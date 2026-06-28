@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Menu, Settings as SettingsIcon, User } from "lucide-react";
+import { LogOut, Menu, Settings as SettingsIcon, User, Shield, FileText } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -127,6 +127,29 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           >
             <SettingsIcon className="size-4" />
             Settings
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="bg-border" />
+          <DropdownMenuItem
+            render={
+              <Link
+                href="/privacy"
+                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+              />
+            }
+          >
+            <Shield className="size-4" />
+            Privacy Policy
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            render={
+              <Link
+                href="/terms"
+                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
+              />
+            }
+          >
+            <FileText className="size-4" />
+            Terms of Service
           </DropdownMenuItem>
           <DropdownMenuSeparator className="bg-border" />
           <DropdownMenuItem
