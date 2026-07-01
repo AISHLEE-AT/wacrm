@@ -6,7 +6,7 @@ import {
   sendMediaMessage,
   type MediaKind,
 } from '@/lib/whatsapp/meta-api'
-import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
+import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import {
   sanitizePhoneForMeta,
@@ -166,40 +166,16 @@ export async function POST(request: Request) {
     }
 
     // Fetch and decrypt WhatsApp config
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('*')
-      .eq('account_id', accountId)
-      .single()
-
-    if (configError || !config) {
+    const config = HARDCODED_WHATSAPP_CONFIG
+    
+    if (!config) {
       return NextResponse.json(
         { error: 'WhatsApp not configured. Please set up your WhatsApp integration first.' },
         { status: 400 }
       )
     }
 
-    const accessToken = decrypt(config.access_token)
-
-    // Self-heal legacy CBC-encrypted tokens. Fire-and-forget: we
-    // return from the send without waiting, so a failed upgrade just
-    // means the next send tries again. The upgrade is idempotent —
-    // concurrent sends both produce valid GCM ciphertexts of the same
-    // plaintext, last write wins.
-    if (isLegacyFormat(config.access_token)) {
-      void supabase
-        .from('whatsapp_config')
-        .update({ access_token: encrypt(accessToken) })
-        .eq('id', config.id)
-        .then(({ error }) => {
-          if (error) {
-            console.warn(
-              '[whatsapp/send] access_token GCM upgrade failed:',
-              error.message,
-            )
-          }
-        })
-    }
+    const accessToken = config.access_token
 
     // Resolve the reply target (if any) to its Meta message_id, which is
     // what `context.message_id` on the outgoing Meta payload needs. The

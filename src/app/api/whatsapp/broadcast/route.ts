@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import type { SendTimeParams } from '@/lib/whatsapp/template-send-builder'
 import { isMessageTemplate } from '@/lib/whatsapp/template-row-guard'
 import {
@@ -134,13 +135,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('*')
-      .eq('account_id', accountId)
-      .single()
+    const config = HARDCODED_WHATSAPP_CONFIG
 
-    if (configError || !config) {
+    if (!config) {
       return NextResponse.json(
         {
           error:
@@ -150,7 +147,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const accessToken = decrypt(config.access_token)
+    const accessToken = config.access_token
 
     // Load the template row once so sendTemplateMessage can build
     // header + button components on each iteration. Loading inside

@@ -6,6 +6,7 @@ import {
   subscribeWabaToApp,
   verifyPhoneNumber,
 } from '@/lib/whatsapp/meta-api'
+import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 
 /**
@@ -85,55 +86,13 @@ export async function GET() {
       )
     }
 
-    const { data: config, error: configError } = await supabase
-      .from('whatsapp_config')
-      .select('phone_number_id, access_token, status')
-      .eq('account_id', accountId)
-      .maybeSingle()
-
-    if (configError) {
-      console.error('Error fetching whatsapp_config:', configError)
-      return NextResponse.json(
-        { connected: false, reason: 'db_error', message: 'Failed to fetch configuration' },
-        { status: 200 }
-      )
-    }
-
-    if (!config) {
-      return NextResponse.json(
-        {
-          connected: false,
-          reason: 'no_config',
-          message: 'No WhatsApp configuration saved yet. Fill in the form and click Save Configuration.',
-        },
-        { status: 200 }
-      )
-    }
-
-    // Try to decrypt the stored token with the current ENCRYPTION_KEY.
-    // If this fails, the key changed (or was never consistent across envs).
-    let accessToken: string
-    try {
-      accessToken = decrypt(config.access_token)
-    } catch (err) {
-      console.error('[whatsapp/config GET] Token decryption failed:', err)
-      return NextResponse.json(
-        {
-          connected: false,
-          reason: 'token_corrupted',
-          needs_reset: true,
-          message:
-            'The stored access token cannot be decrypted with the current ENCRYPTION_KEY. This usually means the key changed, or it differs between environments (local vs Hostinger vs Vercel). Click "Reset Configuration" below, then re-save.',
-        },
-        { status: 200 }
-      )
-    }
+    const config = HARDCODED_WHATSAPP_CONFIG
 
     // Validate credentials against Meta
     try {
       const phoneInfo = await verifyPhoneNumber({
         phoneNumberId: config.phone_number_id,
-        accessToken,
+        accessToken: config.access_token,
       })
       return NextResponse.json({ connected: true, phone_info: phoneInfo })
     } catch (err) {

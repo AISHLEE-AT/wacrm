@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
+import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
@@ -93,53 +94,8 @@ export async function GET(request: Request) {
       )
     }
 
-    // Fetch all whatsapp configs to check verify tokens
-    const { data: configs, error: configError } = await supabaseAdmin()
-      .from('whatsapp_config')
-      .select('id, verify_token')
-
-    if (configError || !configs) {
-      console.error('Error fetching configs for verification:', configError)
-      return NextResponse.json(
-        { error: 'Verification failed' },
-        { status: 403 }
-      )
-    }
-
-    // Check if any config's verify_token matches. Also collect the
-    // matching row so we can opportunistically upgrade its token to
-    // GCM if it was still in the legacy CBC format.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let matchedConfig: any = null
-    for (const config of configs) {
-      if (!config.verify_token) continue
-      try {
-        if (decrypt(config.verify_token) === verifyToken) {
-          matchedConfig = config
-          break
-        }
-      } catch {
-        // Malformed / wrong-key token row — skip it and keep checking.
-      }
-    }
-
-    if (matchedConfig) {
-      // Fire-and-forget GCM upgrade. Safe to run on every subscribe
-      // since it's a no-op once the column is already GCM.
-      if (isLegacyFormat(matchedConfig.verify_token)) {
-        void supabaseAdmin()
-          .from('whatsapp_config')
-          .update({ verify_token: encrypt(verifyToken) })
-          .eq('id', matchedConfig.id)
-          .then(({ error }: { error: unknown }) => {
-            if (error) {
-              console.warn(
-                '[webhook] verify_token GCM upgrade failed:',
-                (error as { message?: string })?.message ?? error,
-              )
-            }
-          })
-      }
+    const config = HARDCODED_WHATSAPP_CONFIG
+    if (config.verify_token === verifyToken) {
       // Return challenge as plain text
       return new Response(challenge, {
         status: 200,
@@ -222,44 +178,14 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       const phoneNumberId = value.metadata.phone_number_id
 
-      // Find user's config by phone_number_id. `.single()` returns
-      // PGRST116 for both 0 rows AND ≥2 rows — distinguish them so
-      // operators see the real cause in logs. ≥2 rows shouldn't happen
-      // post-migration 013 (UNIQUE constraint), but a row created
-      // before the constraint, or a race, would still surface here.
-      const { data: configRows, error: configError } = await supabaseAdmin()
-        .from('whatsapp_config')
-        .select('*')
-        .eq('phone_number_id', phoneNumberId)
+      const config = HARDCODED_WHATSAPP_CONFIG
 
-      if (configError) {
-        console.error(
-          'Error fetching whatsapp_config for phone_number_id:',
-          phoneNumberId,
-          configError
-        )
-        continue
-      }
-
-      if (!configRows || configRows.length === 0) {
+      if (config.phone_number_id !== phoneNumberId) {
         console.error('No config found for phone_number_id:', phoneNumberId)
         continue
       }
 
-      if (configRows.length > 1) {
-        console.error(
-          `Multiple configs (${configRows.length}) found for phone_number_id:`,
-          phoneNumberId,
-          '— inbound message dropped. Resolve duplicates so each number maps to a single account.',
-          'Account owners:',
-          configRows.map((r: { account_id: string; user_id: string }) => `${r.account_id} (admin ${r.user_id})`)
-        )
-        continue
-      }
-
-      const config = configRows[0]
-
-      const decryptedAccessToken = decrypt(config.access_token)
+      const decryptedAccessToken = config.access_token
 
       for (let i = 0; i < value.messages.length; i++) {
         const message = value.messages[i]
