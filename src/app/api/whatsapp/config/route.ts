@@ -94,7 +94,7 @@ export async function GET() {
         phoneNumberId: config.phone_number_id,
         accessToken: config.access_token,
       })
-      return NextResponse.json({ connected: true, phone_info: phoneInfo })
+      return NextResponse.json({ connected: true, phone_info: phoneInfo, config: config })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown Meta API error'
       console.error('[whatsapp/config GET] Meta API verification failed:', message)
