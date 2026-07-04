@@ -138,8 +138,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // Process asynchronously so we can ack Meta within their timeout.
-  processWebhook(body).catch((error) => {
+  // Await processing before acking so Vercel doesn't freeze the lambda
+  // before the database operations finish.
+  await processWebhook(body).catch((error) => {
     console.error('Error processing webhook:', error)
   })
 
@@ -628,17 +629,19 @@ async function processMessage(
   // listens to only one trigger runs only when that trigger matches.
   if (contactOutcome.wasCreated) automationTriggers.unshift('new_contact_created')
   if (isFirstInboundMessage) automationTriggers.unshift('first_inbound_message')
-  for (const triggerType of automationTriggers) {
-    runAutomationsForTrigger({
-      accountId,
-      triggerType,
-      contactId: contactRecord.id,
-      context: {
-        message_text: inboundText,
-        conversation_id: conversation.id,
-      },
-    }).catch((err) => console.error('[automations] dispatch failed:', err))
-  }
+  await Promise.all(
+    automationTriggers.map((triggerType) =>
+      runAutomationsForTrigger({
+        accountId,
+        triggerType,
+        contactId: contactRecord.id,
+        context: {
+          message_text: inboundText,
+          conversation_id: conversation.id,
+        },
+      }).catch((err) => console.error('[automations] dispatch failed:', err))
+    )
+  )
 }
 
 async function parseMessageContent(
