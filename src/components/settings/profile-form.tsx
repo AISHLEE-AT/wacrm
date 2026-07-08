@@ -37,6 +37,8 @@ export function ProfileForm() {
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [phone, setPhone] = useState('');
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -48,6 +50,8 @@ export function ProfileForm() {
     if (!profile) return;
     setFullName(profile.full_name ?? '');
     setEmail(profile.email ?? '');
+    setPincode((profile as unknown as Record<string, unknown>).pincode as string ?? '');
+    setPhone((profile as unknown as Record<string, unknown>).phone as string ?? '');
   }, [profile]);
 
   // Cleanup object URLs to avoid leaks.
@@ -137,12 +141,14 @@ export function ProfileForm() {
         nextAvatarUrl = null;
       }
 
-      // Persist name + avatar to profiles.
+      // Persist name + avatar + pincode + phone to profiles.
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           full_name: trimmedName,
           avatar_url: nextAvatarUrl,
+          pincode: pincode.trim() || null,
+          phone: phone.trim() || null,
         })
         .eq('user_id', user.id);
       if (updateError) {
@@ -300,7 +306,40 @@ export function ProfileForm() {
             )}
           </div>
 
-          {/* Read-only block */}
+          {/* TradeO fields — pincode + phone */}
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+              ⚡ TradeO — Location &amp; Contact
+            </p>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Set once. TradeO uses your pincode to auto-match buyers &amp; providers without asking every time.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="profile-pincode" className="text-foreground">Area Pincode</Label>
+                <Input
+                  id="profile-pincode"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="606703"
+                  maxLength={6}
+                  disabled={saving}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-phone" className="text-foreground">WhatsApp Phone</Label>
+                <Input
+                  id="profile-phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="9486335870"
+                  maxLength={15}
+                  disabled={saving}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-lg border border-border bg-muted p-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Account details

@@ -26,14 +26,13 @@ interface Profile {
   email: string;
   avatar_url: string | null;
   role: string | null;
-  /**
-   * Opted-in beta feature keys for this account. No current feature
-   * reads this — Flows was the last user and went to soft-GA in PR
-   * #134 — but the column survives for future beta gates.
-   */
   beta_features: string[];
   account_id: string | null;
   account_role: AccountRole | null;
+  /** Area pincode — used by TradeO to auto-fill buyer/provider location */
+  pincode: string | null;
+  /** WhatsApp phone — used by TradeO for buyer contact */
+  phone: string | null;
 }
 
 interface AccountSummary {
@@ -136,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // missing account collapses to null rather than a half-
           // populated row (shouldn't happen post-017 NOT NULL, but
           // belt-and-braces against forks running older schemas).
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name, default_currency)",
+          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, pincode, phone, account:accounts!inner(id, name, default_currency)",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -189,13 +188,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: data.email,
           avatar_url: data.avatar_url,
           role: data.role,
-          // `beta_features` is `NOT NULL DEFAULT ARRAY[]` in the DB, but
-          // narrow defensively in case the column hasn't been migrated yet
-          // (older deployments running 011 lazily) — `null` reads as no
-          // opt-ins, which is the safe default for any future beta gate.
           beta_features: data.beta_features ?? [],
           account_id: data.account_id ?? null,
           account_role: accountRole,
+          pincode: (data as Record<string, unknown>).pincode as string | null ?? null,
+          phone: (data as Record<string, unknown>).phone as string | null ?? null,
         });
         setAccount(accountRow);
       }

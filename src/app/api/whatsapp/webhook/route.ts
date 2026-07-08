@@ -425,6 +425,59 @@ async function handleReaction(
   }
 }
 
+async function handleStandaloneBiddingQuote(senderPhone: string, text: string) {
+  try {
+    if (!text) return;
+    
+    // Extract a number from the text (e.g. "Rs 500", "₹500", "500 delivery included" -> 500)
+    const match = text.match(/\d+(\.\d+)?/);
+    if (!match) return;
+    const price = parseFloat(match[0]);
+    if (price <= 0 || price > 10000000) return; // sanity check
+
+    // 1. Is this sender a registered provider?
+    const { data: provider } = await supabaseAdmin()
+      .from('providers')
+      .select('id')
+      .eq('phone_number', senderPhone)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!provider) return; // Not a provider, ignore
+
+    // 2. Find their oldest pending quote (from a broadcasted request)
+    const { data: pendingQuote } = await supabaseAdmin()
+      .from('quotes')
+      .select('id, request_id')
+      .eq('provider_id', provider.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (!pendingQuote) return; // No pending quotes for this provider
+
+    // 3. Update the quote with the price and provider message
+    const { error: updateErr } = await supabaseAdmin()
+      .from('quotes')
+      .update({
+        price,
+        provider_message: text,
+        status: 'submitted'
+      })
+      .eq('id', pendingQuote.id);
+
+    if (updateErr) {
+      console.error('Error updating quote:', updateErr);
+      return;
+    }
+      
+    console.log(`[TradeO] Quote ₹${price} from provider ${provider.id} for request ${pendingQuote.request_id}`);
+  } catch (error) {
+    console.error('Error in handleStandaloneBiddingQuote:', error);
+  }
+}
+
 async function processMessage(
   message: WhatsAppMessage,
   contact: { profile: { name: string }; wa_id: string },
@@ -470,6 +523,15 @@ async function processMessage(
   // Parse message content based on type
   const { contentText, mediaUrl, mediaType, interactiveReplyId } =
     await parseMessageContent(message, accessToken)
+
+  // -- STANDALONE BIDDING SYSTEM HOOK --
+  // We fire this asynchronously so it never slows down or breaks the main CRM flow
+  if (contentText) {
+    handleStandaloneBiddingQuote(senderPhone, contentText).catch(err => {
+      console.error('Bidding hook failed silently:', err);
+    });
+  }
+  // ------------------------------------
 
   // Resolve swipe-reply context if present. A missing parent is fine —
   // we just store NULL and the UI renders the message without a quote.
