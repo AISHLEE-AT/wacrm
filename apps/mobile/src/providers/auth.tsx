@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
+import * as SecureStore from 'expo-secure-store';
 
 type AccountRole = 'owner' | 'admin' | 'agent' | 'viewer' | 'user' | null;
 
@@ -33,7 +34,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Error fetching profile:', error);
         setAccountRole(null);
       } else if (data) {
-        setAccountRole(data.account_role as AccountRole);
+        const role = data.account_role as AccountRole;
+        setAccountRole(role);
+        // Cache role for fast subsequent loads
+        if (role) {
+          SecureStore.setItemAsync('cached_account_role', role).catch(console.error);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -43,6 +49,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+
+    // Fast-path: read from cache immediately
+    SecureStore.getItemAsync('cached_account_role').then((cachedRole) => {
+      if (mounted && cachedRole) {
+        setAccountRole(cachedRole as AccountRole);
+      }
+    });
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -69,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       } else {
         setAccountRole(null);
+        SecureStore.deleteItemAsync('cached_account_role').catch(console.error);
         setLoading(false);
       }
     });

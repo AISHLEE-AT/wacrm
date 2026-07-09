@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'expo-router';
+import { useAuth } from '../providers/auth';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -30,6 +31,20 @@ export default function AuthScreen() {
     return data.session;
   };
 
+  const { session: currentSession, accountRole, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    // Only redirect if we have a session AND auth is done loading
+    if (currentSession && !authLoading) {
+      if (accountRole === 'admin' || accountRole === 'owner') {
+        router.replace('/(tabs)/dashboard');
+      } else {
+        // Fallback for 'user', 'viewer', 'agent', or null (if profile row isn't created yet)
+        router.replace('/(tabs)');
+      }
+    }
+  }, [currentSession, accountRole, authLoading]);
+
   useEffect(() => {
     const subscription = Linking.addEventListener('url', (event) => {
       createSessionFromUrl(event.url).catch(console.error);
@@ -40,23 +55,6 @@ export default function AuthScreen() {
 
     return () => {
       subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.replace('/(tabs)');
-      }
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        router.replace('/(tabs)');
-      }
-    });
-    return () => {
-      authListener.subscription.unsubscribe();
     };
   }, []);
 
@@ -88,7 +86,12 @@ export default function AuthScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Welcome to Trado</Text>
+        <Image 
+          source={require('../../assets/images/logo-title.png')} 
+          style={styles.logo}
+        />
+        
+        <Text style={styles.title}>Welcome to TradO</Text>
         <Text style={styles.subtitle}>
           Read our Privacy Policy. Tap "Agree and continue" to accept the Terms of Service.
         </Text>
@@ -120,6 +123,12 @@ const styles = StyleSheet.create({
     padding: 40,
     alignItems: 'center',
     width: '100%',
+  },
+  logo: {
+    width: 250,
+    height: 100,
+    resizeMode: 'contain',
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,

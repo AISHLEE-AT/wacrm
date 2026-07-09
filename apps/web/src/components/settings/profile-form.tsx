@@ -306,13 +306,13 @@ export function ProfileForm() {
             )}
           </div>
 
-          {/* TradeO fields — pincode + phone */}
+          {/* TradO fields — pincode + phone */}
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-              ⚡ TradeO — Location &amp; Contact
+              ⚡ TradO — Location &amp; Contact
             </p>
             <p className="text-xs text-muted-foreground -mt-2">
-              Set once. TradeO uses your pincode to auto-match buyers &amp; providers without asking every time.
+              Set once. TradO uses your pincode to auto-match buyers &amp; providers without asking every time.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

@@ -29,9 +29,9 @@ interface Profile {
   beta_features: string[];
   account_id: string | null;
   account_role: AccountRole | null;
-  /** Area pincode — used by TradeO to auto-fill buyer/provider location */
+  /** Area pincode — used by TradO to auto-fill buyer/provider location */
   pincode: string | null;
-  /** WhatsApp phone — used by TradeO for buyer contact */
+  /** WhatsApp phone — used by TradO for buyer contact */
   phone: string | null;
 }
 

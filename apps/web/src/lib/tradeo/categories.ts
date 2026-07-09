@@ -1,4 +1,4 @@
-// Shared TradeO category definitions used across the app
+// Shared TradO category definitions used across the app
 export const TRADEO_CATEGORIES = [
   { value: 'Food & Beverages', label: '🍛 Food & Beverages', keywords: ['biriyani', 'meals', 'catering', 'food', 'tiffin', 'snacks', 'sweets'] },
   { value: 'Home Services', label: '🔧 Home Services', keywords: ['plumbing', 'plumber', 'electrical', 'electrician', 'carpentry', 'carpenter', 'painting', 'painter'] },

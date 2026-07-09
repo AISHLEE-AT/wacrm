@@ -43,7 +43,7 @@ function scoreProviderMatch(provider: Provider, keyword: string): number {
   return score
 }
 
-export default function TradeoPage() {
+export default function TradOPage() {
   const { user, profile } = useAuth()
   const router = useRouter()
 
@@ -244,7 +244,7 @@ export default function TradeoPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
               <Zap className="h-5 w-5" />
             </span>
-            TradeO
+            TradO
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Find the best provider, get quotes via WhatsApp

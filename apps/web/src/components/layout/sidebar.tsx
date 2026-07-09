@@ -23,7 +23,7 @@ import {
   Workflow,
   X,
   Zap,
-  Briefcase, // For TradeO Requests
+  Briefcase, // For TradO Requests
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -89,7 +89,7 @@ interface NavItem {
 }
 
 const tradeoItems: NavItem[] = [
-  { href: "/tradeo", label: "TradeO Hub", icon: ShoppingBag },
+  { href: "/tradeo", label: "TradO Hub", icon: ShoppingBag },
   { href: "/tradeo/requests", label: "All Requests", icon: Briefcase },
   { href: "/tradeo/providers", label: "Providers", icon: UsersRound },
 ];
@@ -187,11 +187,11 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-primary-foreground shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-              <ShoppingBag className="h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-primary-foreground">
+              <img src="/logo.png" alt="TradO Logo" className="h-6 w-6 object-contain drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
             </div>
             <span className="text-sm font-bold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-              TradeO
+              TradO
             </span>
           </Link>
           <button
@@ -206,7 +206,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* TradeO Section - Only visible to normal users */}
+          {/* TradO Section - Only visible to normal users */}
           {accountRole !== "owner" && accountRole !== "admin" && (
             <>
               <div className="px-3 mb-2 mt-2">

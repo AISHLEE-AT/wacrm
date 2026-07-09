@@ -1,40 +1,290 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../providers/auth';
+import { Search, MapPin, Zap, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
+// Simple category list matching the web app
+const CATEGORIES = [
+  'All',
+  'Food & Beverages',
+  'Home Services',
+  'Transportation',
+  'Education',
+  'Healthcare',
+  'Beauty & Wellness',
+  'Cleaning',
+  'Events',
+  'Retail & Shopping',
+  'Other'
+];
+
+interface Provider {
+  id: string;
+  business_name: string;
+  category: string;
+  pincode: string;
+  services: string[];
+}
+
 export default function TradoDashboard() {
+  const { session } = useAuth();
   const router = useRouter();
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.replace('/');
+  const [keyword, setKeyword] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [category, setCategory] = useState('All');
+  
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
+
+  // Search providers directly from Supabase
+  const handleSearch = async () => {
+    if (!keyword.trim() || !pincode.trim()) {
+      Alert.alert('Missing Info', 'Please enter both what you are looking for and your pincode.');
+      return;
+    }
+
+    setSearching(true);
+    setSearched(true);
+    setSelectedIds(new Set());
+
+    try {
+      let query = supabase.from('providers').select('*');
+      
+      // Filter by pincode
+      query = query.eq('pincode', pincode.trim());
+
+      // Filter by category if not 'All'
+      if (category !== 'All') {
+        query = query.eq('category', category);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // Filter by keyword in memory (like the web app's scoreProviderMatch)
+      const kw = keyword.toLowerCase();
+      const scored = (data || [])
+        .map((p) => {
+          let score = 0;
+          if (p.business_name?.toLowerCase().includes(kw)) score += 3;
+          if (p.category?.toLowerCase().includes(kw)) score += 2;
+          if ((p.services || []).some((s: string) => s.toLowerCase().includes(kw))) score += 5;
+          return { provider: p, score };
+        })
+        .filter((item) => item.score > 0 || category !== 'All') // Keep if it matches category or keyword
+        .sort((a, b) => b.score - a.score)
+        .map((item) => item.provider);
+
+      setProviders(scored);
+      // Auto-select all by default
+      setSelectedIds(new Set(scored.map((p) => p.id)));
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to search providers.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleBroadcast = async () => {
+    if (selectedIds.size === 0 || !keyword.trim() || !pincode.trim()) return;
+    
+    setBroadcasting(true);
+    try {
+      // Create request in Supabase
+      const { data: request, error: reqError } = await supabase
+        .from('requests')
+        .insert({
+          item_requested: keyword.trim(),
+          pincode: pincode.trim(),
+          category: category === 'All' ? 'Other' : category,
+          buyer_user_id: session?.user?.id,
+          status: 'pending' // Initially pending, web api will set to broadcasted
+        })
+        .select()
+        .single();
+
+      if (reqError || !request) throw reqError || new Error("Failed to create request");
+
+      // Hit the Web App API to trigger WhatsApp messages
+      // We assume the web app API is hosted at the SITE_URL. For dev, we might need a physical IP.
+      // We'll just call the relative API path using our Expo Public URL.
+      const API_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.includes('localhost') 
+        ? 'http://192.168.1.100:3000/api/tradeo/broadcast' // Placeholder IP for local dev
+        : 'https://watscrrm.vercel.app/api/tradeo/broadcast'; // Prod
+
+      const broadRes = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: request.id,
+          provider_ids: Array.from(selectedIds),
+          item_requested: keyword.trim(),
+          pincode: pincode.trim()
+        })
+      });
+
+      if (!broadRes.ok) {
+        console.warn("Broadcast API failed, but request created.");
+      } else {
+        // Update to broadcasted
+        await supabase.from('requests').update({ status: 'broadcasted' }).eq('id', request.id);
+      }
+
+      // Route to Requests Tab
+      router.replace('/(tabs)/requests');
+      
+    } catch (err: any) {
+      Alert.alert('Broadcast Error', err.message);
+    } finally {
+      setBroadcasting(false);
+    }
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Trado Hub</Text>
-        <Button title="Sign Out" onPress={handleSignOut} color="#00A884" />
+        <View style={styles.headerLeft}>
+          <View style={styles.iconBg}>
+            <Zap color="#00A884" size={24} />
+          </View>
+          <Text style={styles.title}>TradO</Text>
+        </View>
+        <TouchableOpacity onPress={() => supabase.auth.signOut()}>
+          <Text style={styles.signOutText}>Sign Out</Text>
+        </TouchableOpacity>
       </View>
-      
-      <View style={styles.banner}>
-        <Text style={styles.bannerTitle}>Find what you need.</Text>
-        <Text style={styles.bannerSubtitle}>Connect with verified providers globally.</Text>
-        <TouchableOpacity style={styles.actionButton}>
-          <Text style={styles.actionButtonText}>+ Ask for Product or Service</Text>
+      <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
+
+      {/* Search Panel */}
+      <View style={styles.searchPanel}>
+        <Text style={styles.panelTitle}>🔍 What are you looking for?</Text>
+        
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity 
+              key={cat}
+              style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+              onPress={() => setCategory(cat)}
+            >
+              <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.inputWrapper}>
+          <Search color="#999" size={20} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Search (e.g. Biriyani, Plumber...)"
+            value={keyword}
+            onChangeText={setKeyword}
+          />
+        </View>
+
+        <View style={styles.inputWrapper}>
+          <MapPin color="#999" size={20} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Pincode (e.g. 600001)"
+            value={pincode}
+            onChangeText={setPincode}
+            keyboardType="number-pad"
+            maxLength={6}
+          />
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.searchBtn, (!keyword || !pincode) && styles.searchBtnDisabled]}
+          onPress={handleSearch}
+          disabled={!keyword || !pincode || searching}
+        >
+          {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Find Providers</Text>}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Recent Requests</Text>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Need 500kg of Organic Coffee Beans</Text>
-        <Text style={styles.cardMeta}>Posted 2 hours ago • Looking for Supplier</Text>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Looking for Web Development Agency</Text>
-        <Text style={styles.cardMeta}>Posted 5 hours ago • Looking for Service</Text>
-      </View>
+      {/* Search Results */}
+      {searched && (
+        <View style={styles.resultsPanel}>
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsTitle}>
+              {providers.length > 0 ? `✅ ${providers.length} provider(s) found` : `❌ No providers found`}
+            </Text>
+            {providers.length > 0 && (
+              <TouchableOpacity onPress={() => setSelectedIds(new Set())}>
+                <Text style={styles.clearText}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {providers.length === 0 ? (
+            <View style={styles.emptyState}>
+              <AlertCircle color="#ccc" size={40} style={{ marginBottom: 12 }} />
+              <Text style={styles.emptyStateText}>No registered providers match your search in this pincode.</Text>
+            </View>
+          ) : (
+            <>
+              {providers.map((p) => {
+                const selected = selectedIds.has(p.id);
+                return (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.providerCard, selected && styles.providerCardSelected]}
+                    onPress={() => {
+                      const next = new Set(selectedIds);
+                      if (selected) next.delete(p.id);
+                      else next.add(p.id);
+                      setSelectedIds(next);
+                    }}
+                  >
+                    <View style={styles.providerLeft}>
+                      <View style={[styles.avatar, selected && styles.avatarSelected]}>
+                        <Text style={[styles.avatarText, selected && styles.avatarTextSelected]}>
+                          {p.business_name?.charAt(0)?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
+                      <View style={styles.providerInfo}>
+                        <Text style={styles.providerName} numberOfLines={1}>{p.business_name}</Text>
+                        <Text style={styles.providerMeta}>{p.category} • {p.pincode}</Text>
+                      </View>
+                    </View>
+                    <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+                      {selected && <CheckCircle2 color="#fff" size={16} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+
+              <TouchableOpacity 
+                style={[styles.broadcastBtn, (selectedIds.size === 0 || broadcasting) && styles.searchBtnDisabled]}
+                onPress={handleBroadcast}
+                disabled={selectedIds.size === 0 || broadcasting}
+              >
+                {broadcasting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Zap color="#fff" size={20} />
+                    <Text style={styles.broadcastBtnText}>
+                      Request Quotes from {selectedIds.size} Provider(s) via WhatsApp
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Spacing at bottom */}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -42,69 +292,233 @@ export default function TradoDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F5F7F9',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconBg: {
+    backgroundColor: '#E0F2EC',
+    padding: 8,
+    borderRadius: 8,
+    marginRight: 10,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#111',
   },
-  banner: {
-    backgroundColor: '#00A884',
-    padding: 24,
-    margin: 16,
-    borderRadius: 12,
-  },
-  bannerTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  bannerSubtitle: {
-    color: '#e0ffe8',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  actionButton: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: '#00A884',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    elevation: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
+  signOutText: {
+    color: '#666',
     fontWeight: '600',
-    marginBottom: 4,
   },
-  cardMeta: {
+  subtitle: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+    color: '#666',
     fontSize: 14,
+  },
+  searchPanel: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 16,
+  },
+  panelTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#111',
+  },
+  categoryScroll: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F2F5',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E4E6E9',
+  },
+  categoryChipActive: {
+    backgroundColor: '#00A884',
+    borderColor: '#00A884',
+  },
+  categoryText: {
+    fontSize: 13,
+    color: '#444',
+    fontWeight: '500',
+  },
+  categoryTextActive: {
+    color: '#fff',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E4E6E9',
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#FAFBFC',
+  },
+  inputIcon: {
+    paddingLeft: 12,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: '#111',
+  },
+  searchBtn: {
+    backgroundColor: '#00A884',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  searchBtnDisabled: {
+    opacity: 0.6,
+  },
+  searchBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  resultsPanel: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  resultsTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#111',
+  },
+  clearText: {
+    color: '#666',
+    fontSize: 13,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  emptyStateText: {
+    color: '#888',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  providerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E4E6E9',
+    marginBottom: 12,
+    backgroundColor: '#FAFBFC',
+  },
+  providerCardSelected: {
+    borderColor: '#00A884',
+    backgroundColor: '#E0F2EC',
+  },
+  providerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#E4E6E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarSelected: {
+    backgroundColor: '#00A884',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#666',
   },
+  avatarTextSelected: {
+    color: '#fff',
+  },
+  providerInfo: {
+    flex: 1,
+    paddingRight: 8,
+  },
+  providerName: {
+    fontWeight: 'bold',
+    fontSize: 15,
+    color: '#111',
+    marginBottom: 2,
+  },
+  providerMeta: {
+    fontSize: 13,
+    color: '#666',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E4E6E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#00A884',
+    borderColor: '#00A884',
+  },
+  broadcastBtn: {
+    flexDirection: 'row',
+    backgroundColor: '#00A884',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  broadcastBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+    marginLeft: 8,
+  }
 });
