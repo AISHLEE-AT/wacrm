@@ -31,7 +31,13 @@ export default function SettingsPage() {
   // section — deep-linkable, and it keeps the existing links in the
   // app sidebar/header working. Legacy tab values (tags, custom-fields)
   // resolve onto their new home; unknown/empty → the Overview landing.
-  const section = resolveSection(searchParams.get('tab'));
+  let section = resolveSection(searchParams.get('tab'));
+  const { accountRole } = useAuth();
+  const isAdmin = accountRole === 'admin' || accountRole === 'owner';
+  
+  if (SECTION_META[section].adminOnly && !isAdmin) {
+    section = 'overview';
+  }
 
   const go = (next: SettingsSection) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -251,6 +251,9 @@ export function SettingsOverview({
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {tiles.map(({ section, loading, subtitle }) => {
           const meta = SECTION_META[section];
+          const isAdmin = accountRole === 'admin' || accountRole === 'owner';
+          if (meta.adminOnly && !isAdmin) return null;
+
           const Icon = meta.icon;
           return (
             <button

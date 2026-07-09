@@ -9,6 +9,7 @@ import {
   SETTINGS_SECTIONS,
   type SettingsSection,
 } from './settings-sections';
+import { useAuth } from '@/hooks/use-auth';
 
 // Width at/above which the rail is a vertical column (already in view, so
 // no auto-scroll needed). Mirrors the Tailwind `lg:` breakpoint that
@@ -21,6 +22,7 @@ const RAIL_DESKTOP_MIN_PX = 1024;
  * behaviour). The active item auto-scrolls into view when the rail is
  * horizontal so a deep-linked section is never off-screen.
  */
+
 export function SettingsRail({
   active,
   onSelect,
@@ -31,6 +33,8 @@ export function SettingsRail({
   hints?: Partial<Record<SettingsSection, ReactNode>>;
 }) {
   const activeRef = useRef<HTMLButtonElement>(null);
+  const { accountRole } = useAuth();
+  const isAdmin = accountRole === 'admin' || accountRole === 'owner';
 
   // When horizontal (mobile), keep the active chip in view. On desktop
   // the rail is a static column, so skip.
@@ -55,8 +59,11 @@ export function SettingsRail({
     >
       {RAIL_GROUPS.map(({ label, group }) => {
         const items = SETTINGS_SECTIONS.filter(
-          (s) => SECTION_META[s].group === group,
+          (s) => SECTION_META[s].group === group && (!SECTION_META[s].adminOnly || isAdmin),
         );
+        
+        if (items.length === 0) return null;
+
         return (
           <div
             key={group}
