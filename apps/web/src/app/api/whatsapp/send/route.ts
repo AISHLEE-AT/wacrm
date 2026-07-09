@@ -22,24 +22,40 @@ import {
 import type { MessageTemplate } from '@/types'
 import { isMessageTemplate } from '@/lib/whatsapp/template-row-guard'
 
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    let user;
-    let authError;
     const authHeader = request.headers.get('authorization')
+    const cookieStore = await cookies()
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const res = await supabase.auth.getUser(token);
-      user = res.data?.user;
-      authError = res.error;
-    } else {
-      const res = await supabase.auth.getUser();
-      user = res.data?.user;
-      authError = res.error;
-    }
+    // Create a Supabase client that uses the Authorization header if present (for mobile app),
+    // otherwise falls back to cookies (for web app).
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            // Ignored in route handler
+          },
+        },
+        global: {
+          headers: {
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+        },
+      }
+    )
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json(
