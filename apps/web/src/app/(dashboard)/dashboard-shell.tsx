@@ -33,8 +33,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       
       if (isCrmPath && accountRole !== 'owner' && accountRole !== 'admin') {
         router.push('/tradeo');
-      } else if (pathname.startsWith('/tradeo') && (accountRole === 'owner' || accountRole === 'admin')) {
-        router.push('/dashboard');
       }
     }
   }, [user, loading, accountRole, pathname, router]);
