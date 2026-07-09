@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Activity
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { ArrowLeft, Send } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Message {
   id: string;
@@ -26,6 +27,7 @@ interface Conversation {
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,6 +38,37 @@ export default function ConversationScreen() {
 
   useEffect(() => {
     if (!id) return;
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        const { data: convData } = await supabase
+          .from('conversations')
+          .select('*, contact:contacts(*)')
+          .eq('id', id)
+          .single();
+        
+        if (convData && isMounted) setConversation(convData);
+
+        const { data: msgData } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', id)
+          .order('created_at', { ascending: true });
+        
+        if (msgData && isMounted) {
+          setMessages(msgData);
+          setTimeout(() => {
+            if (isMounted) flatListRef.current?.scrollToEnd({ animated: false });
+          }, 200);
+        }
+      } catch (e) {
+        console.log('Error fetching chat', e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     fetchData();
 
     // Mark as read
@@ -49,47 +82,24 @@ export default function ConversationScreen() {
         table: 'messages',
         filter: `conversation_id=eq.${id}`
       }, (payload) => {
+        if (!isMounted) return;
         const newMessage = payload.new as Message;
         setMessages(prev => {
-          // Prevent duplicates if optimistic UI was used (though we rely mostly on DB here)
+          // Prevent duplicates
           if (prev.find(m => m.id === newMessage.id)) return prev;
           return [...prev, newMessage];
         });
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+        setTimeout(() => {
+          if (isMounted) flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
       })
       .subscribe();
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, [id]);
-
-  const fetchData = async () => {
-    try {
-      const { data: convData } = await supabase
-        .from('conversations')
-        .select('*, contact:contacts(*)')
-        .eq('id', id)
-        .single();
-      
-      if (convData) setConversation(convData);
-
-      const { data: msgData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', id)
-        .order('created_at', { ascending: true });
-      
-      if (msgData) {
-        setMessages(msgData);
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 200);
-      }
-    } catch (e) {
-      console.log('Error fetching chat', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSend = async () => {
     if (!inputText.trim() || sending || !id) return;
@@ -98,7 +108,7 @@ export default function ConversationScreen() {
     const textToSend = inputText.trim();
     setInputText('');
     
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.29.35:3000';
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://watscrm.vercel.app';
     
     try {
       const res = await fetch(`${apiUrl}/api/whatsapp/send`, {
@@ -134,17 +144,24 @@ export default function ConversationScreen() {
     );
   }
 
+  const getContactName = () => {
+    if (!conversation?.contact) return 'Unknown Contact';
+    if (conversation.contact.name) return conversation.contact.name;
+    if (conversation.contact.phone_number) return '+' + conversation.contact.phone_number;
+    return 'Unknown Contact';
+  };
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft color="#0f172a" size={24} />
         </TouchableOpacity>
         <View style={styles.headerTitle}>
-          <Text style={styles.contactName}>{conversation?.contact?.name || '+' + conversation?.contact?.phone_number}</Text>
+          <Text style={styles.contactName}>{getContactName()}</Text>
           <Text style={styles.statusText}>{conversation?.status === 'open' ? 'Open' : 'Closed'}</Text>
         </View>
       </View>
@@ -172,7 +189,7 @@ export default function ConversationScreen() {
         }
       />
 
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <TextInput
           style={styles.input}
           placeholder="Type a message..."
@@ -200,7 +217,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: 16, 
-    paddingTop: Platform.OS === 'ios' ? 60 : 20, 
     backgroundColor: '#fff', 
     borderBottomWidth: 1, 
     borderBottomColor: '#f1f5f9' 
@@ -265,3 +281,4 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: { opacity: 0.5 },
 });
+
