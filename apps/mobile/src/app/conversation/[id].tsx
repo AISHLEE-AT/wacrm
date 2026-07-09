@@ -111,9 +111,15 @@ export default function ConversationScreen() {
     const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://watscrm.vercel.app';
     
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
       const res = await fetch(`${apiUrl}/api/whatsapp/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           conversation_id: id,
           message_type: 'text',
