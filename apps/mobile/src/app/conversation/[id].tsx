@@ -85,8 +85,16 @@ export default function ConversationScreen() {
         if (!isMounted) return;
         const newMessage = payload.new as Message;
         setMessages(prev => {
-          // Prevent duplicates
           if (prev.find(m => m.id === newMessage.id)) return prev;
+          
+          // Replace matching optimistic message so bubbles don't duplicate
+          const tempIdx = prev.findIndex(m => m.id.startsWith('temp-') && m.content_text === newMessage.content_text);
+          if (tempIdx >= 0) {
+            const copy = [...prev];
+            copy[tempIdx] = newMessage;
+            return copy;
+          }
+          
           return [...prev, newMessage];
         });
         setTimeout(() => {
@@ -104,9 +112,24 @@ export default function ConversationScreen() {
   const handleSend = async () => {
     if (!inputText.trim() || sending || !id) return;
     
-    setSending(true);
+    // Don't set sending=true to block the UI, let them type the next message!
     const textToSend = inputText.trim();
     setInputText('');
+    
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      conversation_id: id as string,
+      sender_type: 'agent',
+      content_type: 'text',
+      content_text: textToSend,
+      created_at: new Date().toISOString(),
+      status: 'sending'
+    };
+    
+    // Instantly show in UI
+    setMessages(prev => [...prev, optimisticMsg]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     
     const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://watscrm.vercel.app';
     
@@ -129,11 +152,12 @@ export default function ConversationScreen() {
       
       if (!res.ok) {
         Alert.alert('Error', 'Failed to send message via WhatsApp.');
+        // Remove failed message from UI
+        setMessages(prev => prev.filter(m => m.id !== tempId));
       }
     } catch (e) {
       Alert.alert('Error', 'Network error sending message.');
-    } finally {
-      setSending(false);
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     }
   };
 
