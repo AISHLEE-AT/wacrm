@@ -1,7 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import VoiceSearch from '../../components/VoiceSearch';
 import { useAuth } from '../../providers/auth';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Search, MapPin, Zap, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
@@ -61,11 +64,13 @@ export default function TradoDashboard() {
   
   const [providers, setProviders] = useState<Provider[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [broadcasting, setBroadcasting] = useState(false);
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!keyword.trim() || !pincode.trim()) {
       Alert.alert('Missing Info', 'Please enter both what you are looking for and your pincode.');
       return;
@@ -105,9 +110,10 @@ export default function TradoDashboard() {
     } finally {
       setSearching(false);
     }
-  };
+  }, [keyword, pincode, category]);
 
   const handleBroadcast = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (selectedIds.size === 0 || !keyword.trim() || !pincode.trim()) return;
     
     setBroadcasting(true);
@@ -146,9 +152,11 @@ export default function TradoDashboard() {
       } else {
         await supabase.from('requests').update({ status: 'broadcasted' }).eq('id', request.id);
       }
-
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/(tabs)/requests');
     } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Broadcast Error', err.message);
     } finally {
       setBroadcasting(false);
@@ -156,6 +164,7 @@ export default function TradoDashboard() {
   };
 
   const toggleProvider = useCallback((id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -166,10 +175,14 @@ export default function TradoDashboard() {
 
 const DashboardHeader = React.memo(({
   keyword, setKeyword, pincode, setPincode, category, setCategory,
-  searching, searched, providersLength, setSelectedIds, handleSearch
+  searching, searched, providersLength, setSelectedIds, handleSearch,
+  isTranscribing, setIsTranscribing
 }: any) => (
   <>
-    <View style={styles.header}>
+    <LinearGradient
+      colors={['#000000', '#1a1a1a']}
+      style={styles.header}
+    >
       <View style={styles.headerLeft}>
         <View style={styles.iconBg}>
           <Zap color="#00A884" size={24} />
@@ -179,7 +192,7 @@ const DashboardHeader = React.memo(({
       <TouchableOpacity onPress={() => supabase.auth.signOut()}>
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
-    </View>
+    </LinearGradient>
     <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
 
     <View style={styles.searchPanel}>
@@ -201,13 +214,20 @@ const DashboardHeader = React.memo(({
         )}
       />
 
-      <View style={styles.inputWrapper}>
-        <Search color="#999" size={20} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Search (e.g. Biriyani, Plumber...)"
-          value={keyword}
-          onChangeText={setKeyword}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={[styles.inputWrapper, { flex: 1 }]}>
+          <Search color="#999" size={20} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder={isTranscribing ? "Listening..." : "Search (e.g. Biriyani, Plumber...)"}
+            value={keyword}
+            onChangeText={setKeyword}
+          />
+        </View>
+        <VoiceSearch 
+          onTranscription={setKeyword}
+          isTranscribing={isTranscribing}
+          setIsTranscribing={setIsTranscribing}
         />
       </View>
 
@@ -297,6 +317,7 @@ const DashboardHeader = React.memo(({
               searching={searching} searched={searched}
               providersLength={providers.length} setSelectedIds={setSelectedIds}
               handleSearch={handleSearch}
+              isTranscribing={isTranscribing} setIsTranscribing={setIsTranscribing}
             />
           }
           ListFooterComponent={renderFooter}

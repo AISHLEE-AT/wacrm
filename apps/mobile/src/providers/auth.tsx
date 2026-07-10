@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import * as SecureStore from 'expo-secure-store';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
 
 type AccountRole = 'owner' | 'admin' | 'agent' | 'viewer' | 'user' | null;
 
@@ -64,6 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (session?.user) {
         fetchProfile(session.user.id).finally(() => {
+          registerForPushNotificationsAsync();
           if (mounted) setLoading(false);
         });
       } else {
@@ -78,6 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (session?.user) {
         fetchProfile(session.user.id).finally(() => {
+          registerForPushNotificationsAsync();
           if (mounted) setLoading(false);
         });
       } else {
