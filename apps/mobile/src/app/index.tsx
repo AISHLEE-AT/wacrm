@@ -37,7 +37,7 @@ export default function AuthScreen() {
     // Only redirect if we have a session AND auth is done loading
     if (currentSession && !authLoading) {
       if (accountRole === 'admin' || accountRole === 'owner') {
-        router.replace('/(tabs)/dashboard');
+        router.replace('/(tabs)');
       } else {
         // Fallback for 'user', 'viewer', 'agent', or null (if profile row isn't created yet)
         router.replace('/(tabs)');

@@ -1,23 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../providers/auth';
-import { Search, MapPin, Zap, CheckCircle2, ChevronRight, AlertCircle } from 'lucide-react-native';
+import { Search, MapPin, Zap, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
-// Simple category list matching the web app
 const CATEGORIES = [
-  'All',
-  'Food & Beverages',
-  'Home Services',
-  'Transportation',
-  'Education',
-  'Healthcare',
-  'Beauty & Wellness',
-  'Cleaning',
-  'Events',
-  'Retail & Shopping',
-  'Other'
+  'All', 'Food & Beverages', 'Home Services', 'Transportation', 'Education',
+  'Healthcare', 'Beauty & Wellness', 'Cleaning', 'Events', 'Retail & Shopping', 'Other'
 ];
 
 interface Provider {
@@ -27,6 +17,39 @@ interface Provider {
   pincode: string;
   services: string[];
 }
+
+// Memoized Provider Card for FlatList performance
+const ProviderCard = React.memo(({ 
+  provider, 
+  selected, 
+  onToggle 
+}: { 
+  provider: Provider, 
+  selected: boolean, 
+  onToggle: (id: string) => void 
+}) => {
+  return (
+    <TouchableOpacity
+      style={[styles.providerCard, selected && styles.providerCardSelected]}
+      onPress={() => onToggle(provider.id)}
+    >
+      <View style={styles.providerLeft}>
+        <View style={[styles.avatar, selected && styles.avatarSelected]}>
+          <Text style={[styles.avatarText, selected && styles.avatarTextSelected]}>
+            {provider.business_name?.charAt(0)?.toUpperCase() || '?'}
+          </Text>
+        </View>
+        <View style={styles.providerInfo}>
+          <Text style={styles.providerName} numberOfLines={1}>{provider.business_name}</Text>
+          <Text style={styles.providerMeta}>{provider.category} • {provider.pincode}</Text>
+        </View>
+      </View>
+      <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
+        {selected && <CheckCircle2 color="#fff" size={16} />}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function TradoDashboard() {
   const { session } = useAuth();
@@ -42,7 +65,6 @@ export default function TradoDashboard() {
   const [searched, setSearched] = useState(false);
   const [broadcasting, setBroadcasting] = useState(false);
 
-  // Search providers directly from Supabase
   const handleSearch = async () => {
     if (!keyword.trim() || !pincode.trim()) {
       Alert.alert('Missing Info', 'Please enter both what you are looking for and your pincode.');
@@ -55,20 +77,14 @@ export default function TradoDashboard() {
 
     try {
       let query = supabase.from('providers').select('*');
-      
-      // Filter by pincode
       query = query.eq('pincode', pincode.trim());
-
-      // Filter by category if not 'All'
       if (category !== 'All') {
         query = query.eq('category', category);
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
 
-      // Filter by keyword in memory (like the web app's scoreProviderMatch)
       const kw = keyword.toLowerCase();
       const scored = (data || [])
         .map((p) => {
@@ -78,12 +94,11 @@ export default function TradoDashboard() {
           if ((p.services || []).some((s: string) => s.toLowerCase().includes(kw))) score += 5;
           return { provider: p, score };
         })
-        .filter((item) => item.score > 0 || category !== 'All') // Keep if it matches category or keyword
+        .filter((item) => item.score > 0 || category !== 'All')
         .sort((a, b) => b.score - a.score)
         .map((item) => item.provider);
 
       setProviders(scored);
-      // Auto-select all by default
       setSelectedIds(new Set(scored.map((p) => p.id)));
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to search providers.');
@@ -97,7 +112,6 @@ export default function TradoDashboard() {
     
     setBroadcasting(true);
     try {
-      // Create request in Supabase
       const { data: request, error: reqError } = await supabase
         .from('requests')
         .insert({
@@ -105,19 +119,16 @@ export default function TradoDashboard() {
           pincode: pincode.trim(),
           category: category === 'All' ? 'Other' : category,
           buyer_user_id: session?.user?.id,
-          status: 'pending' // Initially pending, web api will set to broadcasted
+          status: 'pending'
         })
         .select()
         .single();
 
       if (reqError || !request) throw reqError || new Error("Failed to create request");
 
-      // Hit the Web App API to trigger WhatsApp messages
-      // We assume the web app API is hosted at the SITE_URL. For dev, we might need a physical IP.
-      // We'll just call the relative API path using our Expo Public URL.
       const API_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.includes('localhost') 
-        ? 'http://192.168.1.100:3000/api/tradeo/broadcast' // Placeholder IP for local dev
-        : 'https://watscrrm.vercel.app/api/tradeo/broadcast'; // Prod
+        ? 'http://192.168.1.100:3000/api/tradeo/broadcast' 
+        : 'https://watscrrm.vercel.app/api/tradeo/broadcast';
 
       const broadRes = await fetch(API_URL, {
         method: 'POST',
@@ -133,13 +144,10 @@ export default function TradoDashboard() {
       if (!broadRes.ok) {
         console.warn("Broadcast API failed, but request created.");
       } else {
-        // Update to broadcasted
         await supabase.from('requests').update({ status: 'broadcasted' }).eq('id', request.id);
       }
 
-      // Route to Requests Tab
       router.replace('/(tabs)/requests');
-      
     } catch (err: any) {
       Alert.alert('Broadcast Error', err.message);
     } finally {
@@ -147,9 +155,17 @@ export default function TradoDashboard() {
     }
   };
 
-  return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Header */}
+  const toggleProvider = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const renderHeader = () => (
+    <>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconBg}>
@@ -163,21 +179,24 @@ export default function TradoDashboard() {
       </View>
       <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
 
-      {/* Search Panel */}
       <View style={styles.searchPanel}>
         <Text style={styles.panelTitle}>🔍 What are you looking for?</Text>
         
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-          {CATEGORIES.map((cat) => (
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll}
+          data={CATEGORIES}
+          keyExtractor={(item) => item}
+          renderItem={({ item: cat }) => (
             <TouchableOpacity 
-              key={cat}
               style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
               onPress={() => setCategory(cat)}
             >
               <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          )}
+        />
 
         <View style={styles.inputWrapper}>
           <Search color="#999" size={20} style={styles.inputIcon} />
@@ -210,9 +229,8 @@ export default function TradoDashboard() {
         </TouchableOpacity>
       </View>
 
-      {/* Search Results */}
       {searched && (
-        <View style={styles.resultsPanel}>
+        <View style={styles.resultsHeaderContainer}>
           <View style={styles.resultsHeader}>
             <Text style={styles.resultsTitle}>
               {providers.length > 0 ? `✅ ${providers.length} provider(s) found` : `❌ No providers found`}
@@ -224,68 +242,66 @@ export default function TradoDashboard() {
             )}
           </View>
 
-          {providers.length === 0 ? (
+          {providers.length === 0 && (
             <View style={styles.emptyState}>
               <AlertCircle color="#ccc" size={40} style={{ marginBottom: 12 }} />
               <Text style={styles.emptyStateText}>No registered providers match your search in this pincode.</Text>
             </View>
-          ) : (
-            <>
-              {providers.map((p) => {
-                const selected = selectedIds.has(p.id);
-                return (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[styles.providerCard, selected && styles.providerCardSelected]}
-                    onPress={() => {
-                      const next = new Set(selectedIds);
-                      if (selected) next.delete(p.id);
-                      else next.add(p.id);
-                      setSelectedIds(next);
-                    }}
-                  >
-                    <View style={styles.providerLeft}>
-                      <View style={[styles.avatar, selected && styles.avatarSelected]}>
-                        <Text style={[styles.avatarText, selected && styles.avatarTextSelected]}>
-                          {p.business_name?.charAt(0)?.toUpperCase() || '?'}
-                        </Text>
-                      </View>
-                      <View style={styles.providerInfo}>
-                        <Text style={styles.providerName} numberOfLines={1}>{p.business_name}</Text>
-                        <Text style={styles.providerMeta}>{p.category} • {p.pincode}</Text>
-                      </View>
-                    </View>
-                    <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-                      {selected && <CheckCircle2 color="#fff" size={16} />}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-
-              <TouchableOpacity 
-                style={[styles.broadcastBtn, (selectedIds.size === 0 || broadcasting) && styles.searchBtnDisabled]}
-                onPress={handleBroadcast}
-                disabled={selectedIds.size === 0 || broadcasting}
-              >
-                {broadcasting ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Zap color="#fff" size={20} />
-                    <Text style={styles.broadcastBtnText}>
-                      Request Quotes from {selectedIds.size} Provider(s) via WhatsApp
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </>
           )}
         </View>
       )}
+    </>
+  );
 
-      {/* Spacing at bottom */}
-      <View style={{ height: 40 }} />
-    </ScrollView>
+  const renderFooter = () => {
+    if (!searched || providers.length === 0) return null;
+    return (
+      <View style={styles.footerContainer}>
+        <TouchableOpacity 
+          style={[styles.broadcastBtn, (selectedIds.size === 0 || broadcasting) && styles.searchBtnDisabled]}
+          onPress={handleBroadcast}
+          disabled={selectedIds.size === 0 || broadcasting}
+        >
+          {broadcasting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Zap color="#fff" size={20} />
+              <Text style={styles.broadcastBtnText}>
+                Request Quotes from {selectedIds.size} Provider(s) via WhatsApp
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <FlatList
+          data={searched ? providers : []}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => (
+            <View style={styles.providerCardContainer}>
+              <ProviderCard 
+                provider={item} 
+                selected={selectedIds.has(item.id)} 
+                onToggle={toggleProvider} 
+              />
+            </View>
+          )}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -346,7 +362,6 @@ const styles = StyleSheet.create({
     color: '#111',
   },
   categoryScroll: {
-    flexDirection: 'row',
     marginBottom: 16,
   },
   categoryChip: {
@@ -404,22 +419,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  resultsPanel: {
+  resultsHeaderContainer: {
     backgroundColor: '#fff',
     marginHorizontal: 16,
-    borderRadius: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingBottom: 8,
   },
   resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   resultsTitle: {
     fontSize: 15,
@@ -438,6 +450,11 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
     fontSize: 14,
+  },
+  providerCardContainer: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    paddingHorizontal: 20,
   },
   providerCard: {
     flexDirection: 'row',
@@ -506,6 +523,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#00A884',
     borderColor: '#00A884',
   },
+  footerContainer: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    padding: 20,
+    paddingTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
   broadcastBtn: {
     flexDirection: 'row',
     backgroundColor: '#00A884',
@@ -513,7 +543,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
   },
   broadcastBtnText: {
     color: '#fff',
