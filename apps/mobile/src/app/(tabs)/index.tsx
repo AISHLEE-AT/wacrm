@@ -164,94 +164,97 @@ export default function TradoDashboard() {
     });
   }, []);
 
-  const renderHeader = () => (
-    <>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.iconBg}>
-            <Zap color="#00A884" size={24} />
-          </View>
-          <Text style={styles.title}>TradO</Text>
+const DashboardHeader = React.memo(({
+  keyword, setKeyword, pincode, setPincode, category, setCategory,
+  searching, searched, providersLength, setSelectedIds, handleSearch
+}: any) => (
+  <>
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
+        <View style={styles.iconBg}>
+          <Zap color="#00A884" size={24} />
         </View>
-        <TouchableOpacity onPress={() => supabase.auth.signOut()}>
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>TradO</Text>
       </View>
-      <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
+      <TouchableOpacity onPress={() => supabase.auth.signOut()}>
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </View>
+    <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
 
-      <View style={styles.searchPanel}>
-        <Text style={styles.panelTitle}>🔍 What are you looking for?</Text>
-        
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll}
-          data={CATEGORIES}
-          keyExtractor={(item) => item}
-          renderItem={({ item: cat }) => (
-            <TouchableOpacity 
-              style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
-              onPress={() => setCategory(cat)}
-            >
-              <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
+    <View style={styles.searchPanel}>
+      <Text style={styles.panelTitle}>🔍 What are you looking for?</Text>
+      
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+        data={CATEGORIES}
+        keyExtractor={(item) => item}
+        renderItem={({ item: cat }) => (
+          <TouchableOpacity 
+            style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+            onPress={() => setCategory(cat)}
+          >
+            <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      <View style={styles.inputWrapper}>
+        <Search color="#999" size={20} style={styles.inputIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Search (e.g. Biriyani, Plumber...)"
+          value={keyword}
+          onChangeText={setKeyword}
+        />
+      </View>
+
+      <View style={styles.inputWrapper}>
+        <MapPin color="#999" size={20} style={styles.inputIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Pincode (e.g. 600001)"
+          value={pincode}
+          onChangeText={setPincode}
+          keyboardType="number-pad"
+          maxLength={6}
+        />
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.searchBtn, (!keyword || !pincode) && styles.searchBtnDisabled]}
+        onPress={handleSearch}
+        disabled={!keyword || !pincode || searching}
+      >
+        {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Find Providers</Text>}
+      </TouchableOpacity>
+    </View>
+
+    {searched && (
+      <View style={styles.resultsHeaderContainer}>
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsTitle}>
+            {providersLength > 0 ? `✅ ${providersLength} provider(s) found` : `❌ No providers found`}
+          </Text>
+          {providersLength > 0 && (
+            <TouchableOpacity onPress={() => setSelectedIds(new Set())}>
+              <Text style={styles.clearText}>Clear</Text>
             </TouchableOpacity>
           )}
-        />
-
-        <View style={styles.inputWrapper}>
-          <Search color="#999" size={20} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Search (e.g. Biriyani, Plumber...)"
-            value={keyword}
-            onChangeText={setKeyword}
-          />
         </View>
 
-        <View style={styles.inputWrapper}>
-          <MapPin color="#999" size={20} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Pincode (e.g. 600001)"
-            value={pincode}
-            onChangeText={setPincode}
-            keyboardType="number-pad"
-            maxLength={6}
-          />
-        </View>
-
-        <TouchableOpacity 
-          style={[styles.searchBtn, (!keyword || !pincode) && styles.searchBtnDisabled]}
-          onPress={handleSearch}
-          disabled={!keyword || !pincode || searching}
-        >
-          {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Find Providers</Text>}
-        </TouchableOpacity>
-      </View>
-
-      {searched && (
-        <View style={styles.resultsHeaderContainer}>
-          <View style={styles.resultsHeader}>
-            <Text style={styles.resultsTitle}>
-              {providers.length > 0 ? `✅ ${providers.length} provider(s) found` : `❌ No providers found`}
-            </Text>
-            {providers.length > 0 && (
-              <TouchableOpacity onPress={() => setSelectedIds(new Set())}>
-                <Text style={styles.clearText}>Clear</Text>
-              </TouchableOpacity>
-            )}
+        {providersLength === 0 && (
+          <View style={styles.emptyState}>
+            <AlertCircle color="#ccc" size={40} style={{ marginBottom: 12 }} />
+            <Text style={styles.emptyStateText}>No registered providers match your search in this pincode.</Text>
           </View>
-
-          {providers.length === 0 && (
-            <View style={styles.emptyState}>
-              <AlertCircle color="#ccc" size={40} style={{ marginBottom: 12 }} />
-              <Text style={styles.emptyStateText}>No registered providers match your search in this pincode.</Text>
-            </View>
-          )}
-        </View>
-      )}
-    </>
-  );
+        )}
+      </View>
+    )}
+  </>
+));
 
   const renderFooter = () => {
     if (!searched || providers.length === 0) return null;
@@ -286,7 +289,16 @@ export default function TradoDashboard() {
         <FlatList
           data={searched ? providers : []}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={
+            <DashboardHeader
+              keyword={keyword} setKeyword={setKeyword}
+              pincode={pincode} setPincode={setPincode}
+              category={category} setCategory={setCategory}
+              searching={searching} searched={searched}
+              providersLength={providers.length} setSelectedIds={setSelectedIds}
+              handleSearch={handleSearch}
+            />
+          }
           ListFooterComponent={renderFooter}
           contentContainerStyle={{ paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
