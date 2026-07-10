@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 
 const supabase = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -7,8 +8,8 @@ const supabase = () => createClient(
 )
 
 async function sendWhatsAppTemplate(phone: string, item: string, pincode: string) {
-  const token = process.env.META_ACCESS_TOKEN
-  const phoneId = process.env.META_PHONE_NUMBER_ID
+  const token = HARDCODED_WHATSAPP_CONFIG.access_token
+  const phoneId = HARDCODED_WHATSAPP_CONFIG.phone_number_id
   const url = `https://graph.facebook.com/v19.0/${phoneId}/messages`
 
   const res = await fetch(url, {
