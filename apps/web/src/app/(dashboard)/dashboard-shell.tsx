@@ -32,7 +32,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       const isCrmPath = crmPaths.some(p => pathname.startsWith(p));
       
       if (isCrmPath && accountRole !== 'owner' && accountRole !== 'admin') {
-        router.push('/tradeo');
+        router.push('/home');
       }
     }
   }, [user, loading, accountRole, pathname, router]);

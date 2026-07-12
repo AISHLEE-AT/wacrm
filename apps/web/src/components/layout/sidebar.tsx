@@ -24,6 +24,8 @@ import {
   X,
   Zap,
   Briefcase, // For TradO Requests
+  Home,
+  Car,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -89,6 +91,9 @@ interface NavItem {
 }
 
 const tradeoItems: NavItem[] = [
+  { href: "/home", label: "Home", icon: Home },
+  { href: "/transo", label: "TransO (Book Ride)", icon: Car },
+  { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
   { href: "/tradeo", label: "TradO Hub", icon: ShoppingBag },
   { href: "/tradeo/requests", label: "All Requests", icon: Briefcase },
   { href: "/tradeo/providers", label: "Providers", icon: UsersRound },
@@ -215,7 +220,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               {tradeoItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/tradeo" && pathname.startsWith(item.href));
+                  (item.href !== "/tradeo" && item.href !== "/home" && pathname.startsWith(item.href));
 
                 return (
                   <li key={item.href}>
