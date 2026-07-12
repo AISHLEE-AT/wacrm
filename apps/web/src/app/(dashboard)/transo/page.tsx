@@ -13,11 +13,30 @@ export default function TransoBooking() {
   const [loading, setLoading] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  useEffect(() => {
+    // Get current location for pickup
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setPickupLat(position.coords.latitude);
+          setPickupLng(position.coords.longitude);
+          setPickup((prev) => prev ? prev : "Current Location");
+        },
+        (error) => {
+          console.error("Error getting location", error);
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -66,8 +85,8 @@ export default function TransoBooking() {
     setLoading(true);
     
     try {
-      const mockLat = 13.0827; 
-      const mockLng = 80.2707;
+      const mockLat = pickupLat || 13.0827; 
+      const mockLng = pickupLng || 80.2707;
       
       const { data, error: insertError } = await supabase
         .from("rides")
