@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useAuth } from '../../providers/auth';
 import { ActivityIndicator, View } from 'react-native';
-import { Search, ClipboardList, Car } from 'lucide-react-native';
+import { Search, ClipboardList, Car, MapPin } from 'lucide-react-native';
 
 export default function TabLayout() {
   const { session, loading } = useAuth();
@@ -80,6 +80,14 @@ export default function TabLayout() {
           title: 'DrivO',
           tabBarLabel: 'Drive',
           tabBarIcon: ({ color, size }) => <Car color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="local-connect"
+        options={{
+          title: 'Local Connect',
+          tabBarLabel: 'Connect',
+          tabBarIcon: ({ color, size }) => <MapPin color={color} size={size} />,
         }}
       />
     </Tabs>

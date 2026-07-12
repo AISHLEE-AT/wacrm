@@ -26,6 +26,7 @@ import {
   Briefcase, // For TradO Requests
   Home,
   Car,
+  MapPin,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -94,6 +95,7 @@ const tradeoItems: NavItem[] = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/transo", label: "TransO (Book Ride)", icon: Car },
   { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
+  { href: "/local-connect", label: "Local Connect", icon: MapPin },
   { href: "/tradeo", label: "TradO Hub", icon: ShoppingBag },
   { href: "/tradeo/requests", label: "All Requests", icon: Briefcase },
   { href: "/tradeo/providers", label: "Providers", icon: UsersRound },
