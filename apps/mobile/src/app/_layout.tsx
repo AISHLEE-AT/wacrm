@@ -7,7 +7,20 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
 
+import messaging from '@react-native-firebase/messaging';
+
 const isExpoGo = Constants.appOwnership === 'expo';
+
+// Register background handler
+if (!isExpoGo) {
+  try {
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      console.log('Message handled in the background!', remoteMessage);
+    });
+  } catch(e) {
+    console.warn("Could not setup background messaging", e);
+  }
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -20,13 +33,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (isExpoGo) return;
     try {
-      const Notifications = require('expo-notifications');
-      const subscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
-        console.log("Notification tapped", response);
+      const unsubscribe = messaging().onMessage(async remoteMessage => {
+        console.log('A new FCM message arrived in foreground!', JSON.stringify(remoteMessage));
       });
-      return () => subscription.remove();
+      return unsubscribe;
     } catch (e) {
-      console.warn("Could not setup notification listener", e);
+      console.warn("Could not setup foreground messaging", e);
     }
   }, []);
 

@@ -5,7 +5,7 @@ import { useAuth } from '../../providers/auth';
 import { supabase } from '../../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MapPin, Navigation, Car, Bike, Package, Clock, CheckCircle2, LocateFixed } from 'lucide-react-native';
-import { LocationSearch } from '../components/LocationSearch';
+import { LocationSearch } from '../../components/LocationSearch';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 

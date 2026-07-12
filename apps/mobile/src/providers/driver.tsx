@@ -116,7 +116,9 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       .update({ status: newStatus })
       .eq('id', state.driverId);
     
-    if (!error) {
+    if (error) {
+      throw error;
+    } else {
       setState(prev => ({ ...prev, status: newStatus }));
     }
   };
@@ -129,7 +131,9 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       .eq('id', rideId)
       .eq('status', 'pending'); // Ensure it wasn't taken
 
-    if (!error) {
+    if (error) {
+      throw error;
+    } else {
       setState(prev => ({ ...prev, status: 'busy' }));
       await supabase.from('drivers').update({ status: 'busy' }).eq('id', state.driverId);
     }
@@ -142,7 +146,9 @@ export function DriverProvider({ children }: { children: React.ReactNode }) {
       .update({ status: 'completed' })
       .eq('id', rideId);
 
-    if (!error) {
+    if (error) {
+      throw error;
+    } else {
       setState(prev => ({ ...prev, status: 'online', activeRide: null }));
       await supabase.from('drivers').update({ status: 'online' }).eq('id', state.driverId);
       // Would also trigger wallet update here via RPC in a real app

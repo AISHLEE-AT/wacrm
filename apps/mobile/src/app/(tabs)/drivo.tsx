@@ -5,7 +5,7 @@ import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../providers/auth';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Wallet, Power, Navigation2, CheckCircle2 } from 'lucide-react-native';
+import { Wallet, Power, Navigation2, CheckCircle2, Clock } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -99,8 +99,15 @@ export default function DriverScreen() {
   if (!driverId) {
     if (appStatus === 'pending') {
       return (
-        <View style={styles.center}>
-          <Text style={styles.errorText}>Your application is pending admin approval.</Text>
+        <View style={styles.pendingContainer}>
+          <View style={styles.pendingCard}>
+            <Clock color="#E65100" size={48} style={{ marginBottom: 16 }} />
+            <Text style={styles.pendingTitle}>Application Under Review</Text>
+            <Text style={styles.pendingText}>
+              Your driver application has been submitted and is currently waiting for admin approval. 
+              You will be notified once it is approved.
+            </Text>
+          </View>
         </View>
       );
     }
@@ -145,8 +152,20 @@ export default function DriverScreen() {
   }
 
   const handleAcceptRide = async (rideId: string) => {
-    await acceptRide(rideId);
-    Alert.alert('Ride Accepted', 'Please proceed to the pickup location.');
+    try {
+      await acceptRide(rideId);
+      Alert.alert('Ride Accepted', 'Please proceed to the pickup location.');
+    } catch (e: any) {
+      Alert.alert('Action Failed', e.message || 'Failed to accept the ride. Please try again.');
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    try {
+      await toggleStatus();
+    } catch (e: any) {
+      Alert.alert('Action Failed', e.message || 'Failed to update status.');
+    }
   };
 
   return (
@@ -203,7 +222,7 @@ export default function DriverScreen() {
 
         <TouchableOpacity 
           style={styles.toggleContainer} 
-          onPress={toggleStatus}
+          onPress={handleToggleStatus}
           activeOpacity={0.8}
         >
           <LinearGradient
@@ -261,6 +280,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 16, color: '#ef4444', fontWeight: 'bold' },
+  pendingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F5F7F9', padding: 24 },
+  pendingCard: { backgroundColor: '#fff', padding: 32, borderRadius: 24, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5 },
+  pendingTitle: { fontSize: 20, fontWeight: 'bold', color: '#111', marginBottom: 12, textAlign: 'center' },
+  pendingText: { fontSize: 15, color: '#666', textAlign: 'center', lineHeight: 22 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#111' },
   subtitle: { fontSize: 14, color: '#666', marginTop: 8 },
   registrationContainer: { flex: 1, backgroundColor: '#fff' },

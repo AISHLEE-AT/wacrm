@@ -8,6 +8,9 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, MapPin, Zap, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import Constants from 'expo-constants';
+
+const isExpoGo = Constants.appOwnership === 'expo';
 
 const CATEGORIES = [
   'All', 'Food & Beverages', 'Home Services', 'Transportation', 'Education',
@@ -54,6 +57,234 @@ const ProviderCard = React.memo(({
     </TouchableOpacity>
   );
 });
+
+const DashboardHeader = React.memo(({
+  keyword, setKeyword, pincode, setPincode, category, setCategory,
+  searching, searched, providersLength, setSelectedIds, handleSearch,
+  isTranscribing, setIsTranscribing
+}: any) => (
+  const { session } = useAuth();
+  const router = useRouter();
+
+  const [keyword, setKeyword] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [category, setCategory] = useState('All');
+  
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [broadcasting, setBroadcasting] = useState(false);
+
+  const handleSearch = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!keyword.trim() || !pincode.trim()) {
+      Alert.alert('Missing Info', 'Please enter both what you are looking for and your pincode.');
+      return;
+    }
+
+    setSearching(true);
+    setSearched(true);
+    setSelectedIds(new Set());
+
+    try {
+      let query = supabase.from('providers').select('*');
+      query = query.eq('pincode', pincode.trim());
+      if (category !== 'All') {
+        query = query.eq('category', category);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const kw = keyword.toLowerCase();
+      const scored = (data || [])
+        .map((p) => {
+          let score = 0;
+          if (p.business_name?.toLowerCase().includes(kw)) score += 3;
+          if (p.category?.toLowerCase().includes(kw)) score += 2;
+          if ((p.services || []).some((s: string) => s.toLowerCase().includes(kw))) score += 5;
+          return { provider: p, score };
+        })
+        .filter((item) => item.score > 0 || category !== 'All')
+        .sort((a, b) => b.score - a.score)
+        .map((item) => item.provider);
+
+      setProviders(scored);
+      setSelectedIds(new Set(scored.map((p) => p.id)));
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Failed to search providers.');
+    } finally {
+      setSearching(false);
+    }
+  }, [keyword, pincode, category]);
+
+  const handleBroadcast = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (selectedIds.size === 0 || !keyword.trim() || !pincode.trim()) return;
+    
+    setBroadcasting(true);
+    try {
+      const { data: request, error: reqError } = await supabase
+        .from('requests')
+        .insert({
+          item_requested: keyword.trim(),
+          pincode: pincode.trim(),
+          category: category === 'All' ? 'Other' : category,
+          buyer_user_id: session?.user?.id,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (reqError || !request) throw reqError || new Error("Failed to create request");
+
+      const API_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.includes('localhost') 
+        ? 'http://192.168.1.100:3000/api/tradeo/broadcast' 
+        : 'https://watscrrm.vercel.app/api/tradeo/broadcast';
+
+      const broadRes = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: request.id,
+          provider_ids: Array.from(selectedIds),
+          item_requested: keyword.trim(),
+          pincode: pincode.trim()
+        })
+      });
+
+      if (!broadRes.ok) {
+        console.warn("Broadcast API failed, but request created.");
+      } else {
+        await supabase.from('requests').update({ status: 'broadcasted' }).eq('id', request.id);
+      }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace('/(tabs)/requests');
+    } catch (err: any) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Broadcast Error', err.message);
+    } finally {
+      setBroadcasting(false);
+    }
+  };
+
+  const toggleProvider = useCallback((id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const renderFooter = () => {
+  keyword, setKeyword, pincode, setPincode, category, setCategory,
+  searching, searched, providersLength, setSelectedIds, handleSearch,
+  isTranscribing, setIsTranscribing
+}: any) => (
+  <>
+    <LinearGradient
+      colors={['#000000', '#1a1a1a']}
+      style={styles.header}
+    >
+      <View style={styles.headerLeft}>
+        <View style={styles.iconBg}>
+          <Zap color="#00A884" size={24} />
+        </View>
+        <Text style={styles.title}>TradO</Text>
+      </View>
+      <TouchableOpacity onPress={() => supabase.auth.signOut()}>
+        <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </LinearGradient>
+    <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
+
+    <View style={styles.searchPanel}>
+      <Text style={styles.panelTitle}>🔍 What are you looking for?</Text>
+      
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+        data={CATEGORIES}
+        keyExtractor={(item) => item}
+        renderItem={({ item: cat }) => (
+          <TouchableOpacity 
+            style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+            onPress={() => setCategory(cat)}
+          >
+            <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={[styles.inputWrapper, { flex: 1 }]}>
+          <Search color="#999" size={20} style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder={isTranscribing ? "Listening..." : "Search (e.g. Biriyani, Plumber...)"}
+            value={keyword}
+            onChangeText={setKeyword}
+          />
+        </View>
+        {!isExpoGo && (
+          <VoiceSearch 
+            onTranscription={setKeyword}
+            isTranscribing={isTranscribing}
+            setIsTranscribing={setIsTranscribing}
+          />
+        )}
+      </View>
+
+      <View style={styles.inputWrapper}>
+        <MapPin color="#999" size={20} style={styles.inputIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder="Pincode (e.g. 600001)"
+          value={pincode}
+          onChangeText={setPincode}
+          keyboardType="number-pad"
+          maxLength={6}
+        />
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.searchBtn, (!keyword || !pincode) && styles.searchBtnDisabled]}
+        onPress={handleSearch}
+        disabled={!keyword || !pincode || searching}
+      >
+        {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Find Providers</Text>}
+      </TouchableOpacity>
+    </View>
+
+    {searched && (
+      <View style={styles.resultsHeaderContainer}>
+        <View style={styles.resultsHeader}>
+          <Text style={styles.resultsTitle}>
+            {providersLength > 0 ? `✅ ${providersLength} provider(s) found` : `❌ No providers found`}
+          </Text>
+          {providersLength > 0 && (
+            <TouchableOpacity onPress={() => setSelectedIds(new Set())}>
+              <Text style={styles.clearText}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {providersLength === 0 && (
+          <View style={styles.emptyState}>
+            <AlertCircle color="#ccc" size={40} style={{ marginBottom: 12 }} />
+            <Text style={styles.emptyStateText}>No registered providers match your search in this pincode.</Text>
+          </View>
+        )}
+      </View>
+    )}
+  </>
+));
 
 export default function TradoDashboard() {
   const { session } = useAuth();
@@ -173,109 +404,6 @@ export default function TradoDashboard() {
       return next;
     });
   }, []);
-
-const DashboardHeader = React.memo(({
-  keyword, setKeyword, pincode, setPincode, category, setCategory,
-  searching, searched, providersLength, setSelectedIds, handleSearch,
-  isTranscribing, setIsTranscribing
-}: any) => (
-  <>
-    <LinearGradient
-      colors={['#000000', '#1a1a1a']}
-      style={styles.header}
-    >
-      <View style={styles.headerLeft}>
-        <View style={styles.iconBg}>
-          <Zap color="#00A884" size={24} />
-        </View>
-        <Text style={styles.title}>TradO</Text>
-      </View>
-      <TouchableOpacity onPress={() => supabase.auth.signOut()}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
-    </LinearGradient>
-    <Text style={styles.subtitle}>Find the best provider, get quotes via WhatsApp.</Text>
-
-    <View style={styles.searchPanel}>
-      <Text style={styles.panelTitle}>🔍 What are you looking for?</Text>
-      
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll}
-        data={CATEGORIES}
-        keyExtractor={(item) => item}
-        renderItem={({ item: cat }) => (
-          <TouchableOpacity 
-            style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
-            onPress={() => setCategory(cat)}
-          >
-            <Text style={[styles.categoryText, category === cat && styles.categoryTextActive]}>{cat}</Text>
-          </TouchableOpacity>
-        )}
-      />
-
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={[styles.inputWrapper, { flex: 1 }]}>
-          <Search color="#999" size={20} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder={isTranscribing ? "Listening..." : "Search (e.g. Biriyani, Plumber...)"}
-            value={keyword}
-            onChangeText={setKeyword}
-          />
-        </View>
-        <VoiceSearch 
-          onTranscription={setKeyword}
-          isTranscribing={isTranscribing}
-          setIsTranscribing={setIsTranscribing}
-        />
-      </View>
-
-      <View style={styles.inputWrapper}>
-        <MapPin color="#999" size={20} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Pincode (e.g. 600001)"
-          value={pincode}
-          onChangeText={setPincode}
-          keyboardType="number-pad"
-          maxLength={6}
-        />
-      </View>
-
-      <TouchableOpacity 
-        style={[styles.searchBtn, (!keyword || !pincode) && styles.searchBtnDisabled]}
-        onPress={handleSearch}
-        disabled={!keyword || !pincode || searching}
-      >
-        {searching ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchBtnText}>Find Providers</Text>}
-      </TouchableOpacity>
-    </View>
-
-    {searched && (
-      <View style={styles.resultsHeaderContainer}>
-        <View style={styles.resultsHeader}>
-          <Text style={styles.resultsTitle}>
-            {providersLength > 0 ? `✅ ${providersLength} provider(s) found` : `❌ No providers found`}
-          </Text>
-          {providersLength > 0 && (
-            <TouchableOpacity onPress={() => setSelectedIds(new Set())}>
-              <Text style={styles.clearText}>Clear</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {providersLength === 0 && (
-          <View style={styles.emptyState}>
-            <AlertCircle color="#ccc" size={40} style={{ marginBottom: 12 }} />
-            <Text style={styles.emptyStateText}>No registered providers match your search in this pincode.</Text>
-          </View>
-        )}
-      </View>
-    )}
-  </>
-));
 
   const renderFooter = () => {
     if (!searched || providers.length === 0) return null;
