@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Dimensions, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Dimensions, ScrollView, TextInput } from 'react-native';
 import { useDriver } from '../../providers/driver';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { supabase } from '../../../lib/supabase';
@@ -24,6 +24,10 @@ export default function DriverScreen() {
   
   const { session } = useAuth();
   const [pendingRides, setPendingRides] = useState<any[]>([]);
+  const [appStatus, setAppStatus] = useState<string | null>(null);
+  const [vehicleType, setVehicleType] = useState('bike');
+  const [regNo, setRegNo] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!session?.user || !driverId || status !== 'online') return;
@@ -39,7 +43,17 @@ export default function DriverScreen() {
       if (data) setPendingRides(data);
     };
 
-    fetchPendingRides();
+    const fetchAppStatus = async () => {
+      if (!session?.user?.id) return;
+      const { data } = await supabase.from('driver_applications').select('*').eq('user_id', session.user.id).single();
+      if (data) setAppStatus(data.status);
+    };
+
+    fetchAppStatus();
+    
+    if (driverId) {
+      fetchPendingRides();
+    }
 
     // Subscribe to realtime rides
     const channel = supabase
@@ -62,10 +76,70 @@ export default function DriverScreen() {
     );
   }
 
+  const submitApplication = async () => {
+    if (!regNo.trim()) return Alert.alert("Error", "Enter vehicle registration number.");
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from('driver_applications').insert({
+        user_id: session?.user?.id,
+        vehicle_type: vehicleType,
+        registration_number: regNo,
+        status: 'pending'
+      });
+      if (error) throw error;
+      setAppStatus('pending');
+      Alert.alert("Success", "Your application is under review.");
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (!driverId) {
+    if (appStatus === 'pending') {
+      return (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>Your application is pending admin approval.</Text>
+        </View>
+      );
+    }
+    
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>You are not registered as a driver.</Text>
+      <View style={styles.registrationContainer}>
+        <LinearGradient colors={['#FFF3E0', '#F5F7F9']} style={styles.regHeader}>
+          <Text style={styles.title}>Become a TransO Driver</Text>
+          <Text style={styles.subtitle}>Register your vehicle and start earning today.</Text>
+        </LinearGradient>
+        
+        <View style={styles.formContainer}>
+          <Text style={styles.label}>Vehicle Type</Text>
+          <View style={styles.typeRow}>
+            {['bike', 'car', 'cargo'].map(t => (
+              <TouchableOpacity 
+                key={t} 
+                style={[styles.typeBtn, vehicleType === t && styles.typeBtnActive]}
+                onPress={() => setVehicleType(t)}
+              >
+                <Text style={[styles.typeBtnText, vehicleType === t && styles.typeBtnTextActive]}>
+                  {t.toUpperCase()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          
+          <Text style={styles.label}>Registration Number</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. TN-01-AB-1234"
+            value={regNo}
+            onChangeText={setRegNo}
+          />
+          
+          <TouchableOpacity style={styles.submitBtn} onPress={submitApplication} disabled={submitting}>
+            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Submit Application</Text>}
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -186,7 +260,21 @@ export default function DriverScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  errorText: { fontSize: 16, color: '#ef4444', fontFamily: 'Outfit_500Medium' },
+  errorText: { fontSize: 16, color: '#ef4444', fontWeight: 'bold' },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#111' },
+  subtitle: { fontSize: 14, color: '#666', marginTop: 8 },
+  registrationContainer: { flex: 1, backgroundColor: '#fff' },
+  regHeader: { padding: 24, paddingTop: 60, paddingBottom: 40, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  formContainer: { padding: 24, marginTop: -20, backgroundColor: '#fff', borderRadius: 24, flex: 1 },
+  label: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#111', marginTop: 16 },
+  typeRow: { flexDirection: 'row', gap: 12 },
+  typeBtn: { flex: 1, paddingVertical: 12, borderWidth: 1, borderColor: '#E4E6E9', borderRadius: 12, alignItems: 'center' },
+  typeBtnActive: { backgroundColor: '#E65100', borderColor: '#E65100' },
+  typeBtnText: { fontWeight: 'bold', color: '#666' },
+  typeBtnTextActive: { color: '#fff' },
+  input: { borderWidth: 1, borderColor: '#E4E6E9', borderRadius: 12, padding: 16, fontSize: 16, backgroundColor: '#FAFBFC' },
+  submitBtn: { backgroundColor: '#E65100', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 32 },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   map: { flex: 1 },
   mapPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' },
   overlay: {

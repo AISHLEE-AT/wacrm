@@ -53,23 +53,31 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'TradO Explore',
-          tabBarLabel: 'Explore',
+          title: 'Super App',
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="requests"
+        name="transo"
         options={{
-          title: 'My Requests',
-          tabBarLabel: 'Requests',
+          title: 'TransO',
+          tabBarLabel: 'Rides',
+          tabBarIcon: ({ color, size }) => <Car color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="trado"
+        options={{
+          title: 'TradO',
+          tabBarLabel: 'Services',
           tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
         }}
       />
       <Tabs.Screen
-        name="driver"
+        name="drivo"
         options={{
-          title: 'Driver Mode',
+          title: 'DrivO',
           tabBarLabel: 'Drive',
           tabBarIcon: ({ color, size }) => <Car color={color} size={size} />,
         }}
