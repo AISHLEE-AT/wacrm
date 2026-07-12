@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { TRADEO_CATEGORIES, detectCategory } from '@/lib/tradeo/categories'
 import { translateTamilToEnglish, isTamil } from '@/lib/tradeo/tamil-translate'
 import { Mic, MicOff, Search, Zap, ChevronRight, Clock, CheckCircle2, Package, Users, TrendingUp, AlertCircle, Languages } from 'lucide-react'
+import { GlassCard } from '@/components/ui/glass-card'
+import { AnimatedButton } from '@/components/ui/animated-button'
 
 // Web Speech API type (not in TS default lib)
 type SpeechRecognitionType = typeof window extends { SpeechRecognition: infer T } ? T
@@ -259,26 +261,26 @@ export default function TradOPage() {
         </button>
       </div>
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Stats Bar - Bento Grid */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: 'Providers', value: stats.providers, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-          { label: 'Total Requests', value: stats.requests, icon: Package, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-          { label: 'Quotes Today', value: stats.quotesToday, icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-          { label: 'Deals Closed', value: stats.closed, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-        ].map(s => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4">
-            <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${s.bg} ${s.color} mb-2`}>
-              <s.icon className="h-4 w-4" />
+          { label: 'Providers', value: stats.providers, icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/15' },
+          { label: 'Total Requests', value: stats.requests, icon: Package, color: 'text-purple-400', bg: 'bg-purple-500/15' },
+          { label: 'Quotes Today', value: stats.quotesToday, icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-500/15' },
+          { label: 'Deals Closed', value: stats.closed, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/15' },
+        ].map((s, i) => (
+          <GlassCard key={s.label} variant="dark" glow className="flex flex-col items-start p-5">
+            <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${s.bg} ${s.color} mb-3 shadow-sm`}>
+              <s.icon className="h-5 w-5" />
             </div>
-            <p className="text-2xl font-bold text-foreground">{s.value}</p>
-            <p className="text-xs text-muted-foreground">{s.label}</p>
-          </div>
+            <p className="text-3xl font-black tracking-tight text-foreground">{s.value}</p>
+            <p className="text-xs font-medium text-muted-foreground mt-1 uppercase tracking-wider">{s.label}</p>
+          </GlassCard>
         ))}
       </div>
 
       {/* Search Panel */}
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <GlassCard variant="default" glow className="p-6 sm:p-8">
         <h2 className="text-base font-semibold text-foreground mb-4">
           🔍 What are you looking for?
         </h2>
@@ -400,7 +402,7 @@ export default function TradOPage() {
             </button>
           </div>
         )}
-      </div>
+      </GlassCard>
 
       {/* Search Results */}
       {searched && (
@@ -514,7 +516,7 @@ export default function TradOPage() {
       )}
 
       {/* Recent Requests */}
-      <div className="rounded-2xl border border-border bg-card p-6">
+      <GlassCard variant="default" className="p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">📋 Recent Requests</h2>
         {recentRequests.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">No requests yet. Search above to get started!</p>
@@ -543,7 +545,7 @@ export default function TradOPage() {
             ))}
           </div>
         )}
-      </div>
+      </GlassCard>
     </div>
   )
 }

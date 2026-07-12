@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/outfit": "^0.4.3",
     "@expo/ui": "~57.0.4",
     "@react-native-firebase/app": "^25.1.0",
     "@react-native-firebase/messaging": "^25.1.0",

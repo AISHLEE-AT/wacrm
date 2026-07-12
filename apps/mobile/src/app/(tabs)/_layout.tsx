@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useAuth } from '../../providers/auth';
 import { ActivityIndicator, View } from 'react-native';
-import { Search, ClipboardList } from 'lucide-react-native';
+import { Search, ClipboardList, Car } from 'lucide-react-native';
 
 export default function TabLayout() {
   const { session, loading } = useAuth();
@@ -16,11 +16,44 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: '#00A884', headerShown: true }}>
+    <Tabs screenOptions={{ 
+      tabBarActiveTintColor: '#00A884',
+      tabBarInactiveTintColor: '#94a3b8',
+      headerShown: true,
+      tabBarStyle: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        elevation: 0,
+        backgroundColor: '#ffffff',
+        borderRadius: 20,
+        height: 65,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        borderTopWidth: 0,
+        paddingBottom: 8,
+        paddingTop: 8,
+      },
+      tabBarLabelStyle: {
+        fontFamily: 'Outfit_500Medium',
+        fontSize: 12,
+      },
+      headerStyle: {
+        backgroundColor: '#fff',
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+      headerTitleStyle: {
+        fontFamily: 'Outfit_600SemiBold',
+      }
+    }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'TradO',
+          title: 'TradO Explore',
           tabBarLabel: 'Explore',
           tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
         }}
@@ -28,7 +61,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="requests"
         options={{
-          title: 'Requests',
+          title: 'My Requests',
           tabBarLabel: 'Requests',
           tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
         }}
@@ -37,8 +70,8 @@ export default function TabLayout() {
         name="driver"
         options={{
           title: 'Driver Mode',
-          tabBarLabel: 'Driver',
-          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+          tabBarLabel: 'Drive',
+          tabBarIcon: ({ color, size }) => <Car color={color} size={size} />,
         }}
       />
     </Tabs>

@@ -91,46 +91,95 @@ function SignupPageInner() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <Card className="w-full max-w-md border-border bg-card">
-          <CardHeader className="items-center text-center">
-            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <CheckCircle className="h-6 w-6 text-primary" />
+      <div className="flex min-h-screen w-full bg-background">
+        {/* Left Branding Side */}
+        <div className="hidden w-1/2 lg:flex flex-col justify-between p-12 bg-emerald-950/10 relative overflow-hidden border-r border-white/5">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 pointer-events-none" />
+          <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+          <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+          
+          <div className="relative z-10">
+            <img src="/logo-title.png" alt="TradO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
+          </div>
+          
+          <div className="relative z-10 max-w-md">
+            <h2 className="text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
+              The next generation of marketplace operations.
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              Connect seamlessly with buyers and sellers on the ultimate marketplace platform powered by real-time intelligence.
+            </p>
+          </div>
+          
+          <div className="relative z-10 text-sm text-muted-foreground/60">
+            © {new Date().getFullYear()} TradO Inc. All rights reserved.
+          </div>
+        </div>
+
+        {/* Right Form Side */}
+        <div className="flex w-full lg:w-1/2 items-center justify-center p-8 relative">
+          <div className="w-full max-w-[420px] flex flex-col items-center text-center">
+            <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+              <CheckCircle className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-xl text-foreground">
-              Check your email
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              We&apos;ve sent a confirmation link to{" "}
-              <span className="text-foreground">{email}</span>. Please check your
-              inbox and click the link to verify your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Check your email</h2>
+            <p className="text-muted-foreground mb-8">
+              We've sent a confirmation link to <span className="text-foreground font-medium">{email}</span>. Please check your inbox and click the link to verify your account.
+            </p>
             <Link
               href={
                 inviteToken
                   ? `/login?invite=${encodeURIComponent(inviteToken)}`
                   : "/login"
               }
+              className="w-full"
             >
               <Button
                 variant="outline"
-                className="w-full border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="w-full h-12 border-border text-muted-foreground hover:bg-muted hover:text-foreground rounded-xl"
               >
                 Back to sign in
               </Button>
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border bg-card">
-        <CardHeader className="items-center text-center">
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Left Branding Side */}
+      <div className="hidden w-1/2 lg:flex flex-col justify-between p-12 bg-emerald-950/10 relative overflow-hidden border-r border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 pointer-events-none" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10">
+          <img src="/logo-title.png" alt="TradO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
+        </div>
+        
+        <div className="relative z-10 max-w-md">
+          <h2 className="text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
+            The next generation of marketplace operations.
+          </h2>
+          <p className="text-muted-foreground text-lg">
+            Connect seamlessly with buyers and sellers on the ultimate marketplace platform powered by real-time intelligence.
+          </p>
+        </div>
+        
+        <div className="relative z-10 text-sm text-muted-foreground/60">
+          © {new Date().getFullYear()} TradO Inc. All rights reserved.
+        </div>
+      </div>
+
+      {/* Right Form Side */}
+      <div className="flex w-full lg:w-1/2 items-center justify-center p-8 relative">
+        <div className="w-full max-w-[420px] flex flex-col">
+          <div className="mb-8 lg:hidden flex justify-center w-full">
+            <img src="/logo-title.png" alt="TradO Logo" className="h-12 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" />
+          </div>
+          
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
             {inviteToken ? (
               <UsersRound className="h-6 w-6 text-primary" />
@@ -138,16 +187,14 @@ function SignupPageInner() {
               <MessageSquare className="h-6 w-6 text-primary" />
             )}
           </div>
-          <CardTitle className="text-xl text-foreground">
+          <h1 className="text-3xl font-bold text-foreground mb-2 mt-4">
             {inviteToken ? "Create account & join" : "Create account"}
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
+          </h1>
+          <p className="text-muted-foreground mb-8 text-sm">
             {inviteToken
               ? "Verify your email, then accept the invitation to join your team."
-              : "Get started with CRM Template for WhatsApp"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+              : "Get started with TradO Marketplace"}
+          </p>
           <form onSubmit={handleSignup} className="flex flex-col gap-4">
             {error && (
               <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
@@ -218,13 +265,13 @@ function SignupPageInner() {
             <Button
               type="submit"
               disabled={loading}
-              className="mt-2 h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="mt-4 h-12 w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl font-medium shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all duration-300 disabled:opacity-50"
             >
               {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <p className="mt-8 text-center lg:text-left text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link
               href={
@@ -232,13 +279,13 @@ function SignupPageInner() {
                   ? `/login?invite=${encodeURIComponent(inviteToken)}`
                   : "/login"
               }
-              className="text-primary hover:text-primary/80"
+              className="text-primary hover:text-primary/80 font-medium transition-colors"
             >
               Sign in
             </Link>
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

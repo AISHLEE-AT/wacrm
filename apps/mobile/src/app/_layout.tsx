@@ -2,14 +2,21 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../providers/auth';
-import { ThemeProvider } from '../providers/theme';
 import { DriverProvider } from '../providers/driver';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
+import { useFonts, Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+  });
+
   useEffect(() => {
     if (isExpoGo) return;
     try {
@@ -22,6 +29,8 @@ export default function RootLayout() {
       console.warn("Could not setup notification listener", e);
     }
   }, []);
+
+  if (!fontsLoaded) return null;
 
   return (
     <AuthProvider>

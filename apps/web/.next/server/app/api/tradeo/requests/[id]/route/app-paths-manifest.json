@@ -1,0 +1,3 @@
+{
+  "/api/tradeo/requests/[id]/route": "app/api/tradeo/requests/[id]/route.js"
+}
