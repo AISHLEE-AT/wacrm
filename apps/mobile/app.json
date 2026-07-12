@@ -48,7 +48,13 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "@react-native-firebase/messaging"
+      "@react-native-firebase/messaging",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Trado to use your location to track your driver status and navigate rides."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

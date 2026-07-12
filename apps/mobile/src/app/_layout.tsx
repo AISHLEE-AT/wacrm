@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../providers/auth';
 import { ThemeProvider } from '../providers/theme';
+import { DriverProvider } from '../providers/driver';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 
@@ -24,10 +25,12 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" options={{ title: 'Login' }} />
-        <Stack.Screen name="(tabs)" options={{ title: 'Trado' }} />
-      </Stack>
+      <DriverProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" options={{ title: 'Login' }} />
+          <Stack.Screen name="(tabs)" options={{ title: 'Trado' }} />
+        </Stack>
+      </DriverProvider>
     </AuthProvider>
   );
 }

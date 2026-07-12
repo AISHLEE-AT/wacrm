@@ -33,6 +33,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
         }}
       />
+      <Tabs.Screen
+        name="driver"
+        options={{
+          title: 'Driver Mode',
+          tabBarLabel: 'Driver',
+          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+        }}
+      />
     </Tabs>
   );
 }

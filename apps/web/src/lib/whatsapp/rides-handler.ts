@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { getRideEstimate, calculatePrice, reverseGeocode, LocationCoordinate } from '../google-maps'
-import { sendWhatsAppMessage } from './meta-api'
+import { sendTextMessage, sendInteractiveButtons } from './meta-api'
 import { HARDCODED_WHATSAPP_CONFIG } from './hardcoded-config'
 
 function supabaseAdmin() {
@@ -32,18 +32,13 @@ export async function handleRideHailingBooking(
     }
 
     if (text.includes('ride') || text.includes('book') || text.includes('cab') || text.includes('schedule')) {
-      await sendWhatsAppMessage({
+      await sendTextMessage({
         accessToken,
         phoneNumberId: config.phone_number_id,
         to: senderPhone,
-        message: {
-          type: 'text',
-          text: {
-            body: isScheduled 
-              ? `You want to schedule a ride for ${scheduledTimeStr || 'later'}. Please share your PICKUP location pin.`
-              : 'Welcome to Ride-Hailing! Please share your PICKUP location using the WhatsApp attachment (pin) feature.'
-          }
-        }
+        text: isScheduled 
+          ? `You want to schedule a ride for ${scheduledTimeStr || 'later'}. Please share your PICKUP location pin.`
+          : 'Welcome to Ride-Hailing! Please share your PICKUP location using the WhatsApp attachment (pin) feature.'
       })
       return true
     }
@@ -81,16 +76,11 @@ export async function handleRideHailingBooking(
           dropoff_lng: 0
         })
 
-        await sendWhatsAppMessage({
+        await sendTextMessage({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          message: {
-            type: 'text',
-            text: {
-              body: `Pickup set to: ${address}\nNow, please share your DROPOFF location.`
-            }
-          }
+          text: `Pickup set to: ${address}\nNow, please share your DROPOFF location.`
         })
         return true
       } else if (activeRide && activeRide.pickup_lat && !activeRide.distance_km) {
@@ -102,11 +92,11 @@ export async function handleRideHailingBooking(
         const estimate = await getRideEstimate(pickupLoc, loc)
         
         if (!estimate) {
-          await sendWhatsAppMessage({
+          await sendTextMessage({
             accessToken,
             phoneNumberId: config.phone_number_id,
             to: senderPhone,
-            message: { type: 'text', text: { body: 'Could not calculate route. Please try again.' } }
+            text: 'Could not calculate route. Please try again.'
           })
           return true
         }
@@ -127,23 +117,15 @@ export async function handleRideHailingBooking(
           .eq('id', activeRide.id)
 
         // Send quotation with strict fare messaging
-        await sendWhatsAppMessage({
+        await sendInteractiveButtons({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          message: {
-            type: 'interactive',
-            interactive: {
-              type: 'button',
-              body: { text: `Trip Details:\nFrom: ${activeRide.pickup_address}\nTo: ${dropoffAddress}\nDistance: ${estimate.distanceText}\nETA: ${estimate.durationText}\n\nEstimated Fare: ₹${price}\n\n⚠️ Strict Policy: You only pay exactly ₹${price}. No extra charges.` },
-              action: {
-                buttons: [
-                  { type: 'reply', reply: { id: `confirm_ride_${activeRide.id}`, title: 'Confirm Ride' } },
-                  { type: 'reply', reply: { id: `cancel_ride_${activeRide.id}`, title: 'Cancel' } }
-                ]
-              }
-            }
-          }
+          bodyText: `Trip Details:\nFrom: ${activeRide.pickup_address}\nTo: ${dropoffAddress}\nDistance: ${estimate.distanceText}\nETA: ${estimate.durationText}\n\nEstimated Fare: ₹${price}\n\n⚠️ Strict Policy: You only pay exactly ₹${price}. No extra charges.`,
+          buttons: [
+            { id: `confirm_ride_${activeRide.id}`, title: 'Confirm Ride' },
+            { id: `cancel_ride_${activeRide.id}`, title: 'Cancel' }
+          ]
         })
         return true
       }
@@ -156,22 +138,14 @@ export async function handleRideHailingBooking(
         const rideId = replyId.replace('confirm_ride_', '')
         await supabase.from('rides').update({ status: 'pending' }).eq('id', rideId) // status remains pending but ready for dispatch
         
-        await sendWhatsAppMessage({
+        await sendInteractiveButtons({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          message: {
-            type: 'interactive',
-            interactive: {
-              type: 'button',
-              body: { text: 'Your ride is confirmed! We are finding a driver for you. If a driver demands extra fare, please report immediately.' },
-              action: {
-                buttons: [
-                  { type: 'reply', reply: { id: `report_ride_${rideId}`, title: 'Report Extortion' } }
-                ]
-              }
-            }
-          }
+          bodyText: 'Your ride is confirmed! We are finding a driver for you. If a driver demands extra fare, please report immediately.',
+          buttons: [
+            { id: `report_ride_${rideId}`, title: 'Report Extortion' }
+          ]
         })
         return true
       }
@@ -180,11 +154,11 @@ export async function handleRideHailingBooking(
         const rideId = replyId.replace('cancel_ride_', '')
         await supabase.from('rides').update({ status: 'cancelled' }).eq('id', rideId)
         
-        await sendWhatsAppMessage({
+        await sendTextMessage({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          message: { type: 'text', text: { body: 'Your ride request has been cancelled.' } }
+          text: 'Your ride request has been cancelled.'
         })
         return true
       }
@@ -195,11 +169,11 @@ export async function handleRideHailingBooking(
           .update({ is_flagged: true, flag_reason: 'Driver demanding extra fare' })
           .eq('id', rideId)
         
-        await sendWhatsAppMessage({
+        await sendTextMessage({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          message: { type: 'text', text: { body: 'Thank you for reporting. Our dispatch team has been alerted and is reviewing the driver right now.' } }
+          text: 'Thank you for reporting. Our dispatch team has been alerted and is reviewing the driver right now.'
         })
         return true
       }
