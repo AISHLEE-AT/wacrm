@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { useAuth } from '../../providers/auth';
 import { ActivityIndicator, View } from 'react-native';
-import { Search, ClipboardList, Car, MapPin } from 'lucide-react-native';
+import { Search, ClipboardList, Car, MapPin, Wallet } from 'lucide-react-native';
 
 export default function TabLayout() {
   const { session, loading } = useAuth();
@@ -88,6 +88,14 @@ export default function TabLayout() {
           title: 'Local Connect',
           tabBarLabel: 'Connect',
           tabBarIcon: ({ color, size }) => <MapPin color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          title: 'Wallet',
+          tabBarLabel: 'Wallet',
+          tabBarIcon: ({ color, size }) => <Wallet color={color} size={size} />,
         }}
       />
     </Tabs>

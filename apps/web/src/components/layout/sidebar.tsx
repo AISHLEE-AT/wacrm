@@ -112,6 +112,7 @@ const crmItems: NavItem[] = [
 ];
 
 const bottomNavItems = [
+  { href: "/wallet", label: "Wallet", icon: Zap },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
