@@ -21,6 +21,7 @@ export default function TransoBooking() {
   const [activeRide, setActiveRide] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [dropoffLat, setDropoffLat] = useState<number | null>(null);
   const [dropoffLng, setDropoffLng] = useState<number | null>(null);
