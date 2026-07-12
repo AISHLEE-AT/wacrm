@@ -12,6 +12,7 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
+import { handleRideHailingBooking } from '@/lib/whatsapp/rides-handler'
 
 // Lazy-initialized to avoid build-time crash when env vars are missing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -531,6 +532,18 @@ async function processMessage(
       console.error('Bidding hook failed silently:', err);
     });
   }
+  // ------------------------------------
+
+  // -- RIDE-HAILING SYSTEM HOOK --
+  handleRideHailingBooking(
+    message,
+    accountId,
+    contactRecord.id,
+    senderPhone,
+    accessToken
+  ).catch(err => {
+    console.error('Ride-hailing hook failed silently:', err);
+  });
   // ------------------------------------
 
   // Resolve swipe-reply context if present. A missing parent is fine —

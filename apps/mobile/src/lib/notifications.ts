@@ -1,18 +1,32 @@
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { supabase } from './supabase';
+import { supabase } from '../../lib/supabase';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+const isExpoGo = Constants.appOwnership === 'expo';
+let Notifications: any = null;
+
+if (!isExpoGo) {
+  try {
+    Notifications = require('expo-notifications');
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  } catch (e) {
+    console.warn('Could not load expo-notifications', e);
+  }
+}
 
 export async function registerForPushNotificationsAsync() {
+  if (isExpoGo || !Notifications) {
+    console.log('Push notifications are not supported in Expo Go. Please use a development build.');
+    return null;
+  }
+
   let token;
 
   if (Platform.OS === 'android') {

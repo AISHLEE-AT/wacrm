@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TouchableOpacity, View, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Alert } from 'react-native';
 import { Mic, Square } from 'lucide-react-native';
-import { Audio } from 'expo-av';
+import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import Animated, { 
   useSharedValue, 
@@ -11,6 +11,17 @@ import Animated, {
   withSequence
 } from 'react-native-reanimated';
 
+const isExpoGo = Constants.appOwnership === 'expo';
+let Audio: any = null;
+
+if (!isExpoGo) {
+  try {
+    Audio = require('expo-av').Audio;
+  } catch (e) {
+    console.warn('Could not load expo-av', e);
+  }
+}
+
 interface VoiceSearchProps {
   onTranscription: (text: string) => void;
   isTranscribing: boolean;
@@ -18,7 +29,7 @@ interface VoiceSearchProps {
 }
 
 export default function VoiceSearch({ onTranscription, isTranscribing, setIsTranscribing }: VoiceSearchProps) {
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const scale = useSharedValue(1);
 
@@ -44,6 +55,10 @@ export default function VoiceSearch({ onTranscription, isTranscribing, setIsTran
   }, [isRecording]);
 
   async function startRecording() {
+    if (isExpoGo || !Audio) {
+      Alert.alert('Not Supported', 'Voice Search requires a compiled custom build (EAS). It cannot be used in Expo Go.');
+      return;
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const permission = await Audio.requestPermissionsAsync();
