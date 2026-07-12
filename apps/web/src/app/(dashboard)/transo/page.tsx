@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { MapPin, Navigation, Car, Bike, Clock, Loader2, XCircle } from "lucide-react";
+import { MapPin, Navigation, Car, Bike, Clock, Loader2, XCircle, LocateFixed } from "lucide-react";
+import { LocationSearch } from "@/components/LocationSearch";
 import dynamic from "next/dynamic";
 
 const Map = dynamic(() => import("@/components/Map"), { 
@@ -20,29 +21,53 @@ export default function TransoBooking() {
   const [activeRide, setActiveRide] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   
-  const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
+  const [dropoffLat, setDropoffLat] = useState<number | null>(null);
+  const [dropoffLng, setDropoffLng] = useState<number | null>(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  useEffect(() => {
-    // Get current location for pickup
+  const handleGetLocation = () => {
+    setGettingLocation(true);
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setPickupLat(position.coords.latitude);
           setPickupLng(position.coords.longitude);
           setPickup((prev) => prev ? prev : "Current Location");
+          setGettingLocation(false);
         },
         (error) => {
-          console.error("Error getting location", error);
+          console.error("High accuracy error", error);
+          // Fallback to low accuracy
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setPickupLat(pos.coords.latitude);
+              setPickupLng(pos.coords.longitude);
+              setPickup((prev) => prev ? prev : "Current Location");
+              setGettingLocation(false);
+            },
+            (err) => {
+              console.error("Low accuracy error", err);
+              setGettingLocation(false);
+              setError("Could not get your location automatically. Please type it below.");
+            },
+            { timeout: 10000, maximumAge: 60000 }
+          );
         },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
+    } else {
+      setGettingLocation(false);
     }
+  };
+
+  useEffect(() => {
+    handleGetLocation();
   }, []);
 
   useEffect(() => {
@@ -101,10 +126,10 @@ export default function TransoBooking() {
           passenger_id: user?.id,
           pickup_address: pickup,
           dropoff_address: dropoff,
-          pickup_lat: mockLat,
-          pickup_lng: mockLng,
-          dropoff_lat: mockLat + 0.05,
-          dropoff_lng: mockLng + 0.05,
+          pickup_lat: pickupLat || mockLat,
+          pickup_lng: pickupLng || mockLng,
+          dropoff_lat: dropoffLat || mockLat + 0.05,
+          dropoff_lng: dropoffLng || mockLng + 0.05,
           status: "pending",
           estimated_price: type === "bike" ? 50 : type === "car" ? 150 : 250
         })
@@ -219,28 +244,43 @@ export default function TransoBooking() {
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm mb-8">
         <div className="relative space-y-4">
-          <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border" />
+          <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border z-0" />
           
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-card border-[3px] border-emerald-500" />
-            <input 
-              className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="Pickup Location"
-              value={pickup}
-              onChange={(e) => setPickup(e.target.value)}
-            />
-          </div>
+          <LocationSearch 
+            placeholder="Pickup Location"
+            value={pickup}
+            iconBorderColor="border-emerald-500"
+            onChange={(val, lat, lng) => {
+              setPickup(val);
+              if (lat && lng) {
+                setPickupLat(lat);
+                setPickupLng(lng);
+              }
+            }}
+          />
           
-          <div className="relative z-10 flex items-center gap-4">
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-card border-[3px] border-orange-500" />
-            <input 
-              className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="Destination"
-              value={dropoff}
-              onChange={(e) => setDropoff(e.target.value)}
-            />
-          </div>
+          <LocationSearch 
+            placeholder="Destination"
+            value={dropoff}
+            iconBorderColor="border-orange-500"
+            onChange={(val, lat, lng) => {
+              setDropoff(val);
+              if (lat && lng) {
+                setDropoffLat(lat);
+                setDropoffLng(lng);
+              }
+            }}
+          />
         </div>
+        
+        <button 
+          onClick={handleGetLocation} 
+          disabled={gettingLocation}
+          className="mt-4 flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+        >
+          {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+          Use my current location
+        </button>
       </div>
 
       {pickup.length > 2 && dropoff.length > 2 && (

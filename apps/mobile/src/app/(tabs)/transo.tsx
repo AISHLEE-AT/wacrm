@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../providers/auth';
 import { supabase } from '../../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MapPin, Navigation, Car, Bike, Package, Clock, CheckCircle2 } from 'lucide-react-native';
+import { MapPin, Navigation, Car, Bike, Package, Clock, CheckCircle2, LocateFixed } from 'lucide-react-native';
+import { LocationSearch } from '../components/LocationSearch';
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 
@@ -15,25 +16,36 @@ export default function TransoBooking() {
   const [dropoff, setDropoff] = useState('');
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
+  const [dropoffLat, setDropoffLat] = useState<number | null>(null);
+  const [dropoffLng, setDropoffLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
 
-  useEffect(() => {
-    (async () => {
+  const handleGetLocation = async () => {
+    setGettingLocation(true);
+    try {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        console.log('Permission to access location was denied');
+        Alert.alert('Permission Denied', 'Allow location access to use your current location.');
+        setGettingLocation(false);
         return;
       }
-      try {
-        let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
-        setPickupLat(location.coords.latitude);
-        setPickupLng(location.coords.longitude);
-        setPickup(prev => prev ? prev : 'Current Location');
-      } catch (e) {
-        console.log("Error fetching location", e);
-      }
-    })();
+      
+      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setPickupLat(location.coords.latitude);
+      setPickupLng(location.coords.longitude);
+      setPickup('Current Location');
+    } catch (e) {
+      console.log("Error fetching location", e);
+      Alert.alert('Error', 'Could not fetch your location automatically.');
+    } finally {
+      setGettingLocation(false);
+    }
+  };
+
+  useEffect(() => {
+    handleGetLocation();
   }, []);
   
   // Fetch active ride on load
@@ -94,10 +106,10 @@ export default function TransoBooking() {
           passenger_id: session?.user?.id,
           pickup_address: pickup,
           dropoff_address: dropoff,
-          pickup_lat: mockLat,
-          pickup_lng: mockLng,
-          dropoff_lat: mockLat + 0.05,
-          dropoff_lng: mockLng + 0.05,
+          pickup_lat: pickupLat || mockLat,
+          pickup_lng: pickupLng || mockLng,
+          dropoff_lat: dropoffLat || mockLat + 0.05,
+          dropoff_lng: dropoffLng || mockLng + 0.05,
           status: 'pending',
           estimated_price: type === 'bike' ? 50 : type === 'car' ? 150 : 250
         })
@@ -170,27 +182,47 @@ export default function TransoBooking() {
       </LinearGradient>
       
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.inputContainer}>
-          <View style={styles.iconCol}>
-            <View style={styles.dot} />
-            <View style={styles.line} />
-            <View style={[styles.dot, { backgroundColor: '#E65100' }]} />
-          </View>
-          <View style={styles.inputCol}>
-            <TextInput
-              style={styles.input}
-              placeholder="Pickup Location"
-              value={pickup}
-              onChangeText={setPickup}
-            />
-            <View style={styles.divider} />
-            <TextInput
-              style={styles.input}
-              placeholder="Destination"
-              value={dropoff}
-              onChangeText={setDropoff}
-            />
-          </View>
+        <View style={styles.searchCard}>
+          <LocationSearch 
+            placeholder="Pickup Location"
+            value={pickup}
+            iconBorderColor="#10b981"
+            onChange={(val, lat, lng) => {
+              setPickup(val);
+              if (lat && lng) {
+                setPickupLat(lat);
+                setPickupLng(lng);
+              }
+            }}
+          />
+          
+          <LocationSearch 
+            placeholder="Destination"
+            value={dropoff}
+            iconBorderColor="#f97316"
+            onChange={(val, lat, lng) => {
+              setDropoff(val);
+              if (lat && lng) {
+                setDropoffLat(lat);
+                setDropoffLng(lng);
+              }
+            }}
+          />
+          
+          <TouchableOpacity 
+            style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}
+            onPress={handleGetLocation}
+            disabled={gettingLocation}
+          >
+            {gettingLocation ? (
+              <ActivityIndicator size="small" color="#10b981" />
+            ) : (
+              <LocateFixed size={16} color="#10b981" />
+            )}
+            <Text style={{ marginLeft: 8, color: '#10b981', fontWeight: '600' }}>
+              Use my current location
+            </Text>
+          </TouchableOpacity>
         </View>
         
         {pickup.length > 2 && dropoff.length > 2 && (
@@ -229,13 +261,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', color: '#111' },
   subtitle: { fontSize: 16, color: '#666', marginTop: 4 },
   content: { padding: 20 },
-  inputContainer: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-  iconCol: { width: 24, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#00A884' },
-  line: { width: 2, flex: 1, backgroundColor: '#E4E6E9', marginVertical: 4 },
-  inputCol: { flex: 1, marginLeft: 12 },
-  input: { paddingVertical: 12, fontSize: 16, color: '#111' },
-  divider: { height: 1, backgroundColor: '#E4E6E9' },
+  searchCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
   vehiclesContainer: { marginTop: 24 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16, color: '#111' },
   vehicleCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E4E6E9' },
