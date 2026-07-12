@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
 import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const Map = dynamic(() => import("@/components/Map"), { 
+  ssr: false, 
+  loading: () => <div className="h-full w-full bg-slate-100 dark:bg-neutral-800 animate-pulse flex items-center justify-center text-muted-foreground">Loading Map...</div> 
+});
 
 export default function DrivoDashboard() {
   const { user } = useAuth();
@@ -12,6 +18,7 @@ export default function DrivoDashboard() {
   const [pendingRides, setPendingRides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [appStatus, setAppStatus] = useState<string | null>(null);
+  const [currentLoc, setCurrentLoc] = useState<[number, number]>([13.0827, 80.2707]);
   
   const [regNo, setRegNo] = useState("");
   const [vehicleType, setVehicleType] = useState("bike");
@@ -26,6 +33,13 @@ export default function DrivoDashboard() {
   useEffect(() => {
     if (!user?.id) return;
     loadDriverData();
+    
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setCurrentLoc([pos.coords.latitude, pos.coords.longitude]),
+        (err) => console.error("Error getting location", err)
+      );
+    }
   }, [user?.id]);
 
   async function loadDriverData() {
@@ -238,6 +252,22 @@ export default function DrivoDashboard() {
           </span>
         </button>
       </div>
+
+      {driver.status === "online" && (
+        <div className="mb-8 rounded-3xl overflow-hidden shadow-md h-72 border border-border z-0">
+          <Map 
+            center={currentLoc}
+            zoom={13}
+            markers={[
+              { position: currentLoc, title: "You are here" },
+              ...pendingRides.map(r => ({
+                position: [r.pickup_lat, r.pickup_lng] as [number, number],
+                title: `Ride to ${r.dropoff_address || 'Destination'}`
+              }))
+            ]}
+          />
+        </div>
+      )}
 
       {/* Pending Rides */}
       {driver.status === "online" && pendingRides.length > 0 && (

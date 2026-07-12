@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
 import { MapPin, Navigation, Car, Bike, Clock, Loader2, XCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const Map = dynamic(() => import("@/components/Map"), { 
+  ssr: false, 
+  loading: () => <div className="h-full w-full bg-slate-100 dark:bg-neutral-800 animate-pulse flex items-center justify-center text-muted-foreground">Loading Map...</div> 
+});
 
 export default function TransoBooking() {
   const { user } = useAuth();
@@ -136,6 +142,17 @@ export default function TransoBooking() {
           </h2>
         </div>
         
+        <div className="mb-6 rounded-3xl overflow-hidden shadow-md h-64 border border-border z-0 relative">
+          <Map 
+            center={[activeRide.pickup_lat || 13.0827, activeRide.pickup_lng || 80.2707]}
+            zoom={14}
+            markers={[
+              { position: [activeRide.pickup_lat || 13.0827, activeRide.pickup_lng || 80.2707], title: "Pickup Location" },
+              { position: [activeRide.dropoff_lat || 13.1, activeRide.dropoff_lng || 80.3], title: "Destination" },
+            ]}
+          />
+        </div>
+        
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4">
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-800">
@@ -177,6 +194,18 @@ export default function TransoBooking() {
 
   return (
     <div className="mx-auto max-w-2xl py-8 px-4">
+      <div className="mb-8 rounded-3xl overflow-hidden shadow-md h-48 sm:h-64 border border-border z-0 relative">
+        <Map 
+          center={[pickupLat || 13.0827, pickupLng || 80.2707]}
+          zoom={14}
+          markers={
+            pickupLat && pickupLng 
+              ? [{ position: [pickupLat, pickupLng], title: "Your Location" }]
+              : []
+          }
+        />
+      </div>
+      
       <div className="mb-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-slate-50 p-8 shadow-sm border border-border">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Book a Ride</h1>
         <p className="text-muted-foreground mt-2">Where to?</p>
