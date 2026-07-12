@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const metadata = {
-  title: 'Terms of Service | WhatsApp CRM',
-  description: 'Terms of Service for the WhatsApp CRM application.',
+  title: 'Terms of Service | TradO',
+  description: 'Terms of Service for the TradO application.',
 };
 
 export default function TermsOfServicePage() {
@@ -18,7 +18,7 @@ export default function TermsOfServicePage() {
 
         <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert mx-auto">
           <p>
-            Welcome to WhatsApp CRM (accessible at <a href="https://mywhatsapp-two.vercel.app" className="text-primary hover:underline">https://mywhatsapp-two.vercel.app</a>). 
+            Welcome to TradO (accessible at <a href="https://mywhatsapp-two.vercel.app" className="text-primary hover:underline">https://mywhatsapp-two.vercel.app</a>). 
             By accessing or using our application, you agree to be bound by these Terms of Service.
           </p>
 
@@ -29,7 +29,7 @@ export default function TermsOfServicePage() {
 
           <h2 className="text-2xl font-bold mt-8 mb-4">2. Description of Service</h2>
           <p>
-            WhatsApp CRM provides tools for managing WhatsApp communications via the WhatsApp Business API, including shared inbox, contact management, sales pipelines, and automations. We reserve the right to modify or discontinue any part of the service at our discretion.
+            TradO provides tools for managing WhatsApp communications via the WhatsApp Business API, including shared inbox, contact management, sales pipelines, and automations. We reserve the right to modify or discontinue any part of the service at our discretion.
           </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4">3. User Responsibilities</h2>
@@ -48,7 +48,7 @@ export default function TermsOfServicePage() {
 
           <h2 className="text-2xl font-bold mt-8 mb-4">5. Limitation of Liability</h2>
           <p>
-            In no event shall WhatsApp CRM or its creators be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses resulting from your access to or use of our application.
+            In no event shall TradO or its creators be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses resulting from your access to or use of our application.
           </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4">6. Changes to Terms</h2>

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export const metadata = {
-  title: 'Dispatch | wacrm',
+  title: 'Dispatch | TradO',
 }
 
 export default async function DispatchPage() {

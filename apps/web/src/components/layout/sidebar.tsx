@@ -243,7 +243,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           {(accountRole === "owner" || accountRole === "admin") && (
             <>
               <div className="px-3 mb-2 mt-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WhatsApp CRM</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">TradO</h3>
               </div>
               <ul className="flex flex-col gap-1">
                 {crmItems.map((item) => {
