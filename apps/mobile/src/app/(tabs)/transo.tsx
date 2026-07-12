@@ -6,14 +6,35 @@ import { supabase } from '../../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MapPin, Navigation, Car, Bike, Package, Clock, CheckCircle2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import * as Location from 'expo-location';
 
 export default function TransoBooking() {
   const { session } = useAuth();
   
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
+  const [pickupLat, setPickupLat] = useState<number | null>(null);
+  const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
+        return;
+      }
+      try {
+        let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+        setPickupLat(location.coords.latitude);
+        setPickupLng(location.coords.longitude);
+        setPickup(prev => prev ? prev : 'Current Location');
+      } catch (e) {
+        console.log("Error fetching location", e);
+      }
+    })();
+  }, []);
   
   // Fetch active ride on load
   useEffect(() => {
@@ -64,9 +85,8 @@ export default function TransoBooking() {
     
     setLoading(true);
     try {
-      // Mock coordinates since we don't have Maps API yet
-      const mockLat = 13.0827; 
-      const mockLng = 80.2707;
+      const mockLat = pickupLat || 13.0827; 
+      const mockLng = pickupLng || 80.2707;
       
       const { data, error } = await supabase
         .from('rides')

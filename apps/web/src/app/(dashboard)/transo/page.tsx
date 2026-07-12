@@ -39,7 +39,8 @@ export default function TransoBooking() {
         },
         (error) => {
           console.error("Error getting location", error);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
   }, []);
@@ -105,8 +106,7 @@ export default function TransoBooking() {
           dropoff_lat: mockLat + 0.05,
           dropoff_lng: mockLng + 0.05,
           status: "pending",
-          estimated_price: type === "bike" ? 50 : type === "car" ? 150 : 250,
-          account_id: user?.id
+          estimated_price: type === "bike" ? 50 : type === "car" ? 150 : 250
         })
         .select()
         .single();

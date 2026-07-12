@@ -37,7 +37,8 @@ export default function DrivoDashboard() {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setCurrentLoc([pos.coords.latitude, pos.coords.longitude]),
-        (err) => console.error("Error getting location", err)
+        (err) => console.error("Error getting location", err),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
   }, [user?.id]);
