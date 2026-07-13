@@ -90,7 +90,8 @@ export async function POST(request: Request) {
 
     if (!res.ok) {
       console.error('Meta API Error:', JSON.stringify(data, null, 2))
-      return NextResponse.json({ error: 'Failed to send WhatsApp message' }, { status: 500 })
+      const errorMessage = data.error?.message || 'Failed to send WhatsApp message'
+      return NextResponse.json({ error: `Meta API Error: ${errorMessage}` }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: 'OTP sent successfully' })
