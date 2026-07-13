@@ -1,0 +1,55 @@
+{
+  "sorted_middleware": [
+    "/icon/route"
+  ],
+  "middleware": {},
+  "instrumentation": null,
+  "functions": {
+    "/icon/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "required-server-files.js",
+        "server/server-reference-manifest.js",
+        "server/app/icon/route_client-reference-manifest.js",
+        "server/edge/chunks/apps_web__next-internal_server_app_icon_route_actions_17o4kty.js",
+        "server/edge/chunks/[root-of-the-server]__14c-4ob._.js",
+        "server/edge/chunks/node_modules_next_dist_0ssh0wo._.js",
+        "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_1yocwnl._.js",
+        "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_17ii0nl.js"
+      ],
+      "name": "app/icon/route",
+      "page": "/icon/route",
+      "entrypoint": "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_17ii0nl.js",
+      "matchers": [
+        {
+          "regexp": "^/icon(?:/)?$",
+          "originalSource": "/icon"
+        }
+      ],
+      "wasm": [
+        {
+          "name": "wasm_10a187050363648b49a36c79d5266d2c",
+          "filePath": "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_yoga_0athij3.wasm"
+        },
+        {
+          "name": "wasm_151b7f7b511bd6dda63695d2c75c87a3",
+          "filePath": "server/edge/chunks/node_modules_next_dist_compiled_@vercel_og_resvg_0athij3.wasm"
+        }
+      ],
+      "assets": [
+        {
+          "name": "server/edge/assets/Geist-Regular.05-7db9wczy07.ttf",
+          "filePath": "server/edge/assets/Geist-Regular.05-7db9wczy07.ttf"
+        }
+      ],
+      "env": {
+        "__NEXT_BUILD_ID": "w4PHybRW4HqBOknDdBUvo",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "X8CuaK0JXCr/9dqKgibwy0grXFcjBTiFXfZDyeWPnkY=",
+        "__NEXT_PREVIEW_MODE_ID": "b67a6f5c7d2d9c38c04dea53df28f979",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "0b09cc8ba364234bffe6b24ae098d2d6e7e5d5ff06dd117b85cf72e76c15b61d",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "50ba8cfd0b66c2f0ae86893cd8c24bc01d6dbca58c0947a194b52b46610e3309"
+      }
+    }
+  }
+}
