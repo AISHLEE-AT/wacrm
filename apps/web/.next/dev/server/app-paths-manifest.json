@@ -1,0 +1,4 @@
+{
+  "/api/admin/driver-applications/route": "app/api/admin/driver-applications/route.js",
+  "/api/admin/drivers/route": "app/api/admin/drivers/route.js"
+}

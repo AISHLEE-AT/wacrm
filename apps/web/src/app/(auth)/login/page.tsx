@@ -33,16 +33,17 @@ function LoginPageInner() {
   const handleRequestOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!phone || phone.length < 10) {
-      setError("Please enter a valid phone number with country code (e.g. +919876543210)");
+    if (!phone || phone.length !== 10) {
+      setError("Please enter a valid 10-digit phone number");
       return;
     }
     setLoading(true);
     try {
+      const fullPhone = `+91${phone}`;
       const res = await fetch("/api/auth/whatsapp/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: fullPhone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
@@ -64,10 +65,11 @@ function LoginPageInner() {
     }
     setLoading(true);
     try {
+      const fullPhone = `+91${phone}`;
       const res = await fetch("/api/auth/whatsapp/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone: fullPhone, otp }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to verify OTP");
@@ -206,13 +208,19 @@ function LoginPageInner() {
               <form onSubmit={handleRequestOTP} className="flex flex-col gap-3">
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-foreground">Login with WhatsApp</label>
-                  <input
-                    type="tel"
-                    placeholder="+919876543210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
+                  <div className="relative flex items-center">
+                    <span className="absolute left-4 text-muted-foreground font-medium">+91</span>
+                    <input
+                      type="tel"
+                      placeholder="9876543210"
+                      value={phone}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setPhone(val);
+                      }}
+                      className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
                 </div>
                 <Button
                   type="submit"

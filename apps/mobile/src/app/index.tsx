@@ -104,17 +104,18 @@ export default function AuthScreen() {
   };
 
   const requestOTP = async () => {
-    if (!phone || phone.length < 10) {
-      alert('Please enter a valid phone number with country code');
+    if (!phone || phone.length !== 10) {
+      alert('Please enter a valid 10-digit phone number');
       return;
     }
     setLoading(true);
     try {
+      const fullPhone = `+91${phone}`;
       const baseUrl = getApiBaseUrl();
       const res = await fetch(`${baseUrl}/api/auth/whatsapp/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: fullPhone }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
@@ -137,11 +138,12 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       await AsyncStorage.setItem('intendedDestination', selectedApp);
+      const fullPhone = `+91${phone}`;
       const baseUrl = getApiBaseUrl();
       const res = await fetch(`${baseUrl}/api/auth/whatsapp/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone: fullPhone, otp }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to verify OTP');
@@ -214,14 +216,18 @@ export default function AuthScreen() {
         {!otpRequested ? (
           <View style={styles.authContainer}>
             <Text style={styles.authLabel}>Login with WhatsApp</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="+919876543210"
-              placeholderTextColor="#9ca3af"
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-            />
+            <View style={styles.phoneInputContainer}>
+              <Text style={styles.phonePrefix}>+91</Text>
+              <TextInput
+                style={styles.phoneInput}
+                placeholder="9876543210"
+                placeholderTextColor="#9ca3af"
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={(text) => setPhone(text.replace(/\D/g, '').slice(0, 10))}
+                maxLength={10}
+              />
+            </View>
             <TouchableOpacity 
               style={styles.button}
               onPress={requestOTP}
@@ -368,6 +374,30 @@ const styles = StyleSheet.create({
     color: '#1f2937',
     backgroundColor: '#f9fafb',
     marginBottom: 8,
+  },
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 26,
+    paddingHorizontal: 20,
+    backgroundColor: '#f9fafb',
+    marginBottom: 8,
+  },
+  phonePrefix: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginRight: 8,
+    fontWeight: '500',
+  },
+  phoneInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 16,
+    color: '#1f2937',
   },
   divider: {
     flexDirection: 'row',
