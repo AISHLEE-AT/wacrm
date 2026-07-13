@@ -111,6 +111,12 @@ const crmItems: NavItem[] = [
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
 ];
 
+const adminItems: NavItem[] = [
+  { href: "/admin/drivers/applications", label: "Driver Apps", icon: Briefcase },
+  { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
+  { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
+];
+
 const bottomNavItems = [
   { href: "/wallet", label: "Wallet", icon: Zap },
   { href: "/settings", label: "Settings", icon: Settings },
@@ -292,6 +298,32 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                           </span>
                         )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="px-3 mb-2 mt-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SuperApp Admin</h3>
+              </div>
+              <ul className="flex flex-col gap-1">
+                {adminItems.map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
+                          isActive
+                            ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
+                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="flex-1">{item.label}</span>
                       </Link>
                     </li>
                   );

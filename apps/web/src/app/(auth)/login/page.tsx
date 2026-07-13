@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Car, Search, Briefcase, LayoutDashboard } from "lucide-react";
+import { Car, Search, Briefcase, LayoutDashboard, MessageCircle } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -16,12 +16,79 @@ export default function LoginPage() {
 }
 
 function LoginPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedApp, setSelectedApp] = useState<string>("/home");
+  
+  // WhatsApp OTP states
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpRequested, setOtpRequested] = useState(false);
+  
   const supabase = createClient();
+
+  const handleRequestOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!phone || phone.length < 10) {
+      setError("Please enter a valid phone number with country code (e.g. +919876543210)");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      
+      setOtpRequested(true);
+    } catch (err: any) {
+      setError(err.message || "Error sending OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to verify OTP");
+      
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        
+        if (inviteToken) {
+          router.push(`/join/${encodeURIComponent(inviteToken)}`);
+        } else {
+          router.push(selectedApp);
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || "Error verifying OTP");
+      setLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setError(null);
@@ -133,16 +200,83 @@ function LoginPageInner() {
             </div>
           )}
 
+          {/* WhatsApp OTP Form */}
+          <div className="w-full mb-6">
+            {!otpRequested ? (
+              <form onSubmit={handleRequestOTP} className="flex flex-col gap-3">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-foreground">Login with WhatsApp</label>
+                  <input
+                    type="tel"
+                    placeholder="+919876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  ) : (
+                    <MessageCircle className="h-5 w-5" />
+                  )}
+                  {loading ? "Sending OTP..." : "Get OTP via WhatsApp"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOTP} className="flex flex-col gap-3">
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-foreground">Enter WhatsApp Code</label>
+                  <input
+                    type="text"
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-center tracking-[0.5em] text-lg font-mono"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                  ) : null}
+                  {loading ? "Verifying..." : "Verify & Continue"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setOtpRequested(false)}
+                  className="text-sm text-emerald-500 hover:text-emerald-400 mt-1 font-medium transition-colors"
+                >
+                  Change Phone Number
+                </button>
+              </form>
+            )}
+          </div>
+
+          <div className="flex items-center w-full mb-6">
+            <div className="flex-1 h-px bg-border"></div>
+            <span className="px-4 text-xs text-muted-foreground uppercase tracking-wider font-semibold">or</span>
+            <div className="flex-1 h-px bg-border"></div>
+          </div>
+
           <Button
             type="button"
             disabled={loading}
             onClick={handleGoogleLogin}
-            className="w-full h-14 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-base shadow-[0_0_20px_rgba(255,255,255,0.05)] transition-all duration-300 rounded-2xl flex items-center justify-center gap-3"
+            className="w-full h-12 bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 font-semibold text-sm shadow-sm transition-all duration-300 rounded-xl flex items-center justify-center gap-3"
           >
             {loading ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
             ) : (
-              <svg className="h-6 w-6" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -164,3 +298,4 @@ function LoginPageInner() {
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, TextInput } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
@@ -15,7 +15,19 @@ WebBrowser.maybeCompleteAuthSession();
 export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [selectedApp, setSelectedApp] = useState('/(tabs)');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpRequested, setOtpRequested] = useState(false);
   const router = useRouter();
+
+  // Helper to determine API Base URL
+  const getApiBaseUrl = () => {
+    // If running in Expo Go or local simulator, use network IP or localhost 
+    // depending on the setup. For a robust setup, process.env.EXPO_PUBLIC_API_URL is preferred.
+    return process.env.EXPO_PUBLIC_SUPABASE_URL?.includes('localhost') 
+      ? 'http://10.29.166.142:3000' // using local network IP as seen in Next.js logs
+      : 'https://watscrm.vercel.app';
+  };
 
   const redirectTo = makeRedirectUri();
 
@@ -91,6 +103,64 @@ export default function AuthScreen() {
     }
   };
 
+  const requestOTP = async () => {
+    if (!phone || phone.length < 10) {
+      alert('Please enter a valid phone number with country code');
+      return;
+    }
+    setLoading(true);
+    try {
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/auth/whatsapp/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+      
+      setOtpRequested(true);
+      alert('OTP sent via WhatsApp!');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Error sending OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!otp || otp.length !== 6) {
+      alert('Please enter a valid 6-digit OTP');
+      return;
+    }
+    setLoading(true);
+    try {
+      await AsyncStorage.setItem('intendedDestination', selectedApp);
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/auth/whatsapp/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to verify OTP');
+      
+      // We got the session tokens directly from the server!
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Error verifying OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -141,17 +211,74 @@ export default function AuthScreen() {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={performOAuth}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Agree and Continue with Google</Text>
-          )}
-        </TouchableOpacity>
+        {!otpRequested ? (
+          <View style={styles.authContainer}>
+            <Text style={styles.authLabel}>Login with WhatsApp</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="+919876543210"
+              placeholderTextColor="#9ca3af"
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={setPhone}
+            />
+            <TouchableOpacity 
+              style={styles.button}
+              onPress={requestOTP}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Get OTP via WhatsApp</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.button, styles.googleButton]}
+              onPress={performOAuth}
+              disabled={loading}
+            >
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.authContainer}>
+            <Text style={styles.authLabel}>Enter WhatsApp Code</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="123456"
+              placeholderTextColor="#9ca3af"
+              keyboardType="number-pad"
+              value={otp}
+              onChangeText={setOtp}
+              maxLength={6}
+            />
+            <TouchableOpacity 
+              style={styles.button}
+              onPress={verifyOTP}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Verify & Continue</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => setOtpRequested(false)}
+            >
+              <Text style={styles.backButtonText}>Change Phone Number</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -198,6 +325,75 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  googleButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  authContainer: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 12,
+  },
+  authLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  input: {
+    width: '100%',
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 26,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#1f2937',
+    backgroundColor: '#f9fafb',
+    marginBottom: 8,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: '#9ca3af',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  backButton: {
+    marginTop: 16,
+  },
+  backButtonText: {
+    color: '#00A884',
+    fontSize: 14,
+    fontWeight: '600',
+  },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
