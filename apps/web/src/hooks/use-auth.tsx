@@ -226,6 +226,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!mounted) return;
         const currentUser = session?.user ?? null;
+
+        const SUPERADMIN_EMAILS = [
+          "919486335870@whatsapp.wacrm.local",
+          "9486335870@whatsapp.wacrm.local",
+          "aishleetechnology@gmail.com"
+        ];
+
+        if (currentUser) {
+          if (currentUser.email && !SUPERADMIN_EMAILS.includes(currentUser.email)) {
+            console.warn("Unauthorized access attempt. Superadmins only.");
+            await supabase.auth.signOut();
+            window.location.href = "/login?error=unauthorized";
+            return;
+          }
+        }
+
         setUser(currentUser);
 
         if (currentUser) {
@@ -255,6 +271,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       const currentUser = session?.user ?? null;
+
+      const SUPERADMIN_EMAILS = [
+        "919486335870@whatsapp.wacrm.local",
+        "9486335870@whatsapp.wacrm.local",
+        "aishleetechnology@gmail.com"
+      ];
+
+      if (currentUser) {
+        if (currentUser.email && !SUPERADMIN_EMAILS.includes(currentUser.email)) {
+          console.warn("Unauthorized access attempt. Superadmins only.");
+          supabase.auth.signOut().then(() => {
+            window.location.href = "/login?error=unauthorized";
+          });
+          return;
+        }
+      }
+
       setUser(currentUser);
 
       if (currentUser) {

@@ -91,15 +91,7 @@ interface NavItem {
   beta?: boolean;
 }
 
-const tradeoItems: NavItem[] = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/transo", label: "TransO (Book Ride)", icon: Car },
-  { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
-  { href: "/local-connect", label: "Local Connect", icon: MapPin },
-  { href: "/tradeo", label: "TradO Hub", icon: ShoppingBag },
-  { href: "/tradeo/requests", label: "All Requests", icon: Briefcase },
-  { href: "/tradeo/providers", label: "Providers", icon: UsersRound },
-];
+// Removed tradeoItems for Superadmin only web app
 
 const crmItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -226,38 +218,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* TradO Section - Visible to all users including admins */}
-          <>
-            <div className="px-3 mb-2 mt-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Marketplace</h3>
-            </div>
-            <ul className="flex flex-col gap-1 mb-6">
-              {tradeoItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/tradeo" && item.href !== "/home" && pathname.startsWith(item.href));
 
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
-                        isActive
-                          ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.label}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-
-            <div className="my-4 border-t border-border" />
-          </>
 
           {/* CRM Section - Only visible to Admins and Owners */}
           {(accountRole === "owner" || accountRole === "admin") && (
