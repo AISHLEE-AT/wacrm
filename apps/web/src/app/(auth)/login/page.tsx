@@ -23,10 +23,10 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [selectedApp, setSelectedApp] = useState<string>("/home");
   
-  // WhatsApp OTP states
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
+  const [fallbackOtp, setFallbackOtp] = useState<string | null>(null);
   
   const supabase = createClient();
 
@@ -50,8 +50,7 @@ function LoginPageInner() {
       
       setOtpRequested(true);
       if (data.fallbackOtp) {
-        // Fallback alert for testing
-        alert(`WhatsApp Delivery Fallback - Your OTP is: ${data.fallbackOtp}`);
+        setFallbackOtp(data.fallbackOtp);
       }
     } catch (err: any) {
       setError(err.message || "Error sending OTP");
@@ -241,15 +240,24 @@ function LoginPageInner() {
               </form>
             ) : (
               <form onSubmit={handleVerifyOTP} className="flex flex-col gap-3">
+                {fallbackOtp && (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl mb-2 text-center shadow-sm">
+                    <p className="text-sm font-medium mb-1">Testing Mode</p>
+                    <p className="text-xs opacity-80 mb-2">Since WhatsApp delivery is disabled, use this code to login:</p>
+                    <div className="text-2xl font-bold tracking-widest font-mono bg-white dark:bg-black/20 py-2 rounded-lg inline-block px-6">
+                      {fallbackOtp}
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-1">
-                  <label className="text-sm font-semibold text-foreground">Enter WhatsApp Code</label>
+                  <label className="text-sm font-semibold text-foreground">Enter Code</label>
                   <input
                     type="text"
-                    placeholder="123456"
+                    placeholder="ABC123"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) => setOtp(e.target.value.toUpperCase())}
                     maxLength={6}
-                    className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-center tracking-[0.5em] text-lg font-mono"
+                    className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-center tracking-[0.5em] text-lg font-mono uppercase"
                   />
                 </div>
                 <Button

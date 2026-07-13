@@ -18,6 +18,7 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpRequested, setOtpRequested] = useState(false);
+  const [fallbackOtp, setFallbackOtp] = useState<string | null>(null);
   const router = useRouter();
 
   // Helper to determine API Base URL
@@ -122,9 +123,7 @@ export default function AuthScreen() {
       
       setOtpRequested(true);
       if (data.fallbackOtp) {
-        alert(`WhatsApp Delivery Fallback - Your OTP is: ${data.fallbackOtp}`);
-      } else {
-        alert('OTP sent via WhatsApp!');
+        setFallbackOtp(data.fallbackOtp);
       }
     } catch (err: any) {
       console.error(err);
@@ -260,14 +259,24 @@ export default function AuthScreen() {
           </View>
         ) : (
           <View style={styles.authContainer}>
-            <Text style={styles.authLabel}>Enter WhatsApp Code</Text>
+            <Text style={styles.authLabel}>Enter Code</Text>
+            {fallbackOtp ? (
+              <View style={styles.fallbackContainer}>
+                <Text style={styles.fallbackTitle}>Testing Mode</Text>
+                <Text style={styles.fallbackText}>Since WhatsApp delivery is disabled, use this code:</Text>
+                <View style={styles.fallbackCodeBox}>
+                  <Text style={styles.fallbackCode}>{fallbackOtp}</Text>
+                </View>
+              </View>
+            ) : null}
             <TextInput
-              style={styles.input}
-              placeholder="123456"
+              style={[styles.input, { textAlign: 'center', letterSpacing: 8, fontSize: 20, fontWeight: 'bold' }]}
+              placeholder="ABC123"
               placeholderTextColor="#9ca3af"
-              keyboardType="number-pad"
+              keyboardType="default"
+              autoCapitalize="characters"
               value={otp}
-              onChangeText={setOtp}
+              onChangeText={(text) => setOtp(text.toUpperCase())}
               maxLength={6}
             />
             <TouchableOpacity 
@@ -427,6 +436,42 @@ const styles = StyleSheet.create({
     color: '#00A884',
     fontSize: 14,
     fontWeight: '600',
+  },
+  fallbackContainer: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#a7f3d0',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  fallbackTitle: {
+    color: '#059669',
+    fontWeight: '600',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  fallbackText: {
+    color: '#10b981',
+    fontSize: 12,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  fallbackCodeBox: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  fallbackCode: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#059669',
+    letterSpacing: 4,
   },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,

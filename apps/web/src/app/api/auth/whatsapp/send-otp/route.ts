@@ -13,8 +13,12 @@ export async function POST(request: Request) {
     // Format phone number (remove +, spaces, dashes, etc.)
     const cleanPhone = phone.replace(/\D/g, '')
 
-    // Generate 6-digit OTP
-    const otp = crypto.randomInt(100000, 999999).toString()
+    // Generate 6-character alphanumeric OTP
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let otp = ''
+    for (let i = 0; i < 6; i++) {
+      otp += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
     
     // Expires in 5 minutes
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
