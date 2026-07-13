@@ -1,3 +1,0 @@
-{
-  "/(dashboard)/tradeo/requests/[id]/page": "app/(dashboard)/tradeo/requests/[id]/page.js"
-}

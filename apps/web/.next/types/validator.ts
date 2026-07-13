@@ -74,6 +74,33 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/(dashboard)/admin/drivers/applications/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/drivers/applications">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/admin/drivers/applications/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(dashboard)/admin/drivers/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/drivers">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/admin/drivers/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(dashboard)/admin/providers/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/providers">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/admin/providers/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/(dashboard)/automations/[id]/edit/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/automations/[id]/edit">> = Specific
@@ -164,6 +191,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/(dashboard)/drivo/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/drivo">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/drivo/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/(dashboard)/flows/[id]/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/flows/[id]">> = Specific
@@ -191,10 +227,28 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/(dashboard)/home/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/home">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/home/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/(dashboard)/inbox/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/inbox">> = Specific
   const handler = {} as typeof import("../../src/app/(dashboard)/inbox/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(dashboard)/local-connect/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/local-connect">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/local-connect/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
@@ -254,10 +308,19 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
-// Validate ../../src/app/driver/page.tsx
+// Validate ../../src/app/(dashboard)/transo/page.tsx
 {
-  type __IsExpected<Specific extends AppPageConfig<"/driver">> = Specific
-  const handler = {} as typeof import("../../src/app/driver/page.js")
+  type __IsExpected<Specific extends AppPageConfig<"/transo">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/transo/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(dashboard)/wallet/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/wallet">> = Specific
+  const handler = {} as typeof import("../../src/app/(dashboard)/wallet/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
@@ -371,10 +434,46 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/admin/driver-applications/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/admin/driver-applications">> = Specific
+  const handler = {} as typeof import("../../src/app/api/admin/driver-applications/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/admin/drivers/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/admin/drivers">> = Specific
+  const handler = {} as typeof import("../../src/app/api/admin/drivers/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/auth/callback/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/callback">> = Specific
   const handler = {} as typeof import("../../src/app/api/auth/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/auth/whatsapp/send-otp/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/whatsapp/send-otp">> = Specific
+  const handler = {} as typeof import("../../src/app/api/auth/whatsapp/send-otp/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/auth/whatsapp/verify-otp/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/whatsapp/verify-otp">> = Specific
+  const handler = {} as typeof import("../../src/app/api/auth/whatsapp/verify-otp/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
