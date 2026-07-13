@@ -137,8 +137,14 @@ export function SettingsOverview({
     };
   }, [user, accountId, canManageMembers]);
 
-  const displayName = profile?.full_name || profile?.email || 'Your account';
-  const initial = (profile?.full_name || profile?.email || 'U').charAt(0).toUpperCase();
+  let displayEmail = profile?.email ?? "";
+  if (displayEmail.includes("@whatsapp.wacrm.local")) {
+    const rawNumber = displayEmail.split("@")[0];
+    displayEmail = rawNumber.slice(-10);
+  }
+
+  const displayName = profile?.full_name || displayEmail || 'Your account';
+  const initial = (profile?.full_name || displayEmail || 'U').charAt(0).toUpperCase();
   const roleMeta = accountRole ? ROLE_META[accountRole] : null;
   const RoleIcon = roleMeta?.icon;
 
@@ -233,9 +239,9 @@ export function SettingsOverview({
           <div className="truncate text-base font-semibold text-foreground">
             {displayName}
           </div>
-          {profile?.email ? (
+          {displayEmail ? (
             <div className="truncate text-sm text-muted-foreground">
-              {profile.email}
+              {displayEmail}
             </div>
           ) : null}
         </div>

@@ -145,6 +145,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     !!account?.name &&
     account.name !== profile?.full_name;
 
+  let displayEmail = profile?.email ?? "";
+  if (displayEmail.includes("@whatsapp.wacrm.local")) {
+    const rawNumber = displayEmail.split("@")[0];
+    displayEmail = rawNumber.slice(-10);
+  }
+
   // Close the drawer when route changes — users opened it to navigate,
   // so once they pick a destination the drawer should get out of the way.
   useEffect(() => {
@@ -411,10 +417,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               </Avatar>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {profile?.full_name ?? "User"}
+                  {profile?.full_name ?? displayEmail}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {profile?.email ?? ""}
+                  {displayEmail}
                 </p>
               </div>
             </DropdownMenuTrigger>

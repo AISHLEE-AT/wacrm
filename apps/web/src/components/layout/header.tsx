@@ -52,6 +52,12 @@ export function Header({ onOpenSidebar }: HeaderProps) {
     profile?.email?.charAt(0)?.toUpperCase() ??
     "U";
 
+  let displayEmail = profile?.email ?? "";
+  if (displayEmail.includes("@whatsapp.wacrm.local")) {
+    const rawNumber = displayEmail.split("@")[0];
+    displayEmail = rawNumber.slice(-10);
+  }
+
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-white/5 bg-background/40 backdrop-blur-lg sticky top-0 z-50 px-4 lg:px-6">
       <div className="flex min-w-0 items-center gap-2">
@@ -89,7 +95,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
             </AvatarFallback>
           </Avatar>
           <span className="hidden text-sm font-medium text-foreground sm:inline">
-            {profile?.full_name ?? "User"}
+            {profile?.full_name ?? displayEmail}
           </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -99,10 +105,10 @@ export function Header({ onOpenSidebar }: HeaderProps) {
         >
           <div className="px-2 py-1.5">
             <p className="truncate text-sm font-medium text-foreground">
-              {profile?.full_name ?? "User"}
+              {profile?.full_name ?? displayEmail}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {profile?.email ?? ""}
+              {displayEmail}
             </p>
           </div>
           <DropdownMenuSeparator className="bg-border" />
