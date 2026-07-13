@@ -49,6 +49,10 @@ function LoginPageInner() {
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
       
       setOtpRequested(true);
+      if (data.fallbackOtp) {
+        // Fallback alert for testing
+        alert(`WhatsApp Delivery Fallback - Your OTP is: ${data.fallbackOtp}`);
+      }
     } catch (err: any) {
       setError(err.message || "Error sending OTP");
     } finally {

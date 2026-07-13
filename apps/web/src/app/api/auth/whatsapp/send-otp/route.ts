@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Meta API Error: ${errorMessage}` }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, message: 'OTP sent successfully' })
+    return NextResponse.json({ success: true, message: 'OTP sent successfully', fallbackOtp: otp })
   } catch (error: any) {
     console.error('Send OTP Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

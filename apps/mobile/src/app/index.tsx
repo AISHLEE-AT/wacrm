@@ -121,7 +121,11 @@ export default function AuthScreen() {
       if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
       
       setOtpRequested(true);
-      alert('OTP sent via WhatsApp!');
+      if (data.fallbackOtp) {
+        alert(`WhatsApp Delivery Fallback - Your OTP is: ${data.fallbackOtp}`);
+      } else {
+        alert('OTP sent via WhatsApp!');
+      }
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Error sending OTP');
