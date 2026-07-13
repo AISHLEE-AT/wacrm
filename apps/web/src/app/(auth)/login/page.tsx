@@ -21,6 +21,7 @@ function LoginPageInner() {
   const inviteToken = searchParams.get("invite");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedApp, setSelectedApp] = useState<string>("/home");
   
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -85,7 +86,7 @@ function LoginPageInner() {
         if (inviteToken) {
           router.push(`/join/${encodeURIComponent(inviteToken)}`);
         } else {
-          router.push("/dashboard");
+          router.push(selectedApp);
         }
       }
     } catch (err: any) {
@@ -102,7 +103,7 @@ function LoginPageInner() {
     if (inviteToken) {
       redirectUrl.searchParams.set("next", `/join/${encodeURIComponent(inviteToken)}`);
     } else {
-      redirectUrl.searchParams.set("next", "/dashboard");
+      redirectUrl.searchParams.set("next", selectedApp);
     }
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -163,9 +164,44 @@ function LoginPageInner() {
               {error}
             </div>
           )}
-          {searchParams.get("error") === "unauthorized" && !error && (
-            <div className="w-full mb-6 rounded-xl border border-red-900/50 bg-red-900/10 p-4 text-sm text-red-400">
-              Access denied. Web dashboard is restricted to superadmins.
+
+          {!inviteToken && (
+            <div className="mb-8 w-full">
+              <label className="block text-sm font-semibold text-foreground mb-3">Where to?</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setSelectedApp("/home")}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${selectedApp === "/home" ? "border-emerald-500 bg-emerald-50/50 text-emerald-700 dark:text-emerald-400" : "border-border bg-card hover:bg-slate-50 dark:hover:bg-neutral-800 text-muted-foreground"}`}
+                >
+                  <LayoutDashboard className="h-6 w-6" />
+                  <span className="text-xs font-bold">Super App</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedApp("/transo")}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${selectedApp === "/transo" ? "border-emerald-500 bg-emerald-50/50 text-emerald-700 dark:text-emerald-400" : "border-border bg-card hover:bg-slate-50 dark:hover:bg-neutral-800 text-muted-foreground"}`}
+                >
+                  <Car className="h-6 w-6" />
+                  <span className="text-xs font-bold">TransO</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedApp("/tradeo")}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${selectedApp === "/tradeo" ? "border-emerald-500 bg-emerald-50/50 text-emerald-700 dark:text-emerald-400" : "border-border bg-card hover:bg-slate-50 dark:hover:bg-neutral-800 text-muted-foreground"}`}
+                >
+                  <Search className="h-6 w-6" />
+                  <span className="text-xs font-bold">TradO</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setSelectedApp("/drivo")}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${selectedApp === "/drivo" ? "border-orange-500 bg-orange-50/50 text-orange-700 dark:text-orange-400" : "border-border bg-card hover:bg-slate-50 dark:hover:bg-neutral-800 text-muted-foreground"}`}
+                >
+                  <Briefcase className="h-6 w-6" />
+                  <span className="text-xs font-bold">DrivO</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -270,6 +306,13 @@ function LoginPageInner() {
             )}
             {loading ? "Authenticating..." : "Continue with Google"}
           </Button>
+          
+          <p className="mt-8 text-center lg:text-left text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <a href="/signup" className="text-primary hover:text-primary/80 font-medium transition-colors">
+              Sign up
+            </a>
+          </p>
         </div>
       </div>
     </div>
