@@ -21,7 +21,7 @@ function LoginPageInner() {
   const inviteToken = searchParams.get("invite");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedApp, setSelectedApp] = useState<string>("/home");
+  const [selectedApp, setSelectedApp] = useState<string>("/tradeo");
   
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -168,15 +168,7 @@ function LoginPageInner() {
           {!inviteToken && (
             <div className="mb-8 w-full">
               <label className="block text-sm font-semibold text-foreground mb-3">Where to?</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  type="button"
-                  onClick={() => setSelectedApp("/home")}
-                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${selectedApp === "/home" ? "border-emerald-500 bg-emerald-50/50 text-emerald-700 dark:text-emerald-400" : "border-border bg-card hover:bg-slate-50 dark:hover:bg-neutral-800 text-muted-foreground"}`}
-                >
-                  <LayoutDashboard className="h-6 w-6" />
-                  <span className="text-xs font-bold">Super App</span>
-                </button>
+              <div className="grid grid-cols-3 gap-3">
                 <button 
                   type="button"
                   onClick={() => setSelectedApp("/transo")}
