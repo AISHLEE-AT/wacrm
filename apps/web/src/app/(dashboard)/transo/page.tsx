@@ -20,6 +20,7 @@ export default function TransoBooking() {
   const [loading, setLoading] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [onlineDrivers, setOnlineDrivers] = useState<any[]>([]);
   
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
@@ -27,10 +28,25 @@ export default function TransoBooking() {
   const [dropoffLng, setDropoffLng] = useState<number | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  // Default to Chennai center if location fails
+  const DEFAULT_LAT = 13.0827;
+  const DEFAULT_LNG = 80.2707;
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  const fetchOnlineDrivers = async () => {
+    try {
+      const { data } = await supabase.from('drivers').select('*').eq('status', 'online');
+      if (data) {
+        setOnlineDrivers(data);
+      }
+    } catch (e) {
+      console.error("Could not fetch online drivers", e);
+    }
+  };
 
   const handleGetLocation = () => {
     setGettingLocation(true);
@@ -39,36 +55,40 @@ export default function TransoBooking() {
         (position) => {
           setPickupLat(position.coords.latitude);
           setPickupLng(position.coords.longitude);
-          setPickup((prev) => prev ? prev : "Current Location");
+          if (!pickup) setPickup("Current Location");
           setGettingLocation(false);
         },
         (error) => {
-          console.error("High accuracy error", error);
-          // Fallback to low accuracy
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              setPickupLat(pos.coords.latitude);
-              setPickupLng(pos.coords.longitude);
-              setPickup((prev) => prev ? prev : "Current Location");
-              setGettingLocation(false);
-            },
-            (err) => {
-              console.error("Low accuracy error", err);
-              setGettingLocation(false);
-              setError("Could not get your location automatically. Please type it below.");
-            },
-            { timeout: 10000, maximumAge: 60000 }
-          );
+          console.warn("Geolocation failed or denied, using default location.");
+          // Fallback to default without showing ugly error
+          if (!pickupLat) setPickupLat(DEFAULT_LAT);
+          if (!pickupLng) setPickupLng(DEFAULT_LNG);
+          setGettingLocation(false);
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
       );
     } else {
       setGettingLocation(false);
+      if (!pickupLat) setPickupLat(DEFAULT_LAT);
+      if (!pickupLng) setPickupLng(DEFAULT_LNG);
     }
   };
 
   useEffect(() => {
     handleGetLocation();
+    fetchOnlineDrivers();
+    
+    // Listen for driver status changes
+    const driverChannel = supabase
+      .channel('public:drivers')
+      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => {
+        fetchOnlineDrivers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(driverChannel);
+    };
   }, []);
 
   useEffect(() => {
@@ -121,7 +141,7 @@ export default function TransoBooking() {
     return R * c; // Distance in km
   }
 
-  const handleBookRide = async (type: string, vehiclePrice: number) => {
+  const handleBookRide = async (type: string) => {
     if (!pickup.trim() || !dropoff.trim()) {
       setError("Please enter both pickup and drop-off locations.");
       return;
@@ -130,14 +150,17 @@ export default function TransoBooking() {
     setLoading(true);
     
     try {
-      const mockLat = pickupLat || 13.0827; 
-      const mockLng = pickupLng || 80.2707;
+      const mockLat = pickupLat || DEFAULT_LAT; 
+      const mockLng = pickupLng || DEFAULT_LNG;
       const dLat = dropoffLat || mockLat + 0.05;
       const dLng = dropoffLng || mockLng + 0.05;
       
       const distance = calculateDistance(mockLat, mockLng, dLat, dLng);
-      // Ensure minimum price of ₹50 or 20 per km + vehicle base
-      const finalPrice = Math.max(50, Math.round(distance * 20));
+      // Base calculation: minimum 50, else 20 per km
+      let baseRate = 20;
+      if (type === 'bike') baseRate = 12; // Bike is cheaper
+      
+      const finalPrice = Math.max(50, Math.round(distance * baseRate));
       
       const { data, error: insertError } = await supabase
         .from("rides")
@@ -177,6 +200,27 @@ export default function TransoBooking() {
     }
   };
 
+  // Generate markers array
+  const mapMarkers = [];
+  
+  if (pickupLat && pickupLng) {
+    mapMarkers.push({ position: [pickupLat, pickupLng] as [number, number], title: pickup || "Pickup" });
+  }
+  if (dropoffLat && dropoffLng) {
+    mapMarkers.push({ position: [dropoffLat, dropoffLng] as [number, number], title: dropoff || "Drop-off" });
+  }
+
+  // Add fake driver markers if we don't have real locations, but since we fetch from DB, we'd use their last known lat/lng if we had it.
+  // For now, let's simulate nearby drivers around the pickup location if they are online.
+  onlineDrivers.forEach((driver, idx) => {
+    const lat = (pickupLat || DEFAULT_LAT) + (Math.random() - 0.5) * 0.02;
+    const lng = (pickupLng || DEFAULT_LNG) + (Math.random() - 0.5) * 0.02;
+    mapMarkers.push({
+      position: [lat, lng] as [number, number],
+      title: `Driver ${idx + 1} (${driver.vehicle_type || 'Car'})`
+    });
+  });
+
   if (activeRide) {
     return (
       <div className="mx-auto max-w-xl py-10 px-4">
@@ -189,11 +233,11 @@ export default function TransoBooking() {
         
         <div className="mb-6 rounded-3xl overflow-hidden shadow-md h-64 border border-border z-0 relative">
           <Map 
-            center={[activeRide.pickup_lat || 13.0827, activeRide.pickup_lng || 80.2707]}
+            center={[activeRide.pickup_lat || DEFAULT_LAT, activeRide.pickup_lng || DEFAULT_LNG]}
             zoom={14}
             markers={[
-              { position: [activeRide.pickup_lat || 13.0827, activeRide.pickup_lng || 80.2707], title: "Pickup Location" },
-              { position: [activeRide.dropoff_lat || 13.1, activeRide.dropoff_lng || 80.3], title: "Destination" },
+              { position: [activeRide.pickup_lat, activeRide.pickup_lng], title: "Pickup Location" },
+              { position: [activeRide.dropoff_lat, activeRide.dropoff_lng], title: "Destination" },
             ]}
           />
         </div>
@@ -237,23 +281,22 @@ export default function TransoBooking() {
     );
   }
 
+  const distanceVal = (pickupLat && dropoffLat) ? calculateDistance(pickupLat, pickupLng!, dropoffLat, dropoffLng!) : 0;
+  const showVehicleSelection = pickup.length > 2 && dropoff.length > 2 && pickupLat && dropoffLat;
+
   return (
-    <div className="mx-auto max-w-2xl py-8 px-4">
-      <div className="mb-8 rounded-3xl overflow-hidden shadow-md h-48 sm:h-64 border border-border z-0 relative">
+    <div className="mx-auto max-w-2xl py-8 px-4 relative pb-32">
+      {/* MAP BACKGROUND / HERO */}
+      <div className="mb-6 rounded-3xl overflow-hidden shadow-lg h-[40vh] border border-border z-0 relative">
         <Map 
-          center={[pickupLat || 13.0827, pickupLng || 80.2707]}
+          center={[pickupLat || DEFAULT_LAT, pickupLng || DEFAULT_LNG]}
           zoom={14}
-          markers={
-            pickupLat && pickupLng 
-              ? [{ position: [pickupLat, pickupLng], title: "Your Location" }]
-              : []
-          }
+          markers={mapMarkers}
         />
-      </div>
-      
-      <div className="mb-8 rounded-2xl bg-gradient-to-br from-emerald-50 to-slate-50 p-8 shadow-sm border border-border">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Book a Ride</h1>
-        <p className="text-muted-foreground mt-2">Where to?</p>
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 z-10 text-xs font-bold text-slate-700">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          {onlineDrivers.length} Drivers Nearby
+        </div>
       </div>
       
       {error && (
@@ -262,7 +305,10 @@ export default function TransoBooking() {
         </div>
       )}
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm mb-8">
+      {/* SEARCH CARD */}
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-xl mb-6 relative z-10 -mt-12 bg-white/95 backdrop-blur-xl dark:bg-neutral-900/95">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">Book a Ride</h1>
+        
         <div className="relative space-y-4">
           <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border z-0" />
           
@@ -270,6 +316,8 @@ export default function TransoBooking() {
             placeholder="Pickup Location"
             value={pickup}
             iconBorderColor="border-emerald-500"
+            userLat={pickupLat || DEFAULT_LAT}
+            userLng={pickupLng || DEFAULT_LNG}
             onChange={(val, lat, lng) => {
               setPickup(val);
               if (lat && lng) {
@@ -280,9 +328,11 @@ export default function TransoBooking() {
           />
           
           <LocationSearch 
-            placeholder="Destination"
+            placeholder="Where to?"
             value={dropoff}
             iconBorderColor="border-orange-500"
+            userLat={pickupLat || DEFAULT_LAT}
+            userLng={pickupLng || DEFAULT_LNG}
             onChange={(val, lat, lng) => {
               setDropoff(val);
               if (lat && lng) {
@@ -296,49 +346,70 @@ export default function TransoBooking() {
         <button 
           onClick={handleGetLocation} 
           disabled={gettingLocation}
-          className="mt-4 flex items-center gap-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+          className="mt-6 flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors w-full justify-center bg-emerald-50 py-2.5 rounded-xl"
         >
           {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
-          Use my current location
+          Use Current Location
         </button>
       </div>
 
-      {pickup.length > 2 && dropoff.length > 2 && (
-        <div>
-          <h2 className="text-xl font-bold mb-4">Choose a Vehicle</h2>
+      {/* VEHICLE SELECTION BOTTOM SHEET (Simulated) */}
+      {showVehicleSelection && (
+        <div className="animate-in slide-in-from-bottom-10 fade-in duration-300">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h2 className="text-xl font-bold">Available Rides</h2>
+            <div className="text-sm font-medium text-muted-foreground bg-slate-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
+              {distanceVal.toFixed(1)} km
+            </div>
+          </div>
+          
           <div className="grid gap-4 sm:grid-cols-2">
             <button 
-              onClick={() => handleBookRide("bike", 50)} 
+              onClick={() => handleBookRide("bike")} 
               disabled={loading}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
+              className="group flex flex-col justify-between rounded-3xl border-2 border-transparent bg-slate-50 dark:bg-neutral-800/50 p-5 transition-all hover:border-emerald-500 hover:bg-emerald-50/50 focus:outline-none disabled:opacity-50"
             >
-              <div className="rounded-xl bg-emerald-50 p-3">
-                <Bike className="h-8 w-8 text-emerald-600" />
+              <div className="flex items-start justify-between w-full mb-6">
+                <div className="rounded-2xl bg-white dark:bg-neutral-800 p-3 shadow-sm group-hover:scale-110 transition-transform">
+                  <Bike className="h-8 w-8 text-emerald-600" />
+                </div>
+                <div className="text-right">
+                  <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 12))}</h3>
+                  <p className="text-xs font-semibold text-muted-foreground line-through">₹{Math.max(65, Math.round(distanceVal * 16))}</p>
+                </div>
               </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-bold text-foreground">TransO Bike</h3>
-                <p className="text-sm text-muted-foreground">₹20 / km</p>
+              <div className="text-left w-full">
+                <h3 className="font-bold text-lg text-foreground">TransO Bike</h3>
+                <p className="text-sm font-medium text-emerald-600">Fastest • ~{(distanceVal * 3).toFixed(0)} mins</p>
               </div>
             </button>
 
             <button 
-              onClick={() => handleBookRide("car", 150)} 
+              onClick={() => handleBookRide("car")} 
               disabled={loading}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
+              className="group flex flex-col justify-between rounded-3xl border-2 border-transparent bg-slate-50 dark:bg-neutral-800/50 p-5 transition-all hover:border-emerald-500 hover:bg-emerald-50/50 focus:outline-none disabled:opacity-50"
             >
-              <div className="rounded-xl bg-emerald-50 p-3">
-                <Car className="h-8 w-8 text-emerald-600" />
+              <div className="flex items-start justify-between w-full mb-6">
+                <div className="rounded-2xl bg-white dark:bg-neutral-800 p-3 shadow-sm group-hover:scale-110 transition-transform">
+                  <Car className="h-8 w-8 text-emerald-600" />
+                </div>
+                <div className="text-right">
+                  <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 20))}</h3>
+                </div>
               </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-bold text-foreground">TransO Cab</h3>
-                <p className="text-sm text-muted-foreground">₹20 / km</p>
+              <div className="text-left w-full">
+                <h3 className="font-bold text-lg text-foreground">TransO Cab</h3>
+                <p className="text-sm font-medium text-emerald-600">Comfort • ~{(distanceVal * 4).toFixed(0)} mins</p>
               </div>
             </button>
           </div>
           
           {loading && (
-            <div className="mt-8 flex justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+              <div className="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center">
+                <Loader2 className="h-10 w-10 animate-spin text-emerald-500 mb-4" />
+                <p className="font-bold text-lg">Finding your captain...</p>
+              </div>
             </div>
           )}
         </div>
