@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock } from "lucide-react";
+import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const Map = dynamic(() => import("@/components/Map"), { 
