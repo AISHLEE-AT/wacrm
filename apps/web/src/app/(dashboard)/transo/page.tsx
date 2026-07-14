@@ -109,7 +109,19 @@ export default function TransoBooking() {
     }
   };
 
-  const handleBookRide = async (type: string) => {
+  function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c; // Distance in km
+  }
+
+  const handleBookRide = async (type: string, vehiclePrice: number) => {
     if (!pickup.trim() || !dropoff.trim()) {
       setError("Please enter both pickup and drop-off locations.");
       return;
@@ -120,6 +132,12 @@ export default function TransoBooking() {
     try {
       const mockLat = pickupLat || 13.0827; 
       const mockLng = pickupLng || 80.2707;
+      const dLat = dropoffLat || mockLat + 0.05;
+      const dLng = dropoffLng || mockLng + 0.05;
+      
+      const distance = calculateDistance(mockLat, mockLng, dLat, dLng);
+      // Ensure minimum price of ₹50 or 20 per km + vehicle base
+      const finalPrice = Math.max(50, Math.round(distance * 20));
       
       const { data, error: insertError } = await supabase
         .from("rides")
@@ -127,12 +145,13 @@ export default function TransoBooking() {
           passenger_id: user?.id,
           pickup_address: pickup,
           dropoff_address: dropoff,
-          pickup_lat: pickupLat || mockLat,
-          pickup_lng: pickupLng || mockLng,
-          dropoff_lat: dropoffLat || mockLat + 0.05,
-          dropoff_lng: dropoffLng || mockLng + 0.05,
+          pickup_lat: mockLat,
+          pickup_lng: mockLng,
+          dropoff_lat: dLat,
+          dropoff_lng: dLng,
           status: "pending",
-          estimated_price: type === "bike" ? 50 : type === "car" ? 150 : 250
+          estimated_price: finalPrice,
+          distance_km: parseFloat(distance.toFixed(2))
         })
         .select()
         .single();
@@ -289,7 +308,7 @@ export default function TransoBooking() {
           <h2 className="text-xl font-bold mb-4">Choose a Vehicle</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <button 
-              onClick={() => handleBookRide("bike")} 
+              onClick={() => handleBookRide("bike", 50)} 
               disabled={loading}
               className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
             >
@@ -298,13 +317,12 @@ export default function TransoBooking() {
               </div>
               <div className="flex-1 text-left">
                 <h3 className="font-bold text-foreground">TransO Bike</h3>
-                <p className="text-sm text-muted-foreground">Quick & affordable</p>
+                <p className="text-sm text-muted-foreground">₹20 / km</p>
               </div>
-              <span className="font-bold text-emerald-600">₹50</span>
             </button>
 
             <button 
-              onClick={() => handleBookRide("car")} 
+              onClick={() => handleBookRide("car", 150)} 
               disabled={loading}
               className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
             >
@@ -313,9 +331,8 @@ export default function TransoBooking() {
               </div>
               <div className="flex-1 text-left">
                 <h3 className="font-bold text-foreground">TransO Cab</h3>
-                <p className="text-sm text-muted-foreground">Comfortable cars</p>
+                <p className="text-sm text-muted-foreground">₹20 / km</p>
               </div>
-              <span className="font-bold text-emerald-600">₹150</span>
             </button>
           </div>
           

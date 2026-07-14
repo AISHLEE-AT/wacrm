@@ -14,6 +14,8 @@ interface Driver {
   created_at: string;
   current_lat?: number;
   current_lng?: number;
+  pending_commission?: number;
+  vehicle_type?: string;
   profile?: {
     full_name: string | null;
     email: string | null;
@@ -92,9 +94,15 @@ export default function DriversPage() {
                 </div>
                 
                 <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between border-b pb-2 mb-2">
+                    <span className="font-semibold text-foreground">Pending Commission</span>
+                    <span className={`font-bold ${driver.pending_commission && driver.pending_commission > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                      ₹{driver.pending_commission || 0}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Car className="w-4 h-4" />
-                    <span>{driver.vehicle?.name || "No vehicle assigned"} <span className="uppercase text-xs opacity-70">({driver.vehicle?.type})</span></span>
+                    <span>{driver.vehicle?.name || driver.vehicle_type || "No vehicle assigned"} <span className="uppercase text-xs opacity-70">({driver.vehicle?.type || driver.vehicle_type || "N/A"})</span></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
@@ -109,6 +117,27 @@ export default function DriversPage() {
                     <span>Joined {format(new Date(driver.created_at), "MMM d, yyyy")}</span>
                   </div>
                 </div>
+                
+                {driver.pending_commission && driver.pending_commission > 0 ? (
+                  <button 
+                    onClick={async () => {
+                      if (!confirm("Are you sure you want to mark this driver's pending commission as paid?")) return;
+                      const res = await fetch("/api/admin/drivers/clear-commission", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ driver_id: driver.id })
+                      });
+                      if (res.ok) {
+                        fetchDrivers();
+                      } else {
+                        alert("Failed to clear commission.");
+                      }
+                    }}
+                    className="mt-4 w-full bg-emerald-600 text-white rounded-lg py-2 font-semibold hover:bg-emerald-700 transition-colors text-sm"
+                  >
+                    Mark Commission as Paid
+                  </button>
+                ) : null}
               </div>
             </Card>
           ))}

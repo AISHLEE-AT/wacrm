@@ -93,16 +93,74 @@ export default function DrivoDashboard() {
     if (data) setPendingRides(data);
   }
 
+  async function loadActiveRide() {
+    if (!driver) return;
+    const { data } = await supabase
+      .from("rides")
+      .select("*")
+      .eq("driver_id", driver.id)
+      .in("status", ["accepted", "en_route"])
+      .single();
+    if (data) {
+      setPendingRides([data]); // Just hijack pendingRides state or create a separate one. Let's create a separate state actually.
+    }
+  }
+  
+  // Wait, I need a separate state for activeRide. I'll just re-write the whole state logic for rides.
+  // Actually, let's just make acceptRide change a local state to show the active ride.
+  const [activeRide, setActiveRide] = useState<any>(null);
+
+  useEffect(() => {
+    if (driver) {
+      const fetchActive = async () => {
+        const { data } = await supabase
+          .from("rides")
+          .select("*")
+          .eq("driver_id", driver.id)
+          .in("status", ["accepted", "en_route"])
+          .single();
+        if (data) setActiveRide(data);
+      };
+      fetchActive();
+    }
+  }, [driver]);
+
   async function acceptRide(rideId: string) {
     if (!driver) return;
     try {
-      await supabase.from("rides").update({
+      const { data: updatedRide, error: rideErr } = await supabase.from("rides").update({
         status: "accepted",
         driver_id: driver.id
-      }).eq("id", rideId);
+      }).eq("id", rideId).select().single();
+      
+      if (rideErr) throw rideErr;
       
       await supabase.from("drivers").update({ status: "busy" }).eq("id", driver.id);
       setDriver({ ...driver, status: "busy" });
+      setActiveRide(updatedRide);
+      loadPendingRides();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
+  async function completeRide() {
+    if (!driver || !activeRide) return;
+    try {
+      // 1. Mark ride completed
+      await supabase.from("rides").update({ status: "completed" }).eq("id", activeRide.id);
+      
+      // 2. Add 30% commission
+      const commission = (activeRide.estimated_price || 0) * 0.3;
+      const newPending = (driver.pending_commission || 0) + commission;
+      
+      await supabase.from("drivers").update({ 
+        status: "online", 
+        pending_commission: newPending 
+      }).eq("id", driver.id);
+      
+      setDriver({ ...driver, status: "online", pending_commission: newPending });
+      setActiveRide(null);
       loadPendingRides();
     } catch (err: any) {
       setError(err.message);
@@ -117,14 +175,25 @@ export default function DrivoDashboard() {
     setSubmitting(true);
     setError(null);
     try {
-      const { error: appErr } = await supabase.from("driver_applications").insert({
-        user_id: user?.id,
-        vehicle_type: vehicleType,
-        registration_number: regNo,
-        status: "pending"
-      });
-      if (appErr) throw appErr;
-      setAppStatus("pending");
+      // AUTO-APPROVE: Directly create the driver record instead of a pending application
+      const { data: newDriver, error: driverErr } = await supabase
+        .from("drivers")
+        .insert({
+          user_id: user?.id,
+          status: "offline",
+          wallet_balance: 0,
+          pending_commission: 0,
+          is_blocked: false,
+          vehicle_type: vehicleType,
+          vehicle_registration: regNo
+        })
+        .select()
+        .single();
+        
+      if (driverErr) throw driverErr;
+      
+      setDriver(newDriver);
+      setAppStatus("approved");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -134,6 +203,14 @@ export default function DrivoDashboard() {
 
   const toggleStatus = async () => {
     if (!driver) return;
+    
+    // Check if they owe commission
+    if (driver.status === "offline" && driver.pending_commission > 0) {
+      setError("You must pay your pending commission before you can go online.");
+      return;
+    }
+    
+    setError(null);
     const newStatus = driver.status === "online" ? "offline" : "online";
     await supabase.from("drivers").update({ status: newStatus }).eq("id", driver.id);
     setDriver({ ...driver, status: newStatus });
@@ -270,8 +347,47 @@ export default function DrivoDashboard() {
         </div>
       )}
 
-      {/* Pending Rides */}
-      {driver.status === "online" && pendingRides.length > 0 && (
+      {/* Active Ride OR Pending Rides */}
+      {activeRide ? (
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-6 mb-8 border-orange-300">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-orange-700 flex items-center gap-2">
+              <Clock className="h-5 w-5" /> Active Ride
+            </h2>
+          </div>
+          
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-4">
+              <MapPin className="h-6 w-6 text-emerald-500 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pickup</p>
+                <p className="text-lg font-bold">{activeRide.pickup_address}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <Navigation2 className="h-6 w-6 text-orange-500 mt-1" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Drop-off</p>
+                <p className="text-lg font-bold">{activeRide.dropoff_address}</p>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-900 rounded-xl">
+              <p className="text-lg font-semibold text-foreground">Estimated Fare</p>
+              <p className="text-2xl font-bold text-emerald-600">₹{activeRide.estimated_price}</p>
+            </div>
+            
+            <button 
+              onClick={completeRide}
+              className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-black dark:bg-white text-white dark:text-black py-4 font-bold transition-transform active:scale-95"
+            >
+              <CheckCircle2 className="h-6 w-6" />
+              Complete Ride
+            </button>
+          </div>
+        </div>
+      ) : driver.status === "online" && pendingRides.length > 0 && (
         <div className="rounded-2xl bg-card border border-border shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">Available Rides</h2>
@@ -303,13 +419,18 @@ export default function DrivoDashboard() {
         </div>
       )}
       
-      {driver.status === "offline" && (
-        <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
+      {driver.status === "offline" && !activeRide && (
+        <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground flex flex-col items-center gap-2">
+          {driver.pending_commission > 0 && (
+            <div className="mb-4 text-red-600 font-bold bg-red-50 p-4 rounded-xl border border-red-200">
+              You owe ₹{driver.pending_commission} in pending commissions. Please pay to admin to resume going online.
+            </div>
+          )}
           Go online to see available ride requests.
         </div>
       )}
       
-      {driver.status === "online" && pendingRides.length === 0 && (
+      {driver.status === "online" && pendingRides.length === 0 && !activeRide && (
         <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
           No ride requests available right now. We'll notify you when one comes in!
         </div>
