@@ -21,7 +21,7 @@ interface MapProps {
 export default function Map({ center, zoom = 13, markers = [] }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyDdAePjhtVNhbCPhvsdEGrMUGA2kn5WDds",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
