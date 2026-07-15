@@ -36,13 +36,15 @@ class AuthState {
   }
 }
 
-class AuthNotifier extends StateNotifier<AuthState> {
+class AuthNotifier extends Notifier<AuthState> {
   final firebase.FirebaseAuth _auth = firebase.FirebaseAuth.instance;
   final SupabaseClient _supabase = Supabase.instance.client;
   static const String _bridgeUrl = 'https://watscrm.vercel.app/api/auth/firebase-bridge';
 
-  AuthNotifier() : super(AuthState()) {
+  @override
+  AuthState build() {
     _init();
+    return AuthState();
   }
 
   void _init() {
@@ -155,6 +157,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
   return AuthNotifier();
 });
