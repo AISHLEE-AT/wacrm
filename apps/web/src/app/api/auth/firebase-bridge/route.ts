@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import jwt from 'jsonwebtoken'
 
 const FIREBASE_API_KEY = 'AIzaSyB0UIfxvTHXmaiKCg2C5L1Vw8KCFwkVUKs'
 
@@ -114,7 +115,29 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── 4. Return identifiers ────────────────────────────────────────
+    // ── 4. Generate Supabase Custom JWT ──────────────────────────────
+    const jwtSecret = process.env.SUPABASE_JWT_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json(
+        { error: 'Server misconfiguration: SUPABASE_JWT_SECRET missing' },
+        { status: 500 }
+      )
+    }
+
+    const payload = {
+      aud: 'authenticated',
+      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 30), // 30 days
+      sub: user.id,
+      phone: user.phone,
+      role: 'authenticated',
+      app_metadata: user.app_metadata || {},
+      user_metadata: user.user_metadata || {},
+    };
+
+    const token = jwt.sign(payload, jwtSecret);
+
+    // ── 5. Return identifiers and tokens ─────────────────────────────
+    // The web client uses access_token/refresh_token to set the session.
     // The Flutter client uses user_id for Supabase queries and
     // firebase_uid for Firebase-specific features (push notifications).
     return NextResponse.json({
@@ -122,6 +145,8 @@ export async function POST(request: Request) {
       user_id: user.id,
       phone: phoneDigits,
       firebase_uid: firebaseUid,
+      access_token: token,
+      refresh_token: token,
     })
   } catch (error: any) {
     console.error('Firebase bridge error:', error)

@@ -12,7 +12,7 @@ import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
 // client components can't export Next's metadata object.
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
-  const { user, loading, accountRole } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -21,21 +21,26 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
+  const ADMIN_PHONES = ['919486335870', '916381029380', '9486335870', '6381029380'];
+  const isAdmin = user?.phone ? ADMIN_PHONES.includes(user.phone) : false;
+
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
       return;
     }
 
-    if (!loading && user && accountRole) {
-      const crmPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/flows'];
-      const isCrmPath = crmPaths.some(p => pathname.startsWith(p));
-      
-      if (isCrmPath && accountRole !== 'owner' && accountRole !== 'admin') {
-        router.push('/home');
+    if (!loading && user) {
+      if (!isAdmin) {
+        const crmPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/flows', '/admin'];
+        const isCrmPath = crmPaths.some(p => pathname.startsWith(p));
+        
+        if (isCrmPath) {
+          router.push('/home');
+        }
       }
     }
-  }, [user, loading, accountRole, pathname, router]);
+  }, [user, loading, isAdmin, pathname, router]);
 
   if (loading) {
     return (
@@ -49,6 +54,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-background w-full">
+        <PresenceHeartbeat />
+        <main className="flex-1 overflow-y-auto w-full">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
