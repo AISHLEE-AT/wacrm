@@ -285,135 +285,153 @@ export default function TransoBooking() {
   const showVehicleSelection = pickup.length > 2 && dropoff.length > 2 && pickupLat && dropoffLat;
 
   return (
-    <div className="mx-auto max-w-2xl py-8 px-4 relative pb-32">
-      {/* MAP BACKGROUND / HERO */}
-      <div className="mb-6 rounded-3xl overflow-hidden shadow-lg h-[40vh] border border-border z-0 relative">
+    <div className="relative h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden bg-slate-100 dark:bg-neutral-900 rounded-xl md:border md:border-border">
+      {/* MAP BACKGROUND */}
+      <div className="absolute inset-0 z-0">
         <Map 
           center={[pickupLat || DEFAULT_LAT, pickupLng || DEFAULT_LNG]}
           zoom={14}
           markers={mapMarkers}
         />
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2 z-10 text-xs font-bold text-slate-700">
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md flex items-center gap-2 z-10 text-xs font-bold text-slate-700">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           {onlineDrivers.length} Drivers Nearby
         </div>
       </div>
       
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm font-medium text-red-600">
+        <div className="absolute top-4 left-4 right-24 z-10 rounded-lg bg-red-500 p-3 text-sm font-bold text-white shadow-lg">
           {error}
         </div>
       )}
 
-      {/* SEARCH CARD */}
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-xl mb-6 relative z-10 -mt-12 bg-white/95 backdrop-blur-xl dark:bg-neutral-900/95">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">Book a Ride</h1>
-        
-        <div className="relative space-y-4">
-          <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border z-0" />
+      {/* BOTTOM SHEET (MOBILE REPLICA) */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-lg bg-card rounded-t-[2.5rem] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] border-t border-border overflow-hidden flex flex-col max-h-[85vh]">
+        <div className="flex-1 overflow-y-auto p-6 pb-8">
           
-          <LocationSearch 
-            placeholder="Pickup Location"
-            value={pickup}
-            iconBorderColor="border-emerald-500"
-            userLat={pickupLat || DEFAULT_LAT}
-            userLng={pickupLng || DEFAULT_LNG}
-            onChange={(val, lat, lng) => {
-              setPickup(val);
-              if (lat && lng) {
-                setPickupLat(lat);
-                setPickupLng(lng);
-              }
-            }}
-          />
-          
-          <LocationSearch 
-            placeholder="Where to?"
-            value={dropoff}
-            iconBorderColor="border-orange-500"
-            userLat={pickupLat || DEFAULT_LAT}
-            userLng={pickupLng || DEFAULT_LNG}
-            onChange={(val, lat, lng) => {
-              setDropoff(val);
-              if (lat && lng) {
-                setDropoffLat(lat);
-                setDropoffLng(lng);
-              }
-            }}
-          />
-        </div>
-        
-        <button 
-          onClick={handleGetLocation} 
-          disabled={gettingLocation}
-          className="mt-6 flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors w-full justify-center bg-emerald-50 py-2.5 rounded-xl"
-        >
-          {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
-          Use Current Location
-        </button>
-      </div>
+          <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mb-6" />
 
-      {/* VEHICLE SELECTION BOTTOM SHEET (Simulated) */}
-      {showVehicleSelection && (
-        <div className="animate-in slide-in-from-bottom-10 fade-in duration-300">
-          <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-xl font-bold">Available Rides</h2>
-            <div className="text-sm font-medium text-muted-foreground bg-slate-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
-              {distanceVal.toFixed(1)} km
+          {/* SEARCH MODE */}
+          {!showVehicleSelection && (
+            <div className="animate-in fade-in duration-300">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">Book a Ride</h1>
+              
+              <div className="relative space-y-4">
+                <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border z-0" />
+                
+                <LocationSearch 
+                  placeholder="Pickup Location"
+                  value={pickup}
+                  iconBorderColor="border-emerald-500"
+                  userLat={pickupLat || DEFAULT_LAT}
+                  userLng={pickupLng || DEFAULT_LNG}
+                  onChange={(val, lat, lng) => {
+                    setPickup(val);
+                    if (lat && lng) {
+                      setPickupLat(lat);
+                      setPickupLng(lng);
+                    }
+                  }}
+                />
+                
+                <LocationSearch 
+                  placeholder="Where to?"
+                  value={dropoff}
+                  iconBorderColor="border-orange-500"
+                  userLat={pickupLat || DEFAULT_LAT}
+                  userLng={pickupLng || DEFAULT_LNG}
+                  onChange={(val, lat, lng) => {
+                    setDropoff(val);
+                    if (lat && lng) {
+                      setDropoffLat(lat);
+                      setDropoffLng(lng);
+                    }
+                  }}
+                />
+              </div>
+              
+              <button 
+                onClick={handleGetLocation} 
+                disabled={gettingLocation}
+                className="mt-6 flex items-center gap-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors w-full justify-center bg-emerald-50 py-3 rounded-2xl"
+              >
+                {gettingLocation ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}
+                Use Current Location
+              </button>
             </div>
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2">
-            <button 
-              onClick={() => handleBookRide("bike")} 
-              disabled={loading}
-              className="group flex flex-col justify-between rounded-3xl border-2 border-transparent bg-slate-50 dark:bg-neutral-800/50 p-5 transition-all hover:border-emerald-500 hover:bg-emerald-50/50 focus:outline-none disabled:opacity-50"
-            >
-              <div className="flex items-start justify-between w-full mb-6">
-                <div className="rounded-2xl bg-white dark:bg-neutral-800 p-3 shadow-sm group-hover:scale-110 transition-transform">
-                  <Bike className="h-8 w-8 text-emerald-600" />
-                </div>
-                <div className="text-right">
-                  <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 12))}</h3>
-                  <p className="text-xs font-semibold text-muted-foreground line-through">₹{Math.max(65, Math.round(distanceVal * 16))}</p>
-                </div>
-              </div>
-              <div className="text-left w-full">
-                <h3 className="font-bold text-lg text-foreground">TransO Bike</h3>
-                <p className="text-sm font-medium text-emerald-600">Fastest • ~{(distanceVal * 3).toFixed(0)} mins</p>
-              </div>
-            </button>
+          )}
 
-            <button 
-              onClick={() => handleBookRide("car")} 
-              disabled={loading}
-              className="group flex flex-col justify-between rounded-3xl border-2 border-transparent bg-slate-50 dark:bg-neutral-800/50 p-5 transition-all hover:border-emerald-500 hover:bg-emerald-50/50 focus:outline-none disabled:opacity-50"
-            >
-              <div className="flex items-start justify-between w-full mb-6">
-                <div className="rounded-2xl bg-white dark:bg-neutral-800 p-3 shadow-sm group-hover:scale-110 transition-transform">
-                  <Car className="h-8 w-8 text-emerald-600" />
-                </div>
-                <div className="text-right">
-                  <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 20))}</h3>
+          {/* VEHICLE SELECTION MODE */}
+          {showVehicleSelection && (
+            <div className="animate-in slide-in-from-bottom-8 fade-in duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-foreground">Choose a Ride</h2>
+                <div className="text-sm font-bold text-muted-foreground bg-slate-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
+                  {distanceVal.toFixed(1)} km
                 </div>
               </div>
-              <div className="text-left w-full">
-                <h3 className="font-bold text-lg text-foreground">TransO Cab</h3>
-                <p className="text-sm font-medium text-emerald-600">Comfort • ~{(distanceVal * 4).toFixed(0)} mins</p>
+              
+              <div className="space-y-4">
+                <button 
+                  onClick={() => handleBookRide("bike")} 
+                  disabled={loading}
+                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full bg-emerald-100 p-3 group-hover:bg-emerald-500 transition-colors">
+                      <Bike className="h-7 w-7 text-emerald-600 group-hover:text-white" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-bold text-lg text-foreground">TransO Bike</h3>
+                      <p className="text-sm font-medium text-emerald-600">~{(distanceVal * 3).toFixed(0)} mins</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 12))}</h3>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => handleBookRide("car")} 
+                  disabled={loading}
+                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-full bg-emerald-100 p-3 group-hover:bg-emerald-500 transition-colors">
+                      <Car className="h-7 w-7 text-emerald-600 group-hover:text-white" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-bold text-lg text-foreground">TransO Cab</h3>
+                      <p className="text-sm font-medium text-emerald-600">~{(distanceVal * 4).toFixed(0)} mins</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 20))}</h3>
+                  </div>
+                </button>
               </div>
-            </button>
-          </div>
-          
-          {loading && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-              <div className="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center">
-                <Loader2 className="h-10 w-10 animate-spin text-emerald-500 mb-4" />
-                <p className="font-bold text-lg">Finding your captain...</p>
-              </div>
+              
+              <button 
+                onClick={() => {
+                  setDropoff("");
+                }}
+                className="mt-6 w-full text-center text-sm font-bold text-muted-foreground hover:text-foreground p-2"
+              >
+                Back to Search
+              </button>
+              
+              {loading && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-t-[2.5rem]">
+                  <div className="bg-card p-6 rounded-3xl shadow-xl flex flex-col items-center border border-border">
+                    <Loader2 className="h-10 w-10 animate-spin text-emerald-500 mb-4" />
+                    <p className="font-bold text-lg">Booking ride...</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

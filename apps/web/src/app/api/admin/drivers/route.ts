@@ -52,3 +52,28 @@ export async function GET() {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const { driver_id, is_verified } = await req.json()
+    if (!driver_id || is_verified === undefined) {
+      return NextResponse.json({ error: 'Driver ID and is_verified required' }, { status: 400 })
+    }
+
+    const supabase = supabaseAdmin()
+    
+    const { error } = await supabase
+      .from('drivers')
+      .update({ is_verified })
+      .eq('id', driver_id)
+
+    if (error) {
+      throw error
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Verify driver error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

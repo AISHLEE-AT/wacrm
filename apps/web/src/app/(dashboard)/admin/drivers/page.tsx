@@ -2,34 +2,31 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Car, MapPin, Navigation, Signal } from "lucide-react";
+import { Check, X, Car, DollarSign, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface Driver {
   id: string;
   user_id: string;
-  account_id: string;
   status: string;
+  is_verified: boolean;
+  vehicle_type: string;
+  vehicle_registration: string;
+  wallet_balance: number;
+  pending_commission: number;
   created_at: string;
-  current_lat?: number;
-  current_lng?: number;
-  pending_commission?: number;
-  vehicle_type?: string;
   profile?: {
     full_name: string | null;
     email: string | null;
   };
-  vehicle?: {
-    name: string;
-    type: string;
-    base_fare: number;
-  };
 }
 
-export default function DriversPage() {
+export default function DriversManagementPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchDrivers = async () => {
     setLoading(true);
@@ -50,19 +47,70 @@ export default function DriversPage() {
     fetchDrivers();
   }, []);
 
+  const handleToggleVerification = async (driver: Driver) => {
+    setProcessingId(driver.id + "-verify");
+    try {
+      const res = await fetch("/api/admin/drivers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          driver_id: driver.id,
+          is_verified: !driver.is_verified,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchDrivers();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update verification status");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleClearCommission = async (driver: Driver) => {
+    if (!confirm("Are you sure you want to clear the pending commission for this driver? This means they have paid their dues.")) return;
+    
+    setProcessingId(driver.id + "-comm");
+    try {
+      const res = await fetch("/api/admin/drivers/clear-commission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          driver_id: driver.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchDrivers();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to clear commission");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading drivers...</div>;
   }
 
   return (
-    <div className="flex h-full flex-col p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="flex h-full flex-col p-8 space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
           <Car className="w-8 h-8 text-primary" />
-          Active Drivers
+          Driver Management
         </h1>
         <p className="text-muted-foreground">
-          View all registered drivers on the DrivO platform and their current status.
+          Manage all registered drivers, verifications, and commissions.
         </p>
       </div>
 
@@ -70,74 +118,82 @@ export default function DriversPage() {
         <Card className="border-dashed bg-muted/20">
           <CardContent className="flex flex-col items-center justify-center h-48 text-muted-foreground">
             <Car className="w-12 h-12 mb-4 opacity-20" />
-            <p>No active drivers found.</p>
+            <p>No drivers found on the platform.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           {drivers.map((driver) => (
             <Card key={driver.id} className="overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold truncate">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 gap-6">
+                
+                {/* Driver Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-bold truncate">
                       {driver.profile?.full_name || "Unknown Driver"}
                     </h3>
-                    <p className="text-sm text-muted-foreground">{driver.profile?.email || "N/A"}</p>
+                    <Badge variant={driver.is_verified ? "default" : "secondary"} className={driver.is_verified ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
+                      {driver.is_verified ? "Verified" : "Unverified"}
+                    </Badge>
+                    <Badge variant="outline" className={driver.status === 'online' ? "text-emerald-500 border-emerald-500" : "text-muted-foreground"}>
+                      {driver.status?.toUpperCase() || 'OFFLINE'}
+                    </Badge>
                   </div>
-                  <Badge variant={
-                    driver.status === 'online' ? "default" :
-                    driver.status === 'busy' ? "destructive" : "secondary"
-                  } className={driver.status === 'online' ? "bg-emerald-600" : ""}>
-                    {driver.status}
-                  </Badge>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground mt-3">
+                    <div><span className="font-medium text-foreground">Email:</span> {driver.profile?.email || "N/A"}</div>
+                    <div><span className="font-medium text-foreground">Vehicle:</span> <span className="capitalize">{driver.vehicle_type || 'Car'}</span></div>
+                    <div><span className="font-medium text-foreground">Reg No:</span> {driver.vehicle_registration?.toUpperCase() || 'N/A'}</div>
+                    <div><span className="font-medium text-foreground">Joined:</span> {format(new Date(driver.created_at), "MMM d, yyyy")}</div>
+                  </div>
                 </div>
-                
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div className="flex items-center justify-between border-b pb-2 mb-2">
-                    <span className="font-semibold text-foreground">Pending Commission</span>
-                    <span className={`font-bold ${driver.pending_commission && driver.pending_commission > 0 ? "text-red-600" : "text-emerald-600"}`}>
+
+                {/* Financials */}
+                <div className="bg-slate-50 dark:bg-neutral-900 p-4 rounded-xl flex gap-6 shrink-0 border border-border">
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider flex items-center gap-1">
+                      <Wallet className="w-3 h-3" /> Wallet
+                    </span>
+                    <span className="text-xl font-bold text-foreground">₹{driver.wallet_balance || 0}</span>
+                  </div>
+                  <div className="w-px bg-border"></div>
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" /> Owed
+                    </span>
+                    <span className={`text-xl font-bold ${driver.pending_commission > 0 ? "text-red-500" : "text-emerald-500"}`}>
                       ₹{driver.pending_commission || 0}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4" />
-                    <span>{driver.vehicle?.name || driver.vehicle_type || "No vehicle assigned"} <span className="uppercase text-xs opacity-70">({driver.vehicle?.type || driver.vehicle_type || "N/A"})</span></span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>
-                      {driver.current_lat && driver.current_lng 
-                        ? `${driver.current_lat.toFixed(4)}, ${driver.current_lng.toFixed(4)}`
-                        : "Location unknown"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Signal className="w-4 h-4" />
-                    <span>Joined {format(new Date(driver.created_at), "MMM d, yyyy")}</span>
-                  </div>
                 </div>
-                
-                {driver.pending_commission && driver.pending_commission > 0 ? (
-                  <button 
-                    onClick={async () => {
-                      if (!confirm("Are you sure you want to mark this driver's pending commission as paid?")) return;
-                      const res = await fetch("/api/admin/drivers/clear-commission", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ driver_id: driver.id })
-                      });
-                      if (res.ok) {
-                        fetchDrivers();
-                      } else {
-                        alert("Failed to clear commission.");
-                      }
-                    }}
-                    className="mt-4 w-full bg-emerald-600 text-white rounded-lg py-2 font-semibold hover:bg-emerald-700 transition-colors text-sm"
+
+                {/* Actions */}
+                <div className="flex flex-row md:flex-col items-center gap-2 shrink-0 w-full md:w-auto">
+                  <Button
+                    variant={driver.is_verified ? "outline" : "default"}
+                    className={!driver.is_verified ? "bg-emerald-600 hover:bg-emerald-700 text-white w-full" : "w-full"}
+                    size="sm"
+                    disabled={processingId === driver.id + "-verify"}
+                    onClick={() => handleToggleVerification(driver)}
                   >
-                    Mark Commission as Paid
-                  </button>
-                ) : null}
+                    {driver.is_verified ? (
+                      <><X className="w-4 h-4 mr-1" /> Revoke</>
+                    ) : (
+                      <><Check className="w-4 h-4 mr-1" /> Verify</>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full bg-orange-100 text-orange-700 hover:bg-orange-200"
+                    disabled={processingId === driver.id + "-comm" || (driver.pending_commission || 0) <= 0}
+                    onClick={() => handleClearCommission(driver)}
+                  >
+                    <DollarSign className="w-4 h-4 mr-1" /> Clear Dues
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}

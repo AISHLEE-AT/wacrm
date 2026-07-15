@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock, MapPin } from "lucide-react";
+import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock, MapPin, Car } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const Map = dynamic(() => import("@/components/Map"), { 
@@ -238,55 +238,64 @@ export default function DrivoDashboard() {
     }
 
     return (
-      <div className="mx-auto max-w-lg py-8 px-4">
-        <div className="mb-8 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 p-8 shadow-sm border border-orange-200">
-          <h1 className="text-3xl font-bold tracking-tight text-orange-900">Become a DrivO</h1>
-          <p className="text-orange-700 mt-2">Register your vehicle and start earning today.</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4 text-sm font-medium text-red-600">
-            {error}
+      <div className="min-h-[calc(100vh-4rem)] w-full bg-slate-50 dark:bg-neutral-900 overflow-hidden relative">
+        {/* SOLID ORANGE HEADER (MOBILE REPLICA) */}
+        <div className="bg-orange-500 w-full h-64 absolute top-0 left-0 z-0 rounded-b-[3rem] shadow-md" />
+        
+        <div className="relative z-10 mx-auto max-w-md px-4 pt-16">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-black tracking-tight text-white mb-2">Become a DrivO</h1>
+            <p className="text-orange-100 font-medium text-lg">Partner with us & earn today.</p>
           </div>
-        )}
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-3">Vehicle Type</label>
-            <div className="flex gap-4">
-              {["bike", "car", "cargo"].map(t => (
-                <button 
-                  key={t} 
-                  onClick={() => setVehicleType(t)}
-                  className={`flex-1 rounded-xl py-3 text-sm font-bold uppercase transition-colors ${
-                    vehicleType === t 
-                      ? "bg-orange-600 text-white shadow-md" 
-                      : "bg-muted text-muted-foreground hover:bg-orange-50"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+          <div className="rounded-[2.5rem] bg-card p-8 shadow-xl border border-border">
+            {error && (
+              <div className="mb-6 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-600 flex items-center gap-2">
+                <Info className="h-4 w-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-muted-foreground mb-3 uppercase tracking-wider">Vehicle Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {["bike", "car"].map(t => (
+                    <button 
+                      key={t} 
+                      onClick={() => setVehicleType(t)}
+                      className={`rounded-2xl py-4 text-sm font-bold uppercase transition-all flex flex-col items-center gap-2 border-2 ${
+                        vehicleType === t 
+                          ? "border-orange-500 bg-orange-50 text-orange-600" 
+                          : "border-border bg-background text-muted-foreground hover:border-orange-200"
+                      }`}
+                    >
+                      {t === "bike" ? <Navigation2 className="h-6 w-6" /> : <Car className="h-6 w-6" />}
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="relative pt-2">
+                <label className="absolute -top-1 left-4 bg-card px-1 text-xs font-bold text-orange-500 z-10">Registration Number</label>
+                <input 
+                  className="w-full rounded-2xl border-2 border-orange-200 bg-background px-4 py-4 pt-5 text-foreground font-bold focus:outline-none focus:border-orange-500 transition-colors uppercase placeholder:normal-case"
+                  placeholder="e.g. TN-01-AB-1234"
+                  value={regNo}
+                  onChange={(e) => setRegNo(e.target.value)}
+                />
+              </div>
+              
+              <button 
+                onClick={submitApplication} 
+                disabled={submitting}
+                className="mt-4 w-full flex items-center justify-center rounded-2xl bg-orange-500 py-4 font-bold text-lg text-white transition-transform hover:bg-orange-600 active:scale-95 disabled:opacity-70 shadow-lg shadow-orange-500/30"
+              >
+                {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Start Driving"}
+              </button>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-3">Registration Number</label>
-            <input 
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500"
-              placeholder="e.g. TN-01-AB-1234"
-              value={regNo}
-              onChange={(e) => setRegNo(e.target.value)}
-            />
-          </div>
-          
-          <button 
-            onClick={submitApplication} 
-            disabled={submitting}
-            className="w-full flex items-center justify-center rounded-xl bg-orange-600 py-4 font-bold text-white transition-colors hover:bg-orange-700 disabled:opacity-70"
-          >
-            {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Submit Application"}
-          </button>
         </div>
       </div>
     );
