@@ -473,29 +473,7 @@ const styles = StyleSheet.create({
     color: '#059669',
     letterSpacing: 4,
   },
-  button: {
-    backgroundColor: '#00A884',
-    paddingVertical: 14,
-    borderRadius: 24,
-    width: '100%',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
+
   selectionContainer: {
     width: '100%',
     marginBottom: 30,

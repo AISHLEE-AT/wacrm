@@ -16,8 +16,8 @@ vi.mock('../google-maps', () => ({
 }))
 
 vi.mock('./meta-api', () => ({
-  sendWhatsAppMessage: vi.fn(),
-  sendTextMessage: vi.fn()
+  sendTextMessage: vi.fn(),
+  sendInteractiveButtons: vi.fn()
 }))
 
 vi.mock('./hardcoded-config', () => ({
@@ -86,7 +86,7 @@ describe.skip('rides-handler', () => {
     )
 
     expect(result).toBe(true)
-    expect(metaApi.sendWhatsAppMessage).toHaveBeenCalledWith(
+    expect(metaApi.sendTextMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
           type: 'text',
@@ -104,7 +104,7 @@ describe.skip('rides-handler', () => {
     )
 
     expect(result).toBe(true)
-    expect(metaApi.sendWhatsAppMessage).toHaveBeenCalledWith(
+    expect(metaApi.sendTextMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
           text: { body: expect.stringContaining('tomorrow 9am') }
@@ -136,7 +136,7 @@ describe.skip('rides-handler', () => {
         status: 'pending'
       })
     )
-    expect(metaApi.sendWhatsAppMessage).toHaveBeenCalledWith(
+    expect(metaApi.sendTextMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
           type: 'text',
@@ -177,7 +177,7 @@ describe.skip('rides-handler', () => {
         estimated_price: 125
       })
     )
-    expect(metaApi.sendWhatsAppMessage).toHaveBeenCalledWith(
+    expect(metaApi.sendTextMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
           type: 'interactive',
@@ -202,7 +202,7 @@ describe.skip('rides-handler', () => {
 
     expect(result).toBe(true)
     expect(mockUpdate).toHaveBeenCalledWith({ status: 'pending' }) // Ready for dispatch
-    expect(metaApi.sendWhatsAppMessage).toHaveBeenCalledWith(
+    expect(metaApi.sendTextMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
           type: 'interactive',
@@ -229,7 +229,7 @@ describe.skip('rides-handler', () => {
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ is_flagged: true, flag_reason: 'Driver demanding extra fare' })
     )
-    expect(metaApi.sendWhatsAppMessage).toHaveBeenCalledWith(
+    expect(metaApi.sendTextMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         message: expect.objectContaining({
           text: { body: expect.stringContaining('Thank you for reporting') }

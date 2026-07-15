@@ -35,7 +35,7 @@ export default function WalletScreen() {
       const { data: tData } = await supabase
         .from('wallet_transactions')
         .select('*')
-        .eq('wallet_id', wData.id)
+        .eq('wallet_id', (wData as any).id)
         .order('created_at', { ascending: false })
         .limit(20);
         
