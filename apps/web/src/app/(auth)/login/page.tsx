@@ -4,9 +4,10 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ArrowRight, Loader2 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
   return (
@@ -124,133 +125,182 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      {/* Left Branding Side - Hidden on Mobile */}
-      <div className="hidden w-1/2 lg:flex flex-col justify-between p-12 bg-emerald-950/10 relative overflow-hidden border-r border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 pointer-events-none" />
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
-        
-        <div className="relative z-10">
-          <img src="/logo-title.png" alt="TradO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
-        </div>
-        
-        <div className="relative z-10 max-w-md">
-          <h2 className="text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
-            The next generation of marketplace operations.
-          </h2>
-          <p className="text-muted-foreground text-lg">
-            Connect seamlessly with buyers and sellers on the ultimate marketplace platform powered by real-time intelligence.
-          </p>
-        </div>
-        
-        <div className="relative z-10 text-sm text-muted-foreground/60">
-          © {new Date().getFullYear()} TradO Inc. All rights reserved.
-        </div>
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#000000]">
+      {/* Dynamic Animated Mesh Gradient Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.15, 0.3, 0.15],
+            x: [0, 80, 0],
+            y: [0, -40, 0],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[20%] -left-[10%] h-[70vh] w-[70vw] rounded-full bg-emerald-600 blur-[120px]"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.4, 1],
+            opacity: [0.1, 0.25, 0.1],
+            x: [0, -80, 0],
+            y: [0, 80, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          className="absolute -bottom-[20%] -right-[10%] h-[60vh] w-[60vw] rounded-full bg-cyan-600 blur-[120px]"
+        />
       </div>
 
-      {/* Right Form Side */}
-      <div className="flex w-full lg:w-1/2 items-center justify-center p-8 relative">
-        <div className="w-full max-w-[420px] flex flex-col">
-          <div className="mb-10 lg:hidden flex justify-center w-full">
-            <img src="/logo-title.png" alt="TradO Logo" className="h-12 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" />
-          </div>
+      {/* Glassmorphic Login Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-[420px] px-6 sm:px-10 py-12"
+      >
+        <div className="absolute inset-0 rounded-[32px] bg-white/[0.02] backdrop-blur-3xl border border-white/[0.08] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] pointer-events-none" />
+        
+        <div className="relative flex flex-col items-center">
+          <motion.img 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+            src="/logo-title.png" 
+            alt="TradO Logo" 
+            className="h-9 object-contain mb-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
+          />
           
-          <h1 className="text-3xl font-bold text-foreground mb-3 text-center lg:text-left">
-            {inviteToken ? "Accept your invitation" : "Welcome back"}
-          </h1>
-          <p className="text-muted-foreground mb-10 text-sm text-center lg:text-left">
-            Sign in to your account to continue
-          </p>
+          <div className="text-center mb-10 w-full">
+            <h1 className="text-[28px] font-semibold text-white tracking-tight mb-2">
+              {inviteToken ? "Accept Invitation" : "Welcome to TradO"}
+            </h1>
+            <p className="text-white/50 text-sm">
+              Enter your phone number to continue
+            </p>
+          </div>
 
-          {error && (
-            <div className="w-full mb-6 rounded-xl border border-red-900/50 bg-red-900/10 p-4 text-sm text-red-400">
-              {error}
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -10 }}
+                className="w-full mb-6 overflow-hidden"
+              >
+                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 text-center backdrop-blur-md">
+                  {error}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div id="recaptcha-container"></div>
 
-          {/* WhatsApp OTP Form */}
-          <div className="w-full mb-6">
-            {!otpRequested ? (
-              <form onSubmit={handleRequestOTP} className="flex flex-col gap-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-foreground">Login with Phone (OTP)</label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-4 text-muted-foreground font-medium">+91</span>
+          <div className="w-full">
+            <AnimatePresence mode="wait">
+              {!otpRequested ? (
+                <motion.form 
+                  key="phone-form"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  onSubmit={handleRequestOTP} 
+                  className="flex flex-col gap-5 w-full"
+                >
+                  <div className="relative flex items-center group">
+                    <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
                     <input
                       type="tel"
-                      placeholder="9876543210"
+                      placeholder="98765 43210"
                       value={phone}
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                         setPhone(val);
                       }}
-                      className="w-full h-12 pl-12 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                      className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
                     />
                   </div>
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-all flex items-center justify-center gap-2"
+                  <Button
+                    type="submit"
+                    disabled={loading || phone.length !== 10}
+                    className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:hover:bg-white transition-all text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] group flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-black/50" />
+                    ) : (
+                      <>
+                        Continue
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 opacity-70" />
+                      </>
+                    )}
+                  </Button>
+                </motion.form>
+              ) : (
+                <motion.form 
+                  key="otp-form"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                  onSubmit={handleVerifyOTP} 
+                  className="flex flex-col gap-5 w-full"
                 >
-                  {loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                  ) : (
-                    <MessageCircle className="h-5 w-5" />
-                  )}
-                  {loading ? "Sending OTP..." : "Get OTP via SMS"}
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOTP} className="flex flex-col gap-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-foreground">Enter Code</label>
+                  <div className="flex flex-col gap-2 text-center mb-2">
+                    <p className="text-sm text-white/60">
+                      We sent a code to <span className="text-white font-medium">+91 {phone}</span>
+                    </p>
+                  </div>
+                  
                   <input
                     type="text"
-                    placeholder="ABC123"
+                    placeholder="------"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
-                    className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-center tracking-[0.5em] text-lg font-mono uppercase"
+                    className="w-full h-16 px-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-center tracking-[1em] text-2xl font-mono backdrop-blur-sm"
                   />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                  ) : null}
-                  {loading ? "Verifying..." : "Verify & Continue"}
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtpRequested(false);
-                    setOtp("");
-                    setConfirmationResult(null);
-                  }}
-                  className="text-sm text-emerald-500 hover:text-emerald-400 mt-1 font-medium transition-colors"
-                >
-                  Change Phone Number
-                </button>
-              </form>
-            )}
+                  
+                  <Button
+                    type="submit"
+                    disabled={loading || otp.length !== 6}
+                    className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:hover:bg-white transition-all text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-black/50" />
+                    ) : (
+                      "Verify Code"
+                    )}
+                  </Button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpRequested(false);
+                      setOtp("");
+                      setConfirmationResult(null);
+                    }}
+                    className="text-sm text-white/50 hover:text-white mt-2 font-medium transition-colors p-2"
+                  >
+                    Use a different number
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
           </div>
           
-          <p className="mt-8 text-center lg:text-left text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <a href="/signup" className="text-primary hover:text-primary/80 font-medium transition-colors">
-              Sign up
-            </a>
-          </p>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="mt-12 text-center w-full"
+          >
+            <p className="text-xs text-white/30">
+              By continuing, you agree to our <br/>
+              <a href="/terms" className="text-white/50 hover:text-white transition-colors underline underline-offset-2">Terms of Service</a> and <a href="/privacy" className="text-white/50 hover:text-white transition-colors underline underline-offset-2">Privacy Policy</a>
+            </p>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
-
