@@ -245,7 +245,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                         isActive
                           ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                          : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                          : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
                       )}
                     >
                       <item.icon className="h-4 w-4" />
@@ -282,7 +282,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                           isActive
                             ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
                         )}
                       >
                         <item.icon className="h-4 w-4" />
@@ -325,7 +325,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                           isActive
                             ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
                         )}
                       >
                         <item.icon className="h-4 w-4" />
@@ -351,7 +351,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                       isActive
                         ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
                     )}
                   >
                     <item.icon className="h-4 w-4" />
