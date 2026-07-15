@@ -223,15 +223,61 @@ export default function TransoBooking() {
 
   if (activeRide) {
     return (
-      <div className="mx-auto max-w-xl py-10 px-4">
-        <div className="rounded-2xl border border-orange-100 bg-orange-50 p-6 shadow-sm mb-6 flex items-center gap-4">
-          <Clock className="h-6 w-6 text-orange-600" />
-          <h2 className="text-xl font-bold text-orange-800">
-            {activeRide.status === "pending" ? "Looking for nearby drivers..." : "Driver is on the way!"}
-          </h2>
+      <div className="flex flex-col md:flex-row h-[calc(100vh-2rem)] w-full overflow-hidden bg-background rounded-xl border border-border shadow-sm">
+        {/* LEFT PANEL - RIDE STATUS */}
+        <div className="w-full md:w-[450px] flex flex-col bg-card/95 backdrop-blur-xl border-r border-border z-10 shadow-[4px_0_24px_rgba(0,0,0,0.05)]">
+          <div className="p-6 md:p-8 overflow-y-auto">
+            <div className="rounded-2xl border border-orange-200/50 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/10 p-6 shadow-sm mb-8 flex items-center gap-4">
+              <Clock className="h-7 w-7 text-orange-600 dark:text-orange-400" />
+              <h2 className="text-xl font-bold text-orange-800 dark:text-orange-300">
+                {activeRide.status === "pending" ? "Looking for nearby drivers..." : "Driver is on the way!"}
+              </h2>
+            </div>
+            
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm relative overflow-hidden mb-6">
+              <div className="absolute top-0 right-0 p-4">
+                <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-4 py-1.5 text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                  ₹{activeRide.estimated_price}
+                </span>
+              </div>
+              
+              <h3 className="text-lg font-bold mb-6 text-foreground">Ride Details</h3>
+              
+              <div className="space-y-6">
+                <div className="flex gap-4">
+                  <div className="mt-1 bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-full">
+                    <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Pickup</p>
+                    <p className="text-foreground font-medium">{activeRide.pickup_address}</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="mt-1 bg-orange-100 dark:bg-orange-900/30 p-2 rounded-full">
+                    <Navigation className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Drop-off</p>
+                    <p className="text-foreground font-medium">{activeRide.dropoff_address}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleCancelRide}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 py-4 font-bold text-red-600 dark:text-red-400 transition-all hover:bg-red-100 dark:hover:bg-red-900/50"
+            >
+              <XCircle className="h-5 w-5" />
+              Cancel Ride
+            </button>
+          </div>
         </div>
         
-        <div className="mb-6 rounded-3xl overflow-hidden shadow-md h-64 border border-border z-0 relative">
+        {/* RIGHT PANEL - MAP */}
+        <div className="flex-1 relative z-0 bg-slate-100 dark:bg-neutral-800">
           <Map 
             center={[activeRide.pickup_lat || DEFAULT_LAT, activeRide.pickup_lng || DEFAULT_LNG]}
             zoom={14}
@@ -241,42 +287,6 @@ export default function TransoBooking() {
             ]}
           />
         </div>
-        
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4">
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-800">
-              ₹{activeRide.estimated_price}
-            </span>
-          </div>
-          
-          <h3 className="text-lg font-semibold mb-6">Ride Details</h3>
-          
-          <div className="space-y-6">
-            <div className="flex gap-4">
-              <MapPin className="h-6 w-6 text-emerald-500 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Pickup</p>
-                <p className="text-foreground font-medium">{activeRide.pickup_address}</p>
-              </div>
-            </div>
-            
-            <div className="flex gap-4">
-              <Navigation className="h-6 w-6 text-orange-500 mt-1" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Drop-off</p>
-                <p className="text-foreground font-medium">{activeRide.dropoff_address}</p>
-              </div>
-            </div>
-          </div>
-          
-          <button 
-            onClick={handleCancelRide}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 font-semibold text-red-600 transition-colors hover:bg-red-100"
-          >
-            <XCircle className="h-5 w-5" />
-            Cancel Ride
-          </button>
-        </div>
       </div>
     );
   }
@@ -285,38 +295,17 @@ export default function TransoBooking() {
   const showVehicleSelection = pickup.length > 2 && dropoff.length > 2 && pickupLat && dropoffLat;
 
   return (
-    <div className="relative h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] w-full overflow-hidden bg-slate-100 dark:bg-neutral-900 rounded-xl md:border md:border-border">
-      {/* MAP BACKGROUND */}
-      <div className="absolute inset-0 z-0">
-        <Map 
-          center={[pickupLat || DEFAULT_LAT, pickupLng || DEFAULT_LNG]}
-          zoom={14}
-          markers={mapMarkers}
-        />
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md flex items-center gap-2 z-10 text-xs font-bold text-slate-700">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          {onlineDrivers.length} Drivers Nearby
-        </div>
-      </div>
-      
-      {error && (
-        <div className="absolute top-4 left-4 right-24 z-10 rounded-lg bg-red-500 p-3 text-sm font-bold text-white shadow-lg">
-          {error}
-        </div>
-      )}
-
-      {/* BOTTOM SHEET (MOBILE REPLICA) */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 mx-auto w-full max-w-lg bg-card rounded-t-[2.5rem] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] border-t border-border overflow-hidden flex flex-col max-h-[85vh]">
-        <div className="flex-1 overflow-y-auto p-6 pb-8">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-2rem)] w-full overflow-hidden bg-background rounded-xl border border-border shadow-sm">
+      {/* LEFT PANEL - BOOKING CONTROLS */}
+      <div className="w-full md:w-[450px] flex flex-col bg-card/95 backdrop-blur-xl border-r border-border z-10 shadow-[4px_0_24px_rgba(0,0,0,0.05)]">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
           
-          <div className="mx-auto w-12 h-1.5 rounded-full bg-muted mb-6" />
-
           {/* SEARCH MODE */}
           {!showVehicleSelection && (
             <div className="animate-in fade-in duration-300">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">Book a Ride</h1>
+              <h1 className="text-3xl font-black tracking-tight text-foreground mb-8">Book a Ride</h1>
               
-              <div className="relative space-y-4">
+              <div className="relative space-y-6">
                 <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border z-0" />
                 
                 <LocationSearch 
@@ -353,7 +342,7 @@ export default function TransoBooking() {
               <button 
                 onClick={handleGetLocation} 
                 disabled={gettingLocation}
-                className="mt-6 flex items-center gap-2 text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors w-full justify-center bg-emerald-50 py-3 rounded-2xl"
+                className="mt-8 flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors w-full justify-center bg-emerald-50 dark:bg-emerald-950/30 py-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/50"
               >
                 {gettingLocation ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}
                 Use Current Location
@@ -363,50 +352,50 @@ export default function TransoBooking() {
 
           {/* VEHICLE SELECTION MODE */}
           {showVehicleSelection && (
-            <div className="animate-in slide-in-from-bottom-8 fade-in duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-foreground">Choose a Ride</h2>
-                <div className="text-sm font-bold text-muted-foreground bg-slate-100 dark:bg-neutral-800 px-3 py-1 rounded-full">
+            <div className="animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col h-full">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-black text-foreground">Choose a Ride</h2>
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-900/50">
                   {distanceVal.toFixed(1)} km
                 </div>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-4 flex-1">
                 <button 
                   onClick={() => handleBookRide("bike")} 
                   disabled={loading}
-                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
+                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all hover:border-emerald-500 hover:shadow-lg focus:outline-none disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-neutral-800/50"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="rounded-full bg-emerald-100 p-3 group-hover:bg-emerald-500 transition-colors">
-                      <Bike className="h-7 w-7 text-emerald-600 group-hover:text-white" />
+                  <div className="flex items-center gap-5">
+                    <div className="rounded-full bg-emerald-100/50 dark:bg-emerald-900/30 p-4 group-hover:bg-emerald-500 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all">
+                      <Bike className="h-8 w-8 text-emerald-600 dark:text-emerald-400 group-hover:text-white" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-lg text-foreground">TransO Bike</h3>
-                      <p className="text-sm font-medium text-emerald-600">~{(distanceVal * 3).toFixed(0)} mins</p>
+                      <h3 className="font-bold text-xl text-foreground">TransO Bike</h3>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{(distanceVal * 3).toFixed(0)} mins away</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 12))}</h3>
+                    <h3 className="font-black text-2xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 12))}</h3>
                   </div>
                 </button>
 
                 <button 
                   onClick={() => handleBookRide("car")} 
                   disabled={loading}
-                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-4 transition-all hover:border-emerald-500 hover:shadow-md focus:outline-none disabled:opacity-50"
+                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all hover:border-emerald-500 hover:shadow-lg focus:outline-none disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-neutral-800/50"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="rounded-full bg-emerald-100 p-3 group-hover:bg-emerald-500 transition-colors">
-                      <Car className="h-7 w-7 text-emerald-600 group-hover:text-white" />
+                  <div className="flex items-center gap-5">
+                    <div className="rounded-full bg-emerald-100/50 dark:bg-emerald-900/30 p-4 group-hover:bg-emerald-500 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all">
+                      <Car className="h-8 w-8 text-emerald-600 dark:text-emerald-400 group-hover:text-white" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-lg text-foreground">TransO Cab</h3>
-                      <p className="text-sm font-medium text-emerald-600">~{(distanceVal * 4).toFixed(0)} mins</p>
+                      <h3 className="font-bold text-xl text-foreground">TransO Cab</h3>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{(distanceVal * 4).toFixed(0)} mins away</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <h3 className="font-bold text-xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 20))}</h3>
+                    <h3 className="font-black text-2xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 20))}</h3>
                   </div>
                 </button>
               </div>
@@ -415,22 +404,42 @@ export default function TransoBooking() {
                 onClick={() => {
                   setDropoff("");
                 }}
-                className="mt-6 w-full text-center text-sm font-bold text-muted-foreground hover:text-foreground p-2"
+                className="mt-8 w-full text-center text-sm font-bold text-muted-foreground hover:text-foreground py-3 border border-border rounded-xl transition-colors hover:bg-slate-50 dark:hover:bg-neutral-800"
               >
                 Back to Search
               </button>
               
               {loading && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-sm rounded-t-[2.5rem]">
-                  <div className="bg-card p-6 rounded-3xl shadow-xl flex flex-col items-center border border-border">
-                    <Loader2 className="h-10 w-10 animate-spin text-emerald-500 mb-4" />
-                    <p className="font-bold text-lg">Booking ride...</p>
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                  <div className="bg-card p-8 rounded-3xl shadow-2xl flex flex-col items-center border border-border animate-in zoom-in-95 duration-200">
+                    <Loader2 className="h-12 w-12 animate-spin text-emerald-500 mb-6" />
+                    <p className="font-black text-xl">Booking your ride...</p>
+                    <p className="text-muted-foreground mt-2 text-sm font-medium">Finding the best driver nearby</p>
                   </div>
                 </div>
               )}
             </div>
           )}
         </div>
+      </div>
+      
+      {/* RIGHT PANEL - MAP */}
+      <div className="flex-1 relative z-0 bg-slate-100 dark:bg-neutral-800">
+        <Map 
+          center={[pickupLat || DEFAULT_LAT, pickupLng || DEFAULT_LNG]}
+          zoom={14}
+          markers={mapMarkers}
+        />
+        <div className="absolute top-6 right-6 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-border flex items-center gap-3 z-10 text-sm font-bold text-foreground">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+          {onlineDrivers.length} Drivers Nearby
+        </div>
+        
+        {error && (
+          <div className="absolute top-6 left-6 max-w-sm z-10 rounded-xl bg-red-500/95 backdrop-blur-md p-4 text-sm font-bold text-white shadow-xl border border-red-600">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
