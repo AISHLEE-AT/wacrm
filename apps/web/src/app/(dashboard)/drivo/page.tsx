@@ -172,6 +172,10 @@ export default function DrivoDashboard() {
       setError("Enter vehicle registration number.");
       return;
     }
+    if (!user?.id) {
+      window.location.href = "/login";
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -290,13 +294,22 @@ export default function DrivoDashboard() {
                 />
               </div>
               
-              <button 
-                onClick={submitApplication} 
-                disabled={submitting}
-                className="mt-4 w-full flex items-center justify-center rounded-2xl bg-orange-500 py-5 font-bold text-lg text-white transition-all hover:bg-orange-600 hover:shadow-[0_8px_20px_rgba(249,115,22,0.4)] active:scale-95 disabled:opacity-70 disabled:hover:shadow-none"
-              >
-                {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Start Driving Today"}
-              </button>
+              {user?.id ? (
+                <button 
+                  onClick={submitApplication} 
+                  disabled={submitting}
+                  className="mt-4 w-full flex items-center justify-center rounded-2xl bg-orange-500 py-5 font-bold text-lg text-white transition-all hover:bg-orange-600 hover:shadow-[0_8px_20px_rgba(249,115,22,0.4)] active:scale-95 disabled:opacity-70 disabled:hover:shadow-none"
+                >
+                  {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : "Start Driving Today"}
+                </button>
+              ) : (
+                <button 
+                  onClick={() => window.location.href = "/login"} 
+                  className="mt-4 w-full flex items-center justify-center rounded-2xl bg-orange-500 py-5 font-bold text-lg text-white transition-all hover:bg-orange-600 shadow-lg active:scale-95"
+                >
+                  Sign in to Register
+                </button>
+              )}
             </div>
           </div>
         </div>
