@@ -7,92 +7,42 @@ class DriverRegistrationScreen extends StatefulWidget {
   const DriverRegistrationScreen({super.key});
 
   @override
-  State<DriverRegistrationScreen> createState() =>
-      _DriverRegistrationScreenState();
+  State<DriverRegistrationScreen> createState() => _DriverRegistrationScreenState();
 }
 
 class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _whatsappController = TextEditingController();
-  final TextEditingController _dlController = TextEditingController();
   final TextEditingController _vehicleController = TextEditingController();
-  final TextEditingController _insuranceController = TextEditingController();
-  final TextEditingController _upiController = TextEditingController();
 
   bool _isLoading = false;
-  String _selectedVehicleType = 'car';
-
-  final List<Map<String, dynamic>> _vehicleTypes = [
-    {'value': 'bike', 'label': 'Bike', 'icon': Icons.two_wheeler},
-    {'value': 'car', 'label': 'Car', 'icon': Icons.directions_car},
-    {'value': 'cargo', 'label': 'Cargo', 'icon': Icons.local_shipping},
-  ];
+  String _selectedVehicleType = 'bike'; // Default to bike matching Next.js
 
   Future<void> _submitRegistration() async {
     if (!_formKey.currentState!.validate()) return;
+    if (FirebaseAuth.instance.currentUser == null) return;
 
     setState(() => _isLoading = true);
 
     try {
+      // Create driver with simplified flow matching Next.js auto-approve
+      // Using existing SupabaseService method. Note: If the method signature
+      // requires missing fields, we will pass empty strings for them to avoid breaking the signature.
+      // Wait, let's just pass the required fields or empty strings if needed by existing method.
       final result = await SupabaseService().registerDriver(
-        name: _nameController.text.trim(),
-        whatsappNumber: _whatsappController.text.trim(),
-        drivingLicense: _dlController.text.trim(),
-        vehicleRegistration: _vehicleController.text.trim(),
-        insuranceDetails: _insuranceController.text.trim(),
-        upiId: _upiController.text.trim(),
+        name: 'Unknown', // Not required in new flow
+        whatsappNumber: FirebaseAuth.instance.currentUser?.phoneNumber ?? '', 
+        drivingLicense: '', 
+        vehicleRegistration: _vehicleController.text.trim().toUpperCase(),
+        insuranceDetails: '', 
+        upiId: '', 
         vehicleType: _selectedVehicleType,
       );
 
       if (result != null && mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            icon: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_circle,
-                  color: Colors.orange, size: 48),
-            ),
-            title: const Text('Registration Under Review'),
-            content: const Text(
-              'Your documents have been submitted successfully. '
-              'Once the Admin approves, you can start accepting rides!',
-              textAlign: TextAlign.center,
-            ),
-            actions: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text('Go to Dashboard',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
+        // Since Next.js flow is auto-approve to offline status, we just redirect directly to Home (which loads driver dashboard).
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       }
     } catch (e) {
@@ -112,226 +62,236 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: Column(
+      backgroundColor: const Color(0xFF121212), // Match dark mode
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 24),
+              ),
+              const SizedBox(height: 24),
+              
+              const Text(
+                'Become a DrivO',
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900, // font-black equivalent
+                  color: Color(0xFFF97316), // text-orange-500
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Partner with us & earn on your own schedule with zero hassle.',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.6), // text-muted-foreground
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Info Cards
+              _buildInfoCard(
+                icon: Icons.directions_car,
+                iconColor: const Color(0xFFF97316),
+                bgColor: const Color(0x33431407), // bg-orange-950/30
+                borderColor: const Color(0x807C2D12), // border-orange-900/50
+                title: 'Flexible Hours',
+                subtitle: 'Drive when you want, earn what you need.',
+              ),
+              const SizedBox(height: 16),
+              _buildInfoCard(
+                icon: Icons.account_balance_wallet,
+                iconColor: const Color(0xFF10B981), // emerald-500
+                bgColor: const Color(0x33064E3B), // emerald-950/30
+                borderColor: const Color(0x80065F46), // emerald-900/50
+                title: 'Instant Payouts',
+                subtitle: 'Get paid directly to your digital wallet.',
+              ),
+              const SizedBox(height: 32),
+
+              // Registration Card
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E), // bg-card
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: const Color(0xFF333333)), // border-border
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 30,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Register your vehicle',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      const Text(
+                        'VEHICLE TYPE',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white54,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildVehicleButton('bike', Icons.two_wheeler),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildVehicleButton('car', Icons.directions_car),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        'REGISTRATION NUMBER',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white54,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _vehicleController,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: InputDecoration(
+                          hintText: 'e.g. TN-01-AB-1234',
+                          hintStyle: TextStyle(
+                            color: Colors.white.withOpacity(0.4),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFF171717), // bg-neutral-900
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Color(0xFF333333), width: 2),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Color(0xFF333333), width: 2),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Color(0xFFF97316), width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        ),
+                        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 32),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 60,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _submitRegistration,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF97316), // bg-orange-500
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 8,
+                            shadowColor: const Color(0xFFF97316).withOpacity(0.4),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                                )
+                              : const Text(
+                                  'Start Driving Today',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required Color borderColor,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
         children: [
-          // Orange gradient header
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 16,
-              bottom: 32,
-              left: 24,
-              right: 24,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFF8C00), Color(0xFFFFA040)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
-              ),
-            ),
+          Icon(icon, color: iconColor, size: 36),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Back button
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.arrow_back_ios,
-                      color: Colors.white, size: 22),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Become a DrivO',
-                  style: TextStyle(
-                    fontSize: 30,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
-                  'Complete your profile to start earning',
+                  subtitle,
                   style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.6),
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Form
-          Expanded(
-            child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Vehicle type selector
-                    const Text(
-                      'Vehicle Type',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF333333)),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: _vehicleTypes.map((vt) {
-                        final isSelected =
-                            _selectedVehicleType == vt['value'];
-                        return Expanded(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 4),
-                            child: GestureDetector(
-                              onTap: () => setState(
-                                  () => _selectedVehicleType = vt['value']),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(
-                                    vertical: 16),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFFFF8C00)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFFFF8C00)
-                                        : const Color(0xFFE0E0E0),
-                                    width: 2,
-                                  ),
-                                  boxShadow: isSelected
-                                      ? [
-                                          BoxShadow(
-                                            color: const Color(0xFFFF8C00)
-                                                .withOpacity(0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 3),
-                                          )
-                                        ]
-                                      : [],
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      vt['icon'] as IconData,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : Colors.grey[600],
-                                      size: 28,
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      vt['label'] as String,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : Colors.grey[700],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Form fields
-                    _buildTextField(
-                        _nameController, 'Full Name', Icons.person_outline),
-                    _buildTextField(_whatsappController, 'WhatsApp Number',
-                        Icons.phone_android,
-                        isNumber: true),
-                    _buildTextField(_dlController, 'Driving License Number',
-                        Icons.badge_outlined),
-                    _buildTextField(
-                        _vehicleController,
-                        'Vehicle Registration Number',
-                        Icons.directions_car_outlined),
-                    _buildTextField(_insuranceController,
-                        'Insurance Policy Number', Icons.security_outlined),
-                    _buildTextField(_upiController, 'UPI ID (For payouts)',
-                        Icons.account_balance_wallet_outlined),
-
-                    const SizedBox(height: 12),
-
-                    // Firebase UID info chip
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.verified_user,
-                              color: Color(0xFFFF8C00), size: 18),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              'Linked to: ${FirebaseAuth.instance.currentUser?.phoneNumber ?? "Unknown"}',
-                              style: const TextStyle(
-                                  fontSize: 13, color: Color(0xFF666666)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Submit button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _submitRegistration,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[400],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : const Text(
-                                'Submit Documents',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
@@ -339,53 +299,45 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     );
   }
 
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
-    bool isNumber = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18.0),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: isNumber ? TextInputType.phone : TextInputType.text,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFF888888)),
-          prefixIcon: Icon(icon, color: const Color(0xFFFF8C00)),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+  Widget _buildVehicleButton(String type, IconData icon) {
+    final isSelected = _selectedVehicleType == type;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedVehicleType = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0x4D431407) : Colors.transparent, // bg-orange-950/30 vs transparent
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFF97316) : const Color(0xFF333333),
+            width: 2,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide:
-                const BorderSide(color: Color(0xFFFF8C00), width: 2),
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
-        validator: (value) =>
-            value == null || value.isEmpty ? 'This field is required' : null,
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFFF97316) : Colors.white54,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              type.toUpperCase(),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isSelected ? const Color(0xFFF97316) : Colors.white54,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _whatsappController.dispose();
-    _dlController.dispose();
     _vehicleController.dispose();
-    _insuranceController.dispose();
-    _upiController.dispose();
     super.dispose();
   }
 }

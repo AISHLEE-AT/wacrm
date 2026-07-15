@@ -13,167 +13,201 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Next.js max-w-4xl roughly matches standard padding constraints, but we'll adapt for mobile.
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: Column(
-        children: [
-          // Dark gradient header banner
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 24,
-              bottom: 40,
-              left: 24,
-              right: 24,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF1A1A2E), Color(0xFF16213E)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(36),
-                bottomRight: Radius.circular(36),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Zap icon equivalent
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF8C00), Color(0xFFFFA040)],
+      backgroundColor: const Color(0xFF121212), // Match Next.js dark mode background roughly
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Banner (Super App)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.black, Color(0xFF262626)], // from-black to-neutral-800
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF8C00).withOpacity(0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 48,
+                      width: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF171717), // bg-neutral-900
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF10B981)), // border-emerald-500
                       ),
-                    ],
-                  ),
-                  child: const Icon(Icons.bolt, color: Colors.white, size: 32),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'WatsCRM',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ride. Drive. Manage.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.7),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // Title
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Choose Your Role',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Role cards
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  _buildRoleCard(
-                    context,
-                    title: 'TransO',
-                    subtitle: 'Book rides and travel seamlessly',
-                    icon: Icons.directions_car_filled,
-                    gradientColors: [
-                      const Color(0xFF059669),
-                      const Color(0xFF10B981),
-                    ],
-                    role: 'rider',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRoleCard(
-                    context,
-                    title: 'DrivO',
-                    subtitle: 'Drive, earn, and manage your trips',
-                    icon: Icons.local_taxi,
-                    gradientColors: [
-                      const Color(0xFFFF8C00),
-                      const Color(0xFFFFA040),
-                    ],
-                    role: 'driver',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRoleCard(
-                    context,
-                    title: 'Admin',
-                    subtitle: 'Manage drivers, payouts, and platform',
-                    icon: Icons.admin_panel_settings,
-                    gradientColors: [
-                      const Color(0xFF546E7A),
-                      const Color(0xFF78909C),
-                    ],
-                    role: 'admin',
-                  ),
-                  const Spacer(),
-                  // Safe & Secure badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(24),
+                      child: const Icon(Icons.bolt, color: Color(0xFF10B981), size: 24),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.shield_outlined,
-                            color: Colors.green[700], size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Safe & Secure Platform',
+                        const Text(
+                          'Super App',
                           style: TextStyle(
-                            color: Colors.green[700],
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        Text(
+                          'Your world in one place',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70, // text-neutral-400
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                  ],
+                ),
               ),
-            ),
+
+              const SizedBox(height: 32),
+
+              const Text(
+                'What do you need today, there?',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // TransO Card
+              _buildRoleCard(
+                context,
+                title: 'Book a Ride',
+                subtitle: 'Fast and reliable rides for your daily commute. Auto, Bike, and Cabs.',
+                icon: Icons.directions_car,
+                gradientColors: [const Color(0xFFECFDF5), const Color(0xFFD1FAE5)], // emerald-50 to emerald-100
+                borderColor: const Color(0xFFD1FAE5), // border-emerald-100
+                iconColor: const Color(0xFF059669), // text-emerald-600
+                textColor: const Color(0xFF064E3B), // text-emerald-900
+                subtitleColor: const Color(0xFF047857), // text-emerald-700
+                badgeText: 'TransO',
+                badgeBgColor: const Color(0xFFA7F3D0).withOpacity(0.5), // emerald-200/50
+                badgeTextColor: const Color(0xFF065F46), // emerald-800
+                role: 'rider',
+              ),
+
+              const SizedBox(height: 16),
+
+              // TradO Card
+              _buildRoleCard(
+                context,
+                title: 'Hire a Service',
+                subtitle: 'Find plumbers, electricians, catering, and more near you.',
+                icon: Icons.search,
+                gradientColors: [const Color(0xFFF8FAFC), const Color(0xFFE2E8F0)], // slate-50 to slate-200
+                borderColor: const Color(0xFFE2E8F0), // border-slate-200
+                iconColor: const Color(0xFF1E293B), // text-slate-800
+                textColor: const Color(0xFF0F172A), // text-slate-900
+                subtitleColor: const Color(0xFF334155), // text-slate-700
+                badgeText: 'TradO',
+                badgeBgColor: const Color(0xFFCBD5E1), // slate-300
+                badgeTextColor: const Color(0xFF1E293B), // slate-800
+                role: 'trado', // Assuming tradO uses a different role or just placeholder
+              ),
+
+              const SizedBox(height: 16),
+
+              // DrivO Card
+              _buildRoleCard(
+                context,
+                title: 'Drive & Earn',
+                subtitle: 'Register your vehicle and start earning by driving for TransO.',
+                icon: Icons.work_outline,
+                gradientColors: [const Color(0xFFFFF7ED), const Color(0xFFFFEDD5)], // orange-50 to orange-100
+                borderColor: const Color(0xFFFED7AA), // orange-200
+                iconColor: const Color(0xFFEA580C), // orange-600
+                textColor: const Color(0xFF7C2D12), // orange-900
+                subtitleColor: const Color(0xFFC2410C), // orange-700
+                badgeText: 'DrivO',
+                badgeBgColor: const Color(0xFFFED7AA), // orange-200
+                badgeTextColor: const Color(0xFF9A3412), // orange-800
+                role: 'driver',
+              ),
+
+              const SizedBox(height: 16),
+
+              // Admin Card (Bonus since they need admin login)
+              _buildRoleCard(
+                context,
+                title: 'Manage Platform',
+                subtitle: 'Admin dashboard to manage drivers and payouts.',
+                icon: Icons.admin_panel_settings_outlined,
+                gradientColors: [const Color(0xFFF1F5F9), const Color(0xFFCBD5E1)], // slate
+                borderColor: const Color(0xFF94A3B8), 
+                iconColor: const Color(0xFF334155), 
+                textColor: const Color(0xFF0F172A), 
+                subtitleColor: const Color(0xFF475569), 
+                badgeText: 'Admin',
+                badgeBgColor: const Color(0xFF94A3B8), 
+                badgeTextColor: const Color(0xFF0F172A), 
+                role: 'admin',
+              ),
+
+              const SizedBox(height: 32),
+
+              // Safe & Secure footer
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E), // bg-card
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF333333)), // border-border
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shield_outlined, color: Color(0xFF10B981), size: 32),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Safe & Secure',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'All our drivers and service providers are verified for your safety.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -184,71 +218,74 @@ class RoleSelectionScreen extends StatelessWidget {
     required String subtitle,
     required IconData icon,
     required List<Color> gradientColors,
+    required Color borderColor,
+    required Color iconColor,
+    required Color textColor,
+    required Color subtitleColor,
+    required String badgeText,
+    required Color badgeBgColor,
+    required Color badgeTextColor,
     required String role,
   }) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () => _selectRole(context, role),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: gradientColors,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: gradientColors[0].withOpacity(0.35),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, color: iconColor, size: 40),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: badgeBgColor,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
+                    child: Text(
+                      badgeText,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 13,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: badgeTextColor,
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white.withOpacity(0.7),
-                size: 18,
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: subtitleColor,
+                  height: 1.4,
+                ),
               ),
             ],
           ),
