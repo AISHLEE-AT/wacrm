@@ -146,6 +146,10 @@ export default function TransoBooking() {
       setError("Please enter both pickup and drop-off locations.");
       return;
     }
+    if (!user?.id) {
+      window.location.href = "/login";
+      return;
+    }
     setError(null);
     setLoading(true);
     
@@ -364,7 +368,7 @@ export default function TransoBooking() {
                 <button 
                   onClick={() => handleBookRide("bike")} 
                   disabled={loading}
-                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all hover:border-emerald-500 hover:shadow-lg focus:outline-none disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-neutral-800/50"
+                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all hover:border-emerald-500 hover:shadow-lg focus:outline-none disabled:opacity-50 hover:bg-accent"
                 >
                   <div className="flex items-center gap-5">
                     <div className="rounded-full bg-emerald-100/50 dark:bg-emerald-900/30 p-4 group-hover:bg-emerald-500 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all">
@@ -383,7 +387,7 @@ export default function TransoBooking() {
                 <button 
                   onClick={() => handleBookRide("car")} 
                   disabled={loading}
-                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all hover:border-emerald-500 hover:shadow-lg focus:outline-none disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-neutral-800/50"
+                  className="w-full group flex items-center justify-between rounded-3xl border border-border bg-card p-5 transition-all hover:border-emerald-500 hover:shadow-lg focus:outline-none disabled:opacity-50 hover:bg-accent"
                 >
                   <div className="flex items-center gap-5">
                     <div className="rounded-full bg-emerald-100/50 dark:bg-emerald-900/30 p-4 group-hover:bg-emerald-500 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all">
@@ -399,6 +403,15 @@ export default function TransoBooking() {
                   </div>
                 </button>
               </div>
+              
+              {!user?.id && (
+                <button 
+                  onClick={() => window.location.href = "/login"}
+                  className="mt-4 w-full bg-emerald-600 dark:bg-emerald-700 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-lg"
+                >
+                  Sign in to Book a Ride
+                </button>
+              )}
               
               <button 
                 onClick={() => {

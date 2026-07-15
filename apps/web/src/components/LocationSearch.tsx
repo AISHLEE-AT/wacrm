@@ -166,7 +166,7 @@ export function LocationSearch({
   };
 
   return (
-    <div className="relative w-full z-20" ref={wrapperRef}>
+    <div className={`relative w-full ${showDropdown ? 'z-50' : 'z-20'}`} ref={wrapperRef}>
       <div className="relative flex items-center gap-4">
         <div className={`z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-card border-[3px] ${iconBorderColor}`} />
         <div className="relative flex-1">
@@ -202,7 +202,7 @@ export function LocationSearch({
           ) : (
             <>
               {query === "" && results.length > 0 && (
-                <div className="px-4 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-slate-50 dark:bg-neutral-900 border-b border-border">
+                <div className="px-4 py-2 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-muted/50 border-b border-border">
                   Nearby Places
                 </div>
               )}
@@ -211,10 +211,10 @@ export function LocationSearch({
                   <li
                     key={idx}
                     onClick={() => handleSelect(result)}
-                    className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-neutral-800 cursor-pointer flex items-start gap-3 border-b border-border last:border-0 transition-colors"
+                    className="px-4 py-3 hover:bg-accent hover:text-accent-foreground cursor-pointer flex items-start gap-3 border-b border-border last:border-0 transition-colors"
                   >
                     <MapPin className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
-                    <span className="text-sm text-foreground line-clamp-2">{result.display_name}</span>
+                    <span className="text-sm line-clamp-2">{result.display_name}</span>
                   </li>
                 ))}
               </ul>
