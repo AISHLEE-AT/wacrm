@@ -80,21 +80,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Onboarding Check - enforce onboarding on protected paths for authenticated users
-  if (user && isProtectedPath) {
-    const hasCompletedOnboarding = request.cookies.has('web_onboarding_complete');
-    
-    if (request.nextUrl.pathname === '/onboarding' && hasCompletedOnboarding) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/dashboard';
-      return withRefreshedCookies(NextResponse.redirect(url));
-    }
+  // (Removed for WACRM as web dashboard admins don't need onboarding)
 
-    if (request.nextUrl.pathname !== '/onboarding' && !hasCompletedOnboarding) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/onboarding';
-      return withRefreshedCookies(NextResponse.redirect(url));
-    }
-  }
 
   // API routes that need auth (not webhooks)
   if (!user && request.nextUrl.pathname.startsWith('/api/whatsapp/') &&

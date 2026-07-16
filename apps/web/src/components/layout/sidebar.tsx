@@ -92,13 +92,8 @@ interface NavItem {
 }
 
 const tradeoItems: NavItem[] = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/transo", label: "RidO (Book Ride)", icon: Car },
+  { href: "/rido", label: "RidO (Book Ride)", icon: Car },
   { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
-  { href: "/local-connect", label: "Local Connect", icon: MapPin },
-  { href: "/tradeo", label: "TradO Hub", icon: ShoppingBag },
-  { href: "/tradeo/requests", label: "All Requests", icon: Briefcase },
-  { href: "/tradeo/providers", label: "Providers", icon: UsersRound },
 ];
 
 const crmItems: NavItem[] = [
