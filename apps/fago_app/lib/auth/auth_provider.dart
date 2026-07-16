@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Represents the resolved user role
 enum UserRole { guest, admin, driver, rider }
@@ -39,7 +40,10 @@ class AuthState {
 class AuthNotifier extends Notifier<AuthState> {
   final firebase.FirebaseAuth _auth = firebase.FirebaseAuth.instance;
   final SupabaseClient _supabase = Supabase.instance.client;
-  static const String _bridgeUrl = 'https://watscrm.vercel.app/api/auth/firebase-bridge';
+  
+  // Dynamic bridge URL from environment, fallback to production
+  String get _bridgeUrl => 
+      dotenv.env['FIREBASE_BRIDGE_URL'] ?? 'https://watscrm.vercel.app/api/auth/firebase-bridge';
 
   @override
   AuthState build() {
@@ -71,10 +75,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
     try {
       // 1. Check Admin
-      if (phoneNumber == '+919486335870' || phoneNumber == '+916381029380') {
-        state = state.copyWith(isLoading: false, role: UserRole.admin, supabaseUser: _supabase.auth.currentUser);
-        return;
-      }
+      // Admin phones on mobile default to rider (admin features are web-only)
+      // No admin role assignment on mobile
 
       // 2. Check Driver
       final driverCheck = await _supabase

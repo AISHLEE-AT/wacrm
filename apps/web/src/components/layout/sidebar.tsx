@@ -93,7 +93,7 @@ interface NavItem {
 
 const tradeoItems: NavItem[] = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/transo", label: "TransO (Book Ride)", icon: Car },
+  { href: "/transo", label: "RidO (Book Ride)", icon: Car },
   { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
   { href: "/local-connect", label: "Local Connect", icon: MapPin },
   { href: "/tradeo", label: "TradO Hub", icon: ShoppingBag },
@@ -263,7 +263,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           {(["919486335870@whatsapp.wacrm.local", "9486335870@whatsapp.wacrm.local", "aishleetechnology@gmail.com"].includes(profile?.email ?? "")) && (
             <>
               <div className="px-3 mb-2 mt-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">TradO</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WAPP</h3>
               </div>
               <ul className="flex flex-col gap-1">
                 {crmItems.map((item) => {

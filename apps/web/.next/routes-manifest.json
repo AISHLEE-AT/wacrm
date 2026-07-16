@@ -572,6 +572,12 @@
       "namedRegex": "^/login(?:/)?$"
     },
     {
+      "page": "/onboarding",
+      "regex": "^/onboarding(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/onboarding(?:/)?$"
+    },
+    {
       "page": "/pipelines",
       "regex": "^/pipelines(?:/)?$",
       "routeKeys": {},

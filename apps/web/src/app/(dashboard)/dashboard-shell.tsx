@@ -21,7 +21,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  const ADMIN_PHONES = ['919486335870', '916381029380', '9486335870', '6381029380'];
+  const ADMIN_PHONES = ['919486335870', '919123596988', '9486335870', '9123596988'];
   const normalizedPhone = user?.phone?.replace('+', '') || '';
   const isAdmin = ADMIN_PHONES.includes(normalizedPhone) || ADMIN_PHONES.includes(user?.phone || '');
 

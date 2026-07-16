@@ -66,5 +66,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location for map features.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location for map features even when in background.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone for voice features.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera to scan QR codes and take photos.</string>
 </dict>
 </plist>

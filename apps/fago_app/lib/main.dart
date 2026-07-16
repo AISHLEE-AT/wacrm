@@ -5,9 +5,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'firebase_options.dart';
 import 'router/app_router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Dotenv error: $e");
+  }
 
   // Initialize Firebase using platform-specific options (Fixes Android Crash)
   try {

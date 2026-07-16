@@ -1,0 +1,115 @@
+
+> @wacrm/web@0.2.2 build
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env.local, .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 17.8s
+  Running TypeScript ...
+  Finished TypeScript in 18.7s ...
+  Collecting page data using 7 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 7 workers (0/66) ...
+  Generating static pages using 7 workers (16/66) 
+  Generating static pages using 7 workers (32/66) 
+  Generating static pages using 7 workers (49/66) 
+✓ Generating static pages using 7 workers (66/66) in 1012ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin/drivers
+├ ○ /admin/drivers/applications
+├ ○ /admin/providers
+├ ƒ /api/account
+├ ƒ /api/account/api-keys
+├ ƒ /api/account/api-keys/[id]
+├ ƒ /api/account/invitations
+├ ƒ /api/account/invitations/[id]
+├ ƒ /api/account/members
+├ ƒ /api/account/members/[userId]
+├ ƒ /api/account/transfer-ownership
+├ ƒ /api/admin/driver-applications
+├ ƒ /api/admin/drivers
+├ ƒ /api/admin/drivers/clear-commission
+├ ƒ /api/auth/callback
+├ ƒ /api/auth/firebase-bridge
+├ ƒ /api/auth/whatsapp/send-otp
+├ ƒ /api/auth/whatsapp/verify-otp
+├ ƒ /api/automations
+├ ƒ /api/automations/[id]
+├ ƒ /api/automations/[id]/duplicate
+├ ƒ /api/automations/cron
+├ ƒ /api/automations/engine
+├ ƒ /api/flows
+├ ƒ /api/flows/[id]
+├ ƒ /api/flows/[id]/activate
+├ ƒ /api/flows/[id]/runs
+├ ƒ /api/flows/cron
+├ ƒ /api/flows/templates
+├ ƒ /api/invitations/[token]/peek
+├ ƒ /api/invitations/[token]/redeem
+├ ƒ /api/notifications/send
+├ ƒ /api/tradeo/broadcast
+├ ƒ /api/tradeo/providers
+├ ƒ /api/tradeo/quotes
+├ ƒ /api/tradeo/requests
+├ ƒ /api/tradeo/requests/[id]
+├ ƒ /api/tradeo/search
+├ ƒ /api/tradeo/select-winner
+├ ƒ /api/transcribe
+├ ƒ /api/v1/me
+├ ƒ /api/whatsapp/broadcast
+├ ƒ /api/whatsapp/config
+├ ƒ /api/whatsapp/config/verify-registration
+├ ƒ /api/whatsapp/media/[mediaId]
+├ ƒ /api/whatsapp/react
+├ ƒ /api/whatsapp/send
+├ ƒ /api/whatsapp/templates/[id]
+├ ƒ /api/whatsapp/templates/submit
+├ ƒ /api/whatsapp/templates/sync
+├ ƒ /api/whatsapp/webhook
+├ ○ /automations
+├ ƒ /automations/[id]/edit
+├ ƒ /automations/[id]/logs
+├ ○ /automations/new
+├ ○ /broadcasts
+├ ƒ /broadcasts/[id]
+├ ○ /broadcasts/new
+├ ○ /contacts
+├ ○ /dashboard
+├ ƒ /dispatch
+├ ○ /drivo
+├ ○ /flows
+├ ƒ /flows/[id]
+├ ƒ /flows/[id]/runs
+├ ○ /forgot-password
+├ ○ /home
+├ ƒ /icon
+├ ○ /inbox
+├ ƒ /join/[token]
+├ ○ /local-connect
+├ ○ /login
+├ ○ /onboarding
+├ ○ /pipelines
+├ ○ /privacy
+├ ○ /settings
+├ ○ /signup
+├ ○ /terms
+├ ○ /tradeo
+├ ○ /tradeo/providers
+├ ○ /tradeo/requests
+├ ƒ /tradeo/requests/[id]
+├ ○ /transo
+└ ○ /wallet
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

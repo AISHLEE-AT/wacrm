@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case 'driver':
         return 'DrivO';
       case 'rider':
-        return 'TransO';
+        return 'RidO';
       case 'admin':
         return 'Admin';
       default:

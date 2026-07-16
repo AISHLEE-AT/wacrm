@@ -70,11 +70,30 @@ export async function middleware(request: NextRequest) {
   }
 
   // Protected pages - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/settings']
-  if (!user && protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+  const protectedPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/settings', '/onboarding']
+  const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
+  
+  if (!user && isProtectedPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return withRefreshedCookies(NextResponse.redirect(url))
+  }
+
+  // Onboarding Check - enforce onboarding on protected paths for authenticated users
+  if (user && isProtectedPath) {
+    const hasCompletedOnboarding = request.cookies.has('web_onboarding_complete');
+    
+    if (request.nextUrl.pathname === '/onboarding' && hasCompletedOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return withRefreshedCookies(NextResponse.redirect(url));
+    }
+
+    if (request.nextUrl.pathname !== '/onboarding' && !hasCompletedOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/onboarding';
+      return withRefreshedCookies(NextResponse.redirect(url));
+    }
   }
 
   // API routes that need auth (not webhooks)

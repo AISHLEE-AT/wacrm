@@ -375,7 +375,7 @@ export default function TransoBooking() {
                       <Bike className="h-8 w-8 text-emerald-600 dark:text-emerald-400 group-hover:text-white" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-xl text-foreground">TransO Bike</h3>
+                      <h3 className="font-bold text-xl text-foreground">RidO Bike</h3>
                       <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{(distanceVal * 3).toFixed(0)} mins away</p>
                     </div>
                   </div>
@@ -394,7 +394,7 @@ export default function TransoBooking() {
                       <Car className="h-8 w-8 text-emerald-600 dark:text-emerald-400 group-hover:text-white" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-bold text-xl text-foreground">TransO Cab</h3>
+                      <h3 className="font-bold text-xl text-foreground">RidO Cab</h3>
                       <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{(distanceVal * 4).toFixed(0)} mins away</p>
                     </div>
                   </div>

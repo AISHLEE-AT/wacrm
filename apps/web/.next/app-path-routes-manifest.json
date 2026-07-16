@@ -82,6 +82,7 @@
   "/api/whatsapp/webhook/route": "/api/whatsapp/webhook",
   "/icon/route": "/icon",
   "/join/[token]/page": "/join/[token]",
+  "/onboarding/page": "/onboarding",
   "/page": "/",
   "/privacy/page": "/privacy",
   "/terms/page": "/terms"

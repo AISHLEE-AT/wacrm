@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import jwt from 'jsonwebtoken'
 
-const FIREBASE_API_KEY = 'AIzaSyB0UIfxvTHXmaiKCg2C5L1Vw8KCFwkVUKs'
+const FIREBASE_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyB0UIfxvTHXmaiKCg2C5L1Vw8KCFwkVUKs';
 
 /**
  * Firebase → Supabase Auth Bridge

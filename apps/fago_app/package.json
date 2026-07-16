@@ -1,0 +1,10 @@
+{
+  "name": "@wacrm/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "flutter run",
+    "build": "flutter build apk",
+    "test": "flutter test"
+  }
+}
