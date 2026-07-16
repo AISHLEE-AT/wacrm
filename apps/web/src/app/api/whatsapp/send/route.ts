@@ -6,7 +6,6 @@ import {
   sendMediaMessage,
   type MediaKind,
 } from '@/lib/whatsapp/meta-api'
-import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
 import {
   sanitizePhoneForMeta,
@@ -192,16 +191,30 @@ export async function POST(request: Request) {
     }
 
     // Fetch and decrypt WhatsApp config
-    const config = HARDCODED_WHATSAPP_CONFIG
-    
-    if (!config) {
+    const { data: config, error: configError } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .eq('account_id', accountId)
+      .maybeSingle()
+
+    if (configError || !config) {
       return NextResponse.json(
         { error: 'WhatsApp not configured. Please set up your WhatsApp integration first.' },
         { status: 400 }
       )
     }
 
-    const accessToken = config.access_token
+    let accessToken: string
+    try {
+      const { decrypt } = await import('@/lib/whatsapp/encryption')
+      accessToken = decrypt(config.access_token)
+    } catch (err) {
+      console.error('[whatsapp/send] Decryption failed:', err)
+      return NextResponse.json(
+        { error: 'WhatsApp configuration is corrupted. Please reset and re-configure it.' },
+        { status: 500 }
+      )
+    }
 
     // Resolve the reply target (if any) to its Meta message_id, which is
     // what `context.message_id` on the outgoing Meta payload needs. The

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
-import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
@@ -95,8 +94,13 @@ export async function GET(request: Request) {
       )
     }
 
-    const config = HARDCODED_WHATSAPP_CONFIG
-    if (config.verify_token === verifyToken) {
+    const { data: config } = await supabaseAdmin()
+      .from('whatsapp_config')
+      .select('verify_token')
+      .eq('verify_token', verifyToken)
+      .maybeSingle()
+
+    if (config?.verify_token === verifyToken) {
       // Return challenge as plain text
       return new Response(challenge, {
         status: 200,
@@ -180,14 +184,24 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       const phoneNumberId = value.metadata.phone_number_id
 
-      const config = HARDCODED_WHATSAPP_CONFIG
+      const { data: config } = await supabaseAdmin()
+        .from('whatsapp_config')
+        .select('*')
+        .eq('phone_number_id', phoneNumberId)
+        .maybeSingle()
 
-      if (config.phone_number_id !== phoneNumberId) {
+      if (!config) {
         console.error('No config found for phone_number_id:', phoneNumberId)
         continue
       }
 
-      const decryptedAccessToken = config.access_token
+      let decryptedAccessToken: string
+      try {
+        decryptedAccessToken = decrypt(config.access_token)
+      } catch (err) {
+        console.error('[webhook] Decryption failed for phone_number_id:', phoneNumberId)
+        continue
+      }
 
       for (let i = 0; i < value.messages.length; i++) {
         const message = value.messages[i]

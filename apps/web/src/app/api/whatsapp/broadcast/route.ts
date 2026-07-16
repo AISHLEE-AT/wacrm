@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendTemplateMessage } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
-import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import type { SendTimeParams } from '@/lib/whatsapp/template-send-builder'
 import { isMessageTemplate } from '@/lib/whatsapp/template-row-guard'
 import {
@@ -135,9 +134,13 @@ export async function POST(request: Request) {
       )
     }
 
-    const config = HARDCODED_WHATSAPP_CONFIG
+    const { data: config, error: configError } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .eq('account_id', accountId)
+      .maybeSingle()
 
-    if (!config) {
+    if (configError || !config) {
       return NextResponse.json(
         {
           error:
@@ -147,7 +150,16 @@ export async function POST(request: Request) {
       )
     }
 
-    const accessToken = config.access_token
+    let accessToken: string
+    try {
+      accessToken = decrypt(config.access_token)
+    } catch (err) {
+      console.error('[whatsapp/broadcast] Decryption failed:', err)
+      return NextResponse.json(
+        { error: 'WhatsApp configuration is corrupted. Please reset and re-configure it.' },
+        { status: 500 }
+      )
+    }
 
     // Load the template row once so sendTemplateMessage can build
     // header + button components on each iteration. Loading inside

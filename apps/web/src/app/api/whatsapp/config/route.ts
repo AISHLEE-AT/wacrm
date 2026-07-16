@@ -6,7 +6,6 @@ import {
   subscribeWabaToApp,
   verifyPhoneNumber,
 } from '@/lib/whatsapp/meta-api'
-import { HARDCODED_WHATSAPP_CONFIG } from '@/lib/whatsapp/hardcoded-config'
 import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 
 /**
@@ -86,15 +85,46 @@ export async function GET() {
       )
     }
 
-    const config = HARDCODED_WHATSAPP_CONFIG
+    const { data: config, error: configError } = await supabase
+      .from('whatsapp_config')
+      .select('*')
+      .eq('account_id', accountId)
+      .maybeSingle()
+
+    if (configError || !config) {
+      return NextResponse.json(
+        { connected: false, reason: 'no_config', message: 'WhatsApp not configured.' },
+        { status: 200 }
+      )
+    }
+
+    let decryptedToken: string
+    try {
+      decryptedToken = decrypt(config.access_token)
+    } catch (err) {
+      console.error('[whatsapp/config GET] Decryption failed:', err)
+      return NextResponse.json(
+        {
+          connected: false,
+          reason: 'token_corrupted',
+          message: 'Security keys changed. You must reset your configuration and set it up again.',
+          needs_reset: true,
+        },
+        { status: 200 }
+      )
+    }
 
     // Validate credentials against Meta
     try {
       const phoneInfo = await verifyPhoneNumber({
         phoneNumberId: config.phone_number_id,
-        accessToken: config.access_token,
+        accessToken: decryptedToken,
       })
-      return NextResponse.json({ connected: true, phone_info: phoneInfo, config: config })
+      
+      // Don't send the decrypted token back to the client!
+      const safeConfig = { ...config, access_token: undefined, verify_token: undefined }
+      
+      return NextResponse.json({ connected: true, phone_info: phoneInfo, config: safeConfig })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown Meta API error'
       console.error('[whatsapp/config GET] Meta API verification failed:', message)
@@ -150,7 +180,62 @@ export async function POST(request: Request) {
       )
     }
 
-    // Bypass database write completely because the config is hardcoded
+    // Check account linkage
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const accountId = await resolveAccountId(supabase, user.id)
+    if (!accountId) {
+      return NextResponse.json(
+        { error: 'Your profile is not linked to an account.' },
+        { status: 403 },
+      )
+    }
+
+    // Determine the user's WABA ID. (A real app would fetch this via the
+    // WhatsApp Business Management API using a System User token, but for
+    // this starter, we grab it from the verified payload if available, or
+    // let the user configure it manually later.)
+    const wabaId = phoneInfo?.waba_id || ''
+
+    // Encrypt the permanent token before storing it
+    const encryptedToken = encrypt(access_token)
+
+    // Save to database
+    // We use a transaction/upsert pattern: each account gets exactly one
+    // WhatsApp config row. The schema's UNIQUE(account_id) enforces this.
+    const { error: upsertError } = await supabase
+      .from('whatsapp_config')
+      .upsert(
+        {
+          account_id: accountId,
+          user_id: user.id, // Keep for legacy/logging
+          phone_number_id,
+          waba_id: wabaId,
+          access_token: encryptedToken,
+          status: 'connected',
+          connected_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'account_id' }
+      )
+
+    if (upsertError) {
+      console.error('Database write failed during config save:', upsertError)
+      return NextResponse.json(
+        { error: 'Failed to save configuration to database' },
+        { status: 500 }
+      )
+    }
+
     return NextResponse.json({
       success: true,
       saved: true,
