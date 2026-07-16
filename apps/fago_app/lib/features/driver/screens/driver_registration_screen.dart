@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../services/supabase_service.dart';
-import 'home_screen.dart';
+import '../../../../auth/auth_provider.dart';
 
-class DriverRegistrationScreen extends StatefulWidget {
+class DriverRegistrationScreen extends ConsumerStatefulWidget {
   const DriverRegistrationScreen({super.key});
 
   @override
-  State<DriverRegistrationScreen> createState() => _DriverRegistrationScreenState();
+  ConsumerState<DriverRegistrationScreen> createState() => _DriverRegistrationScreenState();
 }
 
-class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
+class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _vehicleController = TextEditingController();
 
@@ -39,11 +41,10 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       );
 
       if (result != null && mounted) {
-        // Since Next.js flow is auto-approve to offline status, we just redirect directly to Home (which loads driver dashboard).
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        // Refresh auth state to recognize the user as a driver
+        ref.invalidate(authProvider);
+        // Route to driver app
+        context.go('/driver');
       }
     } catch (e) {
       if (mounted) {

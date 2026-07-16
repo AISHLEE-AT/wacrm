@@ -113,7 +113,10 @@ class SupabaseService {
   }
 
   /// Complete a ride and calculate 30% commission.
-  Future<void> completeRide(String rideId, String driverId, double estimatedPrice) async {
+  Future<void> completeRide(String rideId, String driverId) async {
+    final rideData = await _client.from('rides').select('estimated_price').eq('id', rideId).single();
+    final estimatedPrice = (rideData['estimated_price'] as num?)?.toDouble() ?? 0;
+
     await _client.from('rides').update({'status': 'completed'}).eq('id', rideId);
 
     // Calculate 30% commission and add to pending
@@ -130,6 +133,11 @@ class SupabaseService {
       'status': 'online',
       'pending_commission': currentPending + commission,
     }).eq('id', driverId);
+  }
+
+  Future<void> submitRating(String rideId, int rating, String type) async {
+    final column = type == 'driver' ? 'driver_rating' : 'rider_rating';
+    await _client.from('rides').update({column: rating}).eq('id', rideId);
   }
 
   /// Get all pending rides, newest first.

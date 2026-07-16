@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { MapPin, Navigation, Car, Bike, Clock, Loader2, XCircle, LocateFixed } from "lucide-react";
+import { MapPin, Navigation, Car, Bike, Clock, Loader2, XCircle, LocateFixed, Phone, Star } from "lucide-react";
 import { LocationSearch } from "@/components/LocationSearch";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 const Map = dynamic(() => import("@/components/Map"), { 
   ssr: false, 
@@ -21,6 +22,9 @@ export default function TransoBooking() {
   const [activeRide, setActiveRide] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [onlineDrivers, setOnlineDrivers] = useState<any[]>([]);
+  
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [completedRideId, setCompletedRideId] = useState<string | null>(null);
   
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
@@ -99,7 +103,11 @@ export default function TransoBooking() {
       .channel("public:rides")
       .on("postgres_changes", { event: "*", schema: "public", table: "rides", filter: `passenger_id=eq.${user.id}` }, (payload: any) => {
         if (payload.new && ["pending", "accepted", "en_route"].includes(payload.new.status)) {
-          setActiveRide(payload.new);
+          fetchActiveRide();
+        } else if (payload.new && payload.new.status === "completed") {
+          setCompletedRideId(payload.new.id);
+          setShowRatingModal(true);
+          setActiveRide(null);
         } else {
           setActiveRide(null);
         }
@@ -116,7 +124,7 @@ export default function TransoBooking() {
     try {
       const { data } = await supabase
         .from("rides")
-        .select("*")
+        .select("*, driver:drivers(*)")
         .eq("passenger_id", user.id)
         .in("status", ["pending", "accepted", "en_route"])
         .order("created_at", { ascending: false })
@@ -128,6 +136,18 @@ export default function TransoBooking() {
       // No active ride
     }
   };
+
+  async function submitRating(rating: number) {
+    if (!completedRideId) return;
+    try {
+      await supabase.from("rides").update({ rider_rating: rating }).eq("id", completedRideId);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setShowRatingModal(false);
+      setCompletedRideId(null);
+    }
+  }
 
   function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371; // Radius of the earth in km
@@ -231,6 +251,9 @@ export default function TransoBooking() {
         {/* LEFT PANEL - RIDE STATUS */}
         <div className="w-full md:w-[450px] flex flex-col bg-card/95 backdrop-blur-xl border-r border-border z-10 shadow-[4px_0_24px_rgba(0,0,0,0.05)]">
           <div className="p-6 md:p-8 overflow-y-auto">
+            <div className="flex justify-end mb-4">
+              <Link href="/drivo" className="text-sm px-4 py-2 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">Drive with us (Switch to DrivO)</Link>
+            </div>
             <div className="rounded-2xl border border-orange-200/50 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-950/30 dark:to-orange-900/10 p-6 shadow-sm mb-8 flex items-center gap-4">
               <Clock className="h-7 w-7 text-orange-600 dark:text-orange-400" />
               <h2 className="text-xl font-bold text-orange-800 dark:text-orange-300">
@@ -268,6 +291,11 @@ export default function TransoBooking() {
                   </div>
                 </div>
               </div>
+              
+              <a href={'tel:' + (activeRide.driver?.mobile_number || '')} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 py-4 font-bold text-blue-600 transition-all hover:bg-blue-100">
+                <Phone className="h-5 w-5" />
+                Call Driver
+              </a>
             </div>
             
             <button 
@@ -307,7 +335,10 @@ export default function TransoBooking() {
           {/* SEARCH MODE */}
           {!showVehicleSelection && (
             <div className="animate-in fade-in duration-300">
-              <h1 className="text-3xl font-black tracking-tight text-foreground mb-8">Book a Ride</h1>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-black tracking-tight text-foreground">Book a Ride</h1>
+                <Link href="/drivo" className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">Drive with us (Switch to DrivO)</Link>
+              </div>
               
               <div className="relative space-y-6">
                 <div className="absolute left-[11px] top-6 bottom-6 w-[2px] bg-border z-0" />
@@ -357,6 +388,9 @@ export default function TransoBooking() {
           {/* VEHICLE SELECTION MODE */}
           {showVehicleSelection && (
             <div className="animate-in slide-in-from-bottom-8 fade-in duration-300 flex flex-col h-full">
+              <div className="flex justify-end mb-4">
+                <Link href="/drivo" className="text-xs px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">Drive with us (Switch to DrivO)</Link>
+              </div>
               <div className="flex items-center justify-between mb-8">
                 <h2 className="text-3xl font-black text-foreground">Choose a Ride</h2>
                 <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-900/50">
@@ -454,6 +488,22 @@ export default function TransoBooking() {
           </div>
         )}
       </div>
+      
+      {showRatingModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card p-8 rounded-2xl flex flex-col items-center shadow-xl border border-border">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Rate your driver</h2>
+            <div className="flex gap-2 mb-6">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button key={star} onClick={() => submitRating(star)} className="p-3 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-full transition-colors">
+                  <Star className="h-10 w-10 text-yellow-400 fill-yellow-400" />
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowRatingModal(false)} className="text-muted-foreground font-bold hover:text-foreground transition-colors">Skip</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

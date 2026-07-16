@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
@@ -8,18 +9,23 @@ import 'package:uuid/uuid.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../../../auth/auth_provider.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../driver/services/supabase_service.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   late GoogleMapController mapController;
   final LatLng _defaultCenter = const LatLng(13.0827, 80.2707); // Chennai center
   final SupabaseClient _supabase = Supabase.instance.client;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   LatLng? _currentLocation;
   LatLng? _pickup;
@@ -167,8 +173,46 @@ class _HomeScreenState extends State<HomeScreen> {
             final status = payload.newRecord!['status'];
             if (['pending', 'accepted', 'en_route'].contains(status)) {
               setState(() => _activeRide = payload.newRecord);
+            } else if (status == 'completed') {
+              final rideId = payload.newRecord!['id'].toString();
+              setState(() {
+                _activeRide = null;
+                _dropoff = null;
+                _dropoffAddress = "Where to?";
+              });
+              
+              if (mounted) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Rate Driver'),
+                      content: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: const Icon(Icons.star_border, color: Colors.orange, size: 32),
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              await SupabaseService().submitRating(rideId, index + 1, 'rider');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks for rating!')));
+                              }
+                            },
+                          );
+                        }),
+                      ),
+                    );
+                  }
+                );
+              }
             } else {
-              setState(() => _activeRide = null);
+              setState(() {
+                _activeRide = null;
+                _dropoff = null;
+                _dropoffAddress = "Where to?";
+              });
             }
           }
         }
@@ -303,6 +347,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: _buildDrawer(context),
       body: _isLoadingMap 
         ? const Center(child: CircularProgressIndicator())
         : Stack(
@@ -324,7 +370,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 backgroundColor: Colors.white,
                 child: IconButton(
                   icon: const Icon(Icons.menu, color: Colors.black),
-                  onPressed: () {},
+                  onPressed: () {
+                    _scaffoldKey.currentState?.openDrawer();
+                  },
                 ),
               )
             ),
@@ -435,7 +483,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(_activeRide!['status'] == 'pending' ? 'Looking for drivers...' : 'Driver is on the way!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(_activeRide!['status'] == 'pending' ? 'Looking for drivers...' : 'Driver is on the way!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                          ),
+                          if (_activeRide!['status'] != 'pending')
+                            IconButton(
+                              icon: const Icon(Icons.phone, color: Colors.green),
+                              onPressed: () => launchUrl(Uri.parse('tel:${_activeRide!['driver_phone'] ?? ''}')),
+                            ),
+                        ],
+                      ),
                       const SizedBox(height: 20),
                       if (_activeRide!['status'] == 'pending') const CircularProgressIndicator(),
                       const SizedBox(height: 20),
@@ -486,6 +546,77 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('₹$price', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    final userPhone = _supabase.auth.currentUser?.phone ?? 'User';
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Colors.green,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const CircleAvatar(
+                  backgroundColor: Colors.white,
+                  radius: 30,
+                  child: Icon(Icons.person, size: 40, color: Colors.green),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  userPhone,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('Ride History'),
+            onTap: () {
+              Navigator.pop(context);
+              // TODO: Navigate to history
+            },
+          ),
+          if (ref.watch(authProvider).role == UserRole.driver)
+            ListTile(
+              leading: const Icon(Icons.drive_eta, color: Colors.orange),
+              title: const Text('Open Driver App', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/driver');
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.drive_eta),
+              title: const Text('Become a Driver'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/driver/register');
+              },
+            ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Logout', style: TextStyle(color: Colors.red)),
+            onTap: () async {
+              Navigator.pop(context);
+              await _supabase.auth.signOut();
+            },
+          ),
+        ],
       ),
     );
   }

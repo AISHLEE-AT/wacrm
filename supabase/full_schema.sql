@@ -4172,3 +4172,12 @@ CREATE POLICY "Firebase drivers can update own record" ON drivers
 -- 8. Add passenger phone fields to rides for mobile riders
 ALTER TABLE rides ADD COLUMN IF NOT EXISTS passenger_phone TEXT;
 ALTER TABLE rides ADD COLUMN IF NOT EXISTS passenger_name TEXT;
+
+-- ============================================================
+-- 037_ratings_and_phones.sql
+-- Adds rating columns to the rides table
+-- ============================================================
+
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS driver_rating INTEGER CHECK (driver_rating >= 1 AND driver_rating <= 5);
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS rider_rating INTEGER CHECK (rider_rating >= 1 AND rider_rating <= 5);
+

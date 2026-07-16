@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock, MapPin, Car, Bike } from "lucide-react";
+import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock, MapPin, Car, Bike, Phone, Star } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 const Map = dynamic(() => import("@/components/Map"), { 
   ssr: false, 
@@ -24,6 +25,9 @@ export default function DrivoDashboard() {
   const [vehicleType, setVehicleType] = useState("bike");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [completedRideId, setCompletedRideId] = useState<string | null>(null);
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -127,6 +131,10 @@ export default function DrivoDashboard() {
 
   async function acceptRide(rideId: string) {
     if (!driver) return;
+    if (driver.pending_commission > 0) {
+      setError("Please pay your pending commission before accepting new rides.");
+      return;
+    }
     try {
       const { data: updatedRide, error: rideErr } = await supabase.from("rides").update({
         status: "accepted",
@@ -160,10 +168,24 @@ export default function DrivoDashboard() {
       }).eq("id", driver.id);
       
       setDriver({ ...driver, status: "online", pending_commission: newPending });
+      setCompletedRideId(activeRide.id);
       setActiveRide(null);
+      setShowRatingModal(true);
       loadPendingRides();
     } catch (err: any) {
       setError(err.message);
+    }
+  }
+
+  async function submitRating(rating: number) {
+    if (!completedRideId) return;
+    try {
+      await supabase.from("rides").update({ driver_rating: rating }).eq("id", completedRideId);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setShowRatingModal(false);
+      setCompletedRideId(null);
     }
   }
 
@@ -323,6 +345,7 @@ export default function DrivoDashboard() {
       <div className="flex items-center justify-between p-6 bg-card border-b border-border z-10 shrink-0">
         <div className="flex items-center gap-8">
           <h1 className="text-2xl font-black text-foreground hidden sm:block">DrivO Dashboard</h1>
+          <Link href="/rido" className="px-4 py-2 bg-blue-100 text-blue-700 font-bold rounded-full">Book a Ride (Switch to RidO)</Link>
           <div className="flex items-center gap-4 bg-slate-50 dark:bg-neutral-900 px-5 py-2.5 rounded-full border border-border">
             <div className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 p-2">
               <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -416,6 +439,11 @@ export default function DrivoDashboard() {
                       <p className="text-lg font-bold text-foreground">Estimated Fare</p>
                       <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">₹{activeRide.estimated_price}</p>
                     </div>
+
+                    <a href={'tel:' + (activeRide.passenger_phone || '')} className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-blue-50 text-blue-600 py-4 font-bold border border-blue-200 hover:bg-blue-100 transition-colors">
+                      <Phone className="h-5 w-5" />
+                      Call Passenger
+                    </a>
                     
                     <button 
                       onClick={completeRide}
@@ -514,6 +542,22 @@ export default function DrivoDashboard() {
           )}
         </div>
       </div>
+      
+      {showRatingModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card p-8 rounded-2xl flex flex-col items-center shadow-xl border border-border">
+            <h2 className="text-2xl font-bold mb-6 text-foreground">Rate your passenger</h2>
+            <div className="flex gap-2 mb-6">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button key={star} onClick={() => submitRating(star)} className="p-3 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-full transition-colors">
+                  <Star className="h-10 w-10 text-yellow-400 fill-yellow-400" />
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setShowRatingModal(false)} className="text-muted-foreground font-bold hover:text-foreground transition-colors">Skip</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

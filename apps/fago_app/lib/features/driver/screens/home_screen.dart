@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   double _pendingCommission = 0;
   double _walletBalance = 0;
+  bool _isVerified = false;
   String? _driverId;
   String? _driverName;
   Map<String, dynamic>? _activeRide;
@@ -66,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               (driverData['pending_commission'] as num?)?.toDouble() ?? 0;
           _walletBalance =
               (driverData['wallet_balance'] as num?)?.toDouble() ?? 0;
+          _isVerified = driverData['is_verified'] ?? false;
         });
       }
     } catch (e) {
@@ -98,6 +102,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _acceptRide(Map<String, dynamic> ride) async {
+    if (_pendingCommission > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot accept ride. Clear pending commission: ₹${_pendingCommission.toStringAsFixed(0)}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
     if (_driverId == null) return;
 
     try {
@@ -166,6 +180,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     'Ride in Progress',
                     style: TextStyle(
                         fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.phone, color: Colors.green),
+                    onPressed: () => launchUrl(Uri.parse('tel:${_activeRide!['passenger_phone'] ?? ''}')),
                   ),
                 ],
               ),
@@ -265,13 +284,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Future<void> _completeRide() async {
     if (_activeRide == null || _driverId == null) return;
 
+    final rideId = _activeRide!['id'].toString();
+
     try {
-      final price =
-          (_activeRide!['estimated_price'] as num?)?.toDouble() ?? 0;
       await _supabaseService.completeRide(
-        _activeRide!['id'].toString(),
+        rideId,
         _driverId!,
-        price,
       );
 
       setState(() => _activeRide = null);
@@ -283,6 +301,31 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             content: Text('🎉 Ride Completed!'),
             backgroundColor: Colors.green,
           ),
+        );
+        
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Rate Passenger'),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: const Icon(Icons.star_border, color: Colors.orange, size: 32),
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await _supabaseService.submitRating(rideId, index + 1, 'driver');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks for rating!')));
+                      }
+                    },
+                  );
+                }),
+              ),
+            );
+          }
         );
       }
     } catch (e) {
@@ -394,15 +437,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     const Icon(Icons.local_taxi,
                         color: Colors.white, size: 26),
                     const SizedBox(width: 10),
-                    const Text(
-                      'DrivO Dashboard',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'DrivO Dashboard',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(width: 8),
+                    if (!_isVerified)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text('Pending Verification', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
                     const Spacer(),
+                    TextButton(
+                      onPressed: () => context.pushReplacement('/rider'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: const Size(0, 30),
+                      ),
+                      child: const Text('Switch to Rider', style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
@@ -503,6 +572,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               fontSize: 12,
                             ),
                           ),
+                        ),
+                      if (_pendingCommission > 0)
+                        const SizedBox(width: 8),
+                      if (_pendingCommission > 0)
+                        ElevatedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Pay Commissions'),
+                                content: Text('Please pay your pending commission of ₹${_pendingCommission.toStringAsFixed(0)} via UPI to:\n\n9486335870@hdfcbank\n\nAfter payment, admin will update your balance.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('OK'),
+                                  )
+                                ],
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            minimumSize: const Size(0, 30),
+                          ),
+                          child: const Text('PAY NOW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                     ],
                   ),

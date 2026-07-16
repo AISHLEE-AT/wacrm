@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
-import '../features/driver/screens/role_selection_screen.dart';
 
 import '../features/driver/screens/home_screen.dart' as driver;
 import '../features/rider/screens/home_screen.dart' as rider;
@@ -21,7 +20,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/permissions',
     redirect: (context, state) {
       final isLoggingIn = state.uri.path == '/login';
-      final isSelectingRole = state.uri.path == '/role';
       final isPermissions = state.uri.path == '/permissions';
       final isRoot = state.uri.path == '/';
 
@@ -34,24 +32,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isPermissions && hasCompletedOnboarding) {
-        return '/role';
+        return '/'; // Let the subsequent logic handle it
       }
 
       if (authState.role == UserRole.guest) {
-        return (isLoggingIn || isSelectingRole) ? null : '/role';
+        return isLoggingIn ? null : '/login';
       }
 
-      if (isLoggingIn || isSelectingRole || isRoot) {
-        switch (authState.role) {
-          case UserRole.admin:
-            return '/rider';
-          case UserRole.driver:
-            return '/driver';
-          case UserRole.rider:
-            return '/rider';
-          case UserRole.guest:
-            return '/role';
-        }
+      if (isLoggingIn || isRoot) {
+        return '/rider';
       }
 
       return null;
@@ -62,18 +51,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PermissionsScreen(),
       ),
       GoRoute(
-        path: '/role',
-        builder: (context, state) => const RoleSelectionScreen(),
-      ),
-      GoRoute(
         path: '/login',
         builder: (context, state) {
-          // Read role from query parameters
-          final role = state.uri.queryParameters['role'] ?? 'rider';
-          return LoginScreen(role: role);
+          // Default role is rider, no longer reading from query param since role selection is gone
+          return const LoginScreen(role: 'rider');
         },
       ),
-
       GoRoute(
         path: '/driver',
         builder: (context, state) => const driver.HomeScreen(),

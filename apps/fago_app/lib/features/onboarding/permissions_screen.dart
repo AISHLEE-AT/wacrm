@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'device_service.dart';
+import 'onboarding_provider.dart';
 
-class PermissionsScreen extends StatefulWidget {
+class PermissionsScreen extends ConsumerStatefulWidget {
   const PermissionsScreen({super.key});
 
   @override
-  State<PermissionsScreen> createState() => _PermissionsScreenState();
+  ConsumerState<PermissionsScreen> createState() => _PermissionsScreenState();
 }
 
-class _PermissionsScreenState extends State<PermissionsScreen> {
+class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
   bool _isLoading = false;
 
   Future<void> _requestPermissions() async {
@@ -33,6 +35,9 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     // Mark onboarding as complete
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_complete', true);
+
+    // Invalidate the provider so the router re-evaluates
+    ref.invalidate(onboardingProvider);
 
     if (mounted) {
       // Proceed to the main app (e.g. login or home)
