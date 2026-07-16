@@ -18,10 +18,13 @@ interface MapProps {
   }>;
 }
 
+const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
+
 export default function Map({ center, zoom = 13, markers = [] }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries,
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);

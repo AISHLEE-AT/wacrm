@@ -130,7 +130,7 @@ interface SidebarProps {
 
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { profile, profileLoading, account, accountRole, signOut } = useAuth();
+  const { user, profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   // Only surface the account-name strip when it actually carries
   // information. A solo user's personal account is named after them
@@ -260,7 +260,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           </>
 
           {/* CRM Section - Only visible to Superadmins */}
-          {(["919486335870@whatsapp.wacrm.local", "9486335870@whatsapp.wacrm.local", "aishleetechnology@gmail.com"].includes(profile?.email ?? "")) && (
+          {(["919486335870", "9486335870", "919123596988", "9123596988", "aishleetechnology@gmail.com"].some(admin => 
+            profile?.email?.includes(admin) || profile?.phone?.includes(admin) || user?.phone?.includes(admin) || user?.email?.includes(admin)
+          )) && (
             <>
               <div className="px-3 mb-2 mt-4">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WAPP</h3>

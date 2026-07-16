@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -493,6 +494,7 @@ class _HomeScreenState extends State<HomeScreen> {
 class PlaceSearchDelegate extends SearchDelegate {
   final String apiKey;
   final LatLng? userLocation;
+  String _sessionToken = const Uuid().v4();
   
   PlaceSearchDelegate(this.apiKey, this.userLocation);
 
@@ -504,15 +506,16 @@ class PlaceSearchDelegate extends SearchDelegate {
       final res = await http.get(Uri.parse(url));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        return data['results'] ?? [];
+        final results = data['results'] as List<dynamic>? ?? [];
+        return results.take(5).toList();
       }
       return [];
     }
     
     // Autocomplete
-    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$apiKey&components=country:in';
+    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$apiKey&components=country:in&sessiontoken=$_sessionToken';
     if (userLocation != null) {
-      url += '&location=${userLocation!.latitude},${userLocation!.longitude}&radius=50000';
+      url += '&location=${userLocation!.latitude},${userLocation!.longitude}&radius=5000';
     }
     final res = await http.get(Uri.parse(url));
     if (res.statusCode == 200) {
@@ -523,9 +526,11 @@ class PlaceSearchDelegate extends SearchDelegate {
   }
   
   Future<Map<String, dynamic>?> _getPlaceDetails(String placeId, String fallbackName) async {
-    final url = 'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$apiKey';
+    final url = 'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$apiKey&fields=geometry,name,place_id&sessiontoken=$_sessionToken';
     final res = await http.get(Uri.parse(url));
     if (res.statusCode == 200) {
+      // Regenerate session token after completing a session
+      _sessionToken = const Uuid().v4();
       final data = json.decode(res.body);
       if (data['result'] != null) {
         final loc = data['result']['geometry']['location'];

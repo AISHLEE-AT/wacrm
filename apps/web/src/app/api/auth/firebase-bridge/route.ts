@@ -126,7 +126,7 @@ export async function POST(request: Request) {
 
     const payload = {
       aud: 'authenticated',
-      exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 30), // 30 days
+      exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour expiration
       sub: user.id,
       phone: user.phone,
       role: 'authenticated',

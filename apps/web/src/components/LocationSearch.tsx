@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, MapPin, Loader2, X } from "lucide-react";
-import { useLoadScript } from "@react-google-maps/api";
+import { useJsApiLoader } from "@react-google-maps/api";
 
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
 
@@ -36,10 +36,13 @@ export function LocationSearch({
   const [showDropdown, setShowDropdown] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const { isLoaded, loadError } = useLoadScript({
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries,
   });
+
+  const [sessionToken, setSessionToken] = useState<google.maps.places.AutocompleteSessionToken | null>(null);
 
   const autocompleteService = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesService = useRef<google.maps.places.PlacesService | null>(null);
@@ -49,6 +52,7 @@ export function LocationSearch({
       autocompleteService.current = new window.google.maps.places.AutocompleteService();
       // We need a dummy element for PlacesService to get details (lat/lng)
       placesService.current = new window.google.maps.places.PlacesService(document.createElement('div'));
+      setSessionToken(new window.google.maps.places.AutocompleteSessionToken());
     }
   }, [isLoaded]);
 
@@ -73,7 +77,7 @@ export function LocationSearch({
     
     const request = {
       location: new window.google.maps.LatLng(userLat, userLng),
-      radius: 10000, // 10km
+      radius: 5000, // 5km radius for nearby suggestions
       type: 'point_of_interest'
     };
 
@@ -101,6 +105,7 @@ export function LocationSearch({
           fetchNearbyPlaces();
         } else {
           setResults([]);
+          setLoading(false);
         }
         return;
       }
@@ -110,12 +115,13 @@ export function LocationSearch({
       const request: google.maps.places.AutocompletionRequest = {
         input: query,
         componentRestrictions: { country: 'in' }, // Assuming India as per TransO references
+        sessionToken: sessionToken ?? undefined,
       };
 
-      // Bias towards user location if available
+      // Bias towards user location if available (soft bias for search)
       if (userLat && userLng) {
         request.location = new window.google.maps.LatLng(userLat, userLng);
-        request.radius = 50000; // 50km radius
+        request.radius = 5000; // 5km bias radius
       }
 
       autocompleteService.current.getPlacePredictions(request, (predictions, status) => {
@@ -150,11 +156,20 @@ export function LocationSearch({
 
     // Otherwise fetch details via place_id
     if (placesService.current) {
-      placesService.current.getDetails({ placeId: option.place_id }, (place, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
-          onChange(shortName, place.geometry.location.lat(), place.geometry.location.lng());
+      placesService.current.getDetails(
+        { 
+          placeId: option.place_id,
+          sessionToken: sessionToken ?? undefined,
+          fields: ['geometry.location', 'name', 'place_id'] // Cost optimization field mask
+        }, 
+        (place, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.geometry?.location) {
+            onChange(shortName, place.geometry.location.lat(), place.geometry.location.lng());
+            // Regenerate session token after completing a session
+            setSessionToken(new window.google.maps.places.AutocompleteSessionToken());
+          }
         }
-      });
+      );
     } else {
       onChange(shortName);
     }

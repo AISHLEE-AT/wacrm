@@ -23,6 +23,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggingIn = state.uri.path == '/login';
       final isSelectingRole = state.uri.path == '/role';
       final isPermissions = state.uri.path == '/permissions';
+      final isRoot = state.uri.path == '/';
 
       if (authState.isLoading || onboardingState.isLoading) return null; // Keep current while loading
 
@@ -40,7 +41,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return (isLoggingIn || isSelectingRole) ? null : '/role';
       }
 
-      if (isLoggingIn || isSelectingRole) {
+      if (isLoggingIn || isSelectingRole || isRoot) {
         switch (authState.role) {
           case UserRole.admin:
             return '/rider';
