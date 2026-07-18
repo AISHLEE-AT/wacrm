@@ -36,7 +36,13 @@ export default function DriversManagementPage() {
   const fetchDrivers = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/drivers");
+      const res = await fetch(`/api/admin/drivers?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       const data = await res.json();
       if (data.drivers) {
         setDrivers(data.drivers);
@@ -244,7 +250,7 @@ export default function DriversManagementPage() {
                     <span className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider flex items-center gap-1">
                       <Wallet className="w-3 h-3" /> Wallet
                     </span>
-                    <span className="text-xl font-bold text-foreground">₹{driver.wallet_balance || 0}</span>
+                    <span className="text-xl font-bold text-blue-500 dark:text-blue-400">₹{driver.wallet_balance || 0}</span>
                   </div>
                   <div className="w-px bg-border"></div>
                   <div className="flex flex-col items-center">

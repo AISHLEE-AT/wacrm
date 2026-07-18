@@ -429,7 +429,7 @@ export default function DrivoDashboard() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Wallet Balance</p>
-              <p className="text-xl font-bold text-foreground">₹{driver.wallet_balance || 0}</p>
+              <p className="text-xl font-bold text-blue-500 dark:text-blue-400">₹{driver.wallet_balance || 0}</p>
             </div>
           </div>
         </div>
