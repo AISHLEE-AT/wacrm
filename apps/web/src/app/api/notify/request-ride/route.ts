@@ -29,7 +29,7 @@ function supabaseAdmin() {
 export async function POST(req: Request) {
   try {
     const { pickup_address, dropoff_address, price } = await req.json()
-    
+    // @ts-ignore
     if (!admin.apps.length) {
       return NextResponse.json({ error: 'Firebase not configured' }, { status: 500 })
     }
