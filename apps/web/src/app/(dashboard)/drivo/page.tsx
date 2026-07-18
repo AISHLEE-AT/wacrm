@@ -238,8 +238,15 @@ export default function DrivoDashboard() {
     
     setError(null);
     const newStatus = driver.status === "online" ? "offline" : "online";
-    await supabase.from("drivers").update({ status: newStatus }).eq("id", driver.id);
-    setDriver({ ...driver, status: newStatus });
+    
+    const updatePayload: any = { status: newStatus };
+    if (newStatus === "online" && currentLoc) {
+      updatePayload.lat = currentLoc[0];
+      updatePayload.lng = currentLoc[1];
+    }
+    
+    await supabase.from("drivers").update(updatePayload).eq("id", driver.id);
+    setDriver({ ...driver, ...updatePayload });
   };
 
   if (loading) {

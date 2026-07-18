@@ -17,6 +17,10 @@ interface Driver {
   wallet_balance: number;
   pending_commission: number;
   created_at: string;
+  name?: string;
+  mobile_number?: string;
+  whatsapp_number?: string;
+  driving_license?: string;
   profile?: {
     full_name: string | null;
     email: string | null;
@@ -131,7 +135,7 @@ export default function DriversManagementPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-bold truncate">
-                      {driver.profile?.full_name || "Unknown Driver"}
+                      {driver.name || driver.profile?.full_name || "Unknown Driver"}
                     </h3>
                     <Badge variant={driver.is_verified ? "default" : "secondary"} className={driver.is_verified ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
                       {driver.is_verified ? "Verified" : "Unverified"}
@@ -141,8 +145,11 @@ export default function DriversManagementPage() {
                     </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted-foreground mt-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm text-muted-foreground mt-3">
                     <div><span className="font-medium text-foreground">Email:</span> {driver.profile?.email || "N/A"}</div>
+                    <div><span className="font-medium text-foreground">Phone:</span> {driver.mobile_number || "N/A"}</div>
+                    <div><span className="font-medium text-foreground">WhatsApp:</span> {driver.whatsapp_number || "N/A"}</div>
+                    <div><span className="font-medium text-foreground">License:</span> {driver.driving_license || "N/A"}</div>
                     <div><span className="font-medium text-foreground">Vehicle:</span> <span className="capitalize">{driver.vehicle_type || 'Car'}</span></div>
                     <div><span className="font-medium text-foreground">Reg No:</span> {driver.vehicle_registration?.toUpperCase() || 'N/A'}</div>
                     <div><span className="font-medium text-foreground">Joined:</span> {format(new Date(driver.created_at), "MMM d, yyyy")}</div>

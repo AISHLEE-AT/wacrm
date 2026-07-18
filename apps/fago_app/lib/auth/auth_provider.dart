@@ -115,7 +115,20 @@ class AuthNotifier extends Notifier<AuthState> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['access_token'] != null && data['refresh_token'] != null) {
-          await _supabase.auth.setSession(data['access_token']);
+          final sessionJson = jsonEncode({
+            'access_token': data['access_token'],
+            'refresh_token': data['refresh_token'],
+            'expires_in': 3600,
+            'token_type': 'bearer',
+            'user': {
+              'id': data['user_id'],
+              'app_metadata': {},
+              'user_metadata': {},
+              'aud': 'authenticated',
+              'created_at': DateTime.now().toIso8601String(),
+            }
+          });
+          await _supabase.auth.recoverSession(sessionJson);
           return true;
         }
       }

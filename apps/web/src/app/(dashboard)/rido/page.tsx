@@ -234,15 +234,13 @@ export default function TransoBooking() {
     mapMarkers.push({ position: [dropoffLat, dropoffLng] as [number, number], title: dropoff || "Drop-off" });
   }
 
-  // Add fake driver markers if we don't have real locations, but since we fetch from DB, we'd use their last known lat/lng if we had it.
-  // For now, let's simulate nearby drivers around the pickup location if they are online.
-  onlineDrivers.forEach((driver, idx) => {
-    const lat = (pickupLat || DEFAULT_LAT) + (Math.random() - 0.5) * 0.02;
-    const lng = (pickupLng || DEFAULT_LNG) + (Math.random() - 0.5) * 0.02;
-    mapMarkers.push({
-      position: [lat, lng] as [number, number],
-      title: `Driver ${idx + 1} (${driver.vehicle_type || 'Car'})`
-    });
+  onlineDrivers.forEach((driver) => {
+    if (driver.lat && driver.lng) {
+      mapMarkers.push({
+        position: [driver.lat, driver.lng] as [number, number],
+        title: `Driver (${driver.vehicle_type || 'Car'}) - Ph: ${driver.mobile_number || 'N/A'}`
+      });
+    }
   });
 
   if (activeRide) {
