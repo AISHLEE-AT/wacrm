@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import * as admin from 'firebase-admin'
+import { initializeApp, getApps, cert } from 'firebase-admin/app'
+import { getMessaging } from 'firebase-admin/messaging'
 
 // Initialize Firebase Admin (Only once)
-// @ts-ignore
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     // Expected to be a base64 encoded JSON string of the service account key
     // e.g. base64(JSON.stringify(require('./serviceAccountKey.json')))
@@ -11,9 +11,8 @@ if (!admin.apps.length) {
     
     if (serviceAccountBase64) {
       const serviceAccount = JSON.parse(Buffer.from(serviceAccountBase64, 'base64').toString('utf8'))
-      admin.initializeApp({
-        // @ts-ignore
-        credential: admin.credential.cert(serviceAccount)
+      initializeApp({
+        credential: cert(serviceAccount)
       })
       console.log('Firebase Admin initialized via Base64 ENV')
     } else {
@@ -32,8 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'FCM token required' }, { status: 400 })
     }
 
-    // @ts-ignore
-    if (!admin.apps.length) {
+    if (!getApps().length) {
       return NextResponse.json({ error: 'Firebase Admin not initialized on server' }, { status: 500 })
     }
 
@@ -59,8 +57,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // @ts-ignore
-    const response = await admin.messaging().send(message)
+    const response = await getMessaging().send(message)
     
     return NextResponse.json({ success: true, messageId: response })
   } catch (error: any) {

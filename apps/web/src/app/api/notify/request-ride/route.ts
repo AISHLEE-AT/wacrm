@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server'
-import * as admin from 'firebase-admin'
+import { initializeApp, getApps, cert } from 'firebase-admin/app'
+import { getMessaging } from 'firebase-admin/messaging'
 import { createClient } from '@supabase/supabase-js'
 
 // Initialize Firebase Admin (Only once)
-// @ts-ignore
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64
     if (serviceAccountBase64) {
       const serviceAccount = JSON.parse(Buffer.from(serviceAccountBase64, 'base64').toString('utf8'))
-      admin.initializeApp({
-        // @ts-ignore
-        credential: admin.credential.cert(serviceAccount)
+      initializeApp({
+        credential: cert(serviceAccount)
       })
     }
   } catch (error) {
@@ -29,8 +28,7 @@ function supabaseAdmin() {
 export async function POST(req: Request) {
   try {
     const { pickup_address, dropoff_address, price } = await req.json()
-    // @ts-ignore
-    if (!admin.apps.length) {
+    if (!getApps().length) {
       return NextResponse.json({ error: 'Firebase not configured' }, { status: 500 })
     }
 
@@ -71,8 +69,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // @ts-ignore
-    const response = await admin.messaging().sendEachForMulticast(message)
+    const response = await getMessaging().sendEachForMulticast(message)
     
     return NextResponse.json({ success: true, successCount: response.successCount })
   } catch (error: any) {
