@@ -204,7 +204,7 @@ export async function POST(request: Request) {
     // WhatsApp Business Management API using a System User token, but for
     // this starter, we grab it from the verified payload if available, or
     // let the user configure it manually later.)
-    const wabaId = body.waba_id || phoneInfo?.waba_id || ''
+    const wabaId = body.waba_id || (phoneInfo as any)?.waba_id || ''
 
     // Encrypt the permanent token before storing it
     const encryptedToken = encrypt(access_token)
