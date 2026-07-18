@@ -96,7 +96,7 @@ export default function DrivoDashboard() {
 
   function subscribeToDriver(driverId: string) {
     const channel = supabase
-      .channel("public:drivers")
+      .channel(`driver-updates-${driverId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "drivers", filter: `id=eq.${driverId}` },
