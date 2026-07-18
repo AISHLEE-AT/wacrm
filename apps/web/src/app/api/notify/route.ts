@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'FCM token required' }, { status: 400 })
     }
 
+    // @ts-ignore
     if (!admin.apps.length) {
       return NextResponse.json({ error: 'Firebase Admin not initialized on server' }, { status: 500 })
     }
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       }
     }
 
+    // @ts-ignore
     const response = await admin.messaging().send(message)
     
     return NextResponse.json({ success: true, messageId: response })

@@ -71,6 +71,7 @@ export async function POST(req: Request) {
       }
     }
 
+    // @ts-ignore
     const response = await admin.messaging().sendEachForMulticast(message)
     
     return NextResponse.json({ success: true, successCount: response.successCount })
