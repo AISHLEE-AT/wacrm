@@ -63,6 +63,7 @@ export default function DrivoDashboard() {
         setDriver(driverData);
         loadPendingRides();
         subscribeToRides();
+        subscribeToDriver(driverData.id);
       } else {
         const { data: appData } = await supabase
           .from("driver_applications")
@@ -86,6 +87,25 @@ export default function DrivoDashboard() {
       })
       .subscribe();
       
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }
+
+  function subscribeToDriver(driverId: string) {
+    const channel = supabase
+      .channel("public:drivers")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "drivers", filter: `id=eq.${driverId}` },
+        (payload) => {
+          if (payload.new) {
+            setDriver((prev: any) => ({ ...prev, ...payload.new }));
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };

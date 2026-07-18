@@ -9,7 +9,9 @@ class SupabaseService {
 
   final SupabaseClient _client = Supabase.instance.client;
   RealtimeChannel? _ridesChannel;
+  RealtimeChannel? _driverChannel;
   Function(Map<String, dynamic>)? onNewRide;
+  Function(Map<String, dynamic>)? onDriverUpdate;
 
   /// Register a new driver in the Supabase `drivers` table.
   Future<Map<String, dynamic>?> registerDriver({
@@ -100,6 +102,29 @@ class SupabaseService {
         .subscribe();
   }
 
+  /// Subscribe to driver updates via Supabase Realtime (for wallet balance sync).
+  void subscribeToDriver(String driverId, Function(Map<String, dynamic>) onUpdate) {
+    onDriverUpdate = onUpdate;
+    _driverChannel = _client
+        .channel('public:drivers:update:$driverId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'drivers',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: driverId,
+          ),
+          callback: (payload) {
+            if (onDriverUpdate != null && payload.newRecord.isNotEmpty) {
+              onDriverUpdate!(payload.newRecord);
+            }
+          },
+        )
+        .subscribe();
+  }
+
   /// Accept a ride and set driver status to busy.
   Future<Map<String, dynamic>?> acceptRide(String rideId, String driverId) async {
     final res = await _client.from('rides').update({
@@ -155,6 +180,9 @@ class SupabaseService {
   void dispose() {
     if (_ridesChannel != null) {
       _client.removeChannel(_ridesChannel!);
+    }
+    if (_driverChannel != null) {
+      _client.removeChannel(_driverChannel!);
     }
   }
 }

@@ -70,7 +70,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _walletBalance =
               (driverData['wallet_balance'] as num?)?.toDouble() ?? 0;
           _isVerified = driverData['is_verified'] ?? false;
+          _isOnline = driverData['status'] == 'online';
         });
+        
+        // Subscribe to real-time wallet balance changes
+        if (_driverId != null) {
+          _supabaseService.subscribeToDriver(_driverId!, (updatedDriver) {
+            if (mounted) {
+              setState(() {
+                _walletBalance =
+                    (updatedDriver['wallet_balance'] as num?)?.toDouble() ?? _walletBalance;
+                _pendingCommission =
+                    (updatedDriver['pending_commission'] as num?)?.toDouble() ?? _pendingCommission;
+                _isOnline = updatedDriver['status'] == 'online';
+              });
+            }
+          });
+        }
       }
     } catch (e) {
       debugPrint("Error fetching driver data: $e");
