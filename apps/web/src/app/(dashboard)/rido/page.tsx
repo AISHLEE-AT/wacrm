@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { Clock, Loader2, LocateFixed, MapPin, Navigation, XCircle, Phone, Bike, Car, User } from "lucide-react";
+import { Clock, Loader2, LocateFixed, MapPin, Navigation, XCircle, Phone, Bike, Car, User, Star } from "lucide-react";
 import { LocationSearch } from "@/components/LocationSearch";
 import dynamic from "next/dynamic";
 import Link from "next/link";
