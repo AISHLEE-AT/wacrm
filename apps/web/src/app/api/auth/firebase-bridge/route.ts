@@ -147,6 +147,7 @@ export async function POST(request: Request) {
       firebase_uid: firebaseUid,
       access_token: token,
       refresh_token: token,
+      user: user,
     })
   } catch (error: any) {
     console.error('Firebase bridge error:', error)

@@ -82,7 +82,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final driverCheck = await _supabase
           .from('drivers')
           .select('id')
-          .eq('phone', phoneNumber.replaceAll('+91', ''))
+          .eq('mobile_number', phoneNumber.replaceAll('+91', ''))
           .maybeSingle();
 
       if (driverCheck != null) {
@@ -120,13 +120,7 @@ class AuthNotifier extends Notifier<AuthState> {
             'refresh_token': data['refresh_token'],
             'expires_in': 3600,
             'token_type': 'bearer',
-            'user': {
-              'id': data['user_id'],
-              'app_metadata': {},
-              'user_metadata': {},
-              'aud': 'authenticated',
-              'created_at': DateTime.now().toIso8601String(),
-            }
+            'user': data['user']
           });
           await _supabase.auth.recoverSession(sessionJson);
           return true;
