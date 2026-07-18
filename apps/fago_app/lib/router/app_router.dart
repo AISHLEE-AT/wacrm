@@ -41,7 +41,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isLoggingIn || isRoot) {
-        return '/rider';
+        if (authState.role == UserRole.driver) {
+          return '/driver';
+        } else {
+          return '/rider';
+        }
       }
 
       return null;
