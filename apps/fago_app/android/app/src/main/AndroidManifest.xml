@@ -7,7 +7,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <application
-        android:label="fago_app"
+        android:label="FAGO - LetsGo..."
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

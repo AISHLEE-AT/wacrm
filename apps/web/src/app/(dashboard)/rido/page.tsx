@@ -235,6 +235,7 @@ export default function TransoBooking() {
   }
 
   onlineDrivers.forEach((driver) => {
+    if (driver.user_id === user?.id) return;
     if (driver.lat && driver.lng) {
       mapMarkers.push({
         position: [driver.lat, driver.lng] as [number, number],

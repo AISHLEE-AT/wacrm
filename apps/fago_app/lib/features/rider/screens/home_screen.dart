@@ -333,16 +333,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (_dropoff != null) markers.add(Marker(markerId: const MarkerId('dropoff'), position: _dropoff!, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
       
       // Show online drivers nearby
+      final currentUserId = _supabase.auth.currentUser?.id;
       for (var i = 0; i < _onlineDrivers.length; i++) {
         final driver = _onlineDrivers[i];
-        // Generate random offset for simulation if we don't have their true real-time GPS in the DB yet
-        final lat = (_pickup?.latitude ?? _defaultCenter.latitude) + (math.Random().nextDouble() - 0.5) * 0.02;
-        final lng = (_pickup?.longitude ?? _defaultCenter.longitude) + (math.Random().nextDouble() - 0.5) * 0.02;
-        markers.add(Marker(
-          markerId: MarkerId('driver_${driver['id']}'),
-          position: LatLng(lat, lng),
-          icon: BitmapDescriptor.defaultMarkerWithHue(driver['vehicle_type'] == 'bike' ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueBlue),
-        ));
+        
+        // Exclude self to avoid showing two items (self as driver + self as rider)
+        if (driver['user_id'] == currentUserId) continue;
+
+        // Use exact vehicle location from DB
+        if (driver['lat'] != null && driver['lng'] != null) {
+          final lat = (driver['lat'] as num).toDouble();
+          final lng = (driver['lng'] as num).toDouble();
+          final phone = driver['mobile_number'] ?? 'N/A';
+          final vehicle = driver['vehicle_type'] == 'bike' ? 'Bike' : 'Car';
+          
+          markers.add(Marker(
+            markerId: MarkerId('driver_${driver['id']}'),
+            position: LatLng(lat, lng),
+            icon: BitmapDescriptor.defaultMarkerWithHue(driver['vehicle_type'] == 'bike' ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueBlue),
+            infoWindow: InfoWindow(
+              title: 'Driver ($vehicle)',
+              snippet: 'Ph: $phone',
+            ),
+          ));
+        }
       }
     }
 

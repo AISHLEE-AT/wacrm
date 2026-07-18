@@ -15,6 +15,10 @@ class DriverRegistrationScreen extends ConsumerStatefulWidget {
 class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _vehicleController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _licenseController = TextEditingController();
+  final TextEditingController _insuranceController = TextEditingController();
+  final TextEditingController _upiController = TextEditingController();
 
   bool _isLoading = false;
   String _selectedVehicleType = 'bike'; // Default to bike matching Next.js
@@ -31,12 +35,12 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
       // requires missing fields, we will pass empty strings for them to avoid breaking the signature.
       // Wait, let's just pass the required fields or empty strings if needed by existing method.
       final result = await SupabaseService().registerDriver(
-        name: 'Unknown', // Not required in new flow
+        name: _nameController.text.trim(),
         whatsappNumber: FirebaseAuth.instance.currentUser?.phoneNumber ?? '', 
-        drivingLicense: '', 
+        drivingLicense: _licenseController.text.trim(), 
         vehicleRegistration: _vehicleController.text.trim().toUpperCase(),
-        insuranceDetails: '', 
-        upiId: '', 
+        insuranceDetails: _insuranceController.text.trim(), 
+        upiId: _upiController.text.trim(), 
         vehicleType: _selectedVehicleType,
       );
 
@@ -171,6 +175,14 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                       const SizedBox(height: 24),
 
                       const Text(
+                        'FULL NAME',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(_nameController, 'e.g. John Doe', false),
+                      const SizedBox(height: 24),
+
+                      const Text(
                         'REGISTRATION NUMBER',
                         style: TextStyle(
                           fontSize: 12,
@@ -180,37 +192,31 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _vehicleController,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: InputDecoration(
-                          hintText: 'e.g. TN-01-AB-1234',
-                          hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
-                            fontWeight: FontWeight.w500,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF171717), // bg-neutral-900
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFF333333), width: 2),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFF333333), width: 2),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFFF97316), width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                        ),
-                        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                      _buildTextField(_vehicleController, 'e.g. TN-01-AB-1234', true),
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        'DRIVING LICENSE NUMBER',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1.2),
                       ),
+                      const SizedBox(height: 12),
+                      _buildTextField(_licenseController, 'e.g. TN0120230000000', true),
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        'INSURANCE POLICY NUMBER',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(_insuranceController, 'Policy Number', false),
+                      const SizedBox(height: 24),
+
+                      const Text(
+                        'UPI ID (FOR PAYOUTS)',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(_upiController, 'e.g. number@upi', false),
                       const SizedBox(height: 32),
 
                       SizedBox(
@@ -300,6 +306,25 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
     );
   }
 
+  Widget _buildTextField(TextEditingController controller, String hint, bool isUpper) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      textCapitalization: isUpper ? TextCapitalization.characters : TextCapitalization.none,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontWeight: FontWeight.w500),
+        filled: true,
+        fillColor: const Color(0xFF171717),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF333333), width: 2)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF333333), width: 2)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFF97316), width: 2)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      ),
+      validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+    );
+  }
+
   Widget _buildVehicleButton(String type, IconData icon) {
     final isSelected = _selectedVehicleType == type;
     return GestureDetector(
@@ -339,6 +364,10 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
   @override
   void dispose() {
     _vehicleController.dispose();
+    _nameController.dispose();
+    _licenseController.dispose();
+    _insuranceController.dispose();
+    _upiController.dispose();
     super.dispose();
   }
 }

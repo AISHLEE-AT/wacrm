@@ -22,6 +22,10 @@ export default function DrivoDashboard() {
   const [currentLoc, setCurrentLoc] = useState<[number, number]>([13.0827, 80.2707]);
   
   const [regNo, setRegNo] = useState("");
+  const [name, setName] = useState("");
+  const [license, setLicense] = useState("");
+  const [insurance, setInsurance] = useState("");
+  const [upi, setUpi] = useState("");
   const [vehicleType, setVehicleType] = useState("bike");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -206,6 +210,10 @@ export default function DrivoDashboard() {
         .from("drivers")
         .insert({
           user_id: user?.id,
+          name: name,
+          driving_license: license,
+          insurance_details: insurance,
+          upi_id: upi,
           status: "offline",
           wallet_balance: 0,
           pending_commission: 0,
@@ -314,12 +322,52 @@ export default function DrivoDashboard() {
               </div>
 
               <div>
+                <label className="block text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">Full Name</label>
+                <input 
+                  className="w-full rounded-2xl border-2 border-border bg-slate-50 dark:bg-neutral-900 px-5 py-4 text-foreground font-bold focus:outline-none focus:border-orange-500 focus:bg-background transition-colors placeholder:font-medium placeholder:text-muted-foreground"
+                  placeholder="e.g. John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">Registration Number</label>
                 <input 
                   className="w-full rounded-2xl border-2 border-border bg-slate-50 dark:bg-neutral-900 px-5 py-4 text-foreground font-bold focus:outline-none focus:border-orange-500 focus:bg-background transition-colors uppercase placeholder:normal-case placeholder:font-medium placeholder:text-muted-foreground"
                   placeholder="e.g. TN-01-AB-1234"
                   value={regNo}
                   onChange={(e) => setRegNo(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">Driving License Number</label>
+                <input 
+                  className="w-full rounded-2xl border-2 border-border bg-slate-50 dark:bg-neutral-900 px-5 py-4 text-foreground font-bold focus:outline-none focus:border-orange-500 focus:bg-background transition-colors uppercase placeholder:normal-case placeholder:font-medium placeholder:text-muted-foreground"
+                  placeholder="e.g. TN0120230000000"
+                  value={license}
+                  onChange={(e) => setLicense(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">Insurance Policy Number</label>
+                <input 
+                  className="w-full rounded-2xl border-2 border-border bg-slate-50 dark:bg-neutral-900 px-5 py-4 text-foreground font-bold focus:outline-none focus:border-orange-500 focus:bg-background transition-colors placeholder:font-medium placeholder:text-muted-foreground"
+                  placeholder="Policy Number"
+                  value={insurance}
+                  onChange={(e) => setInsurance(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-muted-foreground mb-4 uppercase tracking-wider">UPI ID (FOR PAYOUTS)</label>
+                <input 
+                  className="w-full rounded-2xl border-2 border-border bg-slate-50 dark:bg-neutral-900 px-5 py-4 text-foreground font-bold focus:outline-none focus:border-orange-500 focus:bg-background transition-colors placeholder:font-medium placeholder:text-muted-foreground"
+                  placeholder="e.g. number@upi"
+                  value={upi}
+                  onChange={(e) => setUpi(e.target.value)}
                 />
               </div>
               

@@ -9,6 +9,7 @@ import '../features/driver/screens/home_screen.dart' as driver;
 import '../features/rider/screens/home_screen.dart' as rider;
 
 import '../features/driver/screens/driver_registration_screen.dart' as driver_reg;
+import '../features/driver/screens/admin_home_screen.dart' as admin;
 
 import '../features/onboarding/onboarding_provider.dart';
 import '../features/onboarding/permissions_screen.dart';
@@ -41,7 +42,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isLoggingIn || isRoot) {
-        if (authState.role == UserRole.driver) {
+        if (authState.role == UserRole.admin) {
+          return '/admin';
+        } else if (authState.role == UserRole.driver) {
           return '/driver';
         } else {
           return '/rider';
@@ -69,6 +72,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Default role is rider, no longer reading from query param since role selection is gone
           return const LoginScreen(role: 'rider');
         },
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const admin.AdminHomeScreen(),
       ),
       GoRoute(
         path: '/driver',
