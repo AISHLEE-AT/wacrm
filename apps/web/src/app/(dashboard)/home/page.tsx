@@ -1,74 +1,156 @@
 "use client";
 
 import Link from "next/link";
-import { Car, Search, Briefcase, Zap, Shield } from "lucide-react";
+import { Car, Search, Briefcase, Zap, Shield, Sparkles, ChevronRight, Activity, MapPin } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { motion } from "framer-motion";
 
 export default function SuperAppHome() {
   const { profile } = useAuth();
+  const userName = profile?.full_name?.split(' ')[0] || 'there';
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <div className="mb-8 rounded-2xl bg-gradient-to-r from-black to-neutral-800 p-8 text-white shadow-xl">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500 bg-neutral-900">
-            <Zap className="h-6 w-6 text-emerald-500" />
+    <div className="max-w-6xl mx-auto py-8 px-4 relative min-h-screen">
+      
+      {/* Background ambient light effects */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+      {/* Hero Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden mb-12 rounded-3xl bg-gradient-to-br from-neutral-900 via-black to-neutral-900 border border-white/10 p-10 shadow-2xl"
+      >
+        <div className="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+          <Sparkles className="w-48 h-48 text-emerald-400" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-amber-500 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl">
+                <Zap className="h-10 w-10 text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-amber-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" style={{ stroke: "url(#gradient)" }} />
+                <svg width="0" height="0">
+                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop stopColor="#34d399" offset="0%" />
+                    <stop stopColor="#fbbf24" offset="100%" />
+                  </linearGradient>
+                </svg>
+              </div>
+            </div>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-400 mb-2">
+                FAGO <span className="text-amber-400 font-black">LETSGO</span>
+              </h1>
+              <p className="text-lg text-emerald-400 font-medium tracking-wide">Your world in one immersive place</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Super App</h1>
-            <p className="text-neutral-400">Your world in one place</p>
+          
+          <div className="hidden md:flex flex-col items-end">
+            <div className="flex items-center gap-2 text-neutral-400 mb-1">
+              <Activity className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-medium">System Online</span>
+            </div>
+            <div className="flex items-center gap-2 text-neutral-400">
+              <MapPin className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-medium">Location Active</span>
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <h2 className="text-2xl font-bold mb-6 text-foreground">What do you need today, {profile?.full_name?.split(' ')[0] || 'there'}?</h2>
+      <motion.h2 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="text-3xl font-bold mb-8 text-white tracking-tight"
+      >
+        What do you need today, <span className="text-emerald-400">{userName}</span>?
+      </motion.h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         
         {/* RidO Card */}
-        <Link href="/transo" className="group block overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-emerald-100 p-6 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-start justify-between mb-4">
-            <div className="bg-emerald-500 rounded-xl p-3 text-white shadow-sm">
-              <Car className="w-6 h-6" />
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
+          <Link href="/transo" className="group relative block h-full overflow-hidden rounded-3xl border border-white/10 bg-neutral-900/50 backdrop-blur-md p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.3)] hover:border-emerald-500/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            <div className="relative z-10 flex items-start justify-between mb-8">
+              <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-2xl p-4 shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform duration-500">
+                <Car className="w-8 h-8 text-white" />
+              </div>
+              <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-4 py-1.5 text-xs font-bold text-emerald-400 backdrop-blur-sm">RidO</span>
             </div>
-            <span className="rounded-full bg-emerald-200/50 px-3 py-1 text-xs font-bold text-emerald-800">RidO</span>
-          </div>
-          <h3 className="text-xl font-bold text-emerald-900 mb-2">Book a Ride</h3>
-          <p className="text-sm leading-relaxed text-emerald-700">Fast and reliable rides for your daily commute. Auto, Bike, and Cabs.</p>
-        </Link>
+            
+            <h3 className="relative z-10 text-2xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors">Book a Ride</h3>
+            <p className="relative z-10 text-neutral-400 leading-relaxed mb-6">Experience fast, premium, and reliable rides for your daily commute. Auto, Bike, and Cabs at your fingertips.</p>
+            
+            <div className="relative z-10 flex items-center text-emerald-500 font-semibold text-sm group-hover:gap-2 transition-all">
+              Explore Rides <ChevronRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </div>
+          </Link>
+        </motion.div>
 
         {/* FAGO Hub Card */}
-        <Link href="/fago" className="group block overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-start justify-between mb-4">
-            <div className="bg-blue-500 rounded-xl p-3 text-white shadow-sm">
-              <Search className="w-6 h-6" />
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }}>
+          <Link href="/fago" className="group relative block h-full overflow-hidden rounded-3xl border border-white/10 bg-neutral-900/50 backdrop-blur-md p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(59,130,246,0.3)] hover:border-blue-500/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            <div className="relative z-10 flex items-start justify-between mb-8">
+              <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-4 shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500">
+                <Search className="w-8 h-8 text-white" />
+              </div>
+              <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 text-xs font-bold text-blue-400 backdrop-blur-sm">FAGO Hub</span>
             </div>
-            <span className="rounded-full bg-blue-200/50 px-3 py-1 text-xs font-bold text-blue-800">FAGO</span>
-          </div>
-          <h3 className="text-xl font-bold text-blue-900 mb-2">Hire a Service</h3>
-          <p className="text-sm leading-relaxed text-blue-700">Find plumbers, electricians, catering, and more near you.</p>
-        </Link>
+            
+            <h3 className="relative z-10 text-2xl font-bold text-white mb-3 group-hover:text-blue-400 transition-colors">Hire a Service</h3>
+            <p className="relative z-10 text-neutral-400 leading-relaxed mb-6">Discover top-rated plumbers, electricians, catering, and exclusive local services verified just for you.</p>
+            
+            <div className="relative z-10 flex items-center text-blue-500 font-semibold text-sm group-hover:gap-2 transition-all">
+              Find Services <ChevronRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </div>
+          </Link>
+        </motion.div>
 
         {/* DrivO Card */}
-        <Link href="/drivo" className="group block overflow-hidden rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-orange-100 p-6 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-start justify-between mb-4">
-            <div className="bg-orange-500 rounded-xl p-3 text-white shadow-sm">
-              <Briefcase className="w-6 h-6" />
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.5 }}>
+          <Link href="/drivo" className="group relative block h-full overflow-hidden rounded-3xl border border-white/10 bg-neutral-900/50 backdrop-blur-md p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(245,158,11,0.3)] hover:border-amber-500/50">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            <div className="relative z-10 flex items-start justify-between mb-8">
+              <div className="bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl p-4 shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform duration-500">
+                <Briefcase className="w-8 h-8 text-white" />
+              </div>
+              <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-4 py-1.5 text-xs font-bold text-amber-400 backdrop-blur-sm">DrivO</span>
             </div>
-            <span className="rounded-full bg-orange-200/50 px-3 py-1 text-xs font-bold text-orange-800">DrivO</span>
-          </div>
-          <h3 className="text-xl font-bold text-orange-900 mb-2">Drive & Earn</h3>
-          <p className="text-sm leading-relaxed text-orange-700">Register your vehicle and start earning by driving for RidO.</p>
-        </Link>
+            
+            <h3 className="relative z-10 text-2xl font-bold text-white mb-3 group-hover:text-amber-400 transition-colors">Drive & Earn</h3>
+            <p className="relative z-10 text-neutral-400 leading-relaxed mb-6">Partner with us. Register your vehicle, set your own schedule, and start earning premium rates instantly.</p>
+            
+            <div className="relative z-10 flex items-center text-amber-500 font-semibold text-sm group-hover:gap-2 transition-all">
+              Start Earning <ChevronRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+            </div>
+          </Link>
+        </motion.div>
       </div>
 
-      <div className="mt-8 flex items-center gap-4 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <Shield className="h-8 w-8 text-emerald-500" />
-        <div>
-          <h4 className="font-bold text-foreground">Safe & Secure</h4>
-          <p className="text-sm text-muted-foreground">All our drivers and service providers are verified for your safety.</p>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="mt-12 flex flex-col md:flex-row items-center gap-6 rounded-3xl border border-white/5 bg-neutral-900/30 p-8 backdrop-blur-md"
+      >
+        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+          <Shield className="h-8 w-8 text-emerald-400" />
         </div>
-      </div>
+        <div>
+          <h4 className="text-lg font-bold text-white mb-1">Safe & Secure Ecosystem</h4>
+          <p className="text-neutral-400 max-w-2xl leading-relaxed">We employ enterprise-grade verification for all our drivers and service providers. Your safety and data security are our highest priority.</p>
+        </div>
+      </motion.div>
     </div>
   );
 }
