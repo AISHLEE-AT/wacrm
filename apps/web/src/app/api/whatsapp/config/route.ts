@@ -223,6 +223,7 @@ export async function POST(request: Request) {
           verify_token: body.verify_token || null,
           access_token: encryptedToken,
           status: 'connected',
+          registered_at: new Date().toISOString(),
           connected_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
