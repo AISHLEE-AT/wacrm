@@ -234,7 +234,7 @@ export default function TransoBooking() {
     mapMarkers.push({ position: [dropoffLat, dropoffLng] as [number, number], title: dropoff || "Drop-off" });
   }
 
-  const uniqueDrivers = new Map();
+  const uniqueDrivers = new globalThis.Map();
   onlineDrivers.forEach((driver) => {
     if (driver.user_id === user?.id) return;
     if (driver.lat && driver.lng) {
