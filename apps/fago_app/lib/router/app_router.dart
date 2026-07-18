@@ -14,13 +14,24 @@ import '../features/driver/screens/admin_home_screen.dart' as admin;
 import '../features/onboarding/onboarding_provider.dart';
 import '../features/onboarding/permissions_screen.dart';
 
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+  RouterNotifier(this._ref) {
+    _ref.listen(authProvider, (_, __) => notifyListeners());
+    _ref.listen(onboardingProvider, (_, __) => notifyListeners());
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-  final onboardingState = ref.watch(onboardingProvider);
+  final notifier = RouterNotifier(ref);
 
   return GoRouter(
     initialLocation: '/permissions',
+    refreshListenable: notifier,
     redirect: (context, state) {
+      final authState = ref.read(authProvider);
+      final onboardingState = ref.read(onboardingProvider);
+      
       final isLoggingIn = state.uri.path == '/login';
       final isPermissions = state.uri.path == '/permissions';
       final isRoot = state.uri.path == '/';

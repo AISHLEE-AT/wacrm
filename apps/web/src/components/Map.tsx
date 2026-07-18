@@ -15,6 +15,7 @@ interface MapProps {
   markers?: Array<{
     position: [number, number];
     title: string;
+    icon?: string;
   }>;
 }
 
@@ -55,6 +56,7 @@ export default function Map({ center, zoom = 13, markers = [] }: MapProps) {
           key={idx}
           position={{ lat: marker.position[0], lng: marker.position[1] }}
           title={marker.title}
+          icon={marker.icon ? { url: marker.icon, scaledSize: new window.google.maps.Size(40, 40) } : undefined}
         />
       ))}
     </GoogleMap>

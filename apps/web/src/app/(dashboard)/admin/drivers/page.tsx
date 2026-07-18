@@ -102,6 +102,28 @@ export default function DriversManagementPage() {
     }
   };
 
+  const handleDeleteDriver = async (driver: Driver) => {
+    if (!confirm("Are you sure you want to completely remove this driver? This action cannot be undone.")) return;
+    
+    setProcessingId(driver.id + "-delete");
+    try {
+      const res = await fetch(`/api/admin/drivers?id=${driver.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchDrivers();
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete driver");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse">Loading drivers...</div>;
   }
@@ -199,6 +221,16 @@ export default function DriversManagementPage() {
                     onClick={() => handleClearCommission(driver)}
                   >
                     <DollarSign className="w-4 h-4 mr-1" /> Clear Dues
+                  </Button>
+                  
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full mt-2"
+                    disabled={processingId === driver.id + "-delete"}
+                    onClick={() => handleDeleteDriver(driver)}
+                  >
+                    <X className="w-4 h-4 mr-1" /> Remove
                   </Button>
                 </div>
               </div>

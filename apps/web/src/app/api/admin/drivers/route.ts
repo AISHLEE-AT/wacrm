@@ -77,3 +77,31 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const driver_id = searchParams.get('id')
+    if (!driver_id) {
+      return NextResponse.json({ error: 'Driver ID required' }, { status: 400 })
+    }
+
+    const supabase = supabaseAdmin()
+    
+    // In a real app, you might want to also delete the user from auth.users
+    // or just delete the driver profile. Here we'll delete from the drivers table.
+    const { error } = await supabase
+      .from('drivers')
+      .delete()
+      .eq('id', driver_id)
+
+    if (error) {
+      throw error
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Delete driver error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}

@@ -14,12 +14,14 @@ class AuthState {
   final UserRole role;
   final firebase.User? firebaseUser;
   final User? supabaseUser;
+  final String? errorMessage;
 
   AuthState({
     this.isLoading = true,
     this.role = UserRole.guest,
     this.firebaseUser,
     this.supabaseUser,
+    this.errorMessage,
   });
 
   AuthState copyWith({
@@ -27,12 +29,14 @@ class AuthState {
     UserRole? role,
     firebase.User? firebaseUser,
     User? supabaseUser,
+    String? errorMessage,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       role: role ?? this.role,
       firebaseUser: firebaseUser ?? this.firebaseUser,
       supabaseUser: supabaseUser ?? this.supabaseUser,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }
@@ -56,12 +60,13 @@ class AuthNotifier extends Notifier<AuthState> {
       if (user == null) {
         state = AuthState(isLoading: false, role: UserRole.guest);
       } else {
-        state = state.copyWith(isLoading: true, firebaseUser: user);
-        bool exchanged = await exchangeFirebaseForSupabase();
-        if (exchanged) {
+        state = state.copyWith(isLoading: true, firebaseUser: user, errorMessage: null);
+        try {
+          await exchangeFirebaseForSupabase();
           await _resolveRole(user.phoneNumber);
-        } else {
-          state = AuthState(isLoading: false, role: UserRole.guest);
+        } catch (e) {
+          debugPrint('Auth initialization error: $e');
+          state = AuthState(isLoading: false, role: UserRole.guest, errorMessage: e.toString());
         }
       }
     });
@@ -96,42 +101,40 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: _supabase.auth.currentUser);
     } catch (e) {
       debugPrint('Role resolution error: $e');
-      state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: _supabase.auth.currentUser);
+      throw Exception('Role resolution failed: $e');
     }
   }
 
-  Future<bool> exchangeFirebaseForSupabase() async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) return false;
+  Future<void> exchangeFirebaseForSupabase() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception('Firebase user is null');
 
-      final idToken = await user.getIdToken();
-      if (idToken == null) return false;
+    final idToken = await user.getIdToken();
+    if (idToken == null) throw Exception('Firebase idToken is null');
 
-      final response = await http.post(
-        Uri.parse(_bridgeUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'firebaseToken': idToken}),
-      );
+    final response = await http.post(
+      Uri.parse(_bridgeUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'firebaseToken': idToken}),
+    );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['access_token'] != null && data['refresh_token'] != null) {
-          final sessionJson = jsonEncode({
-            'access_token': data['access_token'],
-            'refresh_token': data['refresh_token'],
-            'expires_in': 3600,
-            'token_type': 'bearer',
-            'user': data['user']
-          });
-          await _supabase.auth.recoverSession(sessionJson);
-          return true;
-        }
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['access_token'] != null && data['refresh_token'] != null) {
+        final sessionJson = jsonEncode({
+          'access_token': data['access_token'],
+          'refresh_token': data['refresh_token'],
+          'expires_in': 3600,
+          'token_type': 'bearer',
+          'user': data['user']
+        });
+        await _supabase.auth.recoverSession(sessionJson);
+        return;
+      } else {
+        throw Exception('Bridge response missing tokens: ${response.body}');
       }
-      return false;
-    } catch (e) {
-      debugPrint('Firebase→Supabase bridge error: $e');
-      return false;
+    } else {
+      throw Exception('Bridge API failed (${response.statusCode}): ${response.body}');
     }
   }
 

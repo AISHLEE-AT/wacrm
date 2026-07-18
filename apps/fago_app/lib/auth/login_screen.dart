@@ -122,7 +122,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 30),
+              Consumer(
+                builder: (context, ref, child) {
+                  final errorMessage = ref.watch(authProvider).errorMessage;
+                  if (errorMessage != null) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 20),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withOpacity(0.1),
+                        border: Border.all(color: Colors.redAccent),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Backend Sync Failed:\n$errorMessage',
+                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+              const SizedBox(height: 10),
               if (!_isOTPSent) ...[
                 TextField(
                   controller: _phoneController,

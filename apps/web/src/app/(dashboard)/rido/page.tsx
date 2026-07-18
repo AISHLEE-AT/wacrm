@@ -234,14 +234,28 @@ export default function TransoBooking() {
     mapMarkers.push({ position: [dropoffLat, dropoffLng] as [number, number], title: dropoff || "Drop-off" });
   }
 
+  const uniqueDrivers = new Map();
   onlineDrivers.forEach((driver) => {
     if (driver.user_id === user?.id) return;
     if (driver.lat && driver.lng) {
-      mapMarkers.push({
-        position: [driver.lat, driver.lng] as [number, number],
-        title: `Driver (${driver.vehicle_type || 'Car'}) - Ph: ${driver.mobile_number || 'N/A'}`
-      });
+      // Deduplicate by user_id
+      uniqueDrivers.set(driver.user_id, driver);
     }
+  });
+
+  uniqueDrivers.forEach((driver) => {
+    let iconUrl = "https://cdn-icons-png.flaticon.com/512/3204/3204061.png"; // default car
+    if (driver.vehicle_type?.toLowerCase() === 'bike') {
+      iconUrl = "https://cdn-icons-png.flaticon.com/512/1987/1987625.png";
+    } else if (driver.vehicle_type?.toLowerCase() === 'auto') {
+      iconUrl = "https://cdn-icons-png.flaticon.com/512/4736/4736173.png";
+    }
+
+    mapMarkers.push({
+      position: [driver.lat, driver.lng] as [number, number],
+      title: `Driver (${driver.vehicle_type || 'Car'}) - Ph: ${driver.mobile_number || 'N/A'}`,
+      icon: iconUrl
+    });
   });
 
   if (activeRide) {
