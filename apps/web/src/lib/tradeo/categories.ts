@@ -1,5 +1,5 @@
-// Shared TradO category definitions used across the app
-export const TRADEO_CATEGORIES = [
+// Shared FAGO category definitions used across the app
+export const fago_CATEGORIES = [
   { value: 'Food & Beverages', label: '🍛 Food & Beverages', keywords: ['biriyani', 'meals', 'catering', 'food', 'tiffin', 'snacks', 'sweets'] },
   { value: 'Home Services', label: '🔧 Home Services', keywords: ['plumbing', 'plumber', 'electrical', 'electrician', 'carpentry', 'carpenter', 'painting', 'painter'] },
   { value: 'Transportation', label: '🚗 Transportation', keywords: ['cab', 'auto', 'bike', 'transport', 'delivery', 'courier', 'moving'] },
@@ -14,7 +14,7 @@ export const TRADEO_CATEGORIES = [
 
 export function detectCategory(keyword: string): string {
   const kw = keyword.toLowerCase()
-  for (const cat of TRADEO_CATEGORIES) {
+  for (const cat of fago_CATEGORIES) {
     if (cat.keywords.some(k => kw.includes(k) || k.includes(kw))) {
       return cat.value
     }

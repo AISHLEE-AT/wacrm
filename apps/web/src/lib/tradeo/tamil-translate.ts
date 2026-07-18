@@ -1,5 +1,5 @@
 // Tamil to English keyword translation map
-// Used by TradO voice search to translate Tamil speech → English search terms
+// Used by FAGO voice search to translate Tamil speech → English search terms
 
 export const TAMIL_TO_ENGLISH: Record<string, string> = {
   // Food & Beverages

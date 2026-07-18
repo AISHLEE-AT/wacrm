@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
-import { TRADEO_CATEGORIES } from '@/lib/tradeo/categories'
+import { fago_CATEGORIES } from '@/lib/fago/categories'
 import { Users, Plus, X, Search, Phone, MapPin, Tag, ToggleLeft, ToggleRight, ChevronRight } from 'lucide-react'
 
 interface Provider {
@@ -53,7 +53,7 @@ function ProviderForm({ onSave, onClose, defaultPincode }: { onSave: () => void;
     let phone = form.phone_number.replace(/\D/g, '')
     if (phone.length === 10) phone = '91' + phone
 
-    await fetch('/api/tradeo/providers', {
+    await fetch('/api/fago/providers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...form, phone_number: phone })
@@ -112,7 +112,7 @@ function ProviderForm({ onSave, onClose, defaultPincode }: { onSave: () => void;
               onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
               className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             >
-              {TRADEO_CATEGORIES.map(c => (
+              {fago_CATEGORIES.map(c => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
@@ -178,7 +178,7 @@ export default function ProvidersPage() {
     const params = new URLSearchParams()
     if (filterPincode) params.set('pincode', filterPincode)
     if (filterCat !== 'All') params.set('category', filterCat)
-    const res = await fetch(`/api/tradeo/providers?${params}`)
+    const res = await fetch(`/api/fago/providers?${params}`)
     if (res.ok) {
       const data = await res.json()
       setProviders(data.providers || [])
@@ -189,7 +189,7 @@ export default function ProvidersPage() {
   useEffect(() => { load() }, [filterCat, filterPincode])
 
   async function toggleActive(id: string, current: boolean) {
-    await fetch('/api/tradeo/providers', {
+    await fetch('/api/fago/providers', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, is_active: !current })
@@ -221,7 +221,7 @@ export default function ProvidersPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push('/tradeo')}
+            onClick={() => router.push('/fago')}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             ←
@@ -265,7 +265,7 @@ export default function ProvidersPage() {
 
         {/* Category filter pills */}
         <div className="flex flex-wrap gap-2 mt-3">
-          {['All', ...TRADEO_CATEGORIES.map(c => c.value)].map(cat => (
+          {['All', ...fago_CATEGORIES.map(c => c.value)].map(cat => (
             <button
               key={cat}
               onClick={() => setFilterCat(cat)}
@@ -275,7 +275,7 @@ export default function ProvidersPage() {
                   : 'border border-border bg-muted/50 text-muted-foreground hover:text-foreground'
               }`}
             >
-              {TRADEO_CATEGORIES.find(c => c.value === cat)?.label || '🌐 All'}
+              {fago_CATEGORIES.find(c => c.value === cat)?.label || '🌐 All'}
             </button>
           ))}
         </div>

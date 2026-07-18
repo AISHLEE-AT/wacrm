@@ -1,8 +1,8 @@
 import React from 'react';
 
 export const metadata = {
-  title: 'Privacy Policy | TradO',
-  description: 'Privacy Policy for TradO.',
+  title: 'Privacy Policy | FAGO',
+  description: 'Privacy Policy for FAGO.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert mx-auto">
           <p>
-            Welcome to TradO (accessible at <a href="https://mywhatsapp-two.vercel.app" className="text-primary hover:underline">https://mywhatsapp-two.vercel.app</a>). 
+            Welcome to FAGO (accessible at <a href="https://mywhatsapp-two.vercel.app" className="text-primary hover:underline">https://mywhatsapp-two.vercel.app</a>). 
             Your privacy is critically important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our application.
           </p>
 
@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
             We may collect the following types of information:
           </p>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Personal Information:</strong> Includes your name, email address, phone numbers, and any other details you provide when registering or interacting with TradO.</li>
+            <li><strong>Personal Information:</strong> Includes your name, email address, phone numbers, and any other details you provide when registering or interacting with FAGO.</li>
             <li><strong>Communication Data:</strong> Messages, contacts, and broadcast history handled through the WhatsApp Business API integration.</li>
             <li><strong>Usage Data:</strong> Information about how you navigate and use our platform (e.g., login times, features accessed).</li>
           </ul>
@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-2xl font-bold mt-8 mb-4">2. How We Use Your Information</h2>
           <p>We use the collected information to:</p>
           <ul className="list-disc pl-6 space-y-2">
-            <li>Provide, operate, and maintain TradO.</li>
+            <li>Provide, operate, and maintain FAGO.</li>
             <li>Facilitate your communications via the WhatsApp API.</li>
             <li>Improve, personalize, and expand our services.</li>
             <li>Understand and analyze how you use our platform.</li>
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
 
           <h2 className="text-2xl font-bold mt-8 mb-4">5. Changes to This Privacy Policy</h2>
           <p>
-            Welcome to TradO's Privacy Policy. We are committed to protecting your personal information and your right to privacy. We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
+            Welcome to FAGO's Privacy Policy. We are committed to protecting your personal information and your right to privacy. We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. You are advised to review this Privacy Policy periodically for any changes.
           </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4">6. Contact Us</h2>

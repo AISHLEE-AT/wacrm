@@ -487,7 +487,7 @@ async function handleStandaloneBiddingQuote(senderPhone: string, text: string) {
       return;
     }
       
-    console.log(`[TradO] Quote ₹${price} from provider ${provider.id} for request ${pendingQuote.request_id}`);
+    console.log(`[FAGO] Quote ₹${price} from provider ${provider.id} for request ${pendingQuote.request_id}`);
   } catch (error) {
     console.error('Error in handleStandaloneBiddingQuote:', error);
   }

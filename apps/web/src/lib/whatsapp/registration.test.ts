@@ -147,7 +147,7 @@ describe('getSubscribedApps', () => {
           {
             whatsapp_business_api_data: {
               id: 'APP1',
-              name: 'TradO',
+              name: 'FAGO',
               link: 'https://example.com/app',
             },
           },
@@ -159,7 +159,7 @@ describe('getSubscribedApps', () => {
       accessToken: 'tok',
     });
     expect(apps).toHaveLength(1);
-    expect(apps[0].whatsapp_business_api_data?.name).toBe('TradO');
+    expect(apps[0].whatsapp_business_api_data?.name).toBe('FAGO');
   });
 
   it('returns empty array when Meta returns no data field', async () => {

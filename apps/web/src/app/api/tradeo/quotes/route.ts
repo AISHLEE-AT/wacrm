@@ -6,7 +6,7 @@ const supabaseAdmin = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// POST /api/tradeo/quotes
+// POST /api/fago/quotes
 // Body: { provider_phone: string, price: number, provider_message?: string }
 export async function POST(request: Request) {
   try {

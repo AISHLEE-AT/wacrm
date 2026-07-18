@@ -440,7 +440,7 @@ export function WhatsAppConfig() {
                   }
                 >
                   {isRegistered
-                    ? 'Registered — Meta will deliver events to TradO'
+                    ? 'Registered — Meta will deliver events to FAGO'
                     : 'Not registered — Meta will not deliver events'}
                 </AlertTitle>
               </div>
@@ -621,7 +621,7 @@ export function WhatsAppConfig() {
                   Meta Business Manager → WhatsApp Accounts → Phone
                   Numbers → Two-step verification
                 </strong>
-                , then paste it here so TradO can subscribe the number —
+                , then paste it here so FAGO can subscribe the number —
                 otherwise Meta routes inbound events to whichever app
                 last claimed it (the symptom that hits second numbers
                 under a shared WABA).{' '}

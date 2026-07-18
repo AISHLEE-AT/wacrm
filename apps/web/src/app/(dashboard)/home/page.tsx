@@ -37,13 +37,13 @@ export default function SuperAppHome() {
           <p className="text-sm leading-relaxed text-emerald-700">Fast and reliable rides for your daily commute. Auto, Bike, and Cabs.</p>
         </Link>
 
-        {/* TradO Hub Card */}
-        <Link href="/tradeo" className="group block overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm transition-all hover:shadow-md">
+        {/* FAGO Hub Card */}
+        <Link href="/fago" className="group block overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100 p-6 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start justify-between mb-4">
             <div className="bg-blue-500 rounded-xl p-3 text-white shadow-sm">
               <Search className="w-6 h-6" />
             </div>
-            <span className="rounded-full bg-blue-200/50 px-3 py-1 text-xs font-bold text-blue-800">TradO</span>
+            <span className="rounded-full bg-blue-200/50 px-3 py-1 text-xs font-bold text-blue-800">FAGO</span>
           </div>
           <h3 className="text-xl font-bold text-blue-900 mb-2">Hire a Service</h3>
           <p className="text-sm leading-relaxed text-blue-700">Find plumbers, electricians, catering, and more near you.</p>

@@ -99,7 +99,7 @@ function SignupPageInner() {
           <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
           
           <div className="relative z-10">
-            <img src="/logo-title.png" alt="TradO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
+            <img src="/logo-title.png" alt="FAGO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
           </div>
           
           <div className="relative z-10 max-w-md">
@@ -112,7 +112,7 @@ function SignupPageInner() {
           </div>
           
           <div className="relative z-10 text-sm text-muted-foreground/60">
-            © {new Date().getFullYear()} TradO Inc. All rights reserved.
+            © {new Date().getFullYear()} FAGO Inc. All rights reserved.
           </div>
         </div>
 
@@ -156,7 +156,7 @@ function SignupPageInner() {
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
         
         <div className="relative z-10">
-          <img src="/logo-title.png" alt="TradO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
+          <img src="/logo-title.png" alt="FAGO Logo" className="h-10 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-8" />
         </div>
         
         <div className="relative z-10 max-w-md">
@@ -169,7 +169,7 @@ function SignupPageInner() {
         </div>
         
         <div className="relative z-10 text-sm text-muted-foreground/60">
-          © {new Date().getFullYear()} TradO Inc. All rights reserved.
+          © {new Date().getFullYear()} FAGO Inc. All rights reserved.
         </div>
       </div>
 
@@ -177,7 +177,7 @@ function SignupPageInner() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8 relative">
         <div className="w-full max-w-[420px] flex flex-col">
           <div className="mb-8 lg:hidden flex justify-center w-full">
-            <img src="/logo-title.png" alt="TradO Logo" className="h-12 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" />
+            <img src="/logo-title.png" alt="FAGO Logo" className="h-12 object-contain drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" />
           </div>
           
           <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
@@ -193,7 +193,7 @@ function SignupPageInner() {
           <p className="text-muted-foreground mb-8 text-sm">
             {inviteToken
               ? "Verify your email, then accept the invitation to join your team."
-              : "Get started with TradO Marketplace"}
+              : "Get started with FAGO Marketplace"}
           </p>
           <form onSubmit={handleSignup} className="flex flex-col gap-4">
             {error && (

@@ -12,17 +12,17 @@
 //   only slow the per-request auth lookup. A fast hash with a UNIQUE
 //   index is the correct, indexable choice for opaque secrets.
 //
-// Why the `TradO_live_` prefix
+// Why the `FAGO_live_` prefix
 //   - Self-identifying: a leaked string is instantly recognisable as
-//     a TradO key (handy for secret-scanners like GitGuardian).
-//   - Forward-compatible: leaves room for a `TradO_test_` variant if
+//     a FAGO key (handy for secret-scanners like GitGuardian).
+//   - Forward-compatible: leaves room for a `FAGO_test_` variant if
 //     a sandbox mode is ever added, without reshaping the format.
 // ============================================================
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 /** Secret prefix on every key. Part of the plaintext, not a secret. */
-export const API_KEY_PREFIX = 'TradO_live_';
+export const API_KEY_PREFIX = 'FAGO_live_';
 
 /**
  * Length of the non-secret display prefix stored in `key_prefix` and

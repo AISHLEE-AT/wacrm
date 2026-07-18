@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
-import { TRADEO_CATEGORIES, detectCategory } from '@/lib/tradeo/categories'
-import { translateTamilToEnglish, isTamil } from '@/lib/tradeo/tamil-translate'
+import { fago_CATEGORIES, detectCategory } from '@/lib/fago/categories'
+import { translateTamilToEnglish, isTamil } from '@/lib/fago/tamil-translate'
 import { Mic, MicOff, Search, Zap, ChevronRight, Clock, CheckCircle2, Package, Users, TrendingUp, AlertCircle, Languages } from 'lucide-react'
 import { GlassCard } from '@/components/ui/glass-card'
 import { AnimatedButton } from '@/components/ui/animated-button'
@@ -45,7 +45,7 @@ function scoreProviderMatch(provider: Provider, keyword: string): number {
   return score
 }
 
-export default function TradOPage() {
+export default function FAGOPage() {
   const { user, profile } = useAuth()
   const router = useRouter()
 
@@ -88,7 +88,7 @@ export default function TradOPage() {
   }, [])
 
   async function loadRecentRequests() {
-    const res = await fetch('/api/tradeo/requests')
+    const res = await fetch('/api/fago/requests')
     if (res.ok) {
       const data = await res.json()
       setRecentRequests(data.requests || [])
@@ -97,8 +97,8 @@ export default function TradOPage() {
 
   async function loadStats() {
     const [provRes, reqRes] = await Promise.all([
-      fetch('/api/tradeo/providers'),
-      fetch('/api/tradeo/requests')
+      fetch('/api/fago/providers'),
+      fetch('/api/fago/requests')
     ])
     const provData = provRes.ok ? await provRes.json() : { providers: [] }
     const reqData = reqRes.ok ? await reqRes.json() : { requests: [] }
@@ -163,7 +163,7 @@ export default function TradOPage() {
     setSearched(true)
     setSelectedIds(new Set())
 
-    const res = await fetch('/api/tradeo/search', {
+    const res = await fetch('/api/fago/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keyword: keyword.trim(), pincode: pincode.trim(), category })
@@ -187,7 +187,7 @@ export default function TradOPage() {
     setBroadcasting(true)
 
     // 1. Create the request
-    const reqRes = await fetch('/api/tradeo/requests', {
+    const reqRes = await fetch('/api/fago/requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -207,7 +207,7 @@ export default function TradOPage() {
     const { request } = await reqRes.json()
 
     // 2. Broadcast
-    const broadRes = await fetch('/api/tradeo/broadcast', {
+    const broadRes = await fetch('/api/fago/broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -221,7 +221,7 @@ export default function TradOPage() {
     setBroadcasting(false)
 
     if (broadRes.ok) {
-      router.push(`/tradeo/requests/${request.id}`)
+      router.push(`/fago/requests/${request.id}`)
     }
   }
 
@@ -246,14 +246,14 @@ export default function TradOPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
               <Zap className="h-5 w-5" />
             </span>
-            TradO
+            FAGO
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Find the best provider, get quotes via WhatsApp
           </p>
         </div>
         <button
-          onClick={() => router.push('/tradeo/providers')}
+          onClick={() => router.push('/fago/providers')}
           className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
         >
           <Users className="h-4 w-4" />
@@ -289,7 +289,7 @@ export default function TradOPage() {
         <div className="mb-4">
           <label className="mb-1.5 block text-xs font-medium text-muted-foreground uppercase tracking-wider">Category</label>
           <div className="flex flex-wrap gap-2">
-            {[{ value: 'All', label: '🌐 All' }, ...TRADEO_CATEGORIES].map(cat => (
+            {[{ value: 'All', label: '🌐 All' }, ...fago_CATEGORIES].map(cat => (
               <button
                 key={cat.value}
                 onClick={() => setCategory(cat.value)}
@@ -439,7 +439,7 @@ export default function TradOPage() {
                 No registered providers match your search in this pincode.
               </p>
               <button
-                onClick={() => router.push('/tradeo/providers')}
+                onClick={() => router.push('/fago/providers')}
                 className="mt-3 text-sm text-emerald-400 hover:text-emerald-300 font-medium"
               >
                 + Add providers for this area →
@@ -525,7 +525,7 @@ export default function TradOPage() {
             {recentRequests.slice(0, 8).map(req => (
               <button
                 key={req.id}
-                onClick={() => router.push(`/tradeo/requests/${req.id}`)}
+                onClick={() => router.push(`/fago/requests/${req.id}`)}
                 className="w-full flex items-center gap-4 rounded-xl border border-border bg-card/50 p-3.5 text-left hover:bg-muted/30 hover:border-border/80 transition-all group"
               >
                 <div className="min-w-0 flex-1">

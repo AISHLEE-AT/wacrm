@@ -35,11 +35,11 @@ describe('generateApiKey', () => {
 
 describe('hashApiKey', () => {
   it('is deterministic', () => {
-    expect(hashApiKey('TradO_live_abc')).toBe(hashApiKey('TradO_live_abc'));
+    expect(hashApiKey('FAGO_live_abc')).toBe(hashApiKey('FAGO_live_abc'));
   });
 
   it('differs for different inputs', () => {
-    expect(hashApiKey('TradO_live_abc')).not.toBe(hashApiKey('TradO_live_abd'));
+    expect(hashApiKey('FAGO_live_abc')).not.toBe(hashApiKey('FAGO_live_abd'));
   });
 });
 
@@ -57,7 +57,7 @@ describe('looksLikeApiKey', () => {
 
 describe('timingSafeHexEqual', () => {
   it('is true for identical digests', () => {
-    const h = hashApiKey('TradO_live_xyz');
+    const h = hashApiKey('FAGO_live_xyz');
     expect(timingSafeHexEqual(h, h)).toBe(true);
   });
 

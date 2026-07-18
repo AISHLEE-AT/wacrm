@@ -23,7 +23,7 @@ import {
   Workflow,
   X,
   Zap,
-  Briefcase, // For TradO Requests
+  Briefcase, // For FAGO Requests
   Home,
   Car,
   MapPin,
@@ -91,7 +91,7 @@ interface NavItem {
   beta?: boolean;
 }
 
-const tradeoItems: NavItem[] = [
+const fagoItems: NavItem[] = [
   { href: "/rido", label: "RidO (Book Ride)", icon: Car },
   { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
 ];
@@ -202,12 +202,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-primary-foreground">
-              <img src="/logo.png" alt="TradO Logo" className="h-6 w-6 object-contain drop-shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-600 shadow-[0_0_10px_rgba(16,185,129,0.3)] border border-white/10">
+              <span className="text-lg font-black text-white tracking-tighter">F</span>
             </div>
-            <span className="text-sm font-bold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-              TradO
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 leading-none">
+                FAGO
+              </span>
+              <span className="text-[9px] font-bold tracking-widest text-emerald-500/80 uppercase mt-0.5 leading-none">
+                LetsGo...
+              </span>
+            </div>
           </Link>
           <button
             type="button"
@@ -221,16 +226,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* TradO Section - Visible to all users including admins */}
+          {/* FAGO Section - Visible to all users including admins */}
           <>
             <div className="px-3 mb-2 mt-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Marketplace</h3>
             </div>
             <ul className="flex flex-col gap-1 mb-6">
-              {tradeoItems.map((item) => {
+              {fagoItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/tradeo" && item.href !== "/home" && pathname.startsWith(item.href));
+                  (item.href !== "/fago" && item.href !== "/home" && pathname.startsWith(item.href));
 
                 return (
                   <li key={item.href}>

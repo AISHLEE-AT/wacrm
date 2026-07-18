@@ -160,23 +160,38 @@ function LoginPageInner() {
         <div className="absolute inset-0 rounded-[32px] bg-white/[0.02] backdrop-blur-3xl border border-white/[0.08] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] pointer-events-none" />
         
         <div className="relative flex flex-col items-center">
-          <motion.img 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            src="/logo-title.png" 
-            alt="TradO Logo" 
-            className="h-9 object-contain mb-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]" 
-          />
-          
-          <div className="text-center mb-10 w-full">
-            <h1 className="text-[28px] font-semibold text-white tracking-tight mb-2">
-              {inviteToken ? "Accept Invitation" : "Welcome to TradO"}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
+            className="flex flex-col items-center justify-center mb-10 w-full"
+          >
+            <div className="relative flex items-center justify-center w-20 h-20 mb-4">
+              <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-2xl" />
+              <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-xl" />
+              <div className="relative z-10 w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-600 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)] border border-white/10 rotate-3">
+                <span className="text-3xl font-black text-white -rotate-3 tracking-tighter">F</span>
+              </div>
+            </div>
+            
+            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 tracking-tight mb-1">
+              {inviteToken ? "Accept Invitation" : "FAGO"}
             </h1>
-            <p className="text-white/50 text-sm">
-              Enter your phone number to continue
-            </p>
-          </div>
+            
+            {!inviteToken && (
+              <>
+                <p className="text-emerald-400/90 font-bold tracking-[0.2em] text-xs uppercase mb-2">
+                  LetsGo...
+                </p>
+                <p className="text-white/40 text-[10px] tracking-widest uppercase mb-4 border-t border-white/10 pt-2 px-4">
+                  By Aishlee Technology
+                </p>
+                <p className="text-white/60 text-sm mt-2">
+                  Enter your phone number to continue
+                </p>
+              </>
+            )}
+          </motion.div>
 
           <AnimatePresence mode="wait">
             {error && (

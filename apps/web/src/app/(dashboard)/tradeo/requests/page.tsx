@@ -71,7 +71,7 @@ export default function RequestsListPage() {
             <ShoppingBag className="h-12 w-12 mb-4 opacity-20" />
             <p className="text-lg">No requests found</p>
             <button 
-              onClick={() => router.push('/tradeo')}
+              onClick={() => router.push('/fago')}
               className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               Create New Request
@@ -86,7 +86,7 @@ export default function RequestsListPage() {
               return (
                 <div 
                   key={req.id}
-                  onClick={() => router.push(`/tradeo/requests/${req.id}`)}
+                  onClick={() => router.push(`/fago/requests/${req.id}`)}
                   className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 hover:bg-muted/50 cursor-pointer transition-colors"
                 >
                   <div className="space-y-2">
