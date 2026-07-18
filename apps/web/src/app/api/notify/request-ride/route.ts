@@ -10,6 +10,7 @@ if (!admin.apps.length) {
     if (serviceAccountBase64) {
       const serviceAccount = JSON.parse(Buffer.from(serviceAccountBase64, 'base64').toString('utf8'))
       admin.initializeApp({
+        // @ts-ignore
         credential: admin.credential.cert(serviceAccount)
       })
     }
