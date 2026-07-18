@@ -20,6 +20,7 @@ export default function TransoBooking() {
   const [dropoff, setDropoff] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
+  const [activeDriver, setActiveDriver] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [onlineDrivers, setOnlineDrivers] = useState<any[]>([]);
   
@@ -122,6 +123,7 @@ export default function TransoBooking() {
             });
           }
           setActiveRide(null);
+          setActiveDriver(null);
           setPickup("");
           setDropoff("");
           setPickupLat(null);
@@ -150,13 +152,37 @@ export default function TransoBooking() {
         .in("status", ["pending", "accepted", "en_route"])
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
-        
-      if (data) setActiveRide(data);
-    } catch (err) {
-      // No active ride
+        .maybeSingle();
+
+      if (data) {
+        setActiveRide(data);
+        if (data.driver_id) {
+          fetchActiveDriver(data.driver_id);
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
+
+  const fetchActiveDriver = async (driverId: string) => {
+    const { data } = await supabase.from('drivers').select('*').eq('id', driverId).single();
+    if (data) setActiveDriver(data);
+  };
+
+  // Subscribe to active driver location updates
+  useEffect(() => {
+    if (!activeRide?.driver_id) return;
+    const channel = supabase
+      .channel(`public:drivers:active:${activeRide.driver_id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "drivers", filter: `id=eq.${activeRide.driver_id}` }, (payload) => {
+        if (payload.new) setActiveDriver(payload.new);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeRide?.driver_id]);
 
   async function submitRating(rating: number) {
     if (!completedRideId) return;
@@ -310,7 +336,7 @@ export default function TransoBooking() {
     }
 
     mapMarkers.push({
-      position: [driver.lat, driver.lng] as [number, number],
+      position: [driver.current_lat || driver.lat || DEFAULT_LAT, driver.current_lng || driver.lng || DEFAULT_LNG] as [number, number],
       title: `Driver (${driver.vehicle_type || 'Car'}) - Ph: ${driver.mobile_number || 'N/A'}`,
       icon: iconUrl
     });
@@ -399,6 +425,13 @@ export default function TransoBooking() {
             markers={[
               { position: [activeRide.pickup_lat, activeRide.pickup_lng], title: "Pickup Location" },
               { position: [activeRide.dropoff_lat, activeRide.dropoff_lng], title: "Destination" },
+              ...(activeDriver && activeDriver.current_lat && activeDriver.current_lng ? [{
+                position: [activeDriver.current_lat, activeDriver.current_lng] as [number, number],
+                title: `Your Driver (${activeDriver.vehicle_type || 'Car'})`,
+                icon: activeDriver.vehicle_type === 'bike' 
+                  ? "https://cdn-icons-png.flaticon.com/512/1987/1987625.png" 
+                  : (activeDriver.vehicle_type === 'auto' ? "https://cdn-icons-png.flaticon.com/512/4736/4736173.png" : "https://cdn-icons-png.flaticon.com/512/3204/3204061.png")
+              }] : [])
             ]}
           />
         </div>

@@ -162,10 +162,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .maybeSingle();
       if (res != null) {
         setState(() => _activeRide = res);
+        if (res['driver_id'] != null) {
+          _subscribeToActiveDriver(res['driver_id']);
+        }
       }
     } catch (e) {
       debugPrint("Active ride error: $e");
     }
+  }
+
+  void _subscribeToActiveDriver(String driverId) {
+    if (_activeDriverChannel != null) {
+      _supabase.removeChannel(_activeDriverChannel!);
+    }
+    
+    // Initial fetch
+    _supabase.from('drivers').select('*').eq('id', driverId).maybeSingle().then((data) {
+      if (data != null && mounted) {
+        setState(() => _activeDriverData = data);
+      }
+    });
+
+    // Real-time updates
+    _activeDriverChannel = _supabase.channel('public:drivers:active:$driverId').onPostgresChanges(
+      event: PostgresChangeEvent.update, schema: 'public', table: 'drivers',
+      filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'id', value: driverId),
+      callback: (payload) {
+        if (payload.newRecord.isNotEmpty && mounted) {
+          setState(() => _activeDriverData = payload.newRecord);
+        }
+      }
+    ).subscribe();
   }
 
   void _listenToRideStatus() {
@@ -179,17 +206,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final status = payload.newRecord!['status'];
             if (['pending', 'accepted', 'en_route'].contains(status)) {
               setState(() => _activeRide = payload.newRecord);
-            } else if (status == 'completed') {
+              if (payload.newRecord!['driver_id'] != null && _activeDriverData?['id'] != payload.newRecord!['driver_id']) {
+                _subscribeToActiveDriver(payload.newRecord!['driver_id'].toString());
+              }
+            } else if (status == 'completed' || status == 'cancelled') {
               final rideId = payload.newRecord!['id'].toString();
               setState(() {
                 _activeRide = null;
+                _activeDriverData = null;
+                if (_activeDriverChannel != null) {
+                  _supabase.removeChannel(_activeDriverChannel!);
+                  _activeDriverChannel = null;
+                }
                 _dropoff = null;
                 _dropoffAddress = "Where to?";
                 _polylines.clear();
                 _exactDistanceKm = null;
                 _exactDurationMins = null;
               });
-              if (mounted) {
+              if (mounted && status == 'completed') {
                 // Fetch driver details again to get UPI ID (since payload doesn't join)
                 _supabase.from('drivers').select('*').eq('id', payload.newRecord!['driver_id']).maybeSingle().then((driverInfo) {
                   if (!mounted) return;
@@ -446,6 +481,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await _supabase.from('rides').update({'status': 'cancelled'}).eq('id', _activeRide!['id']);
       setState(() {
         _activeRide = null;
+        _activeDriverData = null;
+        if (_activeDriverChannel != null) {
+          _supabase.removeChannel(_activeDriverChannel!);
+          _activeDriverChannel = null;
+        }
         _dropoff = null;
         _dropoffAddress = "Where to?";
         _polylines.clear();
@@ -464,6 +504,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (_activeRide != null) {
       markers.add(Marker(markerId: const MarkerId('pickup'), position: LatLng(_activeRide!['pickup_lat'], _activeRide!['pickup_lng']), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)));
       markers.add(Marker(markerId: const MarkerId('dropoff'), position: LatLng(_activeRide!['dropoff_lat'], _activeRide!['dropoff_lng']), icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
+      
+      // Draw live active driver
+      if (_activeDriverData != null) {
+        final driverLat = _activeDriverData!['current_lat'] ?? _activeDriverData!['lat'];
+        final driverLng = _activeDriverData!['current_lng'] ?? _activeDriverData!['lng'];
+        
+        if (driverLat != null && driverLng != null) {
+          final lat = (driverLat as num).toDouble();
+          final lng = (driverLng as num).toDouble();
+          final phone = _activeDriverData!['mobile_number'] ?? 'N/A';
+          final vehicle = _activeDriverData!['vehicle_type'] == 'bike' ? 'Bike' : 'Car';
+          
+          markers.add(Marker(
+            markerId: const MarkerId('active_driver'),
+            position: LatLng(lat, lng),
+            icon: BitmapDescriptor.defaultMarkerWithHue(_activeDriverData!['vehicle_type'] == 'bike' ? BitmapDescriptor.hueOrange : BitmapDescriptor.hueBlue),
+            infoWindow: InfoWindow(
+              title: 'Your Driver ($vehicle)',
+              snippet: 'Ph: $phone',
+            ),
+          ));
+        }
+      }
     } else {
       if (_pickup != null) markers.add(Marker(markerId: const MarkerId('pickup'), position: _pickup!, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)));
       if (_dropoff != null) markers.add(Marker(markerId: const MarkerId('dropoff'), position: _dropoff!, icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)));
@@ -477,9 +540,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (driver['user_id'] == currentUserId) continue;
 
         // Use exact vehicle location from DB
-        if (driver['lat'] != null && driver['lng'] != null) {
-          final lat = (driver['lat'] as num).toDouble();
-          final lng = (driver['lng'] as num).toDouble();
+        final driverLat = driver['current_lat'] ?? driver['lat'];
+        final driverLng = driver['current_lng'] ?? driver['lng'];
+        
+        if (driverLat != null && driverLng != null) {
+          final lat = (driverLat as num).toDouble();
+          final lng = (driverLng as num).toDouble();
           final phone = driver['mobile_number'] ?? 'N/A';
           final vehicle = driver['vehicle_type'] == 'bike' ? 'Bike' : 'Car';
           
