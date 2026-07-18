@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { MapPin, Navigation, Car, Bike, Clock, Loader2, XCircle, LocateFixed, Phone, Star } from "lucide-react";
+import { Clock, Loader2, LocateFixed, MapPin, Navigation, XCircle, Phone, Bike, Car, User } from "lucide-react";
 import { LocationSearch } from "@/components/LocationSearch";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -25,12 +25,16 @@ export default function TransoBooking() {
   
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [completedRideId, setCompletedRideId] = useState<string | null>(null);
+  const [completedRideData, setCompletedRideData] = useState<any>(null);
   
   const [pickupLat, setPickupLat] = useState<number | null>(null);
   const [pickupLng, setPickupLng] = useState<number | null>(null);
   const [dropoffLat, setDropoffLat] = useState<number | null>(null);
   const [dropoffLng, setDropoffLng] = useState<number | null>(null);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [exactDistanceKm, setExactDistanceKm] = useState<number | null>(null);
+  const [exactDurationMins, setExactDurationMins] = useState<number | null>(null);
 
   // Default to Chennai center if location fails
   const DEFAULT_LAT = 13.0827;
@@ -104,12 +108,29 @@ export default function TransoBooking() {
       .on("postgres_changes", { event: "*", schema: "public", table: "rides", filter: `passenger_id=eq.${user.id}` }, (payload: any) => {
         if (payload.new && ["pending", "accepted", "en_route"].includes(payload.new.status)) {
           fetchActiveRide();
-        } else if (payload.new && payload.new.status === "completed") {
-          setCompletedRideId(payload.new.id);
-          setShowRatingModal(true);
+        } else if (payload.new?.status === 'cancelled' || payload.new?.status === 'completed') {
+          if (payload.new?.status === 'completed') {
+            setCompletedRideId(payload.new.id);
+            // Fetch driver details for UPI QR code
+            supabase.from('drivers').select('*').eq('id', payload.new.driver_id).single().then(({ data: driverInfo }) => {
+              setCompletedRideData({
+                price: payload.new.estimated_price,
+                driverName: driverInfo?.name || 'Driver',
+                upiId: driverInfo?.upi_id
+              });
+              setShowRatingModal(true);
+            });
+          }
           setActiveRide(null);
-        } else {
-          setActiveRide(null);
+          setPickup("");
+          setDropoff("");
+          setPickupLat(null);
+          setPickupLng(null);
+          setDropoffLat(null);
+          setDropoffLng(null);
+          setDirections(null);
+          setExactDistanceKm(null);
+          setExactDurationMins(null);
         }
       })
       .subscribe();
@@ -146,6 +167,7 @@ export default function TransoBooking() {
     } finally {
       setShowRatingModal(false);
       setCompletedRideId(null);
+      setCompletedRideData(null);
     }
   }
 
@@ -160,6 +182,34 @@ export default function TransoBooking() {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
     return R * c; // Distance in km
   }
+
+  // Calculate directions whenever pickup and dropoff are fully selected
+  useEffect(() => {
+    if (pickupLat && pickupLng && dropoffLat && dropoffLng && window.google) {
+      const directionsService = new window.google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: new window.google.maps.LatLng(pickupLat, pickupLng),
+          destination: new window.google.maps.LatLng(dropoffLat, dropoffLng),
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK && result) {
+            setDirections(result);
+            const leg = result.routes[0].legs[0];
+            setExactDistanceKm(leg.distance!.value / 1000);
+            setExactDurationMins(Math.round(leg.duration!.value / 60));
+          } else {
+            console.error(`Directions request failed: ${status}`);
+          }
+        }
+      );
+    } else {
+      setDirections(null);
+      setExactDistanceKm(null);
+      setExactDurationMins(null);
+    }
+  }, [pickupLat, pickupLng, dropoffLat, dropoffLng]);
 
   const handleBookRide = async (type: string) => {
     if (!pickup.trim() || !dropoff.trim()) {
@@ -184,7 +234,15 @@ export default function TransoBooking() {
       let baseRate = 20;
       if (type === 'bike') baseRate = 12; // Bike is cheaper
       
-      const finalPrice = Math.max(50, Math.round(distance * baseRate));
+      // Basic Surge Pricing Logic (1.5x during peak hours)
+      const now = new Date();
+      const hour = now.getHours();
+      let surgeMultiplier = 1.0;
+      if ((hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20)) {
+        surgeMultiplier = 1.5;
+      }
+      
+      const finalPrice = Math.max(50, Math.round(distance * baseRate * surgeMultiplier));
       
       const { data, error: insertError } = await supabase
         .from("rides")
@@ -305,10 +363,22 @@ export default function TransoBooking() {
                 </div>
               </div>
               
-              <a href={'tel:' + (activeRide.driver?.mobile_number || '')} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 py-4 font-bold text-blue-600 transition-all hover:bg-blue-100">
-                <Phone className="h-5 w-5" />
-                Call Driver
-              </a>
+              {activeRide.status !== "pending" && (
+                <div className="mt-6 flex items-center justify-between p-4 rounded-xl border border-border bg-slate-50 dark:bg-neutral-800/50">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                      <User className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground text-lg">{activeRide.driver?.name || 'Driver Assigned'}</p>
+                      <p className="text-sm text-muted-foreground font-medium">{activeRide.driver?.vehicle_number || 'Vehicle Details'}</p>
+                    </div>
+                  </div>
+                  <a href={`tel:${activeRide.driver?.mobile_number || ''}`} className="h-12 w-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors shadow-sm">
+                    <Phone className="h-5 w-5" />
+                  </a>
+                </div>
+              )}
             </div>
             
             <button 
@@ -336,7 +406,8 @@ export default function TransoBooking() {
     );
   }
 
-  const distanceVal = (pickupLat && dropoffLat) ? calculateDistance(pickupLat, pickupLng!, dropoffLat, dropoffLng!) : 0;
+  // Use exact distance if available, otherwise fallback to Haversine
+  const distanceVal = exactDistanceKm !== null ? exactDistanceKm : ((pickupLat && dropoffLat) ? calculateDistance(pickupLat, pickupLng!, dropoffLat, dropoffLng!) : 0);
   const showVehicleSelection = pickup.length > 2 && dropoff.length > 2 && pickupLat && dropoffLat;
 
   return (
@@ -423,11 +494,11 @@ export default function TransoBooking() {
                     </div>
                     <div className="text-left">
                       <h3 className="font-bold text-xl text-foreground">RidO Bike</h3>
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{(distanceVal * 3).toFixed(0)} mins away</p>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{exactDurationMins ?? (distanceVal * 3).toFixed(0)} mins away</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <h3 className="font-black text-2xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 12))}</h3>
+                    <h3 className="font-black text-2xl text-foreground">₹{Math.max(30, Math.round(20 + distanceVal * 8))}</h3>
                   </div>
                 </button>
 
@@ -442,11 +513,11 @@ export default function TransoBooking() {
                     </div>
                     <div className="text-left">
                       <h3 className="font-bold text-xl text-foreground">RidO Cab</h3>
-                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{(distanceVal * 4).toFixed(0)} mins away</p>
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">~{exactDurationMins ?? (distanceVal * 4).toFixed(0)} mins away</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <h3 className="font-black text-2xl text-foreground">₹{Math.max(50, Math.round(distanceVal * 20))}</h3>
+                    <h3 className="font-black text-2xl text-foreground">₹{Math.max(70, Math.round(50 + distanceVal * 20))}</h3>
                   </div>
                 </button>
               </div>
@@ -489,6 +560,7 @@ export default function TransoBooking() {
           center={[pickupLat || DEFAULT_LAT, pickupLng || DEFAULT_LNG]}
           zoom={14}
           markers={mapMarkers}
+          directions={directions}
         />
         <div className="absolute top-6 right-6 bg-white/95 dark:bg-neutral-800/95 backdrop-blur-md px-5 py-2.5 rounded-full shadow-lg border border-border flex items-center gap-3 z-10 text-sm font-bold text-foreground">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
@@ -504,8 +576,31 @@ export default function TransoBooking() {
       
       {showRatingModal && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-card p-8 rounded-2xl flex flex-col items-center shadow-xl border border-border">
-            <h2 className="text-2xl font-bold mb-6 text-foreground">Rate your driver</h2>
+          <div className="bg-card p-8 rounded-2xl flex flex-col items-center shadow-xl border border-border text-center max-w-sm w-full">
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Payment & Rating</h2>
+            
+            {completedRideData?.upiId ? (
+              <div className="mb-6 flex flex-col items-center">
+                <p className="font-bold text-sm mb-2">Scan to pay driver directly:</p>
+                <div className="bg-white p-2 rounded-xl mb-3 shadow-sm border">
+                  {/* Using a simple QR code API for the web */}
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${completedRideData.upiId}&pn=${encodeURIComponent(completedRideData.driverName)}&am=${completedRideData.price}`} 
+                    alt="UPI QR Code" 
+                    className="w-44 h-44"
+                  />
+                </div>
+                <p className="text-xl font-bold text-emerald-600">Amount: ₹{completedRideData.price}</p>
+                <div className="w-full h-px bg-border my-4" />
+              </div>
+            ) : (
+              <div className="mb-6">
+                <p className="text-lg font-bold">Please pay ₹{completedRideData?.price || 0} via Cash/UPI</p>
+                <div className="w-full h-px bg-border my-4" />
+              </div>
+            )}
+            
+            <p className="text-sm font-bold text-muted-foreground mb-3">Rate your ride:</p>
             <div className="flex gap-2 mb-6">
               {[1, 2, 3, 4, 5].map(star => (
                 <button key={star} onClick={() => submitRating(star)} className="p-3 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-full transition-colors">
@@ -513,7 +608,7 @@ export default function TransoBooking() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setShowRatingModal(false)} className="text-muted-foreground font-bold hover:text-foreground transition-colors">Skip</button>
+            <button onClick={() => { setShowRatingModal(false); setCompletedRideData(null); }} className="text-muted-foreground font-bold hover:text-foreground transition-colors">Skip</button>
           </div>
         </div>
       )}

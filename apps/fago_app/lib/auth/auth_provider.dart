@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../features/push/push_service.dart';
 
 // Represents the resolved user role
 enum UserRole { guest, admin, driver, rider }
@@ -101,7 +102,12 @@ class AuthNotifier extends Notifier<AuthState> {
       state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: _supabase.auth.currentUser);
     } catch (e) {
       debugPrint('Role resolution error: $e');
-      throw Exception('Role resolution failed: $e');
+      state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());
+    } finally {
+      // Initialize Push Notifications if logged in
+      if (state.role != UserRole.guest) {
+        PushService.init();
+      }
     }
   }
 
@@ -166,8 +172,18 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
-    await _supabase.auth.signOut();
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('Firebase sign out error: $e');
+    }
+    try {
+      await _supabase.auth.signOut();
+    } catch (e) {
+      debugPrint('Supabase sign out error: $e');
+    }
+    // Force state update so router catches it even if network fails
+    state = AuthState(isLoading: false, role: UserRole.guest);
   }
 }
 

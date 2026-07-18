@@ -118,10 +118,12 @@ export function LocationSearch({
         sessionToken: sessionToken ?? undefined,
       };
 
-      // Bias towards user location if available (soft bias for search)
+      // Bias towards user location if available (strict bias for TN search)
       if (userLat && userLng) {
         request.location = new window.google.maps.LatLng(userLat, userLng);
-        request.radius = 5000; // 5km bias radius
+        request.radius = 50000; // 50km bias radius
+        // @ts-ignore - The types are sometimes missing strictBounds but it's supported by the API
+        request.strictBounds = true;
       }
 
       autocompleteService.current.getPlacePredictions(request, (predictions, status) => {

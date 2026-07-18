@@ -2,13 +2,13 @@ module.exports=[45860,a=>{a.v({className:"outfit_a781b69a-module__ZHXJlW__classN
 (function(){
   var d = document.documentElement;
   try {
-    var THEME_KEY = ${JSON.stringify("TradO.theme")};
+    var THEME_KEY = ${JSON.stringify("FAGO.theme")};
     var THEME_DEFAULT = ${JSON.stringify(h)};
     var THEMES = ${JSON.stringify(["violet","emerald","cobalt","amber","rose"])};
     var savedTheme = localStorage.getItem(THEME_KEY);
     d.dataset.theme = THEMES.indexOf(savedTheme) !== -1 ? savedTheme : THEME_DEFAULT;
 
-    var MODE_KEY = ${JSON.stringify("TradO.mode")};
+    var MODE_KEY = ${JSON.stringify("FAGO.mode")};
     var MODE_DEFAULT = ${JSON.stringify(i)};
     var MODES = ${JSON.stringify(["light","dark"])};
     var savedMode = localStorage.getItem(MODE_KEY);
@@ -18,6 +18,6 @@ module.exports=[45860,a=>{a.v({className:"outfit_a781b69a-module__ZHXJlW__classN
     d.dataset.mode = ${JSON.stringify(i)};
   }
 })();
-`;a.s(["default",0,function({children:a}){return(0,b.jsxs)("html",{lang:"en","data-theme":h,"data-mode":i,className:`${d.variable} h-full antialiased`,suppressHydrationWarning:!0,children:[(0,b.jsx)("head",{children:(0,b.jsx)(e.default,{id:"theme-boot",strategy:"beforeInteractive",dangerouslySetInnerHTML:{__html:j}})}),(0,b.jsx)("body",{className:"min-h-full bg-background text-foreground font-sans",children:(0,b.jsxs)(f.ThemeProvider,{children:[a,(0,b.jsx)(g.ThemedToaster,{})]})})]})},"metadata",0,{title:{default:"TradO",template:"%s — TradO"},description:"Marketplace for buyers and sellers.",robots:{index:!1,follow:!1},icons:{icon:[{url:"/logo.png"}]},formatDetection:{email:!1,address:!1,telephone:!1}},"viewport",0,{themeColor:"#020617",colorScheme:"dark light"}],977930)},134005,a=>{a.n(a.i(977930))}];
+`;a.s(["default",0,function({children:a}){return(0,b.jsxs)("html",{lang:"en","data-theme":h,"data-mode":i,className:`${d.variable} h-full antialiased`,suppressHydrationWarning:!0,children:[(0,b.jsx)("head",{children:(0,b.jsx)(e.default,{id:"theme-boot",strategy:"beforeInteractive",dangerouslySetInnerHTML:{__html:j}})}),(0,b.jsx)("body",{className:"min-h-full bg-background text-foreground font-sans",children:(0,b.jsxs)(f.ThemeProvider,{children:[a,(0,b.jsx)(g.ThemedToaster,{})]})})]})},"metadata",0,{title:{default:"FAGO",template:"%s — FAGO"},description:"Marketplace for buyers and sellers.",robots:{index:!1,follow:!1},icons:{icon:[{url:"/logo.png"}]},formatDetection:{email:!1,address:!1,telephone:!1}},"viewport",0,{themeColor:"#020617",colorScheme:"dark light"}],977930)},134005,a=>{a.n(a.i(977930))}];
 
 //# sourceMappingURL=%5Broot-of-the-server%5D__190dyb8._.js.map

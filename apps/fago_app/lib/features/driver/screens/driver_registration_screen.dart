@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/supabase_service.dart';
 import '../../../../auth/auth_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DriverRegistrationScreen extends ConsumerStatefulWidget {
   const DriverRegistrationScreen({super.key});
@@ -36,7 +37,7 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
       // Wait, let's just pass the required fields or empty strings if needed by existing method.
       final result = await SupabaseService().registerDriver(
         name: _nameController.text.trim(),
-        whatsappNumber: FirebaseAuth.instance.currentUser?.phoneNumber ?? '', 
+        whatsappNumber: FirebaseAuth.instance.currentUser?.phoneNumber ?? Supabase.instance.client.auth.currentUser?.phone ?? '', 
         drivingLicense: _licenseController.text.trim(), 
         vehicleRegistration: _vehicleController.text.trim().toUpperCase(),
         insuranceDetails: _insuranceController.text.trim(), 

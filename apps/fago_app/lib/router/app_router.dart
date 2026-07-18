@@ -54,7 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isLoggingIn || isRoot) {
         if (authState.role == UserRole.admin) {
-          return '/admin';
+          return '/rider'; // Let admins test the rider app, they can access dashboard from drawer
         } else if (authState.role == UserRole.driver) {
           return '/driver';
         } else {

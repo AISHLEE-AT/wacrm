@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from "@react-google-maps/api";
 
 const containerStyle = {
   width: "100%",
@@ -17,11 +17,12 @@ interface MapProps {
     title: string;
     icon?: string;
   }>;
+  directions?: google.maps.DirectionsResult | null;
 }
 
 const libraries: ("places" | "geometry" | "drawing" | "visualization")[] = ["places"];
 
-export default function Map({ center, zoom = 13, markers = [] }: MapProps) {
+export default function Map({ center, zoom = 13, markers = [], directions }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -59,6 +60,12 @@ export default function Map({ center, zoom = 13, markers = [] }: MapProps) {
           icon={marker.icon ? { url: marker.icon, scaledSize: new window.google.maps.Size(40, 40) } : undefined}
         />
       ))}
+      {directions && (
+        <DirectionsRenderer 
+          directions={directions} 
+          options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#3b82f6', strokeWeight: 5 } }} 
+        />
+      )}
     </GoogleMap>
   ) : (
     <div className="flex h-full w-full items-center justify-center bg-slate-100 text-muted-foreground animate-pulse rounded-xl">

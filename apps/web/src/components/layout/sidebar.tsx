@@ -107,7 +107,6 @@ const crmItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
-  { href: "/admin/drivers/applications", label: "Driver Apps", icon: Briefcase },
   { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
   { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
 ];

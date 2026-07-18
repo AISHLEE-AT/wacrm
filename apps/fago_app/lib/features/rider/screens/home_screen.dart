@@ -12,6 +12,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../../auth/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../driver/services/supabase_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -37,6 +39,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isLoadingMap = true;
   List<dynamic> _onlineDrivers = [];
   Map<String, dynamic>? _activeRide;
+  
+  Set<Polyline> _polylines = {};
+  double? _exactDistanceKm;
+  int? _exactDurationMins;
 
   // Use dotenv for Google Maps API Key
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
@@ -148,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       final res = await _supabase
           .from('rides')
-          .select('*')
+          .select('*, driver:drivers(*)')
           .eq('passenger_id', userId)
           .inFilter('status', ['pending', 'accepted', 'en_route'])
           .order('created_at', ascending: false)
@@ -179,39 +185,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _activeRide = null;
                 _dropoff = null;
                 _dropoffAddress = "Where to?";
+                _polylines.clear();
+                _exactDistanceKm = null;
+                _exactDurationMins = null;
               });
-              
               if (mounted) {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('Rate Driver'),
-                      content: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(5, (index) {
-                          return IconButton(
-                            icon: const Icon(Icons.star_border, color: Colors.orange, size: 32),
-                            onPressed: () async {
-                              Navigator.pop(context);
-                              await SupabaseService().submitRating(rideId, index + 1, 'rider');
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks for rating!')));
-                              }
-                            },
-                          );
-                        }),
-                      ),
-                    );
-                  }
-                );
+                // Fetch driver details again to get UPI ID (since payload doesn't join)
+                _supabase.from('drivers').select('*').eq('id', payload.newRecord!['driver_id']).maybeSingle().then((driverInfo) {
+                  if (!mounted) return;
+                  final upiId = driverInfo?['upi_id'];
+                  final price = payload.newRecord!['estimated_price'] ?? 0;
+                  final driverName = driverInfo?['name'] ?? 'Driver';
+                  
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Payment & Rating', textAlign: TextAlign.center),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (upiId != null && upiId.toString().isNotEmpty) ...[
+                              const Text('Scan to pay driver directly:', style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 10),
+                              QrImageView(
+                                data: 'upi://pay?pa=$upiId&pn=$driverName&am=$price',
+                                version: QrVersions.auto,
+                                size: 180.0,
+                              ),
+                              Text('Amount: ₹$price', style: const TextStyle(fontSize: 20, color: Colors.green, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 20),
+                              const Divider(),
+                              const SizedBox(height: 10),
+                            ] else ...[
+                              Text('Please pay ₹$price via Cash/UPI', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 20),
+                            ],
+                            const Text('Rate your ride:'),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(5, (index) {
+                                return IconButton(
+                                  icon: const Icon(Icons.star_border, color: Colors.orange, size: 32),
+                                  onPressed: () async {
+                                    Navigator.pop(context);
+                                    await SupabaseService().submitRating(rideId, index + 1, 'rider');
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks for rating!')));
+                                    }
+                                  },
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  );
+                });
               }
             } else {
               setState(() {
                 _activeRide = null;
                 _dropoff = null;
                 _dropoffAddress = "Where to?";
+                _polylines.clear();
+                _exactDistanceKm = null;
+                _exactDurationMins = null;
               });
             }
           }
@@ -237,6 +278,93 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return R * c; 
   }
 
+  List<LatLng> _decodePolyline(String encoded) {
+    List<LatLng> polyline = [];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      polyline.add(LatLng(lat / 1E5, lng / 1E5));
+    }
+    return polyline;
+  }
+
+  Future<void> _getRoute() async {
+    if (_pickup == null || _dropoff == null) return;
+    
+    final url = 'https://maps.googleapis.com/maps/api/directions/json?origin=${_pickup!.latitude},${_pickup!.longitude}&destination=${_dropoff!.latitude},${_dropoff!.longitude}&key=$_googleApiKey';
+    final res = await http.get(Uri.parse(url));
+    if (res.statusCode == 200) {
+      final data = json.decode(res.body);
+      if (data['routes'] != null && data['routes'].isNotEmpty) {
+        final route = data['routes'][0];
+        final leg = route['legs'][0];
+        setState(() {
+          _exactDistanceKm = leg['distance']['value'] / 1000.0;
+          _exactDurationMins = (leg['duration']['value'] / 60.0).round();
+          
+          final points = _decodePolyline(route['overview_polyline']['points']);
+          _polylines = {
+            Polyline(
+              polylineId: const PolylineId('route'),
+              color: Colors.blue,
+              width: 5,
+              points: points,
+            )
+          };
+        });
+        
+        final bounds = route['bounds'];
+        mapController.animateCamera(CameraUpdate.newLatLngBounds(
+          LatLngBounds(
+            southwest: LatLng(bounds['southwest']['lat'], bounds['southwest']['lng']),
+            northeast: LatLng(bounds['northeast']['lat'], bounds['northeast']['lng']),
+          ),
+          50,
+        ));
+      }
+    }
+  }
+
+  int _calculatePrice(double distanceKm, String vehicleType) {
+    // Basic Surge Pricing Logic
+    final now = DateTime.now();
+    final hour = now.hour;
+    double surgeMultiplier = 1.0;
+    
+    // Peak hours: 8 AM - 10 AM (8-10) and 5 PM - 8 PM (17-20)
+    if ((hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20)) {
+      surgeMultiplier = 1.5;
+    }
+    
+    if (vehicleType == 'bike') {
+      return math.max(30, ((20 + distanceKm * 8) * surgeMultiplier).round());
+    } else if (vehicleType == 'auto') {
+      return math.max(40, ((30 + distanceKm * 15) * surgeMultiplier).round());
+    } else {
+      return math.max(70, ((50 + distanceKm * 20) * surgeMultiplier).round());
+    }
+  }
+
   Future<void> _searchPlace(BuildContext context, bool isPickup) async {
     final result = await showSearch(
       context: context,
@@ -252,23 +380,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _dropoffAddress = result['name'];
         }
       });
-      // Move camera
+      // Move camera and draw route
       if (isPickup) {
         mapController.animateCamera(CameraUpdate.newLatLng(_pickup!));
+        if (_dropoff != null) _getRoute();
       } else if (_dropoff != null) {
-        mapController.animateCamera(CameraUpdate.newLatLngBounds(
-          LatLngBounds(
-            southwest: LatLng(
-              math.min(_pickup!.latitude, _dropoff!.latitude),
-              math.min(_pickup!.longitude, _dropoff!.longitude),
-            ),
-            northeast: LatLng(
-              math.max(_pickup!.latitude, _dropoff!.latitude),
-              math.max(_pickup!.longitude, _dropoff!.longitude),
-            ),
-          ),
-          50,
-        ));
+        _getRoute();
       }
     }
   }
@@ -279,9 +396,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _isBooking = true);
 
     try {
-      double distanceKm = _calculateDistance(_pickup!, _dropoff!);
-      double baseRate = vehicleType == 'bike' ? 12 : 20;
-      double price = math.max(50.0, (distanceKm * baseRate).roundToDouble());
+      // Use exact road distance if available, fallback to Haversine
+      double distanceKm = _exactDistanceKm ?? _calculateDistance(_pickup!, _dropoff!);
+      double price = _calculatePrice(distanceKm, vehicleType).toDouble();
 
       final userId = _supabase.auth.currentUser?.id;
 
@@ -300,6 +417,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       setState(() => _activeRide = res);
       
+      // Trigger push notification to drivers
+      try {
+        final bridgeUrl = dotenv.env['NEXT_API_URL'] ?? 'https://watscrm.vercel.app';
+        await http.post(
+          Uri.parse('$bridgeUrl/api/notify/request-ride'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'pickup_address': _pickupAddress,
+            'dropoff_address': _dropoffAddress,
+            'price': price,
+          }),
+        );
+      } catch (e) {
+        debugPrint('Failed to send push notification: $e');
+      }
+      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error booking ride: $e')));
     } finally {
@@ -315,6 +448,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         _activeRide = null;
         _dropoff = null;
         _dropoffAddress = "Where to?";
+        _polylines.clear();
+        _exactDistanceKm = null;
+        _exactDurationMins = null;
       });
     } catch(e) {
       debugPrint("Error canceling: $e");
@@ -371,6 +507,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onMapCreated: _onMapCreated,
               initialCameraPosition: CameraPosition(target: _pickup ?? _defaultCenter, zoom: 15.0),
               markers: markers,
+              polylines: _polylines,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
@@ -386,6 +523,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   icon: const Icon(Icons.menu, color: Colors.black),
                   onPressed: () {
                     _scaffoldKey.currentState?.openDrawer();
+                  },
+                ),
+              )
+            ),
+            
+            Positioned(
+              top: 50,
+              right: 20,
+              child: CircleAvatar(
+                backgroundColor: Colors.greenAccent.shade100,
+                child: IconButton(
+                  icon: Icon(Icons.support_agent, color: Colors.green.shade800),
+                  tooltip: 'WhatsApp Help',
+                  onPressed: () async {
+                    final url = Uri.parse('https://wa.me/916381029380?text=Hi%20Fago%20Support,%20I%20need%20help!');
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    }
                   },
                 ),
               )
@@ -463,18 +618,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         // Bike Option
                         _buildVehicleCard(
                           'RidO Bike', 
-                          'Fastest • ~${(_calculateDistance(_pickup!, _dropoff!) * 3).toStringAsFixed(0)} mins', 
+                          'Fastest • ~${_exactDurationMins ?? (_calculateDistance(_pickup!, _dropoff!) * 3).toStringAsFixed(0)} mins', 
                           Icons.motorcycle, 
-                          math.max(50, (_calculateDistance(_pickup!, _dropoff!) * 12).round()), 
+                          _calculatePrice(_exactDistanceKm ?? _calculateDistance(_pickup!, _dropoff!), 'bike'), 
                           'bike'
+                        ),
+                        const SizedBox(height: 12),
+                        // Auto Option
+                        _buildVehicleCard(
+                          'RidO Auto', 
+                          'Standard • ~${_exactDurationMins ?? (_calculateDistance(_pickup!, _dropoff!) * 4).toStringAsFixed(0)} mins', 
+                          Icons.local_taxi, 
+                          _calculatePrice(_exactDistanceKm ?? _calculateDistance(_pickup!, _dropoff!), 'auto'), 
+                          'auto'
                         ),
                         const SizedBox(height: 12),
                         // Cab Option
                         _buildVehicleCard(
                           'RidO Cab', 
-                          'Comfort • ~${(_calculateDistance(_pickup!, _dropoff!) * 4).toStringAsFixed(0)} mins', 
+                          'Comfort • ~${_exactDurationMins ?? (_calculateDistance(_pickup!, _dropoff!) * 4).toStringAsFixed(0)} mins', 
                           Icons.directions_car, 
-                          math.max(50, (_calculateDistance(_pickup!, _dropoff!) * 20).round()), 
+                          _calculatePrice(_exactDistanceKm ?? _calculateDistance(_pickup!, _dropoff!), 'car'), 
                           'car'
                         ),
                       ],
@@ -503,13 +667,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Expanded(
                             child: Text(_activeRide!['status'] == 'pending' ? 'Looking for drivers...' : 'Driver is on the way!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                           ),
-                          if (_activeRide!['status'] != 'pending')
-                            IconButton(
-                              icon: const Icon(Icons.phone, color: Colors.green),
-                              onPressed: () => launchUrl(Uri.parse('tel:${_activeRide!['driver_phone'] ?? ''}')),
-                            ),
                         ],
                       ),
+                      if (_activeRide!['status'] != 'pending') ...[
+                        const SizedBox(height: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
+                          child: Row(
+                            children: [
+                              CircleAvatar(radius: 25, backgroundColor: Colors.green.shade100, child: Icon(Icons.person, color: Colors.green.shade700, size: 30)),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(_activeRide!['driver']?['name'] ?? 'Driver Assigned', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                                    Text(_activeRide!['driver']?['vehicle_number'] ?? 'Vehicle Details', style: const TextStyle(color: Colors.grey, fontSize: 14)),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
+                                child: IconButton(
+                                  icon: const Icon(Icons.phone, color: Colors.blue),
+                                  onPressed: () => launchUrl(Uri.parse('tel:${_activeRide!['driver']?['mobile_number'] ?? _activeRide!['driver_phone'] ?? ''}')),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       if (_activeRide!['status'] == 'pending') const CircularProgressIndicator(),
                       const SizedBox(height: 20),
@@ -603,6 +791,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // TODO: Navigate to history
             },
           ),
+          if (ref.watch(authProvider).role == UserRole.admin)
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings, color: Colors.amber),
+              title: const Text('Admin Dashboard', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/admin');
+              },
+            ),
           if (ref.watch(authProvider).role == UserRole.driver)
             ListTile(
               leading: const Icon(Icons.drive_eta, color: Colors.orange),
@@ -643,31 +840,69 @@ class PlaceSearchDelegate extends SearchDelegate {
   
   PlaceSearchDelegate(this.apiKey, this.userLocation);
 
-  Future<List<dynamic>> _fetchSuggestions(String query) async {
+  Future<void> _saveRecentPlace(Map<String, dynamic> place) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> recent = prefs.getStringList('recent_places') ?? [];
+    
+    // Remove if exists to move to top
+    recent.removeWhere((p) => json.decode(p)['name'] == place['name']);
+    
+    recent.insert(0, json.encode(place));
+    if (recent.length > 5) {
+      recent = recent.sublist(0, 5); // Keep top 5
+    }
+    await prefs.setStringList('recent_places', recent);
+  }
+
+  Future<List<Map<String, dynamic>>> _getRecentPlaces() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> recent = prefs.getStringList('recent_places') ?? [];
+    return recent.map((p) => json.decode(p) as Map<String, dynamic>).toList();
+  }
+
+  Future<Map<String, dynamic>> _fetchSuggestions(String query) async {
     if (query.isEmpty) {
-      if (userLocation == null) return [];
-      // Nearby places fallback
-      final url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${userLocation!.latitude},${userLocation!.longitude}&radius=5000&type=point_of_interest&key=$apiKey';
-      final res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        final results = data['results'] as List<dynamic>? ?? [];
-        return results.take(5).toList();
+      List<Map<String, dynamic>> recentPlaces = await _getRecentPlaces();
+      List<dynamic> nearbyPlaces = [];
+
+      if (userLocation != null) {
+        // Nearby 10km places fallback
+        final url = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${userLocation!.latitude},${userLocation!.longitude}&radius=10000&type=point_of_interest&key=$apiKey';
+        final res = await http.get(Uri.parse(url));
+        if (res.statusCode == 200) {
+          final data = json.decode(res.body);
+          final results = data['results'] as List<dynamic>? ?? [];
+          nearbyPlaces = results.take(10).toList();
+        }
       }
-      return [];
+      return {
+        'recent': recentPlaces,
+        'nearby': nearbyPlaces,
+        'autocomplete': []
+      };
     }
     
-    // Autocomplete
-    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$apiKey&components=country:in&sessiontoken=$_sessionToken';
+    // Autocomplete with strict radius and location bias (10km)
+    String url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$apiKey&sessiontoken=$_sessionToken';
     if (userLocation != null) {
-      url += '&location=${userLocation!.latitude},${userLocation!.longitude}&radius=5000';
+      url += '&location=${userLocation!.latitude},${userLocation!.longitude}&radius=10000&strictbounds=true';
     }
+    url += '&components=country:in'; // Restrict to India for accuracy (Uber/Rapido clone mostly in IN)
+
     final res = await http.get(Uri.parse(url));
     if (res.statusCode == 200) {
       final data = json.decode(res.body);
-      return data['predictions'] ?? [];
+      return {
+        'recent': [],
+        'nearby': [],
+        'autocomplete': data['predictions'] ?? []
+      };
     }
-    return [];
+    return {
+      'recent': [],
+      'nearby': [],
+      'autocomplete': []
+    };
   }
   
   Future<Map<String, dynamic>?> _getPlaceDetails(String placeId, String fallbackName) async {
@@ -707,39 +942,104 @@ class PlaceSearchDelegate extends SearchDelegate {
   }
 
   @override
+  ThemeData appBarTheme(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.copyWith(
+      appBarTheme: theme.appBarTheme.copyWith(
+        backgroundColor: theme.scaffoldBackgroundColor,
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: InputBorder.none,
+      ),
+    );
+  }
+
+  @override
   Widget buildSuggestions(BuildContext context) {
-    return FutureBuilder<List<dynamic>>(
+    return FutureBuilder<Map<String, dynamic>>(
       future: _fetchSuggestions(query),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final results = snapshot.data!;
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.greenAccent));
         
-        return ListView.builder(
-          itemCount: results.length,
-          itemBuilder: (context, index) {
-            final place = results[index];
-            final name = place['description'] ?? place['name'];
-            final placeId = place['place_id'];
-            
-            return ListTile(
-              leading: const Icon(Icons.location_on, color: Colors.grey),
-              title: Text(name),
-              onTap: () async {
-                if (place['geometry'] != null) {
-                  // Coming from nearby search which already has lat/lng
-                  close(context, {
-                    'name': name,
-                    'lat': place['geometry']['location']['lat'],
-                    'lng': place['geometry']['location']['lng']
-                  });
-                } else {
-                  // Need to fetch details for autocomplete prediction
+        final data = snapshot.data!;
+        final List<dynamic> recent = data['recent'];
+        final List<dynamic> nearby = data['nearby'];
+        final List<dynamic> autocomplete = data['autocomplete'];
+
+        if (query.isEmpty) {
+          return Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: ListView(
+              children: [
+                if (recent.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('Recent Places', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ),
+                  ...recent.map((place) => ListTile(
+                    leading: const Icon(Icons.history, color: Colors.grey),
+                    title: Text(place['name'], style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black)),
+                    onTap: () async {
+                      close(context, place);
+                    },
+                  )),
+                  const Divider(),
+                ],
+                if (nearby.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('Nearby Places (10km)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ),
+                  ...nearby.map((place) {
+                    final name = place['name'] ?? 'Unknown place';
+                    return ListTile(
+                      leading: const Icon(Icons.location_on, color: Colors.grey),
+                      title: Text(name, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black)),
+                      onTap: () async {
+                        final details = {
+                          'name': name,
+                          'lat': place['geometry']['location']['lat'],
+                          'lng': place['geometry']['location']['lng']
+                        };
+                        await _saveRecentPlace(details);
+                        close(context, details);
+                      },
+                    );
+                  }),
+                ]
+              ],
+            ),
+          );
+        }
+
+        if (autocomplete.isEmpty) {
+          return Center(
+            child: Text('No results found', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black54)),
+          );
+        }
+
+        return Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: ListView.builder(
+            itemCount: autocomplete.length,
+            itemBuilder: (context, index) {
+              final place = autocomplete[index];
+              final name = place['description'] ?? 'Unknown place';
+              final placeId = place['place_id'];
+              
+              return ListTile(
+                leading: const Icon(Icons.location_on, color: Colors.grey),
+                title: Text(name, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black)),
+                onTap: () async {
                   final details = await _getPlaceDetails(placeId, name);
-                  close(context, details);
-                }
-              },
-            );
-          },
+                  if (details != null) {
+                    await _saveRecentPlace(details);
+                    close(context, details);
+                  }
+                },
+              );
+            },
+          ),
         );
       },
     );

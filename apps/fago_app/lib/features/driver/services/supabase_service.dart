@@ -24,12 +24,12 @@ class SupabaseService {
     final firebaseUser = fb.FirebaseAuth.instance.currentUser;
     final supabaseUser = _client.auth.currentUser;
 
-    final res = await _client.from('drivers').insert({
+    final res = await _client.from('drivers').upsert({
       'user_id': supabaseUser?.id,
       'firebase_uid': firebaseUser?.uid,
       'name': name,
-      'mobile_number': firebaseUser?.phoneNumber ?? '',
-      'whatsapp_number': whatsappNumber,
+      'mobile_number': firebaseUser?.phoneNumber ?? supabaseUser?.phone ?? '',
+      'whatsapp_number': whatsappNumber.isNotEmpty ? whatsappNumber : (firebaseUser?.phoneNumber ?? supabaseUser?.phone ?? ''),
       'driving_license': drivingLicense,
       'vehicle_registration': vehicleRegistration,
       'insurance_details': insuranceDetails,
@@ -40,7 +40,7 @@ class SupabaseService {
       'wallet_balance': 0,
       'pending_commission': 0,
       'is_blocked': false,
-    }).select().single();
+    }, onConflict: 'user_id').select().single();
     return res;
   }
 
@@ -119,19 +119,20 @@ class SupabaseService {
 
     await _client.from('rides').update({'status': 'completed'}).eq('id', rideId);
 
-    // Calculate 30% commission and add to pending
-    final commission = estimatedPrice * 0.3;
+    // Calculate 30% commission and deduct from wallet balance
+    const commissionRate = 0.30;
+    final commission = (estimatedPrice * commissionRate).round();
     final driverData = await _client
         .from('drivers')
-        .select('pending_commission')
+        .select('wallet_balance')
         .eq('id', driverId)
         .single();
-    final currentPending =
-        (driverData['pending_commission'] as num?)?.toDouble() ?? 0;
+    final currentBalance =
+        (driverData['wallet_balance'] as num?)?.toDouble() ?? 0;
 
     await _client.from('drivers').update({
       'status': 'online',
-      'pending_commission': currentPending + commission,
+      'wallet_balance': currentBalance - commission,
     }).eq('id', driverId);
   }
 

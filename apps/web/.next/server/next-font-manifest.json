@@ -51,6 +51,18 @@
     "[project]/apps/web/src/app/(dashboard)/drivo/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
+    "[project]/apps/web/src/app/(dashboard)/fago/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(dashboard)/fago/providers/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(dashboard)/fago/requests/[id]/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(dashboard)/fago/requests/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
     "[project]/apps/web/src/app/(dashboard)/flows/[id]/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
@@ -72,22 +84,10 @@
     "[project]/apps/web/src/app/(dashboard)/pipelines/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
+    "[project]/apps/web/src/app/(dashboard)/rido/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
     "[project]/apps/web/src/app/(dashboard)/settings/page": [
-      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
-    ],
-    "[project]/apps/web/src/app/(dashboard)/tradeo/page": [
-      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
-    ],
-    "[project]/apps/web/src/app/(dashboard)/tradeo/providers/page": [
-      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
-    ],
-    "[project]/apps/web/src/app/(dashboard)/tradeo/requests/[id]/page": [
-      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
-    ],
-    "[project]/apps/web/src/app/(dashboard)/tradeo/requests/page": [
-      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
-    ],
-    "[project]/apps/web/src/app/(dashboard)/transo/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
     "[project]/apps/web/src/app/(dashboard)/wallet/page": [

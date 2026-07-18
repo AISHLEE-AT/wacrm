@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/hooks/use-auth";
-import { Power, Wallet, Navigation2, CheckCircle2, Loader2, Info, Clock, MapPin, Car, Bike, Phone, Star } from "lucide-react";
+import { MapPin, Navigation2, Clock, CheckCircle2, Wallet, Power, Loader2, Phone, User, Info, Car, Bike, Star } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
@@ -162,16 +162,16 @@ export default function DrivoDashboard() {
       // 1. Mark ride completed
       await supabase.from("rides").update({ status: "completed" }).eq("id", activeRide.id);
       
-      // 2. Add 30% commission
-      const commission = (activeRide.estimated_price || 0) * 0.3;
-      const newPending = (driver.pending_commission || 0) + commission;
+      // 2. Deduct 30% commission directly from wallet balance
+      const commission = Math.round((activeRide.estimated_price || 0) * 0.30);
+      const newBalance = (driver.wallet_balance || 0) - commission;
       
       await supabase.from("drivers").update({ 
         status: "online", 
-        pending_commission: newPending 
+        wallet_balance: newBalance 
       }).eq("id", driver.id);
       
-      setDriver({ ...driver, status: "online", pending_commission: newPending });
+      setDriver({ ...driver, status: "online", wallet_balance: newBalance });
       setCompletedRideId(activeRide.id);
       setActiveRide(null);
       setShowRatingModal(true);
@@ -238,9 +238,9 @@ export default function DrivoDashboard() {
   const toggleStatus = async () => {
     if (!driver) return;
     
-    // Check if they owe commission
-    if (driver.status === "offline" && driver.pending_commission > 0) {
-      setError("You must pay your pending commission before you can go online.");
+    // Check if they meet minimum wallet requirement
+    if (driver.status === "offline" && (driver.wallet_balance || 0) < 999) {
+      setError("Minimum wallet balance of ₹999 required. Please recharge via admin.");
       return;
     }
     
@@ -446,9 +446,28 @@ export default function DrivoDashboard() {
                 </div>
                 <h3 className="text-xl font-bold text-foreground">You are offline</h3>
                 <p className="text-muted-foreground">Go online to receive new ride requests.</p>
-                {driver.pending_commission > 0 && (
-                  <div className="mt-6 w-full text-red-600 font-bold bg-red-50 dark:bg-red-950/30 p-5 rounded-2xl border border-red-200 dark:border-red-900/50">
-                    You owe ₹{driver.pending_commission} in pending commissions. Please pay to admin to resume going online.
+                {(driver.wallet_balance || 0) < 999 && (
+                  <div className="mt-6 w-full flex flex-col gap-4 text-red-600 font-bold bg-red-50 dark:bg-red-950/30 p-6 rounded-2xl border border-red-200 dark:border-red-900/50">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-6 w-6 shrink-0 mt-1" />
+                      <p className="text-left">
+                        Minimum wallet balance of ₹999 required to go online. Current balance: ₹{driver.wallet_balance || 0}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-black/40 p-4 rounded-xl border border-red-100 dark:border-red-900/30 text-sm font-medium text-foreground text-left">
+                      <p className="mb-2">1. Pay the amount via UPI to Admin: <span className="font-bold text-lg select-all bg-muted px-2 py-0.5 rounded ml-1">admin@upi</span></p>
+                      <p>2. Send the payment screenshot to WhatsApp CRM.</p>
+                    </div>
+                    
+                    <a 
+                      href={`https://wa.me/916381029380?text=${encodeURIComponent('Hi Admin, I have paid to recharge my driver wallet. My Vehicle No is ' + (driver.vehicle_registration || '') + '. Please find the screenshot attached.')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 px-4 rounded-xl shadow hover:bg-[#20bd5a] transition-colors"
+                    >
+                      <Phone className="h-5 w-5" /> Send Screenshot on WhatsApp
+                    </a>
                   </div>
                 )}
               </div>
@@ -494,18 +513,40 @@ export default function DrivoDashboard() {
                       <p className="text-lg font-bold text-foreground">Estimated Fare</p>
                       <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">₹{activeRide.estimated_price}</p>
                     </div>
-
-                    <a href={'tel:' + (activeRide.passenger_phone || '')} className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-blue-50 text-blue-600 py-4 font-bold border border-blue-200 hover:bg-blue-100 transition-colors">
-                      <Phone className="h-5 w-5" />
-                      Call Passenger
-                    </a>
-                    
+                    <div className="mt-4 flex items-center justify-between p-4 rounded-xl border border-border bg-slate-50 dark:bg-neutral-800/50">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                          <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground text-lg">{activeRide.passenger_name || 'Passenger'}</p>
+                          <p className="text-sm text-muted-foreground font-medium">{activeRide.passenger_phone || 'No phone provided'}</p>
+                        </div>
+                      </div>
+                      <a href={`tel:${activeRide.passenger_phone || ''}`} className="h-12 w-12 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors shadow-sm">
+                        <Phone className="h-5 w-5" />
+                      </a>
+                    </div>
+                    <button 
+                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeRide.pickup_lat},${activeRide.pickup_lng}&travelmode=driving`, '_blank')}
+                      className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white py-4 font-bold text-lg transition-transform active:scale-95 shadow-md"
+                    >
+                      <MapPin className="h-6 w-6" />
+                      Navigate to Pickup
+                    </button>
+                    <button 
+                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeRide.dropoff_lat},${activeRide.dropoff_lng}&travelmode=driving`, '_blank')}
+                      className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white py-4 font-bold text-lg transition-transform active:scale-95 shadow-md"
+                    >
+                      <Navigation2 className="h-6 w-6" />
+                      Navigate to Drop-off
+                    </button>
                     <button 
                       onClick={completeRide}
-                      className="mt-2 w-full flex items-center justify-center gap-2 rounded-xl bg-foreground text-background py-5 font-bold text-lg transition-transform active:scale-95 shadow-md"
+                      className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 text-white py-5 font-bold text-lg transition-transform active:scale-95 shadow-md hover:bg-emerald-700"
                     >
                       <CheckCircle2 className="h-6 w-6" />
-                      Complete Ride
+                      Complete Ride & Deduct Comm.
                     </button>
                   </div>
                 </div>
