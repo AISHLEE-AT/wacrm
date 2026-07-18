@@ -7,6 +7,8 @@ import '../services/supabase_service.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:math' as math;
+import 'package:qr_flutter/qr_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +29,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   double _walletBalance = 0;
   bool _isVerified = false;
   String? _driverId;
-  String? _driverName;
+  String _driverName = '';
+  String? _upiId;
   Map<String, dynamic>? _activeRide;
   List<Map<String, dynamic>> _pendingRides = [];
 
@@ -65,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         setState(() {
           _driverId = driverData!['id']?.toString();
           _driverName = driverData['name'] ?? 'Driver';
+          _upiId = driverData['upi_id'];
           _pendingCommission =
               (driverData['pending_commission'] as num?)?.toDouble() ?? 0;
           _walletBalance =
@@ -286,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   },
                   icon: const Icon(Icons.navigation),
                   label: const Text(
-                    'Navigate to Drop-off',
+                    'Start Live Navigation',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -303,13 +307,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton.icon(
-                  onPressed: () async {
+                  onPressed: () {
                     Navigator.pop(context);
-                    await _completeRide();
+                    _showPaymentDialog();
                   },
-                  icon: const Icon(Icons.check_circle_outline),
+                  icon: const Icon(Icons.qr_code_2),
                   label: const Text(
-                    'Complete Ride',
+                    'Collect Payment (UPI)',
                     style: TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold),
                   ),
@@ -350,6 +354,67 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ),
       ],
+    );
+  }
+
+  void _showPaymentDialog() {
+    if (_activeRide == null) return;
+    final amount = _activeRide!['estimated_price'] ?? 0;
+    // Fallback to Admin UPI if driver didn't provide one
+    final targetUpiId = (_upiId != null && _upiId!.trim().isNotEmpty) ? _upiId : 'admin@upi';
+    final upiUrl = 'upi://pay?pa=$targetUpiId&pn=${Uri.encodeComponent(_driverName)}&am=$amount&cu=INR';
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Collect Payment', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Ask rider to scan this QR to pay ₹$amount', textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: QrImageView(
+                  data: upiUrl,
+                  version: QrVersions.auto,
+                  size: 200.0,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text('UPI ID: $targetUpiId', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showActiveRideSheet(); // Go back to ride sheet
+              },
+              child: const Text('Back', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _completeRide();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Verify Payment & Complete', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 

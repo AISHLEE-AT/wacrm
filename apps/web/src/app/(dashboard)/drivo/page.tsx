@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { MapPin, Navigation2, Clock, CheckCircle2, Wallet, Power, Loader2, Phone, User, Info, Car, Bike, Star } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 
 const Map = dynamic(() => import("@/components/Map"), { 
   ssr: false, 
@@ -31,6 +32,7 @@ export default function DrivoDashboard() {
   const [error, setError] = useState<string | null>(null);
   
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [completedRideId, setCompletedRideId] = useState<string | null>(null);
 
   const supabase = createBrowserClient(
@@ -562,11 +564,11 @@ export default function DrivoDashboard() {
                       Navigate to Drop-off
                     </button>
                     <button 
-                      onClick={completeRide}
+                      onClick={() => setShowPaymentModal(true)}
                       className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 text-white py-5 font-bold text-lg transition-transform active:scale-95 shadow-md hover:bg-emerald-700"
                     >
                       <CheckCircle2 className="h-6 w-6" />
-                      Complete Ride & Deduct Comm.
+                      Collect Payment & Complete Ride
                     </button>
                   </div>
                 </div>
@@ -671,6 +673,39 @@ export default function DrivoDashboard() {
               ))}
             </div>
             <button onClick={() => setShowRatingModal(false)} className="text-muted-foreground font-bold hover:text-foreground transition-colors">Skip</button>
+          </div>
+        </div>
+      )}
+      
+      {showPaymentModal && activeRide && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-card p-8 rounded-2xl flex flex-col items-center shadow-xl border border-border w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-2 text-foreground">Collect Payment</h2>
+            <p className="text-muted-foreground mb-6 text-center">Ask rider to scan this QR to pay ₹{activeRide.estimated_price}</p>
+            <div className="bg-white p-4 rounded-2xl shadow-sm mb-4 border border-border">
+              <QRCodeSVG 
+                value={`upi://pay?pa=${driver?.upi_id || 'admin@upi'}&pn=${encodeURIComponent(driver?.name || 'Driver')}&am=${activeRide.estimated_price}&cu=INR`}
+                size={200}
+              />
+            </div>
+            <p className="text-sm font-bold text-muted-foreground mb-6">UPI ID: {driver?.upi_id || 'admin@upi'}</p>
+            <div className="flex gap-4 w-full">
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="flex-1 py-3 font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-neutral-800 dark:text-neutral-300 transition-colors"
+              >
+                Back
+              </button>
+              <button 
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  completeRide();
+                }}
+                className="flex-[2] py-3 font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-md transition-colors"
+              >
+                Verify & Complete
+              </button>
+            </div>
           </div>
         </div>
       )}
