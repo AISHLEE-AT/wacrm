@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import * as admin from 'firebase-admin'
 
 // Initialize Firebase Admin (Only once)
+// @ts-ignore
 if (!admin.apps.length) {
   try {
     // Expected to be a base64 encoded JSON string of the service account key

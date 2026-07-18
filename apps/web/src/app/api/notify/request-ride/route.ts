@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin'
 import { createClient } from '@supabase/supabase-js'
 
 // Initialize Firebase Admin (Only once)
+// @ts-ignore
 if (!admin.apps.length) {
   try {
     const serviceAccountBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64
