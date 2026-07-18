@@ -43,6 +43,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Set<Polyline> _polylines = {};
   double? _exactDistanceKm;
   int? _exactDurationMins;
+  
+  RealtimeChannel? _activeDriverChannel;
+  Map<String, dynamic>? _activeDriverData;
 
   // Use dotenv for Google Maps API Key
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
