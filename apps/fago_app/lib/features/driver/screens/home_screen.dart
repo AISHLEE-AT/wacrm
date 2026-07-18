@@ -78,11 +78,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _supabaseService.subscribeToDriver(_driverId!, (updatedDriver) {
             if (mounted) {
               setState(() {
-                _walletBalance =
-                    (updatedDriver['wallet_balance'] as num?)?.toDouble() ?? _walletBalance;
-                _pendingCommission =
-                    (updatedDriver['pending_commission'] as num?)?.toDouble() ?? _pendingCommission;
-                _isOnline = updatedDriver['status'] == 'online';
+                if (updatedDriver.containsKey('wallet_balance')) {
+                  _walletBalance = (updatedDriver['wallet_balance'] as num?)?.toDouble() ?? _walletBalance;
+                }
+                if (updatedDriver.containsKey('pending_commission')) {
+                  _pendingCommission = (updatedDriver['pending_commission'] as num?)?.toDouble() ?? _pendingCommission;
+                }
+                if (updatedDriver.containsKey('status')) {
+                  _isOnline = updatedDriver['status'] == 'online';
+                }
               });
             }
           });
