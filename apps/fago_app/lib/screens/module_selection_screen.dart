@@ -38,7 +38,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
+    final user = ref.watch(authProvider).supabaseUser;
     final userName = user?.userMetadata?['full_name']?.split(' ')[0] ?? 'User';
 
     return Scaffold(
