@@ -1,4 +1,5 @@
 {
+  "/(aishlee)/admin/ai-notes-generator/page": "/admin/ai-notes-generator",
   "/(aishlee)/admin/course-builder/page": "/admin/course-builder",
   "/(aishlee)/admino/page": "/admino",
   "/(aishlee)/aishlee-dashboard/page": "/aishlee-dashboard",
@@ -7,6 +8,7 @@
   "/(aishlee)/localadmin/page": "/localadmin",
   "/(aishlee)/moneyo/page": "/moneyo",
   "/(aishlee)/profile/page": "/profile",
+  "/(aishlee)/rideo/page": "/rideo",
   "/(aishlee)/tasko/page": "/tasko",
   "/(aishlee)/teacho/page": "/teacho",
   "/(aishlee)/testo/page": "/testo",

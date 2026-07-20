@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'webview_screen.dart';
@@ -21,7 +21,7 @@ class _SuperAppMainScreenState extends ConsumerState<SuperAppMainScreen> {
     // 1: Aishlee Ecosystem Menu/Inbox (Web)
     const WebViewScreen(url: 'https://watscrm.vercel.app/inbox'),
     // 2: RideO (Native)
-    const RideoDashboardScreen(),
+    const RideODashboard(),
     // 3: Wallet/Settings (Web)
     const WebViewScreen(url: 'https://watscrm.vercel.app/wallet'),
   ];

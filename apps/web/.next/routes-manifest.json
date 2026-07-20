@@ -254,6 +254,12 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/admin/ai-notes-generator",
+      "regex": "^/admin/ai\\-notes\\-generator(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/ai\\-notes\\-generator(?:/)?$"
+    },
+    {
       "page": "/admin/course-builder",
       "regex": "^/admin/course\\-builder(?:/)?$",
       "routeKeys": {},
@@ -678,6 +684,12 @@
       "regex": "^/profile(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/profile(?:/)?$"
+    },
+    {
+      "page": "/rideo",
+      "regex": "^/rideo(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/rideo(?:/)?$"
     },
     {
       "page": "/rido",

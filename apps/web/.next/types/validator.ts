@@ -47,6 +47,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
+// Validate ../../src/app/(aishlee)/admin/ai-notes-generator/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/ai-notes-generator">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/admin/ai-notes-generator/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/(aishlee)/admin/course-builder/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin/course-builder">> = Specific
@@ -114,6 +123,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends AppPageConfig<"/profile">> = Specific
   const handler = {} as typeof import("../../src/app/(aishlee)/profile/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/rideo/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/rideo">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/rideo/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

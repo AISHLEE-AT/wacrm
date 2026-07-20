@@ -1,5 +1,5 @@
-import { usePathname } from 'next/navigation';
 'use client';
+import { usePathname } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, Sparkles, GraduationCap, Store, Landmark, PlaySquare, ShieldAlert, UserCircle, Bell, ClipboardCheck } from 'lucide-react';
@@ -86,5 +86,6 @@ const Navigation = () => {
 };
 
 export default Navigation;
+
 
 

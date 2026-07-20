@@ -1,5 +1,8 @@
 {
   "app": {
+    "[project]/apps/web/src/app/(aishlee)/admin/ai-notes-generator/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
     "[project]/apps/web/src/app/(aishlee)/admin/course-builder/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
@@ -22,6 +25,9 @@
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
     "[project]/apps/web/src/app/(aishlee)/profile/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/rideo/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
     "[project]/apps/web/src/app/(aishlee)/tasko/page": [
