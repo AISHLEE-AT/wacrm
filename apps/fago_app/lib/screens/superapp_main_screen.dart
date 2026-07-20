@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'webview_screen.dart';
 import 'rideo/rideo_dashboard.dart';
-import '../auth/auth_provider.dart';
 
-const _kBaseUrl = 'https://watscrm.vercel.app';
+final _kBaseUrl = 'https://watscrm.vercel.app';
 
 // Bottom nav tabs definition — these are the persistent shell tabs
 // The WebView shows WHICHEVER url the user navigated to last
-const _navItems = [
+final _navItems = [
   {'label': 'Home',      'icon': Icons.home_outlined,                   'activeIcon': Icons.home,                    'url': '$_kBaseUrl/home'},
   {'label': 'Modules',   'icon': Icons.grid_view_outlined,              'activeIcon': Icons.grid_view,               'url': 'modules'}, // Shows module selector
   {'label': 'RideO',     'icon': Icons.local_taxi_outlined,             'activeIcon': Icons.local_taxi,              'url': 'rideo'}, // Native
@@ -94,9 +92,14 @@ class _SuperAppMainScreenState extends ConsumerState<SuperAppMainScreen> {
         _currentTab = 1;
       });
     } else {
-      // Load URL in the single WebView
-      _loadUrl(url);
-      setState(() { _currentTab = index; });
+      // Navigate single WebView to the tapped tab's URL
+      // _loadUrl sets _currentTab = 0, but for Home/Wallet we want the correct index
+      setState(() {
+        _urlHistory.add(_activeWebUrl);
+        _activeWebUrl = url;
+        _currentTab = index;
+        _showModuleSelector = false;
+      });
     }
   }
 
@@ -149,8 +152,8 @@ class _SuperAppMainScreenState extends ConsumerState<SuperAppMainScreen> {
 }
 
 // ─── Compact Module Selector shown as bottom sheet / overlay ─────────────────
-const _kBaseUrlInner = 'https://watscrm.vercel.app';
-const _allModules = [
+final _kBaseUrlInner = 'https://watscrm.vercel.app';
+final _allModules = [
   {'title': 'TeachO',  'icon': Icons.school_rounded,             'color': Color(0xFF3B82F6), 'url': '$_kBaseUrlInner/teacho'},
   {'title': 'TestO',   'icon': Icons.fact_check_rounded,         'color': Color(0xFFEF4444), 'url': '$_kBaseUrlInner/testo'},
   {'title': 'TourO',   'icon': Icons.flight_rounded,             'color': Color(0xFF10B981), 'url': '$_kBaseUrlInner/touro'},

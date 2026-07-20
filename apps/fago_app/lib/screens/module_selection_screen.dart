@@ -5,9 +5,9 @@ import 'dart:ui';
 import '../auth/auth_provider.dart';
 
 // ─── Module definitions: title, subtitle, icon, direct web URL ───────────────
-const _kBaseUrl = 'https://watscrm.vercel.app';
+final _kBaseUrl = 'https://watscrm.vercel.app';
 
-const _modules = [
+final _modules = [
   {
     'title': 'TeachO',
     'subtitle': 'Online Academy & Courses',

@@ -35,7 +35,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     }
   }
 
-  void _injectSession() async {
+  Future<void> _injectSession() async {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) return;
     try {
