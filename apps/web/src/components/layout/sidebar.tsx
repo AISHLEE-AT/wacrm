@@ -27,6 +27,13 @@ import {
   Home,
   Car,
   MapPin,
+  CheckSquare,
+  GraduationCap,
+  Wallet,
+  Plane,
+  Sprout,
+  Tv,
+  Wrench,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -94,6 +101,16 @@ interface NavItem {
 const fagoItems: NavItem[] = [
   { href: "/rido", label: "RidO (Book Ride)", icon: Car },
   { href: "/drivo", label: "DrivO (Drive & Earn)", icon: Briefcase },
+];
+
+const aishleeItems: NavItem[] = [
+  { href: "/teacho", label: "TeachO (LMS)", icon: GraduationCap },
+  { href: "/moneyo", label: "MoneyO (Finance)", icon: Wallet },
+  { href: "/touro", label: "TourO (Travel)", icon: Plane },
+  { href: "/tradeo", label: "TradeO (Agri)", icon: Sprout },
+  { href: "/toolso", label: "ToolsO (AI Gen)", icon: Wrench },
+  { href: "/tvo", label: "TvO (Media)", icon: Tv },
+  { href: "/tasko", label: "TaskO (Tasks)", icon: CheckSquare },
 ];
 
 const crmItems: NavItem[] = [
@@ -230,11 +247,37 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <div className="px-3 mb-2 mt-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Marketplace</h3>
             </div>
-            <ul className="flex flex-col gap-1 mb-6">
+            <ul className="flex flex-col gap-1 mb-2">
               {fagoItems.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/fago" && item.href !== "/home" && pathname.startsWith(item.href));
+
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
+                        isActive
+                          ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
+                          : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1">{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            
+            <div className="px-3 mb-2 mt-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aishlee Ecosystem</h3>
+            </div>
+            <ul className="flex flex-col gap-1 mb-6">
+              {aishleeItems.map((item) => {
+                const isActive = pathname.startsWith(item.href);
 
                 return (
                   <li key={item.href}>
