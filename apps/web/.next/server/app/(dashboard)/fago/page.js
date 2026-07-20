@@ -1,7 +1,7 @@
 var R=require("../../../chunks/ssr/[turbopack]_runtime.js")("server/app/(dashboard)/fago/page.js")
 R.c("server/chunks/ssr/[root-of-the-server]__1si5h6o._.js")
 R.c("server/chunks/ssr/node_modules_next_dist_esm_build_templates_app-page_0c6dgbf.js")
-R.c("server/chunks/ssr/[root-of-the-server]__1-zz62j._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__1zn02by._.js")
 R.c("server/chunks/ssr/node_modules_1__7j23._.js")
 R.c("server/chunks/ssr/[root-of-the-server]__0ds3h9l._.js")
 R.c("server/chunks/ssr/_0e1jfeb._.js")

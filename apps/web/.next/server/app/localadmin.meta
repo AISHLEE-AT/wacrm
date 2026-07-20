@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(aishlee)/layout,_N_T_/(aishlee)/localadmin/layout,_N_T_/(aishlee)/localadmin/page,_N_T_/localadmin"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGFpc2hsZWUp/localadmin/__PAGE__",
+    "/!KGFpc2hsZWUp/localadmin",
+    "/!KGFpc2hsZWUp",
+    "/_index",
+    "/_head"
+  ]
+}

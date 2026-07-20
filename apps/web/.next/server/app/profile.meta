@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(aishlee)/layout,_N_T_/(aishlee)/profile/layout,_N_T_/(aishlee)/profile/page,_N_T_/profile"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGFpc2hsZWUp/profile/__PAGE__",
+    "/!KGFpc2hsZWUp/profile",
+    "/!KGFpc2hsZWUp",
+    "/_index",
+    "/_head"
+  ]
+}

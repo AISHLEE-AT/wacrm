@@ -1,5 +1,50 @@
 {
   "app": {
+    "[project]/apps/web/src/app/(aishlee)/admin/course-builder/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/admino/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/aishlee-dashboard/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/approval-hub/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/careers/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/localadmin/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/moneyo/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/profile/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/tasko/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/teacho/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/testo/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/toolso/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/touro/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/tradeo/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
+    "[project]/apps/web/src/app/(aishlee)/tvo/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
     "[project]/apps/web/src/app/(auth)/forgot-password/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],

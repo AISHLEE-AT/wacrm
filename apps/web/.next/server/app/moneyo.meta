@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(aishlee)/layout,_N_T_/(aishlee)/moneyo/layout,_N_T_/(aishlee)/moneyo/page,_N_T_/moneyo"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGFpc2hsZWUp/moneyo/__PAGE__",
+    "/!KGFpc2hsZWUp/moneyo",
+    "/!KGFpc2hsZWUp",
+    "/_index",
+    "/_head"
+  ]
+}

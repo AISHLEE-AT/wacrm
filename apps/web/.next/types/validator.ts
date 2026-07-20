@@ -47,6 +47,141 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
+// Validate ../../src/app/(aishlee)/admin/course-builder/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/course-builder">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/admin/course-builder/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/admino/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admino">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/admino/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/aishlee-dashboard/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/aishlee-dashboard">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/aishlee-dashboard/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/approval-hub/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/approval-hub">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/approval-hub/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/careers/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/careers">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/careers/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/localadmin/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/localadmin">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/localadmin/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/moneyo/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/moneyo">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/moneyo/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/profile/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/profile">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/profile/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/tasko/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/tasko">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/tasko/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/teacho/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/teacho">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/teacho/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/testo/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/testo">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/testo/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/toolso/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/toolso">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/toolso/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/touro/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/touro">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/touro/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/tradeo/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/tradeo">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/tradeo/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/(aishlee)/tvo/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/tvo">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/tvo/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/(auth)/forgot-password/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/forgot-password">> = Specific
@@ -842,6 +977,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 
 
 
+
+// Validate ../../src/app/(aishlee)/layout.tsx
+{
+  type __IsExpected<Specific extends LayoutConfig<"/">> = Specific
+  const handler = {} as typeof import("../../src/app/(aishlee)/layout.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
 
 // Validate ../../src/app/(auth)/layout.tsx
 {
