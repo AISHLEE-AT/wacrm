@@ -9,7 +9,7 @@ final _kBaseUrl = 'https://watscrm.vercel.app';
 // Bottom nav tabs definition — these are the persistent shell tabs
 // The WebView shows WHICHEVER url the user navigated to last
 final _navItems = [
-  {'label': 'Home',      'icon': Icons.home_outlined,                   'activeIcon': Icons.home,                    'url': '$_kBaseUrl/home'},
+  {'label': 'Home',      'icon': Icons.home_outlined,                   'activeIcon': Icons.home,                    'url': '$_kBaseUrl/'},
   {'label': 'Modules',   'icon': Icons.grid_view_outlined,              'activeIcon': Icons.grid_view,               'url': 'modules'}, // Shows module selector
   {'label': 'RideO',     'icon': Icons.local_taxi_outlined,             'activeIcon': Icons.local_taxi,              'url': 'rideo'}, // Native
   {'label': 'Wallet',    'icon': Icons.account_balance_wallet_outlined, 'activeIcon': Icons.account_balance_wallet,  'url': '$_kBaseUrl/wallet'},
@@ -37,7 +37,7 @@ class _SuperAppMainScreenState extends ConsumerState<SuperAppMainScreen> {
   int _currentTab = 0;
 
   /// The URL currently loaded in the single WebView
-  String _activeWebUrl = '$_kBaseUrl/home';
+  String _activeWebUrl = '$_kBaseUrl/';
 
   /// History stack so back button works correctly
   final List<String> _urlHistory = [];

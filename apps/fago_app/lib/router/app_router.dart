@@ -27,42 +27,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = RouterNotifier(ref);
 
   return GoRouter(
-    initialLocation: '/permissions',
+    initialLocation: '/superapp',
     refreshListenable: notifier,
     redirect: (context, state) {
-      final authState = ref.read(authProvider);
-      final onboardingState = ref.read(onboardingProvider);
-
-      final isLoggingIn = state.uri.path == '/login';
-      final isPermissions = state.uri.path == '/permissions';
-      final isRoot = state.uri.path == '/';
-
-      if (authState.isLoading || onboardingState.isLoading) return null;
-
-      final hasCompletedOnboarding = onboardingState.value ?? false;
-
-      if (!hasCompletedOnboarding) {
-        return isPermissions ? null : '/permissions';
-      }
-
-      if (isPermissions && hasCompletedOnboarding) {
-        return '/';
-      }
-
-      if (authState.role == UserRole.guest) {
-        return isLoggingIn ? null : '/login';
-      }
-
-      if (isLoggingIn || isRoot) {
-        if (authState.role == UserRole.admin) {
-          return '/rider';
-        } else if (authState.role == UserRole.driver) {
-          return '/driver';
-        } else {
-          return '/rider';
-        }
-      }
-
+      // Always allow navigation; Web app handles auth internally via WebView
       return null;
     },
     routes: [
