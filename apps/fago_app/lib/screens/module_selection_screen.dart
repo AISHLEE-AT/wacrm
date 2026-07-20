@@ -4,6 +4,68 @@ import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../auth/auth_provider.dart';
 
+// ─── Module definitions: title, subtitle, icon, direct web URL ───────────────
+const _kBaseUrl = 'https://watscrm.vercel.app';
+
+const _modules = [
+  {
+    'title': 'TeachO',
+    'subtitle': 'Online Academy & Courses',
+    'icon': Icons.school_rounded,
+    'gradient': [Color(0xFF3B82F6), Color(0xFF2563EB)],
+    'url': '$_kBaseUrl/teacho',
+  },
+  {
+    'title': 'TestO',
+    'subtitle': 'Assessments & Exams',
+    'icon': Icons.fact_check_rounded,
+    'gradient': [Color(0xFFEF4444), Color(0xFFDC2626)],
+    'url': '$_kBaseUrl/testo',
+  },
+  {
+    'title': 'TourO',
+    'subtitle': 'Travel & Tours',
+    'icon': Icons.flight_rounded,
+    'gradient': [Color(0xFF10B981), Color(0xFF059669)],
+    'url': '$_kBaseUrl/touro',
+  },
+  {
+    'title': 'MoneyO',
+    'subtitle': 'Finance & Wallet',
+    'icon': Icons.account_balance_wallet_rounded,
+    'gradient': [Color(0xFFF59E0B), Color(0xFFD97706)],
+    'url': '$_kBaseUrl/moneyo',
+  },
+  {
+    'title': 'TaskO',
+    'subtitle': 'Task Management',
+    'icon': Icons.task_alt_rounded,
+    'gradient': [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+    'url': '$_kBaseUrl/tasko',
+  },
+  {
+    'title': 'TradeO',
+    'subtitle': 'Business & Trade',
+    'icon': Icons.storefront_rounded,
+    'gradient': [Color(0xFFEC4899), Color(0xFFBE185D)],
+    'url': '$_kBaseUrl/tradeo',
+  },
+  {
+    'title': 'TvO',
+    'subtitle': 'Entertainment & Media',
+    'icon': Icons.tv_rounded,
+    'gradient': [Color(0xFF14B8A6), Color(0xFF0F766E)],
+    'url': '$_kBaseUrl/tvo',
+  },
+  {
+    'title': 'RideO',
+    'subtitle': 'Transport & Delivery',
+    'icon': Icons.directions_car_rounded,
+    'gradient': [Color(0xFF6366F1), Color(0xFF4338CA)],
+    'url': 'rideo', // Special: native screen
+  },
+];
+
 class ModuleSelectionScreen extends ConsumerStatefulWidget {
   const ModuleSelectionScreen({super.key});
 
@@ -11,7 +73,8 @@ class ModuleSelectionScreen extends ConsumerStatefulWidget {
   ConsumerState<ModuleSelectionScreen> createState() => _ModuleSelectionScreenState();
 }
 
-class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> with SingleTickerProviderStateMixin {
+class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
@@ -19,7 +82,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 900),
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart);
@@ -32,61 +95,68 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
     super.dispose();
   }
 
-  void _navigateToModule(BuildContext context, String route, WidgetRef ref) {
-    context.go(route);
+  void _openModule(Map module) {
+    final url = module['url'] as String;
+    if (url == 'rideo') {
+      // RideO is a native Flutter screen
+      context.go('/superapp?url=rideo');
+    } else {
+      // Pass the exact URL so only THIS page loads in the WebView
+      final encoded = Uri.encodeComponent(url);
+      context.go('/superapp?url=$encoded');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).supabaseUser;
-    final userName = user?.userMetadata?['full_name']?.split(' ')[0] ?? 'User';
+    final userName = user?.userMetadata?['full_name']?.toString().split(' ')[0] ?? 'User';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F), // Deep futuristic black
+      backgroundColor: const Color(0xFF0A0A0F),
       body: Stack(
         children: [
-          // Background ambient glows
+          // Ambient background glows
           Positioned(
-            top: -100,
-            left: -100,
+            top: -120,
+            left: -80,
             child: Container(
-              width: 300,
-              height: 300,
+              width: 320,
+              height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF4F46E5).withOpacity(0.3), // Indigo glow
+                color: const Color(0xFF4F46E5).withOpacity(0.25),
               ),
             ),
           ),
           Positioned(
-            bottom: -50,
-            right: -50,
+            bottom: -60,
+            right: -60,
             child: Container(
-              width: 250,
-              height: 250,
+              width: 260,
+              height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF10B981).withOpacity(0.2), // Emerald glow
+                color: const Color(0xFF10B981).withOpacity(0.15),
               ),
             ),
           ),
-          // Blur layer for ambient glow effect
           BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
             child: Container(color: Colors.transparent),
           ),
 
-          // Main Content
+          // Main content
           SafeArea(
             child: FadeTransition(
               opacity: _fadeAnimation,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ────────────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Column(
@@ -95,16 +165,16 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
                             Text(
                               'Welcome back,',
                               style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white.withOpacity(0.7),
-                                letterSpacing: 1.1,
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.55),
+                                letterSpacing: 0.5,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               userName,
                               style: const TextStyle(
-                                fontSize: 32,
+                                fontSize: 28,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
                                 letterSpacing: -0.5,
@@ -112,17 +182,18 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
                             ),
                           ],
                         ),
+                        // Avatar circle
                         Container(
-                          width: 48,
-                          height: 48,
+                          width: 46,
+                          height: 46,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF4F46E5), Color(0xFF3B82F6)],
+                              colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4F46E5).withOpacity(0.4),
+                                color: const Color(0xFF6366F1).withOpacity(0.4),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -132,7 +203,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
                             child: Text(
                               userName[0].toUpperCase(),
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -141,121 +212,95 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
                         ),
                       ],
                     ),
-                    const SizedBox(height: 48),
+                  ),
 
-                    // AI Assistant Prompt
-                    Container(
-                      padding: const EdgeInsets.all(20),
+                  const SizedBox(height: 20),
+
+                  // ── AI Prompt Banner ──────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.03),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.white.withOpacity(0.08)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 20,
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withOpacity(0.07)),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.auto_awesome, color: Color(0xFFC4B5FD)),
+                            child: const Icon(Icons.auto_awesome,
+                                color: Color(0xFFC4B5FD), size: 20),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Aishlee AI System',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFFC4B5FD),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Where would you like to go today?',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.white.withOpacity(0.9),
-                                  ),
-                                ),
-                              ],
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Text(
+                              'Select a module — only that page will load. Saves data & loads faster.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFFE5E7EB),
+                                height: 1.4,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 40),
+                  ),
 
-                    // Module Grid
-                    const Text(
-                      'YOUR MODULES',
+                  const SizedBox(height: 20),
+
+                  // ── Section Label ─────────────────────────────────────────
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'CHOOSE MODULE',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white54,
-                        letterSpacing: 2,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white38,
+                        letterSpacing: 2.5,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: GridView.count(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 0.85,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // ── Module Grid ───────────────────────────────────────────
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: GridView.builder(
                         physics: const BouncingScrollPhysics(),
-                        children: [
-                          _buildModuleCard(
-                            context,
-                            ref,
-                            title: 'WACRM',
-                            subtitle: 'Business Dashboard',
-                            icon: Icons.dashboard_rounded,
-                            gradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                            route: '/superapp?tab=0', 
-                          ),
-                          _buildModuleCard(
-                            context,
-                            ref,
-                            title: 'Aishlee',
-                            subtitle: 'Ecosystem & Universal Apps',
-                            icon: Icons.apps_rounded,
-                            gradient: const [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                            route: '/superapp?tab=1',
-                          ),
-                          _buildModuleCard(
-                            context,
-                            ref,
-                            title: 'RideO',
-                            subtitle: 'Transport & Delivery',
-                            icon: Icons.directions_car_rounded,
-                            gradient: const [Color(0xFF10B981), Color(0xFF059669)],
-                            route: '/superapp?tab=2',
-                          ),
-                          _buildModuleCard(
-                            context,
-                            ref,
-                            title: 'Wallet',
-                            subtitle: 'Finances & Settings',
-                            icon: Icons.account_balance_wallet_rounded,
-                            gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
-                            route: '/superapp?tab=3',
-                          ),
-                        ],
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.05,
+                        ),
+                        itemCount: _modules.length,
+                        itemBuilder: (context, index) {
+                          final mod = _modules[index];
+                          final colors = mod['gradient'] as List<Color>;
+                          final icon = mod['icon'] as IconData;
+                          return _ModuleCard(
+                            title: mod['title'] as String,
+                            subtitle: mod['subtitle'] as String,
+                            icon: icon,
+                            colors: colors,
+                            onTap: () => _openModule(mod),
+                          );
+                        },
                       ),
                     ),
-                  ],
-                ),
+                  ),
+
+                  const SizedBox(height: 16),
+                ],
               ),
             ),
           ),
@@ -263,73 +308,133 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen> w
       ),
     );
   }
+}
 
-  Widget _buildModuleCard(
-    BuildContext context,
-    WidgetRef ref, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required List<Color> gradient,
-    required String route,
-  }) {
+// ─── Reusable card widget ─────────────────────────────────────────────────────
+class _ModuleCard extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<Color> colors;
+  final VoidCallback onTap;
+
+  const _ModuleCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.colors,
+    required this.onTap,
+  });
+
+  @override
+  State<_ModuleCard> createState() => _ModuleCardState();
+}
+
+class _ModuleCardState extends State<_ModuleCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _scaleCtrl;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+      lowerBound: 0.95,
+      upperBound: 1.0,
+      value: 1.0,
+    );
+    _scaleAnim = _scaleCtrl;
+  }
+
+  @override
+  void dispose() {
+    _scaleCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _navigateToModule(context, route, ref),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              gradient[0].withOpacity(0.15),
-              gradient[1].withOpacity(0.05),
+      onTapDown: (_) => _scaleCtrl.reverse(),
+      onTapUp: (_) {
+        _scaleCtrl.forward();
+        widget.onTap();
+      },
+      onTapCancel: () => _scaleCtrl.forward(),
+      child: AnimatedBuilder(
+        animation: _scaleAnim,
+        builder: (context, child) => Transform.scale(
+          scale: _scaleAnim.value,
+          child: child,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                widget.colors[0].withOpacity(0.18),
+                widget.colors[1].withOpacity(0.06),
+              ],
+            ),
+            border: Border.all(
+              color: widget.colors[0].withOpacity(0.35),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: widget.colors[0].withOpacity(0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
-          border: Border.all(color: gradient[0].withOpacity(0.3), width: 1.5),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: gradient[0].withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: widget.colors[0].withOpacity(0.22),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(widget.icon, color: widget.colors[0], size: 26),
                     ),
-                    child: Icon(icon, color: gradient[0], size: 28),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.3,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.6),
-                          height: 1.2,
+                        const SizedBox(height: 3),
+                        Text(
+                          widget.subtitle,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withOpacity(0.55),
+                            height: 1.3,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

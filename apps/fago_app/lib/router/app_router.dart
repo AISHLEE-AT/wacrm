@@ -6,12 +6,11 @@ import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 
 import '../features/driver/screens/home_screen.dart' as driver;
-import '../features/rider/screens/home_screen.dart' as rider;
-import '../screens/superapp_main_screen.dart';
-import '../screens/module_selection_screen.dart';
-
 import '../features/driver/screens/driver_registration_screen.dart' as driver_reg;
 import '../features/driver/screens/admin_home_screen.dart' as admin;
+
+import '../screens/superapp_main_screen.dart';
+import '../screens/module_selection_screen.dart';
 
 import '../features/onboarding/onboarding_provider.dart';
 import '../features/onboarding/permissions_screen.dart';
@@ -33,12 +32,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final onboardingState = ref.read(onboardingProvider);
-      
+
       final isLoggingIn = state.uri.path == '/login';
       final isPermissions = state.uri.path == '/permissions';
       final isRoot = state.uri.path == '/';
 
-      if (authState.isLoading || onboardingState.isLoading) return null; // Keep current while loading
+      if (authState.isLoading || onboardingState.isLoading) return null;
 
       final hasCompletedOnboarding = onboardingState.value ?? false;
 
@@ -47,7 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (isPermissions && hasCompletedOnboarding) {
-        return '/'; // Let the subsequent logic handle it
+        return '/';
       }
 
       if (authState.role == UserRole.guest) {
@@ -56,7 +55,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isLoggingIn || isRoot) {
         if (authState.role == UserRole.admin) {
-          return '/rider'; // Let admins test the rider app, they can access dashboard from drawer
+          return '/rider';
         } else if (authState.role == UserRole.driver) {
           return '/driver';
         } else {
@@ -71,7 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/',
         builder: (context, state) => const Scaffold(
           body: Center(
-            child: CircularProgressIndicator(color: Color(0xFF00FF00)),
+            child: CircularProgressIndicator(color: Color(0xFF6366F1)),
           ),
         ),
       ),
@@ -81,10 +80,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) {
-          // Default role is rider, no longer reading from query param since role selection is gone
-          return const LoginScreen(role: 'rider');
-        },
+        builder: (context, state) => const LoginScreen(role: 'rider'),
       ),
       GoRoute(
         path: '/admin',
@@ -96,14 +92,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/rider',
+        // Module selector: user picks which module to open
         builder: (context, state) => const ModuleSelectionScreen(),
-        ),
-        GoRoute(
-          path: '/superapp',
-          builder: (context, state) {
-            final tab = state.uri.queryParameters['tab'];
-            return SuperAppMainScreen(initialIndex: tab != null ? int.tryParse(tab) ?? 0 : 0);
-          },
+      ),
+      GoRoute(
+        path: '/superapp',
+        builder: (context, state) {
+          // 'url' param = exact module URL (e.g. https://watscrm.vercel.app/teacho)
+          // Only THAT page loads — zero egress for unvisited modules
+          final url = state.uri.queryParameters['url'];
+          // Legacy tab-based support
+          final tab = state.uri.queryParameters['tab'];
+          return SuperAppMainScreen(
+            initialUrl: url != null ? Uri.decodeComponent(url) : null,
+            initialIndex: tab != null ? int.tryParse(tab) ?? 0 : 0,
+          );
+        },
       ),
       GoRoute(
         path: '/driver/register',

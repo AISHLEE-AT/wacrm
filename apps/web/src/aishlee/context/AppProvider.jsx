@@ -35,16 +35,75 @@ export const AppProvider = ({ children }) => {
   }, [theme]);
 
   useEffect(() => {
-    // Check for auto_sync_token from mobile app WebView
-    if (typeof window !== 'undefined') {
+    // Handle auto_sync_token from mobile app WebView
+    const handleMobileToken = async () => {
+      if (typeof window === 'undefined') return;
       const params = new URLSearchParams(window.location.search);
       const syncToken = params.get('auto_sync_token');
-      if (syncToken) {
-        supabase.auth.setSession({ access_token: syncToken, refresh_token: '' });
-        // Clean URL to prevent sharing token
+      if (!syncToken) return;
+
+      try {
+        // Validate token with Supabase and get user data
+        const { data: { user }, error } = await supabase.auth.getUser(syncToken);
+        if (error || !user) {
+          console.warn('Mobile sync token invalid:', error?.message);
+          return;
+        }
+
+        // Set session with a valid structure (refresh_token can be empty for short-lived tokens)
+        await supabase.auth.setSession({
+          access_token: syncToken,
+          refresh_token: syncToken, // Use access token as refresh fallback
+        });
+      } catch (e) {
+        console.warn('Mobile token sync error:', e);
+      } finally {
+        // Always clean URL regardless of success/failure
         window.history.replaceState({}, document.title, window.location.pathname);
       }
-    }
+    };
+    handleMobileToken();
+  }, []);
+
+  useEffect(() => {
+    // Listen for session injection from Flutter WebView (JS bridge method)
+    const handleMobileSessionEvent = async (event) => {
+      try {
+        const { access_token, refresh_token } = event.detail;
+        if (!access_token) return;
+        await supabase.auth.setSession({ access_token, refresh_token: refresh_token || access_token });
+      } catch (e) {
+        console.warn('Mobile session event error:', e);
+      }
+    };
+
+    // Also check if session was already injected into localStorage by Flutter before JS ran
+    const checkInjectedSession = async () => {
+      if (typeof window === 'undefined') return;
+      // If we're already logged in, no need to check
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) return;
+
+      // Check for manually injected token in localStorage by WebView
+      try {
+        const storageKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.access_token) {
+            await supabase.auth.setSession({
+              access_token: parsed.access_token,
+              refresh_token: parsed.refresh_token || parsed.access_token
+            });
+          }
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('mobileSessionInjected', handleMobileSessionEvent);
+    checkInjectedSession();
+
+    return () => window.removeEventListener('mobileSessionInjected', handleMobileSessionEvent);
   }, []);
 
   const initializeUser = async (user) => {
