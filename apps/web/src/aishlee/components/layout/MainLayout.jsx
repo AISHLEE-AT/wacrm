@@ -180,17 +180,21 @@ export default function MainLayout({ children }) {
 
   // The Header component (Top bar for mobile & desktop)
   const HeaderBar = () => (
-    <div className="glass-panel" style={{ 
+    <div style={{ 
       display: 'flex', 
       justifyContent: 'space-between', 
       alignItems: 'center', 
-      padding: '12px 20px',
+      padding: '16px 24px',
       position: 'sticky',
-      top: 0,
+      top: '20px',
       zIndex: 100,
-      borderRadius: '0 0 16px 16px',
-      borderTop: 'none',
-      marginBottom: '24px'
+      borderRadius: '20px',
+      background: 'rgba(10, 15, 30, 0.6)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      marginBottom: '32px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <button 
@@ -242,7 +246,7 @@ export default function MainLayout({ children }) {
 
       {/* DESKTOP SIDEBAR */}
       {currentUser && (
-        <aside className={`desktop-sidebar glass-panel no-print`} style={{
+        <aside className={`desktop-sidebar no-print`} style={{
           position: 'fixed',
           top: '20px',
           left: '20px',
@@ -252,6 +256,12 @@ export default function MainLayout({ children }) {
           flexDirection: 'column',
           zIndex: 1000,
           padding: '24px 16px',
+          background: 'rgba(10, 15, 30, 0.7)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '24px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
         }}>
           <div style={{ marginBottom: '40px', paddingLeft: '8px' }}>
             <Logo size={24} />
@@ -281,27 +291,31 @@ export default function MainLayout({ children }) {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
+                    gap: '14px',
+                    padding: '12px 18px',
+                    borderRadius: '16px',
                     textDecoration: 'none',
-                    color: active ? 'var(--deep-midnight)' : 'var(--text-secondary)',
-                    background: active ? 'var(--tech-cyan)' : 'transparent',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.6)',
+                    background: active ? 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(59,130,246,0.2) 100%)' : 'transparent',
+                    border: active ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+                    boxShadow: active ? '0 4px 12px rgba(99,102,241,0.1)' : 'none',
                     fontWeight: active ? '700' : '500',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     position: 'relative'
                   }}
                   className="hover-lift"
                   onMouseEnter={(e) => {
                     if(!active) {
-                      e.currentTarget.style.background = 'var(--surface-2)';
-                      e.currentTarget.style.color = 'var(--text-primary)';
+                      e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.transform = 'translateX(4px)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if(!active) {
                       e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
+                      e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                      e.currentTarget.style.transform = 'translateX(0)';
                     }
                   }}
                 >
@@ -415,11 +429,12 @@ export default function MainLayout({ children }) {
       <style dangerouslySetInnerHTML={{__html: `
         @media (max-width: 1023px) {
           .desktop-sidebar { display: none !important; }
+          .main-content-wrapper { margin-left: 0 !important; }
         }
         @media (min-width: 1024px) {
           .lg-hidden { display: none !important; }
           .bottom-nav { display: none !important; }
-          .main-content-wrapper { margin-left: 290px !important; }
+          .main-content-wrapper { margin-left: ${currentUser ? '290px' : '0'} !important; }
         }
       `}} />
     </>
