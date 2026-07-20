@@ -8,6 +8,7 @@ import '../auth/login_screen.dart';
 import '../features/driver/screens/home_screen.dart' as driver;
 import '../features/rider/screens/home_screen.dart' as rider;
 import '../screens/superapp_main_screen.dart';
+import '../screens/module_selection_screen.dart';
 
 import '../features/driver/screens/driver_registration_screen.dart' as driver_reg;
 import '../features/driver/screens/admin_home_screen.dart' as admin;
@@ -95,7 +96,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/rider',
-        builder: (context, state) => const SuperAppMainScreen(),
+        builder: (context, state) => const ModuleSelectionScreen(),
+        ),
+        GoRoute(
+          path: '/superapp',
+          builder: (context, state) {
+            final tab = state.uri.queryParameters['tab'];
+            return SuperAppMainScreen(initialIndex: tab != null ? int.tryParse(tab) ?? 0 : 0);
+          },
       ),
       GoRoute(
         path: '/driver/register',

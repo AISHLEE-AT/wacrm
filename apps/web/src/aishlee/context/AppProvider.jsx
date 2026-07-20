@@ -26,6 +26,19 @@ export const AppProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    // Check for auto_sync_token from mobile app WebView
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const syncToken = params.get('auto_sync_token');
+      if (syncToken) {
+        supabase.auth.setSession({ access_token: syncToken, refresh_token: '' });
+        // Clean URL to prevent sharing token
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   const initializeUser = async (user) => {
     try {
       // Fetch role from profiles table

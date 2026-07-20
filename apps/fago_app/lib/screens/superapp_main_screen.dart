@@ -6,14 +6,21 @@ import 'rideo/rideo_dashboard.dart';
 import '../auth/auth_provider.dart';
 
 class SuperAppMainScreen extends ConsumerStatefulWidget {
-  const SuperAppMainScreen({super.key});
+  final int initialIndex;
+  const SuperAppMainScreen({super.key, this.initialIndex = 0});
 
   @override
   ConsumerState<SuperAppMainScreen> createState() => _SuperAppMainScreenState();
 }
 
 class _SuperAppMainScreenState extends ConsumerState<SuperAppMainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   final List<Widget> _screens = [
     // 0: Aishlee Dashboard (Web)

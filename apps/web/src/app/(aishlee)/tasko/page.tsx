@@ -30,7 +30,7 @@ const TaskO = () => {
       return;
     }
     loadDailyTasks();
-  }, [currentUser, navigate]);
+  }, [currentUser, router]);
 
   const loadDailyTasks = async () => {
     setLoading(true);

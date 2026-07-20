@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(aishlee)/layout,_N_T_/(aishlee)/aishlee-dashboard/layout,_N_T_/(aishlee)/aishlee-dashboard/page,_N_T_/aishlee-dashboard"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGFpc2hsZWUp/aishlee-dashboard/__PAGE__",
+    "/!KGFpc2hsZWUp/aishlee-dashboard",
+    "/!KGFpc2hsZWUp",
+    "/_index",
+    "/_head"
+  ]
+}

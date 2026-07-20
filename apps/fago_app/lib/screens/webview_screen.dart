@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String url;
@@ -17,6 +18,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
   @override
   void initState() {
     super.initState();
+    final session = Supabase.instance.client.auth.currentSession;
+    final token = session?.accessToken;
+    final separator = widget.url.contains('?') ? '&' : '?';
+    final finalUrl = token != null ? '${widget.url}${separator}auto_sync_token=$token' : widget.url;
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0A0A0A))
@@ -38,7 +44,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
           onWebResourceError: (WebResourceError error) {},
         ),
       )
-      ..loadRequest(Uri.parse(widget.url));
+      ..loadRequest(Uri.parse(finalUrl));
   }
 
   @override
@@ -51,7 +57,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
             WebViewWidget(controller: _controller),
             if (_isLoading)
               const Center(
-                child: CircularProgressIndicator(color: Color(0xFF00FF00)),
+                child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
               ),
           ],
         ),

@@ -51,7 +51,7 @@ const Navigation = () => {
         return (
           <Link
             key={item.path}
-            to={item.path}
+            href={item.path}
             className={`nav-item ${isActive ? 'active' : ''}`}
             style={{ position: 'relative' }}
           >
