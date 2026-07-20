@@ -24,6 +24,9 @@
     "[project]/apps/web/src/app/(aishlee)/moneyo/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
+    "[project]/apps/web/src/app/(aishlee)/page": [
+      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
+    ],
     "[project]/apps/web/src/app/(aishlee)/profile/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
@@ -151,9 +154,6 @@
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
     "[project]/apps/web/src/app/onboarding/page": [
-      "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
-    ],
-    "[project]/apps/web/src/app/page": [
       "static/media/1b99372b3eaef0c8-s.p.1gsd1jahc5dg_.woff2"
     ],
     "[project]/apps/web/src/app/privacy/page": [

@@ -7,6 +7,7 @@
   "/(aishlee)/careers/page": "/careers",
   "/(aishlee)/localadmin/page": "/localadmin",
   "/(aishlee)/moneyo/page": "/moneyo",
+  "/(aishlee)/page": "/",
   "/(aishlee)/profile/page": "/profile",
   "/(aishlee)/rideo/page": "/rideo",
   "/(aishlee)/tasko/page": "/tasko",
@@ -104,7 +105,6 @@
   "/icon/route": "/icon",
   "/join/[token]/page": "/join/[token]",
   "/onboarding/page": "/onboarding",
-  "/page": "/",
   "/privacy/page": "/privacy",
   "/terms/page": "/terms"
 }

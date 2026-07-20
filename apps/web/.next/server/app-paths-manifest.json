@@ -7,6 +7,7 @@
   "/(aishlee)/careers/page": "app/(aishlee)/careers/page.js",
   "/(aishlee)/localadmin/page": "app/(aishlee)/localadmin/page.js",
   "/(aishlee)/moneyo/page": "app/(aishlee)/moneyo/page.js",
+  "/(aishlee)/page": "app/(aishlee)/page.js",
   "/(aishlee)/profile/page": "app/(aishlee)/profile/page.js",
   "/(aishlee)/rideo/page": "app/(aishlee)/rideo/page.js",
   "/(aishlee)/tasko/page": "app/(aishlee)/tasko/page.js",
@@ -104,7 +105,6 @@
   "/icon/route": "app-edge-has-no-entrypoint",
   "/join/[token]/page": "app/join/[token]/page.js",
   "/onboarding/page": "app/onboarding/page.js",
-  "/page": "app/page.js",
   "/privacy/page": "app/privacy/page.js",
   "/terms/page": "app/terms/page.js"
 }
