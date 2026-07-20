@@ -2,15 +2,15 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { supabase } from '@/aishlee/lib/supabaseClient';
 import { Compass, MessageCircle, Info, Check, ShieldCheck, X } from 'lucide-react';
 import { PaymentQR } from '@/aishlee/components/PaymentQR';
-import { purchaseService } from '../services/purchaseService';
+import { purchaseService } from '@/aishlee/services/purchaseService';
 
 const TourO = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { currentUser } = useApp();
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +61,7 @@ const TourO = () => {
   const handlePayEMI = (tour) => {
     if (!currentUser) {
       alert("Please login first to join a tour plan.");
-      navigate('/login');
+      router.push('/login');
       return;
     }
     setSelectedTour(tour);
@@ -113,7 +113,7 @@ const TourO = () => {
         </div>
         {(currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin') && (
           <button 
-            onClick={() => navigate('/touro/admin')}
+            onClick={() => router.push('/touro/admin')}
             className="btn-primary"
             style={{ padding: '8px 16px', fontSize: '14px', background: 'var(--tech-cyan)', color: 'black' }}
           >
@@ -286,3 +286,4 @@ const TourO = () => {
 };
 
 export default TourO;
+

@@ -5,10 +5,10 @@ import { createPortal } from 'react-dom';
 import { Store, MessageCircle, Info, PlusCircle, CheckCircle, X, Trash2, MapPin, Loader, Camera, Upload, Share2, Search, Edit } from 'lucide-react';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { dataService } from '@/aishlee/services/dataService';
-import { ecosystemService } from '../services/ecosystemService';
-import { marketplaceSheetsService } from '../services/marketplaceSheetsService';
-import { purchaseService } from '../services/purchaseService';
-import { lmsService } from '../services/lmsService';
+import { ecosystemService } from '@/aishlee/services/ecosystemService';
+import { marketplaceSheetsService } from '@/aishlee/services/marketplaceSheetsService';
+import { purchaseService } from '@/aishlee/services/purchaseService';
+import { lmsService } from '@/aishlee/services/lmsService';
 import { QrCode } from 'lucide-react';
 import { PaymentQR } from '@/aishlee/components/PaymentQR';
 
@@ -673,3 +673,4 @@ const TradeO = () => {
 };
 
 export default TradeO;
+

@@ -2,9 +2,9 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Bot, Send, Sparkles, Settings, FileText, Download, Share2, History, Trash2, Camera, Link as LinkIcon, HelpCircle, FileType, Mic } from 'lucide-react';
-import { geminiService } from '../services/geminiService';
-import { lmsService } from '../services/lmsService';
-import { EXAM_CATEGORIES } from '../constants/exams';
+import { geminiService } from '@/aishlee/services/geminiService';
+import { lmsService } from '@/aishlee/services/lmsService';
+import { EXAM_CATEGORIES } from '@/aishlee/constants/exams';
 import { useApp } from '@/aishlee/context/AppProvider';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -502,3 +502,4 @@ const ToolsO = () => {
 };
 
 export default ToolsO;
+

@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { supabase } from '@/aishlee/lib/supabaseClient';
 import { 
@@ -12,7 +12,7 @@ import { createPortal } from 'react-dom';
 
 const TaskO = () => {
   const { currentUser } = useApp();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -26,7 +26,7 @@ const TaskO = () => {
 
   useEffect(() => {
     if (!currentUser) {
-      navigate('/login');
+      router.push('/login');
       return;
     }
     loadDailyTasks();
@@ -336,7 +336,7 @@ const TaskO = () => {
                   <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                     {task.link && (
                       <button 
-                        onClick={() => navigate(task.link)}
+                        onClick={() => router.push(task.link)}
                         className="btn-outline" 
                         style={{ padding: '8px 16px', flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', fontSize: '13px' }}
                       >
@@ -412,3 +412,4 @@ const TaskO = () => {
 };
 
 export default TaskO;
+

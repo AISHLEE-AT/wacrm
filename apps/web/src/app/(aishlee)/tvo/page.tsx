@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PlayCircle, Loader, PlaySquare, ThumbsUp, MessageCircle, Search, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { dashboardSheetsService } from '../services/dashboardSheetsService';
+import { dashboardSheetsService } from '@/aishlee/services/dashboardSheetsService';
 
 const TvO = () => {
   const [videos, setVideos] = useState([]);
@@ -295,3 +295,4 @@ const MediaCard = ({ video, onPlay }) => {
 };
 
 export default TvO;
+
