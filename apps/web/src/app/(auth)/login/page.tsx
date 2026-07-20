@@ -111,7 +111,7 @@ function LoginPageInner() {
         if (inviteToken) {
           router.push(`/join/${encodeURIComponent(inviteToken)}`);
         } else {
-          router.push("/home");
+          router.push("/");
         }
       } else {
         throw new Error("Invalid session data from bridge");

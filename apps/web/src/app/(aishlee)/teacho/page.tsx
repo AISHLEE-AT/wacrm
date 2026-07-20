@@ -102,7 +102,7 @@ const navigate = (path) => router.push(path);
 
   const [unlockedCourses, setUnlockedCourses] = useState(() => {
     return JSON.parse(
-      (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem : () => null)(`unlocked_courses_${currentUser?.id}`) || "[]",
+      (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(`unlocked_courses_${currentUser?.id}`) : null) || "[]",
     );
   });
 
@@ -110,7 +110,7 @@ const navigate = (path) => router.push(path);
     if (currentUser?.id) {
       setUnlockedCourses(
         JSON.parse(
-          (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem : () => null)(`unlocked_courses_${currentUser?.id}`) || "[]",
+          (typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(`unlocked_courses_${currentUser?.id}`) : null) || "[]",
         ),
       );
     }
@@ -177,7 +177,7 @@ const navigate = (path) => router.push(path);
   const [activeQuiz, setActiveQuiz] = useState<any>(null);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResult, setQuizResult] = useState<any>(null);
-  const [tempApiKey, setTempApiKey] = useState((typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem : () => null)("gemini_api_key") || "");
+  const [tempApiKey, setTempApiKey] = useState((typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem("gemini_api_key") : null) || "");
   const [quizError, setQuizError] = useState("");
   const [quizLanguage, setQuizLanguage] = useState("English");
   const [quizCoverage, setQuizCoverage] = useState("All");
@@ -193,7 +193,7 @@ const navigate = (path) => router.push(path);
     setGeneratingQuiz(true);
     try {
       const userKey = tempApiKey;
-      (typeof window !== 'undefined' && window.localStorage ? window.localStorage.setItem : () => {})("gemini_api_key", tempApiKey);
+      if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem("gemini_api_key", tempApiKey);
       const subtopicsToCover = quizCoverage === "All" ? (activeTopic.subtopics || []) : [quizCoverage];
       
       let jsonStr = '';
@@ -506,10 +506,12 @@ const navigate = (path) => router.push(path);
       if (isValid) {
         const updated = [...unlockedCourses, course.id];
         setUnlockedCourses(updated);
-        (typeof window !== 'undefined' && window.localStorage ? window.localStorage.setItem : () => {})(
-          `unlocked_courses_${currentUser?.id}`,
-          JSON.stringify(updated),
-        );
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(
+            `unlocked_courses_${currentUser?.id}`,
+            JSON.stringify(updated),
+          );
+        }
         setUnlockingCourseId(null);
         setAccessCodeInput("");
         alert(
@@ -1185,7 +1187,7 @@ const navigate = (path) => router.push(path);
                                   
                                   {aiProvider === 'GEMINI' && (!tempApiKey || tempApiKey === "") && (
                                     <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", maxWidth: "400px" }}>
-                                      <input type="password" placeholder="Gemini API Key..." value={tempApiKey} onChange={(e: any) => { setTempApiKey(e.target.value); (typeof window !== 'undefined' && window.localStorage ? window.localStorage.setItem : () => {})("gemini_api_key", e.target.value); }} className="input-field" style={{ padding: "10px" }} />
+                                      <input type="password" placeholder="Gemini API Key..." value={tempApiKey} onChange={(e: any) => { setTempApiKey(e.target.value); if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem("gemini_api_key", e.target.value); }} className="input-field" style={{ padding: "10px" }} />
                                     </div>
                                   )}
                                   

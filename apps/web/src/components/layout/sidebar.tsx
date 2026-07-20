@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
+  ClipboardCheck,
   Radio,
   Settings,
   Shield,
@@ -105,6 +106,7 @@ const fagoItems: NavItem[] = [
 
 const aishleeItems: NavItem[] = [
   { href: "/teacho", label: "TeachO (LMS)", icon: GraduationCap },
+  { href: "/testo", label: "TestO (Assessments)", icon: ClipboardCheck },
   { href: "/moneyo", label: "MoneyO (Finance)", icon: Wallet },
   { href: "/touro", label: "TourO (Travel)", icon: Plane },
   { href: "/tradeo", label: "TradeO (Agri)", icon: Sprout },
