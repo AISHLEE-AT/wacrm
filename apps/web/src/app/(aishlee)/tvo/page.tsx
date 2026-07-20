@@ -151,7 +151,7 @@ const TvO = () => {
                 >
                   <X size={24} />
                 </button>
-                <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, background: '#000' }}>
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', background: '#000' }}>
                   <iframe 
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                     src={`https://www.youtube.com/embed/${activeVideo.videoId}?autoplay=1&playsinline=1`}
@@ -241,7 +241,7 @@ const MediaCard = ({ video, onPlay }) => {
       {/* Thumbnail Area - Click to Play */}
       <div 
         onClick={onPlay}
-        style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#1a1a1a', cursor: 'pointer' }}
+        style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', background: '#1a1a1a', cursor: 'pointer' }}
       >
         <img 
           src={video.thumbnail} 
