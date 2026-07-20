@@ -154,7 +154,7 @@ const TvO = () => {
                 <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, background: '#000' }}>
                   <iframe 
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                    src={`https://www.youtube.com/embed/${activeVideo.videoId}?autoplay=1`}
+                    src={`https://www.youtube.com/embed/${activeVideo.videoId}?autoplay=1&playsinline=1`}
                     title={activeVideo.title}
                     frameBorder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
