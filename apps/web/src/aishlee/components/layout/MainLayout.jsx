@@ -1,3 +1,4 @@
+import { usePathname } from 'next/navigation';
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -15,7 +16,8 @@ import Footer from '../Footer';
 
 export default function MainLayout({ children }) {
   const { currentUser } = useApp();
-  const location = useLocation();
+  const pathname = usePathname();
+  const location = { pathname };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [navSearchQuery, setNavSearchQuery] = useState('');
@@ -269,3 +271,5 @@ export default function MainLayout({ children }) {
     </>
   );
 }
+
+

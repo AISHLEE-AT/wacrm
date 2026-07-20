@@ -1,3 +1,4 @@
+import { usePathname } from 'next/navigation';
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -6,7 +7,8 @@ import { useApp } from '../context/AppProvider';
 import { purchaseService } from '../services/purchaseService';
 
 const Navigation = () => {
-  const location = useLocation();
+  const pathname = usePathname();
+  const location = { pathname };
   const { currentUser } = useApp();
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -84,3 +86,5 @@ const Navigation = () => {
 };
 
 export default Navigation;
+
+
