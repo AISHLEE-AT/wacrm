@@ -6,14 +6,14 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { supabase } from '@/aishlee/lib/supabaseClient';
-import { ClipboardCheck, Search, ChevronRight, ChevronDown, Lock, Play, MessageCircle, Folder, FolderOpen, X, Clock } from 'lucide-react';
+import { ClipboardCheck, Search, ChevronRight, ChevronDown, Lock, Play, MessageCircle, Folder, FolderOpen, X, Clock, Brain, Target, Zap, ShieldCheck } from 'lucide-react';
 import { PaymentQR } from '@/aishlee/components/PaymentQR';
 import { purchaseService } from '@/aishlee/services/purchaseService';
 import { lmsService } from '@/aishlee/services/lmsService';
 
 const TestOHub = () => {
   const router = useRouter();
-const navigate = (path) => router.push(path);
+  const navigate = (path) => router.push(path);
   const { currentUser } = useApp();
   const [tests, setTests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -278,83 +278,94 @@ const navigate = (path) => router.push(path);
   };
 
   return (
-    <div className="animate-fade-in-up bento-grid">
+    <div className="animate-fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '120px' }}>
       
-      {/* Header Bento Item */}
-      <div className="bento-item span-12 glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ background: 'var(--surface-3)', padding: '12px', borderRadius: '12px', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.1)' }}>
-            <ClipboardCheck color="#EF4444" size={32} />
+      {/* 2026 AI Analytics Hero Section */}
+      <div className="glass-panel hover-lift" style={{ 
+        position: 'relative', overflow: 'hidden', padding: '60px 40px', borderRadius: '32px',
+        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.1))',
+        border: '1px solid rgba(239, 68, 68, 0.3)', minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center'
+      }}>
+        {/* Glow effect behind */}
+        <div style={{ position: 'absolute', top: '0', right: '0', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(239, 68, 68, 0.15) 0%, transparent 70%)', filter: 'blur(50px)', zIndex: 0 }} />
+        
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '800px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ background: 'rgba(239, 68, 68, 0.2)', padding: '8px', borderRadius: '12px', color: '#EF4444' }}>
+              <Target size={24} />
+            </div>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '16px', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 'bold' }}>AI-Powered Assessment</span>
           </div>
-          <div>
-            <h1 style={{ fontSize: '28px', margin: 0, fontWeight: '900', color: 'white' }}>O-Test Hub</h1>
-            <p style={{ fontSize: '14px', color: 'var(--cool-gray)', margin: 0 }}>Secure Online Testing Platform</p>
+          <h1 style={{ fontSize: '48px', fontWeight: '800', margin: '0 0 16px 0', lineHeight: 1.1, color: '#fff' }}>
+            Test your knowledge,<br/>
+            <span className="gradient-text-red">accelerate your success.</span>
+          </h1>
+          <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.8)', margin: '0 0 32px 0', maxWidth: '600px', lineHeight: 1.6 }}>
+            Micro-topic tests carefully crafted for school and competitive exams. Analyze performance and improve weak spots.
+          </p>
+
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1', minWidth: '250px' }}>
+              <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '16px', color: 'var(--cool-gray)' }}>
+                <Search size={20} />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search topics, subjects, exams..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '16px', backdropFilter: 'blur(10px)', outline: 'none' }}
+              />
+            </div>
+            {(currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin') && (
+              <button 
+                onClick={() => router.push('/testo/admin')}
+                style={{ background: '#EF4444', color: '#fff', padding: '0 24px', borderRadius: '100px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.4)' }}
+              >
+                <ClipboardCheck size={20} /> Manage Tests
+              </button>
+            )}
           </div>
         </div>
-        {(currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin') && (
-          <button 
-            onClick={() => navigate('/testo/admin')}
-            className="btn-primary hover-glow"
-            style={{ padding: '10px 20px', fontSize: '14px', background: 'var(--tech-cyan)', color: 'black' }}
-          >
-            Create / Manage Tests
-          </button>
-        )}
-      </div>
-
-      <div className="bento-item span-12 glass-panel" style={{ background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(59, 130, 246, 0.1))', padding: '20px' }}>
-        <h2 style={{ fontSize: '20px', margin: '0 0 8px 0', fontWeight: 'bold', color: '#60a5fa' }}>Level Up Your Prep!</h2>
-        <p style={{ fontSize: '15px', color: 'var(--cool-gray)', margin: 0, lineHeight: 1.6 }}>
-          Take micro-topic tests carefully crafted for school exams, IBPS, and other competitive exams. Master every topic for just <strong style={{ color: 'var(--tech-gold)' }}>Rs. 33</strong> per test.
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="bento-item span-12 glass-panel" style={{ padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Search size={20} color="var(--tech-cyan)" style={{ marginLeft: '12px' }} />
-        <input 
-          type="text" 
-          placeholder="Search tests by topic or course..." 
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="input-field"
-          style={{ width: '100%', border: 'none', background: 'transparent', fontSize: '16px', color: 'white', outline: 'none', padding: '8px' }}
-        />
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--cool-gray)' }}>Loading tests...</div>
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--cool-gray)' }}>
+          <Zap size={40} className="animate-spin" style={{ margin: '0 auto 16px auto', display: 'block', color: '#EF4444' }} />
+          Loading assessments...
+        </div>
       ) : tests.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', color: 'var(--cool-gray)' }}>
-          <ClipboardCheck size={48} opacity={0.5} style={{ margin: '0 auto 16px auto', display: 'block' }} />
-          No O-Tests available yet. Check back soon!
+        <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--cool-gray)', borderRadius: '24px' }}>
+          <ClipboardCheck size={60} opacity={0.3} style={{ margin: '0 auto 16px auto', display: 'block' }} />
+          No assessments available yet.
         </div>
       ) : Object.keys(groupedData).length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--cool-gray)' }}>No tests found for your search.</div>
       ) : (
         <>
-          {/* Tabs */}
+          {/* Smart Filter Chips */}
           {!searchQuery && (
-            <div className="bento-item span-12 glass-panel" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }} className="hide-scrollbar">
-                <span style={{ fontWeight: "bold", color: "var(--cool-gray)", whiteSpace: "nowrap", display: "flex", alignItems: "center" }}>
-                  Categories:
-                </span>
-                {allTabs.map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`chip ${activeTab === tab ? 'active' : ''}`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+            <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px' }} className="hide-scrollbar">
+              {allTabs.map(tab => (
+                <button 
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  style={{ 
+                    padding: '10px 24px', borderRadius: '100px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', whiteSpace: 'nowrap',
+                    background: activeTab === tab ? '#EF4444' : 'rgba(255,255,255,0.05)',
+                    color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
+                    border: activeTab === tab ? '1px solid #EF4444' : '1px solid rgba(255,255,255,0.1)',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Folder Content */}
-          <div className="span-12" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Folder Content - 2026 Layout */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
             {(searchQuery ? allTabs : [activeTab]).map(currentTab => {
               const courses = groupedData[currentTab] || {};
               return Object.keys(courses).sort().map(courseName => {
@@ -363,35 +374,35 @@ const navigate = (path) => router.push(path);
                 const courseTests = courses[courseName];
                 
                 return (
-                  <div key={folderKey} className="bento-item span-12 glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div key={folderKey} className="glass-panel" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column' }}>
                     {/* Folder Header */}
                     <div 
                       onClick={() => toggleFolder(folderKey)}
                       style={{
-                        padding: '16px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         cursor: 'pointer',
-                        background: 'rgba(255,255,255,0.02)',
-                        borderBottom: isExpanded ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                        marginBottom: isExpanded ? '20px' : '0'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {isExpanded ? <FolderOpen size={24} color="#60a5fa" /> : <Folder size={24} color="#60a5fa" />}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '16px', color: '#EF4444' }}>
+                           {isExpanded ? <FolderOpen size={24} /> : <Folder size={24} />}
+                        </div>
                         <div>
-                          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{courseName}</h3>
-                          <p style={{ margin: 0, fontSize: '13px', color: 'var(--cool-gray)' }}>{courseTests.length} Tests</p>
+                          <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '800', color: '#fff' }}>{courseName}</h3>
+                          <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{courseTests.length} Assessments</p>
                         </div>
                       </div>
-                      <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
-                        <ChevronDown size={20} color="var(--cool-gray)" />
+                      <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', padding: '8px' }}>
+                        <ChevronDown size={20} color="white" />
                       </div>
                     </div>
                     
                     {/* Tests List */}
                     {isExpanded && (
-                      <div style={{ display: 'grid', gap: '1px', background: 'rgba(255,255,255,0.02)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {courseTests.map(test => {
                           const isUnlocked = currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin' || purchasedTestIds.has(test.id);
                           const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin';
@@ -414,56 +425,44 @@ const navigate = (path) => router.push(path);
                                 alignItems: 'center', 
                                 justifyContent: 'space-between',
                                 cursor: isLockedOut ? 'not-allowed' : 'pointer',
-                                background: '#111827',
+                                background: 'rgba(0,0,0,0.3)',
+                                borderRadius: '16px',
+                                border: `1px solid ${isUnlocked && !isLockedOut ? 'rgba(16, 185, 129, 0.3)' : isLockedOut ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255,255,255,0.05)'}`,
                                 transition: 'all 0.2s ease',
-                                borderLeft: `3px solid ${isUnlocked && !isLockedOut ? '#10B981' : isLockedOut ? '#EF4444' : 'transparent'}`
                               }}
-                              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                              onMouseLeave={(e) => e.currentTarget.style.background = '#111827'}
+                              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                             >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 4px 0' }}>
-                                  <h4 style={{ margin: 0, fontSize: '15px', color: isUnlocked && !isLockedOut ? '#10B981' : isLockedOut ? '#EF4444' : 'white' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: isUnlocked && !isLockedOut ? '#10B981' : isLockedOut ? '#EF4444' : 'white' }}>
                                     {shortTitle || 'Untitled Test'}
                                   </h4>
-                                  {currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin' ? (
-                                    <span style={{
-                                      fontSize: '10px',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      background: test.isComplete ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                      color: test.isComplete ? '#10B981' : '#EF4444',
-                                      border: `1px solid ${test.isComplete ? '#10B981' : '#EF4444'}`,
-                                      fontWeight: 'bold'
-                                    }}>
-                                      {test.isComplete ? 'COMPLETE' : 'INCOMPLETE'}
-                                    </span>
-                                  ) : null}
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                   {!isUnlocked && !pendingTestIds.has(test.id) && (
-                                    <span style={{ fontSize: '13px', color: '#F97316', fontWeight: 'bold' }}>
-                                      Rs. 33
+                                    <span style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 'bold', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '100px' }}>
+                                      ₹{test.price || 33}
                                     </span>
                                   )}
                                   {isUnlocked && !isAdmin && (
-                                    <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '12px', background: isLockedOut ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.1)', color: isLockedOut ? '#EF4444' : 'var(--cool-gray)' }}>
-                                      {isLockedOut ? 'Repurchase Needed' : `Attempts: ${attempts} / ${maxAttempts}`}
+                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '100px', background: isLockedOut ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.05)', color: isLockedOut ? '#EF4444' : 'var(--text-secondary)' }}>
+                                      {isLockedOut ? 'Repurchase Needed' : `Attempts: ${attempts}/${maxAttempts}`}
                                     </span>
                                   )}
                                   {pendingTestIds.has(test.id) && (
-                                    <span style={{ fontSize: '12px', color: '#F59E0B' }}>Pending Approval</span>
+                                    <span style={{ fontSize: '11px', color: '#F59E0B', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '100px' }}>Pending</span>
                                   )}
                                 </div>
                               </div>
                               
                               <div style={{ 
-                                background: (isUnlocked && !isLockedOut) ? 'rgba(16, 185, 129, 0.1)' : isLockedOut ? 'rgba(239, 68, 68, 0.1)' : pendingTestIds.has(test.id) ? 'rgba(245, 158, 11, 0.1)' : 'rgba(255, 255, 255, 0.05)', 
-                                width: '36px', height: '36px', 
+                                background: (isUnlocked && !isLockedOut) ? 'rgba(16, 185, 129, 0.2)' : isLockedOut ? 'rgba(239, 68, 68, 0.2)' : pendingTestIds.has(test.id) ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.05)', 
+                                width: '40px', height: '40px', 
                                 borderRadius: '50%', 
                                 display: 'flex', alignItems: 'center', justifyContent: 'center' 
                               }}>
-                                {isUnlocked && !isLockedOut ? <Play size={16} color="#10B981" /> : isLockedOut ? <Lock size={16} color="#EF4444" /> : pendingTestIds.has(test.id) ? <Clock size={16} color="#F59E0B" /> : <Lock size={16} color="var(--cool-gray)" />}
+                                {isUnlocked && !isLockedOut ? <Play size={18} color="#10B981" /> : isLockedOut ? <Lock size={18} color="#EF4444" /> : pendingTestIds.has(test.id) ? <Clock size={18} color="#F59E0B" /> : <Lock size={18} color="var(--cool-gray)" />}
                               </div>
                             </div>
                           );
@@ -481,67 +480,67 @@ const navigate = (path) => router.push(path);
 
       {/* Payment Modal */}
       {showPayment && selectedTest && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-panel animate-fade-in" style={{ position: 'relative', width: '90%', maxWidth: '400px', background: 'var(--surface-bg)', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', textAlign: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-panel animate-fade-in-up" style={{ position: 'relative', width: '100%', maxWidth: '400px', background: '#111', borderRadius: '32px', padding: '32px', border: '1px solid rgba(239, 68, 68, 0.3)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', textAlign: 'center' }}>
             <button 
               onClick={() => {
                 setShowPayment(false);
                 setPaymentId('');
               }}
-              className="btn-outline hover-glow"
-              style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '50%', padding: '8px' }}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', cursor: 'pointer', width: '40px', height: '40px', borderRadius: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <X size={20} />
             </button>
             
-            <h2 style={{ color: 'var(--tech-cyan)', margin: '0 0 8px 0', fontSize: '22px' }}>{selectedTest.isRepurchase ? 'Repurchase O-Test' : 'Unlock O-Test'}</h2>
-            <p style={{ color: 'white', fontWeight: 'bold', fontSize: '15px', margin: '0 0 16px 0', lineHeight: '1.4' }}>{selectedTest.title_name || 'Untitled Test'}</p>
+            <h2 style={{ color: '#EF4444', margin: '0 0 8px 0', fontSize: '24px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <ShieldCheck size={28} /> {selectedTest.isRepurchase ? 'Repurchase' : 'Unlock Assessment'}
+            </h2>
+            <p style={{ color: 'white', fontWeight: '600', fontSize: '18px', margin: '0 0 24px 0', opacity: 0.9 }}>{selectedTest.title_name || 'Untitled Test'}</p>
             
             {appliedDiscount > 0 ? (
               <div style={{ marginBottom: '24px' }}>
-                <p style={{ color: 'var(--cool-gray)', fontSize: '18px', textDecoration: 'line-through', margin: '0' }}>₹{selectedTest.price || 33}</p>
-                <p style={{ color: 'var(--tech-gold)', fontSize: '24px', fontWeight: '900', margin: '0' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '18px', textDecoration: 'line-through', margin: '0' }}>₹{selectedTest.price || 33}</p>
+                <p style={{ color: '#fff', fontSize: '32px', fontWeight: '900', margin: '0' }}>
                   ₹{Math.max(0, (selectedTest.price || 33) - appliedDiscount)}
                 </p>
-                <p style={{ color: 'var(--tech-cyan)', fontSize: '14px', margin: '4px 0 0 0' }}>✓ Access Code Applied!</p>
+                <p style={{ color: '#10B981', fontSize: '14px', margin: '8px 0 0 0', fontWeight: 'bold' }}>✓ Access Code Applied!</p>
               </div>
             ) : (
-              <p style={{ color: 'var(--tech-gold)', fontSize: '24px', fontWeight: '900', margin: '0 0 24px 0' }}>₹{selectedTest.price || 33}</p>
+              <p style={{ color: '#fff', fontSize: '32px', fontWeight: '900', margin: '0 0 24px 0' }}>₹{selectedTest.price || 33}</p>
             )}
             
             {((selectedTest.price || 33) - appliedDiscount) > 0 && (
               <>
-                <PaymentQR 
-                  amount={Math.max(0, (selectedTest.price || 33) - appliedDiscount)} 
-                  onSuccess={handlePaymentSuccess}
-                  itemId={selectedTest.id}
-                />
+                <div style={{ background: '#fff', padding: '16px', borderRadius: '24px', display: 'inline-block', marginBottom: '24px' }}>
+                  <PaymentQR 
+                    amount={Math.max(0, (selectedTest.price || 33) - appliedDiscount)} 
+                    onSuccess={handlePaymentSuccess}
+                    itemId={selectedTest.id}
+                  />
+                </div>
                 
-                <p style={{ color: 'var(--cool-gray)', fontSize: '13px', marginBottom: '16px', marginTop: '16px' }}>Scan QR to pay securely, then enter your Payment Transaction ID below.</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>Scan QR to pay securely via UPI, then enter your Transaction ID below.</p>
                 
                 <input 
                   type="text" 
-                  placeholder="UPI Transaction ID" 
+                  placeholder="Paste UPI Transaction ID" 
                   value={paymentId}
                   onChange={e => setPaymentId(e.target.value)}
-                  className="input-field" 
-                  style={{ textAlign: 'center', fontSize: '16px', marginBottom: '16px', width: '100%' }}
+                  style={{ textAlign: 'center', fontSize: '16px', marginBottom: '24px', width: '100%', padding: '16px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', outline: 'none' }}
                 />
               </>
             )}
 
             {!appliedCode && (
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
                 <input 
                   type="text" 
-                  placeholder="Have an Access Code?" 
+                  placeholder="Access Code?" 
                   value={accessCodeInput}
                   onChange={e => setAccessCodeInput(e.target.value)}
-                  className="input-field" 
-                  style={{ textAlign: 'center', fontSize: '14px', flex: 1 }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', outline: 'none', textAlign: 'center' }}
                 />
                 <button
-                  className="btn-outline"
                   disabled={!accessCodeInput || submittingPayment}
                   onClick={async () => {
                     setSubmittingPayment(true);
@@ -567,7 +566,7 @@ const navigate = (path) => router.push(path);
                     }
                     setSubmittingPayment(false);
                   }}
-                  style={{ padding: '8px 12px', fontSize: '14px' }}
+                  style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0 24px', borderRadius: '100px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
                 >
                   Apply
                 </button>
@@ -575,12 +574,11 @@ const navigate = (path) => router.push(path);
             )}
 
             <button 
-              className="btn-primary" 
               onClick={submitPayment}
               disabled={submittingPayment || (((selectedTest.price || 33) - appliedDiscount) > 0 && !paymentId.trim())}
-              style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 'bold', marginTop: '8px' }}
+              style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', background: (submittingPayment || (((selectedTest.price || 33) - appliedDiscount) > 0 && !paymentId.trim())) ? 'rgba(255,255,255,0.1)' : '#EF4444', color: (submittingPayment || (((selectedTest.price || 33) - appliedDiscount) > 0 && !paymentId.trim())) ? 'rgba(255,255,255,0.5)' : '#fff', borderRadius: '100px', border: 'none', cursor: (submittingPayment || (((selectedTest.price || 33) - appliedDiscount) > 0 && !paymentId.trim())) ? 'not-allowed' : 'pointer', transition: 'all 0.2s', boxShadow: (submittingPayment || (((selectedTest.price || 33) - appliedDiscount) > 0 && !paymentId.trim())) ? 'none' : '0 4px 15px rgba(239, 68, 68, 0.4)' }}
             >
-              {submittingPayment ? 'Submitting...' : 'Submit for Approval'}
+              {submittingPayment ? 'Submitting...' : 'Submit Payment'}
             </button>
           </div>
         </div>,
@@ -613,31 +611,31 @@ const navigate = (path) => router.push(path);
 
       {/* Pending Approval Modal */}
       {showPending && pendingTest && createPortal(
-        <div className="mobile-fullscreen-modal animate-fade-in" style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', zIndex: 9999 }}>
-          <div className="mobile-modal-content" style={{ width: '90%', maxWidth: '400px', background: '#1f2937', height: 'auto', padding: '24px', textAlign: 'center', borderRadius: '16px', position: 'relative' }}>
-            <ClipboardCheck size={48} color="#F59E0B" style={{ margin: '0 auto 16px auto' }} />
-            <h2 style={{ fontSize: '20px', margin: '0 0 12px 0' }}>Waiting for Approval</h2>
-            <p style={{ color: 'var(--cool-gray)', marginBottom: '24px', fontSize: '14px' }}>
-              Your payment for <strong>{pendingTest.title_name}</strong> has been submitted and is currently pending admin approval.
+        <div className="animate-fade-in-up" style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999 }}>
+          <div style={{ width: '90%', maxWidth: '400px', background: '#111', padding: '32px', textAlign: 'center', borderRadius: '32px', border: '1px solid rgba(245, 158, 11, 0.3)', position: 'relative' }}>
+            <div style={{ background: 'rgba(245, 158, 11, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto' }}>
+               <ClipboardCheck size={40} color="#F59E0B" />
+            </div>
+            <h2 style={{ fontSize: '24px', margin: '0 0 16px 0', fontWeight: '800', color: '#fff' }}>Approval Pending</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '15px', lineHeight: 1.6 }}>
+              Your payment for <strong>{pendingTest.title_name}</strong> has been submitted.
             </p>
-            <p style={{ color: 'var(--cool-gray)', marginBottom: '24px', fontSize: '14px' }}>
-              Please contact our admin on WhatsApp and send a <strong>screenshot of your payment</strong> for faster activation.
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '15px', lineHeight: 1.6 }}>
+              Contact admin on WhatsApp and send a screenshot of your payment for faster activation.
             </p>
             
             <a 
               href={`https://wa.me/916381029380?text=${encodeURIComponent(`Hi Admin, I have made the payment for O-Test: ${pendingTest.title_name}. Please approve my access. My Name: ${currentUser?.fullName || currentUser?.full_name || currentUser?.email}`)}`}
               target="_blank" rel="noreferrer"
-              className="btn-primary"
-              style={{ width: '100%', marginBottom: '12px', background: '#25D366', color: 'white', border: 'none', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ width: '100%', marginBottom: '16px', background: '#25D366', color: 'white', border: 'none', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', borderRadius: '100px', fontWeight: 'bold' }}
             >
               <MessageCircle size={20} style={{ marginRight: '8px' }} />
-              Contact Admin via WhatsApp
+              WhatsApp Admin
             </a>
             
             <button 
               onClick={() => setShowPending(false)}
-              className="btn-outline"
-              style={{ width: '100%', borderColor: 'rgba(255,255,255,0.2)' }}
+              style={{ width: '100%', padding: '16px', background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '100px', cursor: 'pointer', fontWeight: 'bold' }}
             >
               Close
             </button>

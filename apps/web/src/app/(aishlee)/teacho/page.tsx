@@ -1759,718 +1759,319 @@ const navigate = (path) => router.push(path);
   }
 
   return (
-    <div className="animate-fade-in-up bento-grid">
-      {/* Premium Hero Section */}
-      <div
-        className="bento-item span-12 glass-panel"
-        style={{
-          position: "relative",
-          padding: "60px 40px",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          background: "linear-gradient(135deg, rgba(0, 229, 163, 0.05), transparent)",
-        }}
-      >
-        {/* Abstract Background Elements */}
-        <div
-          style={{
-            position: "absolute",
-            top: "-50%",
-            left: "-10%",
-            width: "300px",
-            height: "300px",
-            background: "var(--tech-cyan)",
-            filter: "blur(100px)",
-            opacity: 0.15,
-            borderRadius: "50%",
-          }}
-        ></div>
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-50%",
-            right: "-10%",
-            width: "300px",
-            height: "300px",
-            background: "var(--tech-gold)",
-            filter: "blur(100px)",
-            opacity: 0.15,
-            borderRadius: "50%",
-          }}
-        ></div>
+    <div className="animate-fade-in-up" style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '120px' }}>
+      
+      {/* 2026 AI Netflix-Style Hero */}
+      <div className="glass-panel hover-lift" style={{ 
+        position: 'relative', overflow: 'hidden', padding: '60px 40px', borderRadius: '32px',
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(30, 64, 175, 0.1))',
+        border: '1px solid rgba(59, 130, 246, 0.3)', minHeight: '350px', display: 'flex', flexDirection: 'column', justifyContent: 'center'
+      }}>
+        <div style={{ position: 'absolute', top: '0', left: '0', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', filter: 'blur(60px)', zIndex: 0 }} />
+        
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: '800px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <div style={{ background: 'rgba(59, 130, 246, 0.2)', padding: '8px', borderRadius: '12px', color: '#3B82F6' }}>
+              <Brain size={24} />
+            </div>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '16px', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 'bold' }}>AI-Powered Learning</span>
+          </div>
+          <h1 style={{ fontSize: '48px', fontWeight: '800', margin: '0 0 16px 0', lineHeight: 1.1, color: '#fff' }}>
+            Master your future with<br/>
+            <span className="gradient-text-blue">TeachO AI Academy.</span>
+          </h1>
+          <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.8)', margin: '0 0 32px 0', maxWidth: '600px', lineHeight: 1.6 }}>
+            Personalized learning paths, interactive quizzes, and AI-driven insights to accelerate your career.
+          </p>
 
-        <h1
-          style={{
-            fontSize: "42px",
-            fontWeight: "900",
-            margin: "0 0 16px 0",
-            zIndex: 1,
-            background: "linear-gradient(180deg, #FF9933 0%, #FFFFFF 50%, #138808 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            filter: "drop-shadow(1px 2px 2px rgba(0,0,0,0.8)) drop-shadow(0px 1px 4px rgba(255,255,255,0.2))",
-          }}
-        >
-          Unlock Your Potential
-        </h1>
-        <p
-          style={{
-            fontSize: "18px",
-            color: "var(--cool-gray)",
-            maxWidth: "600px",
-            margin: "0 0 40px 0",
-            zIndex: 1,
-          }}
-        >
-          Discover top-tier AI-generated courses, comprehensive study notes, and
-          interactive quizzes designed to elevate your career.
-        </p>
-
-        {/* SMART SEARCH */}
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            maxWidth: "700px",
-            display: "flex",
-            gap: "8px",
-            zIndex: 100,
-          }}
-        >
-          <div style={{ position: "relative", flex: 1 }}>
-            <Search
-              size={22}
-              color="var(--cool-gray)"
-              style={{
-                position: "absolute",
-                left: "20px",
-                top: "50%",
-                transform: "translateY(-50%)",
-              }}
-            />
-            <input
-              type="text"
-              placeholder="What do you want to learn today?"
-              value={searchQuery}
-              onChange={(e: any) => {
-                setSearchQuery(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              style={{
-                width: "100%",
-                padding: "20px 60px",
-                borderRadius: "16px",
-                border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.05)",
-                color: "white",
-                fontSize: "18px",
-                boxShadow:
-                  "inset 0 2px 4px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.3)",
-                backdropFilter: "blur(10px)",
-              }}
-            />
-            <button
-              onClick={handleVoiceSearch}
-              style={{
-                position: "absolute",
-                right: "20px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-              }}
-              title="Voice Search"
-            >
-              <Mic
-                size={22}
-                color={isListening ? "#F43F5E" : "var(--cool-gray)"}
-                className={isListening ? "pulse-animation" : ""}
-              />
-            </button>
-
-            {showSuggestions && searchQuery.trim() !== "" && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  right: 0,
-                  marginTop: "12px",
-                  background: "#1E293B",
-                  borderRadius: "16px",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  zIndex: 150,
-                  overflow: "hidden",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
-                }}
-              >
-                {courses
-                  .filter((l) =>
-                    l.title?.toLowerCase().includes(searchQuery.toLowerCase()),
-                  )
-                  .slice(0, 5)
-                  .map((item, idx, arr) => (
-                    <div
-                      key={idx}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setSearchQuery(item.title);
-                        setShowSuggestions(false);
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(255,255,255,0.05)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
-                      style={{
-                        padding: "16px 20px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "16px",
-                        cursor: "pointer",
-                        borderBottom:
-                          idx !== arr.length - 1
-                            ? "1px solid rgba(255,255,255,0.05)"
-                            : "none",
-                        transition: "background 0.2s",
-                      }}
-                    >
-                      <div
-                        style={{
-                          background: "rgba(0,229,255,0.1)",
-                          padding: "10px",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <BookOpen size={18} color="var(--tech-cyan)" />
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            color: "white",
-                            fontSize: "16px",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {item.title}
-                        </div>
-                        <div
-                          style={{
-                            color: "var(--cool-gray)",
-                            fontSize: "13px",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {item.type || "Course"} • {item.class_level}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: '1', minWidth: '300px' }}>
+              <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '16px', color: 'var(--cool-gray)' }}>
+                <Search size={20} />
               </div>
+              <input 
+                type="text" 
+                placeholder="What do you want to learn today?" 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '16px 16px 16px 48px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: 'white', fontSize: '16px', backdropFilter: 'blur(10px)', outline: 'none' }}
+              />
+              <button 
+                onClick={handleVoiceSearch}
+                style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: '8px', background: isListening ? '#EF4444' : 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '100px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+              >
+                <Mic size={16} className={isListening ? "animate-pulse" : ""} />
+              </button>
+            </div>
+            {isAdmin && (
+              <button 
+                onClick={() => navigate('/admin/course-builder')}
+                style={{ background: '#3B82F6', color: '#fff', padding: '0 24px', borderRadius: '100px', fontWeight: 'bold', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)' }}
+              >
+                <PlusCircle size={20} /> Create Course
+              </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Smart Categories / Tabs */}
-      <div className="bento-item span-12 glass-panel" style={{ padding: '20px', marginTop: '20px', marginBottom: '20px' }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            overflowX: "auto",
-            paddingBottom: "4px",
-          }}
-          className="hide-scrollbar"
-        >
-          <span
-            style={{
-              fontWeight: "bold",
-              color: "var(--cool-gray)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Categories:
-          </span>
-          <div style={{ display: "flex", gap: "12px" }}>
-            {[
-              "All Levels",
-              "TN State Board",
-              "CBSE",
-              "TNPSC",
-              "UPSC & Central",
-              "Defense & Police",
-              "NEET / JEE",
-              "Tech & Careers"
-            ].map((lvl) => {
-              const actualVal = lvl === "All Levels" ? "All" : lvl;
-              const isActive =
-                filterClass === actualVal ||
-                (filterClass === "All" && lvl === "All Levels");
-              return (
-                <button
-                  key={lvl}
-                  onClick={() => setFilterClass(actualVal)}
-                  className={`chip ${isActive ? 'active' : ''}`}
-                >
-                  {lvl}
-                </button>
-              );
-            })}
+      {/* Access Code Banner */}
+      <div className="glass-panel" style={{ padding: '24px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.1), transparent)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: 'rgba(139, 92, 246, 0.2)', padding: '12px', borderRadius: '16px', color: '#8B5CF6' }}>
+            <Award size={24} />
           </div>
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#fff' }}>Have an Access Code?</h3>
+            <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)' }}>Unlock premium courses instantly.</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', flex: '1', minWidth: '250px' }}>
+          <input 
+            type="text" 
+            placeholder="Enter Code (e.g. AISHLEE2026)" 
+            value={accessCodeInput}
+            onChange={e => setAccessCodeInput(e.target.value.toUpperCase())}
+            style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none' }}
+          />
+          <button 
+            onClick={() => handleUnlockCourse(null)} // Generic unlock
+            style={{ background: '#8B5CF6', color: '#fff', padding: '0 24px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+          >
+            Unlock
+          </button>
         </div>
       </div>
 
-      {/* Top Rated Courses Header */}
-      <div className="bento-item span-12" style={{ padding: "0 8px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h2 style={{ color: "white", margin: 0, fontSize: "24px", display: "flex", alignItems: "center", gap: "12px" }}>
-          <Award size={24} color="var(--tech-gold)" />
-          Top Rated Courses
-        </h2>
+      {/* Filter Categories */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }} className="hide-scrollbar">
+          {["All", "Recorded Course", "Interactive Advanced", "Test Series", "Notes & Material"].map(type => (
+            <button 
+              key={type}
+              onClick={() => setFilterType(type)}
+              style={{ 
+                padding: '10px 24px', borderRadius: '100px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', whiteSpace: 'nowrap',
+                background: filterType === type ? '#3B82F6' : 'rgba(255,255,255,0.05)',
+                color: filterType === type ? '#fff' : 'var(--text-secondary)',
+                border: filterType === type ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.1)',
+                transition: 'all 0.2s'
+              }}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
         {isAdmin && (
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button onClick={() => setShowAdminApprovals(true)} className="btn-outline">
-              <Award size={16} /> Approvals
-            </button>
-            <button onClick={() => navigate("/admin/course-builder")} className="btn-primary" style={{ background: "var(--tech-gold)", color: "black" }}>
-              <PlusCircle size={16} /> Create New
-            </button>
-          </div>
+          <button 
+            onClick={() => setShowAdminApprovals(true)}
+            style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '10px 20px', borderRadius: '100px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <ShieldCheck size={16} /> Approvals
+          </button>
         )}
       </div>
 
+      {/* Netflix-style Course Grid */}
       {loading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "80px",
-            color: "var(--cool-gray)",
-          }}
-        >
-          <div
-            className="pulse-animation"
-            style={{ display: "inline-block", marginBottom: "16px" }}
-          >
-            <BookOpen size={48} color="var(--tech-cyan)" />
-          </div>
-          <p>Loading premium content...</p>
+        <div style={{ textAlign: 'center', padding: '60px', color: 'var(--cool-gray)' }}>
+          <Brain size={40} className="animate-spin" style={{ margin: '0 auto 16px auto', display: 'block', color: '#3B82F6' }} />
+          Loading curriculum...
         </div>
       ) : courses.length === 0 ? (
-        <div
-          className="glass-panel"
-          style={{
-            textAlign: "center",
-            padding: "80px 20px",
-            borderRadius: "24px",
-          }}
-        >
-          <BookOpen
-            size={64}
-            color="var(--surface-border)"
-            style={{ margin: "0 auto 24px auto", display: "block" }}
-          />
-          <h3 style={{ color: "white", margin: 0, fontSize: "24px" }}>
-            No Courses Found
-          </h3>
-          <p
-            style={{
-              color: "var(--cool-gray)",
-              margin: "12px 0 0 0",
-              fontSize: "16px",
-            }}
-          >
-            Try adjusting your filters or search query to find what you're
-            looking for.
-          </p>
+        <div className="glass-panel" style={{ padding: '60px', textAlign: 'center', color: 'var(--cool-gray)', borderRadius: '24px' }}>
+          <BookOpen size={60} opacity={0.3} style={{ margin: '0 auto 16px auto', display: 'block' }} />
+          No courses found matching your criteria.
         </div>
       ) : (
-        <div className="bento-grid span-12" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-          {courses
-            .filter(
-              (c) =>
-                !searchQuery ||
-                c.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.description
-                  ?.toLowerCase()
-                  .includes(searchQuery.toLowerCase()),
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
+          {courses.filter(c => !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase())).map(course => {
+            const hasAccess = isAdmin || (course.price === 0) || unlockedCourses.includes(course.id) || userPurchases.some(p => p.item_id === course.id && p.status === 'approved');
+            
+            return (
+              <div 
+                key={course.id} 
+                className="glass-panel hover-lift"
+                style={{ 
+                  borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer',
+                  border: hasAccess ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.1)',
+                  position: 'relative',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.03), transparent)'
+                }}
+                onClick={() => {
+                  if (hasAccess) setActiveCourse(course);
+                  else setPurchaseModal({ isOpen: true, course, paymentId: "", accessCodeInput: "", appliedDiscount: 0, appliedCode: null });
+                }}
+              >
+                {/* Thumbnail */}
+                <div style={{ height: '160px', background: course.image_url ? `url(${course.image_url}) center/cover` : 'linear-gradient(135deg, #1e3a8a, #0f172a)', position: 'relative' }}>
+                  {!hasAccess && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ background: 'rgba(245, 158, 11, 0.9)', color: '#000', padding: '6px 12px', borderRadius: '100px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Award size={14} /> PREMIUM
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', color: 'white', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    {course.type}
+                  </div>
+                </div>
+                
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '100px', color: 'var(--text-secondary)' }}>{course.class_level}</span>
+                    <span style={{ fontSize: '11px', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '100px', color: 'var(--text-secondary)' }}>{course.language}</span>
+                  </div>
+                  
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#fff', lineHeight: 1.3 }}>{course.title}</h3>
+                  <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', margin: '0 0 16px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {course.description || "Learn from the best educators with structured courses."}
+                  </p>
+                  
+                  <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: '#fff' }}>
+                        {course.profiles?.full_name?.charAt(0) || 'A'}
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{course.profiles?.full_name || 'Admin'}</span>
+                    </div>
+                    {hasAccess ? (
+                      <span style={{ color: '#3B82F6', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <PlayCircle size={16} /> Play
+                      </span>
+                    ) : (
+                      <span style={{ color: '#F59E0B', fontWeight: 'bold', fontSize: '14px' }}>
+                        ₹{course.price}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isAdmin && (
+                  <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', gap: '8px' }}>
+                    <button onClick={(e) => handleEditCourse(e, course)} style={{ background: '#3B82F6', color: 'white', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}>
+                      <Edit2 size={14} />
+                    </button>
+                    <button onClick={(e) => handleDeleteCourse(e, course.id)} style={{ background: '#EF4444', color: 'white', border: 'none', padding: '6px', borderRadius: '6px', cursor: 'pointer' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
             )
-            .map((course) => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                isAdmin={isAdmin}
-                currentUser={currentUser}
-                unlockedCourses={unlockedCourses}
-                handleEditCourse={handleEditCourse}
-                handleDeleteCourse={handleDeleteCourse}
-                setActiveCourse={setActiveCourse}
-                handleShare={handleShare}
-                unlockingCourseId={unlockingCourseId}
-                setUnlockingCourseId={setUnlockingCourseId}
-                accessCodeInput={accessCodeInput}
-                setAccessCodeInput={setAccessCodeInput}
-                handleUnlockCourse={handleUnlockCourse}
-                userPurchases={userPurchases}
-                setPurchaseModal={setPurchaseModal}
-              />
-            ))}
+          })}
         </div>
       )}
 
-      {/* QR Code Purchase Modal */}
-      {purchaseModal.isOpen &&
-        createPortal(
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0,0,0,0.85)",
-              zIndex: 9999,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              className="glass-panel animate-fade-in"
-              style={{
-                position: "relative",
-                width: "90%",
-                maxWidth: "400px",
-                background: "var(--surface-bg)",
-                borderRadius: "24px",
-                padding: "32px",
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                textAlign: "center",
-              }}
+      {/* Purchase Modal with UPI QR */}
+      {purchaseModal.isOpen && purchaseModal.course && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', overflowY: 'auto', padding: '20px' }}>
+          <div className="glass-panel animate-fade-in-up" style={{ position: 'relative', width: '100%', maxWidth: '500px', background: '#111', borderRadius: '32px', padding: '32px', margin: 'auto', border: '1px solid rgba(59, 130, 246, 0.3)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+            <button 
+              onClick={() => setPurchaseModal({ isOpen: false, course: null, paymentId: "", accessCodeInput: "", appliedDiscount: 0, appliedCode: null })}
+              style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', cursor: 'pointer', width: '40px', height: '40px', borderRadius: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <button
-                onClick={() =>
-                  setPurchaseModal({
-                    isOpen: false,
-                    course: null,
-                    paymentId: "",
-                    accessCodeInput: "",
-                    appliedDiscount: 0,
-                    appliedCode: null,
-                  })
-                }
-                className="btn-outline hover-glow"
-                style={{
-                  position: "absolute",
-                  top: "16px",
-                  right: "16px",
-                  background: "rgba(255,255,255,0.1)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "50%",
-                  padding: "8px",
-                }}
-              >
-                <X size={20} />
-              </button>
+              <X size={20} />
+            </button>
+            
+            <h2 style={{ color: '#3B82F6', margin: '0 0 8px 0', fontSize: '24px', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '800' }}>
+              <ShieldCheck size={28} /> Unlock Course
+            </h2>
+            <h3 style={{ color: 'white', fontSize: '18px', marginBottom: '24px', fontWeight: '600', opacity: 0.9 }}>{purchaseModal.course.title}</h3>
 
-              <h2
-                style={{
-                  color: "var(--tech-cyan)",
-                  margin: "0 0 8px 0",
-                  fontSize: "22px",
-                }}
-              >
-                Checkout
-              </h2>
-              <p
-                style={{
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: "18px",
-                  margin: "0 0 4px 0",
-                }}
-              >
-                {purchaseModal.course?.title}
-              </p>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', padding: '12px', borderRadius: '16px', marginBottom: '24px', fontSize: '14px', fontWeight: 'bold', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                Premium Content Access
+              </div>
 
-              {purchaseModal.appliedDiscount > 0 ? (
-                <div style={{ marginBottom: "24px" }}>
-                  <p
-                    style={{
-                      color: "var(--cool-gray)",
-                      fontSize: "18px",
-                      textDecoration: "line-through",
-                      margin: "0",
-                    }}
-                  >
-                    ₹{purchaseModal.course?.price}
-                  </p>
-                  <p
-                    style={{
-                      color: "var(--tech-gold)",
-                      fontSize: "24px",
-                      fontWeight: "900",
-                      margin: "0",
-                    }}
-                  >
-                    ₹
-                    {Math.max(
-                      0,
-                      purchaseModal.course?.price -
-                        purchaseModal.appliedDiscount,
-                    )}
-                  </p>
-                  <p
-                    style={{
-                      color: "var(--tech-cyan)",
-                      fontSize: "14px",
-                      margin: "4px 0 0 0",
-                    }}
-                  >
-                    ✓ Access Code Applied!
-                  </p>
-                </div>
-              ) : (
-                <p
-                  style={{
-                    color: "var(--tech-gold)",
-                    fontSize: "24px",
-                    fontWeight: "900",
-                    margin: "0 0 24px 0",
-                  }}
-                >
-                  ₹{purchaseModal.course?.price}
-                </p>
-              )}
-
-              {purchaseModal.course?.price -
-                (purchaseModal.appliedDiscount || 0) >
-                0 && (
-                <>
-                  <PaymentQR
-                    amount={Math.max(
-                      0,
-                      purchaseModal.course?.price -
-                        (purchaseModal.appliedDiscount || 0),
-                    )}
-                  />
-
-                  <p
-                    style={{
-                      color: "var(--cool-gray)",
-                      fontSize: "14px",
-                      marginBottom: "16px",
-                      marginTop: "16px",
-                    }}
-                  >
-                    Scan the QR code to pay the balance, then enter your Payment
-                    Transaction ID below.
-                  </p>
-
-                  <input
-                    type="text"
-                    placeholder="UPI Transaction ID"
-                    value={purchaseModal.paymentId || ""}
-                    onChange={(e: any) =>
-                      setPurchaseModal({
-                        ...purchaseModal,
-                        paymentId: e.target.value,
-                      })
-                    }
-                    className="input-field"
-                    style={{
-                      textAlign: "center",
-                      fontSize: "16px",
-                      marginBottom: "16px",
-                    }}
-                  />
-                </>
-              )}
-
-              {!purchaseModal.appliedCode && (
-                <div
-                  style={{ display: "flex", gap: "8px", marginBottom: "16px" }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Have an Access Code?"
-                    value={purchaseModal.accessCodeInput || ""}
-                    onChange={(e: any) =>
-                      setPurchaseModal({
-                        ...purchaseModal,
-                        accessCodeInput: e.target.value,
-                      })
-                    }
-                    className="input-field"
-                    style={{ textAlign: "center", fontSize: "16px", flex: 1 }}
-                  />
-                  <button
-                    className="btn-outline"
-                    disabled={
-                      !purchaseModal.accessCodeInput || submittingPayment
-                    }
-                    onClick={async () => {
-                      setSubmittingPayment(true);
-                      try {
-                        const inputVal = purchaseModal.accessCodeInput
-                          .trim()
-                          .toUpperCase();
-                        if (inputVal.startsWith("PAID-")) {
-                          const isValid =
-                            await lmsService.validateAndConsumeCode(inputVal);
-                          if (isValid) {
-                            const bName = currentUser?.name || 'User';
-                            const bContact = currentUser?.email || 'No Email';
-                            const isBundle = purchaseModal.item.type === 'bundle';
-                            const categoryStr = isBundle ? 'bundle' : 'course';
-                            
-                            await purchaseService.submitPurchase(
-                              currentUser.id,
-                              purchaseModal.item.id,
-                              categoryStr,
-                              inputVal,
-                              bName,
-                              bContact,
-                              'APPROVED'
-                            );
-                            
-                            alert("Access Code Applied successfully! Course unlocked instantly.");
-                            setPurchaseModal({ isOpen: false, item: null, paymentId: '' });
-                          } else {
-                            alert("Invalid or Already Used Access Code.");
-                          }
-                        } else {
-                          alert(
-                            "Invalid Access Code format. Must start with PAID-",
-                          );
-                        }
-                      } catch (e) {
-                        console.error(e);
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '24px' }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '18px', textDecoration: purchaseModal.appliedDiscount > 0 ? 'line-through' : 'none', margin: 0 }}>₹{purchaseModal.course.price}</p>
+                {purchaseModal.appliedDiscount > 0 && (
+                  <p style={{ color: 'white', fontWeight: '800', fontSize: '32px', margin: 0 }}>₹{Math.max(0, purchaseModal.course.price - purchaseModal.appliedDiscount)}</p>
+                )}
+              </div>
+              
+              <div style={{ background: '#fff', padding: '16px', borderRadius: '24px', display: 'inline-block', marginBottom: '24px', opacity: (purchaseModal.course.price - purchaseModal.appliedDiscount) <= 0 ? 0.3 : 1, pointerEvents: (purchaseModal.course.price - purchaseModal.appliedDiscount) <= 0 ? 'none' : 'auto' }}>
+                <PaymentQR amount={Math.max(0, purchaseModal.course.price - purchaseModal.appliedDiscount)} />
+              </div>
+              
+              <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>Scan the QR code with any UPI app to pay, then enter your Transaction ID below. Or enter an Access Code.</p>
+              
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Have an Access Code?" 
+                  value={purchaseModal.accessCodeInput}
+                  onChange={e => setPurchaseModal({...purchaseModal, accessCodeInput: e.target.value.toUpperCase()})}
+                  style={{ flex: 1, padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', outline: 'none' }}
+                />
+                <button 
+                  onClick={async () => {
+                    if (!purchaseModal.accessCodeInput) return;
+                    try {
+                      const res = await lmsService.validateAccessCodeForDiscount(purchaseModal.accessCodeInput);
+                      if (res.valid) {
+                        setPurchaseModal({...purchaseModal, appliedDiscount: res.discountValue, appliedCode: res.code});
+                        alert(`Success! Discount of ₹${res.discountValue} applied.`);
+                      } else {
+                        alert("Invalid code.");
                       }
-                      setSubmittingPayment(false);
-                    }}
-                    style={{ padding: "0 16px", borderRadius: "8px" }}
-                  >
-                    Apply
-                  </button>
-                </div>
-              )}
+                    } catch (e) { alert("Error: " + e.message); }
+                  }}
+                  style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0 24px', borderRadius: '16px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+                >
+                  Apply
+                </button>
+              </div>
 
-              <button
-                className="btn-primary"
-                disabled={
-                  submittingPayment ||
-                  (purchaseModal.course?.price -
-                    (purchaseModal.appliedDiscount || 0) >
-                    0 &&
-                    !purchaseModal.paymentId)
-                }
+              <input 
+                type="text" 
+                placeholder="Paste UPI Transaction ID here" 
+                value={purchaseModal.paymentId}
+                onChange={e => setPurchaseModal({...purchaseModal, paymentId: e.target.value})}
+                disabled={(purchaseModal.course.price - purchaseModal.appliedDiscount) <= 0}
+                style={{ textAlign: 'center', fontSize: '16px', marginBottom: '24px', width: '100%', padding: '16px', borderRadius: '100px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.5)', color: 'white', outline: 'none' }}
+              />
+              
+              <button 
                 onClick={async () => {
+                  const finalPrice = Math.max(0, purchaseModal.course.price - (purchaseModal.appliedDiscount || 0));
+                  if (finalPrice > 0 && !purchaseModal.paymentId.trim()) {
+                    alert("Please enter UPI Transaction ID");
+                    return;
+                  }
                   setSubmittingPayment(true);
                   try {
-                    const bName =
-                      currentUser?.fullName ||
-                      currentUser?.full_name ||
-                      currentUser.user_metadata?.full_name ||
-                      "User";
-                    const bContact = currentUser?.whatsapp || "";
-                    const balance = Math.max(
-                      0,
-                      purchaseModal.course.price -
-                        (purchaseModal.appliedDiscount || 0),
-                    );
-
-                    let finalPaymentId = purchaseModal.paymentId?.trim();
-                    if (purchaseModal.appliedCode) {
-                      if (balance === 0) {
-                        finalPaymentId = purchaseModal.appliedCode;
-                      } else {
-                        finalPaymentId = `${finalPaymentId} (Code: ${purchaseModal.appliedCode})`;
-                      }
-                    }
-
-                    if (balance === 0 && purchaseModal.appliedCode) {
-                      await purchaseService.submitPurchase(
-                        currentUser?.id,
-                        purchaseModal.course.id,
-                        "course",
-                        finalPaymentId,
-                        bName,
-                        bContact,
-                        "APPROVED",
-                      );
-
-                      const updated = [
-                        ...unlockedCourses,
-                        purchaseModal.course.id,
-                      ];
-                      setUnlockedCourses(updated);
-                      (typeof window !== 'undefined' && window.localStorage ? window.localStorage.setItem : () => {})(
-                        `unlocked_courses_${currentUser?.id}`,
-                        JSON.stringify(updated),
-                      );
-
-                      alert(
-                        "Success! Course Unlocked perfectly for free using your Access Code.",
-                      );
-                    } else {
-                      await purchaseService.submitPurchase(
-                        currentUser?.id,
-                        purchaseModal.course.id,
-                        "course",
-                        finalPaymentId,
-                        bName,
-                        bContact,
-                      );
-                      alert(
-                        "Payment details submitted! Once the payment is verified, your course will be unlocked quickly.",
-                      );
-                    }
-
-                    const newPurchases = await purchaseService.getUserPurchases(
+                    await purchaseService.submitPurchase(
                       currentUser?.id,
+                      purchaseModal.course.id,
+                      'course',
+                      finalPrice === 0 ? `FREE_CODE_${purchaseModal.appliedCode}` : purchaseModal.paymentId.trim(),
+                      currentUser?.fullName || currentUser?.full_name || currentUser?.user_metadata?.full_name || 'User',
+                      currentUser?.whatsapp || ''
                     );
-                    setUserPurchases(newPurchases || []);
-                    setPurchaseModal({
-                      isOpen: false,
-                      course: null,
-                      paymentId: "",
-                      accessCodeInput: "",
-                      appliedDiscount: 0,
-                      appliedCode: null,
-                    });
+                    
+                    if (finalPrice === 0 && purchaseModal.appliedCode) {
+                      await lmsService.consumeAccessCode(purchaseModal.appliedCode);
+                    }
+                    
+                    alert(finalPrice === 0 ? "Course Unlocked Instantly!" : "Payment submitted for Admin Approval!");
+                    setPurchaseModal({ isOpen: false, course: null, paymentId: "", accessCodeInput: "", appliedDiscount: 0, appliedCode: null });
                   } catch (e) {
-                    alert("Failed to submit payment. Please try again.");
+                    alert("Failed to submit payment.");
                   }
                   setSubmittingPayment(false);
                 }}
-                style={{ width: "100%", padding: "14px", fontSize: "16px" }}
+                disabled={submittingPayment}
+                style={{ width: '100%', padding: '16px', fontSize: '16px', fontWeight: 'bold', background: '#3B82F6', color: '#fff', borderRadius: '100px', border: 'none', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)' }}
               >
-                {submittingPayment
-                  ? "Submitting..."
-                  : purchaseModal.course?.price -
-                        (purchaseModal.appliedDiscount || 0) ===
-                      0
-                    ? "Unlock Course for Free"
-                    : "Submit Purchase"}
+                {submittingPayment ? 'Processing...' : (purchaseModal.course.price - purchaseModal.appliedDiscount <= 0 ? 'Unlock for Free' : 'Submit Payment')}
               </button>
             </div>
-          </div>,
-          document.body,
-        )}
-
-      
+          </div>
+        </div>,
+        document.body
+      )}
 
     </div>
   );

@@ -12,7 +12,7 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('/');
   const [allUsers, setAllUsers] = useState([]);
-  const [theme, setTheme] = useState((typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem('app_theme') || 'dark' : 'dark');
+  const [theme, setTheme] = useState('dark'); // Hydrated safely below
 
   const toggleTheme = () => {
     setTheme(prev => {
@@ -21,6 +21,14 @@ export const AppProvider = ({ children }) => {
       return newTheme;
     });
   };
+
+  // Safely hydrate theme from localStorage (avoids SSR mismatch)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = window.localStorage.getItem('app_theme') || 'dark';
+      setTheme(savedTheme);
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -76,14 +84,16 @@ export const AppProvider = ({ children }) => {
       if (user.email === 'aishleeraadee@gmail.com') forcedRole = 'Super Admin';
       if (user.email === 'rajakumaranaap@gmail.com') forcedRole = 'User';
 
-      // Ensure profile exists in database
-      await supabase.from('profiles').upsert({
-        id: user.id,
-        full_name: fullName,
-        role: forcedRole,
-        referred_by: referredBy,
-        ...(whatsapp ? { whatsapp } : {})
-      });
+      // Only upsert if profile is missing (saves ~1 DB write per login = major egress reduction)
+      if (!profile) {
+        await supabase.from('profiles').insert({
+          id: user.id,
+          full_name: fullName,
+          role: forcedRole,
+          referred_by: referredBy,
+          ...(whatsapp ? { whatsapp } : {})
+        }).select();
+      }
 
       setCurrentUser({
         id: user.id,
@@ -196,25 +206,27 @@ export const AppProvider = ({ children }) => {
     if (currentUser?.role === 'Super Admin') {
       const SYNC_INTERVAL = 60 * 60 * 1000; // 1 hour
       
-      // Optional: Initial sync if it hasn't been synced recently
-      const lastSync = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('last_auto_sync') : null;
-      if (!lastSync || Date.now() - parseInt(lastSync) > SYNC_INTERVAL) {
-        dashboardSheetsService.importToSupabase(supabase).then(() => {
-          if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem('last_auto_sync', Date.now().toString());
-        }).catch(err => console.error("Auto-sync failed on init:", err));
+      // Only run if it hasn't been synced in the last hour (read from localStorage)
+      if (typeof window !== 'undefined') {
+        const lastSync = window.localStorage.getItem('last_auto_sync');
+        if (!lastSync || Date.now() - parseInt(lastSync) > SYNC_INTERVAL) {
+          dashboardSheetsService.importToSupabase(supabase).then(() => {
+            window.localStorage.setItem('last_auto_sync', Date.now().toString());
+          }).catch(err => console.error("Auto-sync failed on init:", err));
+        }
       }
 
       interval = setInterval(() => {
-        console.log("Running hourly auto-sync...");
         dashboardSheetsService.importToSupabase(supabase).then(() => {
-          if (typeof window !== 'undefined' && window.localStorage) window.localStorage.setItem('last_auto_sync', Date.now().toString());
+          if (typeof window !== 'undefined') window.localStorage.setItem('last_auto_sync', Date.now().toString());
         }).catch(err => console.error("Auto-sync failed:", err));
       }, SYNC_INTERVAL);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [currentUser]);
+  // Only re-run when userId or role changes, NOT the whole user object (prevents extra intervals)
+  }, [currentUser?.id, currentUser?.role]);
 
   const assignUserToAdmin = async (userId, adminId) => {
     const { error } = await supabase.from('profiles').update({ allotted_to: adminId }).eq('id', userId);

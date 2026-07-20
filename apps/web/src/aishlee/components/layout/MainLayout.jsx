@@ -1,11 +1,12 @@
 'use client';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   LayoutDashboard, GraduationCap, Store, Landmark, 
   ClipboardCheck, PlaySquare, ShieldAlert, UserCircle, 
-  Menu, X, Search, CheckSquare, Plane
+  Menu, X, Search, CheckSquare, Plane, Zap, ChevronRight,
+  BookOpen, Target, Tv, Wallet, Map, Tool, DollarSign
 } from 'lucide-react';
 import { useApp } from '../../context/AppProvider';
 import { purchaseService } from '../../services/purchaseService';
@@ -14,13 +15,127 @@ import NotificationBell from '../NotificationBell';
 import ThemeToggle from '../ThemeToggle';
 import Footer from '../Footer';
 
+// ─── Universal Module Selector (shown once after login) ───────────────────────
+const MODULE_KEY = 'aishlee_last_module';
+
+const MODULES = [
+  { path: '/',        label: 'Home',      icon: LayoutDashboard, color: '#6366F1', desc: 'Dashboard & overview' },
+  { path: '/teacho',  label: 'TeachO',    icon: GraduationCap,   color: '#3B82F6', desc: 'Online Academy & Courses' },
+  { path: '/testo',   label: 'TestO',     icon: ClipboardCheck,  color: '#EF4444', desc: 'Assessments & Exams' },
+  { path: '/touro',   label: 'TourO',     icon: Plane,           color: '#10B981', desc: 'Travel & Tours' },
+  { path: '/moneyo',  label: 'MoneyO',    icon: Landmark,        color: '#F59E0B', desc: 'Finance & Wallet' },
+  { path: '/tasko',   label: 'TaskO',     icon: CheckSquare,     color: '#8B5CF6', desc: 'Task Management' },
+  { path: '/tradeo',  label: 'TradeO',    icon: Store,           color: '#EC4899', desc: 'Business & Trade' },
+  { path: '/tvo',     label: 'TvO',       icon: PlaySquare,      color: '#14B8A6', desc: 'Entertainment & Media' },
+];
+
+function UniversalModuleSelector({ onSelect }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 99999,
+      background: 'linear-gradient(135deg, #050A18 0%, #0A0F1E 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: '24px', overflowY: 'auto'
+    }}>
+      {/* Glow orbs */}
+      <div style={{ position: 'absolute', top: '10%', left: '10%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '10%', right: '10%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '700px', width: '100%' }}>
+        <div style={{ marginBottom: '32px' }}>
+          <Logo size={32} />
+          <h1 style={{ fontSize: '32px', fontWeight: '900', color: '#fff', margin: '20px 0 12px 0', lineHeight: 1.2 }}>
+            Where would you like<br/>
+            <span style={{ background: 'linear-gradient(90deg, #6366F1, #3B82F6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>to go today?</span>
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '16px', margin: 0 }}>Select a module to get started</p>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
+          {MODULES.map(mod => {
+            const Icon = mod.icon;
+            return (
+              <button
+                key={mod.path}
+                onClick={() => onSelect(mod.path)}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: `1px solid rgba(255,255,255,0.1)`,
+                  borderRadius: '20px',
+                  padding: '24px 16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '12px',
+                  transition: 'all 0.2s ease',
+                  color: 'white',
+                  textAlign: 'center',
+                  backdropFilter: 'blur(10px)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = `${mod.color}20`;
+                  e.currentTarget.style.borderColor = `${mod.color}60`;
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = `0 8px 24px ${mod.color}30`;
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ background: `${mod.color}25`, padding: '12px', borderRadius: '16px', color: mod.color }}>
+                  <Icon size={28} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '800', fontSize: '16px' }}>{mod.label}</div>
+                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>{mod.desc}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', marginTop: '24px' }}>
+          Your choice will be remembered for next time
+        </p>
+      </div>
+    </div>
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function MainLayout({ children }) {
   const { currentUser } = useApp();
   const pathname = usePathname();
-  const location = { pathname };
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [navSearchQuery, setNavSearchQuery] = useState('');
+  const [showModuleSelector, setShowModuleSelector] = useState(false);
+
+  // Show module selector once per session when user first logs in
+  useEffect(() => {
+    if (currentUser && typeof window !== 'undefined') {
+      const lastModule = window.sessionStorage.getItem(MODULE_KEY);
+      // Show selector only if: user just logged in (no session module) AND they're at the root
+      if (!lastModule && pathname === '/') {
+        setShowModuleSelector(true);
+      }
+    } else if (!currentUser) {
+      setShowModuleSelector(false);
+    }
+  }, [currentUser?.id, pathname]);
+
+  const handleModuleSelect = (path) => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(MODULE_KEY, path);
+    }
+    setShowModuleSelector(false);
+    router.push(path);
+  };
 
   useEffect(() => {
     if (currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin') {
@@ -40,28 +155,28 @@ export default function MainLayout({ children }) {
   // Close mobile menu on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   const navItems = [
-    { path: '/', label: 'Home', icon: LayoutDashboard },
-    { path: '/teacho', label: 'TeachO', icon: GraduationCap },
-    { path: '/testo', label: 'TestO', icon: ClipboardCheck },
-    { path: '/moneyo', label: 'MoneyO', icon: Landmark },
-    { path: '/tasko', label: 'TaskO', icon: CheckSquare },
-    { path: '/touro', label: 'TourO', icon: Plane },
-    { path: '/tradeo', label: 'TradeO', icon: Store },
-    { path: '/tvo', label: 'TvO', icon: PlaySquare },
+    { path: '/',        label: 'Home',    icon: LayoutDashboard },
+    { path: '/teacho',  label: 'TeachO',  icon: GraduationCap },
+    { path: '/testo',   label: 'TestO',   icon: ClipboardCheck },
+    { path: '/moneyo',  label: 'MoneyO',  icon: Landmark },
+    { path: '/tasko',   label: 'TaskO',   icon: CheckSquare },
+    { path: '/touro',   label: 'TourO',   icon: Plane },
+    { path: '/tradeo',  label: 'TradeO',  icon: Store },
+    { path: '/tvo',     label: 'TvO',     icon: PlaySquare },
     { path: '/profile', label: 'Profile', icon: UserCircle },
   ];
 
   if (currentUser?.role === 'Super Admin') {
-    navItems.push({ path: '/admino', label: 'AdminO', icon: ShieldAlert });
+    navItems.push({ path: '/admino',     label: 'AdminO',  icon: ShieldAlert });
   } else if (currentUser?.role === 'Admin') {
     navItems.push({ path: '/localadmin', label: 'My Node', icon: ShieldAlert });
   }
 
   // Determine active item
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => pathname === path;
 
   // The Header component (Top bar for mobile & desktop)
   const HeaderBar = () => (
@@ -90,6 +205,28 @@ export default function MainLayout({ children }) {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Module Switcher button for quick re-selection */}
+        {currentUser && (
+          <button
+            onClick={() => setShowModuleSelector(true)}
+            title="Switch Module"
+            style={{
+              background: 'rgba(99, 102, 241, 0.15)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              color: '#6366F1',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Zap size={14} /> Modules
+          </button>
+        )}
         <NotificationBell />
         <ThemeToggle />
       </div>
@@ -98,6 +235,11 @@ export default function MainLayout({ children }) {
 
   return (
     <>
+      {/* Universal Module Selector Overlay */}
+      {showModuleSelector && (
+        <UniversalModuleSelector onSelect={handleModuleSelect} />
+      )}
+
       {/* DESKTOP SIDEBAR */}
       {currentUser && (
         <aside className={`desktop-sidebar glass-panel no-print`} style={{
@@ -135,7 +277,7 @@ export default function MainLayout({ children }) {
               return (
                 <Link 
                   key={item.path} 
-                  to={item.path}
+                  href={item.path}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -191,7 +333,7 @@ export default function MainLayout({ children }) {
             const Icon = item.icon;
             const active = isActive(item.path);
             return (
-              <Link key={item.path} to={item.path} className={`nav-item ${active ? 'active' : ''}`}>
+              <Link key={item.path} href={item.path} className={`nav-item ${active ? 'active' : ''}`}>
                 <Icon size={24} style={{ color: active ? 'var(--tech-cyan)' : 'var(--cool-gray)' }} />
                 <span style={{ color: active ? 'var(--tech-cyan)' : 'var(--cool-gray)' }}>{item.label}</span>
               </Link>
@@ -225,19 +367,31 @@ export default function MainLayout({ children }) {
             </div>
 
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
+              {/* Module Switcher in Mobile Menu */}
+              <button
+                onClick={() => { setIsMobileMenuOpen(false); setShowModuleSelector(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '16px', color: '#6366F1', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                <Zap size={24} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '800' }}>Switch Module</div>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', fontWeight: 'normal' }}>Quick module selector</div>
+                </div>
+              </button>
               {navItems.filter(item => item.label.toLowerCase().includes(navSearchQuery.toLowerCase())).map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
                 return (
                   <Link 
                     key={item.path} 
-                    to={item.path}
+                    href={item.path}
                     className="glass-panel"
                     style={{
                       display: 'flex', alignItems: 'center', gap: '16px', padding: '16px',
                       textDecoration: 'none', color: active ? 'var(--tech-cyan)' : 'var(--text-primary)',
                       border: active ? '1px solid var(--tech-cyan)' : '1px solid var(--surface-border)'
                     }}
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon size={24} />
                     <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{item.label}</span>
@@ -271,6 +425,3 @@ export default function MainLayout({ children }) {
     </>
   );
 }
-
-
-

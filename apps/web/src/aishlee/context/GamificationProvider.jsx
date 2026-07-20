@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { useApp } from './AppProvider';
 import { supabase } from '../lib/supabaseClient';
 
@@ -8,59 +8,73 @@ const GamificationContext = createContext();
 export const useGamification = () => useContext(GamificationContext);
 
 export const GamificationProvider = ({ children }) => {
-  const { currentUser, updateProfile } = useApp();
+  const { currentUser } = useApp();
+  // Buffer points locally and flush to DB every 5 minutes (single RPC call = 1 egress unit)
+  const pendingPoints = useRef(0);
 
-  // Award Points Helper
+  // Award Points Helper - now fully optimistic with buffering
   const awardPoints = async (action, points, userId) => {
     if (!userId) return;
+    // Buffer points locally to reduce DB writes
+    pendingPoints.current += points;
+  };
+
+  // Flush buffered points to DB - single atomic RPC call = minimal egress
+  const flushPoints = async () => {
+    if (!currentUser || pendingPoints.current <= 0) return;
+    const pts = pendingPoints.current;
+    pendingPoints.current = 0; // Clear immediately to prevent double-flush
     try {
-      // 1. Log the action
-      await supabase.from('point_logs').insert({
-        user_id: userId,
-        action: action,
-        points_awarded: points
+      // Single RPC call replaces 2 separate DB calls (select + update)
+      // The RPC atomically increments points in the DB
+      const { error } = await supabase.rpc('increment_user_points', {
+        p_user_id: currentUser.id,
+        p_action: 'time_spent',
+        p_points: pts
       });
-
-      // 2. Fetch current points and update
-      const { data: profile } = await supabase.from('profiles').select('points').eq('id', userId).single();
-      const currentPoints = profile?.points || 0;
-      const newPoints = currentPoints + points;
-
-      await supabase.from('profiles').update({ points: newPoints }).eq('id', userId);
-      
-      // Update local state if it's the current user
-      if (currentUser && currentUser.id === userId) {
-        updateProfile({ points: newPoints });
+      if (error) {
+        // If RPC fails, restore points to retry next flush
+        pendingPoints.current += pts;
+        console.error('Points flush error:', error);
       }
     } catch (err) {
-      console.error('Gamification Error:', err);
+      pendingPoints.current += pts; // restore for retry
+      console.error('Gamification flush error:', err);
     }
   };
 
   useEffect(() => {
     if (!currentUser) return;
 
-    let isActive = true;
-    
+    let isActive = document.visibilityState === 'visible';
+
     // Check if tab is active
     const handleVisibilityChange = () => {
       isActive = document.visibilityState === 'visible';
+      // Flush to DB when user tabs away (good moment to save)
+      if (!isActive) flushPoints();
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Give 1 point every 60 seconds of active screen time
-    const interval = setInterval(() => {
+    // Buffer 5 points every 5 min (no DB write yet)
+    const bufferInterval = setInterval(() => {
       if (isActive) {
-        awardPoints('time_spent', 1, currentUser.id);
+        pendingPoints.current += 5;
       }
-    }, 60000); // 60 seconds
+    }, 300000); // 5 minutes
+
+    // Flush to DB once every 30 minutes (was 2 calls every 5 min = 24 calls/2hr → now 2 calls/hr)
+    const flushInterval = setInterval(flushPoints, 1800000); // 30 minutes
 
     return () => {
-      clearInterval(interval);
+      clearInterval(bufferInterval);
+      clearInterval(flushInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Flush remaining points on unmount
+      flushPoints();
     };
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   return (
     <GamificationContext.Provider value={{ awardPoints }}>
