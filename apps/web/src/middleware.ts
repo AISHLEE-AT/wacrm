@@ -94,7 +94,9 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', 
     '/automations', '/settings', '/onboarding',
-    '/teacho', '/testo', '/touro', '/moneyo', '/tasko', '/tradeo', '/tvo'
+    '/teacho', '/testo', '/touro', '/moneyo', '/tasko', '/tradeo', '/tvo',
+    '/rido', '/drivo', '/toolso', '/admin', '/admino', '/aishlee-dashboard', 
+    '/approval-hub', '/careers', '/localadmin', '/profile', '/setup', '/rideo'
   ]
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path)) || request.nextUrl.pathname === '/';
   
