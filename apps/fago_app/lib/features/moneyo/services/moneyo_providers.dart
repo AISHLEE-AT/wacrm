@@ -16,5 +16,5 @@ final moneyoProvider = FutureProvider<List<MoneyoModel>>((ref) async {
 
 final totalSavingsProvider = FutureProvider<double>((ref) async {
   final savings = await ref.watch(moneyoProvider.future);
-  return savings.fold(0.0, (sum, item) => sum + item.amount);
+  return savings.fold<double>(0.0, (sum, item) => sum + item.amount);
 });

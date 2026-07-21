@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/testo_model.dart';
+import '../models/testo_model.dart';
 import 'package:go_router/go_router.dart';
 
 class TestDetailsScreen extends StatelessWidget {

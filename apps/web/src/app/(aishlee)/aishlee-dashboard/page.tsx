@@ -5,7 +5,8 @@ import { useApp } from '@/aishlee/context/AppProvider';
 import { 
   ShieldCheck, GraduationCap, IndianRupee, MapPin, 
   Store, Cpu, PlaySquare, ShieldAlert, Award, ChevronRight, 
-  TrendingUp, Search, Landmark, ClipboardCheck, Map, ClipboardList, Users, Sparkles
+  TrendingUp, Search, Landmark, ClipboardCheck, Map, ClipboardList, Users, Sparkles,
+  Car, Truck, MessageSquare, Briefcase
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/aishlee/lib/supabaseClient';
@@ -113,6 +114,8 @@ const Dashboard = () => {
     { id: 'moneyo', icon: Landmark, label: 'MoneyO', color: '#3B82F6', bg: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05))', path: '/moneyo', weight: currentUser?.main_category === 'Financier' || currentUser?.main_category === 'Trader' ? 10 : 4 },
     { id: 'touro', icon: Map, label: 'TourO', color: '#14B8A6', bg: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(20, 184, 166, 0.05))', path: '/touro', weight: 5 },
     { id: 'tasko', icon: ClipboardList, label: 'TaskO', color: '#D946EF', bg: 'linear-gradient(135deg, rgba(217, 70, 239, 0.15), rgba(217, 70, 239, 0.05))', path: '/tasko', weight: currentUser?.main_category === 'Employee' || currentUser?.main_category === 'Professional' ? 10 : (currentUser?.main_category === 'Student' ? 9 : 0) },
+    { id: 'rido', icon: Car, label: 'RidO', color: '#F43F5E', bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(244, 63, 94, 0.05))', path: '/rido', weight: currentUser?.main_category === 'Driver' ? 10 : 6 },
+    { id: 'drivo', icon: Truck, label: 'DrivO', color: '#EAB308', bg: 'linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05))', path: '/drivo', weight: currentUser?.main_category === 'Driver' ? 10 : 7 },
   ];
   
   if (isAdmin) modules.push({ id: 'admino', icon: ShieldCheck, label: 'AdminO', color: '#FFD700', bg: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05))', path: '/admino', weight: 100 });
@@ -272,6 +275,24 @@ const Dashboard = () => {
                padding: '12px 24px', borderRadius: '100px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' 
              }}>
                <Users size={20} /> Manage Users
+             </button>
+             <button onClick={() => navigate('/admin/drivers')} style={{ 
+               background: 'transparent', color: 'var(--tech-gold)', border: '1px solid var(--tech-gold)', 
+               padding: '12px 24px', borderRadius: '100px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' 
+             }}>
+               <Car size={20} /> Drivers
+             </button>
+             <button onClick={() => navigate('/admin/providers')} style={{ 
+               background: 'transparent', color: 'var(--tech-gold)', border: '1px solid var(--tech-gold)', 
+               padding: '12px 24px', borderRadius: '100px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' 
+             }}>
+               <Briefcase size={20} /> Providers
+             </button>
+             <button onClick={() => navigate('/broadcasts')} style={{ 
+               background: 'transparent', color: 'var(--tech-gold)', border: '1px solid var(--tech-gold)', 
+               padding: '12px 24px', borderRadius: '100px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' 
+             }}>
+               <MessageSquare size={20} /> WA CRM
              </button>
              <button onClick={() => navigate('/testo/admin')} style={{ 
                background: 'transparent', color: 'var(--tech-gold)', border: '1px solid var(--tech-gold)', 

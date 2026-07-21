@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/services/cache_service.dart';
+import '../../../core/services/cache_service.dart';
 import '../models/profile_model.dart';
 
 class ProfileService {

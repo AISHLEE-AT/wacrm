@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/touro_model.dart';
+import '../models/touro_model.dart';
 import 'package:intl/intl.dart';
 
 class TourDetailsScreen extends StatelessWidget {

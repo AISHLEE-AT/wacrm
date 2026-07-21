@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/providers/cache_provider.dart';
+import '../../../core/providers/cache_provider.dart';
 import '../models/profile_model.dart';
 import '../services/profile_service.dart';
 
