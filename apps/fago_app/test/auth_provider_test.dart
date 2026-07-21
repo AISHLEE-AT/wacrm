@@ -15,11 +15,11 @@ void main() {
       final state = AuthState();
       final newState = state.copyWith(
         isLoading: false,
-        role: UserRole.rider,
+        role: UserRole.user,
       );
 
       expect(newState.isLoading, false);
-      expect(newState.role, UserRole.rider);
+      expect(newState.role, UserRole.user);
     });
   });
 }

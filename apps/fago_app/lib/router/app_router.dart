@@ -7,6 +7,9 @@ import '../auth/login_screen.dart';
 import '../screens/module_selection_screen.dart';
 import '../screens/setup_screen.dart';
 import '../screens/rideo/rideo_dashboard.dart';
+import '../features/drivo/screens/drivo_dashboard.dart';
+import '../features/toolso/screens/toolso_dashboard.dart';
+import '../features/rido/screens/rido_dashboard.dart';
 
 // Feature dashboards
 import '../features/teacho/screens/teacho_dashboard.dart';
@@ -148,6 +151,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rideo',
         builder: (context, state) => const RideODashboard(),
+      ),
+      GoRoute(
+        path: '/drivo',
+        builder: (context, state) => const DrivODashboard(),
+      ),
+      GoRoute(
+        path: '/rido',
+        builder: (context, state) => const RidODashboard(),
+      ),
+      GoRoute(
+        path: '/toolso',
+        builder: (context, state) => const ToolsODashboard(),
       ),
       GoRoute(
         path: '/profile',

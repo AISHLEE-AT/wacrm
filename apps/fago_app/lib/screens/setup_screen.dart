@@ -58,11 +58,25 @@ final _modules = [
     'id': 'tvo',
   },
   {
-    'title': 'RideO',
-    'subtitle': 'Transport & Delivery',
+    'id': 'toolso',
+    'title': 'ToolsO',
+    'subtitle': 'AI Generators & Tools',
+    'icon': Icons.build_circle_rounded,
+    'gradient': [Color(0xFFF43F5E), Color(0xFFE11D48)],
+  },
+  {
+    'id': 'rido',
+    'title': 'RidO',
+    'subtitle': 'Book a Ride',
     'icon': Icons.directions_car_rounded,
-    'gradient': [Color(0xFF6366F1), Color(0xFF4338CA)],
+    'gradient': [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+  },
+  {
     'id': 'rideo',
+    'title': 'RideO',
+    'subtitle': 'Driver Dashboard',
+    'icon': Icons.navigation_rounded,
+    'gradient': [Color(0xFF6366F1), Color(0xFF4F46E5)],
   },
   {
     'title': 'DrivO',
@@ -190,10 +204,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6366F1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () {
-              if (_nameController.text.isNotEmpty && _whatsappController.text.length == 10) {
+              final isValidPhone = _whatsappController.text.length == 10 && RegExp(r'^[6-9]\d{9}$').hasMatch(_whatsappController.text);
+              if (_nameController.text.isNotEmpty && isValidPhone) {
                 setState(() => _currentStep = 1);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid details')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid name and a 10-digit Indian WhatsApp number')));
               }
             },
             child: const Text('Next', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),

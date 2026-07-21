@@ -8,7 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../features/push/push_service.dart';
 
 // Represents the resolved user role
-enum UserRole { guest, admin, driver, rider }
+enum UserRole { guest, admin, user, provider, driver, lister, professional }
 
 class AuthState {
   final bool isLoading;
@@ -124,8 +124,8 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      // 3. Fallback to Rider
-      state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
+      // 3. Fallback to User
+      state = state.copyWith(isLoading: false, role: UserRole.user, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
     } catch (e) {
       debugPrint('Role resolution error: $e');
       state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());

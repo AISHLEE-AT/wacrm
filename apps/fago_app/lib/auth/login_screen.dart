@@ -19,9 +19,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _verificationId = '';
 
   void _sendOTP() async {
-    if (_phoneController.text.length < 10) {
+    if (_phoneController.text.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(_phoneController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid 10-digit number')),
+        const SnackBar(content: Text('Please enter a valid 10-digit Indian mobile number')),
       );
       return;
     }

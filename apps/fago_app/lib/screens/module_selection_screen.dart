@@ -62,9 +62,23 @@ final _modules = [
     'url': '$_kBaseUrl/tvo',
   },
   {
-    'title': 'RideO',
-    'subtitle': 'Transport & Delivery',
+    'title': 'ToolsO',
+    'subtitle': 'AI Generators & Tools',
+    'icon': Icons.build_circle_rounded,
+    'gradient': [Color(0xFFF43F5E), Color(0xFFBE123C)],
+    'url': '$_kBaseUrl/toolso',
+  },
+  {
+    'title': 'RidO',
+    'subtitle': 'Book a Ride',
     'icon': Icons.directions_car_rounded,
+    'gradient': [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+    'url': '$_kBaseUrl/rido',
+  },
+  {
+    'title': 'RideO',
+    'subtitle': 'Driver Dashboard',
+    'icon': Icons.navigation_rounded,
     'gradient': [Color(0xFF6366F1), Color(0xFF4338CA)],
     'url': 'rideo', // Special: native screen
   },
@@ -232,32 +246,35 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
                           children: [
                             IconButton(
                               icon: const Icon(Icons.settings, color: Colors.white70),
-                              onPressed: () => context.push('/setup'),
+                              onPressed: () => context.push('/profile'),
                             ),
                             const SizedBox(width: 8),
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF6366F1).withOpacity(0.4),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
+                            GestureDetector(
+                              onTap: () => context.push('/profile'),
+                              child: Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
                                   ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  userName[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF6366F1).withOpacity(0.4),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    userName[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
