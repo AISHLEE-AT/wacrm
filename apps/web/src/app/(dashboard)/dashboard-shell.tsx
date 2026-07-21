@@ -13,7 +13,7 @@ import { MessageCircle } from "lucide-react";
 // client components can't export Next's metadata object.
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -22,9 +22,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  const ADMIN_PHONES = ['919486335870', '919123596988', '9486335870', '9123596988'];
-  const normalizedPhone = user?.phone?.replace('+', '') || '';
-  const isAdmin = ADMIN_PHONES.includes(normalizedPhone) || ADMIN_PHONES.includes(user?.phone || '');
+  const ADMINS = ["919486335870", "9486335870", "919123596988", "9123596988", "aishleetechnology@gmail.com"];
+  const isAdmin = ADMINS.some(admin => 
+    profile?.email?.includes(admin) || profile?.phone?.includes(admin) || user?.phone?.includes(admin) || user?.email?.includes(admin)
+  );
 
   useEffect(() => {
     if (!loading && !user) {
