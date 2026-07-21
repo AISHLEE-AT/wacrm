@@ -29,19 +29,26 @@ import '../features/profile/screens/profile_dashboard.dart';
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-  final hasRoutedInitially = ref.read(hasRoutedInitiallyProvider.notifier);
+  // Use a ValueNotifier to trigger redirects without rebuilding GoRouter
+  final notifier = ValueNotifier<AuthState>(ref.read(authProvider));
+  ref.listen<AuthState>(authProvider, (_, next) {
+    notifier.value = next;
+  });
 
   return GoRouter(
+    refreshListenable: notifier,
     initialLocation: '/',
     redirect: (context, state) {
+      final authState = notifier.value;
+      final hasRoutedInitially = ref.read(hasRoutedInitiallyProvider);
+      
       if (authState.isLoading) return null; // Let the current screen handle loading or wait
       
       final isLoggingIn = state.uri.path == '/login';
       final isGuest = authState.role == UserRole.guest;
 
       if (isGuest) {
-        hasRoutedInitially.state = false; // Reset on logout
+        ref.read(hasRoutedInitiallyProvider.notifier).state = false; // Reset on logout
         return isLoggingIn ? null : '/login';
       }
 
@@ -55,8 +62,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Default module routing logic for initial startup or login
-      if (state.uri.path == '/' && !hasRoutedInitially.state) {
-        hasRoutedInitially.state = true;
+      if (state.uri.path == '/' && !hasRoutedInitially) {
+        ref.read(hasRoutedInitiallyProvider.notifier).state = true;
         if (authState.defaultModule != null && authState.defaultModule!.isNotEmpty) {
           return '/${authState.defaultModule!.toLowerCase()}';
         }
@@ -76,14 +83,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (context, state) {
-          if (authState.isLoading) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(color: Color(0xFF6366F1)),
-              ),
-            );
-          }
-          return const ModuleSelectionScreen();
+          return Consumer(
+            builder: (context, ref, _) {
+              final authState = ref.watch(authProvider);
+              if (authState.isLoading) {
+                return const Scaffold(
+                  body: Center(
+                    child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+                  ),
+                );
+              }
+              return const ModuleSelectionScreen();
+            },
+          );
         },
       ),
       GoRoute(

@@ -73,14 +73,14 @@ final _modules = [
     'subtitle': 'Book a Ride',
     'icon': Icons.directions_car_rounded,
     'gradient': [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-    'url': '$_kBaseUrl/rido',
+    'url': '/rider', // Native screen
   },
   {
     'title': 'RideO',
     'subtitle': 'Driver Dashboard',
     'icon': Icons.navigation_rounded,
     'gradient': [Color(0xFF6366F1), Color(0xFF4338CA)],
-    'url': 'rideo', // Special: native screen
+    'url': '/driver', // Native screen
   },
   {
     'title': 'DrivO',
@@ -122,8 +122,8 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
 
   void _openModule(Map module) {
     final url = module['url'] as String;
-    if (url == 'rideo') {
-      context.go('/rideo');
+    if (url.startsWith('/')) {
+      context.go(url);
     } else {
       // The URLs in `_modules` are defined as `$_kBaseUrl/teacho`
       // We need to extract the path segment (e.g. '/teacho')
