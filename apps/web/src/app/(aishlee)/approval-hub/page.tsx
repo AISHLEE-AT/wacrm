@@ -8,7 +8,8 @@ import { financeService } from '@/aishlee/services/financeService';
 import { recruitmentService } from '@/aishlee/services/recruitmentService';
 import { generateAppointmentOrder } from '@/aishlee/utils/pdfGenerator';
 import { CheckCircle, XCircle, MessageSquare, ShieldAlert, DatabaseZap, Users, Link, Briefcase, FileText, Download, Star, Award, Store } from 'lucide-react';
-import { supabase } from '@/aishlee/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 import ChatBox from '@/aishlee/components/ChatBox';
 import AdminBulkUpload from '@/aishlee/components/AdminBulkUpload';
 

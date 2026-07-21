@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { GoogleMap, useLoadScript, Marker, DirectionsRenderer } from '@react-google-maps/api';
 import { MapPin, Navigation, Package, CheckCircle, Clock, ShieldAlert, Power } from 'lucide-react';
-import { supabase } from '@/aishlee/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 
 const libraries: any = ['places'];
 const mapContainerStyle = { width: '100%', height: '100%', borderRadius: '12px' };

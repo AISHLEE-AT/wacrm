@@ -7,7 +7,8 @@ import { Users, Shield, UserCheck, Database, Copy, CheckCircle, Loader, Download
 import { ecosystemService } from '@/aishlee/services/ecosystemService';
 import { marketplaceSheetsService } from '@/aishlee/services/marketplaceSheetsService';
 import { dashboardSheetsService } from '@/aishlee/services/dashboardSheetsService';
-import { supabase } from '@/aishlee/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 import { purchaseService } from '@/aishlee/services/purchaseService';
 
 export default function AdminO() {

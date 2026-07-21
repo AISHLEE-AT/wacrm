@@ -9,7 +9,8 @@ import {
   Car, Truck, MessageSquare, Briefcase
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/aishlee/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 import { dataService } from '@/aishlee/services/dataService';
 
 // Widgets

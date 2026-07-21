@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/aishlee/context/AppProvider';
-import { supabase } from '@/aishlee/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 import { 
   CheckCircle, XCircle, Clock, BookOpen, Activity, 
   ShoppingBag, Compass, MapPin, ChevronRight, X

@@ -9,7 +9,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Brain, BookOpen, ChevronRight, Video, FileText, CheckCircle, ArrowLeft, Loader, Plus, Save, Share2, Link as LinkIcon, Database, Download } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { EXAM_CATEGORIES } from '@/aishlee/constants/exams';
-import { supabase } from '@/aishlee/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 import { youtubeService } from '@/aishlee/services/youtubeService';
 
 const coachLink = "Need help? Contact your Coach on WhatsApp: [Click here](https://wa.me/916381029380)";
