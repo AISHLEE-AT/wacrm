@@ -1,90 +1,67 @@
 -- 048_fix_profiles_id.sql
 -- Fixes the profiles schema so that id is the auth.users(id), which frontend expects.
--- Now using IF EXISTS checks to ensure it runs cleanly even if some tables haven't been migrated yet.
+-- Uses dynamic SQL to find and update all foreign keys referencing profiles(id).
 
 DO $$
+DECLARE
+    r RECORD;
 BEGIN
-    -- 1. Drop existing foreign keys & Update referencing columns
-    -- deals
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'deals') THEN
-        ALTER TABLE public.deals DROP CONSTRAINT IF EXISTS deals_assigned_to_fkey;
-        UPDATE public.deals t SET assigned_to = p.user_id FROM public.profiles p WHERE t.assigned_to = p.id;
-    END IF;
+    -- Create temp table to store constraints
+    CREATE TEMP TABLE IF NOT EXISTS temp_fk_constraints AS
+        SELECT
+            tc.table_schema,
+            tc.table_name,
+            kcu.column_name,
+            tc.constraint_name,
+            rc.update_rule,
+            rc.delete_rule
+        FROM
+            information_schema.table_constraints AS tc
+            JOIN information_schema.key_column_usage AS kcu
+              ON tc.constraint_name = kcu.constraint_name
+              AND tc.table_schema = kcu.table_schema
+            JOIN information_schema.constraint_column_usage AS ccu
+              ON ccu.constraint_name = tc.constraint_name
+              AND ccu.table_schema = tc.table_schema
+            JOIN information_schema.referential_constraints AS rc
+              ON rc.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY' 
+          AND ccu.table_name = 'profiles' 
+          AND ccu.column_name = 'id';
 
-    -- system_announcements
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'system_announcements') THEN
-        ALTER TABLE public.system_announcements DROP CONSTRAINT IF EXISTS system_announcements_admin_id_fkey;
-        UPDATE public.system_announcements t SET admin_id = p.user_id FROM public.profiles p WHERE t.admin_id = p.id;
-    END IF;
-
-    -- seller_shops
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'seller_shops') THEN
-        ALTER TABLE public.seller_shops DROP CONSTRAINT IF EXISTS seller_shops_seller_id_fkey;
-        UPDATE public.seller_shops t SET seller_id = p.user_id FROM public.profiles p WHERE t.seller_id = p.id;
-    END IF;
-
-    -- loan_applications
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'loan_applications') THEN
-        ALTER TABLE public.loan_applications DROP CONSTRAINT IF EXISTS loan_applications_applicant_id_fkey;
-        UPDATE public.loan_applications t SET applicant_id = p.user_id FROM public.profiles p WHERE t.applicant_id = p.id;
-    END IF;
-
-    -- listings
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'listings') THEN
-        ALTER TABLE public.listings DROP CONSTRAINT IF EXISTS listings_lister_id_fkey;
-        UPDATE public.listings t SET lister_id = p.user_id FROM public.profiles p WHERE t.lister_id = p.id;
-    END IF;
-
-    -- messages
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'messages') THEN
-        ALTER TABLE public.messages DROP CONSTRAINT IF EXISTS messages_sender_id_fkey;
-        UPDATE public.messages t SET sender_id = p.user_id FROM public.profiles p WHERE t.sender_id = p.id;
-    END IF;
-
-    -- testo_assessments
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'testo_assessments') THEN
-        ALTER TABLE public.testo_assessments DROP CONSTRAINT IF EXISTS testo_assessments_admin_id_fkey;
-        UPDATE public.testo_assessments t SET admin_id = p.user_id FROM public.profiles p WHERE t.admin_id = p.id;
-    END IF;
-
-    -- teacho_courses
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teacho_courses') THEN
-        ALTER TABLE public.teacho_courses DROP CONSTRAINT IF EXISTS teacho_courses_admin_id_fkey;
-        UPDATE public.teacho_courses t SET admin_id = p.user_id FROM public.profiles p WHERE t.admin_id = p.id;
-    END IF;
+    -- 1. Drop constraints and update referencing columns
+    FOR r IN SELECT * FROM temp_fk_constraints LOOP
+        EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.table_schema, r.table_name, r.constraint_name);
+        
+        EXECUTE format('
+            UPDATE %I.%I t
+            SET %I = p.user_id
+            FROM public.profiles p
+            WHERE t.%I = p.id
+        ', r.table_schema, r.table_name, r.column_name, r.column_name);
+    END LOOP;
 
     -- 2. Update profiles id to be user_id
     ALTER TABLE public.profiles ALTER COLUMN id DROP DEFAULT;
     UPDATE public.profiles SET id = user_id;
 
     -- 3. Re-add foreign keys
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'deals') THEN
-        ALTER TABLE public.deals ADD CONSTRAINT deals_assigned_to_fkey FOREIGN KEY (assigned_to) REFERENCES public.profiles(id) ON DELETE SET NULL;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'system_announcements') THEN
-        ALTER TABLE public.system_announcements ADD CONSTRAINT system_announcements_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'seller_shops') THEN
-        ALTER TABLE public.seller_shops ADD CONSTRAINT seller_shops_seller_id_fkey FOREIGN KEY (seller_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'loan_applications') THEN
-        ALTER TABLE public.loan_applications ADD CONSTRAINT loan_applications_applicant_id_fkey FOREIGN KEY (applicant_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'listings') THEN
-        ALTER TABLE public.listings ADD CONSTRAINT listings_lister_id_fkey FOREIGN KEY (lister_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'messages') THEN
-        ALTER TABLE public.messages ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'testo_assessments') THEN
-        ALTER TABLE public.testo_assessments ADD CONSTRAINT testo_assessments_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'teacho_courses') THEN
-        ALTER TABLE public.teacho_courses ADD CONSTRAINT teacho_courses_admin_id_fkey FOREIGN KEY (admin_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-    END IF;
+    FOR r IN SELECT * FROM temp_fk_constraints LOOP
+        EXECUTE format('
+            ALTER TABLE %I.%I 
+            ADD CONSTRAINT %I 
+            FOREIGN KEY (%I) 
+            REFERENCES public.profiles(id) 
+            ON DELETE %s 
+            ON UPDATE %s
+        ', r.table_schema, r.table_name, r.constraint_name, r.column_name, r.delete_rule, r.update_rule);
+    END LOOP;
+
+    -- Cleanup
+    DROP TABLE temp_fk_constraints;
 END $$;
 
--- 5. Fix the handle_new_user trigger to insert id instead of user_id, since they are the same now.
+-- 4. Fix the handle_new_user trigger to insert id instead of user_id, since they are the same now.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -111,7 +88,7 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
--- 6. Re-create the RLS policy from 039 to make sure it exists (it should now work correctly)
+-- 5. Re-create the RLS policy from 039 to make sure it exists (it should now work correctly)
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
