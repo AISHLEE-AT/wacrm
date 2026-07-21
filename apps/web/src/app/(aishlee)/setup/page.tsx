@@ -62,15 +62,15 @@ const CATEGORIES = [
 ];
 
 const MODULES = [
-  { id: '/teach', name: 'TeachO', icon: GraduationCap, color: '#3B82F6' },
-  { id: '/test', name: 'TestO', icon: ClipboardCheck, color: '#EF4444' },
-  { id: '/tour', name: 'TourO', icon: Plane, color: '#10B981' },
-  { id: '/money', name: 'MoneyO', icon: Landmark, color: '#F59E0B' },
-  { id: '/task', name: 'TaskO', icon: CheckSquare, color: '#8B5CF6' },
-  { id: '/trade', name: 'TradeO', icon: Store, color: '#EC4899' },
-  { id: '/tv', name: 'TvO', icon: PlaySquare, color: '#14B8A6' },
-  { id: '/rid', name: 'RidO', icon: Car, color: '#F43F5E' },
-  { id: '/driv', name: 'DrivO', icon: Truck, color: '#EAB308' },
+  { id: '/teacho', name: 'TeachO', icon: GraduationCap, color: '#3B82F6' },
+  { id: '/testo', name: 'TestO', icon: ClipboardCheck, color: '#EF4444' },
+  { id: '/touro', name: 'TourO', icon: Plane, color: '#10B981' },
+  { id: '/moneyo', name: 'MoneyO', icon: Landmark, color: '#F59E0B' },
+  { id: '/tasko', name: 'TaskO', icon: CheckSquare, color: '#8B5CF6' },
+  { id: '/tradeo', name: 'TradeO', icon: Store, color: '#EC4899' },
+  { id: '/tvo', name: 'TvO', icon: PlaySquare, color: '#14B8A6' },
+  { id: '/rideo', name: 'RidO', icon: Car, color: '#F43F5E' },
+  { id: '/drivo', name: 'DrivO', icon: Truck, color: '#EAB308' },
 ];
 
 export default function SetupWizard() {
