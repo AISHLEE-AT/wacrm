@@ -17,6 +17,7 @@ class AuthState {
   final User? supabaseUser;
   final String? errorMessage;
   final String? defaultModule;
+  final bool isProfileComplete;
 
   AuthState({
     this.isLoading = true,
@@ -25,6 +26,7 @@ class AuthState {
     this.supabaseUser,
     this.errorMessage,
     this.defaultModule,
+    this.isProfileComplete = false,
   });
 
   AuthState copyWith({
@@ -34,6 +36,7 @@ class AuthState {
     User? supabaseUser,
     String? errorMessage,
     String? defaultModule,
+    bool? isProfileComplete,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -42,6 +45,7 @@ class AuthState {
       supabaseUser: supabaseUser ?? this.supabaseUser,
       errorMessage: errorMessage ?? this.errorMessage,
       defaultModule: defaultModule ?? this.defaultModule,
+      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
     );
   }
 }
@@ -86,22 +90,25 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final user = _supabase.auth.currentUser;
       String? defaultModule;
+      bool isProfileComplete = false;
       if (user != null) {
         try {
           final profileData = await _supabase
               .from('profiles')
-              .select('default_module')
-              .eq('user_id', user.id)
+              .select('default_module, profile_complete, full_name, whatsapp')
+              .eq('id', user.id)
               .maybeSingle();
           defaultModule = profileData?['default_module'];
+          isProfileComplete = profileData?['profile_complete'] == true ||
+              (profileData?['full_name'] != null && profileData?['whatsapp'] != null);
         } catch (e) {
-          debugPrint('Could not fetch profile default_module: $e');
+          debugPrint('Could not fetch profile data: $e');
         }
       }
 
       // 1. Check Admin
       if (phoneNumber.contains('9486335870')) {
-        state = state.copyWith(isLoading: false, role: UserRole.admin, supabaseUser: user, defaultModule: defaultModule);
+        state = state.copyWith(isLoading: false, role: UserRole.admin, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
         return;
       }
 
@@ -113,12 +120,12 @@ class AuthNotifier extends Notifier<AuthState> {
           .maybeSingle();
 
       if (driverCheck != null) {
-        state = state.copyWith(isLoading: false, role: UserRole.driver, supabaseUser: user, defaultModule: defaultModule);
+        state = state.copyWith(isLoading: false, role: UserRole.driver, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
         return;
       }
 
       // 3. Fallback to Rider
-      state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: user, defaultModule: defaultModule);
+      state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
     } catch (e) {
       debugPrint('Role resolution error: $e');
       state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());

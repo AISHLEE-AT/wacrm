@@ -18,7 +18,7 @@ import Footer from '../Footer';
 // UniversalModuleSelector has been moved to page.tsx (Home Page)
 
 export default function MainLayout({ children }) {
-  const { currentUser } = useApp();
+  const { currentUser, isProfileComplete } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,6 +44,26 @@ export default function MainLayout({ children }) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // Auth Guard: redirect to login if not authenticated
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    // Give AppProvider time to check session (don't redirect during loading)
+    const timer = setTimeout(() => {
+      if (!currentUser && !['/login', '/signup', '/forgot-password'].some(p => pathname?.startsWith(p))) {
+        router.push('/login');
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [currentUser, pathname]);
+
+  // Profile Guard: redirect to setup if profile is incomplete
+  useEffect(() => {
+    if (!currentUser) return;
+    if (!isProfileComplete && pathname !== '/setup') {
+      router.push('/setup');
+    }
+  }, [currentUser, isProfileComplete, pathname]);
 
   const navItems = [
     { path: '/',        label: 'Home',    icon: LayoutDashboard },
@@ -102,7 +122,7 @@ export default function MainLayout({ children }) {
         {/* Modules Button Navigates Home Now */}
         {currentUser && (
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/?override=1')}
             title="Switch Module"
             style={{
               background: 'rgba(99, 102, 241, 0.15)',
@@ -269,7 +289,7 @@ export default function MainLayout({ children }) {
             <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
               {/* Module Switcher in Mobile Menu */}
               <button
-                onClick={() => { setIsMobileMenuOpen(false); router.push('/'); }}
+                onClick={() => { setIsMobileMenuOpen(false); router.push('/?override=1'); }}
                 style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '16px', color: '#6366F1', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 <Zap size={24} />

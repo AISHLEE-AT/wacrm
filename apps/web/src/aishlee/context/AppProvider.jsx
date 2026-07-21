@@ -154,6 +154,17 @@ export const AppProvider = ({ children }) => {
         }).select();
       }
 
+      // Default module & profile completion (Option A: auto-mark existing users)
+      let default_module = profile?.default_module || null;
+      let profile_complete = profile?.profile_complete || false;
+      
+      // Option A: auto-mark existing users with name + whatsapp as complete
+      if (!profile_complete && fullName && fullName !== 'User' && whatsapp) {
+        profile_complete = true;
+        // Silently update DB in background
+        supabase.from('profiles').update({ profile_complete: true }).eq('id', user.id).then(() => {});
+      }
+
       setCurrentUser({
         id: user.id,
         email: user.email,
@@ -184,7 +195,9 @@ export const AppProvider = ({ children }) => {
         land_size,
         primary_crop,
         main_category: profile?.main_category || null,
-        sub_categories: profile?.sub_categories || []
+        sub_categories: profile?.sub_categories || [],
+        default_module,
+        profile_complete,
       });
     } catch (err) {
       console.error("Error initializing user:", err);
@@ -302,6 +315,19 @@ export const AppProvider = ({ children }) => {
     setCurrentUser(null);
   };
 
+  // Check if profile setup is complete
+  const isProfileComplete = currentUser?.profile_complete === true;
+
+  const setDefaultModule = async (modulePath) => {
+    if (!currentUser) return;
+    const moduleKey = modulePath.replace('/', ''); // e.g., '/teacho' -> 'teacho'
+    const { error } = await supabase.from('profiles').update({ default_module: moduleKey }).eq('id', currentUser.id);
+    if (!error) {
+      setCurrentUser(prev => ({ ...prev, default_module: moduleKey }));
+      if (typeof window !== 'undefined') window.sessionStorage.setItem('aishlee_last_module', modulePath);
+    }
+  };
+
   const updateProfile = async (updates) => {
     if (!currentUser) return;
 
@@ -347,6 +373,8 @@ export const AppProvider = ({ children }) => {
     assignUserToAdmin,
     logout,
     updateProfile,
+    isProfileComplete,
+    setDefaultModule,
     theme,
     toggleTheme,
     refreshUserPoints

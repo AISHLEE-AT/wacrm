@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import '../screens/module_selection_screen.dart';
+import '../screens/setup_screen.dart';
 import '../screens/rideo/rideo_dashboard.dart';
 
 // Feature dashboards
@@ -46,6 +47,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/';
       }
 
+      // Profile completion check
+      if (!authState.isProfileComplete && state.uri.path != '/setup') {
+        return '/setup';
+      }
+
       // Default module routing logic for initial startup or login
       if (state.uri.path == '/' && !hasRoutedInitially.state) {
         hasRoutedInitially.state = true;
@@ -60,6 +66,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/setup',
+        builder: (context, state) => const SetupScreen(),
       ),
       GoRoute(
         path: '/',

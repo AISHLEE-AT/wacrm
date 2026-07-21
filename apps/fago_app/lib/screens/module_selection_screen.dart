@@ -6,6 +6,7 @@ import '../auth/auth_provider.dart';
 import '../features/profile/models/profile_model.dart';
 import '../features/profile/providers/profile_provider.dart';
 import '../core/widgets/whatsapp_helper.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ─── Module definitions: title, subtitle, icon, direct web URL ───────────────
 final _kBaseUrl = 'https://watscrm.vercel.app';
@@ -67,6 +68,13 @@ final _modules = [
     'gradient': [Color(0xFF6366F1), Color(0xFF4338CA)],
     'url': 'rideo', // Special: native screen
   },
+  {
+    'title': 'DrivO',
+    'subtitle': 'Logistics & Delivery',
+    'icon': Icons.local_shipping_rounded,
+    'gradient': [Color(0xFFEAB308), Color(0xFFCA8A04)],
+    'url': '$_kBaseUrl/drivo',
+  },
 ];
 
 class ModuleSelectionScreen extends ConsumerStatefulWidget {
@@ -108,6 +116,40 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
       final uri = Uri.parse(url);
       context.go(uri.path);
     }
+  }
+
+  void _setDefaultModule(String moduleTitle) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E28),
+        title: const Text('Set Default Home', style: TextStyle(color: Colors.white)),
+        content: Text('Set $moduleTitle as your default home?', style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final userId = Supabase.instance.client.auth.currentUser?.id;
+              if (userId != null) {
+                await Supabase.instance.client.from('profiles').update({
+                  'default_module': moduleTitle.toLowerCase(),
+                }).eq('id', userId);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('$moduleTitle set as default!')),
+                  );
+                }
+              }
+            },
+            child: const Text('Yes', style: TextStyle(color: Color(0xFF6366F1))),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -185,33 +227,42 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
                             ),
                           ],
                         ),
-                        // Avatar circle
-                        Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
+                        // Avatar circle and settings
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.settings, color: Colors.white70),
+                              onPressed: () => context.push('/setup'),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6366F1).withOpacity(0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF6366F1), Color(0xFF3B82F6)],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF6366F1).withOpacity(0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              userName[0].toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                              child: Center(
+                                child: Text(
+                                  userName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
@@ -296,6 +347,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
                             icon: icon,
                             colors: colors,
                             onTap: () => _openModule(mod),
+                            onLongPress: () => _setDefaultModule(mod['title'] as String),
                           );
                         },
                       ),
@@ -321,6 +373,7 @@ class _ModuleCard extends StatefulWidget {
   final IconData icon;
   final List<Color> colors;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
   const _ModuleCard({
     required this.title,
@@ -328,6 +381,7 @@ class _ModuleCard extends StatefulWidget {
     required this.icon,
     required this.colors,
     required this.onTap,
+    required this.onLongPress,
   });
 
   @override
@@ -366,6 +420,7 @@ class _ModuleCardState extends State<_ModuleCard>
         _scaleCtrl.forward();
         widget.onTap();
       },
+      onLongPress: widget.onLongPress,
       onTapCancel: () => _scaleCtrl.forward(),
       child: AnimatedBuilder(
         animation: _scaleAnim,

@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { LayoutDashboard, GraduationCap, Store, Landmark, ClipboardCheck, PlaySquare, CheckSquare, Plane, Car, Truck } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { LayoutDashboard, GraduationCap, Store, Landmark, ClipboardCheck, PlaySquare, CheckSquare, Plane, Car, Truck, Star } from 'lucide-react';
+import { useApp } from '@/aishlee/context/AppProvider';
 
 const MODULE_KEY = 'aishlee_last_module';
 
@@ -19,6 +20,15 @@ const MODULES = [
 
 export default function RootPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { currentUser, setDefaultModule } = useApp();
+  const overrideRedirect = searchParams.get('override') === '1';
+
+  useEffect(() => {
+    if (currentUser?.default_module && !overrideRedirect) {
+      router.replace(`/${currentUser.default_module}`);
+    }
+  }, [currentUser?.default_module, overrideRedirect, router]);
 
   const handleSelect = (path: string) => {
     if (typeof window !== 'undefined') {
@@ -83,6 +93,34 @@ export default function RootPage() {
                   <div style={{ fontWeight: '800', fontSize: '17px' }}>{mod.label}</div>
                   <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '6px' }}>{mod.desc}</div>
                 </div>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const moduleKey = mod.path.replace('/', '');
+                    setDefaultModule(moduleKey);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: currentUser?.default_module === mod.path.replace('/', '') ? '#F59E0B' : 'rgba(255,255,255,0.2)',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    transition: 'color 0.2s',
+                  }}
+                  title="Set as Default Module"
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#F59E0B'}
+                  onMouseLeave={(e) => {
+                    if (currentUser?.default_module !== mod.path.replace('/', '')) {
+                      e.currentTarget.style.color = 'rgba(255,255,255,0.2)';
+                    }
+                  }}
+                >
+                  <Star size={18} fill={currentUser?.default_module === mod.path.replace('/', '') ? '#F59E0B' : 'none'} />
+                </button>
               </button>
             );
           })}
