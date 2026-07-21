@@ -16,6 +16,7 @@ class AuthState {
   final firebase.User? firebaseUser;
   final User? supabaseUser;
   final String? errorMessage;
+  final String? defaultModule;
 
   AuthState({
     this.isLoading = true,
@@ -23,6 +24,7 @@ class AuthState {
     this.firebaseUser,
     this.supabaseUser,
     this.errorMessage,
+    this.defaultModule,
   });
 
   AuthState copyWith({
@@ -31,6 +33,7 @@ class AuthState {
     firebase.User? firebaseUser,
     User? supabaseUser,
     String? errorMessage,
+    String? defaultModule,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -38,6 +41,7 @@ class AuthState {
       firebaseUser: firebaseUser ?? this.firebaseUser,
       supabaseUser: supabaseUser ?? this.supabaseUser,
       errorMessage: errorMessage ?? this.errorMessage,
+      defaultModule: defaultModule ?? this.defaultModule,
     );
   }
 }
@@ -80,9 +84,24 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     try {
+      final user = _supabase.auth.currentUser;
+      String? defaultModule;
+      if (user != null) {
+        try {
+          final profileData = await _supabase
+              .from('profiles')
+              .select('default_module')
+              .eq('user_id', user.id)
+              .maybeSingle();
+          defaultModule = profileData?['default_module'];
+        } catch (e) {
+          debugPrint('Could not fetch profile default_module: $e');
+        }
+      }
+
       // 1. Check Admin
       if (phoneNumber.contains('9486335870')) {
-        state = state.copyWith(isLoading: false, role: UserRole.admin, supabaseUser: _supabase.auth.currentUser);
+        state = state.copyWith(isLoading: false, role: UserRole.admin, supabaseUser: user, defaultModule: defaultModule);
         return;
       }
 
@@ -94,12 +113,12 @@ class AuthNotifier extends Notifier<AuthState> {
           .maybeSingle();
 
       if (driverCheck != null) {
-        state = state.copyWith(isLoading: false, role: UserRole.driver, supabaseUser: _supabase.auth.currentUser);
+        state = state.copyWith(isLoading: false, role: UserRole.driver, supabaseUser: user, defaultModule: defaultModule);
         return;
       }
 
       // 3. Fallback to Rider
-      state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: _supabase.auth.currentUser);
+      state = state.copyWith(isLoading: false, role: UserRole.rider, supabaseUser: user, defaultModule: defaultModule);
     } catch (e) {
       debugPrint('Role resolution error: $e');
       state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());

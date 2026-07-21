@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../auth/auth_provider.dart';
+import '../features/profile/models/profile_model.dart';
+import '../features/profile/providers/profile_provider.dart';
+import '../core/widgets/whatsapp_helper.dart';
 
 // ─── Module definitions: title, subtitle, icon, direct web URL ───────────────
 final _kBaseUrl = 'https://watscrm.vercel.app';
@@ -98,12 +101,12 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
   void _openModule(Map module) {
     final url = module['url'] as String;
     if (url == 'rideo') {
-      // RideO is a native Flutter screen
-      context.go('/superapp?url=rideo');
+      context.go('/rideo');
     } else {
-      // Pass the exact URL so only THIS page loads in the WebView
-      final encoded = Uri.encodeComponent(url);
-      context.go('/superapp?url=$encoded');
+      // The URLs in `_modules` are defined as `$_kBaseUrl/teacho`
+      // We need to extract the path segment (e.g. '/teacho')
+      final uri = Uri.parse(url);
+      context.go(uri.path);
     }
   }
 
@@ -306,6 +309,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
           ),
         ],
       ),
+      floatingActionButton: const WhatsAppHelper(),
     );
   }
 }

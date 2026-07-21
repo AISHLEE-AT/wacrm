@@ -88,6 +88,11 @@ const TradeO = () => {
 
   const handleListMyService = () => {
     if (!currentUser) return alert("Please login to create a listing.");
+    if (!currentUser.upi_id) {
+      alert("Please update your UPI ID in your Profile before adding a listing so buyers can pay you directly.");
+      window.location.href = '/profile';
+      return;
+    }
     setEditingItem(null);
     setFormData({ title: '', category: 'Grocery store items', price: '', unit: '', imageUrl: '', description: '' });
     setShowAddForm(true);
@@ -131,6 +136,7 @@ const TradeO = () => {
         description: formData.description,
         price: parseFloat(formData.price) || 0,
         status: 'PENDING',
+        seller_upi_id: currentUser.upi_id,
         details: {
           unit: formData.unit,
           image_url: formData.imageUrl

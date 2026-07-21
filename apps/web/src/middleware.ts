@@ -64,7 +64,20 @@ export async function middleware(request: NextRequest) {
       url.pathname = `/join/${encodeURIComponent(inviteToken)}`
       url.search = ''
     } else {
-      url.pathname = '/dashboard'
+      // Smart Default Module Routing
+      let defaultModule = null;
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('default_module')
+          .eq('user_id', user.id)
+          .single();
+        defaultModule = data?.default_module;
+      } catch (err) {
+        console.error('Failed to fetch default module in middleware', err);
+      }
+      
+      url.pathname = defaultModule ? `/${defaultModule.toLowerCase()}` : '/dashboard'
       url.search = ''
     }
     return withRefreshedCookies(NextResponse.redirect(url))
