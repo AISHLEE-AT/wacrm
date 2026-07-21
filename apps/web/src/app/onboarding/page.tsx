@@ -79,7 +79,7 @@ export default function OnboardingPage() {
       const { error: updateError } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('user_id', user.id);
+        .eq('id', user.id);
 
       if (updateError) throw updateError;
 

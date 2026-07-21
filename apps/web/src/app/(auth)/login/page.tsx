@@ -5,8 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, ArrowRight, Loader2 } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import type { ConfirmationResult } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
@@ -35,16 +34,23 @@ function LoginPageInner() {
   useEffect(() => {
     // Initialize reCAPTCHA verifier
     if (typeof window !== "undefined" && !(window as any).recaptchaVerifier) {
-      try {
-        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-          size: "invisible",
-          callback: () => {
-            // reCAPTCHA solved
-          },
-        });
-      } catch (err) {
-        console.error("Error initializing Recaptcha", err);
-      }
+      Promise.all([
+        import("@/lib/firebase"),
+        import("firebase/auth")
+      ]).then(([{ auth }, { RecaptchaVerifier }]) => {
+        try {
+          (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+            size: "invisible",
+            callback: () => {
+              // reCAPTCHA solved
+            },
+          });
+        } catch (err) {
+          console.error("Error initializing Recaptcha", err);
+        }
+      }).catch(err => {
+        console.error("Failed to load Firebase auth", err);
+      });
     }
   }, []);
 
@@ -59,6 +65,8 @@ function LoginPageInner() {
     try {
       const fullPhone = `+91${phone}`;
       const appVerifier = (window as any).recaptchaVerifier;
+      const { auth } = await import("@/lib/firebase");
+      const { signInWithPhoneNumber } = await import("firebase/auth");
       const confirmation = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(confirmation);
       setOtpRequested(true);
