@@ -129,13 +129,14 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {
-        await Supabase.instance.client.from('profiles').update({
+        await Supabase.instance.client.from('profiles').upsert({
+          'id': user.id,
           if (_nameController.text.isNotEmpty) 'full_name': _nameController.text,
           if (_whatsappController.text.isNotEmpty) 'whatsapp': '+91${_whatsappController.text}',
           if (_selectedCategory != null) 'main_category': _selectedCategory,
           if (_selectedModule != null && !skipped) 'default_module': _selectedModule,
           'profile_complete': true,
-        }).eq('id', user.id);
+        });
         
         // Force provider refresh
         ref.invalidate(authProvider);
