@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 
 // Hardcoded Internal Vacancies for Aishlee Tech
 export const INTERNAL_JOBS = [

@@ -1,7 +1,8 @@
 'use client';
 import React, { createContext, useContext, useEffect, useRef } from 'react';
 import { useApp } from './AppProvider';
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 
 const GamificationContext = createContext();
 

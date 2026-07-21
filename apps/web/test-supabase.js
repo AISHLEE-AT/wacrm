@@ -1,0 +1,1 @@
+const { createBrowserClient } = require('@supabase/ssr'); try { const client = createBrowserClient(undefined, undefined); console.log('Client:', client); } catch (e) { console.error('Error:', e.message); }

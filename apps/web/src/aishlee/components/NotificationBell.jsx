@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Check, X } from 'lucide-react';
 import { useApp } from '../context/AppProvider';
 import { notificationService } from '../services/notificationService';
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 
 export default function NotificationBell() {
   const { currentUser } = useApp();

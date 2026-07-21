@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 import { dataService } from './dataService';
 
 export const lmsService = {

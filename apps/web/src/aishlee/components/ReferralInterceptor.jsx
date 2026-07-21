@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppProvider';
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 import { Users, Loader } from 'lucide-react';
 import Logo from './Logo';
 

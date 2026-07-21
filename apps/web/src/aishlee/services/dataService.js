@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 import { dashboardSheetsService } from './dashboardSheetsService';
 
 export const dataService = {

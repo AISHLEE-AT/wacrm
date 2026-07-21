@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
 import { Upload, FileDown, CheckCircle, AlertTriangle } from 'lucide-react';
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 import { useApp } from '../context/AppProvider';
 
 const AdminBulkUpload = ({ onUploadSuccess }) => {
