@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
         const { data } = await supabase
           .from('profiles')
           .select('default_module, profile_complete')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
         defaultModule = data?.default_module;
         profileComplete = data?.profile_complete;
@@ -114,7 +114,7 @@ export async function middleware(request: NextRequest) {
         const { data } = await supabase
           .from('profiles')
           .select('profile_complete')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
           
         if (!data?.profile_complete) {
