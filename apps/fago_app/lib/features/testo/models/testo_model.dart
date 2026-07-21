@@ -15,7 +15,7 @@ class TestoTest {
 
   factory TestoTest.fromJson(Map<String, dynamic> json) {
     return TestoTest(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       title: json['title'] ?? 'Untitled Test',
       description: json['description'],
       timeLimitMinutes: json['time_limit_minutes'] ?? 30,

@@ -21,14 +21,18 @@ class TvoModel {
 
   factory TvoModel.fromJson(Map<String, dynamic> json) {
     return TvoModel(
-      id: json['id'],
-      creatorId: json['creator_id'],
-      title: json['title'],
-      description: json['description'],
-      videoUrl: json['video_url'],
-      thumbnailUrl: json['thumbnail_url'],
-      viewsCount: json['views_count'] ?? 0,
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      creatorId: json['creator_id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString(),
+      videoUrl: json['video_url']?.toString() ?? '',
+      thumbnailUrl: json['thumbnail_url']?.toString(),
+      viewsCount: json['views_count'] is int 
+          ? json['views_count'] 
+          : int.tryParse(json['views_count']?.toString() ?? '0') ?? 0,
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
     );
   }
 

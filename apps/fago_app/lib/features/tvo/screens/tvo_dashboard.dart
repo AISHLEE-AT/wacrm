@@ -85,25 +85,53 @@ class TvODashboard extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFEF4444))),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 48),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load videos\n$error',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white),
+        loading: () => Column(
+          children: [
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => context.go('/'),
+                ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.refresh(tvoProvider),
-                child: const Text('Retry'),
-              )
-            ],
-          ),
+            ),
+            const Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFFEF4444)))),
+          ],
+        ),
+        error: (error, stack) => Column(
+          children: [
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => context.go('/'),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load videos\n$error',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.refresh(tvoProvider),
+                      child: const Text('Retry'),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

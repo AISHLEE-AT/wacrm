@@ -19,7 +19,7 @@ class TradeoModel {
 
   factory TradeoModel.fromJson(Map<String, dynamic> json) {
     return TradeoModel(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       sellerId: json['seller_id'],
       title: json['title'],
       description: json['description'],

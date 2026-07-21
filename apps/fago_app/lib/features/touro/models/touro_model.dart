@@ -17,7 +17,7 @@ class TouroModel {
 
   factory TouroModel.fromJson(Map<String, dynamic> json) {
     return TouroModel(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       userId: json['user_id'],
       tourName: json['tour_name'],
       bookingDetails: json['booking_details'],

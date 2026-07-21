@@ -17,7 +17,7 @@ class TaskoModel {
 
   factory TaskoModel.fromJson(Map<String, dynamic> json) {
     return TaskoModel(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       userId: json['user_id'],
       title: json['title'],
       status: json['status'] ?? 'TODO',

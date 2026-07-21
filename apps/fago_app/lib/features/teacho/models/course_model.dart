@@ -25,7 +25,7 @@ class CourseModel {
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
     return CourseModel(
-      id: json['id'] as int,
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       adminId: json['admin_id'] as String?,
       title: json['title'] as String,
       content: json['content'] as String?,
