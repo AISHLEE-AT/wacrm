@@ -12,9 +12,11 @@ export default function AishleeRootLayout({ children }: { children: React.ReactN
     <AppProvider>
       <GamificationProvider>
         <ErrorBoundary>
-          <MainLayout>
-            {children}
-          </MainLayout>
+          <div className="aishlee-app">
+            <MainLayout>
+              {children}
+            </MainLayout>
+          </div>
         </ErrorBoundary>
       </GamificationProvider>
     </AppProvider>
