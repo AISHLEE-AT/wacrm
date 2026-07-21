@@ -101,8 +101,23 @@ class AuthNotifier extends Notifier<AuthState> {
           defaultModule = profileData?['default_module'];
           isProfileComplete = profileData?['profile_complete'] == true ||
               (profileData?['full_name'] != null && profileData?['whatsapp'] != null);
+
+          // Sync user's cell number to WhatsApp CRM contact list
+          if (phoneNumber != null) {
+            final existingContact = await _supabase
+                .from('contacts')
+                .select('id')
+                .eq('user_id', user.id)
+                .maybeSingle();
+            if (existingContact == null) {
+              await _supabase.from('contacts').insert({
+                'user_id': user.id,
+                'phone': phoneNumber,
+              });
+            }
+          }
         } catch (e) {
-          debugPrint('Could not fetch profile data: $e');
+          debugPrint('Could not fetch profile data or sync contact: $e');
         }
       }
 
