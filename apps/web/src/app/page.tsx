@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from 'react';
+import React, { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LayoutDashboard, GraduationCap, Store, Landmark, ClipboardCheck, PlaySquare, CheckSquare, Plane, Car, Truck, Star } from 'lucide-react';
 
@@ -17,7 +17,7 @@ const MODULES = [
   { path: '/drivo',   label: 'DrivO',     icon: Truck,           color: '#EAB308', desc: 'Logistics & Delivery' },
 ];
 
-export default function RootPage() {
+function ModuleGrid() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -90,5 +90,13 @@ export default function RootPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RootPage() {
+  return (
+    <Suspense fallback={<div style={{color: 'white', padding: '24px', textAlign: 'center'}}>Loading...</div>}>
+      <ModuleGrid />
+    </Suspense>
   );
 }
