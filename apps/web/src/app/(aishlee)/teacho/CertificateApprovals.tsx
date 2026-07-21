@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { lmsService } from '@/aishlee/services/lmsService';
 import { Award, CheckCircle, XCircle, Search, Clock } from 'lucide-react';
@@ -11,6 +12,12 @@ export default function CertificateApprovals() {
   const navigate = (path: string) => router.push(path);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
 
   useEffect(() => {
     if (currentUser?.role !== 'Admin' && currentUser?.role !== 'Super Admin') {
@@ -27,7 +34,7 @@ export default function CertificateApprovals() {
       setRequests(data);
     } catch (err: any) {
       console.error(err);
-      alert("Failed to load requests");
+      showToast("Failed to load requests", 'error');
     } finally {
       setLoading(false);
     }
@@ -38,7 +45,7 @@ export default function CertificateApprovals() {
       await lmsService.updateCertificateStatus(requestId, status, currentUser.id);
       setRequests(prev => prev.map(req => req.id === requestId ? { ...req, status } : req));
     } catch (err: any) {
-      alert("Failed to update status: " + err.message);
+      showToast(`Failed to update status: ${err.message}`, 'error');
     }
   };
 
@@ -107,6 +114,22 @@ export default function CertificateApprovals() {
           </div>
         )}
       </div>
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

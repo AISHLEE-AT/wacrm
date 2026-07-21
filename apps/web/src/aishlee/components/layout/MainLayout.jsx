@@ -6,7 +6,7 @@ import {
   LayoutDashboard, GraduationCap, Store, Landmark, 
   ClipboardCheck, PlaySquare, ShieldAlert, UserCircle, 
   Menu, X, Search, CheckSquare, Plane, Zap, ChevronRight,
-  BookOpen, Target, Tv, Wallet, Map, Tool, DollarSign
+  BookOpen, Target, Tv, Wallet, Map, Tool, DollarSign, Car, Truck, MessageCircle, Settings, Users
 } from 'lucide-react';
 import { useApp } from '../../context/AppProvider';
 import { purchaseService } from '../../services/purchaseService';
@@ -53,6 +53,8 @@ export default function MainLayout({ children }) {
     { path: '/tasko',   label: 'TaskO',   icon: CheckSquare },
     { path: '/touro',   label: 'TourO',   icon: Plane },
     { path: '/tradeo',  label: 'TradeO',  icon: Store },
+    { path: '/rido',    label: 'RidO',    icon: Car },
+    { path: '/drivo',   label: 'DrivO',   icon: Truck },
     { path: '/tvo',     label: 'TvO',     icon: PlaySquare },
     { path: '/profile', label: 'Profile', icon: UserCircle },
   ];

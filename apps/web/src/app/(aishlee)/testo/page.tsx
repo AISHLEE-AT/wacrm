@@ -42,6 +42,13 @@ const TestOHub = () => {
   const [activeTab, setActiveTab] = useState<string>('');
   const [expandedFolders, setExpandedFolders] = useState({});
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
+
   const toggleFolder = (folderKey) => {
     setExpandedFolders(prev => ({...prev, [folderKey]: !prev[folderKey]}));
   };
@@ -238,7 +245,7 @@ const TestOHub = () => {
     
     // If there is an amount to pay, payment ID is required unless fully discounted
     if (finalAmount > 0 && !paymentId.trim()) {
-      alert("Please enter the Payment ID (Transaction Reference).");
+      showToast("Please enter the Payment ID (Transaction Reference).", 'error');
       return;
     }
     setSubmittingPayment(true);
@@ -272,7 +279,7 @@ const TestOHub = () => {
       setPendingTest(selectedTest);
       setShowPending(true);
     } catch (e) {
-      alert("Failed to submit payment. Please try again.");
+      showToast("Failed to submit payment. Please try again.", 'error');
     }
     setSubmittingPayment(false);
   };
@@ -552,14 +559,14 @@ const TestOHub = () => {
                           const bName = currentUser?.name || 'User';
                           const bContact = currentUser?.email || 'No Email';
                           await purchaseService.submitPurchase(currentUser.id, selectedTest.id, 'Test', inputVal, bName, bContact, 'APPROVED');
-                          alert("Access Code Applied successfully! Test unlocked instantly.");
+                          showToast("Access Code Applied successfully! Test unlocked instantly.", 'success');
                           setSelectedTest(null);
                           setAccessCodeInput('');
                         } else {
-                          alert("Invalid or Already Used Access Code.");
+                          showToast("Invalid or Already Used Access Code.", 'error');
                         }
                       } else {
-                        alert("Invalid Access Code format. Must start with PAID-");
+                        showToast("Invalid Access Code format. Must start with PAID-", 'error');
                       }
                     } catch (e) {
                       console.error(e);
@@ -640,6 +647,22 @@ const TestOHub = () => {
               Close
             </button>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
         </div>,
         document.body
       )}

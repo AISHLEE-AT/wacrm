@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Bot, Send, Sparkles, Settings, FileText, Download, Share2, History, Trash2, Camera, Link as LinkIcon, HelpCircle, FileType, Mic } from 'lucide-react';
 import { geminiService } from '@/aishlee/services/geminiService';
 import { lmsService } from '@/aishlee/services/lmsService';
@@ -39,6 +40,13 @@ const ToolsO = () => {
   const cameraInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -68,7 +76,7 @@ const ToolsO = () => {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Voice search is not supported in this browser.");
+      showToast("Voice search is not supported in this browser.", 'error');
       return;
     }
 
@@ -119,7 +127,7 @@ const ToolsO = () => {
 
   const handleGenerate = async () => {
     if (!input.trim() && attachments.length === 0) {
-      return alert("Please provide some text or upload a file first.");
+      return showToast("Please provide some text or upload a file first.", 'error');
     }
     setLoading(true);
     setOutput('');
@@ -174,7 +182,7 @@ const ToolsO = () => {
         console.error('Error sharing', error);
       }
     } else {
-      alert("Sharing is not supported on this browser. Try downloading as PDF.");
+      showToast("Sharing is not supported on this browser. Try downloading as PDF.", 'error');
     }
   };
 
@@ -185,7 +193,7 @@ const ToolsO = () => {
 
   const handlePublishToLMS = async () => {
     if (!publishTitle.trim()) {
-      alert("Please enter a Course/Module Title before publishing.");
+      showToast("Please enter a Course/Module Title before publishing.", 'error');
       return;
     }
     setPublishing(true);
@@ -198,11 +206,11 @@ const ToolsO = () => {
         classLevel,
         language
       });
-      alert("Success! Content permanently published to the LMS Academy.");
+      showToast("Success! Content permanently published to the LMS Academy.", 'success');
       setPublishTitle('');
     } catch (err) {
       console.error(err);
-      alert("Failed to publish: " + err.message);
+      showToast(`Failed to publish: ${err.message}`, 'error');
     } finally {
       setPublishing(false);
     }
@@ -496,6 +504,22 @@ const ToolsO = () => {
         </div>
 
       </div>
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
       )}
     </div>
   );

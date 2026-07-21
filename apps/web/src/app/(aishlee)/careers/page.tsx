@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import UnifiedJobsWidget from '@/aishlee/components/dashboard/UnifiedJobsWidget';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { recruitmentService } from '@/aishlee/services/recruitmentService';
@@ -13,6 +14,13 @@ export default function Careers() {
   const [resumeLink, setResumeLink] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string>('');
+
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
 
   const jobs = recruitmentService.getInternalJobs();
 
@@ -28,7 +36,7 @@ export default function Careers() {
 
   const submitApplication = async (e) => {
     e.preventDefault();
-    if (!coverLetter.trim()) return alert("Please provide a brief cover letter.");
+    if (!coverLetter.trim()) return showToast("Please provide a brief cover letter.", 'error');
     
     setIsSubmitting(true);
     try {
@@ -40,7 +48,7 @@ export default function Careers() {
       }, 3000);
     } catch (err: any) {
       console.error(err);
-      alert("Failed to submit application. Please try again.");
+      showToast("Failed to submit application. Please try again.", 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -202,6 +210,22 @@ export default function Careers() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
       )}
 
     </div>

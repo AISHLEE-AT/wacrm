@@ -62,6 +62,13 @@ const navigate = (path) => router.push(path);
   const [loading, setLoading] = useState(true);
   const [activeCourse, setActiveCourse] = useState<any>(null);
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
+
   // Tab System
   // Tab System removed
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,8 +79,9 @@ const navigate = (path) => router.push(path);
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert(
+      showToast(
         "Voice search is not supported in this browser. Please use Chrome, Edge, or Safari.",
+        "error"
       );
       return;
     }
@@ -243,7 +251,7 @@ const navigate = (path) => router.push(path);
 
   const downloadQuizPDF = () => {
     if (!activeQuiz || !activeTopic) {
-      alert("Please wait for the quiz to generate before downloading.");
+      showToast("Please wait for the quiz to generate before downloading.", "info");
       return;
     }
     try {
@@ -278,14 +286,14 @@ const navigate = (path) => router.push(path);
       
       doc.save(`${activeTopic.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_quiz.pdf`);
     } catch (e) {
-      alert("Failed to generate PDF: " + e.message);
+      showToast(`Failed to generate PDF: ${e.message}`, "error");
       console.error(e);
     }
   };
 
   const handleShareQuiz = async () => {
     if (!activeQuiz || !activeTopic) {
-      alert("Please wait for the quiz to generate before sharing.");
+      showToast("Please wait for the quiz to generate before sharing.", "info");
       return;
     }
     
@@ -303,14 +311,14 @@ const navigate = (path) => router.push(path);
           });
         } catch (err: any) {
           console.log('Error sharing:', err);
-          alert("Failed to share: " + err.message);
+          showToast(`Failed to share: ${err.message}`, "error");
         }
       } else {
         navigator.clipboard.writeText(textContent);
-        alert("Quiz text copied to clipboard!");
+        showToast("Quiz text copied to clipboard!", "success");
       }
     } catch (e) {
-      alert("An error occurred while sharing: " + e.message);
+      showToast(`An error occurred while sharing: ${e.message}`, "error");
       console.error(e);
     }
   };
@@ -407,9 +415,9 @@ const navigate = (path) => router.push(path);
       );
       setCertRequestStatus("pending");
       setShowFinalTest(false);
-      alert("Certificate requested! Please wait for Admin approval.");
+      showToast("Certificate requested! Please wait for Admin approval.", "success");
     } catch (e) {
-      alert("Error requesting certificate: " + e.message);
+      showToast(`Error requesting certificate: ${e.message}`, "error");
     }
   };
 
@@ -483,7 +491,7 @@ const navigate = (path) => router.push(path);
         await lmsService.deleteCourse(courseId, currentUser?.id);
         loadCourses();
       } catch (err: any) {
-        alert("Failed to delete: " + err.message);
+        showToast(`Failed to delete: ${err.message}`, "error");
       }
     }
   };
@@ -495,7 +503,7 @@ const navigate = (path) => router.push(path);
 
   const handleUnlockCourse = async (course) => {
     if (!accessCodeInput || accessCodeInput.trim() === "") {
-      alert("Please enter an access code.");
+      showToast("Please enter an access code.", "error");
       return;
     }
 
@@ -514,24 +522,27 @@ const navigate = (path) => router.push(path);
         }
         setUnlockingCourseId(null);
         setAccessCodeInput("");
-        alert(
+        showToast(
           "Success! Course Unlocked permanently. The Access Code has been consumed and cannot be reused.",
+          "success"
         );
       } else {
-        alert(
+        showToast(
           "Invalid or already consumed Access Code. Please contact the Admin on WhatsApp to get a new valid code.",
+          "error"
         );
       }
     } catch (err: any) {
       console.error("Failed to validate code:", err);
-      alert("Error validating code. Please try again.");
+      showToast("Error validating code. Please try again.", "error");
     }
   };
 
   const handleShare = (course) => {
     if (!currentUser?.whatsapp) {
-      alert(
+      showToast(
         "Please update your profile with your WhatsApp number to earn referral points!",
+        "info"
       );
       navigate("/profile");
       return;
@@ -588,6 +599,22 @@ const navigate = (path) => router.push(path);
 
     return (
       <div className="teacho-course-layout">
+        {/* Custom Toast Notification */}
+        {toast.show && typeof document !== 'undefined' && createPortal(
+          <div style={{
+            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+            padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+            background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+            color: '#fff', fontWeight: '700', fontSize: '14px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            animation: 'fadeInUp 0.3s ease-out',
+            maxWidth: '90vw', textAlign: 'center',
+          }}>
+            {toast.message}
+          </div>,
+          document.body
+        )}
+
         {/* Hero Header */}
         <div className="teacho-hero">
           <div className="teacho-hero-left">
@@ -693,8 +720,8 @@ const navigate = (path) => router.push(path);
                   const quizTopics = completedTopics.filter((t) => t.endsWith("_QUIZ_PASSED"));
                   if (normalTopics.length >= totalTopicsCount && totalTopicsCount > 0) {
                     if (quizTopics.length >= totalTopicsCount) { setShowFinalTest(true); }
-                    else { alert(`Please pass the AI Quiz for all ${totalTopicsCount} topics first!`); }
-                  } else { alert(`Please mark all ${totalTopicsCount} topics as complete first!`); }
+                    else { showToast(`Please pass the AI Quiz for all ${totalTopicsCount} topics first!`, "info"); }
+                  } else { showToast(`Please mark all ${totalTopicsCount} topics as complete first!`, "info"); }
                 }}
                 className="teacho-action-btn gold"
               >
@@ -1250,7 +1277,7 @@ const navigate = (path) => router.push(path);
                                         Submit Exam
                                       </button>
                                       {isAdmin && (
-                                        <button onClick={async () => { try { const res = await lmsService.saveQuizToTopic(activeCourse.id, activeTopic.title, activeQuiz); if (res) alert("Saved to DB!"); } catch (e) { alert("Failed: " + e.message); } }} className="teacho-action-btn green" style={{ justifyContent: 'center' }}>
+                                        <button onClick={async () => { try { const res = await lmsService.saveQuizToTopic(activeCourse.id, activeTopic.title, activeQuiz); if (res) showToast("Saved to DB!", "success"); } catch (e) { showToast(`Failed: ${e.message}`, "error"); } }} className="teacho-action-btn green" style={{ justifyContent: 'center' }}>
                                           💾 Save Quiz to Database for All Users
                                         </button>
                                       )}
@@ -2014,11 +2041,11 @@ const navigate = (path) => router.push(path);
                       const res = await lmsService.validateAccessCodeForDiscount(purchaseModal.accessCodeInput);
                       if (res.valid) {
                         setPurchaseModal({...purchaseModal, appliedDiscount: res.discountValue, appliedCode: res.code});
-                        alert(`Success! Discount of ₹${res.discountValue} applied.`);
+                        showToast(`Success! Discount of ₹${res.discountValue} applied.`, "success");
                       } else {
-                        alert("Invalid code.");
+                        showToast("Invalid code.", "error");
                       }
-                    } catch (e) { alert("Error: " + e.message); }
+                    } catch (e) { showToast(`Error: ${e.message}`, "error"); }
                   }}
                   style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '0 24px', borderRadius: '16px', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
                 >
@@ -2039,7 +2066,7 @@ const navigate = (path) => router.push(path);
                 onClick={async () => {
                   const finalPrice = Math.max(0, purchaseModal.course.price - (purchaseModal.appliedDiscount || 0));
                   if (finalPrice > 0 && !purchaseModal.paymentId.trim()) {
-                    alert("Please enter UPI Transaction ID");
+                    showToast("Please enter UPI Transaction ID", "error");
                     return;
                   }
                   setSubmittingPayment(true);
@@ -2057,10 +2084,10 @@ const navigate = (path) => router.push(path);
                       await lmsService.consumeAccessCode(purchaseModal.appliedCode);
                     }
                     
-                    alert(finalPrice === 0 ? "Course Unlocked Instantly!" : "Payment submitted for Admin Approval!");
+                    showToast(finalPrice === 0 ? "Course Unlocked Instantly!" : "Payment submitted for Admin Approval!", "success");
                     setPurchaseModal({ isOpen: false, course: null, paymentId: "", accessCodeInput: "", appliedDiscount: 0, appliedCode: null });
                   } catch (e) {
-                    alert("Failed to submit payment.");
+                    showToast("Failed to submit payment.", "error");
                   }
                   setSubmittingPayment(false);
                 }}
@@ -2075,6 +2102,21 @@ const navigate = (path) => router.push(path);
         document.body
       )}
 
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

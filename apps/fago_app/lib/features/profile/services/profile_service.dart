@@ -13,7 +13,7 @@ class ProfileService {
     final cacheKey = 'profile_$userId';
     
     try {
-      final cached = await _cache.getCachedData(cacheKey);
+      final cached = _cache.getCache(cacheKey);
       if (cached != null) {
         return ProfileModel.fromJson(cached);
       }
@@ -24,11 +24,11 @@ class ProfileService {
           .eq('id', userId)
           .single();
 
-      await _cache.setCachedData(cacheKey, response);
+      await _cache.setCache(cacheKey, response);
       return ProfileModel.fromJson(response);
     } catch (e) {
       print('Error fetching profile: $e');
-      final cached = await _cache.getCachedData(cacheKey);
+      final cached = _cache.getCache(cacheKey);
       if (cached != null) {
         return ProfileModel.fromJson(cached);
       }
@@ -46,7 +46,7 @@ class ProfileService {
     final cacheKey = 'transactions_$userId';
     
     try {
-      final cached = await _cache.getCachedData(cacheKey);
+      final cached = _cache.getCache(cacheKey);
       if (cached != null) {
         final list = (cached as List).map((x) => TransactionModel.fromJson(x)).toList();
         // Fire and forget update
@@ -68,7 +68,7 @@ class ProfileService {
         .eq('user_id', userId)
         .order('created_at', ascending: false);
     
-    await _cache.setCachedData(cacheKey, response);
+    await _cache.setCache(cacheKey, response);
     return (response as List).map((x) => TransactionModel.fromJson(x)).toList();
   }
 
@@ -76,7 +76,7 @@ class ProfileService {
     final cacheKey = 'orders_$userId';
     
     try {
-      final cached = await _cache.getCachedData(cacheKey);
+      final cached = _cache.getCache(cacheKey);
       if (cached != null) {
         final list = (cached as List).map((x) => OrderModel.fromJson(x)).toList();
         _fetchOrders(userId, cacheKey); 
@@ -97,7 +97,7 @@ class ProfileService {
         .eq('user_id', userId)
         .order('created_at', ascending: false);
     
-    await _cache.setCachedData(cacheKey, response);
+    await _cache.setCache(cacheKey, response);
     return (response as List).map((x) => OrderModel.fromJson(x)).toList();
   }
 }

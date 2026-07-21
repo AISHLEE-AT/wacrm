@@ -814,3 +814,31 @@ select option {
     font-size: 15px;
   }
 }
+
+/* Modal Utilities for TvO and others */
+.mobile-fullscreen-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-modal-content {
+  width: 100%;
+  max-width: 800px;
+  background: var(--deep-midnight);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  margin: 16px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}

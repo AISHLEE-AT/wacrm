@@ -26,6 +26,13 @@ const TourO = () => {
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
+
   useEffect(() => {
     async function fetchTours() {
       setLoading(true);
@@ -69,7 +76,7 @@ const TourO = () => {
 
   const handlePayEMI = (tour) => {
     if (!currentUser) {
-      alert("Please login first to join a tour plan.");
+      showToast("Please login first to join a tour plan.", "info");
       router.push('/login');
       return;
     }
@@ -81,7 +88,7 @@ const TourO = () => {
 
   const submitPayment = async () => {
     if (!paymentId.trim()) {
-      alert("Please enter the Payment ID (Transaction Reference).");
+      showToast("Please enter the Payment ID (Transaction Reference).", "error");
       return;
     }
     setSubmittingPayment(true);
@@ -98,11 +105,11 @@ const TourO = () => {
         bContact
       );
       
-      alert("Your EMI Payment has been submitted successfully for Admin approval!");
+      showToast("Your EMI Payment has been submitted successfully for Admin approval!", "success");
       setShowPayment(false);
       setPaymentId('');
     } catch (e) {
-      alert("Failed to submit payment. Please try again.");
+      showToast("Failed to submit payment. Please try again.", "error");
     }
     setSubmittingPayment(false);
   };
@@ -338,6 +345,22 @@ const TourO = () => {
               </div>
             )}
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
         </div>,
         document.body
       )}

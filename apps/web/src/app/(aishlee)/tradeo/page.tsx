@@ -22,6 +22,12 @@ const TradeO = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
 
   // Purchase State
   const [userPurchases, setUserPurchases] = useState([]);
@@ -78,7 +84,7 @@ const TradeO = () => {
 
   const handleShare = (item) => {
     if (!currentUser?.whatsapp) {
-      alert("Please update your profile with your WhatsApp number to earn referral points!");
+      showToast("Please update your profile with your WhatsApp number to earn referral points!", 'error');
       return;
     }
     const url = `${window.location.origin}/ecosystem?ref=${currentUser.whatsapp}`;
@@ -87,9 +93,9 @@ const TradeO = () => {
   };
 
   const handleListMyService = () => {
-    if (!currentUser) return alert("Please login to create a listing.");
+    if (!currentUser) return showToast("Please login to create a listing.", 'error');
     if (!currentUser.upi_id) {
-      alert("Please update your UPI ID in your Profile before adding a listing so buyers can pay you directly.");
+      showToast("Please update your UPI ID in your Profile before adding a listing so buyers can pay you directly.", 'error');
       window.location.href = '/profile';
       return;
     }
@@ -115,7 +121,7 @@ const TradeO = () => {
     e.preventDefault();
     
     if (editingItem) {
-      alert("Since this LocalMarket item is synced to your Master Google Sheet, the app cannot modify the database directly yet.\\n\\nYour edited values are:\\nTitle: " + formData.title + "\\nCategory: " + formData.category + "\\nPrice: " + formData.price + "\\nImage URL: " + formData.imageUrl + "\\n\\nPlease copy these into your Google Sheet to permanently apply the change!");
+      showToast("Since this LocalMarket item is synced to your Master Google Sheet, the app cannot modify the database directly yet.\\n\\nYour edited values are:\\nTitle: " + formData.title + "\\nCategory: " + formData.category + "\\nPrice: " + formData.price + "\\nImage URL: " + formData.imageUrl + "\\n\\nPlease copy these into your Google Sheet to permanently apply the change!", 'info');
       setShowAddForm(false);
       setEditingItem(null);
       return;
@@ -123,7 +129,7 @@ const TradeO = () => {
 
     // Prevent massive pasted base64 strings from crashing the API
     if (formData.imageUrl && formData.imageUrl.startsWith('data:image') && formData.imageUrl.length > 200000) {
-      alert("The pasted image is too large! Please use the 'Upload' or 'Camera' button below the text box instead so we can optimize it.");
+      showToast("The pasted image is too large! Please use the 'Upload' or 'Camera' button below the text box instead so we can optimize it.", 'error');
       return;
     }
 
@@ -142,12 +148,12 @@ const TradeO = () => {
           image_url: formData.imageUrl
         }
       });
-      alert("Listing submitted successfully! It is now pending Admin approval.");
+      showToast("Listing submitted successfully! It is now pending Admin approval.", 'success');
       setShowAddForm(false);
       setFormData({ title: '', category: 'Agriculture', price: '', unit: '', imageUrl: '', description: '' });
     } catch (err) {
       console.error(err);
-      alert(`Failed to submit listing. Error: ${err.message || JSON.stringify(err)}`);
+      showToast(`Failed to submit listing. Error: ${err.message || JSON.stringify(err)}`, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -155,7 +161,7 @@ const TradeO = () => {
 
   const handlePurchaseSubmit = async () => {
     if (!purchaseModal.paymentId || purchaseModal.paymentId.trim() === '') {
-      alert("Please enter a valid Payment Transaction ID.");
+      showToast("Please enter a valid Payment Transaction ID.", 'error');
       return;
     }
 
@@ -178,10 +184,10 @@ const TradeO = () => {
                 bContact,
                 'APPROVED'
               );
-              alert("Success! Asset Unlocked permanently for free using your Access Code.");
+              showToast("Success! Asset Unlocked permanently for free using your Access Code.", 'success');
               setPurchaseModal({ isOpen: false, item: null, paymentId: '' });
           } else {
-              alert("Invalid or already consumed Access Code.");
+              showToast("Invalid or already consumed Access Code.", 'error');
           }
       } else {
           await purchaseService.submitPurchase(
@@ -193,7 +199,7 @@ const TradeO = () => {
             bContact
           );
           
-          alert("Payment ID submitted successfully! The Admin will verify it shortly. You will receive a notification once approved.");
+          showToast("Payment ID submitted successfully! The Admin will verify it shortly. You will receive a notification once approved.", 'success');
           setPurchaseModal({ isOpen: false, item: null, paymentId: '' });
       }
       
@@ -201,7 +207,7 @@ const TradeO = () => {
       const updatedPurchases = await purchaseService.getUserPurchases(currentUser.id);
       setUserPurchases(updatedPurchases || []);
     } catch (e) {
-      alert("Failed to submit payment. Please try again.");
+      showToast("Failed to submit payment. Please try again.", 'error');
       console.error(e);
     } finally {
       setSubmittingPayment(false);
@@ -271,6 +277,15 @@ const TradeO = () => {
   return (
     <div className="animate-fade-in-up bento-grid">
       
+      {/* Toast Notification */}
+      {toast.show && createPortal(
+        <div style={{ position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)', zIndex: 99999, background: toast.type === 'error' ? '#EF4444' : 'var(--tech-cyan)', color: toast.type === 'error' ? 'white' : 'black', padding: '12px 24px', borderRadius: '30px', fontWeight: 'bold', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: '8px', animation: 'fadeInUp 0.3s ease' }}>
+          {toast.type === 'error' ? <Info size={18} /> : <CheckCircle size={18} />}
+          {toast.message}
+        </div>,
+        document.body
+      )}
+
       {/* HEADER */}
       <div className="bento-item span-12 glass-panel" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
@@ -481,7 +496,7 @@ const TradeO = () => {
                     <button onClick={() => handleEditListing(item)} style={{ background: 'var(--tech-cyan)', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer', color: 'black' }} title="Edit Listing">
                       <Edit size={14} />
                     </button>
-                    <button onClick={() => { alert('This LocalMarket item is synced directly from your Master Google Sheet.\\n\\nTo Delete: Please delete the row in your Google Sheet.\\nThe app will automatically remove it.'); }} style={{ background: '#EF4444', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer', color: 'white' }} title="Delete in Sheet">
+                    <button onClick={() => { showToast('This LocalMarket item is synced directly from your Master Google Sheet.\\n\\nTo Delete: Please delete the row in your Google Sheet.\\nThe app will automatically remove it.', 'info'); }} style={{ background: '#EF4444', border: 'none', padding: '6px', borderRadius: '4px', cursor: 'pointer', color: 'white' }} title="Delete in Sheet">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -610,13 +625,13 @@ const TradeO = () => {
                             bContact,
                             'APPROVED'
                           );
-                          alert("Access Code Applied successfully! Asset unlocked instantly.");
+                          showToast("Access Code Applied successfully! Asset unlocked instantly.", 'success');
                           setPurchaseModal({ isOpen: false, item: null, paymentId: '' });
                         } else {
-                          alert("Invalid or already consumed Access Code.");
+                          showToast("Invalid or already consumed Access Code.", 'error');
                         }
                       } else {
-                        alert("Invalid Access Code format. Must start with PAID-");
+                        showToast("Invalid Access Code format. Must start with PAID-", 'error');
                       }
                     } catch (e) {
                       console.error(e);
@@ -652,17 +667,17 @@ const TradeO = () => {
 
                   if (balance === 0 && purchaseModal.appliedCode) {
                       await purchaseService.submitPurchase(currentUser.id, purchaseModal.item.id, categoryStr, finalPaymentId, bName, bContact, 'APPROVED');
-                      alert("Success! Asset Unlocked perfectly for free using your Access Code.");
+                      showToast("Success! Asset Unlocked perfectly for free using your Access Code.", 'success');
                   } else {
                       await purchaseService.submitPurchase(currentUser.id, purchaseModal.item.id, categoryStr, finalPaymentId, bName, bContact);
-                      alert("Payment details submitted! Once the payment is verified, your order will be delivered quickly.");
+                      showToast("Payment details submitted! Once the payment is verified, your order will be delivered quickly.", 'success');
                   }
                   
                   const newPurchases = await purchaseService.getUserPurchases(currentUser.id);
                   setUserPurchases(newPurchases || []);
                   setPurchaseModal({ isOpen: false, item: null, paymentId: '', accessCodeInput: '', appliedDiscount: 0, appliedCode: null });
                 } catch (e) {
-                  alert("Failed to submit payment. Please try again.");
+                  showToast("Failed to submit payment. Please try again.", 'error');
                 }
                 setSubmittingPayment(false);
               }}

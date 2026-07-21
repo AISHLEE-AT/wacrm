@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { geminiService } from '@/aishlee/services/geminiService';
 import { lmsService } from '@/aishlee/services/lmsService';
@@ -188,6 +189,13 @@ export default function AdminCourseBuilder() {
   const [bulkGenVideos, setBulkGenVideos] = useState(false);
   const [bulkGenQuizzes, setBulkGenQuizzes] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<string>('');
+
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
 
   const isAdmin = currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin';
 
@@ -408,19 +416,19 @@ export default function AdminCourseBuilder() {
       setLoading(true);
       try {
         await lmsService.updateCourse(editingCourseId, { curriculum: newCurriculum }, currentUser.id);
-        alert('Topic Saved and Course Updated successfully!');
+        showToast('Topic Saved and Course Updated successfully!', 'success');
       } catch (e) {
-        alert('Failed to save to database: ' + e.message);
+        showToast(`Failed to save to database: ${e.message}`, 'error');
       } finally {
         setLoading(false);
       }
     } else {
-      alert('Topic Saved locally! Remember to click Publish Course when done building all topics.');
+      showToast('Topic Saved locally! Remember to click Publish Course when done building all topics.', 'info');
     }
   };
 
   const handleSharePDF = () => {
-    if (!editContent.trim()) return alert("No content available to export as PDF.");
+    if (!editContent.trim()) return showToast("No content available to export as PDF.", 'error');
     const doc = new jsPDF('p', 'mm', 'a4');
     const topicTitle = curriculum[activeModuleIdx].topics[activeTopicIdx].title;
     
@@ -449,7 +457,7 @@ export default function AdminCourseBuilder() {
           curriculum: currToSave,
           price: parseFloat(price) || 0
         }, currentUser.id);
-        alert('Updated Successfully!');
+        showToast('Updated Successfully!', 'success');
       } else {
         await lmsService.publishCourse({
           adminId: currentUser.id,
@@ -461,7 +469,7 @@ export default function AdminCourseBuilder() {
           curriculum: currToSave,
           price: parseFloat(price) || 0
         });
-        alert('Published Successfully!');
+        showToast('Published Successfully!', 'success');
       }
       navigate('/lms');
     } catch (err: any) {
@@ -504,7 +512,7 @@ export default function AdminCourseBuilder() {
       const { error: insertError } = await supabase.from('lms_courses').insert([basicCourse, advancedCourse]);
       if (insertError) throw insertError;
       
-      alert("SEO Courses (Basic & Advanced) imported successfully!");
+      showToast("SEO Courses (Basic & Advanced) imported successfully!", 'success');
       navigate('/lms');
     } catch (err: any) {
       setError(err.message);
@@ -907,6 +915,22 @@ export default function AdminCourseBuilder() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -21,6 +21,13 @@ const TaskO = () => {
   const [selectedTask, setSelectedTask] = useState(null);
   const [reason, setReason] = useState('');
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
+
   // Date formatted as YYYY-MM-DD for logging
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -240,7 +247,7 @@ const TaskO = () => {
       setSelectedTask(null);
 
     } catch (e) {
-      alert("Failed to update task: " + e.message);
+      showToast(`Failed to update task: ${e.message}`, 'error');
     }
   };
 
@@ -403,6 +410,22 @@ const TaskO = () => {
               Submit Reason & Skip
             </button>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
         </div>,
         document.body
       )}

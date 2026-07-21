@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { ecosystemService } from '@/aishlee/services/ecosystemService';
 import { financeService } from '@/aishlee/services/financeService';
@@ -26,6 +27,13 @@ export default function ApprovalHub() {
   const [rewardPhone, setRewardPhone] = useState<string>('');
   const [rewardPoints, setRewardPoints] = useState(50);
   const [rewardStatus, setRewardStatus] = useState<string>('');
+
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
 
   useEffect(() => {
     loadPending();
@@ -97,7 +105,7 @@ export default function ApprovalHub() {
   };
 
   const openWhatsApp = (phone, text) => {
-    if (!phone) return alert("No phone number available.");
+    if (!phone) return showToast("No phone number available.", 'error');
     window.open(`https://wa.me/${(String(phone.replace(/\D/g, '')).replace(/\D/g, '').length === 10 ? '91' + String(phone.replace(/\D/g, '')).replace(/\D/g, '') : String(phone.replace(/\D/g, '')).replace(/\D/g, ''))}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -108,7 +116,7 @@ export default function ApprovalHub() {
 
   const handleWhatsAppMatchedUser = (listing) => {
     const matchedUserId = matchSelections[listing.id];
-    if (!matchedUserId) return alert("Select a user to match first.");
+    if (!matchedUserId) return showToast("Select a user to match first.", 'error');
     const matchedUser = allUsers.find(u => u.id === matchedUserId);
     if (!matchedUser) return;
     const text = `Hi ${matchedUser.full_name}, we found a listing on the Digital Marketplace that matches your needs: "${listing.title}" by ${listing.profiles?.full_name} for ₹${listing.price}. Are you interested?`;
@@ -120,11 +128,11 @@ export default function ApprovalHub() {
     setSeeding(true);
     try {
       await ecosystemService.injectDemoData(currentUser.id);
-      alert("Success! 8 realistic listings have been injected and auto-approved.");
+      showToast("Success! 8 realistic listings have been injected and auto-approved.", 'success');
       await loadPending(); // Refresh the list
     } catch (err: any) {
       console.error("Failed to seed", err);
-      alert("Failed to seed data: " + err.message);
+      showToast(`Failed to seed data: ${err.message}`, 'error');
     } finally {
       setSeeding(false);
     }
@@ -138,7 +146,7 @@ export default function ApprovalHub() {
 
   const handleAppoint = async (app) => {
     if (currentUser.role !== 'Super Admin') {
-      return alert("Only Super Admins can issue Appointment Orders.");
+      return showToast("Only Super Admins can issue Appointment Orders.", 'error');
     }
     
     try {
@@ -156,7 +164,7 @@ export default function ApprovalHub() {
       
     } catch (err: any) {
       console.error("Failed to appoint", err);
-      alert("Error generating appointment order.");
+      showToast("Error generating appointment order.", 'error');
     } finally {
       setGeneratingPdf(null);
     }
@@ -433,6 +441,22 @@ export default function ApprovalHub() {
             ))}
           </div>
         )
+      )}
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
       )}
     </div>
   );

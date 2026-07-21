@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '@/aishlee/context/AppProvider';
 import { Users, Shield, UserCheck, Database, Copy, CheckCircle, Loader, Download, FileText, ClipboardCheck } from 'lucide-react';
 import { ecosystemService } from '@/aishlee/services/ecosystemService';
@@ -12,6 +13,13 @@ import { purchaseService } from '@/aishlee/services/purchaseService';
 export default function AdminO() {
   const { currentUser, allUsers, assignUserToAdmin } = useApp();
   const [loadingId, setLoadingId] = useState<any>(null);
+  
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message: string, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
+  };
   
   // Backup URL (Push to Sheets)
   const [backupUrl, setBackupUrl] = useState<string>('');
@@ -68,16 +76,16 @@ export default function AdminO() {
   }, []);
 
   const handleApprovePayments = async () => {
-    if (!paymentApprovalInput.trim()) return alert("Please enter payment IDs to approve.");
+    if (!paymentApprovalInput.trim()) return showToast("Please enter payment IDs to approve.", 'error');
     setApprovingPayments(true);
     try {
       const ids = paymentApprovalInput.split(',').map(id => id.trim()).filter(Boolean);
       const res = await purchaseService.bulkApprovePayments(ids);
-      alert(`Successfully approved ${res.updatedCount} payments!`);
+      showToast(`Successfully approved ${res.updatedCount} payments!`, 'success');
       setPaymentApprovalInput('');
       loadPendingPurchases(); // Reload list after approval
     } catch (e) {
-      alert("Error approving payments: " + e.message);
+      showToast(`Error approving payments: ${e.message}`, 'error');
     }
     setApprovingPayments(false);
   };
@@ -127,14 +135,14 @@ export default function AdminO() {
       await assignUserToAdmin(userId, adminId);
     } catch (err: any) {
       console.error(err);
-      alert("Failed to assign user.");
+      showToast("Failed to assign user.", 'error');
     } finally {
       setLoadingId(null);
     }
   };
 
   const handleSaveUrl = () => {
-    if (!backupUrl.trim()) return alert("Please enter a Google Sheet URL.");
+    if (!backupUrl.trim()) return showToast("Please enter a Google Sheet URL.", 'error');
     localStorage.setItem('master_backup_url', backupUrl.trim());
     setIsConfigured(true);
   };
@@ -146,7 +154,7 @@ export default function AdminO() {
   };
 
   const handleSaveCsvUrl = (key) => {
-    if (!csvUrls[key].trim()) return alert("Please enter a valid CSV URL for " + key);
+    if (!csvUrls[key].trim()) return showToast(`Please enter a valid CSV URL for ${key}`, 'error');
     localStorage.setItem(`csv_url_${key}`, csvUrls[key].trim());
     setCsvConfigured(prev => ({ ...prev, [key]: true }));
   };
@@ -241,7 +249,7 @@ export default function AdminO() {
   };
 
   const handleSyncDatabase = async () => {
-    if (!backupUrl) return alert("Please connect Master Database Backup first.");
+    if (!backupUrl) return showToast("Please connect Master Database Backup first.", 'error');
     setSyncing(true);
     try {
       // 1. Fetch Users
@@ -261,10 +269,10 @@ export default function AdminO() {
         body: new URLSearchParams({ data: JSON.stringify(payload) })
       });
       
-      alert("Database successfully backed up to Master Google Sheet! (Request sent)");
+      showToast("Database successfully backed up to Master Google Sheet! (Request sent)", 'success');
     } catch (err: any) {
       console.error(err);
-      alert("Error syncing to Google Sheets: " + err.message);
+      showToast(`Error syncing to Google Sheets: ${err.message}`, 'error');
     } finally {
       setSyncing(false);
     }
@@ -275,13 +283,13 @@ export default function AdminO() {
     try {
       const stats = await dashboardSheetsService.importToSupabase(supabase);
       if (stats.success) {
-        alert("LMS Data successfully synced from Google Sheets!");
+        showToast("LMS Data successfully synced from Google Sheets!", 'success');
       } else {
-        alert("Failed to sync LMS data: " + stats.message);
+        showToast(`Failed to sync LMS data: ${stats.message}`, 'error');
       }
     } catch (err: any) {
       console.error(err);
-      alert("Error syncing LMS: " + err.message);
+      showToast(`Error syncing LMS: ${err.message}`, 'error');
     } finally {
       setSyncingLms(false);
     }
@@ -310,11 +318,11 @@ export default function AdminO() {
   };
 
   const handleGenerateReport = async () => {
-     if (!backupUrl) return alert("Please connect Master Database Backup first.");
+     if (!backupUrl) return showToast("Please connect Master Database Backup first.", 'error');
      setGeneratingReport(true);
      try {
        const reportData = await getFilteredReportData();
-       if (reportData.length === 0) return alert("No data found for this category.");
+       if (reportData.length === 0) return showToast("No data found for this category.", 'error');
 
        const payload = { action: 'custom_report', reportData };
        await fetch(backupUrl, { 
@@ -324,10 +332,10 @@ export default function AdminO() {
          body: new URLSearchParams({ data: JSON.stringify(payload) })
        });
        
-       alert("Custom Report successfully pushed to Google Sheets (Tab: 'Custom Report')! (Request sent)");
+       showToast("Custom Report successfully pushed to Google Sheets (Tab: 'Custom Report')! (Request sent)", 'success');
      } catch (err: any) {
        console.error(err);
-       alert("Error generating report.");
+       showToast("Error generating report.", 'error');
      } finally {
        setGeneratingReport(false);
      }
@@ -335,7 +343,7 @@ export default function AdminO() {
 
   const handleDownloadCsv = async () => {
     const reportData = await getFilteredReportData();
-    if (reportData.length === 0) return alert("No data found for this category.");
+    if (reportData.length === 0) return showToast("No data found for this category.", 'error');
 
     const headers = Object.keys(reportData[0]);
     const csvContent = [
@@ -407,6 +415,42 @@ export default function AdminO() {
           >
             <ClipboardCheck size={20} />
             Manage O-Tests
+          </button>
+        </div>
+      </div>
+
+      {/* WhatsApp CRM & Partner Management Quick Links */}
+      <div className="glass-panel" style={{ padding: '24px' }}>
+        <h2 style={{ color: 'white', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Users color="var(--tech-cyan)" size={24} /> Partner & CRM Management
+        </h2>
+        <p style={{ color: 'var(--cool-gray)', marginBottom: '24px' }}>
+          Quick access to the management interfaces for RidO Drivers, DrivO Providers, and WhatsApp CRM.
+        </p>
+        
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <button className="btn-outline hover-glow" onClick={() => showToast("Opening WhatsApp CRM Interface...", 'info')} style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '24px' }}>
+            <div style={{ padding: '12px', background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', borderRadius: '50%' }}>
+              <Users size={32} />
+            </div>
+            <div style={{ fontWeight: 'bold', fontSize: '18px', color: 'white' }}>WhatsApp CRM</div>
+            <div style={{ fontSize: '12px', color: 'var(--cool-gray)' }}>Manage broadcast lists and automated replies</div>
+          </button>
+          
+          <button className="btn-outline hover-glow" onClick={() => showToast("Opening Driver Management...", 'info')} style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '24px' }}>
+            <div style={{ padding: '12px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', borderRadius: '50%' }}>
+              <Users size={32} />
+            </div>
+            <div style={{ fontWeight: 'bold', fontSize: '18px', color: 'white' }}>Driver Management</div>
+            <div style={{ fontSize: '12px', color: 'var(--cool-gray)' }}>Approve and track RidO & DrivO drivers</div>
+          </button>
+          
+          <button className="btn-outline hover-glow" onClick={() => showToast("Opening Provider Management...", 'info')} style={{ flex: 1, minWidth: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '24px' }}>
+            <div style={{ padding: '12px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', borderRadius: '50%' }}>
+              <Users size={32} />
+            </div>
+            <div style={{ fontWeight: 'bold', fontSize: '18px', color: 'white' }}>Provider Management</div>
+            <div style={{ fontSize: '12px', color: 'var(--cool-gray)' }}>Manage TradeO local businesses & service providers</div>
           </button>
         </div>
       </div>
@@ -697,6 +741,22 @@ export default function AdminO() {
           </div>
         </div>
       </div>
+
+      {/* Custom Toast Notification */}
+      {toast.show && typeof document !== 'undefined' && createPortal(
+        <div style={{
+          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
+          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
+          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
+          color: '#fff', fontWeight: '700', fontSize: '14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'fadeInUp 0.3s ease-out',
+          maxWidth: '90vw', textAlign: 'center',
+        }}>
+          {toast.message}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
