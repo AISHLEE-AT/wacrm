@@ -151,7 +151,7 @@ const TvO = () => {
                 >
                   <X size={24} />
                 </button>
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', background: '#000' }}>
+                <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000' }}>
                   <iframe 
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                     src={`https://www.youtube.com/embed/${activeVideo.videoId}?autoplay=1&playsinline=1`}

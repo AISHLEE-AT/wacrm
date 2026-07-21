@@ -37,7 +37,9 @@ function LoginPageInner() {
       Promise.all([
         import("@/lib/firebase"),
         import("firebase/auth")
-      ]).then(([{ auth }, { RecaptchaVerifier }]) => {
+      ]).then(([firebaseModule, authModule]) => {
+        const auth = firebaseModule.auth;
+        const RecaptchaVerifier = authModule.RecaptchaVerifier;
         try {
           (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
             size: "invisible",
@@ -65,8 +67,10 @@ function LoginPageInner() {
     try {
       const fullPhone = `+91${phone}`;
       const appVerifier = (window as any).recaptchaVerifier;
-      const { auth } = await import("@/lib/firebase");
-      const { signInWithPhoneNumber } = await import("firebase/auth");
+      const firebaseModule = await import("@/lib/firebase");
+      const authModule = await import("firebase/auth");
+      const auth = firebaseModule.auth;
+      const signInWithPhoneNumber = authModule.signInWithPhoneNumber;
       const confirmation = await signInWithPhoneNumber(auth, fullPhone, appVerifier);
       setConfirmationResult(confirmation);
       setOtpRequested(true);
