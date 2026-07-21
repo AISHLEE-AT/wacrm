@@ -48,7 +48,7 @@ class TvODashboard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFFEF4444).withOpacity(0.15),
+                            const Color(0xFFEF4444).withValues(alpha: 0.15),
                             Colors.transparent,
                           ],
                           begin: Alignment.topCenter,

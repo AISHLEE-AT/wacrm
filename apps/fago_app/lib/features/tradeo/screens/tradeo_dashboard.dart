@@ -48,7 +48,7 @@ class TradeODashboard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFF8B5CF6).withOpacity(0.15),
+                            const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                             Colors.transparent,
                           ],
                           begin: Alignment.topCenter,

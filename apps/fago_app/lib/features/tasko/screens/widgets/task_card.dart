@@ -15,7 +15,7 @@ class TaskCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF16161E),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,7 +24,7 @@ class TaskCard extends StatelessWidget {
             margin: const EdgeInsets.only(top: 2),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _getStatusColor(taskModel.status).withOpacity(0.15),
+              color: _getStatusColor(taskModel.status).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(

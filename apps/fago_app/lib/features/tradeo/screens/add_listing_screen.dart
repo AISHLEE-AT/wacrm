@@ -73,8 +73,8 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
                       padding: const EdgeInsets.all(16),
                       margin: const EdgeInsets.only(bottom: 24),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.1),
-                        border: Border.all(color: Colors.redAccent.withOpacity(0.5)),
+                        color: Colors.redAccent.withValues(alpha: 0.1),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -144,7 +144,7 @@ class _AddListingScreenState extends ConsumerState<AddListingScreen> {
             hintText: hint,
             hintStyle: const TextStyle(color: Colors.white24),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
           ),
           validator: (value) => value == null || value.isEmpty ? 'Required' : null,

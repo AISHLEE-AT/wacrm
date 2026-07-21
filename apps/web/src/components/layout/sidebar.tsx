@@ -118,7 +118,7 @@ const adminItems: NavItem[] = [
 
 const bottomNavItems = [
   { href: "/wallet", label: "Wallet", icon: Zap },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/profile", label: "Profile & Settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -420,7 +420,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               <DropdownMenuItem
                 render={
                   <Link
-                    href="/settings?tab=whatsapp"
+                    href="/profile?tab=crm_whatsapp"
                     onClick={onClose}
                     className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
                   />

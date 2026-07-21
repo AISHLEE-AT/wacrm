@@ -179,10 +179,10 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF00F0FF).withOpacity(0.5), width: 2),
+            border: Border.all(color: const Color(0xFF00F0FF).withValues(alpha: 0.5), width: 2),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00F0FF).withOpacity(0.2),
+                color: const Color(0xFF00F0FF).withValues(alpha: 0.2),
                 blurRadius: 20,
                 spreadRadius: 2,
               )
@@ -306,7 +306,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: isCredit ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                  backgroundColor: isCredit ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2),
                   child: Icon(isCredit ? Icons.arrow_downward : Icons.arrow_upward, 
                     color: isCredit ? Colors.green : Colors.red),
                 ),

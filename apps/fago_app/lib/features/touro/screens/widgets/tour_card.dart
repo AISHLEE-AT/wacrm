@@ -19,10 +19,10 @@ class TourCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF16161E),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -37,7 +37,7 @@ class TourCard extends StatelessWidget {
               Container(
                 height: 140,
                 width: double.infinity,
-                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                 child: const Stack(
                   alignment: Alignment.center,
                   children: [
@@ -68,7 +68,7 @@ class TourCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getStatusColor(touroModel.status).withOpacity(0.15),
+                            color: _getStatusColor(touroModel.status).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(

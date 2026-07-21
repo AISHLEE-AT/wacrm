@@ -22,7 +22,7 @@ class TourDetailsScreen extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   Container(
-                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
                     child: const Icon(Icons.landscape_rounded, size: 120, color: Color(0xFF3B82F6)),
                   ),
                   Container(
@@ -32,7 +32,7 @@ class TourDetailsScreen extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          const Color(0xFF0A0A0F).withOpacity(0.8),
+                          const Color(0xFF0A0A0F).withValues(alpha: 0.8),
                           const Color(0xFF0A0A0F),
                         ],
                       ),
@@ -54,7 +54,7 @@ class TourDetailsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(touroModel.status).withOpacity(0.15),
+                          color: _getStatusColor(touroModel.status).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

@@ -25,6 +25,7 @@ const pageTitles: Record<string, string> = {
   "/pipelines": "Pipelines",
   "/broadcasts": "Broadcasts",
   "/automations": "Automations",
+  "/profile": "Profile & Settings",
   "/settings": "Settings",
 };
 
@@ -115,7 +116,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           <DropdownMenuItem
             render={
               <Link
-                href="/settings?tab=profile"
+                href="/profile"
                 className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
               />
             }
@@ -126,7 +127,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
           <DropdownMenuItem
             render={
               <Link
-                href="/settings?tab=whatsapp"
+                href="/profile?tab=crm_whatsapp"
                 className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
               />
             }

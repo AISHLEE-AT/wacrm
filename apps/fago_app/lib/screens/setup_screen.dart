@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:ui';
 import '../auth/auth_provider.dart';
 
-final _kBaseUrl = 'https://watscrm.vercel.app';
+
 
 final _modules = [
   {
@@ -173,10 +173,10 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           decoration: InputDecoration(
             labelText: 'Full Name',
             labelStyle: const TextStyle(color: Colors.white54),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.1)), borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)), borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Color(0xFF6366F1)), borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
           ),
         ),
         const SizedBox(height: 16),
@@ -190,10 +190,10 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
             prefixText: '+91 ',
             prefixStyle: const TextStyle(color: Colors.white),
             labelStyle: const TextStyle(color: Colors.white54),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.1)), borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)), borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(borderSide: const BorderSide(color: Color(0xFF6366F1)), borderRadius: BorderRadius.circular(12)),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: Colors.white.withValues(alpha: 0.05),
             counterText: '',
           ),
         ),
@@ -244,9 +244,9 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    color: isSelected ? color.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+                    color: isSelected ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
                     border: Border.all(
-                      color: isSelected ? color : Colors.white.withOpacity(0.1),
+                      color: isSelected ? color : Colors.white.withValues(alpha: 0.1),
                       width: 2,
                     ),
                   ),
@@ -309,11 +309,11 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(
-                      colors: [colors[0].withOpacity(isSelected ? 0.3 : 0.1), colors[1].withOpacity(isSelected ? 0.1 : 0.05)],
+                      colors: [colors[0].withValues(alpha: isSelected ? 0.3 : 0.1), colors[1].withValues(alpha: isSelected ? 0.1 : 0.05)],
                       begin: Alignment.topLeft, end: Alignment.bottomRight,
                     ),
                     border: Border.all(
-                      color: isSelected ? colors[0] : colors[0].withOpacity(0.3),
+                      color: isSelected ? colors[0] : colors[0].withValues(alpha: 0.3),
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -329,7 +329,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                           children: [
                             Text(mod['title'] as String, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                             const SizedBox(height: 4),
-                            Text(mod['subtitle'] as String, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+                            Text(mod['subtitle'] as String, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11)),
                           ],
                         ),
                       ],
@@ -382,8 +382,8 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       body: Stack(
         children: [
           // Background Glows
-          Positioned(top: -100, left: -50, child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF6366F1).withOpacity(0.2)))),
-          Positioned(bottom: -50, right: -50, child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF10B981).withOpacity(0.15)))),
+          Positioned(top: -100, left: -50, child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF6366F1).withValues(alpha: 0.2)))),
+          Positioned(bottom: -50, right: -50, child: Container(width: 200, height: 200, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF10B981).withValues(alpha: 0.15)))),
           BackdropFilter(filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50), child: Container(color: Colors.transparent)),
           
           SafeArea(
@@ -402,7 +402,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                       Expanded(
                         child: LinearProgressIndicator(
                           value: (_currentStep + 1) / 3,
-                          backgroundColor: Colors.white.withOpacity(0.1),
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
                           valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
                           borderRadius: BorderRadius.circular(8),
                         ),

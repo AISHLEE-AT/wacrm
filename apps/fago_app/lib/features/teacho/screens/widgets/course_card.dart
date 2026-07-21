@@ -18,10 +18,10 @@ class CourseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF16161E),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -36,7 +36,7 @@ class CourseCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                 gradient: LinearGradient(
-                  colors: [Colors.cyan.withOpacity(0.2), Colors.blue.withOpacity(0.1)],
+                  colors: [Colors.cyan.withValues(alpha: 0.2), Colors.blue.withValues(alpha: 0.1)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -149,7 +149,7 @@ class CourseCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(

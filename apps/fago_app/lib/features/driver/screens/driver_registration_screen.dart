@@ -97,7 +97,7 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.6), // text-muted-foreground
+                  color: Colors.white.withValues(alpha: 0.6), // text-muted-foreground
                 ),
               ),
               const SizedBox(height: 32),
@@ -131,7 +131,7 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                   border: Border.all(color: const Color(0xFF333333)), // border-border
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
+                      color: Colors.black.withValues(alpha: 0.12),
                       blurRadius: 30,
                       offset: const Offset(0, 8),
                     ),
@@ -232,7 +232,7 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 8,
-                            shadowColor: const Color(0xFFF97316).withOpacity(0.4),
+                            shadowColor: const Color(0xFFF97316).withValues(alpha: 0.4),
                           ),
                           child: _isLoading
                               ? const SizedBox(
@@ -296,7 +296,7 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -314,7 +314,7 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
       textCapitalization: isUpper ? TextCapitalization.characters : TextCapitalization.none,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontWeight: FontWeight.w500),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontWeight: FontWeight.w500),
         filled: true,
         fillColor: const Color(0xFF171717),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF333333), width: 2)),

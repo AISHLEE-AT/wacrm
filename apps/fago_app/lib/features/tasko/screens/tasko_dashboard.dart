@@ -48,7 +48,7 @@ class TaskODashboard extends ConsumerWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFFF59E0B).withOpacity(0.15),
+                            const Color(0xFFF59E0B).withValues(alpha: 0.15),
                             Colors.transparent,
                           ],
                           begin: Alignment.topCenter,

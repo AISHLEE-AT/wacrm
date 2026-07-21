@@ -25,8 +25,8 @@ class PaymentQRVerifier extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.redAccent.withOpacity(0.1),
-            border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+            color: Colors.redAccent.withValues(alpha: 0.1),
+            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -75,8 +75,8 @@ class PaymentQRVerifier extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            color: Colors.white.withValues(alpha: 0.05),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: RichText(

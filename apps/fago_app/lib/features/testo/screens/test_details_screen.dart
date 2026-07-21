@@ -27,7 +27,7 @@ class TestDetailsScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFEF4444).withOpacity(0.1),
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                 ),
                 child: const Icon(Icons.psychology_outlined, size: 72, color: Color(0xFFEF4444)),
               ),

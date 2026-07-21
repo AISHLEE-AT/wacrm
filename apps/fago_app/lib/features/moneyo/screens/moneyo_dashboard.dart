@@ -43,7 +43,7 @@ class MoneyODashboard extends ConsumerWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF10B981).withOpacity(0.15),
+                      const Color(0xFF10B981).withValues(alpha: 0.15),
                       Colors.transparent,
                     ],
                     begin: Alignment.topCenter,

@@ -85,12 +85,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.greenAccent.withOpacity(0.3),
+                      color: Colors.greenAccent.withValues(alpha: 0.3),
                       blurRadius: 40,
                       spreadRadius: 10,
                     ),
                     BoxShadow(
-                      color: Colors.amber.withOpacity(0.2),
+                      color: Colors.amber.withValues(alpha: 0.2),
                       blurRadius: 20,
                       spreadRadius: 5,
                     )
@@ -131,7 +131,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       margin: const EdgeInsets.only(bottom: 20),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.redAccent.withOpacity(0.1),
+                        color: Colors.redAccent.withValues(alpha: 0.1),
                         border: Border.all(color: Colors.redAccent),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -160,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     labelStyle: const TextStyle(color: Colors.greenAccent),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.greenAccent.withOpacity(0.5)),
+                      borderSide: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -179,7 +179,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 10,
-                    shadowColor: Colors.greenAccent.withOpacity(0.5),
+                    shadowColor: Colors.greenAccent.withValues(alpha: 0.5),
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -204,7 +204,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     labelStyle: const TextStyle(color: Colors.amber),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.amber.withOpacity(0.5)),
+                      borderSide: BorderSide(color: Colors.amber.withValues(alpha: 0.5)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -223,7 +223,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 10,
-                    shadowColor: Colors.amber.withOpacity(0.5),
+                    shadowColor: Colors.amber.withValues(alpha: 0.5),
                   ),
                   child: _isLoading
                       ? const SizedBox(

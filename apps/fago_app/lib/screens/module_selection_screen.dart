@@ -184,7 +184,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
               height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF4F46E5).withOpacity(0.25),
+                color: const Color(0xFF4F46E5).withValues(alpha: 0.25),
               ),
             ),
           ),
@@ -196,7 +196,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF10B981).withOpacity(0.15),
+                color: const Color(0xFF10B981).withValues(alpha: 0.15),
               ),
             ),
           ),
@@ -225,7 +225,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
                               'Welcome back,',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.55),
+                                color: Colors.white.withValues(alpha: 0.55),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -261,7 +261,7 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF6366F1).withOpacity(0.4),
+                                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -293,16 +293,16 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.03),
+                        color: Colors.white.withValues(alpha: 0.03),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white.withOpacity(0.07)),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                              color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.auto_awesome,
@@ -452,17 +452,17 @@ class _ModuleCardState extends State<_ModuleCard>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                widget.colors[0].withOpacity(0.18),
-                widget.colors[1].withOpacity(0.06),
+                widget.colors[0].withValues(alpha: 0.18),
+                widget.colors[1].withValues(alpha: 0.06),
               ],
             ),
             border: Border.all(
-              color: widget.colors[0].withOpacity(0.35),
+              color: widget.colors[0].withValues(alpha: 0.35),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: widget.colors[0].withOpacity(0.12),
+                color: widget.colors[0].withValues(alpha: 0.12),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -481,7 +481,7 @@ class _ModuleCardState extends State<_ModuleCard>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: widget.colors[0].withOpacity(0.22),
+                        color: widget.colors[0].withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(widget.icon, color: widget.colors[0], size: 26),
@@ -503,7 +503,7 @@ class _ModuleCardState extends State<_ModuleCard>
                           widget.subtitle,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withOpacity(0.55),
+                            color: Colors.white.withValues(alpha: 0.55),
                             height: 1.3,
                           ),
                         ),
