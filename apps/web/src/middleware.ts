@@ -64,20 +64,27 @@ export async function middleware(request: NextRequest) {
       url.pathname = `/join/${encodeURIComponent(inviteToken)}`
       url.search = ''
     } else {
-      // Smart Default Module Routing
+      // Smart Default Module Routing & Onboarding
       let defaultModule = null;
+      let profileComplete = false;
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('default_module')
+          .select('default_module, profile_complete')
           .eq('user_id', user.id)
           .single();
         defaultModule = data?.default_module;
+        profileComplete = data?.profile_complete;
       } catch (err) {
-        console.error('Failed to fetch default module in middleware', err);
+        console.error('Failed to fetch profile status in middleware', err);
       }
       
-      url.pathname = defaultModule ? `/${defaultModule.toLowerCase()}` : '/dashboard'
+      if (!profileComplete) {
+        url.pathname = '/onboarding';
+      } else {
+        url.pathname = defaultModule ? `/${defaultModule.toLowerCase()}` : '/dashboard';
+        supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
+      }
       url.search = ''
     }
     return withRefreshedCookies(NextResponse.redirect(url))
@@ -98,8 +105,31 @@ export async function middleware(request: NextRequest) {
   }
 
   // Onboarding Check - enforce onboarding on protected paths for authenticated users
-  // (Removed for WACRM as web dashboard admins don't need onboarding)
-
+  if (user && isProtectedPath && !request.nextUrl.pathname.startsWith('/onboarding')) {
+    const hasOnboardedCookie = request.cookies.has('fago_onboarded');
+    
+    if (!hasOnboardedCookie) {
+      // Fallback to DB check if cookie is missing but user is logged in
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('profile_complete')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (!data?.profile_complete) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/onboarding';
+          return withRefreshedCookies(NextResponse.redirect(url));
+        } else {
+          // They are complete, set the cookie so we don't query DB next time
+          supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
+        }
+      } catch (err) {
+        console.error('Error verifying onboarding fallback', err);
+      }
+    }
+  }
 
   // API routes that need auth (not webhooks)
   if (!user && request.nextUrl.pathname.startsWith('/api/whatsapp/') &&
