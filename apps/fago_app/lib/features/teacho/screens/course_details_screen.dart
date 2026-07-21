@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/course_model.dart';
-import 'package:go_router/go_router.dart';
 
 class CourseDetailsScreen extends StatelessWidget {
   final CourseModel course;

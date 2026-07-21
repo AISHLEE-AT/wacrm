@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cache_service.dart';
 import '../models/profile_model.dart';
@@ -27,7 +27,7 @@ class ProfileService {
       await _cache.setCache(cacheKey, response);
       return ProfileModel.fromJson(response);
     } catch (e) {
-      print('Error fetching profile: $e');
+      debugPrint('Error fetching profile: $e');
       final cached = _cache.getCache(cacheKey);
       if (cached != null) {
         return ProfileModel.fromJson(cached);
@@ -56,7 +56,7 @@ class ProfileService {
 
       return await _fetchTransactions(userId, cacheKey);
     } catch (e) {
-      print('Error getting transactions: $e');
+      debugPrint('Error getting transactions: $e');
       return [];
     }
   }
@@ -85,7 +85,7 @@ class ProfileService {
 
       return await _fetchOrders(userId, cacheKey);
     } catch (e) {
-      print('Error getting orders: $e');
+      debugPrint('Error getting orders: $e');
       return [];
     }
   }

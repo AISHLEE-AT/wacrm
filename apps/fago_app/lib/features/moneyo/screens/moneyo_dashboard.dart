@@ -37,7 +37,7 @@ class MoneyODashboard extends ConsumerWidget {
                   ),
                 ),
                 loading: () => const Text('...', style: TextStyle(color: Colors.white)),
-                error: (_, __) => const Text('Error', style: TextStyle(color: Colors.red)),
+                error: (error, _) => const Text('Error', style: TextStyle(color: Colors.red)),
               ),
               background: Container(
                 decoration: BoxDecoration(
@@ -117,8 +117,8 @@ class MoneyODashboard extends ConsumerWidget {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        ref.refresh(moneyoProvider);
-                        ref.refresh(totalSavingsProvider);
+                        ref.invalidate(moneyoProvider);
+                        ref.invalidate(totalSavingsProvider);
                       },
                       child: const Text('Retry'),
                     )

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireRole, toErrorResponse } from '@/lib/auth/account'
 
 function supabaseAdmin() {
   return createClient(
@@ -10,6 +11,7 @@ function supabaseAdmin() {
 
 export async function POST(req: Request) {
   try {
+    await requireRole('admin')
     const { driver_id, amount } = await req.json()
     if (!driver_id || typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json({ error: 'Valid Driver ID and positive amount required' }, { status: 400 })
@@ -41,8 +43,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, new_balance: newBalance })
-  } catch (error: any) {
-    console.error('Add funds error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }

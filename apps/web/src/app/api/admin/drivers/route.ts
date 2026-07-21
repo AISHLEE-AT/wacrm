@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireRole, toErrorResponse } from '@/lib/auth/account'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ function supabaseAdmin() {
 
 export async function GET() {
   try {
+    await requireRole('admin')
     const supabase = supabaseAdmin()
     
     // Fetch drivers and their vehicle
@@ -49,14 +51,14 @@ export async function GET() {
     }))
 
     return NextResponse.json({ drivers: driversWithProfiles })
-  } catch (error) {
-    console.error('Admin drivers GET error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }
 
 export async function PATCH(req: Request) {
   try {
+    await requireRole('admin')
     const { driver_id, is_verified } = await req.json()
     if (!driver_id || is_verified === undefined) {
       return NextResponse.json({ error: 'Driver ID and is_verified required' }, { status: 400 })
@@ -74,14 +76,14 @@ export async function PATCH(req: Request) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Verify driver error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }
 
 export async function DELETE(req: Request) {
   try {
+    await requireRole('admin')
     const { searchParams } = new URL(req.url)
     const driver_id = searchParams.get('id')
     if (!driver_id) {
@@ -90,8 +92,6 @@ export async function DELETE(req: Request) {
 
     const supabase = supabaseAdmin()
     
-    // In a real app, you might want to also delete the user from auth.users
-    // or just delete the driver profile. Here we'll delete from the drivers table.
     const { error } = await supabase
       .from('drivers')
       .delete()
@@ -102,8 +102,7 @@ export async function DELETE(req: Request) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Delete driver error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }

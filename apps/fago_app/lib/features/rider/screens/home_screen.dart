@@ -47,6 +47,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   RealtimeChannel? _activeDriverChannel;
   Map<String, dynamic>? _activeDriverData;
 
+  RealtimeChannel? _driversChannel;
+  RealtimeChannel? _ridesChannel;
+
   // Use dotenv for Google Maps API Key
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
@@ -54,6 +57,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _initApp();
+  }
+
+  @override
+  void dispose() {
+    _driversChannel?.unsubscribe();
+    _ridesChannel?.unsubscribe();
+    if (_activeDriverChannel != null) {
+      _supabase.removeChannel(_activeDriverChannel!);
+    }
+    mapController.dispose();
+    super.dispose();
   }
 
   Future<void> _initApp() async {
@@ -143,12 +157,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _listenToDrivers() {
-    _supabase.channel('public:drivers').onPostgresChanges(
+    _driversChannel = _supabase.channel('public:drivers').onPostgresChanges(
       event: PostgresChangeEvent.all, schema: 'public', table: 'drivers',
       callback: (payload) {
         _fetchOnlineDrivers();
       }
-    ).subscribe();
+    );
+    _driversChannel!.subscribe();
   }
 
   Future<void> _checkActiveRide() async {
@@ -201,19 +216,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _listenToRideStatus() {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
-    _supabase.channel('public:rides').onPostgresChanges(
+    _ridesChannel = _supabase.channel('public:rides').onPostgresChanges(
       event: PostgresChangeEvent.all, schema: 'public', table: 'rides',
       callback: (payload) {
-        if (payload.newRecord != null) {
-          if (payload.newRecord!['passenger_id'] == userId) {
-            final status = payload.newRecord!['status'];
+        if (payload.newRecord['passenger_id'] == userId) {
+            final status = payload.newRecord['status'];
             if (['pending', 'accepted', 'en_route'].contains(status)) {
               setState(() => _activeRide = payload.newRecord);
-              if (payload.newRecord!['driver_id'] != null && _activeDriverData?['id'] != payload.newRecord!['driver_id']) {
-                _subscribeToActiveDriver(payload.newRecord!['driver_id'].toString());
+              if (payload.newRecord['driver_id'] != null && _activeDriverData?['id'] != payload.newRecord['driver_id']) {
+                _subscribeToActiveDriver(payload.newRecord['driver_id'].toString());
               }
             } else if (status == 'completed' || status == 'cancelled') {
-              final rideId = payload.newRecord!['id'].toString();
+              final rideId = payload.newRecord['id'].toString();
               setState(() {
                 _activeRide = null;
                 _activeDriverData = null;
@@ -229,10 +243,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               });
               if (mounted && status == 'completed') {
                 // Fetch driver details again to get UPI ID (since payload doesn't join)
-                _supabase.from('drivers').select('*').eq('id', payload.newRecord!['driver_id']).maybeSingle().then((driverInfo) {
+                _supabase.from('drivers').select('*').eq('id', payload.newRecord['driver_id']).maybeSingle().then((driverInfo) {
                   if (!mounted) return;
                   final upiId = driverInfo?['upi_id'];
-                  final price = payload.newRecord!['estimated_price'] ?? 0;
+                  final price = payload.newRecord['estimated_price'] ?? 0;
                   final driverName = driverInfo?['name'] ?? 'Driver';
                   
                   showDialog(
@@ -293,10 +307,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _exactDurationMins = null;
               });
             }
-          }
         }
       }
-    ).subscribe();
+    );
+    _ridesChannel!.subscribe();
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -472,7 +486,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
       
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error booking ride: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error booking ride: $e')));
+      }
     } finally {
       setState(() => _isBooking = false);
     }
@@ -1071,6 +1087,7 @@ class PlaceSearchDelegate extends SearchDelegate {
                           'lng': place['geometry']['location']['lng']
                         };
                         await _saveRecentPlace(details);
+                        // ignore: use_build_context_synchronously
                         close(context, details);
                       },
                     );
@@ -1103,6 +1120,7 @@ class PlaceSearchDelegate extends SearchDelegate {
                   final details = await _getPlaceDetails(placeId, name);
                   if (details != null) {
                     await _saveRecentPlace(details);
+                    // ignore: use_build_context_synchronously
                     close(context, details);
                   }
                 },

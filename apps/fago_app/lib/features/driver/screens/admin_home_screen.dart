@@ -39,11 +39,13 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   Future<void> _clearCommission(String driverId) async {
     try {
       await _supabase.from('drivers').update({'pending_commission': 0}).eq('id', driverId);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Commission cleared!')),
       );
       _fetchDrivers();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error clearing commission: $e')),
       );
@@ -53,11 +55,13 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   Future<void> _verifyDriver(String driverId) async {
     try {
       await _supabase.from('drivers').update({'is_verified': true}).eq('id', driverId);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Driver verified!')),
       );
       _fetchDrivers();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error verifying driver: $e')),
       );

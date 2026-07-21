@@ -30,7 +30,7 @@ class VideoCard extends StatelessWidget {
                       child: Image.network(
                         videoModel.thumbnailUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Center(
+                        errorBuilder: (context, error, stackTrace) => const Center(
                           child: Icon(Icons.broken_image_rounded, size: 48, color: Colors.white24),
                         ),
                       ),

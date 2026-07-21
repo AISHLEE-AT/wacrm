@@ -5,7 +5,7 @@ class WhatsAppHelper extends StatelessWidget {
   final String phoneNumber = '916381029380';
   final String initialMessage;
 
-  const WhatsAppHelper({Key? key, this.initialMessage = 'Hello, I need some help with the Fago app.'}) : super(key: key);
+  const WhatsAppHelper({super.key, this.initialMessage = 'Hello, I need some help with the Fago app.'});
 
   Future<void> _launchWhatsApp() async {
     final url = Uri.parse('https://wa.me/$phoneNumber?text=${Uri.encodeComponent(initialMessage)}');
@@ -22,8 +22,8 @@ class WhatsAppHelper extends StatelessWidget {
       heroTag: 'whatsapp_helper',
       backgroundColor: const Color(0xFF25D366), // WhatsApp Green
       onPressed: _launchWhatsApp,
-      child: const Icon(Icons.support_agent, color: Colors.white),
       tooltip: 'Get Help on WhatsApp',
+      child: const Icon(Icons.support_agent, color: Colors.white),
     );
   }
 }

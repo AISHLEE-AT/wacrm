@@ -7,7 +7,6 @@ import '../services/supabase_service.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math;
 import 'package:qr_flutter/qr_flutter.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -485,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     if (permission == LocationPermission.deniedForever) return;
 
     Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
     setState(() => _currentPosition = position);
     _mapController?.animateCamera(CameraUpdate.newCameraPosition(
       CameraPosition(
@@ -542,6 +541,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _locationTimer?.cancel();
     _ridesSubscription?.cancel();
     _supabaseService.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 

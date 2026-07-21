@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
-import '../models/transaction_model.dart';
 
 class ProfileDashboard extends ConsumerStatefulWidget {
-  const ProfileDashboard({Key? key}) : super(key: key);
+  const ProfileDashboard({super.key});
 
   @override
   ConsumerState<ProfileDashboard> createState() => _ProfileDashboardState();
@@ -151,9 +150,10 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           TextButton(
             onPressed: () async {
               if (controller.text.isNotEmpty) {
+                final nav = Navigator.of(context);
                 await ref.read(profileServiceProvider).updateProfile(profile.id, {'upi_id': controller.text.trim()});
                 ref.invalidate(currentProfileProvider);
-                if (mounted) Navigator.pop(context);
+                nav.pop();
               }
             },
             child: const Text('Save', style: TextStyle(color: Color(0xFF00F0FF))),
@@ -265,7 +265,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             leading: const Icon(Icons.work, color: Color(0xFF00F0FF)),
             title: Text(exp['title'] ?? 'Role', style: const TextStyle(color: Colors.white)),
             subtitle: Text(exp['company'] ?? 'Company', style: const TextStyle(color: Colors.grey)),
-          )).toList(),
+          )),
           const SizedBox(height: 24),
           _buildSectionTitle('Education'),
           ...profile.education.map((edu) => ListTile(
@@ -273,7 +273,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             leading: const Icon(Icons.school, color: Color(0xFF00F0FF)),
             title: Text(edu['degree'] ?? 'Degree', style: const TextStyle(color: Colors.white)),
             subtitle: Text(edu['institution'] ?? 'Institution', style: const TextStyle(color: Colors.grey)),
-          )).toList(),
+          )),
         ],
       ),
     );

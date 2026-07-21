@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../auth/auth_provider.dart';
-import '../features/profile/models/profile_model.dart';
-import '../features/profile/providers/profile_provider.dart';
 import '../core/widgets/whatsapp_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -146,18 +144,17 @@ class _ModuleSelectionScreenState extends ConsumerState<ModuleSelectionScreen>
           ),
           TextButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(context);
               final userId = Supabase.instance.client.auth.currentUser?.id;
               if (userId != null) {
                 await Supabase.instance.client.from('profiles').update({
                   'default_module': moduleTitle.toLowerCase(),
                 }).eq('id', userId);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$moduleTitle set as default!')),
-                  );
-                }
               }
+              messenger.showSnackBar(
+                SnackBar(content: Text('$moduleTitle set as default!')),
+              );
             },
             child: const Text('Yes', style: TextStyle(color: Color(0xFF6366F1))),
           ),

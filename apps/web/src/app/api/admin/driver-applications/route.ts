@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireRole, toErrorResponse } from '@/lib/auth/account'
 
 function supabaseAdmin() {
   return createClient(
@@ -10,6 +11,7 @@ function supabaseAdmin() {
 
 export async function GET() {
   try {
+    await requireRole('admin')
     const supabase = supabaseAdmin()
     
     // We fetch the applications and their corresponding user profiles to show names/emails
@@ -44,14 +46,14 @@ export async function GET() {
     }))
 
     return NextResponse.json({ applications: applicationsWithProfiles })
-  } catch (error) {
-    console.error('Admin driver applications error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    await requireRole('admin')
     const { id, status, accountId, userId, vehicleType } = await request.json()
 
     if (!id || !status) {
@@ -107,8 +109,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ success: true })
 
-  } catch (error: any) {
-    console.error('Admin approve/reject error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }

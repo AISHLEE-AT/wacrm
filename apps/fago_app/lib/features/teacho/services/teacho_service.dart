@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/course_model.dart';
 
@@ -25,7 +26,7 @@ class TeachOService {
       final response = await query.order('created_at', ascending: false);
       return (response as List).map((e) => CourseModel.fromJson(e)).toList();
     } catch (e) {
-      print('Error fetching courses: $e');
+      debugPrint('Error fetching courses: $e');
       return [];
     }
   }
@@ -40,7 +41,7 @@ class TeachOService {
           .maybeSingle();
       return response;
     } catch (e) {
-      print('Error fetching course progress: $e');
+      debugPrint('Error fetching course progress: $e');
       return null;
     }
   }
@@ -61,7 +62,7 @@ class TeachOService {
         'updated_at': DateTime.now().toIso8601String(),
       });
     } catch (e) {
-      print('Error updating course progress: $e');
+      debugPrint('Error updating course progress: $e');
       rethrow;
     }
   }

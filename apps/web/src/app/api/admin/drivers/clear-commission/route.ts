@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireRole, toErrorResponse } from '@/lib/auth/account'
 
 function supabaseAdmin() {
   return createClient(
@@ -10,6 +11,7 @@ function supabaseAdmin() {
 
 export async function POST(req: Request) {
   try {
+    await requireRole('admin')
     const { driver_id } = await req.json()
     if (!driver_id) {
       return NextResponse.json({ error: 'Driver ID required' }, { status: 400 })
@@ -27,8 +29,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Clear commission error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err) {
+    return toErrorResponse(err)
   }
 }
