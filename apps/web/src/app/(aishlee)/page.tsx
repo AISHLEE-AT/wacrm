@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, GraduationCap, Store, Landmark, ClipboardCheck, PlaySquare, CheckSquare, Plane } from 'lucide-react';
+import { LayoutDashboard, GraduationCap, Store, Landmark, ClipboardCheck, PlaySquare, CheckSquare, Plane, Car, Truck } from 'lucide-react';
 
 const MODULE_KEY = 'aishlee_last_module';
 
@@ -13,6 +13,8 @@ const MODULES = [
   { path: '/tasko',   label: 'TaskO',     icon: CheckSquare,     color: '#8B5CF6', desc: 'Task Management' },
   { path: '/tradeo',  label: 'TradeO',    icon: Store,           color: '#EC4899', desc: 'Business & Trade' },
   { path: '/tvo',     label: 'TvO',       icon: PlaySquare,      color: '#14B8A6', desc: 'Entertainment & Media' },
+  { path: '/rido',    label: 'RidO',      icon: Car,             color: '#F43F5E', desc: 'Share-auto & Transport' },
+  { path: '/drivo',   label: 'DrivO',     icon: Truck,           color: '#EAB308', desc: 'Logistics & Delivery' },
 ];
 
 export default function RootPage() {
