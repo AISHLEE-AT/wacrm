@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink, UserPlus, Check } from 'lucide-react';
+import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink, UserPlus, Check, Compass } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -532,19 +532,26 @@ export default function DriveODashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-muted-foreground block">Pickup GPS:</span>
+                    <span className="text-muted-foreground block font-semibold mb-1">Pickup GPS Location:</span>
                     <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${activeOrder.pickup_latitude},${activeOrder.pickup_longitude}`}
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${activeOrder.pickup_latitude || activeOrder.pickup_lat || 13.0827},${activeOrder.pickup_longitude || activeOrder.pickup_lng || 80.2707}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary font-bold hover:underline inline-flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold inline-flex items-center gap-1.5 hover:bg-emerald-700 transition shadow-sm"
                     >
-                      Open Maps GPS <ExternalLink className="w-3 h-3" />
+                      <Compass className="w-4 h-4" /> Navigate to Pickup (Google Maps)
                     </a>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block">Dropoff:</span>
-                    <strong className="text-foreground">{activeOrder.dropoff_address}</strong>
+                    <span className="text-muted-foreground block font-semibold mb-1">Dropoff Location:</span>
+                    <a
+                      href={activeOrder.dropoff_latitude ? `https://www.google.com/maps/dir/?api=1&destination=${activeOrder.dropoff_latitude},${activeOrder.dropoff_longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeOrder.dropoff_address || 'Dropoff')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-primary text-white font-bold inline-flex items-center gap-1.5 hover:bg-primary/90 transition shadow-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" /> Navigate to Dropoff
+                    </a>
                   </div>
                 </div>
 

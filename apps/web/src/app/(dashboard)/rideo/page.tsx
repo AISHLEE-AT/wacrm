@@ -167,7 +167,7 @@ export default function RideODashboard() {
   const baseAppFare = distanceKm !== null ? Math.round(currentCategoryObj.baseFare + distanceKm * currentCategoryObj.perKm) : 0;
   const totalOfferedFare = baseAppFare + extraTip;
 
-  // Fully Automated WhatsApp Message Payload (Pickup GPS + Dropoff + Distance + Offered Fare)
+  // Fully Automated WhatsApp Message Payload (Pickup GPS + Dropoff + 1-Click Device Navigation + Offered Fare)
   const getAutomatedDriverWhatsAppUrl = (driverPhone: string, driverName: string) => {
     const customerName = profile?.full_name || currentUser?.email?.split('@')[0] || 'Customer';
     const customerPhone = profile?.phone || 'Contact via App';
@@ -176,18 +176,23 @@ export default function RideODashboard() {
       : 'Device GPS Location';
     const dropoffGpsUrl = destinationLocation 
       ? `https://www.google.com/maps/search/?api=1&query=${destinationLocation.lat},${destinationLocation.lng}` 
-      : searchQuery || 'Destination';
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`;
+
+    const turnByTurnNavUrl = (currentLocation && destinationLocation)
+      ? `https://www.google.com/maps/dir/?api=1&origin=${currentLocation.lat},${currentLocation.lng}&destination=${destinationLocation.lat},${destinationLocation.lng}&travelmode=driving`
+      : pickupGpsUrl;
 
     const text = `🚨 *RIDEO TRIP & LOGISTICS BOOKING* 🚨\n\n` +
       `👋 *Hello ${driverName},*\n\n` +
       `👤 *Customer:* ${customerName}\n` +
       `📞 *Customer Call:* tel:${customerPhone}\n\n` +
       `📌 *LIVE PICKUP GPS:* ${pickupGpsUrl}\n` +
-      `🎯 *DROPOFF / DESTINATION:* ${dropoffGpsUrl}\n` +
+      `🎯 *DROPOFF GPS:* ${dropoffGpsUrl}\n` +
+      `🧭 *1-CLICK DEVICE MAP NAVIGATION:* ${turnByTurnNavUrl}\n\n` +
       `📏 *TRIP DISTANCE:* ${distanceKm || 0} km\n` +
       `🚚 *VEHICLE NEEDED:* ${currentCategoryObj.icon} ${currentCategoryObj.name}\n\n` +
       `💵 *COMMITTED OFFERED AMOUNT:* ₹${totalOfferedFare}\n\n` +
-      `👉 *Please tap reply or call customer to confirm this trip commitment!*`;
+      `👉 *Please tap the navigation link above or call customer to confirm this trip!*`;
 
     return `https://api.whatsapp.com/send?phone=${driverPhone.replace(/\D/g, '')}&text=${encodeURIComponent(text)}`;
   };
