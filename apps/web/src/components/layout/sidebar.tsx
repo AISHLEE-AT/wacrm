@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -26,44 +26,6 @@ import {
   Truck,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
-
-// Per-role chip metadata used in the sidebar's account strip + the
-// Members tab roster. Keeping this near both consumers in a single
-// place avoids drift between the two surfaces — when a designer
-// wants to recolour "agent" rows, this is the one diff.
-const ROLE_CHIP: Record<
-  AccountRole,
-  { icon: typeof Crown; label: string; className: string }
-> = {
-  owner: {
-    icon: Crown,
-    label: "Owner",
-    // Amber: scarce, immutable, "the boss" — gets visual emphasis.
-    className:
-      "border-amber-500/40 bg-amber-500/10 text-amber-300",
-  },
-  admin: {
-    icon: Shield,
-    label: "Admin",
-    // Primary-tinted: significant but not as scarce as owner.
-    className:
-      "border-primary/40 bg-primary/10 text-primary",
-  },
-  agent: {
-    icon: UserCog,
-    label: "Agent",
-    // Neutral slate: the operational default.
-    className:
-      "border-border bg-muted text-foreground",
-  },
-  viewer: {
-    icon: User,
-    label: "Viewer",
-    // Muted slate: read-only role; visually quieter than agent.
-    className:
-      "border-border bg-card text-muted-foreground",
-  },
-};
 import {
   Avatar,
   AvatarFallback,
@@ -77,18 +39,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const ROLE_CHIP: Record<
+  AccountRole,
+  { icon: typeof Crown; label: string; className: string }
+> = {
+  owner: {
+    icon: Crown,
+    label: "Owner",
+    className: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+  },
+  admin: {
+    icon: Shield,
+    label: "Admin",
+    className: "border-primary/40 bg-primary/10 text-primary",
+  },
+  agent: {
+    icon: UserCog,
+    label: "Agent",
+    className: "border-border bg-muted text-foreground",
+  },
+  viewer: {
+    icon: User,
+    label: "Viewer",
+    className: "border-border bg-card text-muted-foreground",
+  },
+};
+
 interface NavItem {
   href: string;
   label: string;
   icon: typeof LayoutDashboard;
-  /**
-   * When true, the nav row renders a small "Beta" chip after the label.
-   * Purely informational — doesn't affect routing or access.
-   */
   beta?: boolean;
 }
-
-// Removed fagoItems and aishleeItems to enforce grid navigation
 
 const crmItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -98,11 +80,6 @@ const crmItems: NavItem[] = [
   { href: "/broadcasts", label: "Broadcasts", icon: Radio },
   { href: "/automations", label: "Automations", icon: Zap },
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
-];
-
-const mobilityItems: NavItem[] = [
-  { href: "/rideo", label: "RideO", icon: Car },
-  { href: "/drivo", label: "DriveO", icon: Truck },
 ];
 
 const adminItems: NavItem[] = [
@@ -117,7 +94,6 @@ const bottomNavItems = [
 ];
 
 interface SidebarProps {
-  /** Controlled on mobile by the Header's hamburger button. Ignored on lg+. */
   open?: boolean;
   onClose?: () => void;
 }
@@ -126,14 +102,36 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, profile, profileLoading, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
-  // Only surface the account-name strip when it actually carries
-  // information. A solo user's personal account is named after them
-  // (the 017 signup trigger seeds it from `full_name`), so showing it
-  // here would just duplicate the user name in the footer below. Once
-  // the account is renamed or the user joins a shared account, the
-  // name diverges and the strip becomes meaningful — that's the signal
-  // we gate on. Wait for the profile fetch to settle first, otherwise
-  // the strip flashes in once the row resolves (a layout jump).
+  const [isRegisteredDriver, setIsRegisteredDriver] = useState(false);
+
+  // Explicit Admin Determination: Phone 9486335870 or Email aishleetechnology@gmail.com or Admin Role
+  const isAdmin =
+    accountRole === "admin" ||
+    accountRole === "owner" ||
+    profile?.email === "aishleetechnology@gmail.com" ||
+    profile?.phone?.includes("9486335870") ||
+    user?.email === "aishleetechnology@gmail.com" ||
+    user?.phone?.includes("9486335870");
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const checkDriverStatus = async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("drivers")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (data) setIsRegisteredDriver(true);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    checkDriverStatus();
+  }, [user?.id]);
+
   const showAccountStrip =
     !profileLoading &&
     !!account?.name &&
@@ -145,16 +143,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     displayEmail = rawNumber.slice(-10);
   }
 
-  // Close the drawer when route changes — users opened it to navigate,
-  // so once they pick a destination the drawer should get out of the way.
   useEffect(() => {
     onClose?.();
-    // Only pathname drives this — onClose identity doesn't need to re-run it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Lock body scroll and allow Escape to close while the drawer is open on
-  // mobile. No-ops on desktop because the sidebar isn't positioned there.
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -169,38 +161,37 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     };
   }, [open, onClose]);
 
+  // Dynamic Mobility Items based on Driver status
+  const mobilityItems: NavItem[] = [
+    { href: "/rideo", label: "RideO", icon: Car },
+    ...(isAdmin || isRegisteredDriver
+      ? [{ href: "/drivo", label: "DriveO", icon: Truck }]
+      : []),
+  ];
+
   return (
     <>
-      {/* Backdrop — only exists on mobile and only when open. Clicking
-          it closes the drawer. Hidden from lg+ since the sidebar is
-          part of the main flex row there. */}
       <button
         type="button"
         aria-label="Close menu"
         onClick={onClose}
         className={cn(
           "fixed inset-0 z-30 bg-background/70 backdrop-blur-sm transition-opacity lg:hidden",
-          open
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0",
+          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         )}
       />
 
       <aside
         className={cn(
-          // Mobile: fixed drawer that slides in from the left.
           "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-white/5 bg-card/40 backdrop-blur-2xl",
           "transition-transform duration-200 ease-out will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: static, always visible — reset all the mobile framing.
-          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none",
+          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none"
         )}
         aria-label="Primary"
       >
-        {/* Logo row. On mobile we put a close button here; on desktop the
-            close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-600 shadow-[0_0_10px_rgba(16,185,129,0.3)] border border-white/10">
               <span className="text-lg font-black text-white tracking-tighter">F</span>
             </div>
@@ -223,13 +214,11 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           </button>
         </div>
 
-        {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* FAGO and Aishlee Ecosystem navigation moved exclusively to the grid selection screen */}
-
-          {/* CRM Section - Visible to everyone now */}
+          {/* CRM Section — Only Visible to Admin */}
+          {isAdmin && (
             <>
-              <div className="px-3 mb-2 mt-4">
+              <div className="px-3 mb-2 mt-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WAPP CRM</h3>
               </div>
               <ul className="flex flex-col gap-1">
@@ -249,7 +238,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                           isActive
                             ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                         )}
                       >
                         <item.icon className="h-4 w-4" />
@@ -276,40 +265,47 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   );
                 })}
               </ul>
+            </>
+          )}
 
-              <div className="px-3 mb-2 mt-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobility & Logistics</h3>
-              </div>
-              <ul className="flex flex-col gap-1">
-                {mobilityItems.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
-                          isActive
-                            ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
-                        )}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span className="flex-1">{item.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
+          {/* Mobility & Logistics Section — Always Visible */}
+          <div className="px-3 mb-2 mt-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobility & Logistics</h3>
+          </div>
+          <ul className="flex flex-col gap-1">
+            {mobilityItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
+                      isActive
+                        ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
 
+          {/* Administration Section — Only Visible to Admin */}
+          {isAdmin && (
+            <>
               <div className="px-3 mb-2 mt-4">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</h3>
               </div>
               <ul className="flex flex-col gap-1">
                 {adminItems.map((item) => {
-                  const isActive = item.href === "/admin" 
-                    ? pathname === "/admin"
-                    : pathname.startsWith(item.href);
+                  const isActive =
+                    item.href === "/admin"
+                      ? pathname === "/admin"
+                      : pathname.startsWith(item.href);
 
                   return (
                     <li key={item.href}>
@@ -319,7 +315,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                           "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                           isActive
                             ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                         )}
                       >
                         <item.icon className="h-4 w-4" />
@@ -329,10 +325,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   );
                 })}
               </ul>
-
-              <div className="my-4 border-t border-border" />
             </>
+          )}
 
+          <div className="my-4 border-t border-border" />
+
+          {/* Account & Settings Section — Always Visible */}
           <ul className="flex flex-col gap-1">
             {bottomNavItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
@@ -344,7 +342,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
                       isActive
                         ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -356,28 +354,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           </ul>
         </nav>
 
-        {/* User section */}
+        {/* User Footer Strip */}
         <div className="shrink-0 border-t border-white/5 p-3">
-          {/* Account name display — surfaced only when the account
-              name differs from the user's own name (see
-              `showAccountStrip`). For a default solo account the two
-              match, so we hide it to avoid duplicating the user name
-              below; for renamed or shared accounts it tells the user
-              which account they're acting in. */}
           {showAccountStrip && account?.name ? (
             <div className="mb-2 flex items-center gap-2 px-3 text-xs text-muted-foreground">
               <UsersRound className="size-3.5 shrink-0" />
-              {/* `title=` exposes the full name on hover when it
-                  gets truncated (long account names + narrow
-                  sidebars). Cheap a11y win. */}
               <span className="truncate" title={account.name}>
                 {account.name}
               </span>
               {accountRole ? (
-                // Always render the chip — owners used to be
-                // invisible here, which made them indistinguishable
-                // from admins at a glance. Now everyone sees their
-                // role (with a colour cue) regardless of tier.
                 (() => {
                   const meta = ROLE_CHIP[accountRole];
                   const Icon = meta.icon;
