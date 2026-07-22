@@ -58,4 +58,44 @@ class WhatsAppService {
       return false;
     }
   }
+
+  /// Launch 1-Tap UPI Payment Intent (GPay, PhonePe, Paytm, BHIM)
+  static Future<bool> openUpiPayment({
+    required String upiId,
+    required String name,
+    required double amount,
+    required String note,
+  }) async {
+    final encodedName = Uri.encodeComponent(name);
+    final encodedNote = Uri.encodeComponent(note);
+    final upiUri = Uri.parse(
+      'upi://pay?pa=$upiId&pn=$encodedName&am=${amount.toStringAsFixed(2)}&cu=INR&tn=$encodedNote',
+    );
+
+    try {
+      if (await canLaunchUrl(upiUri)) {
+        return await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+      } else {
+        return false;
+      }
+    } catch (e) {
+      print('Error launching UPI Payment: $e');
+      return false;
+    }
+  }
+
+  /// Automated Ride Confirmation Message Template for WhatsApp
+  static String getRideConfirmationTemplate({
+    required String vehicleCategory,
+    required String pickupAddress,
+    required String dropoffAddress,
+    required double fare,
+  }) {
+    return '🚗 *RideO Booking Request*\n\n'
+        '• *Vehicle*: $vehicleCategory\n'
+        '• *Pickup*: $pickupAddress\n'
+        '• *Dropoff*: $dropoffAddress\n'
+        '• *Estimated Fare*: ₹${fare.toStringAsFixed(0)}\n\n'
+        'Please confirm availability!';
+  }
 }

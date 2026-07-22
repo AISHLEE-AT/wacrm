@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
@@ -35,6 +36,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   }
 
   Future<void> _acceptRide(RideRequest ride) async {
+    HapticFeedback.vibrate();
     final success = await SupabaseBackendService().acceptRideRequest(
       rideId: ride.id,
       driverId: 'DRIVER_007',

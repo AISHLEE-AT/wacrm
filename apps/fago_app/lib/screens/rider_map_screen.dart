@@ -223,6 +223,24 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
               ),
               const SizedBox(height: 16),
 
+              OutlinedButton.icon(
+                onPressed: () {
+                  WhatsAppService.openUpiPayment(
+                    upiId: 'wacrm@upi',
+                    name: 'WACRM RideO Fare',
+                    amount: _estimatedFare,
+                    note: 'RideO $_selectedCategory Fare',
+                  );
+                },
+                icon: const Icon(Icons.account_balance_wallet, color: Colors.indigo),
+                label: Text('Pay ₹${_estimatedFare.toStringAsFixed(0)} via UPI (GPay / PhonePe / Paytm)'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44),
+                  side: const BorderSide(color: Colors.indigo),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               SizedBox(
                 width: double.infinity,
                 height: 48,
