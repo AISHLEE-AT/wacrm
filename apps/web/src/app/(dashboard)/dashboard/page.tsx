@@ -26,7 +26,10 @@ import type {
   ResponseTimeSummary,
 } from '@/lib/dashboard/types'
 
-import { MetricCard } from '@/components/dashboard/metric-card'
+import { useRouter } from 'next/navigation'
+import {
+  MetricCard
+} from '@/components/dashboard/metric-card'
 import { SkeletonCard } from '@/components/dashboard/skeleton'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
@@ -37,7 +40,22 @@ import { ActivityFeed } from '@/components/dashboard/activity-feed'
 type RangeDays = 7 | 30 | 90
 
 export default function DashboardPage() {
-  const { defaultCurrency } = useAuth()
+  const router = useRouter()
+  const { user, profile, defaultCurrency } = useAuth()
+
+  const isAdmin = Boolean(
+    profile?.email === "aishleetechnology@gmail.com" ||
+    profile?.phone?.includes("9486335870") ||
+    user?.email === "aishleetechnology@gmail.com" ||
+    user?.phone?.includes("9486335870")
+  )
+
+  useEffect(() => {
+    if (user && !isAdmin) {
+      router.replace('/rideo')
+    }
+  }, [user, isAdmin, router])
+
   const [metrics, setMetrics] = useState<MetricsBundle | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
 

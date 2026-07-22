@@ -82,7 +82,8 @@ export async function middleware(request: NextRequest) {
       if (!profileComplete) {
         url.pathname = '/onboarding';
       } else {
-        url.pathname = '/dashboard';
+        const isAdmin = user.email === 'aishleetechnology@gmail.com' || user.phone?.includes('9486335870');
+        url.pathname = isAdmin ? '/dashboard' : '/rideo';
         supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
       }
       url.search = ''
