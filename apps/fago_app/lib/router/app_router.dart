@@ -11,6 +11,9 @@ import '../features/driver/screens/home_screen.dart' as driver;
 import '../features/driver/screens/admin_home_screen.dart' as admin;
 import '../features/profile/screens/profile_dashboard.dart';
 
+import '../screens/rider_map_screen.dart';
+import '../screens/driver_dashboard_screen.dart';
+
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -64,6 +67,14 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           );
         },
+      ),
+      GoRoute(
+        path: '/rideo',
+        builder: (context, state) => const RiderMapScreen(),
+      ),
+      GoRoute(
+        path: '/drivo',
+        builder: (context, state) => const DriverDashboardScreen(),
       ),
       GoRoute(
         path: '/rider',
