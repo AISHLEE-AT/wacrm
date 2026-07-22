@@ -108,4 +108,18 @@ class LocationService {
 
     return 'GPS Pin: ${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
   }
+
+  /// Forward Geocoding: Search location coordinates from text input ($0 API Cost & 100% Native Precision)
+  Future<model.Location?> searchAddressCoordinates(String address) async {
+    try {
+      List<Location> locations = await locationFromAddress(address);
+      if (locations.isNotEmpty) {
+        final loc = locations.first;
+        return model.Location(latitude: loc.latitude, longitude: loc.longitude);
+      }
+    } catch (e) {
+      print('Native forward geocoding search error: $e');
+    }
+    return null;
+  }
 }

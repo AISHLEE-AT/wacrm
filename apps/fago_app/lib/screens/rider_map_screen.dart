@@ -5,6 +5,7 @@ import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
+import '../features/driver/screens/driver_registration_screen.dart';
 
 class RiderMapScreen extends StatefulWidget {
   const RiderMapScreen({Key? key}) : super(key: key);
@@ -19,10 +20,13 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   Location? _destinationLocation;
   String _currentAddress = 'Detecting high-precision GPS...';
   String _destinationAddress = '';
-  String _selectedCategory = 'Auto';
+  String _selectedCategory = 'Bike';
   double _estimatedFare = 0.0;
   bool _isBooking = false;
-  RideRequest? _activeRide;
+  bool _isSearching = false;
+
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController(text: '+91');
 
   final Map<String, Map<String, dynamic>> _categories = {
     'Bike': {'baseFare': 30, 'perKm': 10, 'icon': Icons.two_wheeler, 'color': Colors.orange},
@@ -32,6 +36,14 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     'Truck': {'baseFare': 400, 'perKm': 50, 'icon': Icons.local_shipping, 'color': Colors.brown},
     'Bus': {'baseFare': 600, 'perKm': 75, 'icon': Icons.directions_bus, 'color': Colors.teal},
   };
+
+  final List<String> _quickLandmarks = [
+    'THALA THALAPATHY SALOON',
+    'Bus Stand',
+    'Railway Station',
+    'Government Hospital',
+    'Main Market Center',
+  ];
 
   @override
   void initState() {
@@ -77,35 +89,159 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     }
   }
 
-  void _onMapTapped(LatLng target) async {
+  Future<void> _searchDestination(String query) async {
+    if (query.trim().isEmpty) return;
+
+    setState(() => _isSearching = true);
+    
+    // Add current locality context if available
+    String fullQuery = query;
+    if (_currentAddress.contains(',')) {
+      final parts = _currentAddress.split(',');
+      if (parts.length > 1) {
+        fullQuery = '$query, ${parts[parts.length - 2]}';
+      }
+    }
+
+    final searchedLoc = await LocationService().searchAddressCoordinates(fullQuery) ??
+        await LocationService().searchAddressCoordinates(query);
+
+    setState(() => _isSearching = false);
+
+    if (searchedLoc != null) {
+      _setDestinationCoordinates(searchedLoc.latitude, searchedLoc.longitude, query);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not locate "$query". Tap directly on the map to set pin.')),
+        );
+      }
+    }
+  }
+
+  void _setDestinationCoordinates(double lat, double lng, [String? addressLabel]) async {
     setState(() {
-      _destinationLocation = Location(latitude: target.latitude, longitude: target.longitude);
-      _destinationAddress = 'Selected Destination Pin (${target.latitude.toStringAsFixed(3)}, ${target.longitude.toStringAsFixed(3)})';
+      _destinationLocation = Location(latitude: lat, longitude: lng);
+      _destinationAddress = addressLabel ?? 'Selected Pin ($lat, $lng)';
     });
     _updateFare();
 
-    final address = await LocationService().getAddressFromCoordinates(target.latitude, target.longitude);
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15),
+    );
+
+    final resolvedAddress = await LocationService().getAddressFromCoordinates(lat, lng);
     if (mounted) {
       setState(() {
-        _destinationAddress = address;
+        _destinationAddress = resolvedAddress;
       });
     }
   }
 
-  Future<void> _requestRide() async {
-    if (_currentLocation == null || _destinationLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your destination on the map first.')),
-      );
-      return;
-    }
+  void _onMapTapped(LatLng target) {
+    _setDestinationCoordinates(target.latitude, target.longitude);
+  }
+
+  void _showBookingConfirmationDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Confirm $_selectedCategory Booking',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Pickup: $_currentAddress',
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Dropoff: $_destinationAddress',
+                style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.bold),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Estimated Fare: ₹${_estimatedFare.toStringAsFixed(0)}',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+              ),
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Your WhatsApp Phone Number',
+                  hintText: '+919876543210',
+                  prefixIcon: const Icon(Icons.phone_android, color: Colors.green),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _confirmAndPostRide();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('CONFIRM & NOTIFY NEARBY DRIVERS'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmAndPostRide() async {
+    if (_currentLocation == null || _destinationLocation == null) return;
 
     setState(() => _isBooking = true);
+
+    final riderPhone = _phoneController.text.trim().isEmpty ? '+919876543210' : _phoneController.text.trim();
 
     final newRide = RideRequest(
       id: 'RIDE_${DateTime.now().millisecondsSinceEpoch}',
       riderId: 'RIDER_001',
-      riderPhone: '+919876543210',
+      riderPhone: riderPhone,
       pickupLocation: _currentLocation!,
       pickupAddress: _currentAddress,
       dropoffLocation: _destinationLocation!,
@@ -116,15 +252,15 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       createdAt: DateTime.now(),
     );
 
-    final result = await SupabaseBackendService().createRideRequest(newRide);
-    setState(() {
-      _isBooking = false;
-      _activeRide = result ?? newRide;
-    });
+    await SupabaseBackendService().createRideRequest(newRide);
+    setState(() => _isBooking = false);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ride requested! Nearby drivers have been notified via WhatsApp Radar.')),
+        SnackBar(
+          content: Text('Ride requested for $riderPhone! Nearby drivers are alerted.'),
+          backgroundColor: Colors.green.shade800,
+        ),
       );
     }
   }
@@ -152,7 +288,9 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           markerId: const MarkerId('dropoff'),
           position: LatLng(_destinationLocation!.latitude, _destinationLocation!.longitude),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: const InfoWindow(title: 'Drop-off Location'),
+          infoWindow: InfoWindow(
+            title: _destinationAddress.isNotEmpty ? _destinationAddress : 'Drop-off Pin',
+          ),
         ),
       );
     }
@@ -163,6 +301,28 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
+          // 💬 Support Chat Button
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline, color: Colors.greenAccent),
+            tooltip: 'WhatsApp Support',
+            onPressed: () {
+              WhatsAppService.openWhatsApp(
+                phone: '+919876543210',
+                message: 'Hello WACRM Support! I have a question about booking a ride or registering as a driver.',
+              );
+            },
+          ),
+          // 🚚 Driver Registration Quick Link
+          IconButton(
+            icon: const Icon(Icons.badge_outlined, color: Colors.amber),
+            tooltip: 'Register as Driver',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DriverRegistrationScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.my_location),
             onPressed: _fetchLiveLocation,
@@ -180,6 +340,49 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
             myLocationButtonEnabled: false,
           ),
 
+          // 🔍 Top Floating Search Bar
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 12,
+            child: Card(
+              elevation: 6,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: Colors.black54),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: _searchDestination,
+                        decoration: const InputDecoration(
+                          hintText: 'Search place (e.g. THALA THALAPATHY SALOON)...',
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                    if (_isSearching)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward, color: Colors.black87),
+                        onPressed: () => _searchDestination(_searchController.text),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 📍 Bottom Card Controls
           Positioned(
             bottom: 0,
             left: 0,
@@ -216,7 +419,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _destinationAddress.isEmpty ? 'Tap map to choose drop-off point' : _destinationAddress,
+                          _destinationAddress.isEmpty ? 'Search place above or tap map to set pin' : _destinationAddress,
                           style: TextStyle(
                             color: _destinationAddress.isEmpty ? Colors.grey : Colors.black,
                             fontSize: 13,
@@ -227,10 +430,31 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                       ),
                     ],
                   ),
-                  const Divider(height: 20),
+                  const SizedBox(height: 8),
+
+                  // Quick Landmark Suggestion Chips
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _quickLandmarks.map((landmark) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ActionChip(
+                            avatar: const Icon(Icons.place, size: 14, color: Colors.redAccent),
+                            label: Text(landmark, style: const TextStyle(fontSize: 11)),
+                            onPressed: () {
+                              _searchController.text = landmark;
+                              _searchDestination(landmark);
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const Divider(height: 16),
 
                   SizedBox(
-                    height: 80,
+                    height: 75,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
                       children: _categories.keys.map((catKey) {
@@ -244,7 +468,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: isSelected ? (cat['color'] as Color).withOpacity(0.15) : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
@@ -272,7 +496,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                       }).toList(),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
 
                   if (_destinationLocation != null) ...[
                     Row(
@@ -300,14 +524,24 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                   ],
 
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: _isBooking ? null : _requestRide,
+                      onPressed: _isBooking
+                          ? null
+                          : () {
+                              if (_destinationLocation == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please select your destination on map or search above.')),
+                                );
+                                return;
+                              }
+                              _showBookingConfirmationDialog();
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
                         foregroundColor: Colors.white,
