@@ -5,7 +5,7 @@
 
 -- 1. Create Contacts Table for WhatsApp CRM Lead & Contact Management
 CREATE TABLE IF NOT EXISTS public.contacts (
-    id UUID PRIMARY KEY DEFAULT gen_random_null(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL DEFAULT 'Rider Lead',
     phone TEXT NOT NULL UNIQUE,
     role TEXT NOT NULL DEFAULT 'Rider',
@@ -58,7 +58,7 @@ ON public.ride_requests FOR ALL USING (true) WITH CHECK (true);
 
 -- 5. Create Driver Profiles & Verification Table (Driver KYC & Vehicle Details)
 CREATE TABLE IF NOT EXISTS public.driver_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_null(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
     license_number TEXT NOT NULL,
