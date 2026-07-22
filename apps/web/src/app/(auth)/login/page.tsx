@@ -200,7 +200,7 @@ function LoginPageInner() {
 
   const getWhatsAppDirectMsgUrl = () => {
     const text = `Hello FAGO Support, please reply with my Login OTP for mobile +91 ${phone || 'YOUR_PHONE'}`;
-    return `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(text)}`;
+    return `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(text)}`;
   };
 
   return (
@@ -363,7 +363,7 @@ function LoginPageInner() {
                     className="w-full py-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm mt-1"
                   >
                     <Send className="w-4 h-4" />
-                    Send WhatsApp Message for Auto-OTP (9486335870)
+                    Send WhatsApp Message for Auto-OTP (6381029380)
                   </a>
                 </motion.form>
               ) : (
