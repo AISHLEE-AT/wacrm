@@ -26,6 +26,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   bool _isSearching = false;
 
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController(text: '+91');
 
   final Map<String, Map<String, dynamic>> _categories = {
@@ -199,6 +200,18 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
               const SizedBox(height: 16),
 
               TextField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Your Name',
+                  hintText: 'e.g. Rahul Sharma',
+                  prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
@@ -238,12 +251,23 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
     setState(() => _isBooking = true);
 
+    final riderName = _nameController.text.trim().isEmpty ? 'Anonymous Rider' : _nameController.text.trim();
     final riderPhone = _phoneController.text.trim().isEmpty ? '+919876543210' : _phoneController.text.trim();
 
+    // 1. Save Lead Contact directly to WhatsApp CRM Contacts list for future marketing/follow-up
+    await SupabaseBackendService().saveCrmContact(
+      name: riderName,
+      phone: riderPhone,
+      role: 'Rider',
+      city: _currentAddress,
+      category: _selectedCategory,
+    );
+
+    // 2. Create Ride Request
     final newRide = RideRequest(
       id: 'RIDE_${DateTime.now().millisecondsSinceEpoch}',
       riderId: 'RIDER_001',
-      riderPhone: riderPhone,
+      riderPhone: '$riderName ($riderPhone)',
       pickupLocation: _currentLocation!,
       pickupAddress: _currentAddress,
       dropoffLocation: _destinationLocation!,
@@ -260,7 +284,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Ride requested for $riderPhone! Nearby drivers are alerted.'),
+          content: Text('Ride requested for $riderName ($riderPhone)! Contact saved to WhatsApp CRM.'),
           backgroundColor: Colors.green.shade800,
         ),
       );

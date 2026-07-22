@@ -70,4 +70,31 @@ class SupabaseBackendService {
       return const Stream.empty();
     }
   }
+
+  /// Save Rider/Lead Contact to WhatsApp CRM Database for Future Follow-ups & CRM Marketing
+  Future<bool> saveCrmContact({
+    required String name,
+    required String phone,
+    required String role, // 'Rider' or 'Driver'
+    String? city,
+    String? category,
+  }) async {
+    try {
+      final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+      await _client.from('contacts').upsert({
+        'name': name.isEmpty ? 'Rider Lead' : name,
+        'phone': cleanPhone,
+        'role': role,
+        'city': city ?? 'Unknown',
+        'last_vehicle_category': category ?? 'General',
+        'source': 'RideO Mobile App',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'phone');
+      return true;
+    } catch (e) {
+      print('Supabase Save CRM Contact Error: $e');
+      return false;
+    }
+  }
 }
