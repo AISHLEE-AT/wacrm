@@ -57,24 +57,32 @@ export default function RideODashboard() {
   useEffect(() => {
     if (typeof window === 'undefined' || !navigator.geolocation) return;
 
+    const handleCoords = (pos: GeolocationPosition) => {
+      const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setCurrentLocation(coords);
+      if (mapRef.current) {
+        mapRef.current.panTo(coords);
+        mapRef.current.setZoom(15);
+      }
+    };
+
+    // Fast high accuracy attempt
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setCurrentLocation(coords);
-        if (mapRef.current) mapRef.current.panTo(coords);
-      },
+      handleCoords,
       (err) => {
-        console.warn('Geolocation fallback:', err.message);
-        setCurrentLocation(defaultCenter);
+        console.warn('Geolocation fallback to coarse mode:', err.message);
+        // Coarse fallback for quick mobile GPS lock
+        navigator.geolocation.getCurrentPosition(
+          handleCoords,
+          () => setCurrentLocation(defaultCenter),
+          { enableHighAccuracy: false, timeout: 5000 }
+        );
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
     );
 
     watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setCurrentLocation(coords);
-      },
+      handleCoords,
       (err) => console.warn(err),
       { enableHighAccuracy: true, maximumAge: 5000 }
     );

@@ -12,7 +12,7 @@ import {
   Smartphone, MapPin,
   LayoutGrid, User, Shield, Palette, PlugZap, Tags, Coins,
   UsersRound, KeyRound, Sparkles,
-  CreditCard, QrCode, FileText
+  CreditCard, QrCode, FileText, Clock, ExternalLink, MessageCircle, Truck
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -35,8 +35,8 @@ const PERSONAL_TABS = [
 ] as const;
 
 const CRM_TABS = [
-  { id: 'crm_overview', icon: LayoutGrid, label: 'Overview', group: 'workspace' },
-  { id: 'crm_profile', icon: User, label: 'CRM Profile', group: 'workspace' },
+  { id: 'crm_overview', icon: LayoutGrid, label: 'Overview', group: 'workspace', adminOnly: true },
+  { id: 'crm_profile', icon: User, label: 'CRM Profile', group: 'workspace', adminOnly: true },
   { id: 'crm_security', icon: Shield, label: 'Login & Security', group: 'workspace' },
   { id: 'crm_appearance', icon: Palette, label: 'Appearance', group: 'workspace' },
   { id: 'crm_whatsapp', icon: PlugZap, label: 'WhatsApp', group: 'workspace', adminOnly: true },
@@ -57,7 +57,7 @@ function resolveTab(raw: string | null): string {
     whatsapp: 'crm_whatsapp',
     templates: 'crm_templates',
     fields: 'crm_fields',
-    deals: 'crm_deals',
+    deals: 'crm_fields',
     members: 'crm_members',
     api: 'crm_api',
     tags: 'crm_fields',
@@ -98,12 +98,35 @@ function ProfilePageInner() {
   );
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
+  const [driverProfile, setDriverProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchDriverData = async () => {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) setDriverProfile(data);
+    };
+    fetchDriverData();
+  }, [user?.id]);
 
   const goSettings = (section: string) => {
     setActiveTab(`crm_${section}`);
   };
 
   const availableCrmTabs = CRM_TABS.filter(t => !t.adminOnly || isAdmin);
+
+  const getAdminVerificationWhatsAppUrl = () => {
+    const name = profile?.full_name || 'Driver Partner';
+    const vehicle = driverProfile?.vehicle_number || driverProfile?.vehicle_registration || 'Vehicle';
+    const text = `Hello Admin! I have registered as a DriveO Driver Partner (Name: ${name}, Vehicle: ${vehicle}). Please verify my driver account.`;
+    return `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(text)}`;
+  };
 
   const renderAccount = () => (
     <div className="space-y-6 max-w-2xl">
@@ -146,7 +169,7 @@ function ProfilePageInner() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Location</p>
-            <p className="font-medium">{profile?.location || 'Not provided'}</p>
+            <p className="font-medium">{profile?.location || 'Tamil Nadu, India'}</p>
           </div>
         </div>
         <hr className="border-border" />
@@ -191,6 +214,55 @@ function ProfilePageInner() {
             >Edit</button>
           )}
         </div>
+      </div>
+
+      {/* Driver Registration & Verification Status Card */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-3 shadow-sm">
+        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <Truck className="w-4 h-4 text-emerald-500" /> DriveO Partner Registration Status
+        </h3>
+
+        {!driverProfile ? (
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-xs text-muted-foreground">You are not registered as a DriveO vehicle operator yet.</p>
+            <button
+              onClick={() => router.push('/drivo')}
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shrink-0"
+            >
+              Enroll as Driver Partner
+            </button>
+          </div>
+        ) : !driverProfile.is_verified ? (
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 animate-pulse" /> Pending Admin Verification
+              </span>
+              <span className="text-xs text-muted-foreground font-mono">Reg: {driverProfile.vehicle_number || driverProfile.vehicle_registration}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Your driver profile is undergoing document verification by Admin. Tap below to request quick verification via WhatsApp.</p>
+            <a
+              href={getAdminVerificationWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs transition shadow-md"
+            >
+              <MessageCircle className="w-4 h-4" /> Request Admin Verification via WhatsApp
+            </a>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <CheckCircle className="w-4 h-4" /> Verified & Active Driver Partner
+            </span>
+            <button
+              onClick={() => router.push('/drivo')}
+              className="px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-xs transition shrink-0"
+            >
+              Open DriveO Portal
+            </button>
+          </div>
+        )}
       </div>
 
       <button

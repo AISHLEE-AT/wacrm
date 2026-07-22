@@ -261,6 +261,16 @@ function LoginPageInner() {
                       </>
                     )}
                   </Button>
+
+                  <a
+                    href="https://api.whatsapp.com/send?phone=919486335870&text=Hello%20FAGO%20Support!%20I%20need%20help%20logging%20in."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Need Help Logging In? Connect via WhatsApp
+                  </a>
                 </motion.form>
               ) : (
                 <motion.form 

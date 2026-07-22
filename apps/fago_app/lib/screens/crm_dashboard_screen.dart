@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -40,22 +39,11 @@ class _CrmDashboardScreenState extends State<CrmDashboardScreen> {
             }
           },
           onNavigationRequest: (NavigationRequest request) {
-            final uri = Uri.parse(request.url);
-            // Route RideO to native Flutter map screen for 60FPS live location & native map performance
-            if (uri.path.endsWith('/rideo') || uri.path.endsWith('/rider')) {
-              context.push('/rider');
-              return NavigationDecision.prevent;
-            }
-            // Route DrivO to native Flutter driver map screen
-            if (uri.path.endsWith('/drivo') || uri.path.endsWith('/driver')) {
-              context.push('/driver');
-              return NavigationDecision.prevent;
-            }
             return NavigationDecision.navigate;
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://watscrm.vercel.app/dashboard'));
+      ..loadRequest(Uri.parse('https://watscrm.vercel.app/rideo'));
 
     // Automatically grant Geolocation & Platform permissions for Android WebView
     if (controller.platform is AndroidWebViewController) {
@@ -87,7 +75,7 @@ class _CrmDashboardScreenState extends State<CrmDashboardScreen> {
             WebViewWidget(controller: _controller),
             if (_isLoading)
               const Center(
-                child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+                child: CircularProgressIndicator(color: Color(0xFF10B981)),
               ),
           ],
         ),
