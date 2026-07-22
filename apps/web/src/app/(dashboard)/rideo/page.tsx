@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { GoogleMap, useLoadScript, Marker, Polyline } from '@react-google-maps/api';
-import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users, Clock, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users, Clock, AlertCircle, Sparkles, Loader2, Edit3 } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -40,10 +40,19 @@ export default function RideODashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const [currentLocation, setCurrentLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [pickupAddress, setPickupAddress] = useState<string>('Locating live GPS coordinates...');
+  
+  // Source Search & Autocomplete
+  const [sourceSearchQuery, setSourceSearchQuery] = useState('');
+  const [sourceSuggestions, setSourceSuggestions] = useState<any[]>([]);
+  const [isSearchingSource, setIsSearchingSource] = useState<boolean>(false);
+  const [isManualSourceMode, setIsManualSourceMode] = useState<boolean>(false);
+
+  // Destination Search & Autocomplete
   const [destinationLocation, setDestinationLocation] = useState<google.maps.LatLngLiteral | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
   const [isSearchingSuggestions, setIsSearchingSuggestions] = useState<boolean>(false);
+
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('bike');
   const [extraTip, setExtraTip] = useState<number>(0);
@@ -63,21 +72,24 @@ export default function RideODashboard() {
 
     const handleCoords = (pos: GeolocationPosition) => {
       const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      setCurrentLocation(coords);
-      if (mapRef.current) {
-        mapRef.current.panTo(coords);
-        mapRef.current.setZoom(15);
+      if (!isManualSourceMode) {
+        setCurrentLocation(coords);
+        if (mapRef.current) {
+          mapRef.current.panTo(coords);
+          mapRef.current.setZoom(15);
+        }
       }
     };
 
-    // Fast high accuracy attempt
     navigator.geolocation.getCurrentPosition(
       handleCoords,
       (err) => {
         console.warn('Geolocation fallback to coarse mode:', err.message);
         navigator.geolocation.getCurrentPosition(
           handleCoords,
-          () => setCurrentLocation(defaultCenter),
+          () => {
+            if (!currentLocation) setCurrentLocation(defaultCenter);
+          },
           { enableHighAccuracy: false, timeout: 5000 }
         );
       },
@@ -93,11 +105,11 @@ export default function RideODashboard() {
     return () => {
       if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
     };
-  }, []);
+  }, [isManualSourceMode]);
 
   // Auto Reverse-Geocode Pickup Location Address
   useEffect(() => {
-    if (!currentLocation) return;
+    if (!currentLocation || isManualSourceMode) return;
     const fetchAddress = async () => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLocation.lat}&lon=${currentLocation.lng}`);
@@ -112,9 +124,31 @@ export default function RideODashboard() {
       }
     };
     fetchAddress();
-  }, [currentLocation]);
+  }, [currentLocation, isManualSourceMode]);
 
-  // Places Search Suggestions Autocomplete
+  // Source Places Search Suggestions Autocomplete
+  useEffect(() => {
+    if (!sourceSearchQuery.trim() || sourceSearchQuery.length < 3) {
+      setSourceSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingSource(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sourceSearchQuery)}&countrycodes=in&limit=5`);
+        const data = await res.json();
+        if (data) setSourceSuggestions(data);
+      } catch (err) {
+        console.warn('Source search suggestion error:', err);
+      } finally {
+        setIsSearchingSource(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [sourceSearchQuery]);
+
+  // Destination Places Search Suggestions Autocomplete
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.length < 3) {
       setSearchSuggestions([]);
@@ -135,6 +169,27 @@ export default function RideODashboard() {
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  const handleSelectSourceSuggestion = (place: any) => {
+    const newSource = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+    setCurrentLocation(newSource);
+    setPickupAddress(place.display_name);
+    setSourceSearchQuery(place.display_name);
+    setSourceSuggestions([]);
+    setIsManualSourceMode(true);
+
+    if (mapRef.current) {
+      if (destinationLocation) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(newSource);
+        bounds.extend(destinationLocation);
+        mapRef.current.fitBounds(bounds);
+      } else {
+        mapRef.current.panTo(newSource);
+        mapRef.current.setZoom(15);
+      }
+    }
+  };
 
   const handleSelectSuggestion = (place: any) => {
     const newDest = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
@@ -217,17 +272,16 @@ export default function RideODashboard() {
   }, []);
 
   const handleCenterOnUser = () => {
-    if (currentLocation && mapRef.current) {
-      mapRef.current.panTo(currentLocation);
-      mapRef.current.setZoom(15);
-    }
-  };
-
-  const handleDestinationSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim() || !currentLocation) return;
-    if (searchSuggestions.length > 0) {
-      handleSelectSuggestion(searchSuggestions[0]);
+    setIsManualSourceMode(false);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCurrentLocation(coords);
+        if (mapRef.current) {
+          mapRef.current.panTo(coords);
+          mapRef.current.setZoom(15);
+        }
+      });
     }
   };
 
@@ -250,7 +304,8 @@ export default function RideODashboard() {
       `👋 Hello ${driverName},\n\n` +
       `👤 Customer: ${customerName}\n` +
       `📞 Customer Call: tel:${customerPhone}\n\n` +
-      `📌 LIVE PICKUP GPS: ${pickupGpsUrl}\n` +
+      `📌 PICKUP PLACE: ${pickupAddress}\n` +
+      `📍 LIVE PICKUP GPS: ${pickupGpsUrl}\n` +
       `🎯 DROPOFF LOCATION: ${dropoffAddress}\n` +
       `🧭 1-CLICK DEVICE MAP NAVIGATION: ${navUrl}\n\n` +
       `📏 TRIP DISTANCE: ${distanceKm || 0} km\n` +
@@ -288,7 +343,7 @@ export default function RideODashboard() {
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Auto Place Search • Live Device GPS Reverse Geocoding • Instant 1-Click Navigation
+            Search Source & Destination Places • Auto Live GPS Pinning • Instant 1-Click Device Navigation
           </p>
         </div>
 
@@ -298,7 +353,7 @@ export default function RideODashboard() {
             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-xs font-semibold hover:bg-muted transition"
           >
             <Compass className="w-4 h-4 text-primary animate-pulse" />
-            My Location
+            Reset to Device Live GPS
           </button>
           <button
             onClick={() => setIsOnline(!isOnline)}
@@ -316,52 +371,95 @@ export default function RideODashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[500px]">
         {/* Left Control Panel */}
         <div className="lg:col-span-5 flex flex-col space-y-4">
-          {/* Destination Form with Autocomplete */}
-          <form onSubmit={handleDestinationSubmit} className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3 relative z-30">
-            <div className="flex items-center gap-3 text-sm border-b border-border pb-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
-              <div className="flex-1 truncate text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground block">Live Pickup GPS Address:</span>
-                <span className="text-emerald-500 font-medium truncate block">{pickupAddress}</span>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Type Destination Place (e.g. Marina Beach, Trichy, Hosur)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary transition"
-                />
+          {/* Source & Destination Search Form */}
+          <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3 relative z-30">
+            {/* Source Pickup Input & Autocomplete */}
+            <div className="space-y-1 relative">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Source / Pickup Location
+                </label>
                 <button
-                  type="submit"
-                  className="p-2.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition shrink-0"
+                  type="button"
+                  onClick={() => setIsManualSourceMode(!isManualSourceMode)}
+                  className="text-[10px] text-primary font-bold hover:underline flex items-center gap-1"
                 >
-                  {isSearchingSuggestions ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  <Edit3 className="w-3 h-3" /> {isManualSourceMode ? 'Switch to Live GPS' : 'Type / Search Place'}
                 </button>
               </div>
 
-              {/* Autocomplete Dropdown */}
-              {searchSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 divide-y divide-border">
-                  {searchSuggestions.map((place, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleSelectSuggestion(place)}
-                      className="w-full p-3 text-left hover:bg-primary/10 transition flex items-start gap-2.5 text-xs"
-                    >
-                      <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <span className="text-foreground font-medium truncate">{place.display_name}</span>
-                    </button>
-                  ))}
+              {!isManualSourceMode ? (
+                <div className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-400 truncate">
+                  {pickupAddress}
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Type Pickup Place (e.g. Chennai Central, Salem Bus Stand)"
+                    value={sourceSearchQuery}
+                    onChange={(e) => setSourceSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-emerald-500/50 bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500 transition"
+                  />
+                  {isSearchingSource && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-2.5 text-emerald-500" />}
+
+                  {sourceSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 divide-y divide-border">
+                      {sourceSuggestions.map((place, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectSourceSuggestion(place)}
+                          className="w-full p-3 text-left hover:bg-emerald-500/10 transition flex items-start gap-2.5 text-xs"
+                        >
+                          <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span className="text-foreground font-medium truncate">{place.display_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          </form>
+
+            <hr className="border-border" />
+
+            {/* Destination Dropoff Input & Autocomplete */}
+            <div className="space-y-1 relative">
+              <label className="text-[10px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" /> Destination / Dropoff Location
+              </label>
+
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Type Destination Place (e.g. Marina Beach, Trichy, Hosur)"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary transition"
+                  />
+                  {isSearchingSuggestions && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
+                </div>
+
+                {searchSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 divide-y divide-border">
+                    {searchSuggestions.map((place, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectSuggestion(place)}
+                        className="w-full p-3 text-left hover:bg-primary/10 transition flex items-start gap-2.5 text-xs"
+                      >
+                        <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <span className="text-foreground font-medium truncate">{place.display_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* 6 Category Selector */}
           <div className="bg-card border border-border rounded-xl p-4 space-y-3">
@@ -519,7 +617,7 @@ export default function RideODashboard() {
               {currentLocation && (
                 <Marker
                   position={currentLocation}
-                  title="Your Live GPS Pickup Location"
+                  title={`Pickup: ${pickupAddress}`}
                   icon={{
                     url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
                   }}
