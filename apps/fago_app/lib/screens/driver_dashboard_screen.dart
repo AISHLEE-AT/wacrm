@@ -194,7 +194,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                                             );
                                           },
                                           icon: const Icon(Icons.navigation, size: 16),
-                                          label: const Text('Nav to Pickup ($0)'),
+                                          label: const Text('Nav to Pickup (\$0)'),
                                         ),
                                       ),
                                       const SizedBox(width: 8),

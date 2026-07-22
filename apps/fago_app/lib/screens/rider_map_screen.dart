@@ -292,7 +292,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                             );
                           },
                           icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('Route Preview ($0)'),
+                          label: const Text('Route Preview (\$0)'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue.shade800,
                             foregroundColor: Colors.white,
