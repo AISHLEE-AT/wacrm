@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink } from 'lucide-react';
+import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink, UserPlus, Check } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -33,6 +33,18 @@ export default function DriveODashboard() {
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [showUpiModal, setShowUpiModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registerSubmitted, setRegisterSubmitted] = useState(false);
+
+  // User Enrollment Form State
+  const [regForm, setRegForm] = useState({
+    name: profile?.full_name || '',
+    mobile: profile?.phone || '',
+    category: 'truck',
+    regNo: '',
+    licenseNo: '',
+    upi: '',
+  });
 
   // Fetch real-time rides from Supabase matching vehicle category
   useEffect(() => {
@@ -53,7 +65,6 @@ export default function DriveODashboard() {
 
     fetchRequests();
 
-    // Subscribe to real-time incoming rides
     const channel = supabase
       .channel('public:rides:driveo')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
@@ -66,7 +77,40 @@ export default function DriveODashboard() {
     };
   }, []);
 
-  // Commit Trip & Update Operator Status to BUSY
+  const handleUserDriverRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regForm.name || !regForm.mobile || !regForm.regNo) {
+      alert("Name, Mobile Number, and Vehicle Registration are required.");
+      return;
+    }
+
+    try {
+      if (currentUser) {
+        await supabase.from('drivers').upsert({
+          user_id: currentUser.id,
+          name: regForm.name,
+          mobile_number: regForm.mobile,
+          whatsapp_number: regForm.mobile,
+          vehicle_type: regForm.category,
+          vehicle_number: regForm.regNo,
+          driving_license: regForm.licenseNo || 'PENDING-VERIFICATION',
+          upi_id: regForm.upi || `${regForm.mobile}@upi`,
+          status: 'online',
+          is_verified: false,
+          updated_at: new Date().toISOString()
+        });
+      }
+      setRegisterSubmitted(true);
+      setTimeout(() => {
+        setRegisterSubmitted(false);
+        setShowRegisterModal(false);
+      }, 3000);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit registration.");
+    }
+  };
+
   const handleAcceptRide = async (ride: any) => {
     try {
       const { error } = await supabase
@@ -77,7 +121,6 @@ export default function DriveODashboard() {
       if (!error) {
         setActiveOrder(ride);
         setIncomingRequests((prev) => prev.filter((r) => r.id !== ride.id));
-        // Mark driver as BUSY in database so other riders see they are committed
         if (currentUser) {
           await supabase.from('drivers').update({ status: 'busy' }).eq('user_id', currentUser.id);
         }
@@ -100,7 +143,6 @@ export default function DriveODashboard() {
     }
   };
 
-  // Zero Meta Cost: Driver Sends WhatsApp Message to CRM to Open 24-Hour Free Session Window!
   const getFreeActiveWhatsAppUrl = () => {
     const categoryObj = VEHICLE_CATEGORIES.find(c => c.id === operatorCategory) || VEHICLE_CATEGORIES[0];
     const text = `☀️ *GOOD MORNING FAGO CRM! I AM ACTIVE TODAY* ☀️\n\n` +
@@ -154,20 +196,27 @@ export default function DriveODashboard() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Truck className="w-7 h-7 text-primary" />
-            DriveO Operator & Driver Portal
+            DriveO Driver & Operator Portal
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Trip Commitment Engine • Driver Subscription Management • Zero Meta Fee Architecture
+            User Driver Enrollment • Admin Approval • Direct WhatsApp Session Check-In
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowRegisterModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition"
+          >
+            <UserPlus className="w-4 h-4" />
+            Enroll as Driver Partner
+          </button>
+          <button
             onClick={() => setShowSubscriptionModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-xs hover:bg-amber-500/25 transition"
           >
             <Crown className="w-4 h-4" />
-            {selectedPlanObj.name} (Active)
+            {selectedPlanObj.name}
           </button>
           <button
             onClick={handleGoActiveWhatsApp}
@@ -176,17 +225,106 @@ export default function DriveODashboard() {
             <MessageSquare className="w-4 h-4" />
             Go Active via WhatsApp
           </button>
-          <button
-            onClick={() => setIsOnline(!isOnline)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition ${
-              isOnline ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30' : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            <Power className="w-4 h-4" />
-            {isOnline ? 'Operator Active' : 'Offline'}
-          </button>
         </div>
       </div>
+
+      {/* User Driver Partner Enrollment Modal */}
+      {showRegisterModal && (
+        <div className="bg-card border border-border p-5 rounded-xl space-y-4 shadow-xl animate-fade-in">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-emerald-500" /> Enroll as DriveO Driver Partner
+            </h3>
+            <button onClick={() => setShowRegisterModal(false)} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
+          </div>
+
+          {registerSubmitted ? (
+            <div className="p-6 text-center space-y-2 text-emerald-500 font-bold text-sm bg-emerald-500/10 rounded-xl border border-emerald-500/30">
+              <Check className="w-8 h-8 mx-auto" />
+              Registration Submitted! Our Admin will verify your documents shortly.
+            </div>
+          ) : (
+            <form onSubmit={handleUserDriverRegister} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Your Full Name"
+                  value={regForm.name}
+                  onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Mobile / WhatsApp Number *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="+91 9876543210"
+                  value={regForm.mobile}
+                  onChange={(e) => setRegForm({ ...regForm, mobile: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Category *</label>
+                <select
+                  value={regForm.category}
+                  onChange={(e) => setRegForm({ ...regForm, category: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary"
+                >
+                  {VEHICLE_CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Reg Number *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="TN-39-AB-1234"
+                  value={regForm.regNo}
+                  onChange={(e) => setRegForm({ ...regForm, regNo: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Driving License Number</label>
+                <input
+                  type="text"
+                  placeholder="TN-2024-998877"
+                  value={regForm.licenseNo}
+                  onChange={(e) => setRegForm({ ...regForm, licenseNo: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">UPI ID for Driver Settlement</label>
+                <input
+                  type="text"
+                  placeholder="9876543210@upi"
+                  value={regForm.upi}
+                  onChange={(e) => setRegForm({ ...regForm, upi: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-2">
+                <button type="submit" className="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition">
+                  Submit Driver Registration
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {/* Subscription Modal */}
       {showSubscriptionModal && (
@@ -226,7 +364,7 @@ export default function DriveODashboard() {
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left: Operator Settings & Profile */}
+        {/* Left: Operator Profile */}
         <div className="lg:col-span-4 flex flex-col space-y-4">
           <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
             <div className="flex items-center gap-3">

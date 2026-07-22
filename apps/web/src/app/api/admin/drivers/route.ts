@@ -34,15 +34,15 @@ export async function GET() {
       return NextResponse.json({ drivers: [] })
     }
 
-    const userIds = drivers.map((d: any) => d.user_id)
+    const userIds = drivers.map((d: any) => d.user_id).filter(Boolean)
 
-    const { data: profiles, error: pError } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, email, account_id')
-      .in('user_id', userIds)
-
-    if (pError) {
-      console.error('Error fetching profiles:', pError)
+    let profiles: any[] = []
+    if (userIds.length > 0) {
+      const { data: pData } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email, account_id')
+        .in('user_id', userIds)
+      profiles = pData || []
     }
 
     const driversWithProfiles = drivers.map((d: any) => ({
@@ -51,6 +51,37 @@ export async function GET() {
     }))
 
     return NextResponse.json({ drivers: driversWithProfiles })
+  } catch (err) {
+    return toErrorResponse(err)
+  }
+}
+
+// Admin Manual Driver Enrollment
+export async function POST(req: Request) {
+  try {
+    await requireRole('admin')
+    const { name, mobile_number, whatsapp_number, vehicle_type, vehicle_registration, driving_license, upi_id } = await req.json()
+
+    if (!name || !mobile_number || !vehicle_type || !vehicle_registration) {
+      return NextResponse.json({ error: 'Name, Mobile, Vehicle Category & Reg Number required' }, { status: 400 })
+    }
+
+    const supabase = supabaseAdmin()
+    const { data, error } = await supabase.from('drivers').insert({
+      name,
+      mobile_number,
+      whatsapp_number: whatsapp_number || mobile_number,
+      vehicle_type,
+      vehicle_registration,
+      driving_license: driving_license || 'VERIFIED-ADMIN',
+      upi_id: upi_id || `${mobile_number}@upi`,
+      is_verified: true,
+      status: 'online',
+    }).select().single()
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true, driver: data })
   } catch (err) {
     return toErrorResponse(err)
   }
