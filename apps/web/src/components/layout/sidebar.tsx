@@ -104,14 +104,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const totalUnread = useTotalUnread();
   const [isRegisteredDriver, setIsRegisteredDriver] = useState(false);
 
-  // Explicit Admin Determination: Phone 9486335870 or Email aishleetechnology@gmail.com or Admin Role
-  const isAdmin =
-    accountRole === "admin" ||
-    accountRole === "owner" ||
+  // STRICT ADMIN CHECK: ONLY 9486335870 or aishleetechnology@gmail.com
+  const isAdmin = Boolean(
     profile?.email === "aishleetechnology@gmail.com" ||
     profile?.phone?.includes("9486335870") ||
     user?.email === "aishleetechnology@gmail.com" ||
-    user?.phone?.includes("9486335870");
+    user?.phone?.includes("9486335870")
+  );
 
   useEffect(() => {
     if (!user?.id) return;
@@ -161,7 +160,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     };
   }, [open, onClose]);
 
-  // Dynamic Mobility Items based on Driver status
+  // Dynamic Mobility Items: RideO for everyone, DriveO for admins or registered drivers
   const mobilityItems: NavItem[] = [
     { href: "/rideo", label: "RideO", icon: Car },
     ...(isAdmin || isRegisteredDriver
@@ -215,7 +214,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* CRM Section — Only Visible to Admin */}
+          {/* CRM Section — STRICTLY Only Visible to 9486335870 / aishleetechnology@gmail.com */}
           {isAdmin && (
             <>
               <div className="px-3 mb-2 mt-2">
@@ -294,7 +293,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             })}
           </ul>
 
-          {/* Administration Section — Only Visible to Admin */}
+          {/* Administration Section — STRICTLY Only Visible to 9486335870 / aishleetechnology@gmail.com */}
           {isAdmin && (
             <>
               <div className="px-3 mb-2 mt-4">
@@ -362,20 +361,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               <span className="truncate" title={account.name}>
                 {account.name}
               </span>
-              {accountRole ? (
-                (() => {
-                  const meta = ROLE_CHIP[accountRole];
-                  const Icon = meta.icon;
-                  return (
-                    <span
-                      className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${meta.className}`}
-                    >
-                      <Icon className="size-3" />
-                      {meta.label}
-                    </span>
-                  );
-                })()
-              ) : null}
+              {isAdmin ? (
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider border-amber-500/40 bg-amber-500/10 text-amber-300">
+                  <Crown className="size-3" />
+                  Admin
+                </span>
+              ) : (
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider border-border bg-card text-muted-foreground">
+                  <User className="size-3" />
+                  User
+                </span>
+              )}
             </div>
           ) : null}
           <DropdownMenu>
@@ -423,7 +419,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               <DropdownMenuItem
                 render={
                   <Link
-                    href="/profile?tab=crm_whatsapp"
+                    href="/profile?tab=account"
                     onClick={onClose}
                     className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
                   />

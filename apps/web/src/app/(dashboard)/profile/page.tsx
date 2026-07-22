@@ -89,7 +89,13 @@ function ProfilePageInner() {
     router.replace(`/profile?${params.toString()}`, { scroll: false });
   };
 
-  const isAdmin = accountRole === 'admin' || accountRole === 'owner';
+  // STRICT ADMIN CHECK: ONLY 9486335870 or aishleetechnology@gmail.com
+  const isAdmin = Boolean(
+    profile?.email === "aishleetechnology@gmail.com" ||
+    profile?.phone?.includes("9486335870") ||
+    user?.email === "aishleetechnology@gmail.com" ||
+    user?.phone?.includes("9486335870")
+  );
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
 
@@ -118,7 +124,7 @@ function ProfilePageInner() {
             {profile?.full_name || 'User'}
           </h2>
           <p className="text-primary text-sm font-medium mt-0.5 uppercase tracking-wider">
-            {accountRole || 'User'}
+            {isAdmin ? 'Admin / Owner' : 'User'}
           </p>
         </div>
       </div>
