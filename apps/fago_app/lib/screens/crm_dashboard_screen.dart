@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class CrmDashboardScreen extends StatefulWidget {
   const CrmDashboardScreen({super.key});
@@ -15,27 +18,63 @@ class _CrmDashboardScreenState extends State<CrmDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
+    _requestLocationPermission();
+
+    final WebViewController controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF000000))
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            setState(() {
-              _isLoading = true;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+              });
+            }
           },
           onPageFinished: (String url) {
-            setState(() {
-              _isLoading = false;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
+            final uri = Uri.parse(request.url);
+            // Route RideO to native Flutter map screen for 60FPS live location & native map performance
+            if (uri.path.endsWith('/rideo') || uri.path.endsWith('/rider')) {
+              context.push('/rider');
+              return NavigationDecision.prevent;
+            }
+            // Route DrivO to native Flutter driver map screen
+            if (uri.path.endsWith('/drivo') || uri.path.endsWith('/driver')) {
+              context.push('/driver');
+              return NavigationDecision.prevent;
+            }
             return NavigationDecision.navigate;
           },
         ),
       )
       ..loadRequest(Uri.parse('https://watscrm.vercel.app/dashboard'));
+
+    // Automatically grant Geolocation & Platform permissions for Android WebView
+    if (controller.platform is AndroidWebViewController) {
+      final androidController = controller.platform as AndroidWebViewController;
+      androidController.setOnPlatformPermissionRequest(
+        (PlatformWebViewPermissionRequest request) {
+          request.grant();
+        },
+      );
+    }
+
+    _controller = controller;
+  }
+
+  Future<void> _requestLocationPermission() async {
+    final status = await Permission.location.status;
+    if (status.isDenied) {
+      await Permission.location.request();
+    }
   }
 
   @override
