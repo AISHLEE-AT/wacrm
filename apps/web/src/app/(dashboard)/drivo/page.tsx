@@ -183,13 +183,35 @@ export default function DriveODashboard() {
     }
   };
 
+  // Auto-fetch device GPS location for pre-filling WhatsApp check-in
+  const [deviceCoords, setDeviceCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setDeviceCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        (err) => console.warn('DriveO GPS fetch:', err.message),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, []);
+
   const getFreeActiveWhatsAppUrl = () => {
     const categoryObj = VEHICLE_CATEGORIES.find(c => c.id === operatorCategory) || VEHICLE_CATEGORIES[0];
+    const gpsUrl = deviceCoords 
+      ? `https://www.google.com/maps/search/?api=1&query=${deviceCoords.lat},${deviceCoords.lng}` 
+      : 'Device GPS Location';
+    const coordsStr = deviceCoords ? `(${deviceCoords.lat}, ${deviceCoords.lng})` : 'Auto GPS';
+
     const text = `☀️ *GOOD MORNING FAGO CRM! I AM ACTIVE TODAY* ☀️\n\n` +
       `👤 *Operator Name:* ${profile?.full_name || 'Vehicle Partner'}\n` +
       `🚚 *Vehicle Category:* ${categoryObj.icon} ${categoryObj.name}\n` +
       `🔢 *Reg Number:* ${regNumber}\n` +
-      `📍 *Status:* ONLINE & READY FOR TRIP REQUESTS!\n\n` +
+      `📍 *LIVE VEHICLE GPS:* ${gpsUrl}\n` +
+      `📍 *Coordinates:* ${coordsStr}\n` +
+      `⚡ *Status:* ONLINE & READY FOR TRIP REQUESTS!\n\n` +
       `👉 *Please send me customer ride/transport requests today!*`;
 
     return `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(text)}`;
@@ -207,6 +229,8 @@ export default function DriveODashboard() {
           vehicle_number: regNumber,
           upi_id: upiId,
           status: 'online',
+          pickup_latitude: deviceCoords?.lat || null,
+          pickup_longitude: deviceCoords?.lng || null,
           updated_at: new Date().toISOString()
         });
       }

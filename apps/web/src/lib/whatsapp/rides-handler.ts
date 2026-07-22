@@ -55,10 +55,34 @@ export async function handleRideHailingBooking(
 
       // Driver sent Daily Active Good Morning check-in message
       if (text.includes('active') || text.includes('good morning') || text.includes('online')) {
+        // Extract auto-prefilled GPS coordinates if included in the message text
+        let extractedLat: number | null = null
+        let extractedLng: number | null = null
+
+        const rawText = message.text?.body || ''
+        const match = rawText.match(/query=(-?\d+\.\d+),(-?\d+\.\d+)/) || rawText.match(/Coordinates:\s*\((-?\d+\.\d+),\s*(-?\d+\.\d+)\)/i)
+        if (match) {
+          extractedLat = parseFloat(match[1])
+          extractedLng = parseFloat(match[2])
+        }
+
+        const updateData: any = {
+          status: 'online',
+          updated_at: new Date().toISOString()
+        }
+        if (extractedLat !== null && extractedLng !== null) {
+          updateData.pickup_latitude = extractedLat
+          updateData.pickup_longitude = extractedLng
+        }
+
         await supabase
           .from('drivers')
-          .update({ status: 'online', updated_at: new Date().toISOString() })
+          .update(updateData)
           .eq('id', driverRow.id)
+
+        const locationNotice = extractedLat !== null && extractedLng !== null
+          ? `📍 Live GPS Auto-Pinned: (${extractedLat}, ${extractedLng})\n\n✅ Your vehicle (${driverRow.vehicle_registration}) is now ACTIVE on RideO map for nearby customers!`
+          : `📍 Please share your live PICKUP location using the WhatsApp attachment (Pin Location) button so nearby RideO riders can find your vehicle!`
 
         await sendTextMessage({
           accessToken,
@@ -66,7 +90,7 @@ export async function handleRideHailingBooking(
           to: senderPhone,
           text: `☀️ GOOD MORNING ${driverRow.name.toUpperCase()}! ☀️\n\n` +
             `Your vehicle status is now ACTIVE & ONLINE for today.\n\n` +
-            `📍 Please share your live PICKUP location using the WhatsApp attachment (Pin Location) button so nearby RideO riders can find your vehicle!`
+            locationNotice
         })
         return true
       }
