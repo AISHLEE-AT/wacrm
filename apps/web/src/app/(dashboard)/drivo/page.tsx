@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Zap } from 'lucide-react';
+import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -16,15 +16,23 @@ const VEHICLE_CATEGORIES = [
   { id: 'truck', name: 'Lorry / Truck', icon: '🚛' },
 ];
 
+const SUBSCRIPTION_PLANS = [
+  { id: 'daily', name: 'Daily Pass', price: 29, duration: '1 Day', description: 'Unlimited RideO trip leads' },
+  { id: 'weekly', name: 'Weekly Pass', price: 149, duration: '7 Days', description: 'Save 25% • Unlimited leads' },
+  { id: 'monthly', name: 'Monthly Pro', price: 499, duration: '30 Days', description: 'Best Value • Priority leads' },
+];
+
 export default function DriveODashboard() {
   const { user: currentUser, profile } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [operatorCategory, setOperatorCategory] = useState<string>('truck');
   const [regNumber, setRegNumber] = useState<string>('TN-39-AB-1234');
   const [upiId, setUpiId] = useState<string>('916381029380@upi');
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string>('monthly');
   const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [showUpiModal, setShowUpiModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Fetch real-time rides from Supabase matching vehicle category
   useEffect(() => {
@@ -58,6 +66,7 @@ export default function DriveODashboard() {
     };
   }, []);
 
+  // Commit Trip & Update Operator Status to BUSY
   const handleAcceptRide = async (ride: any) => {
     try {
       const { error } = await supabase
@@ -68,6 +77,23 @@ export default function DriveODashboard() {
       if (!error) {
         setActiveOrder(ride);
         setIncomingRequests((prev) => prev.filter((r) => r.id !== ride.id));
+        // Mark driver as BUSY in database so other riders see they are committed
+        if (currentUser) {
+          await supabase.from('drivers').update({ status: 'busy' }).eq('user_id', currentUser.id);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCompleteRide = async () => {
+    if (!activeOrder) return;
+    try {
+      await supabase.from('rides').update({ status: 'completed' }).eq('id', activeOrder.id);
+      setActiveOrder(null);
+      if (currentUser) {
+        await supabase.from('drivers').update({ status: 'online' }).eq('user_id', currentUser.id);
       }
     } catch (err) {
       console.error(err);
@@ -105,7 +131,6 @@ export default function DriveODashboard() {
     } catch (err) {
       console.error(err);
     }
-    // Launch WhatsApp on Driver's Phone (Zero Meta Fee!)
     window.open(getFreeActiveWhatsAppUrl(), '_blank');
   };
 
@@ -120,6 +145,7 @@ export default function DriveODashboard() {
   }
 
   const selectedCategoryObj = VEHICLE_CATEGORIES.find((c) => c.id === operatorCategory) || VEHICLE_CATEGORIES[0];
+  const selectedPlanObj = SUBSCRIPTION_PLANS.find(p => p.id === subscriptionPlan) || SUBSCRIPTION_PLANS[2];
 
   return (
     <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
@@ -131,17 +157,24 @@ export default function DriveODashboard() {
             DriveO Operator & Driver Portal
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Zero Meta Fee Architecture • Free 24hr WhatsApp Session Check-In • Direct Driver Settlement
+            Trip Commitment Engine • Driver Subscription Management • Zero Meta Fee Architecture
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowSubscriptionModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-xs hover:bg-amber-500/25 transition"
+          >
+            <Crown className="w-4 h-4" />
+            {selectedPlanObj.name} (Active)
+          </button>
+          <button
             onClick={handleGoActiveWhatsApp}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs shadow-md transition"
           >
             <MessageSquare className="w-4 h-4" />
-            Go Active via WhatsApp (Free 24h Window)
+            Go Active via WhatsApp
           </button>
           <button
             onClick={() => setIsOnline(!isOnline)}
@@ -154,6 +187,42 @@ export default function DriveODashboard() {
           </button>
         </div>
       </div>
+
+      {/* Subscription Modal */}
+      {showSubscriptionModal && (
+        <div className="bg-card border border-border p-5 rounded-xl space-y-4 shadow-lg animate-fade-in">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Crown className="w-5 h-5 text-amber-400" /> DriveO Operator Subscription Tiers
+            </h3>
+            <button onClick={() => setShowSubscriptionModal(false)} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {SUBSCRIPTION_PLANS.map((plan) => {
+              const isSelected = subscriptionPlan === plan.id;
+              return (
+                <div
+                  key={plan.id}
+                  onClick={() => setSubscriptionPlan(plan.id)}
+                  className={`p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between space-y-3 ${
+                    isSelected ? 'border-amber-500 bg-amber-500/10 shadow-md' : 'border-border hover:bg-muted/40'
+                  }`}
+                >
+                  <div>
+                    <h4 className="font-bold text-sm text-foreground">{plan.name}</h4>
+                    <p className="text-xs text-muted-foreground">{plan.description}</p>
+                  </div>
+                  <div className="flex items-baseline justify-between pt-2 border-t border-border">
+                    <span className="text-xl font-bold text-amber-400">₹{plan.price}</span>
+                    <span className="text-[10px] text-muted-foreground">/ {plan.duration}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -202,7 +271,7 @@ export default function DriveODashboard() {
 
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
-                  Operator UPI ID (For Direct Customer Payment)
+                  Operator UPI ID (Direct Settlement)
                 </label>
                 <input
                   type="text"
@@ -215,12 +284,12 @@ export default function DriveODashboard() {
           </div>
         </div>
 
-        {/* Right: Live Request Broadcast Feed */}
+        {/* Right: Live Request Feed & Active Committed Trip */}
         <div className="lg:col-span-8 flex flex-col space-y-4">
           <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Send className="w-5 h-5 text-primary" /> Live Customer Trip Requests
+                <Send className="w-5 h-5 text-primary" /> Live Trip Requests & Commitments
               </h2>
               <span className="text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary font-bold">
                 {incomingRequests.length} Active Requests
@@ -232,14 +301,21 @@ export default function DriveODashboard() {
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" /> Order Accepted & Committed
+                    <CheckCircle className="w-4 h-4" /> TRIP COMMITTED & LOCKED
                   </span>
                   <span className="text-xs text-muted-foreground">ID: #{activeOrder.id.toString().slice(0, 8)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-muted-foreground block">Pickup:</span>
-                    <strong className="text-foreground">{activeOrder.pickup_address || 'Live GPS Location'}</strong>
+                    <span className="text-muted-foreground block">Pickup GPS:</span>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${activeOrder.pickup_latitude},${activeOrder.pickup_longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary font-bold hover:underline inline-flex items-center gap-1"
+                    >
+                      Open Maps GPS <ExternalLink className="w-3 h-3" />
+                    </a>
                   </div>
                   <div>
                     <span className="text-muted-foreground block">Dropoff:</span>
@@ -248,7 +324,7 @@ export default function DriveODashboard() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-emerald-500/20">
-                  <span className="text-lg font-bold text-emerald-500">Offered Fare: ₹{activeOrder.fare}</span>
+                  <span className="text-lg font-bold text-emerald-500">Committed Amount: ₹{activeOrder.fare}</span>
                   <div className="flex items-center gap-2">
                     <a
                       href={`tel:${activeOrder.phone || '916381029380'}`}
@@ -261,6 +337,12 @@ export default function DriveODashboard() {
                       className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-emerald-700 transition"
                     >
                       <QrCode className="w-3.5 h-3.5" /> Show UPI QR
+                    </button>
+                    <button
+                      onClick={handleCompleteRide}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition"
+                    >
+                      Complete Trip
                     </button>
                   </div>
                 </div>

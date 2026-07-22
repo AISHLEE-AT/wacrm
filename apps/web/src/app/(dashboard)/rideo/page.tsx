@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { GoogleMap, useLoadScript, Marker, Polyline } from '@react-google-maps/api';
-import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users } from 'lucide-react';
+import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users, Clock, AlertCircle } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -84,24 +84,23 @@ export default function RideODashboard() {
     };
   }, []);
 
-  // Fetch active drivers from Supabase matching category
+  // Fetch drivers from Supabase with status (Free vs Busy)
   useEffect(() => {
     const fetchActiveDrivers = async () => {
       try {
         const { data } = await supabase
           .from('drivers')
-          .select('*')
-          .eq('status', 'online');
+          .select('*');
         
-        if (data) {
+        if (data && data.length > 0) {
           setActiveDrivers(data);
         } else {
-          // Fallback demo drivers for Tamil Nadu transport network
+          // Demo Tamil Nadu Transport Operators with Free / Busy status
           setActiveDrivers([
-            { id: '1', name: 'Muthu Travels', phone: '916381029380', category: 'bus', vehicle_no: 'TN-39-B-8899', rating: 4.9 },
-            { id: '2', name: 'Kumar Lorry Service', phone: '916381029380', category: 'truck', vehicle_no: 'TN-38-AX-5544', rating: 4.8 },
-            { id: '3', name: 'Selvam Auto', phone: '916381029380', category: 'auto', vehicle_no: 'TN-37-Z-1234', rating: 4.7 },
-            { id: '4', name: 'Vijay Bike Taxi', phone: '916381029380', category: 'bike', vehicle_no: 'TN-39-M-9988', rating: 5.0 },
+            { id: '1', name: 'Muthu Travels', phone: '916381029380', category: 'bus', vehicle_no: 'TN-39-B-8899', rating: 4.9, status: 'online' },
+            { id: '2', name: 'Kumar Lorry Service', phone: '916381029380', category: 'truck', vehicle_no: 'TN-38-AX-5544', rating: 4.8, status: 'online' },
+            { id: '3', name: 'Selvam Auto', phone: '916381029380', category: 'auto', vehicle_no: 'TN-37-Z-1234', rating: 4.7, status: 'busy', committed_to: 'Chennai -> Trichy Trip' },
+            { id: '4', name: 'Vijay Bike Taxi', phone: '916381029380', category: 'bike', vehicle_no: 'TN-39-M-9988', rating: 5.0, status: 'online' },
           ]);
         }
       } catch (err) {
@@ -109,7 +108,19 @@ export default function RideODashboard() {
       }
     };
     fetchActiveDrivers();
-  }, [selectedCategory]);
+
+    // Subscribe to driver status changes (Free vs Committed Busy)
+    const channel = supabase
+      .channel('public:drivers:status')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, (payload) => {
+        fetchActiveDrivers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Distance calculation (Client-Side Math)
   useEffect(() => {
@@ -156,21 +167,27 @@ export default function RideODashboard() {
   const baseAppFare = distanceKm !== null ? Math.round(currentCategoryObj.baseFare + distanceKm * currentCategoryObj.perKm) : 0;
   const totalOfferedFare = baseAppFare + extraTip;
 
-  // Generate Direct WhatsApp URL to a Specific Driver / Vehicle Owner (Zero Meta API Cost)
-  const getDirectDriverWhatsAppUrl = (driverPhone: string, driverName: string) => {
+  // Fully Automated WhatsApp Message Payload (Pickup GPS + Dropoff + Distance + Offered Fare)
+  const getAutomatedDriverWhatsAppUrl = (driverPhone: string, driverName: string) => {
     const customerName = profile?.full_name || currentUser?.email?.split('@')[0] || 'Customer';
     const customerPhone = profile?.phone || 'Contact via App';
-    const locationMapUrl = currentLocation ? `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}` : 'Live Location';
-    
-    const text = `👋 *Hi ${driverName}! RIDEO TRANSPORT REQUEST* 🚨\n\n` +
+    const pickupGpsUrl = currentLocation 
+      ? `https://www.google.com/maps/search/?api=1&query=${currentLocation.lat},${currentLocation.lng}` 
+      : 'Device GPS Location';
+    const dropoffGpsUrl = destinationLocation 
+      ? `https://www.google.com/maps/search/?api=1&query=${destinationLocation.lat},${destinationLocation.lng}` 
+      : searchQuery || 'Destination';
+
+    const text = `🚨 *RIDEO TRIP & LOGISTICS BOOKING* 🚨\n\n` +
+      `👋 *Hello ${driverName},*\n\n` +
       `👤 *Customer:* ${customerName}\n` +
-      `📞 *Phone:* ${customerPhone}\n` +
-      `🚚 *Vehicle Needed:* ${currentCategoryObj.icon} ${currentCategoryObj.name}\n` +
-      `📍 *Pickup GPS:* ${locationMapUrl}\n` +
-      `🎯 *Destination:* ${searchQuery || 'Destination'}\n` +
-      `📏 *Distance:* ${distanceKm || 0} km\n\n` +
-      `💵 *Offered Price:* ₹${totalOfferedFare}\n\n` +
-      `👉 *Please confirm if you are available for this trip!*`;
+      `📞 *Customer Call:* tel:${customerPhone}\n\n` +
+      `📌 *LIVE PICKUP GPS:* ${pickupGpsUrl}\n` +
+      `🎯 *DROPOFF / DESTINATION:* ${dropoffGpsUrl}\n` +
+      `📏 *TRIP DISTANCE:* ${distanceKm || 0} km\n` +
+      `🚚 *VEHICLE NEEDED:* ${currentCategoryObj.icon} ${currentCategoryObj.name}\n\n` +
+      `💵 *COMMITTED OFFERED AMOUNT:* ₹${totalOfferedFare}\n\n` +
+      `👉 *Please tap reply or call customer to confirm this trip commitment!*`;
 
     return `https://api.whatsapp.com/send?phone=${driverPhone.replace(/\D/g, '')}&text=${encodeURIComponent(text)}`;
   };
@@ -196,10 +213,10 @@ export default function RideODashboard() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Navigation className="w-7 h-7 text-primary" />
-            RideO Transport & Logistics Network
+            RideO Transport Network
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Zero Meta API Cost • Direct WhatsApp Request to Vehicle Owners & Operators
+            Real-Time Driver Status (Free vs Committed) • Auto WhatsApp Trip Payload • Zero API Cost
           </p>
         </div>
 
@@ -225,7 +242,7 @@ export default function RideODashboard() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[500px]">
-        {/* Left Side */}
+        {/* Left Control Panel */}
         <div className="lg:col-span-5 flex flex-col space-y-4">
           {/* Destination Form */}
           <form onSubmit={handleDestinationSubmit} className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
@@ -278,18 +295,18 @@ export default function RideODashboard() {
             </div>
           </div>
 
-          {/* Fare & Direct Driver WhatsApp Links */}
+          {/* Distance, Fare & Live Driver List */}
           {distanceKm !== null && (
             <div className="bg-card border border-border rounded-xl p-4 space-y-4">
               <div className="flex items-center justify-between text-xs border-b border-border pb-2">
                 <span className="text-muted-foreground">Distance: <strong className="text-foreground">{distanceKm} km</strong></span>
-                <span className="text-muted-foreground">Base Fare: <strong className="text-emerald-500 font-bold">₹{baseAppFare}</strong></span>
+                <span className="text-muted-foreground">App Fare: <strong className="text-emerald-500 font-bold">₹{baseAppFare}</strong></span>
               </div>
 
               {/* Offer Extra */}
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
-                  Add Extra Offer to Driver (+₹)
+                  Add Extra Offer Amount (+₹)
                 </label>
                 <div className="flex items-center gap-2">
                   {[0, 20, 50, 100].map((tip) => (
@@ -311,40 +328,60 @@ export default function RideODashboard() {
 
               {/* Total Offered Fare */}
               <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border border-border">
-                <span className="text-sm font-semibold">Offered Rate:</span>
+                <span className="text-sm font-semibold">Total Offered Rate:</span>
                 <span className="text-xl font-bold text-emerald-500">₹{totalOfferedFare}</span>
               </div>
 
-              {/* Nearby Operators List for Direct WhatsApp Contact */}
+              {/* Live Driver List with Status (FREE vs COMMITTED BUSY) */}
               <div className="space-y-2 pt-2 border-t border-border">
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-primary" /> Send Direct WhatsApp Request to Operators (Zero Fee)
+                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
+                  <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-primary" /> Active Transport Operators</span>
+                  <span className="text-[10px] text-muted-foreground">Auto-Fills GPS & Dropoff</span>
                 </h4>
 
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {filteredDrivers.map((driver) => (
-                    <div key={driver.id} className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/30 transition text-xs">
-                      <div>
-                        <p className="font-bold text-foreground">{driver.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{driver.vehicle_no || 'Reg Vehicle'} • ⭐ {driver.rating || 4.8}</p>
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                  {filteredDrivers.map((driver) => {
+                    const isBusy = driver.status === 'busy';
+                    return (
+                      <div key={driver.id} className="p-3 rounded-lg border border-border bg-background space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-foreground flex items-center gap-1.5">
+                              {driver.name}
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                                isBusy ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                              }`}>
+                                {isBusy ? 'Busy / Committed' : 'Free / Available'}
+                              </span>
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">{driver.vehicle_no || 'Reg Vehicle'} • ⭐ {driver.rating || 4.8}</p>
+                          </div>
+
+                          {!isBusy ? (
+                            <a
+                              href={getAutomatedDriverWhatsAppUrl(driver.phone || '916381029380', driver.name)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold flex items-center gap-1 transition shrink-0"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" /> Book via WhatsApp
+                            </a>
+                          ) : (
+                            <span className="text-[11px] text-amber-500 font-semibold flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" /> On Active Trip
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <a
-                        href={getDirectDriverWhatsAppUrl(driver.phone || '916381029380', driver.name)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold flex items-center gap-1 transition"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" /> WhatsApp Request
-                      </a>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Right Live Map */}
+        {/* Right Live Interactive Map */}
         <div className="lg:col-span-7 bg-card border border-border rounded-xl overflow-hidden relative min-h-[400px]">
           {isLoaded ? (
             <GoogleMap
