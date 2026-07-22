@@ -59,9 +59,16 @@ class _CrmDashboardScreenState extends State<CrmDashboardScreen> {
   }
 
   Future<void> _requestLocationPermission() async {
-    final status = await Permission.location.status;
-    if (status.isDenied) {
-      await Permission.location.request();
+    try {
+      await [
+        Permission.location,
+        Permission.locationWhenInUse,
+        Permission.camera,
+        Permission.notification,
+        Permission.microphone,
+      ].request();
+    } catch (e) {
+      debugPrint('Permission request error: $e');
     }
   }
 
