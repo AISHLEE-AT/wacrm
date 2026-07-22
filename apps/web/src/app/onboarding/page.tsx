@@ -48,12 +48,12 @@ export default function OnboardingPage() {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const name = user.user_metadata?.full_name || '';
-        if (name) setFullName(name);
+        // Authenticated users bypass onboarding and land directly on RideO
+        router.replace('/rideo');
       }
     }
     loadProfile();
-  }, [supabase.auth]);
+  }, [supabase.auth, router]);
 
   const handleSubmit = async (skipped = false) => {
     if (!skipped && !selectedModule) {

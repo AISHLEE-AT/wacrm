@@ -340,31 +340,35 @@ function LoginPageInner() {
                     />
                   </div>
 
-                  <Button
-                    type="submit"
-                    disabled={loading || phone.length !== 10}
-                    className={`w-full h-14 rounded-2xl ${loginMode === 'whatsapp' ? 'bg-[#25D366] text-white hover:bg-[#20bd5a]' : 'bg-white text-black hover:bg-white/90'} disabled:opacity-50 transition-all text-base font-semibold shadow-lg group flex items-center justify-center gap-2`}
-                  >
-                    {loading ? (
-                      <Loader2 className="h-5 w-5 animate-spin opacity-80" />
-                    ) : (
-                      <>
-                        {loginMode === 'whatsapp' ? 'Request WhatsApp OTP' : 'Request SMS OTP'}
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 opacity-70" />
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Direct WhatsApp Automated OTP Request Link */}
-                  <a
-                    href={getWhatsAppDirectMsgUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full py-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm mt-1"
-                  >
-                    <Send className="w-4 h-4" />
-                    Send WhatsApp Message for Auto-OTP (6381029380)
-                  </a>
+                  {loginMode === 'whatsapp' ? (
+                    <a
+                      href={getWhatsAppDirectMsgUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        if (phone.length === 10) setOtpRequested(true);
+                      }}
+                      className="w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base flex items-center justify-center gap-2 transition shadow-lg group"
+                    >
+                      <Send className="w-5 h-5" />
+                      Get Instant OTP via WhatsApp (6381029380)
+                    </a>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={loading || phone.length !== 10}
+                      className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 transition-all text-base font-semibold shadow-lg group flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin opacity-80" />
+                      ) : (
+                        <>
+                          Request SMS OTP
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 opacity-70" />
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </motion.form>
               ) : (
                 <motion.form 

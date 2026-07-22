@@ -83,6 +83,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // Auto-update profiles table with verified phone and default full_name
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      phone: cleanPhone,
+      full_name: user.user_metadata?.full_name || `User ${cleanPhone.slice(-4)}`,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+
     // 3. Sign in to generate a session (using standard client to get session)
     const standardSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
