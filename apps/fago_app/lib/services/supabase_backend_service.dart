@@ -97,4 +97,40 @@ class SupabaseBackendService {
       return false;
     }
   }
+
+  /// Register Driver KYC & Profile into Supabase database
+  Future<bool> registerDriverProfile({
+    required String fullName,
+    required String phone,
+    required String licenseNumber,
+    required String rcNumber,
+    required String vehicleCategory,
+  }) async {
+    try {
+      final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+      await _client.from('driver_profiles').upsert({
+        'full_name': fullName,
+        'phone': cleanPhone,
+        'license_number': licenseNumber,
+        'rc_number': rcNumber,
+        'vehicle_category': vehicleCategory,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'phone');
+
+      // Also save driver contact to CRM Contacts list
+      await saveCrmContact(
+        name: fullName,
+        phone: cleanPhone,
+        role: 'Driver',
+        category: vehicleCategory,
+      );
+
+      return true;
+    } catch (e) {
+      print('Supabase Driver Profile Registration Error: $e');
+      return false;
+    }
+  }
 }

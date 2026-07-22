@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../services/supabase_service.dart';
-import '../../../../auth/auth_provider.dart';
+import '../../../services/supabase_backend_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DriverRegistrationScreen extends ConsumerStatefulWidget {
@@ -26,30 +24,27 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
 
   Future<void> _submitRegistration() async {
     if (!_formKey.currentState!.validate()) return;
-    if (FirebaseAuth.instance.currentUser == null) return;
 
     setState(() => _isLoading = true);
 
     try {
-      // Create driver with simplified flow matching Next.js auto-approve
-      // Using existing SupabaseService method. Note: If the method signature
-      // requires missing fields, we will pass empty strings for them to avoid breaking the signature.
-      // Wait, let's just pass the required fields or empty strings if needed by existing method.
-      final result = await SupabaseService().registerDriver(
-        name: _nameController.text.trim(),
-        whatsappNumber: FirebaseAuth.instance.currentUser?.phoneNumber ?? Supabase.instance.client.auth.currentUser?.phone ?? '', 
-        drivingLicense: _licenseController.text.trim(), 
-        vehicleRegistration: _vehicleController.text.trim().toUpperCase(),
-        insuranceDetails: _insuranceController.text.trim(), 
-        upiId: _upiController.text.trim(), 
-        vehicleType: _selectedVehicleType,
+      final phoneNum = FirebaseAuth.instance.currentUser?.phoneNumber ?? Supabase.instance.client.auth.currentUser?.phone ?? '+919876543211';
+      final success = await SupabaseBackendService().registerDriverProfile(
+        fullName: _nameController.text.trim(),
+        phone: phoneNum,
+        licenseNumber: _licenseController.text.trim(),
+        rcNumber: _vehicleController.text.trim().toUpperCase(),
+        vehicleCategory: _selectedVehicleType,
       );
 
-      if (result != null && mounted) {
-        // Refresh auth state to recognize the user as a driver
-        ref.invalidate(authProvider);
-        // Route to driver app
-        context.go('/driver');
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Driver Registration Submitted! Awaiting Admin Verification.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

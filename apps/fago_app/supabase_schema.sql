@@ -54,3 +54,21 @@ ON public.contacts FOR ALL USING (true) WITH CHECK (true);
 
 CREATE POLICY "Allow public read/write on ride_requests" 
 ON public.ride_requests FOR ALL USING (true) WITH CHECK (true);
+
+
+-- 5. Create Driver Profiles & Verification Table (Driver KYC & Vehicle Details)
+CREATE TABLE IF NOT EXISTS public.driver_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_null(),
+    full_name TEXT NOT NULL,
+    phone TEXT NOT NULL UNIQUE,
+    license_number TEXT NOT NULL,
+    rc_number TEXT NOT NULL,
+    vehicle_category TEXT NOT NULL DEFAULT 'Auto',
+    status TEXT NOT NULL DEFAULT 'pending', -- pending, active, suspended
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.driver_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read/write on driver_profiles" 
+ON public.driver_profiles FOR ALL USING (true) WITH CHECK (true);

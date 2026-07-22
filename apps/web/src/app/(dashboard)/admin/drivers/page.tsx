@@ -1,72 +1,44 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { Check, X, Car, DollarSign, Wallet, Plus, ShieldCheck, UserCheck, Phone, MessageSquare, Trash2, Edit3 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
+import { ShieldCheck, ShieldAlert, Car, Phone, FileText, CheckCircle2, XCircle, Search, RefreshCw } from 'lucide-react';
 
-interface Driver {
+interface DriverProfile {
   id: string;
-  user_id?: string;
+  full_name: string;
+  phone: string;
+  license_number: string;
+  rc_number: string;
+  vehicle_category: string;
   status: string;
-  is_verified: boolean;
-  vehicle_type: string;
-  vehicle_registration?: string;
-  wallet_balance: number;
-  pending_commission: number;
   created_at: string;
-  name?: string;
-  mobile_number?: string;
-  whatsapp_number?: string;
-  driving_license?: string;
-  upi_id?: string | null;
-  profile?: {
-    full_name: string | null;
-    email: string | null;
-  };
 }
 
-const VEHICLE_CATEGORIES = [
-  { id: 'bike', name: 'Bike / Scooty' },
-  { id: 'auto', name: 'Auto Rickshaw' },
-  { id: 'car', name: 'Car / Taxi / SUV' },
-  { id: 'van', name: 'Van / Mini-Bus' },
-  { id: 'bus', name: 'Bus / Travels' },
-  { id: 'truck', name: 'Lorry / Truck' },
-];
-
-export default function DriversManagementPage() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
+export default function AdminDriversPage() {
+  const [drivers, setDrivers] = useState<DriverProfile[]>([]);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // New Driver Form State
-  const [newDriver, setNewDriver] = useState({
-    name: '',
-    mobile_number: '',
-    whatsapp_number: '',
-    vehicle_type: 'bike',
-    vehicle_registration: '',
-    driving_license: '',
-    upi_id: '',
-  });
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const fetchDrivers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/drivers?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-      });
-      const data = await res.json();
-      if (data.drivers) {
-        setDrivers(data.drivers);
+      const { data, error } = await supabase
+        .from('driver_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setDrivers(data);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error('Error fetching drivers', e);
     } finally {
       setLoading(false);
     }
@@ -76,261 +48,179 @@ export default function DriversManagementPage() {
     fetchDrivers();
   }, []);
 
-  const handleEnrollSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newDriver.name || !newDriver.mobile_number || !newDriver.vehicle_registration) {
-      alert("Name, Mobile Number, and Vehicle Registration are required.");
-      return;
-    }
-
+  const updateDriverStatus = async (id: string, newStatus: string) => {
+    setUpdatingId(id);
     try {
-      const res = await fetch("/api/admin/drivers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newDriver),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setShowEnrollModal(false);
-        setNewDriver({
-          name: '', mobile_number: '', whatsapp_number: '', vehicle_type: 'bike', vehicle_registration: '', driving_license: '', upi_id: ''
-        });
-        fetchDrivers();
-      } else {
-        alert("Error enrolling driver: " + data.error);
+      const { error } = await supabase
+        .from('driver_profiles')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (!error) {
+        setDrivers((prev) =>
+          prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
+        );
       }
-    } catch (err) {
-      alert("Failed to enroll driver");
-    }
-  };
-
-  const handleToggleVerification = async (driver: Driver) => {
-    setProcessingId(driver.id + "-verify");
-    try {
-      const res = await fetch("/api/admin/drivers", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driver_id: driver.id, is_verified: !driver.is_verified }),
-      });
-      const data = await res.json();
-      if (data.success) fetchDrivers();
-      else alert("Error: " + data.error);
-    } catch (err) {
-      alert("Failed to update verification status");
+    } catch (e) {
+      console.error('Failed to update status', e);
     } finally {
-      setProcessingId(null);
+      setUpdatingId(null);
     }
   };
 
-  const handleClearCommission = async (driver: Driver) => {
-    if (!confirm("Clear pending commission dues for this driver?")) return;
-    setProcessingId(driver.id + "-comm");
-    try {
-      const res = await fetch("/api/admin/drivers/clear-commission", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ driver_id: driver.id }),
-      });
-      const data = await res.json();
-      if (data.success) fetchDrivers();
-    } catch (err) {
-      alert("Failed to clear commission");
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleRemoveDriver = async (driverId: string) => {
-    if (!confirm("Are you sure you want to remove this driver?")) return;
-    try {
-      const res = await fetch(`/api/admin/drivers?id=${driverId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) fetchDrivers();
-    } catch (err) {
-      alert("Failed to remove driver");
-    }
-  };
+  const filteredDrivers = drivers.filter(
+    (d) =>
+      d.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      d.phone.includes(search) ||
+      d.license_number.toLowerCase().includes(search.toLowerCase()) ||
+      d.rc_number.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Car className="w-7 h-7 text-primary" /> Driver & Operator Management
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Manage user driver registrations, enrollments, document verifications, and commissions.
+          <div className="flex items-center gap-2 text-orange-400 font-bold text-sm">
+            <ShieldCheck className="w-5 h-5" />
+            DRIV O VERIFICATION ENGINE
+          </div>
+          <h1 className="text-2xl font-black mt-1">Driver & Vehicle Management Portal</h1>
+          <p className="text-slate-400 text-xs mt-1">
+            Review driver KYC documents, license numbers, RC details & toggle verification status.
           </p>
         </div>
-
-        <Button
-          onClick={() => setShowEnrollModal(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-md"
+        <button
+          onClick={fetchDrivers}
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition"
         >
-          <Plus className="w-4 h-4" /> Enroll New Driver
-        </Button>
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh List
+        </button>
       </div>
 
-      {/* Admin Manual Enrollment Modal */}
-      {showEnrollModal && (
-        <div className="bg-card border border-border p-5 rounded-xl space-y-4 shadow-xl animate-fade-in">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-emerald-500" /> Enroll New Driver (Admin Direct)
-            </h3>
-            <button onClick={() => setShowEnrollModal(false)} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
+      {/* Search & Stats Bar */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="md:col-span-2 relative">
+          <Search className="w-5 h-5 absolute left-3 top-3.5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search driver by name, phone, DL, or RC..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none shadow-sm"
+          />
+        </div>
+        <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-emerald-600">VERIFIED DRIVERS</p>
+            <p className="text-xl font-black text-emerald-900">
+              {drivers.filter((d) => d.status === 'active').length}
+            </p>
           </div>
+          <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+        </div>
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-amber-600">PENDING VERIFICATION</p>
+            <p className="text-xl font-black text-amber-900">
+              {drivers.filter((d) => d.status === 'pending').length}
+            </p>
+          </div>
+          <ShieldAlert className="w-8 h-8 text-amber-500" />
+        </div>
+      </div>
 
-          <form onSubmit={handleEnrollSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Driver Full Name *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Ramesh Kumar"
-                value={newDriver.name}
-                onChange={(e) => setNewDriver({ ...newDriver, name: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Mobile Number *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. +91 9876543210"
-                value={newDriver.mobile_number}
-                onChange={(e) => setNewDriver({ ...newDriver, mobile_number: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Category *</label>
-              <select
-                value={newDriver.vehicle_type}
-                onChange={(e) => setNewDriver({ ...newDriver, vehicle_type: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary"
-              >
-                {VEHICLE_CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+      {/* Driver List Table */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-slate-400 font-medium">Loading registered drivers...</div>
+        ) : filteredDrivers.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 font-medium">
+            No driver records found. New driver registrations will appear here automatically.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="p-4">Driver Details</th>
+                  <th className="p-4">Vehicle Category</th>
+                  <th className="p-4">License (DL) & RC</th>
+                  <th className="p-4">Verification Status</th>
+                  <th className="p-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                {filteredDrivers.map((driver) => (
+                  <tr key={driver.id} className="hover:bg-slate-50/80 transition">
+                    <td className="p-4">
+                      <p className="font-bold text-slate-900">{driver.full_name}</p>
+                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                        <Phone className="w-3 h-3 text-emerald-600" />
+                        {driver.phone}
+                      </p>
+                    </td>
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-800 rounded-full text-xs font-bold border border-slate-200">
+                        <Car className="w-3.5 h-3.5 text-orange-500" />
+                        {driver.vehicle_category.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <p className="text-xs font-mono text-slate-800 flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5 text-blue-500" />
+                        DL: <span className="font-bold">{driver.license_number}</span>
+                      </p>
+                      <p className="text-xs font-mono text-slate-500 mt-0.5">
+                        RC: <span className="font-semibold text-slate-700">{driver.rc_number}</span>
+                      </p>
+                    </td>
+                    <td className="p-4">
+                      {driver.status === 'active' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold border border-emerald-300">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          VERIFIED ACTIVE
+                        </span>
+                      ) : driver.status === 'suspended' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-100 text-rose-800 rounded-lg text-xs font-bold border border-rose-300">
+                          <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                          SUSPENDED
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-bold border border-amber-300">
+                          <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                          PENDING APPROVAL
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right space-x-2">
+                      {driver.status !== 'active' && (
+                        <button
+                          disabled={updatingId === driver.id}
+                          onClick={() => updateDriverStatus(driver.id, 'active')}
+                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                        >
+                          APPROVE
+                        </button>
+                      )}
+                      {driver.status !== 'suspended' && (
+                        <button
+                          disabled={updatingId === driver.id}
+                          onClick={() => updateDriverStatus(driver.id, 'suspended')}
+                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
+                        >
+                          SUSPEND
+                        </button>
+                      )}
+                    </td>
+                  </tr>
                 ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Reg Number *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. TN-39-AB-1234"
-                value={newDriver.vehicle_registration}
-                onChange={(e) => setNewDriver({ ...newDriver, vehicle_registration: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Driving License No</label>
-              <input
-                type="text"
-                placeholder="e.g. TN-2024-998877"
-                value={newDriver.driving_license}
-                onChange={(e) => setNewDriver({ ...newDriver, driving_license: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">UPI ID for Payment</label>
-              <input
-                type="text"
-                placeholder="e.g. 9876543210@upi"
-                value={newDriver.upi_id}
-                onChange={(e) => setNewDriver({ ...newDriver, upi_id: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-              />
-            </div>
-
-            <div className="md:col-span-2 pt-2">
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm">
-                Complete Enrollment
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Drivers List */}
-      {loading ? (
-        <div className="text-center p-12 text-muted-foreground">Loading registered drivers...</div>
-      ) : drivers.length === 0 ? (
-        <div className="text-center p-12 text-muted-foreground">No drivers enrolled yet. Click "Enroll New Driver" to add one.</div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {drivers.map((driver) => {
-            const displayName = driver.name || driver.profile?.full_name || 'Registered Driver';
-            const displayPhone = driver.mobile_number || 'N/A';
-            const displayVehicleNo = driver.vehicle_registration || 'N/A';
-            const displayLicense = driver.driving_license || 'N/A';
-            const displayUpi = driver.upi_id || 'N/A';
-
-            return (
-              <Card key={driver.id} className="bg-card border-border hover:border-primary/50 transition shadow-sm">
-                <CardContent className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-base font-bold text-foreground">{displayName}</h3>
-                      <Badge className={driver.is_verified ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" : "bg-amber-500/15 text-amber-500 border-amber-500/30"}>
-                        {driver.is_verified ? "Verified Partner" : "Pending Verification"}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs uppercase">{driver.status || 'Offline'}</Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-muted-foreground">
-                      <div><strong className="text-foreground">Phone:</strong> {displayPhone}</div>
-                      <div><strong className="text-foreground">Category:</strong> {driver.vehicle_type}</div>
-                      <div><strong className="text-foreground">Reg No:</strong> {displayVehicleNo}</div>
-                      <div><strong className="text-foreground">License:</strong> {displayLicense}</div>
-                      <div><strong className="text-foreground">UPI ID:</strong> {displayUpi}</div>
-                      <div><strong className="text-foreground">Joined:</strong> {format(new Date(driver.created_at || Date.now()), "MMM dd, yyyy")}</div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Button
-                      size="sm"
-                      onClick={() => handleToggleVerification(driver)}
-                      disabled={processingId === driver.id + "-verify"}
-                      className={driver.is_verified ? "bg-amber-600 hover:bg-amber-700 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"}
-                    >
-                      {driver.is_verified ? "Unverify" : "Verify Partner"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleClearCommission(driver)}
-                      disabled={processingId === driver.id + "-comm"}
-                    >
-                      Clear Dues
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleRemoveDriver(driver.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
