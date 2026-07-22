@@ -36,6 +36,46 @@ export default function DriveODashboard() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerSubmitted, setRegisterSubmitted] = useState(false);
 
+  // Driver Record & Verification State
+  const [driverRecord, setDriverRecord] = useState<any>(null);
+  const [loadingDriverRecord, setLoadingDriverRecord] = useState(true);
+
+  // Strict Admin Determination
+  const isAdmin = Boolean(
+    profile?.email === "aishleetechnology@gmail.com" ||
+    profile?.phone?.includes("9486335870") ||
+    currentUser?.email === "aishleetechnology@gmail.com" ||
+    currentUser?.phone?.includes("9486335870")
+  );
+
+  // Fetch current user's driver partner record from Supabase
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const fetchDriverRecord = async () => {
+      setLoadingDriverRecord(true);
+      try {
+        const { data } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (data) {
+          setDriverRecord(data);
+          if (data.vehicle_type) setOperatorCategory(data.vehicle_type);
+          if (data.vehicle_number) setRegNumber(data.vehicle_number);
+          if (data.upi_id) setUpiId(data.upi_id);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingDriverRecord(false);
+      }
+    };
+
+    fetchDriverRecord();
+  }, [currentUser?.id]);
+
   // User Enrollment Form State
   const [regForm, setRegForm] = useState({
     name: profile?.full_name || '',
@@ -182,6 +222,29 @@ export default function DriveODashboard() {
         <ShieldCheck className="w-12 h-12 text-primary mb-4" />
         <h2 className="text-xl font-bold">Access Denied</h2>
         <p className="text-sm text-muted-foreground mt-1">Please sign in as a DriveO Operator.</p>
+      </div>
+    );
+  }
+
+  // Pending Admin Approval Guard for Non-Admins
+  if (!isAdmin && driverRecord && !driverRecord.is_verified) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center max-w-lg mx-auto">
+        <div className="p-4 rounded-full bg-amber-500/15 text-amber-400 mb-4 border border-amber-500/30 shadow-lg">
+          <Clock className="w-12 h-12 animate-pulse" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Registration Pending Admin Approval</h2>
+        <p className="text-sm text-muted-foreground mt-2">
+          Your driver partner profile (Vehicle Reg: <span className="text-emerald-400 font-bold">{driverRecord.vehicle_number || driverRecord.vehicle_registration || 'In Review'}</span>) has been submitted and is undergoing document verification by Admin.
+        </p>
+        <div className="mt-6 p-5 bg-card border border-border rounded-xl text-xs text-muted-foreground space-y-2 text-left w-full shadow-sm">
+          <p className="font-bold text-foreground text-sm flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-500" /> Next Verification Steps:
+          </p>
+          <p>1. Admin verifies your Driving License & Vehicle Registration details.</p>
+          <p>2. Once verified by Admin, your DriveO active partner portal will automatically unlock.</p>
+          <p>3. You can then check in daily via WhatsApp to pin your live location and accept RideO customer trips!</p>
+        </div>
       </div>
     );
   }

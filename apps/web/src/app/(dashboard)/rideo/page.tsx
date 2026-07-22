@@ -24,14 +24,14 @@ function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lo
   return Math.round((R * c) * 10) / 10;
 }
 
-// 6 Vehicle Transport Modes for Tamil Nadu & Beyond
+// 6 Vehicle Transport Modes for Tamil Nadu & Beyond with Dynamic Search Radii
 const VEHICLE_CATEGORIES = [
-  { id: 'bike', name: 'Bike / Scooty', icon: '🛵', baseFare: 30, perKm: 8 },
-  { id: 'auto', name: 'Auto Rickshaw', icon: '🛺', baseFare: 40, perKm: 15 },
-  { id: 'car', name: 'Car / Taxi / SUV', icon: '🚗', baseFare: 70, perKm: 20 },
-  { id: 'van', name: 'Van / Mini-Bus', icon: '🚐', baseFare: 150, perKm: 35 },
-  { id: 'bus', name: 'Bus / Travels', icon: '🚌', baseFare: 300, perKm: 50 },
-  { id: 'truck', name: 'Lorry / Truck', icon: '🚛', baseFare: 500, perKm: 75 },
+  { id: 'bike', name: 'Bike / Scooty', icon: '🛵', baseFare: 30, perKm: 8, radiusKm: 3 },
+  { id: 'auto', name: 'Auto Rickshaw', icon: '🛺', baseFare: 40, perKm: 15, radiusKm: 3 },
+  { id: 'car', name: 'Car / Taxi / SUV', icon: '🚗', baseFare: 70, perKm: 20, radiusKm: 5 },
+  { id: 'van', name: 'Van / Mini-Bus', icon: '🚐', baseFare: 150, perKm: 35, radiusKm: 10 },
+  { id: 'truck', name: 'Lorry / Truck', icon: '🚛', baseFare: 500, perKm: 75, radiusKm: 20 },
+  { id: 'bus', name: 'Bus / Travels', icon: '🚌', baseFare: 300, perKm: 50, radiusKm: 50 },
 ];
 
 export default function RideODashboard() {
@@ -202,9 +202,29 @@ export default function RideODashboard() {
     );
   }
 
-  if (loadError) return <div className="p-8 text-center text-red-500">Error loading Google Maps.</div>;
+  const maxRadiusKm = currentCategoryObj.radiusKm || 5;
 
-  const filteredDrivers = activeDrivers.filter(d => !d.category || d.category === selectedCategory || selectedCategory === 'bike');
+  const filteredDrivers = activeDrivers.filter((d) => {
+    // 1. Vehicle category matching
+    const cat = d.vehicle_type || d.category;
+    const categoryMatches = !cat || cat === selectedCategory;
+    if (!categoryMatches) return false;
+
+    // 2. Haversine distance radius filtering if coordinates exist
+    const driverLat = d.pickup_latitude || d.lat;
+    const driverLng = d.pickup_longitude || d.lng;
+    if (currentLocation && driverLat && driverLng) {
+      const dist = calculateHaversineDistance(
+        currentLocation.lat,
+        currentLocation.lng,
+        Number(driverLat),
+        Number(driverLng)
+      );
+      return dist <= maxRadiusKm;
+    }
+
+    return true;
+  });
 
   return (
     <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
@@ -289,6 +309,7 @@ export default function RideODashboard() {
                   >
                     <span className="text-2xl mb-1">{cat.icon}</span>
                     <span className="text-xs text-center leading-tight">{cat.name}</span>
+                    <span className="text-[10px] opacity-80 mt-1 font-mono">📍 {cat.radiusKm} km radius</span>
                   </button>
                 );
               })}

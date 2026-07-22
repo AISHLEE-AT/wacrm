@@ -2,6 +2,7 @@ import { supabaseAdmin } from '../supabase/admin'
 import { getRideEstimate, calculatePrice, reverseGeocode, LocationCoordinate } from '../google-maps'
 import { sendTextMessage, sendInteractiveButtons } from './meta-api'
 import { HARDCODED_WHATSAPP_CONFIG } from './hardcoded-config'
+
 export async function handleRideHailingBooking(
   message: any,
   accountId: string,
@@ -12,10 +13,66 @@ export async function handleRideHailingBooking(
   try {
     const config = HARDCODED_WHATSAPP_CONFIG
     const supabase = supabaseAdmin()
-
-    // 1. Check if user sent "Ride" or "Book" or "Schedule" to start the flow
     const text = message.text?.body?.toLowerCase() || ''
-    
+    const cleanPhone = senderPhone.replace(/\D/g, '')
+
+    // ───── 0. DRIVER DAILY WAKEUP & LOCATION PINNING HOOK ─────
+    // Check if sender phone matches a registered driver partner
+    const { data: driverRow } = await supabase
+      .from('drivers')
+      .select('id, name, vehicle_type, vehicle_registration, status')
+      .or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%`)
+      .maybeSingle()
+
+    if (driverRow) {
+      // Driver pinned live location via WhatsApp Attachment (Pin Location)
+      if (message.type === 'location' && message.location) {
+        const lat = message.location.latitude
+        const lng = message.location.longitude
+
+        await supabase
+          .from('drivers')
+          .update({
+            pickup_latitude: lat,
+            pickup_longitude: lng,
+            status: 'online',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', driverRow.id)
+
+        await sendTextMessage({
+          accessToken,
+          phoneNumberId: config.phone_number_id,
+          to: senderPhone,
+          text: `📍 LOCATION PINNED SUCCESSFULLY! 📍\n\n` +
+            `👤 Driver: ${driverRow.name}\n` +
+            `🚛 Vehicle: ${driverRow.vehicle_registration}\n` +
+            `🌐 Coordinates: (${lat}, ${lng})\n\n` +
+            `✅ Your live vehicle position is now ACTIVE on RideO map for nearby customers!`
+        })
+        return true
+      }
+
+      // Driver sent Daily Active Good Morning check-in message
+      if (text.includes('active') || text.includes('good morning') || text.includes('online')) {
+        await supabase
+          .from('drivers')
+          .update({ status: 'online', updated_at: new Date().toISOString() })
+          .eq('id', driverRow.id)
+
+        await sendTextMessage({
+          accessToken,
+          phoneNumberId: config.phone_number_id,
+          to: senderPhone,
+          text: `☀️ GOOD MORNING ${driverRow.name.toUpperCase()}! ☀️\n\n` +
+            `Your vehicle status is now ACTIVE & ONLINE for today.\n\n` +
+            `📍 Please share your live PICKUP location using the WhatsApp attachment (Pin Location) button so nearby RideO riders can find your vehicle!`
+        })
+        return true
+      }
+    }
+
+    // ───── 1. CUSTOMER RIDE & TRANSPORT BOOKING ─────
     let isScheduled = false
     let scheduledTimeStr = ''
     if (text.includes('schedule') || text.includes('later')) {
@@ -35,14 +92,13 @@ export async function handleRideHailingBooking(
       return true
     }
 
-    // 2. Handle Location Pins (Pickup or Dropoff)
+    // ───── 2. HANDLE LOCATION PINS (Pickup or Dropoff) ─────
     if (message.type === 'location' && message.location) {
       const loc: LocationCoordinate = {
         lat: message.location.latitude,
         lng: message.location.longitude
       }
 
-      // Check if there is an active pending ride for this contact without a dropoff
       const { data: activeRide } = await supabase
         .from('rides')
         .select('*')
@@ -54,7 +110,6 @@ export async function handleRideHailingBooking(
         .maybeSingle()
 
       if (!activeRide || (activeRide.pickup_lat && activeRide.dropoff_lat)) {
-        // This is a new pickup location
         const address = await reverseGeocode(loc)
         await supabase.from('rides').insert({
           account_id: accountId,
@@ -63,7 +118,6 @@ export async function handleRideHailingBooking(
           pickup_lat: loc.lat,
           pickup_lng: loc.lng,
           pickup_address: address,
-          // Dummy dropoff to satisfy NOT NULL, will be updated next
           dropoff_lat: 0,
           dropoff_lng: 0
         })
@@ -76,10 +130,7 @@ export async function handleRideHailingBooking(
         })
         return true
       } else if (activeRide && activeRide.pickup_lat && !activeRide.distance_km) {
-        // This is a dropoff location
         const dropoffAddress = await reverseGeocode(loc)
-        
-        // Calculate distance and price
         const pickupLoc = { lat: activeRide.pickup_lat, lng: activeRide.pickup_lng }
         const estimate = await getRideEstimate(pickupLoc, loc)
         
@@ -93,7 +144,6 @@ export async function handleRideHailingBooking(
           return true
         }
 
-        // Assume standard "car" for now. In a full implementation, we'd ask to select vehicle type.
         const vehicle = { baseFare: 50, perKmRate: 15, perMinuteRate: 2 }
         const price = calculatePrice(estimate, vehicle)
 
@@ -108,7 +158,6 @@ export async function handleRideHailingBooking(
           })
           .eq('id', activeRide.id)
 
-        // Send quotation with strict fare messaging
         await sendInteractiveButtons({
           accessToken,
           phoneNumberId: config.phone_number_id,
@@ -123,12 +172,12 @@ export async function handleRideHailingBooking(
       }
     }
 
-    // 3. Handle Interactive Replies (Confirm / Cancel)
+    // ───── 3. HANDLE INTERACTIVE REPLIES ─────
     if (message.type === 'interactive' && message.interactive) {
       const replyId = message.interactive.button_reply?.id || message.interactive.list_reply?.id
       if (replyId && replyId.startsWith('confirm_ride_')) {
         const rideId = replyId.replace('confirm_ride_', '')
-        await supabase.from('rides').update({ status: 'pending' }).eq('id', rideId) // status remains pending but ready for dispatch
+        await supabase.from('rides').update({ status: 'pending' }).eq('id', rideId)
         
         await sendInteractiveButtons({
           accessToken,
