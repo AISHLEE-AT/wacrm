@@ -15,18 +15,17 @@ export async function handleRideHailingBooking(
     const supabase = supabaseAdmin()
     const text = message.text?.body?.toLowerCase() || ''
     const cleanPhone = senderPhone.replace(/\D/g, '')
+    const tenDigitPhone = cleanPhone.slice(-10)
 
     // ───── 0. AUTOMATED WHATSAPP LOGIN OTP GENERATION HOOK ─────
     if (text.includes('otp') || text.includes('login') || text.includes('code') || text.includes('help')) {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      await supabase
-        .from('whatsapp_otps')
-        .upsert(
-          { phone_number: cleanPhone, otp: otpCode, expires_at: expiresAt },
-          { onConflict: 'phone_number' }
-        );
+      await supabase.from('whatsapp_otps').upsert([
+        { phone_number: tenDigitPhone, otp: otpCode, expires_at: expiresAt },
+        { phone_number: cleanPhone, otp: otpCode, expires_at: expiresAt }
+      ]);
 
       await sendTextMessage({
         accessToken,

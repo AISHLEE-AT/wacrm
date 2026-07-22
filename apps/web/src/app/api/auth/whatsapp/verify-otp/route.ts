@@ -11,15 +11,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Phone and OTP are required' }, { status: 400 })
     }
 
-    const cleanPhone = phone.replace(/\D/g, '')
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10)
     const supabase = supabaseAdmin()
 
-    // 1. Verify OTP in database
-    const { data: record, error: dbError } = await supabase
+    // 1. Verify OTP in database (support 10-digit & 91-prefixed phone keys)
+    const { data: records, error: dbError } = await supabase
       .from('whatsapp_otps')
       .select('*')
-      .eq('phone_number', cleanPhone)
-      .single()
+      .or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
+
+    const record = records?.[0]
 
     if (dbError || !record) {
       return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 })

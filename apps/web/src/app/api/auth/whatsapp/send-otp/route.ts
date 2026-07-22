@@ -11,6 +11,8 @@ export async function POST(request: Request) {
     }
 
     const cleanPhone = phone.replace(/\D/g, '')
+    const tenDigitPhone = cleanPhone.slice(-10)
+    const ninetyOnePhone = `91${tenDigitPhone}`
 
     // Generate 6-digit NUMERIC OTP (Valid for 10 minutes)
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
@@ -18,13 +20,13 @@ export async function POST(request: Request) {
 
     const supabase = supabaseAdmin()
 
-    // 1. Store the OTP in the database
+    // 1. Store the OTP in the database under both 10-digit and 91-prefixed keys
     const { error: dbError } = await supabase
       .from('whatsapp_otps')
-      .upsert(
-        { phone_number: cleanPhone, otp, expires_at: expiresAt },
-        { onConflict: 'phone_number' }
-      )
+      .upsert([
+        { phone_number: tenDigitPhone, otp, expires_at: expiresAt },
+        { phone_number: ninetyOnePhone, otp, expires_at: expiresAt }
+      ])
 
     if (dbError) {
       console.error('Error saving OTP:', dbError)
