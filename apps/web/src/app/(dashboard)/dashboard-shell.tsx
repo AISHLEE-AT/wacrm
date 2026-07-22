@@ -56,17 +56,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen overflow-hidden bg-background w-full relative">
         <PresenceHeartbeat />
         <main className="flex-1 overflow-y-auto w-full">{children}</main>
-        
-        {/* WhatsApp Help Button */}
-        <a 
-          href="https://wa.me/916381029380?text=Hi%20Fago%20Support,%20I%20need%20help!" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] text-white px-5 py-3 rounded-full font-bold shadow-lg hover:bg-[#20bd5a] hover:scale-105 transition-all"
-        >
-          <MessageCircle className="h-6 w-6" />
-          <span className="hidden sm:inline">Help</span>
-        </a>
       </div>
     );
   }
@@ -81,17 +70,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         <Header onOpenSidebar={() => setSidebarOpen(true)} />
         {/* Thinner horizontal padding on mobile so cards have room to breathe. */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
-
-        {/* WhatsApp Help Button for Admins too */}
-        <a 
-          href="https://wa.me/916381029380?text=Hi%20Fago%20Support,%20I%20need%20help!" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="absolute bottom-6 right-6 z-50 flex items-center justify-center gap-2 bg-[#25D366] text-white px-5 py-3 rounded-full font-bold shadow-lg hover:bg-[#20bd5a] hover:scale-105 transition-all"
-        >
-          <MessageCircle className="h-6 w-6" />
-          <span className="hidden sm:inline">Help</span>
-        </a>
       </div>
     </div>
   );

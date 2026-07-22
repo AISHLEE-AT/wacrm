@@ -29,24 +29,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (authState.isLoading) return null;
 
-      final isLoggingIn = state.uri.path == '/login';
-      final isGuest = authState.role == UserRole.guest;
-
-      if (isGuest) {
-        ref.read(hasRoutedInitiallyProvider.notifier).state = false;
-        return isLoggingIn ? null : '/login';
-      }
-
-      if (isLoggingIn) {
-        return '/';
-      }
-
-      // Profile completion check
-      if (!authState.isProfileComplete && state.uri.path != '/setup') {
-        return '/setup';
-      }
-
-      // Mark initial routing done
+      // Direct all mobile entry straight to CrmDashboardScreen (WebView)
+      // Authentication is handled seamlessly ONCE via web session persistence.
       if (state.uri.path == '/' && !hasRoutedInitially) {
         ref.read(hasRoutedInitiallyProvider.notifier).state = true;
       }
