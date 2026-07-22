@@ -201,11 +201,7 @@ export function SettingsOverview({
                 : ''
             }`,
     },
-    {
-      section: 'deals',
-      loading: false,
-      subtitle: `${defaultCurrency} — ${currencyLabel}`,
-    },
+
     {
       section: 'fields',
       loading: countsLoading,

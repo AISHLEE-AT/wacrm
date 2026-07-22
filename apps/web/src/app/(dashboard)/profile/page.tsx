@@ -42,7 +42,6 @@ const CRM_TABS = [
   { id: 'crm_whatsapp', icon: PlugZap, label: 'WhatsApp', group: 'workspace', adminOnly: true },
   { id: 'crm_templates', icon: FileText, label: 'Templates', group: 'workspace', adminOnly: true },
   { id: 'crm_fields', icon: Tags, label: 'Fields & Tags', group: 'workspace', adminOnly: true },
-  { id: 'crm_deals', icon: Coins, label: 'Deals & Currency', group: 'workspace', adminOnly: true },
   { id: 'crm_members', icon: UsersRound, label: 'Team Members', group: 'workspace', adminOnly: true },
   { id: 'crm_api', icon: KeyRound, label: 'API Keys', group: 'workspace', adminOnly: true },
 ] as const;
