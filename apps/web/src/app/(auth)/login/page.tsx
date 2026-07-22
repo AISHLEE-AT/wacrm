@@ -351,7 +351,7 @@ function LoginPageInner() {
                       className="w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base flex items-center justify-center gap-2 transition shadow-lg group"
                     >
                       <Send className="w-5 h-5" />
-                      Get Instant OTP via WhatsApp (6381029380)
+                      Get Instant OTP via WhatsApp
                     </a>
                   ) : (
                     <Button

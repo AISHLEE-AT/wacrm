@@ -27,7 +27,9 @@ export async function POST(request: Request) {
     }
 
     if (record.otp !== otp) {
-      return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 })
+      // Anti-Spam Protection: Immediate purge of wrong OTP attempts to block brute-force attacks
+      await supabase.from('whatsapp_otps').delete().or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
+      return NextResponse.json({ error: 'Invalid OTP code. Please request a fresh OTP via WhatsApp.' }, { status: 400 })
     }
 
     const now = new Date()
