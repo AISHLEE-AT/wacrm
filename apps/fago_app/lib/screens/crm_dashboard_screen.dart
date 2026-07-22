@@ -78,7 +78,7 @@ class _CrmDashboardScreenState extends State<CrmDashboardScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://watscrm.vercel.app'));
+      ..loadRequest(Uri.parse('https://watscrm.vercel.app/rideo'));
 
     // Grant Geolocation & Platform permissions for Android WebView
     if (controller.platform is AndroidWebViewController) {
