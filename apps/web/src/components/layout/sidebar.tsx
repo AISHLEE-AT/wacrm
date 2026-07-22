@@ -12,11 +12,9 @@ import {
   LayoutDashboard,
   LogOut,
   MessageSquare,
-  ClipboardCheck,
   Radio,
   Settings,
   Shield,
-  ShoppingBag,
   User,
   UserCog,
   Users,
@@ -24,17 +22,8 @@ import {
   Workflow,
   X,
   Zap,
-  Briefcase, // For FAGO Requests
-  Home,
   Car,
-  MapPin,
-  CheckSquare,
-  GraduationCap,
-  Wallet,
-  Plane,
-  Sprout,
-  Tv,
-  Wrench,
+  Truck,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 
@@ -111,7 +100,13 @@ const crmItems: NavItem[] = [
   { href: "/flows", label: "Flows", icon: Workflow, beta: true },
 ];
 
+const mobilityItems: NavItem[] = [
+  { href: "/rideo", label: "RideO", icon: Car },
+  { href: "/drivo", label: "DriveO", icon: Truck },
+];
+
 const adminItems: NavItem[] = [
+  { href: "/admin", label: "Admin Overview", icon: Shield },
   { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
   { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
 ];
@@ -232,13 +227,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {/* FAGO and Aishlee Ecosystem navigation moved exclusively to the grid selection screen */}
 
-          {/* CRM Section - Only visible to Superadmins */}
-          {(["919486335870", "9486335870", "919123596988", "9123596988", "aishleetechnology@gmail.com"].some(admin => 
-            profile?.email?.includes(admin) || profile?.phone?.includes(admin) || user?.phone?.includes(admin) || user?.email?.includes(admin)
-          )) && (
+          {/* CRM Section - Visible to everyone now */}
             <>
               <div className="px-3 mb-2 mt-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WAPP</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WAPP CRM</h3>
               </div>
               <ul className="flex flex-col gap-1">
                 {crmItems.map((item) => {
@@ -286,11 +278,38 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               </ul>
 
               <div className="px-3 mb-2 mt-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">SuperApp Admin</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobility & Logistics</h3>
+              </div>
+              <ul className="flex flex-col gap-1">
+                {mobilityItems.map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
+                          isActive
+                            ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
+                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                        )}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span className="flex-1">{item.label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="px-3 mb-2 mt-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</h3>
               </div>
               <ul className="flex flex-col gap-1">
                 {adminItems.map((item) => {
-                  const isActive = pathname.startsWith(item.href);
+                  const isActive = item.href === "/admin" 
+                    ? pathname === "/admin"
+                    : pathname.startsWith(item.href);
 
                   return (
                     <li key={item.href}>
@@ -313,7 +332,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
               <div className="my-4 border-t border-border" />
             </>
-          )}
 
           <ul className="flex flex-col gap-1">
             {bottomNavItems.map((item) => {

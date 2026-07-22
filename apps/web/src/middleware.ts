@@ -23,8 +23,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user || null
+  const { data: { user } } = await supabase.auth.getUser()
 
   // getUser() transparently refreshes an expired access token, which
   // ROTATES the refresh token and writes the new cookies onto
@@ -50,6 +49,7 @@ export async function middleware(request: NextRequest) {
   // a forwarded invite link to someone who's already signed in
   // would silently drop them on /dashboard.
   if (user && (
+    request.nextUrl.pathname === '/' ||
     request.nextUrl.pathname === '/login' ||
     request.nextUrl.pathname === '/signup' ||
     request.nextUrl.pathname === '/forgot-password'
@@ -82,7 +82,7 @@ export async function middleware(request: NextRequest) {
       if (!profileComplete) {
         url.pathname = '/onboarding';
       } else {
-        url.pathname = defaultModule ? `/${defaultModule.toLowerCase()}` : '/dashboard';
+        url.pathname = '/dashboard';
         supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
       }
       url.search = ''
@@ -92,11 +92,10 @@ export async function middleware(request: NextRequest) {
 
   // Protected pages - redirect to login if not authenticated
   const protectedPaths = [
-    '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', 
-    '/automations', '/settings', '/onboarding',
-    '/teacho', '/testo', '/touro', '/moneyo', '/tasko', '/tradeo', '/tvo',
-    '/rido', '/drivo', '/toolso', '/admin', '/admino', '/aishlee-dashboard', 
-    '/approval-hub', '/careers', '/localadmin', '/profile', '/setup', '/rideo'
+    '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
+    '/automations', '/flows', '/settings', '/onboarding',
+    '/admin', '/profile', '/wallet',
+    '/rideo', '/drivo',
   ]
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path)) || request.nextUrl.pathname === '/';
   

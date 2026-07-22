@@ -24,16 +24,22 @@ vi.mock("@supabase/ssr", () => ({
     },
   ) => ({
     auth: {
-      // Mirrors real auth-js: an expired access token is transparently
-      // refreshed inside getUser(), which rotates the refresh token and
-      // pushes the new cookies through setAll() before resolving.
       getUser: async () => {
         if (refreshedCookies.length) opts.cookies.setAll(refreshedCookies);
         return { data: { user: mockUser } };
       },
     },
+    // Mock DB calls so middleware's onboarding check doesn't throw
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({ data: { profile_complete: true }, error: null }),
+        }),
+      }),
+    }),
   }),
 }));
+
 
 // Imported after the mock is registered.
 const { middleware } = await import("./middleware");

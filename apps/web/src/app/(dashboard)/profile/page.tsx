@@ -3,8 +3,6 @@
 
 import React, { useState, useEffect, useMemo, Suspense, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AppProvider, useApp } from '@/aishlee/context/AppProvider';
-import { profileSyncService } from '@/aishlee/services/profileSyncService';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -81,9 +79,7 @@ function resolveTab(raw: string | null): string {
 export default function UnifiedProfilePage() {
   return (
     <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
-      <AppProvider>
-        <ProfilePageInner />
-      </AppProvider>
+      <ProfilePageInner />
     </Suspense>
   );
 }
@@ -91,7 +87,6 @@ export default function UnifiedProfilePage() {
 function ProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, logout, updateProfile } = useApp();
   const { user, profile, accountRole, signOut, defaultCurrency } = useAuth();
   const { mode } = useTheme();
 
@@ -113,26 +108,7 @@ function ProfilePageInner() {
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
 
-  useEffect(() => {
-    if (currentUser?.id) {
-      loadHistory();
-    }
-  }, [currentUser]);
 
-  const loadHistory = async () => {
-    setLoading(true);
-    try {
-      const [txs, ords] = await Promise.all([
-        profileSyncService.getTransactions(currentUser.id),
-        profileSyncService.getOrders(currentUser.id)
-      ]);
-      setTransactions(txs);
-      setOrders(ords);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  };
 
   // CRM settings navigation callback
   const goSettings = (section: string) => {
@@ -148,9 +124,9 @@ function ProfilePageInner() {
     <div className="space-y-6 max-w-2xl">
       {/* Avatar & name */}
       <div className="flex items-center gap-6">
-        {currentUser?.avatar_url || profile?.avatar_url ? (
+        {profile?.avatar_url || profile?.avatar_url ? (
           <img
-            src={currentUser?.avatar_url || profile?.avatar_url}
+            src={profile?.avatar_url || profile?.avatar_url}
             alt="Avatar"
             className="w-20 h-20 rounded-2xl border-2 border-border object-cover shadow-lg"
           />
@@ -161,10 +137,10 @@ function ProfilePageInner() {
         )}
         <div>
           <h2 className="text-2xl font-bold text-foreground">
-            {currentUser?.fullName || profile?.full_name || 'User'}
+            {profile?.full_name || profile?.full_name || 'User'}
           </h2>
           <p className="text-primary text-sm font-medium mt-0.5">
-            {currentUser?.role || accountRole || 'User'}
+            {accountRole || accountRole || 'User'}
           </p>
         </div>
       </div>
@@ -177,7 +153,7 @@ function ProfilePageInner() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">WhatsApp</p>
-            <p className="font-medium">{currentUser?.whatsapp || profile?.phone || 'Not provided'}</p>
+            <p className="font-medium">{profile?.phone || profile?.phone || 'Not provided'}</p>
           </div>
         </div>
         <hr className="border-border" />
@@ -187,7 +163,7 @@ function ProfilePageInner() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Location</p>
-            <p className="font-medium">{currentUser?.location || 'Not provided'}</p>
+            <p className="font-medium">{profile?.location || 'Not provided'}</p>
           </div>
         </div>
         <hr className="border-border" />
@@ -210,8 +186,10 @@ function ProfilePageInner() {
                   <button
                     onClick={async () => {
                       if (upiValue.trim()) {
-                        await profileSyncService.updateProfile(currentUser.id, { upi_id: upiValue.trim() });
-                        updateProfile({ upi_id: upiValue.trim() });
+                        // UPI update via Supabase directly
+                        const { createClient } = await import('@/lib/supabase/client');
+                        const supabase = createClient();
+                        await supabase.from('profiles').update({ upi_id: upiValue.trim() }).eq('id', user?.id);
                         setEditingUpi(false);
                       }
                     }}
@@ -220,13 +198,13 @@ function ProfilePageInner() {
                   <button onClick={() => setEditingUpi(false)} className="text-muted-foreground text-sm hover:text-foreground transition">Cancel</button>
                 </div>
               ) : (
-                <p className="font-medium">{currentUser?.upi_id || 'Not provided'}</p>
+                <p className="font-medium">{(profile as any)?.upi_id || 'Not provided'}</p>
               )}
             </div>
           </div>
           {!editingUpi && (
             <button
-              onClick={() => { setUpiValue(currentUser?.upi_id || ''); setEditingUpi(true); }}
+              onClick={() => { setUpiValue((profile as any)?.upi_id || ''); setEditingUpi(true); }}
               className="text-xs text-muted-foreground hover:text-primary font-medium transition px-3 py-1 rounded-lg hover:bg-primary/10"
             >Edit</button>
           )}
@@ -236,7 +214,6 @@ function ProfilePageInner() {
       {/* Logout */}
       <button
         onClick={() => {
-          logout?.();
           signOut?.();
           router.push('/login');
         }}
@@ -249,7 +226,7 @@ function ProfilePageInner() {
   );
 
   const renderDigitalId = () => {
-    const qrData = currentUser?.digital_id_hash || `fago-id-${currentUser?.id || user?.id}`;
+    const qrData = (profile as any)?.digital_id_hash || `fago-id-${user?.id || user?.id}`;
 
     return (
       <div className="flex justify-center items-center py-8">
@@ -269,10 +246,10 @@ function ProfilePageInner() {
 
           <div className="text-center relative z-10">
             <h3 className="text-foreground text-xl font-bold tracking-wider">
-              {(currentUser?.fullName || profile?.full_name || 'USER')?.toUpperCase()}
+              {(profile?.full_name || profile?.full_name || 'USER')?.toUpperCase()}
             </h3>
             <p className="text-muted-foreground text-sm tracking-widest mt-1 uppercase">
-              {(currentUser?.role || accountRole || 'User')?.toUpperCase()}
+              {(accountRole || accountRole || 'User')?.toUpperCase()}
             </p>
           </div>
         </div>
@@ -281,7 +258,7 @@ function ProfilePageInner() {
   };
 
   const renderResume = () => {
-    const skills: string[] = currentUser?.skills ? String(currentUser.skills).split(',').map((s: string) => s.trim()) : [];
+    const skills: string[] = (profile as any)?.skills ? String((profile as any).skills).split(',').map((s: string) => s.trim()) : [];
 
     return (
       <div className="max-w-3xl space-y-6">
@@ -313,24 +290,24 @@ function ProfilePageInner() {
         <div>
           <h3 className="text-primary font-semibold mb-3">Education</h3>
           <p className="text-foreground bg-card p-4 rounded-xl border border-border">
-            {currentUser?.education_level || 'No education data provided.'}
+            {(profile as any)?.education_level || 'No education data provided.'}
           </p>
         </div>
 
-        {currentUser?.bio && (
+        {(profile as any)?.bio && (
           <div>
             <h3 className="text-primary font-semibold mb-3">Bio</h3>
             <p className="text-foreground bg-card p-4 rounded-xl border border-border">
-              {currentUser.bio}
+              {(profile as any).bio}
             </p>
           </div>
         )}
 
-        {currentUser?.employment_status && (
+        {(profile as any)?.employment_status && (
           <div>
             <h3 className="text-primary font-semibold mb-3">Employment</h3>
             <p className="text-foreground bg-card p-4 rounded-xl border border-border">
-              {currentUser.employment_status}
+              {(profile as any).employment_status}
               {currentUser.experience_years ? ` • ${currentUser.experience_years} years experience` : ''}
             </p>
           </div>

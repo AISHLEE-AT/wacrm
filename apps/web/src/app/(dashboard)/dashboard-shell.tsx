@@ -34,14 +34,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     }
 
     if (!loading && user) {
-      if (!isAdmin) {
-        const crmPaths = ['/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts', '/automations', '/flows', '/admin'];
-        const isCrmPath = crmPaths.some(p => pathname.startsWith(p));
-        
-        if (isCrmPath) {
-          router.push('/home');
-        }
-      }
+      // Allow all users to access the CRM paths (WhatsApp CRM)
     }
   }, [user, loading, isAdmin, pathname, router]);
 
