@@ -225,6 +225,25 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
               OutlinedButton.icon(
                 onPressed: () {
+                  final msg = '🚨 *RideO Live Trip Update*\n\n'
+                      '• *Pickup*: $_currentAddress\n'
+                      '• *Dropoff*: $_destinationAddress\n'
+                      '• *Vehicle*: $_selectedCategory\n'
+                      '• *Fare*: ₹${_estimatedFare.toStringAsFixed(0)}\n\n'
+                      'Track my ride status!';
+                  WhatsAppService.openWhatsApp(phone: '', message: msg);
+                },
+                icon: const Icon(Icons.share, color: Colors.green),
+                label: const Text('Share Live Trip via WhatsApp'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 44),
+                  side: const BorderSide(color: Colors.green),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              OutlinedButton.icon(
+                onPressed: () {
                   WhatsAppService.openUpiPayment(
                     upiId: 'wacrm@upi',
                     name: 'WACRM RideO Fare',

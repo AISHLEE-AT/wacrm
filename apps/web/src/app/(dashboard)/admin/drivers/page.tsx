@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { ShieldCheck, ShieldAlert, Car, Phone, FileText, CheckCircle2, XCircle, Search, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Car, Phone, FileText, CheckCircle2, XCircle, Search, RefreshCw, MessageSquare, Download } from 'lucide-react';
 
 interface DriverProfile {
   id: string;
@@ -48,24 +48,55 @@ export default function AdminDriversPage() {
     fetchDrivers();
   }, []);
 
-  const updateDriverStatus = async (id: string, newStatus: string) => {
-    setUpdatingId(id);
+  const updateDriverStatus = async (driver: DriverProfile, newStatus: string) => {
+    setUpdatingId(driver.id);
     try {
       const { error } = await supabase
         .from('driver_profiles')
         .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', driver.id);
 
       if (!error) {
         setDrivers((prev) =>
-          prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
+          prev.map((d) => (d.id === driver.id ? { ...d, status: newStatus } : d))
         );
+
+        // Send Automated WhatsApp Notification upon Approval
+        if (newStatus === 'active') {
+          const cleanPhone = driver.phone.replace(/[^\d]/g, '');
+          const message = encodeURIComponent(
+            `🎉 *Congratulations ${driver.full_name}!*\n\nYour vehicle registration (${driver.rc_number}) and Driving License (${driver.license_number}) have been *VERIFIED & APPROVED* on DriveO!\n\nYou can now go online in your DriveO app and start accepting ride requests in your area.`
+          );
+          window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+        }
       }
     } catch (e) {
       console.error('Failed to update status', e);
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const exportDriversCSV = () => {
+    if (drivers.length === 0) return;
+    const headers = ['Full Name', 'Phone', 'Vehicle Category', 'License Number', 'RC Number', 'Status', 'Created At'];
+    const rows = drivers.map(d => [
+      `"${d.full_name}"`,
+      `"${d.phone}"`,
+      `"${d.vehicle_category}"`,
+      `"${d.license_number}"`,
+      `"${d.rc_number}"`,
+      `"${d.status}"`,
+      `"${d.created_at}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `wacrm_driver_leads_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const filteredDrivers = drivers.filter(
@@ -83,20 +114,29 @@ export default function AdminDriversPage() {
         <div>
           <div className="flex items-center gap-2 text-orange-400 font-bold text-sm">
             <ShieldCheck className="w-5 h-5" />
-            DRIV O VERIFICATION ENGINE
+            DRIV O VERIFICATION & WHATSAPP CRM ENGINE
           </div>
           <h1 className="text-2xl font-black mt-1">Driver & Vehicle Management Portal</h1>
           <p className="text-slate-400 text-xs mt-1">
-            Review driver KYC documents, license numbers, RC details & toggle verification status.
+            Review driver KYC documents, license numbers, RC details, toggle approval & send automated WhatsApp alerts.
           </p>
         </div>
-        <button
-          onClick={fetchDrivers}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh List
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportDriversCSV}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md transition"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={fetchDrivers}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-semibold border border-slate-700 transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Search & Stats Bar */}
@@ -195,10 +235,22 @@ export default function AdminDriversPage() {
                       )}
                     </td>
                     <td className="p-4 text-right space-x-2">
+                      <button
+                        onClick={() => {
+                          const cleanPhone = driver.phone.replace(/[^\d]/g, '');
+                          const msg = encodeURIComponent(`Hi ${driver.full_name}, checking in from DriveO support regarding your vehicle registration.`);
+                          window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+                        }}
+                        title="Chat on WhatsApp"
+                        className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg text-xs font-bold transition inline-flex items-center gap-1"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        WhatsApp
+                      </button>
                       {driver.status !== 'active' && (
                         <button
                           disabled={updatingId === driver.id}
-                          onClick={() => updateDriverStatus(driver.id, 'active')}
+                          onClick={() => updateDriverStatus(driver, 'active')}
                           className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
                         >
                           APPROVE
@@ -207,7 +259,7 @@ export default function AdminDriversPage() {
                       {driver.status !== 'suspended' && (
                         <button
                           disabled={updatingId === driver.id}
-                          onClick={() => updateDriverStatus(driver.id, 'suspended')}
+                          onClick={() => updateDriverStatus(driver, 'suspended')}
                           className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm"
                         >
                           SUSPEND
