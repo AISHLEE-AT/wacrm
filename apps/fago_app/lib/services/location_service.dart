@@ -122,4 +122,36 @@ class LocationService {
     }
     return null;
   }
+
+  /// Generates dynamic local landmark suggestions based on user's current GPS locality ($0 API Cost)
+  Future<List<String>> getNearbyLandmarkSuggestions(double lat, double lng) async {
+    List<String> suggestions = [];
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        final subArea = place.subLocality?.isNotEmpty == true
+            ? place.subLocality!
+            : (place.thoroughfare?.isNotEmpty == true ? place.thoroughfare! : 'Local Area');
+        final city = place.locality?.isNotEmpty == true ? place.locality! : subArea;
+
+        suggestions.add('THALA THALAPATHY SALOON, $subArea');
+        suggestions.add('$subArea Bus Stand');
+        suggestions.add('$subArea Main Market');
+        suggestions.add('$city Railway Station');
+        suggestions.add('$city General Hospital');
+      }
+    } catch (_) {}
+
+    if (suggestions.isEmpty) {
+      suggestions = [
+        'THALA THALAPATHY SALOON',
+        'Nearby Bus Stand',
+        'Railway Station',
+        'Government Hospital',
+        'Town Market Center',
+      ];
+    }
+    return suggestions;
+  }
 }

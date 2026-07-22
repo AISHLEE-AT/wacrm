@@ -37,7 +37,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     'Bus': {'baseFare': 600, 'perKm': 75, 'icon': Icons.directions_bus, 'color': Colors.teal},
   };
 
-  final List<String> _quickLandmarks = [
+  List<String> _quickLandmarks = [
     'THALA THALAPATHY SALOON',
     'Bus Stand',
     'Railway Station',
@@ -54,10 +54,12 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   Future<void> _fetchLiveLocation() async {
     final loc = await LocationService().getCurrentLocation();
     final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
+    final nearbyChips = await LocationService().getNearbyLandmarkSuggestions(loc.latitude, loc.longitude);
     if (mounted) {
       setState(() {
         _currentLocation = loc;
         _currentAddress = address;
+        _quickLandmarks = nearbyChips;
       });
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 15),
