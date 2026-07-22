@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { GoogleMap, useLoadScript, Marker, Polyline } from '@react-google-maps/api';
-import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users, Clock, AlertCircle, Sparkles, Loader2, Edit3 } from 'lucide-react';
+import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users, Clock, AlertCircle, Sparkles, Loader2, Edit3, ArrowUpDown, History, Bookmark } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -35,6 +35,15 @@ const VEHICLE_CATEGORIES = [
   { id: 'bus', name: 'Bus / Travels', icon: '🚌', baseFare: 300, perKm: 50, radiusKm: 50 },
 ];
 
+const PRESET_FAVORITE_PLACES = [
+  { label: '🏠 Home', query: 'Chennai' },
+  { label: '🏢 Office', query: 'TIDEL Park, OMR, Chennai' },
+  { label: '🚉 Station', query: 'Chennai Central Railway Station' },
+  { label: '✈️ Airport', query: 'Chennai International Airport' },
+  { label: '🚌 Bus Stand', query: 'Koyambedu Bus Terminus, Chennai' },
+  { label: '🏥 Hospital', query: 'Apollo Hospital, Greams Road, Chennai' },
+];
+
 export default function RideODashboard() {
   const { user: currentUser, profile } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
@@ -53,6 +62,7 @@ export default function RideODashboard() {
   const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
   const [isSearchingSuggestions, setIsSearchingSuggestions] = useState<boolean>(false);
 
+  const [recentTrips, setRecentTrips] = useState<any[]>([]);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('bike');
   const [extraTip, setExtraTip] = useState<number>(0);
@@ -65,6 +75,23 @@ export default function RideODashboard() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
   });
+
+  // Load Recent Trips from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('fago_recent_trips');
+      if (saved) setRecentTrips(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  const saveTripToRecent = (pickup: string, dropoff: string, destCoords: google.maps.LatLngLiteral) => {
+    try {
+      const newTrip = { pickup, dropoff, destCoords, timestamp: Date.now() };
+      const updated = [newTrip, ...recentTrips.filter(r => r.dropoff !== dropoff)].slice(0, 5);
+      setRecentTrips(updated);
+      localStorage.setItem('fago_recent_trips', JSON.stringify(updated));
+    } catch (e) {}
+  };
 
   // Hardware Device GPS Fetch (Zero API Cost)
   useEffect(() => {
@@ -196,6 +223,8 @@ export default function RideODashboard() {
     setDestinationLocation(newDest);
     setSearchQuery(place.display_name);
     setSearchSuggestions([]);
+    saveTripToRecent(pickupAddress, place.display_name, newDest);
+
     if (mapRef.current && currentLocation) {
       const bounds = new google.maps.LatLngBounds();
       bounds.extend(currentLocation);
@@ -204,11 +233,42 @@ export default function RideODashboard() {
     }
   };
 
+  const handlePresetSelect = async (presetQuery: string) => {
+    setSearchQuery(presetQuery);
+    try {
+      setIsSearchingSuggestions(true);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(presetQuery)}&countrycodes=in&limit=1`);
+      const data = await res.json();
+      if (data && data[0]) {
+        handleSelectSuggestion(data[0]);
+      }
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      setIsSearchingSuggestions(false);
+    }
+  };
+
+  const handleSwapLocations = () => {
+    if (currentLocation && destinationLocation) {
+      const temp = currentLocation;
+      setCurrentLocation(destinationLocation);
+      setDestinationLocation(temp);
+
+      const tempAddr = pickupAddress;
+      setPickupAddress(searchQuery || `GPS: ${temp.lat.toFixed(4)}, ${temp.lng.toFixed(4)}`);
+      setSearchQuery(tempAddr);
+    }
+  };
+
   const handleMapClick = (e: google.maps.MapMouseEvent) => {
     if (e.latLng) {
       const clickDest = { lat: e.latLng.lat(), lng: e.latLng.lng() };
       setDestinationLocation(clickDest);
-      setSearchQuery(`Pinned Location (${clickDest.lat.toFixed(4)}, ${clickDest.lng.toFixed(4)})`);
+      const label = `Pinned Location (${clickDest.lat.toFixed(4)}, ${clickDest.lng.toFixed(4)})`;
+      setSearchQuery(label);
+      saveTripToRecent(pickupAddress, label, clickDest);
+
       if (mapRef.current && currentLocation) {
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(currentLocation);
@@ -343,7 +403,7 @@ export default function RideODashboard() {
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Search Source & Destination Places • Auto Live GPS Pinning • Instant 1-Click Device Navigation
+            Quick Favorite Places • 1-Click Swap Locations • Live Device Navigation
           </p>
         </div>
 
@@ -373,11 +433,11 @@ export default function RideODashboard() {
         <div className="lg:col-span-5 flex flex-col space-y-4">
           {/* Source & Destination Search Form */}
           <div className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3 relative z-30">
-            {/* Source Pickup Input & Autocomplete */}
+            {/* Source Pickup Input */}
             <div className="space-y-1 relative">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Source / Pickup Location
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Pickup Location
                 </label>
                 <button
                   type="button"
@@ -396,7 +456,7 @@ export default function RideODashboard() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Type Pickup Place (e.g. Chennai Central, Salem Bus Stand)"
+                    placeholder="Type Pickup Place (e.g. Chennai Central, Salem Stand)"
                     value={sourceSearchQuery}
                     onChange={(e) => setSourceSearchQuery(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-emerald-500/50 bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500 transition"
@@ -422,12 +482,21 @@ export default function RideODashboard() {
               )}
             </div>
 
-            <hr className="border-border" />
+            {/* 1-Click Swap Locations Button */}
+            <div className="flex justify-center -my-1">
+              <button
+                type="button"
+                onClick={handleSwapLocations}
+                className="p-1.5 rounded-full bg-card border border-border text-muted-foreground hover:text-primary hover:border-primary transition shadow-sm flex items-center gap-1 text-[10px] font-bold px-3"
+              >
+                <ArrowUpDown className="w-3 h-3" /> Swap Pickup & Dropoff
+              </button>
+            </div>
 
-            {/* Destination Dropoff Input & Autocomplete */}
+            {/* Destination Dropoff Input */}
             <div className="space-y-1 relative">
               <label className="text-[10px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-500" /> Destination / Dropoff Location
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" /> Dropoff Location
               </label>
 
               <div className="relative">
@@ -459,6 +528,52 @@ export default function RideODashboard() {
                 )}
               </div>
             </div>
+
+            {/* 1-Click Favorite Quick Preset Places */}
+            <div className="pt-2 border-t border-border space-y-1.5">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <Bookmark className="w-3 h-3 text-amber-500" /> Quick Preset Places:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_FAVORITE_PLACES.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => handlePresetSelect(preset.query)}
+                    className="px-2.5 py-1 rounded-full bg-muted/60 hover:bg-primary/20 text-foreground hover:text-primary border border-border text-[11px] font-semibold transition"
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Trips History (1-Click Re-Book) */}
+            {recentTrips.length > 0 && (
+              <div className="pt-2 border-t border-border space-y-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  <History className="w-3 h-3 text-blue-500" /> Recent Searches:
+                </span>
+                <div className="space-y-1">
+                  {recentTrips.map((trip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery(trip.dropoff);
+                        if (trip.destCoords) {
+                          setDestinationLocation(trip.destCoords);
+                        }
+                      }}
+                      className="w-full p-2 rounded-lg bg-background hover:bg-muted border border-border/60 text-left text-xs truncate flex items-center justify-between transition"
+                    >
+                      <span className="truncate font-medium text-foreground">🎯 {trip.dropoff}</span>
+                      <span className="text-[10px] text-primary font-bold shrink-0 ml-2">Re-Book</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 6 Category Selector */}
@@ -491,12 +606,18 @@ export default function RideODashboard() {
             </div>
           </div>
 
-          {/* Distance, Fare & Live Driver List */}
+          {/* Distance, Fare Breakdown Card */}
           {distanceKm !== null && (
-            <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-              <div className="flex items-center justify-between text-xs border-b border-border pb-2">
-                <span className="text-muted-foreground">Calculated Distance: <strong className="text-foreground">{distanceKm} km</strong></span>
-                <span className="text-muted-foreground">Estimated Fare: <strong className="text-emerald-500 font-bold text-sm">₹{baseAppFare}</strong></span>
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-sm">
+              <div className="grid grid-cols-2 gap-2 text-xs border-b border-border pb-2">
+                <div>
+                  <span className="text-muted-foreground block">Calculated Distance:</span>
+                  <strong className="text-foreground text-sm font-bold">📏 {distanceKm} km</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">Est. Travel Time:</span>
+                  <strong className="text-foreground text-sm font-bold">⏱️ ~{Math.round(distanceKm * 2.5) + 3} mins</strong>
+                </div>
               </div>
 
               {/* Offer Extra */}
@@ -523,8 +644,11 @@ export default function RideODashboard() {
               </div>
 
               <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">Total Offered Fare:</span>
-                <span className="text-xl font-black text-emerald-500">₹{totalOfferedFare}</span>
+                <div>
+                  <span className="text-xs font-bold text-foreground block">Total Offered Fare:</span>
+                  <span className="text-[10px] text-muted-foreground">App Fare: ₹{baseAppFare} + Tip: ₹{extraTip}</span>
+                </div>
+                <span className="text-2xl font-black text-emerald-500">₹{totalOfferedFare}</span>
               </div>
             </div>
           )}
