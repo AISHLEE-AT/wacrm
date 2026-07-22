@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
+import '../features/driver/screens/driver_registration_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({Key? key}) : super(key: key);
@@ -104,6 +106,41 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               ],
             ),
           ),
+
+          if (Supabase.instance.client.auth.currentUser == null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: Colors.amber.shade100,
+              child: Row(
+                children: [
+                  const Icon(Icons.shield, color: Colors.brown, size: 24),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Driver Auth & Vehicle Registration', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text('Authenticate your driver account to accept rides.', style: TextStyle(fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const DriverRegistrationScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    ),
+                    child: const Text('REGISTER', style: TextStyle(fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
 
           Expanded(
             child: !_isOnline

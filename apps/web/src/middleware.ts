@@ -88,10 +88,10 @@ export async function middleware(request: NextRequest) {
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // Protected pages - redirect to login if not authenticated (rideo and drivo are public)
+  // Protected pages - redirect to login if not authenticated (/rideo remains public for zero-login riding)
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
-    '/automations', '/flows', '/settings',
+    '/automations', '/flows', '/settings', '/drivo',
     '/admin', '/profile', '/wallet',
   ]
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
