@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, ArrowRight, Loader2 } from "lucide-react";
+import { MessageCircle, ArrowRight, Loader2, Smartphone, Send } from "lucide-react";
 import type { ConfirmationResult } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,16 +23,16 @@ function LoginPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
+  const [loginMode, setLoginMode] = useState<"whatsapp" | "firebase">("whatsapp");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
   
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  
   const supabase = createClient();
 
   useEffect(() => {
-    // Initialize reCAPTCHA verifier
+    // Initialize reCAPTCHA verifier for Firebase SMS OTP
     if (typeof window !== "undefined" && !(window as any).recaptchaVerifier) {
       Promise.all([
         import("@/lib/firebase"),
@@ -43,9 +43,7 @@ function LoginPageInner() {
         try {
           (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
             size: "invisible",
-            callback: () => {
-              // reCAPTCHA solved
-            },
+            callback: () => {},
           });
         } catch (err) {
           console.error("Error initializing Recaptcha", err);
@@ -56,7 +54,72 @@ function LoginPageInner() {
     }
   }, []);
 
-  const handleRequestOTP = async (e: React.FormEvent) => {
+  // ───── WhatsApp CRM Instant OTP Handlers ─────
+  const handleRequestWhatsAppOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!phone || phone.length !== 10) {
+      setError("Please enter a valid 10-digit phone number");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send WhatsApp OTP");
+      setOtpRequested(true);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Error sending WhatsApp OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyWhatsAppOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/whatsapp/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid OTP");
+
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        if (inviteToken) {
+          router.push(`/join/${encodeURIComponent(inviteToken)}`);
+        } else {
+          router.push("/");
+        }
+      } else {
+        throw new Error("Invalid session payload");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Error verifying OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ───── Firebase Phone SMS OTP Handlers ─────
+  const handleRequestFirebaseOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!phone || phone.length !== 10) {
@@ -76,7 +139,7 @@ function LoginPageInner() {
       setOtpRequested(true);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Error sending OTP");
+      setError(err.message || "Error sending SMS OTP");
       if ((window as any).recaptchaVerifier) {
         (window as any).recaptchaVerifier.render().then((widgetId: any) => {
           (window as any).grecaptcha.reset(widgetId);
@@ -87,7 +150,7 @@ function LoginPageInner() {
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
+  const handleVerifyFirebaseOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!otp || otp.length !== 6) {
@@ -105,7 +168,6 @@ function LoginPageInner() {
       const user = result.user;
       const idToken = await user.getIdToken();
 
-      // Bridge Firebase Token to Supabase Session
       const res = await fetch("/api/auth/firebase-bridge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,9 +198,14 @@ function LoginPageInner() {
     }
   };
 
+  const getWhatsAppDirectMsgUrl = () => {
+    const text = `Hello FAGO Support, please reply with my Login OTP for mobile +91 ${phone || 'YOUR_PHONE'}`;
+    return `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(text)}`;
+  };
+
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#000000]">
-      {/* Dynamic Animated Mesh Gradient Background */}
+      {/* Background Mesh Gradient */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
@@ -148,35 +215,32 @@ function LoginPageInner() {
             y: [0, -40, 0],
           }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[20%] -left-[10%] h-[70vh] w-[70vw] rounded-full bg-emerald-600 blur-[120px]"
+          className="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] rounded-full bg-emerald-600/30 blur-[140px]"
         />
         <motion.div
           animate={{
-            scale: [1, 1.4, 1],
-            opacity: [0.1, 0.25, 0.1],
-            x: [0, -80, 0],
-            y: [0, 80, 0],
+            scale: [1.2, 1, 1.2],
+            opacity: [0.15, 0.3, 0.15],
+            x: [0, -60, 0],
+            y: [0, 60, 0],
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-          className="absolute -bottom-[20%] -right-[10%] h-[60vh] w-[60vw] rounded-full bg-cyan-600 blur-[120px]"
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -bottom-[20%] -right-[10%] w-[700px] h-[700px] rounded-full bg-cyan-600/20 blur-[160px]"
         />
       </div>
 
-      {/* Glassmorphic Login Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-[420px] px-6 sm:px-10 py-12"
+        className="relative z-10 w-full max-w-md px-6 py-12"
       >
-        <div className="absolute inset-0 rounded-[32px] bg-white/[0.02] backdrop-blur-3xl border border-white/[0.08] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] pointer-events-none" />
-        
-        <div className="relative flex flex-col items-center">
+        <div className="flex flex-col items-center">
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col items-center justify-center mb-10 w-full"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-col items-center text-center mb-8"
           >
             <div className="relative flex items-center justify-center w-20 h-20 mb-4">
               <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-2xl" />
@@ -199,7 +263,7 @@ function LoginPageInner() {
                   By Aishlee Technology
                 </p>
                 <p className="text-white/60 text-sm mt-2">
-                  Enter your phone number to continue
+                  Choose your preferred OTP login method
                 </p>
               </>
             )}
@@ -223,6 +287,34 @@ function LoginPageInner() {
           <div id="recaptcha-container"></div>
 
           <div className="w-full">
+            {/* Dual Login Method Selector */}
+            {!otpRequested && (
+              <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-6">
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('whatsapp'); setError(null); }}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    loginMode === 'whatsapp'
+                      ? 'bg-[#25D366] text-white shadow-lg shadow-[#25D366]/20'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  <MessageCircle className="w-4 h-4" /> WhatsApp OTP
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLoginMode('firebase'); setError(null); }}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+                    loginMode === 'firebase'
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                >
+                  <Smartphone className="w-4 h-4" /> SMS Phone OTP
+                </button>
+              </div>
+            )}
+
             <AnimatePresence mode="wait">
               {!otpRequested ? (
                 <motion.form 
@@ -231,8 +323,8 @@ function LoginPageInner() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  onSubmit={handleRequestOTP} 
-                  className="flex flex-col gap-5 w-full"
+                  onSubmit={loginMode === 'whatsapp' ? handleRequestWhatsAppOTP : handleRequestFirebaseOTP} 
+                  className="flex flex-col gap-4 w-full"
                 >
                   <div className="relative flex items-center group">
                     <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
@@ -247,29 +339,31 @@ function LoginPageInner() {
                       className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
                     />
                   </div>
+
                   <Button
                     type="submit"
                     disabled={loading || phone.length !== 10}
-                    className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:hover:bg-white transition-all text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] group flex items-center justify-center gap-2"
+                    className={`w-full h-14 rounded-2xl ${loginMode === 'whatsapp' ? 'bg-[#25D366] text-white hover:bg-[#20bd5a]' : 'bg-white text-black hover:bg-white/90'} disabled:opacity-50 transition-all text-base font-semibold shadow-lg group flex items-center justify-center gap-2`}
                   >
                     {loading ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-black/50" />
+                      <Loader2 className="h-5 w-5 animate-spin opacity-80" />
                     ) : (
                       <>
-                        Continue
+                        {loginMode === 'whatsapp' ? 'Request WhatsApp OTP' : 'Request SMS OTP'}
                         <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 opacity-70" />
                       </>
                     )}
                   </Button>
 
+                  {/* Direct WhatsApp Automated OTP Request Link */}
                   <a
-                    href="https://api.whatsapp.com/send?phone=919486335870&text=Hello%20FAGO%20Support!%20I%20need%20help%20logging%20in."
+                    href={getWhatsAppDirectMsgUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm"
+                    className="w-full py-3 rounded-2xl bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm mt-1"
                   >
-                    <MessageCircle className="w-4 h-4" />
-                    Need Help Logging In? Connect via WhatsApp
+                    <Send className="w-4 h-4" />
+                    Send WhatsApp Message for Auto-OTP (9486335870)
                   </a>
                 </motion.form>
               ) : (
@@ -279,12 +373,12 @@ function LoginPageInner() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  onSubmit={handleVerifyOTP} 
-                  className="flex flex-col gap-5 w-full"
+                  onSubmit={loginMode === 'whatsapp' ? handleVerifyWhatsAppOTP : handleVerifyFirebaseOTP} 
+                  className="flex flex-col gap-4 w-full"
                 >
-                  <div className="flex flex-col gap-2 text-center mb-2">
+                  <div className="flex flex-col gap-2 text-center mb-1">
                     <p className="text-sm text-white/60">
-                      We sent a code to <span className="text-white font-medium">+91 {phone}</span>
+                      Enter the 6-digit code sent to <span className="text-white font-medium">+91 {phone}</span> via {loginMode === 'whatsapp' ? 'WhatsApp' : 'SMS'}
                     </p>
                   </div>
                   
@@ -300,12 +394,12 @@ function LoginPageInner() {
                   <Button
                     type="submit"
                     disabled={loading || otp.length !== 6}
-                    className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 disabled:hover:bg-white transition-all text-base font-semibold shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center justify-center gap-2"
+                    className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 transition-all text-base font-semibold shadow-lg flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-black/50" />
                     ) : (
-                      "Verify Code"
+                      "Verify Code & Sign In"
                     )}
                   </Button>
                   
@@ -316,9 +410,9 @@ function LoginPageInner() {
                       setOtp("");
                       setConfirmationResult(null);
                     }}
-                    className="text-sm text-white/50 hover:text-white mt-2 font-medium transition-colors p-2"
+                    className="text-sm text-white/50 hover:text-white mt-1 font-medium transition-colors p-2 text-center"
                   >
-                    Use a different number
+                    Use a different number or method
                   </button>
                 </motion.form>
               )}
@@ -329,7 +423,7 @@ function LoginPageInner() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.8 }}
-            className="mt-12 text-center w-full"
+            className="mt-8 text-center w-full"
           >
             <p className="text-xs text-white/30">
               By continuing, you agree to our <br/>

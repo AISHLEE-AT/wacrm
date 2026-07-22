@@ -16,7 +16,30 @@ export async function handleRideHailingBooking(
     const text = message.text?.body?.toLowerCase() || ''
     const cleanPhone = senderPhone.replace(/\D/g, '')
 
-    // ───── 0. DRIVER DAILY WAKEUP & LOCATION PINNING HOOK ─────
+    // ───── 0. AUTOMATED WHATSAPP LOGIN OTP GENERATION HOOK ─────
+    if (text.includes('otp') || text.includes('login') || text.includes('code') || text.includes('help')) {
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      await supabase
+        .from('whatsapp_otps')
+        .upsert(
+          { phone_number: cleanPhone, otp: otpCode, expires_at: expiresAt },
+          { onConflict: 'phone_number' }
+        );
+
+      await sendTextMessage({
+        accessToken,
+        phoneNumberId: config.phone_number_id,
+        to: senderPhone,
+        text: `🔐 YOUR FAGO LOGIN OTP IS: ${otpCode}\n\n` +
+          `Valid for 10 minutes. Enter this 6-digit OTP on your FAGO login screen to sign in instantly.\n\n` +
+          `Do not share this code with anyone.`
+      });
+      return true;
+    }
+
+    // ───── 0.1 DRIVER DAILY WAKEUP & LOCATION PINNING HOOK ─────
     // Check if sender phone matches a registered driver partner
     const { data: driverRow } = await supabase
       .from('drivers')
