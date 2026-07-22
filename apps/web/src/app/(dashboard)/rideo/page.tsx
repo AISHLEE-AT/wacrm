@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { GoogleMap, useLoadScript, Marker, Polyline } from '@react-google-maps/api';
-import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, Zap, MessageSquare, Phone, Plus, CheckCircle } from 'lucide-react';
+import { Navigation, ShieldAlert, Power, Compass, Car, Bike, Truck, MapPin, Search, ArrowRight, MessageSquare, Phone, CheckCircle, Users } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -26,12 +26,12 @@ function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lo
 
 // 6 Vehicle Transport Modes for Tamil Nadu & Beyond
 const VEHICLE_CATEGORIES = [
-  { id: 'bike', name: 'Bike / Scooty', icon: '🛵', baseFare: 30, perKm: 8, description: 'Short & quick travel' },
-  { id: 'auto', name: 'Auto Rickshaw', icon: '🛺', baseFare: 40, perKm: 15, description: 'Local 3-wheeler commute' },
-  { id: 'car', name: 'Car / Taxi / SUV', icon: '🚗', baseFare: 70, perKm: 20, description: 'Comfortable family ride' },
-  { id: 'van', name: 'Van / Mini-Bus', icon: '🚐', baseFare: 150, perKm: 35, description: 'Group & outstation travel' },
-  { id: 'bus', name: 'Bus / Travels', icon: '🚌', baseFare: 300, perKm: 50, description: 'Intercity Tamil Nadu transport' },
-  { id: 'truck', name: 'Lorry / Truck', icon: '🚛', baseFare: 500, perKm: 75, description: 'Goods, heavy cargo & logistics' },
+  { id: 'bike', name: 'Bike / Scooty', icon: '🛵', baseFare: 30, perKm: 8 },
+  { id: 'auto', name: 'Auto Rickshaw', icon: '🛺', baseFare: 40, perKm: 15 },
+  { id: 'car', name: 'Car / Taxi / SUV', icon: '🚗', baseFare: 70, perKm: 20 },
+  { id: 'van', name: 'Van / Mini-Bus', icon: '🚐', baseFare: 150, perKm: 35 },
+  { id: 'bus', name: 'Bus / Travels', icon: '🚌', baseFare: 300, perKm: 50 },
+  { id: 'truck', name: 'Lorry / Truck', icon: '🚛', baseFare: 500, perKm: 75 },
 ];
 
 export default function RideODashboard() {
@@ -43,10 +43,7 @@ export default function RideODashboard() {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('bike');
   const [extraTip, setExtraTip] = useState<number>(0);
-  const [customTipInput, setCustomTipInput] = useState<string>('');
-  const [isBooking, setIsBooking] = useState(false);
-  const [activeRide, setActiveRide] = useState<any>(null);
-  const [broadcastSent, setBroadcastSent] = useState(false);
+  const [activeDrivers, setActiveDrivers] = useState<any[]>([]);
 
   const mapRef = useRef<google.maps.Map | null>(null);
   const watchIdRef = useRef<number | null>(null);
@@ -86,6 +83,33 @@ export default function RideODashboard() {
       if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
     };
   }, []);
+
+  // Fetch active drivers from Supabase matching category
+  useEffect(() => {
+    const fetchActiveDrivers = async () => {
+      try {
+        const { data } = await supabase
+          .from('drivers')
+          .select('*')
+          .eq('status', 'online');
+        
+        if (data) {
+          setActiveDrivers(data);
+        } else {
+          // Fallback demo drivers for Tamil Nadu transport network
+          setActiveDrivers([
+            { id: '1', name: 'Muthu Travels', phone: '916381029380', category: 'bus', vehicle_no: 'TN-39-B-8899', rating: 4.9 },
+            { id: '2', name: 'Kumar Lorry Service', phone: '916381029380', category: 'truck', vehicle_no: 'TN-38-AX-5544', rating: 4.8 },
+            { id: '3', name: 'Selvam Auto', phone: '916381029380', category: 'auto', vehicle_no: 'TN-37-Z-1234', rating: 4.7 },
+            { id: '4', name: 'Vijay Bike Taxi', phone: '916381029380', category: 'bike', vehicle_no: 'TN-39-M-9988', rating: 5.0 },
+          ]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchActiveDrivers();
+  }, [selectedCategory]);
 
   // Distance calculation (Client-Side Math)
   useEffect(() => {
@@ -132,54 +156,23 @@ export default function RideODashboard() {
   const baseAppFare = distanceKm !== null ? Math.round(currentCategoryObj.baseFare + distanceKm * currentCategoryObj.perKm) : 0;
   const totalOfferedFare = baseAppFare + extraTip;
 
-  // Generate WhatsApp Operator Broadcast Link
-  const getWhatsAppBroadcastUrl = () => {
+  // Generate Direct WhatsApp URL to a Specific Driver / Vehicle Owner (Zero Meta API Cost)
+  const getDirectDriverWhatsAppUrl = (driverPhone: string, driverName: string) => {
     const customerName = profile?.full_name || currentUser?.email?.split('@')[0] || 'Customer';
     const customerPhone = profile?.phone || 'Contact via App';
     const locationMapUrl = currentLocation ? `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}` : 'Live Location';
     
-    const text = `🚨 *RIDEO TRANSPORT & LOGISTICS REQUEST* 🚨\n\n` +
+    const text = `👋 *Hi ${driverName}! RIDEO TRANSPORT REQUEST* 🚨\n\n` +
       `👤 *Customer:* ${customerName}\n` +
       `📞 *Phone:* ${customerPhone}\n` +
       `🚚 *Vehicle Needed:* ${currentCategoryObj.icon} ${currentCategoryObj.name}\n` +
       `📍 *Pickup GPS:* ${locationMapUrl}\n` +
       `🎯 *Destination:* ${searchQuery || 'Destination'}\n` +
       `📏 *Distance:* ${distanceKm || 0} km\n\n` +
-      `💵 *App Fare:* ₹${baseAppFare}\n` +
-      `➕ *Extra Offer/Tip:* ₹${extraTip}\n` +
-      `💰 *TOTAL OFFERED PRICE:* ₹${totalOfferedFare}\n\n` +
-      `👉 *Operators Please Reply or Call Customer to Commit Order!*`;
+      `💵 *Offered Price:* ₹${totalOfferedFare}\n\n` +
+      `👉 *Please confirm if you are available for this trip!*`;
 
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-  };
-
-  const handleBroadcastRequest = async () => {
-    if (!currentLocation || !destinationLocation || !currentUser) return;
-    setIsBooking(true);
-    try {
-      const { data, error } = await supabase.from('rides').insert({
-        rider_id: currentUser.id,
-        pickup_latitude: currentLocation.lat,
-        pickup_longitude: currentLocation.lng,
-        pickup_address: 'Live Device Location',
-        dropoff_latitude: destinationLocation.lat,
-        dropoff_longitude: destinationLocation.lng,
-        dropoff_address: searchQuery || 'Destination',
-        status: 'requested',
-        fare: totalOfferedFare
-      }).select().single();
-
-      if (!error && data) {
-        setActiveRide(data);
-        setBroadcastSent(true);
-        // Launch WhatsApp Broadcast
-        window.open(getWhatsAppBroadcastUrl(), '_blank');
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsBooking(false);
-    }
+    return `https://api.whatsapp.com/send?phone=${driverPhone.replace(/\D/g, '')}&text=${encodeURIComponent(text)}`;
   };
 
   if (!currentUser) {
@@ -194,6 +187,8 @@ export default function RideODashboard() {
 
   if (loadError) return <div className="p-8 text-center text-red-500">Error loading Google Maps.</div>;
 
+  const filteredDrivers = activeDrivers.filter(d => !d.category || d.category === selectedCategory || selectedCategory === 'bike');
+
   return (
     <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
       {/* Header */}
@@ -204,7 +199,7 @@ export default function RideODashboard() {
             RideO Transport & Logistics Network
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Tamil Nadu All-Vehicle Mode (Bike, Auto, Car, Van, Bus, Lorry) • Device GPS • WhatsApp Operator Broadcast
+            Zero Meta API Cost • Direct WhatsApp Request to Vehicle Owners & Operators
           </p>
         </div>
 
@@ -228,9 +223,9 @@ export default function RideODashboard() {
         </div>
       </div>
 
-      {/* Main Container */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[500px]">
-        {/* Left Control Panel */}
+        {/* Left Side */}
         <div className="lg:col-span-5 flex flex-col space-y-4">
           {/* Destination Form */}
           <form onSubmit={handleDestinationSubmit} className="bg-card border border-border rounded-xl p-4 shadow-sm space-y-3">
@@ -259,9 +254,9 @@ export default function RideODashboard() {
             </div>
           </form>
 
-          {/* 6 Vehicle Category Selector */}
+          {/* 6 Category Selector */}
           <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Select Transport Category</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Select Vehicle Category</h3>
             <div className="grid grid-cols-3 gap-2">
               {VEHICLE_CATEGORIES.map((cat) => {
                 const isSelected = selectedCategory === cat.id;
@@ -283,32 +278,32 @@ export default function RideODashboard() {
             </div>
           </div>
 
-          {/* Fare Guidelines & Extra Offer Adder */}
+          {/* Fare & Direct Driver WhatsApp Links */}
           {distanceKm !== null && (
             <div className="bg-card border border-border rounded-xl p-4 space-y-4">
               <div className="flex items-center justify-between text-xs border-b border-border pb-2">
                 <span className="text-muted-foreground">Distance: <strong className="text-foreground">{distanceKm} km</strong></span>
-                <span className="text-muted-foreground">App Fare: <strong className="text-emerald-500 font-bold">₹{baseAppFare}</strong></span>
+                <span className="text-muted-foreground">Base Fare: <strong className="text-emerald-500 font-bold">₹{baseAppFare}</strong></span>
               </div>
 
-              {/* Offer Extra to Driver / Operator */}
+              {/* Offer Extra */}
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
-                  Offer Extra to Operators (Incentivize Pickup)
+                  Add Extra Offer to Driver (+₹)
                 </label>
                 <div className="flex items-center gap-2">
                   {[0, 20, 50, 100].map((tip) => (
                     <button
                       key={tip}
                       type="button"
-                      onClick={() => { setExtraTip(tip); setCustomTipInput(''); }}
+                      onClick={() => setExtraTip(tip)}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition ${
-                        extraTip === tip && !customTipInput
+                        extraTip === tip
                           ? 'bg-emerald-500 text-white border-emerald-500'
                           : 'border-border text-muted-foreground hover:bg-muted'
                       }`}
                     >
-                      {tip === 0 ? 'No Tip' : `+₹${tip}`}
+                      {tip === 0 ? 'Standard' : `+₹${tip}`}
                     </button>
                   ))}
                 </div>
@@ -316,47 +311,40 @@ export default function RideODashboard() {
 
               {/* Total Offered Fare */}
               <div className="flex items-center justify-between bg-muted/40 p-3 rounded-xl border border-border">
-                <span className="text-sm font-semibold">Total Price Offered:</span>
+                <span className="text-sm font-semibold">Offered Rate:</span>
                 <span className="text-xl font-bold text-emerald-500">₹{totalOfferedFare}</span>
               </div>
 
-              {/* WhatsApp Broadcast Trigger Button */}
-              <button
-                onClick={handleBroadcastRequest}
-                disabled={isBooking}
-                className="w-full py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm flex items-center justify-center gap-2 transition shadow-lg disabled:opacity-50"
-              >
-                <MessageSquare className="w-5 h-5" />
-                Broadcast Request on WhatsApp
-              </button>
-            </div>
-          )}
+              {/* Nearby Operators List for Direct WhatsApp Contact */}
+              <div className="space-y-2 pt-2 border-t border-border">
+                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-primary" /> Send Direct WhatsApp Request to Operators (Zero Fee)
+                </h4>
 
-          {/* Active Broadcast State */}
-          {activeRide && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckCircle className="w-4 h-4" /> Request Broadcasted
-                </span>
-                <span className="text-xs text-muted-foreground">Status: {activeRide.status}</span>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {filteredDrivers.map((driver) => (
+                    <div key={driver.id} className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-background hover:bg-muted/30 transition text-xs">
+                      <div>
+                        <p className="font-bold text-foreground">{driver.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{driver.vehicle_no || 'Reg Vehicle'} • ⭐ {driver.rating || 4.8}</p>
+                      </div>
+                      <a
+                        href={getDirectDriverWhatsAppUrl(driver.phone || '916381029380', driver.name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold flex items-center gap-1 transition"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" /> WhatsApp Request
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Operators of <strong className="text-foreground">{currentCategoryObj.name}</strong> are reviewing your broadcast. They will call you or confirm via WhatsApp.
-              </p>
-              <a
-                href={getWhatsAppBroadcastUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-xs font-bold text-[#25D366] hover:underline"
-              >
-                <MessageSquare className="w-4 h-4" /> Re-open WhatsApp Broadcast Payload
-              </a>
             </div>
           )}
         </div>
 
-        {/* Right Live Interactive Map */}
+        {/* Right Live Map */}
         <div className="lg:col-span-7 bg-card border border-border rounded-xl overflow-hidden relative min-h-[400px]">
           {isLoaded ? (
             <GoogleMap

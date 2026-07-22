@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Truck, Phone, MessageSquare, CheckCircle, ShieldCheck, IndianRupee, QrCode, User, Car, Bike, Compass, Power, Bell, Send } from 'lucide-react';
+import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Zap } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -25,7 +25,6 @@ export default function DriveODashboard() {
   const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [showUpiModal, setShowUpiModal] = useState(false);
-  const [wakeupSent, setWakeupSent] = useState(false);
 
   // Fetch real-time rides from Supabase matching vehicle category
   useEffect(() => {
@@ -75,22 +74,39 @@ export default function DriveODashboard() {
     }
   };
 
-  // Send Daily Good Morning / Wakeup Broadcast to Operators
-  const handleSendDailyWakeupBroadcast = async () => {
-    setWakeupSent(true);
+  // Zero Meta Cost: Driver Sends WhatsApp Message to CRM to Open 24-Hour Free Session Window!
+  const getFreeActiveWhatsAppUrl = () => {
+    const categoryObj = VEHICLE_CATEGORIES.find(c => c.id === operatorCategory) || VEHICLE_CATEGORIES[0];
+    const text = `☀️ *GOOD MORNING FAGO CRM! I AM ACTIVE TODAY* ☀️\n\n` +
+      `👤 *Operator Name:* ${profile?.full_name || 'Vehicle Partner'}\n` +
+      `🚚 *Vehicle Category:* ${categoryObj.icon} ${categoryObj.name}\n` +
+      `🔢 *Reg Number:* ${regNumber}\n` +
+      `📍 *Status:* ONLINE & READY FOR TRIP REQUESTS!\n\n` +
+      `👉 *Please send me customer ride/transport requests today!*`;
+
+    return `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(text)}`;
+  };
+
+  const handleGoActiveWhatsApp = async () => {
+    setIsOnline(true);
     try {
-      await fetch('/api/whatsapp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: profile?.phone || '916381029380',
-          message: `☀️ *Good Morning DriveO Partner!* ☀️\n\nYour ${operatorCategory.toUpperCase()} vehicle service is active in Tamil Nadu. Stay online on DriveO to receive customer trip broadcasts today!`
-        })
-      });
+      if (currentUser) {
+        await supabase.from('drivers').upsert({
+          user_id: currentUser.id,
+          name: profile?.full_name || 'Driver',
+          mobile_number: profile?.phone || '916381029380',
+          vehicle_type: operatorCategory,
+          vehicle_number: regNumber,
+          upi_id: upiId,
+          status: 'online',
+          updated_at: new Date().toISOString()
+        });
+      }
     } catch (err) {
-      console.warn(err);
+      console.error(err);
     }
-    setTimeout(() => setWakeupSent(false), 4000);
+    // Launch WhatsApp on Driver's Phone (Zero Meta Fee!)
+    window.open(getFreeActiveWhatsAppUrl(), '_blank');
   };
 
   if (!currentUser) {
@@ -115,17 +131,17 @@ export default function DriveODashboard() {
             DriveO Operator & Driver Portal
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Vehicle Operator Network • Broadcast Request Receiver • Direct Call & UPI Settlement
+            Zero Meta Fee Architecture • Free 24hr WhatsApp Session Check-In • Direct Driver Settlement
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={handleSendDailyWakeupBroadcast}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-xs font-semibold hover:bg-muted transition"
+            onClick={handleGoActiveWhatsApp}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs shadow-md transition"
           >
-            <Bell className="w-4 h-4 text-amber-400" />
-            {wakeupSent ? 'Wakeup Sent!' : 'Daily Wakeup Broadcast'}
+            <MessageSquare className="w-4 h-4" />
+            Go Active via WhatsApp (Free 24h Window)
           </button>
           <button
             onClick={() => setIsOnline(!isOnline)}
@@ -204,10 +220,10 @@ export default function DriveODashboard() {
           <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Send className="w-5 h-5 text-primary" /> Live Customer Trip Broadcasts
+                <Send className="w-5 h-5 text-primary" /> Live Customer Trip Requests
               </h2>
               <span className="text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary font-bold">
-                {incomingRequests.length} Active Broadcasts
+                {incomingRequests.length} Active Requests
               </span>
             </div>
 
@@ -215,7 +231,9 @@ export default function DriveODashboard() {
             {activeOrder && (
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Order Accepted & Committed</span>
+                  <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Order Accepted & Committed
+                  </span>
                   <span className="text-xs text-muted-foreground">ID: #{activeOrder.id.toString().slice(0, 8)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -269,7 +287,7 @@ export default function DriveODashboard() {
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
               {incomingRequests.length === 0 ? (
                 <div className="text-center p-8 text-muted-foreground text-xs">
-                  No active broadcasts. Waiting for customer requests in Tamil Nadu...
+                  No active requests. Waiting for customer requests in Tamil Nadu...
                 </div>
               ) : (
                 incomingRequests.map((req) => (
@@ -289,7 +307,7 @@ export default function DriveODashboard() {
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <a
                         href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                          `Hi, I am DriveO Partner (${selectedCategoryObj.name} - ${regNumber}). I received your trip broadcast for ₹${req.fare}. I am ready to accept!`
+                          `Hi, I am DriveO Partner (${selectedCategoryObj.name} - ${regNumber}). I received your trip request for ₹${req.fare}. I am ready to accept!`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
