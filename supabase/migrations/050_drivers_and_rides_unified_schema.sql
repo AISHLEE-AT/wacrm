@@ -1,7 +1,7 @@
--- Migration 050: Ensure all columns for Drivers, Vehicle Categories, and Rides exist cleanly
+-- Migration 050: Ensure all columns for Drivers, Vehicle Categories, Rides & Live WhatsApp GPS Pinning exist cleanly
 -- Safe & idempotent script: can be executed repeatedly in Supabase SQL Editor
 
--- 1. Ensure drivers table has all onboarding and verification columns
+-- 1. Ensure drivers table has all onboarding, verification, and live GPS location columns
 ALTER TABLE public.drivers 
   ADD COLUMN IF NOT EXISTS name TEXT,
   ADD COLUMN IF NOT EXISTS mobile_number TEXT,
@@ -15,6 +15,8 @@ ALTER TABLE public.drivers
   ADD COLUMN IF NOT EXISTS wallet_balance NUMERIC DEFAULT 0,
   ADD COLUMN IF NOT EXISTS pending_commission NUMERIC DEFAULT 0,
   ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'online',
+  ADD COLUMN IF NOT EXISTS pickup_latitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS pickup_longitude NUMERIC,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
@@ -33,6 +35,8 @@ ALTER TABLE public.rides
   ADD COLUMN IF NOT EXISTS estimated_price NUMERIC DEFAULT 0,
   ADD COLUMN IF NOT EXISTS distance_km NUMERIC DEFAULT 0,
   ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'requested',
+  ADD COLUMN IF NOT EXISTS is_flagged BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS flag_reason TEXT,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
 -- 3. Sync vehicle_number and vehicle_registration if one is filled
