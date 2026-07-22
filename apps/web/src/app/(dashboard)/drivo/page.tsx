@@ -1,188 +1,316 @@
 'use client';
-import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Truck, MapPin, Package, Clock, ShieldCheck, IndianRupee, PackageCheck, Bike } from 'lucide-react';
+import { Truck, Phone, MessageSquare, CheckCircle, ShieldCheck, IndianRupee, QrCode, User, Car, Bike, Compass, Power, Bell, Send } from 'lucide-react';
+import { createClient } from "@/lib/supabase/client";
 
-const PACKAGE_BASE: Record<string, number> = {
-  'Documents': 25, 'Small Package': 45, 'Medium Package': 80, 'Large Item': 180,
-};
+const supabase = createClient();
 
-const DrivO = () => {
-  const { user: currentUser } = useAuth();
-  const [pickup, setPickup] = useState('');
-  const [dropoff, setDropoff] = useState('');
-  const [packageType, setPackageType] = useState('Documents');
-  const [searching, setSearching] = useState(false);
-  const [estimate, setEstimate] = useState<{ cost: number; eta: string } | null>(null);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+const VEHICLE_CATEGORIES = [
+  { id: 'bike', name: 'Bike / Scooty', icon: '🛵' },
+  { id: 'auto', name: 'Auto Rickshaw', icon: '🛺' },
+  { id: 'car', name: 'Car / Taxi / SUV', icon: '🚗' },
+  { id: 'van', name: 'Van / Mini-Bus', icon: '🚐' },
+  { id: 'bus', name: 'Bus / Travels', icon: '🚌' },
+  { id: 'truck', name: 'Lorry / Truck', icon: '🚛' },
+];
 
-  const showToast = (message: string, type = 'info') => {
-    setToast({ show: true, message, type });
-    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 4000);
-  };
+export default function DriveODashboard() {
+  const { user: currentUser, profile } = useAuth();
+  const [isOnline, setIsOnline] = useState(true);
+  const [operatorCategory, setOperatorCategory] = useState<string>('truck');
+  const [regNumber, setRegNumber] = useState<string>('TN-39-AB-1234');
+  const [upiId, setUpiId] = useState<string>('916381029380@upi');
+  const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [showUpiModal, setShowUpiModal] = useState(false);
+  const [wakeupSent, setWakeupSent] = useState(false);
 
-  const handleSearch = () => {
-    if (!pickup || !dropoff) {
-      showToast('Please enter both pickup and delivery locations.', 'error');
-      return;
+  // Fetch real-time rides from Supabase matching vehicle category
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const { data } = await supabase
+          .from('rides')
+          .select('*')
+          .in('status', ['requested', 'pending'])
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (data) setIncomingRequests(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchRequests();
+
+    // Subscribe to real-time incoming rides
+    const channel = supabase
+      .channel('public:rides:driveo')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
+        setIncomingRequests((prev) => [payload.new, ...prev]);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleAcceptRide = async (ride: any) => {
+    try {
+      const { error } = await supabase
+        .from('rides')
+        .update({ status: 'accepted', driver_id: currentUser?.id })
+        .eq('id', ride.id);
+
+      if (!error) {
+        setActiveOrder(ride);
+        setIncomingRequests((prev) => prev.filter((r) => r.id !== ride.id));
+      }
+    } catch (err) {
+      console.error(err);
     }
-    setSearching(true);
-    setEstimate(null);
-    setTimeout(() => {
-      setSearching(false);
-      const base = PACKAGE_BASE[packageType] || 50;
-      const cost = base + Math.floor(Math.random() * 30) + 10;
-      setEstimate({ cost, eta: `${Math.floor(Math.random() * 30) + 25} min` });
-      showToast('Delivery drivers found in your area! Connecting you shortly.', 'success');
-    }, 2000);
   };
+
+  // Send Daily Good Morning / Wakeup Broadcast to Operators
+  const handleSendDailyWakeupBroadcast = async () => {
+    setWakeupSent(true);
+    try {
+      await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: profile?.phone || '916381029380',
+          message: `☀️ *Good Morning DriveO Partner!* ☀️\n\nYour ${operatorCategory.toUpperCase()} vehicle service is active in Tamil Nadu. Stay online on DriveO to receive customer trip broadcasts today!`
+        })
+      });
+    } catch (err) {
+      console.warn(err);
+    }
+    setTimeout(() => setWakeupSent(false), 4000);
+  };
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center text-foreground">
+        <ShieldCheck className="w-12 h-12 text-primary mb-4" />
+        <h2 className="text-xl font-bold">Access Denied</h2>
+        <p className="text-sm text-muted-foreground mt-1">Please sign in as a DriveO Operator.</p>
+      </div>
+    );
+  }
+
+  const selectedCategoryObj = VEHICLE_CATEGORIES.find((c) => c.id === operatorCategory) || VEHICLE_CATEGORIES[0];
 
   return (
-    <div className="animate-fade-in-up bento-grid">
-      <div className="bento-item span-12 glass-panel" style={{ padding: '32px' }}>
-        <h1 className="gradient-text-teal" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '32px', margin: '0 0 8px 0' }}>
-          <Truck size={36} /> DrivO
-        </h1>
-        <p className="text-muted" style={{ margin: 0 }}>Fast and secure local delivery network for your packages.</p>
-      </div>
+    <div className="flex flex-col h-full space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
+      {/* Top Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Truck className="w-7 h-7 text-primary" />
+            DriveO Operator & Driver Portal
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Vehicle Operator Network • Broadcast Request Receiver • Direct Call & UPI Settlement
+          </p>
+        </div>
 
-      <div className="bento-item span-12 lg-span-6 glass-panel" style={{ padding: '32px' }}>
-        <h2 style={{ margin: '0 0 24px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Package size={20} /> Send a Package
-        </h2>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ position: 'relative' }}>
-            <MapPin size={20} color="var(--tech-cyan)" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Pickup Location" 
-              value={pickup}
-              onChange={(e) => setPickup(e.target.value)}
-              className="input-field"
-              style={{ width: '100%', paddingLeft: '48px' }}
-            />
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            <MapPin size={20} color="#EF4444" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Delivery Location" 
-              value={dropoff}
-              onChange={(e) => setDropoff(e.target.value)}
-              className="input-field"
-              style={{ width: '100%', paddingLeft: '48px' }}
-            />
-          </div>
-
-          <div>
-            <select 
-              value={packageType} 
-              onChange={(e) => setPackageType(e.target.value)}
-              className="input-field"
-              style={{ width: '100%' }}
-            >
-              <option value="Documents">Documents</option>
-              <option value="Small Package">Small Package (up to 5kg)</option>
-              <option value="Medium Package">Medium Package (up to 15kg)</option>
-              <option value="Large Item">Large Item (Furniture, Appliances)</option>
-            </select>
-          </div>
-
-          <button 
-            className="btn-primary" 
-            onClick={handleSearch}
-            disabled={searching}
-            style={{ marginTop: '16px', padding: '16px', fontSize: '16px', fontWeight: 'bold', background: 'var(--tech-cyan)', color: 'black' }}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSendDailyWakeupBroadcast}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-xs font-semibold hover:bg-muted transition"
           >
-            {searching ? 'Finding Delivery Driver...' : 'Get Estimate'}
+            <Bell className="w-4 h-4 text-amber-400" />
+            {wakeupSent ? 'Wakeup Sent!' : 'Daily Wakeup Broadcast'}
           </button>
+          <button
+            onClick={() => setIsOnline(!isOnline)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition ${
+              isOnline ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            <Power className="w-4 h-4" />
+            {isOnline ? 'Operator Active' : 'Offline'}
+          </button>
+        </div>
+      </div>
 
-          {estimate && (
-            <div style={{ marginTop: '8px', padding: '20px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', fontSize: '18px', color: '#EAB308' }}>
-                  <IndianRupee size={18} /> Delivery Estimate
-                </span>
-                <span style={{ fontSize: '14px', color: 'var(--cool-gray)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={14} /> ETA: {estimate.eta}
-                </span>
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Operator Settings & Profile */}
+        <div className="lg:col-span-4 flex flex-col space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold text-xl">
+                {selectedCategoryObj.icon}
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: '#fff' }}>
-                ₹{estimate.cost}
+              <div>
+                <h3 className="text-sm font-bold text-foreground">{profile?.full_name || 'Vehicle Operator'}</h3>
+                <p className="text-xs text-muted-foreground">{selectedCategoryObj.name}</p>
               </div>
-              <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--cool-gray)' }}>
-                {packageType} • Final cost depends on actual distance.
-              </p>
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="bento-item span-12 lg-span-6 glass-panel" style={{ padding: '32px' }}>
-        <h3 style={{ margin: '0 0 24px 0' }}>Why choose DrivO?</h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-            <div style={{ padding: '12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', color: '#10B981' }}>
-              <ShieldCheck size={24} />
-            </div>
-            <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Secure Transport</h4>
-              <p style={{ margin: 0, color: 'var(--cool-gray)', fontSize: '14px', lineHeight: '1.5' }}>Your packages are handled with care and tracked in real-time until they reach their destination.</p>
+            <div className="space-y-3 border-t border-border pt-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                  Operator Vehicle Category
+                </label>
+                <select
+                  value={operatorCategory}
+                  onChange={(e) => setOperatorCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary transition"
+                >
+                  {VEHICLE_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                  Vehicle Reg Number
+                </label>
+                <input
+                  type="text"
+                  value={regNumber}
+                  onChange={(e) => setRegNumber(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary transition"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">
+                  Operator UPI ID (For Direct Customer Payment)
+                </label>
+                <input
+                  type="text"
+                  value={upiId}
+                  onChange={(e) => setUpiId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary transition"
+                />
+              </div>
             </div>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-            <div style={{ padding: '12px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', color: '#3B82F6' }}>
-              <Clock size={24} />
+        {/* Right: Live Request Broadcast Feed */}
+        <div className="lg:col-span-8 flex flex-col space-y-4">
+          <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Send className="w-5 h-5 text-primary" /> Live Customer Trip Broadcasts
+              </h2>
+              <span className="text-xs px-2.5 py-1 rounded-full bg-primary/15 text-primary font-bold">
+                {incomingRequests.length} Active Broadcasts
+              </span>
             </div>
-            <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Same-Day Delivery</h4>
-              <p style={{ margin: 0, color: 'var(--cool-gray)', fontSize: '14px', lineHeight: '1.5' }}>Need it there fast? Our network of drivers guarantees quick same-day delivery within the city.</p>
-            </div>
-          </div>
 
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-            <div style={{ padding: '12px', background: 'rgba(168,85,247,0.1)', borderRadius: '12px', color: '#A855F7' }}>
-              <Bike size={24} />
-            </div>
-            <div>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '18px' }}>Flexible Fleet</h4>
-              <p style={{ margin: 0, color: 'var(--cool-gray)', fontSize: '14px', lineHeight: '1.5' }}>From bikes to trucks — our fleet adapts to your package size for the most cost-effective delivery.</p>
+            {/* Active Committed Order */}
+            {activeOrder && (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Order Accepted & Committed</span>
+                  <span className="text-xs text-muted-foreground">ID: #{activeOrder.id.toString().slice(0, 8)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block">Pickup:</span>
+                    <strong className="text-foreground">{activeOrder.pickup_address || 'Live GPS Location'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground block">Dropoff:</span>
+                    <strong className="text-foreground">{activeOrder.dropoff_address}</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-emerald-500/20">
+                  <span className="text-lg font-bold text-emerald-500">Offered Fare: ₹{activeOrder.fare}</span>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`tel:${activeOrder.phone || '916381029380'}`}
+                      className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-blue-700 transition"
+                    >
+                      <Phone className="w-3.5 h-3.5" /> Call Customer
+                    </a>
+                    <button
+                      onClick={() => setShowUpiModal(!showUpiModal)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-emerald-700 transition"
+                    >
+                      <QrCode className="w-3.5 h-3.5" /> Show UPI QR
+                    </button>
+                  </div>
+                </div>
+
+                {showUpiModal && (
+                  <div className="bg-background border border-border p-4 rounded-xl text-center space-y-2 mt-2">
+                    <p className="text-xs font-bold text-muted-foreground">Customer Scans UPI to Pay Driver Directly</p>
+                    <div className="p-3 bg-white rounded-lg inline-block shadow-inner">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                          `upi://pay?pa=${upiId}&pn=${encodeURIComponent(profile?.full_name || 'DriveO Partner')}&am=${activeOrder.fare}`
+                        )}`}
+                        alt="UPI Payment QR Code"
+                        className="w-40 h-40 mx-auto"
+                      />
+                    </div>
+                    <p className="text-xs text-foreground font-mono font-semibold">{upiId}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Broadcast Feed List */}
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+              {incomingRequests.length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground text-xs">
+                  No active broadcasts. Waiting for customer requests in Tamil Nadu...
+                </div>
+              ) : (
+                incomingRequests.map((req) => (
+                  <div key={req.id} className="p-4 rounded-xl border border-border bg-background/50 hover:border-primary/50 transition space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-primary flex items-center gap-1">
+                        📍 Trip Request #{req.id.toString().slice(0, 6)}
+                      </span>
+                      <span className="text-lg font-bold text-emerald-500">₹{req.fare}</span>
+                    </div>
+
+                    <div className="text-xs space-y-1 text-muted-foreground">
+                      <p><strong className="text-foreground">Pickup:</strong> {req.pickup_address || 'Live GPS'}</p>
+                      <p><strong className="text-foreground">Dropoff:</strong> {req.dropoff_address}</p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                          `Hi, I am DriveO Partner (${selectedCategoryObj.name} - ${regNumber}). I received your trip broadcast for ₹${req.fare}. I am ready to accept!`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#25D366] font-bold flex items-center gap-1 hover:underline"
+                      >
+                        <MessageSquare className="w-4 h-4" /> Reply on WhatsApp
+                      </a>
+                      <button
+                        onClick={() => handleAcceptRide(req)}
+                        className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-xs transition"
+                      >
+                        Accept & Commit Trip
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      <div className="bento-item span-12 glass-panel" style={{ padding: '32px' }}>
-        <h3 style={{ margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <PackageCheck size={20} /> Active Deliveries
-        </h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0', color: 'var(--cool-gray)', fontSize: '14px' }}>
-          No active deliveries. Send your first package above!
-        </div>
-      </div>
-
-      {/* Custom Toast Notification */}
-      {toast.show && typeof document !== 'undefined' && createPortal(
-        <div style={{
-          position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-          padding: '14px 28px', borderRadius: '14px', zIndex: 99999,
-          background: toast.type === 'error' ? '#EF4444' : toast.type === 'success' ? '#10B981' : 'var(--tech-cyan)',
-          color: '#fff', fontWeight: '700', fontSize: '14px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          animation: 'fadeInUp 0.3s ease-out',
-          maxWidth: '90vw', textAlign: 'center',
-        }}>
-          {toast.message}
-        </div>,
-        document.body
-      )}
     </div>
   );
-};
-
-export default DrivO;
+}

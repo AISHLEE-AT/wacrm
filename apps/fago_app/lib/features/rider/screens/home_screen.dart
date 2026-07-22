@@ -412,6 +412,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return math.max(30, ((20 + distanceKm * 8) * surgeMultiplier).round());
     } else if (vehicleType == 'auto') {
       return math.max(40, ((30 + distanceKm * 15) * surgeMultiplier).round());
+    } else if (vehicleType == 'car') {
+      return math.max(70, ((50 + distanceKm * 20) * surgeMultiplier).round());
+    } else if (vehicleType == 'van') {
+      return math.max(150, ((100 + distanceKm * 35) * surgeMultiplier).round());
+    } else if (vehicleType == 'bus') {
+      return math.max(300, ((200 + distanceKm * 50) * surgeMultiplier).round());
+    } else if (vehicleType == 'truck') {
+      return math.max(500, ((300 + distanceKm * 75) * surgeMultiplier).round());
     } else {
       return math.max(70, ((50 + distanceKm * 20) * surgeMultiplier).round());
     }
