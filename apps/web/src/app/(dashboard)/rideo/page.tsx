@@ -111,22 +111,22 @@ export default function RideODashboard() {
     navigator.geolocation.getCurrentPosition(
       handleCoords,
       (err) => {
-        console.warn('Geolocation fallback to coarse mode:', err.message);
+        console.warn('Geolocation high accuracy fallback:', err.message);
         navigator.geolocation.getCurrentPosition(
           handleCoords,
           () => {
             if (!currentLocation) setCurrentLocation(defaultCenter);
           },
-          { enableHighAccuracy: false, timeout: 5000 }
+          { enableHighAccuracy: false, timeout: 10000 }
         );
       },
-      { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       handleCoords,
       (err) => console.warn(err),
-      { enableHighAccuracy: true, maximumAge: 5000 }
+      { enableHighAccuracy: true, maximumAge: 3000 }
     );
 
     return () => {
@@ -374,7 +374,13 @@ export default function RideODashboard() {
       `👉 Please tap the navigation link above or call customer to confirm this trip!`;
 
     const cleanNumber = driverPhone.replace(/\D/g, '');
-    return `https://api.whatsapp.com/send?phone=${cleanNumber.startsWith('91') ? cleanNumber : '91' + cleanNumber}&text=${encodeURIComponent(text)}`;
+    const formattedPhone = cleanNumber.startsWith('91') ? cleanNumber : '91' + cleanNumber;
+    const isMobileDevice = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobileDevice) {
+      return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`;
+    }
+    return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(text)}`;
   };
 
   // Filter Drivers by Selected Category & Dynamic Radius

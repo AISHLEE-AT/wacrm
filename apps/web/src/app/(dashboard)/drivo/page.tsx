@@ -214,7 +214,13 @@ export default function DriveODashboard() {
       `⚡ *Status:* ONLINE & READY FOR TRIP REQUESTS!\n\n` +
       `👉 *Please send me customer ride/transport requests today!*`;
 
-    return `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(text)}`;
+    const isMobileDevice = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const targetPhone = '916381029380';
+
+    if (isMobileDevice) {
+      return `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+    }
+    return `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encodeURIComponent(text)}`;
   };
 
   const handleGoActiveWhatsApp = async () => {
