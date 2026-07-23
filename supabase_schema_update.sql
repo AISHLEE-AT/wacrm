@@ -90,17 +90,29 @@ ALTER TABLE public.drivers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ride_requests ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated users to read/update their own profile
+DROP POLICY IF EXISTS "Public profiles read" ON public.profiles;
 CREATE POLICY "Public profiles read" ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Allow authenticated and guest users to insert into contacts & ride_requests
+DROP POLICY IF EXISTS "Anyone can insert contacts" ON public.contacts;
 CREATE POLICY "Anyone can insert contacts" ON public.contacts FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can read contacts" ON public.contacts;
 CREATE POLICY "Anyone can read contacts" ON public.contacts FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Anyone can insert ride requests" ON public.ride_requests;
 CREATE POLICY "Anyone can insert ride requests" ON public.ride_requests FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Anyone can read ride requests" ON public.ride_requests;
 CREATE POLICY "Anyone can read ride requests" ON public.ride_requests FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Anyone can read drivers" ON public.drivers;
 CREATE POLICY "Anyone can read drivers" ON public.drivers FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Drivers can insert profile" ON public.drivers;
 CREATE POLICY "Drivers can insert profile" ON public.drivers FOR INSERT WITH CHECK (true);
 
 -- Create fast indexes for phone numbers & roles
