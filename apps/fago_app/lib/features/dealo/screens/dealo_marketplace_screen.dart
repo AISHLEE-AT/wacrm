@@ -16,6 +16,9 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
   List<Map<String, dynamic>> _sellDeals = [];
   List<Map<String, dynamic>> _buyDeals = [];
   bool _isLoading = true;
+  int _radiusKm = 5; // 5 km default radius!
+
+  final List<int> _radiusOptions = [5, 10, 20, 50, 999];
 
   @override
   void initState() {
@@ -46,22 +49,21 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
     }
   }
 
-  void _openWhatsAppDealChat(Map<String, dynamic> deal) async {
+  void _openWhatsAppDealChat(Map<String, dynamic> deal, {String actionType = 'chat'}) async {
     final messenger = ScaffoldMessenger.of(context);
     final String rawPhone = (deal['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
     final String cleanPhone = rawPhone.length >= 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
     
-    final String message = Uri.encodeComponent(
-      "🛍️ *FAGO DealO P2P Inquiry*\n\n"
-      "Hello *${deal['seller_name']}*,\n"
-      "I saw your ${deal['deal_type'] == 'sell' ? 'item for sale' : 'buyer requirement'} on *FAGO DealO*:\n"
-      "📌 *${deal['title']}*\n"
-      "💰 Price: ₹${deal['price']}\n"
-      "📍 Location: ${deal['location_name']} (${deal['pincode']})\n\n"
-      "Is this available? Let's talk!"
-    );
+    String messageText = "";
+    if (actionType == 'photos') {
+      messageText = "📸 *Request for Item Live Photos & Videos*\n\nHi ${deal['seller_name']}, I saw *${deal['title']}* on FAGO DealO. Could you please send me 2-3 live photos or a short video recording of the item?";
+    } else if (actionType == 'videocall') {
+      messageText = "📹 *WhatsApp Video Call Live Inspection*\n\nHi ${deal['seller_name']}, can we have a quick WhatsApp Video Call to inspect *${deal['title']}* live?";
+    } else {
+      messageText = "🛍️ *FAGO DealO P2P Inquiry*\n\nவணக்கம் *${deal['seller_name']}*,\nI am interested in your item on *FAGO DealO*:\n📌 *${deal['title']}*\n💰 Price: ₹${deal['price']}\n📍 Location: ${deal['location_name']} (${deal['pincode']})\n\nIs this available? Let's talk!";
+    }
 
-    final Uri url = Uri.parse("https://wa.me/91$cleanPhone?text=$message");
+    final Uri url = Uri.parse("https://wa.me/91$cleanPhone?text=${Uri.encodeComponent(messageText)}");
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -69,6 +71,73 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
         const SnackBar(content: Text("Could not launch WhatsApp")),
       );
     }
+  }
+
+  void _makePhoneCall(Map<String, dynamic> deal) async {
+    final String rawPhone = (deal['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+    final String cleanPhone = rawPhone.length >= 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
+    final Uri url = Uri.parse("tel:+91$cleanPhone");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    }
+  }
+
+  void _showContactOptionsBottomSheet(Map<String, dynamic> deal) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Contact Seller: ${deal['seller_name']}",
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(deal['title'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.chat, color: Color(0xFF25D366)),
+                title: const Text("Chat on WhatsApp", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openWhatsAppDealChat(deal, actionType: 'chat');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.phone, color: Colors.blueAccent),
+                title: const Text("Direct Phone Call", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _makePhoneCall(deal);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Colors.amber),
+                title: const Text("Request Live Photos / Video", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openWhatsAppDealChat(deal, actionType: 'photos');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.videocam, color: Colors.purpleAccent),
+                title: const Text("Request WhatsApp Video Call Inspection", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openWhatsAppDealChat(deal, actionType: 'videocall');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showPostDealBottomSheet() {
@@ -80,7 +149,6 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
     final phoneController = TextEditingController();
     final upiController = TextEditingController();
     String dealType = 'sell';
-    String category = 'electronics';
 
     showModalBottomSheet(
       context: context,
@@ -108,7 +176,7 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          "🚀 Post Deal or Requirement",
+                          "🚀 Post Deal (தமிழ் தட்டச்சு)",
                           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         IconButton(
@@ -144,7 +212,7 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                       controller: titleController,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
-                        labelText: "Title / Item Name *",
+                        labelText: "Item Name (பொருள் பெயர் - Tamil / English) *",
                         labelStyle: TextStyle(color: Colors.grey),
                         filled: true,
                         fillColor: Color(0xFF222222),
@@ -238,7 +306,6 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                             'user_id': user?.id,
                             'deal_type': dealType,
                             'title': titleController.text.trim(),
-                            'category': category,
                             'price': double.tryParse(priceController.text) ?? 0,
                             'pincode': pincodeController.text.trim(),
                             'location_name': locationController.text.trim(),
@@ -325,9 +392,9 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () => _openWhatsAppDealChat(deal),
-                        icon: const Icon(Icons.chat, size: 18),
-                        label: const Text("Chat WhatsApp", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        onPressed: () => _showContactOptionsBottomSheet(deal),
+                        icon: const Icon(Icons.contact_phone, size: 18),
+                        label: const Text("Contact Seller Options", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                     ),
                   ],
@@ -346,7 +413,7 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF141414),
-        title: const Text("FAGO DealO Marketplace", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text("FAGO DealO (5km Nearby)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: const Color(0xFF00FF00),
@@ -365,15 +432,43 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
         icon: const Icon(Icons.add),
         label: const Text("Post Deal", style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00FF00)))
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildDealList(_sellDeals),
-                _buildDealList(_buyDeals),
-              ],
+      body: Column(
+        children: [
+          // Radius Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: const Color(0xFF181818),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const Text("📍 Radius: ", style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 12)),
+                  ..._radiusOptions.map((r) => Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(r == 999 ? 'All' : '$r km'),
+                      selected: _radiusKm == r,
+                      selectedColor: const Color(0xFF00FF00),
+                      onSelected: (val) => setState(() => _radiusKm = r),
+                    ),
+                  )),
+                ],
+              ),
             ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF00FF00)))
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildDealList(_sellDeals),
+                      _buildDealList(_buyDeals),
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
