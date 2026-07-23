@@ -14,6 +14,8 @@ import '../features/profile/screens/profile_dashboard.dart';
 import '../screens/rider_map_screen.dart';
 import '../screens/driver_dashboard_screen.dart';
 
+import '../screens/rento_screen.dart';
+
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -75,6 +77,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/drivo',
         builder: (context, state) => const DriverDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/rento',
+        builder: (context, state) => const RentOScreen(),
       ),
       GoRoute(
         path: '/rider',

@@ -104,12 +104,18 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const totalUnread = useTotalUnread();
   const [isRegisteredDriver, setIsRegisteredDriver] = useState(false);
 
-  // STRICT ADMIN CHECK: ONLY 9486335870 or aishleetechnology@gmail.com
+  // ADMIN CHECK: 9486335870 or 9123596988 or aishleetechnology@gmail.com
   const isAdmin = Boolean(
-    profile?.email === "aishleetechnology@gmail.com" ||
+    profile?.email?.includes("aishleetechnology@gmail.com") ||
+    profile?.email?.includes("9486335870") ||
+    profile?.email?.includes("9123596988") ||
     profile?.phone?.includes("9486335870") ||
-    user?.email === "aishleetechnology@gmail.com" ||
-    user?.phone?.includes("9486335870")
+    profile?.phone?.includes("9123596988") ||
+    user?.email?.includes("aishleetechnology@gmail.com") ||
+    user?.email?.includes("9486335870") ||
+    user?.email?.includes("9123596988") ||
+    user?.phone?.includes("9486335870") ||
+    user?.phone?.includes("9123596988")
   );
 
   useEffect(() => {
@@ -160,9 +166,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     };
   }, [open, onClose]);
 
-  // Dynamic Mobility Items: RideO for everyone, DriveO for admins or registered drivers
+  // Dynamic Mobility Items: RideO for everyone, RentO for Agri/Machinery, DriveO for admins/drivers
   const mobilityItems: NavItem[] = [
     { href: "/rideo", label: "RideO", icon: Car },
+    { href: "/rento", label: "RentO (Agri)", icon: Truck },
     ...(isAdmin || isRegisteredDriver
       ? [{ href: "/drivo", label: "DriveO", icon: Truck }]
       : []),

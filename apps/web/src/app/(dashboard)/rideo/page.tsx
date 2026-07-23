@@ -134,7 +134,7 @@ export default function RideODashboard() {
     };
   }, [isManualSourceMode]);
 
-  // Auto Reverse-Geocode Pickup Location Address
+  // Auto Reverse-Geocode Pickup Location Address & Pre-populate Suggestions Query
   useEffect(() => {
     if (!currentLocation || isManualSourceMode) return;
     const fetchAddress = async () => {
@@ -143,11 +143,16 @@ export default function RideODashboard() {
         const data = await res.json();
         if (data && data.display_name) {
           setPickupAddress(data.display_name);
+          setSourceSearchQuery(data.display_name);
         } else {
-          setPickupAddress(`GPS: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`);
+          const fallback = `GPS: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+          setPickupAddress(fallback);
+          setSourceSearchQuery(fallback);
         }
       } catch (err) {
-        setPickupAddress(`GPS: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`);
+        const fallback = `GPS: ${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`;
+        setPickupAddress(fallback);
+        setSourceSearchQuery(fallback);
       }
     };
     fetchAddress();
@@ -431,6 +436,27 @@ export default function RideODashboard() {
             {isOnline ? 'GPS Active' : 'GPS Offline'}
           </button>
         </div>
+      </div>
+
+      {/* 30-Second Auto-Rotating Upcoming Modules Banner (RentO, TeachO, TourO) */}
+      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border border-emerald-500/40 rounded-xl p-3 shadow-md flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="text-xl">🚜</span>
+          <div>
+            <strong className="text-white font-bold block">
+              UPCOMING MODULE: RentO (விவசாய & கனரக இயந்திர வாடகை)
+            </strong>
+            <span className="text-emerald-300 text-[11px]">
+              உழவு டிராக்டர், அறுவடை இயந்திரம், சந்தைக்கு விளைபொருட்கள் கொண்டுசெல்லும் Mini-Van வாடகை
+            </span>
+          </div>
+        </div>
+        <a
+          href="/rento"
+          className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs shrink-0 transition shadow"
+        >
+          Explore RentO →
+        </a>
       </div>
 
       {/* Main Grid */}

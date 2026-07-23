@@ -70,7 +70,24 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
     );
   }
 
+  String _cleanPhone(String? raw) {
+    if (raw == null || raw.isEmpty) return '+91 94863 35870';
+    String cleaned = raw;
+    if (cleaned.contains('@')) {
+      cleaned = cleaned.split('@')[0];
+    }
+    cleaned = cleaned.replaceAll(RegExp(r'\D'), '');
+    if (cleaned.startsWith('91') && cleaned.length == 12) {
+      cleaned = cleaned.substring(2);
+    }
+    if (cleaned.length == 10) {
+      return '+91 ${cleaned.substring(0, 5)} ${cleaned.substring(5)}';
+    }
+    return raw;
+  }
+
   Widget _buildProfileTab(ProfileModel profile) {
+    final cleanWhatsapp = _cleanPhone(profile.whatsapp);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -83,13 +100,43 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           ),
           const SizedBox(height: 16),
           Text(profile.fullName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-          Text(profile.role, style: const TextStyle(color: Color(0xFF00F0FF), fontSize: 16)),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            decoration: BoxDecoration(
+              color: profile.role.toLowerCase() == 'admin'
+                  ? Colors.amber.withValues(alpha: 0.2)
+                  : profile.role.toLowerCase() == 'driver'
+                      ? Colors.orange.withValues(alpha: 0.2)
+                      : const Color(0xFF00F0FF).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: profile.role.toLowerCase() == 'admin'
+                    ? Colors.amber
+                    : profile.role.toLowerCase() == 'driver'
+                        ? Colors.orange
+                        : const Color(0xFF00F0FF),
+              ),
+            ),
+            child: Text(
+              profile.role.toUpperCase(),
+              style: TextStyle(
+                color: profile.role.toLowerCase() == 'admin'
+                    ? Colors.amber
+                    : profile.role.toLowerCase() == 'driver'
+                        ? Colors.orange
+                        : const Color(0xFF00F0FF),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
           const SizedBox(height: 32),
-          _buildInfoRow(Icons.phone, 'WhatsApp', profile.whatsapp ?? 'Not provided'),
+          _buildInfoRow(Icons.phone, 'Cell / WhatsApp', cleanWhatsapp),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.location_on, 'Address', profile.address ?? 'Not provided'),
+          _buildInfoRow(Icons.location_on, 'Address', profile.address ?? 'Tamil Nadu, India'),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.account_balance_wallet, 'UPI ID', profile.upiId ?? 'Not set', isEditable: true, profile: profile),
+          _buildInfoRow(Icons.account_balance_wallet, 'UPI ID', profile.upiId ?? 'wacrm@upi', isEditable: true, profile: profile),
         ],
       ),
     );
@@ -165,6 +212,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
 
   Widget _buildDigitalIdTab(ProfileModel profile) {
     final String qrData = profile.digitalIdHash ?? 'fago-id-${profile.id}';
+    final cleanWhatsapp = _cleanPhone(profile.whatsapp);
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -195,7 +243,13 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Aishlee ID', style: TextStyle(color: Color(0xFF00F0FF), fontWeight: FontWeight.bold, fontSize: 18)),
-                  Icon(Icons.verified, color: const Color(0xFF00F0FF)),
+                  Row(
+                    children: [
+                      const Icon(Icons.verified, color: Color(0xFF00F0FF), size: 18),
+                      const SizedBox(width: 4),
+                      Text('VERIFIED', style: TextStyle(color: const Color(0xFF00F0FF), fontSize: 10, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -209,9 +263,21 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
                 ),
               ),
               const SizedBox(height: 24),
-              Text(profile.fullName.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              Text(profile.fullName.toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              const SizedBox(height: 4),
+              Text(cleanWhatsapp, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text(profile.role.toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 14, letterSpacing: 2)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                decoration: BoxDecoration(
+                  color: profile.role.toLowerCase() == 'admin' ? Colors.amber : (profile.role.toLowerCase() == 'driver' ? Colors.orange : Colors.blue),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  profile.role.toUpperCase(),
+                  style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                ),
+              ),
             ],
           ),
         ),

@@ -81,69 +81,140 @@ class AuthNotifier extends Notifier<AuthState> {
     });
   }
 
-  Future<void> _resolveRole(String? phoneNumber) async {
-    if (phoneNumber == null) {
-      state = state.copyWith(isLoading: false, role: UserRole.guest);
-      return;
-    }
+  Future<void> refreshRole() async {
+    final user = _supabase.auth.currentUser;
+    final fbUser = _auth.currentUser;
+    final phone = fbUser?.phoneNumber ?? user?.phone ?? user?.email;
+    await _resolveRole(phone);
+  }
 
+  Future<void> _resolveRole(String? phoneNumber) async {
     try {
       final user = _supabase.auth.currentUser;
+      final fbUser = _auth.currentUser;
+
       String? defaultModule;
       bool isProfileComplete = false;
+
+      // Extract all potential phone/email identifiers for admin check
+      final String rawPhone = phoneNumber ?? '';
+      final String fbPhone = fbUser?.phoneNumber ?? '';
+      final String sbEmail = user?.email ?? '';
+      final String sbPhone = user?.phone ?? '';
+
+      String? profilePhone;
+      String? profileRole;
+
       if (user != null) {
         try {
           final profileData = await _supabase
               .from('profiles')
-              .select('default_module, profile_complete, full_name, whatsapp')
+              .select('default_module, profile_complete, full_name, whatsapp, phone, role')
               .eq('id', user.id)
               .maybeSingle();
-          defaultModule = profileData?['default_module'];
-          isProfileComplete = profileData?['profile_complete'] == true ||
-              (profileData?['full_name'] != null && profileData?['whatsapp'] != null);
+
+          if (profileData != null) {
+            defaultModule = profileData['default_module'];
+            profilePhone = profileData['whatsapp'] ?? profileData['phone'];
+            profileRole = profileData['role'];
+            isProfileComplete = profileData['profile_complete'] == true ||
+                (profileData['full_name'] != null && (profileData['whatsapp'] != null || profileData['phone'] != null));
+          }
 
           // Sync user's cell number to WhatsApp CRM contact list
-          final existingContact = await _supabase
-              .from('contacts')
-              .select('id')
-              .eq('user_id', user.id)
-              .maybeSingle();
-          if (existingContact == null) {
-            await _supabase.from('contacts').insert({
-              'user_id': user.id,
-              'phone': phoneNumber,
-            });
+          final contactPhone = (profilePhone ?? rawPhone).replaceAll(RegExp(r'\D'), '');
+          if (contactPhone.isNotEmpty) {
+            final existingContact = await _supabase
+                .from('contacts')
+                .select('id')
+                .eq('user_id', user.id)
+                .maybeSingle();
+            if (existingContact == null) {
+              await _supabase.from('contacts').insert({
+                'user_id': user.id,
+                'phone': contactPhone,
+                'name': profileData?['full_name'] ?? 'App User',
+              });
+            }
           }
         } catch (e) {
           debugPrint('Could not fetch profile data or sync contact: $e');
         }
       }
 
-      // 1. Check Admin
-      if (phoneNumber.contains('9486335870')) {
-        state = state.copyWith(isLoading: false, role: UserRole.admin, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
+      // 1. Comprehensive Admin Check: 9486335870 or 9123596988 or aishleetechnology@gmail.com
+      final adminIdentifiers = ['9486335870', '919486335870', '9123596988', '919123596988', 'aishleetechnology@gmail.com'];
+      bool isAdmin = profileRole == 'admin';
+
+      if (!isAdmin) {
+        final allText = '$rawPhone $fbPhone $sbEmail $sbPhone ${profilePhone ?? ''}'.toLowerCase();
+        for (final adminId in adminIdentifiers) {
+          if (allText.contains(adminId)) {
+            isAdmin = true;
+            break;
+          }
+        }
+      }
+
+      if (isAdmin) {
+        state = state.copyWith(
+          isLoading: false,
+          role: UserRole.admin,
+          supabaseUser: user,
+          defaultModule: defaultModule,
+          isProfileComplete: isProfileComplete,
+        );
         return;
       }
 
-      // 2. Check Driver
-      final driverCheck = await _supabase
-          .from('drivers')
-          .select('id')
-          .eq('mobile_number', phoneNumber.replaceAll('+91', ''))
-          .maybeSingle();
+      // 2. Check Driver Status (Check drivers and driver_profiles tables)
+      bool isDriver = profileRole == 'driver';
+      if (!isDriver && user != null) {
+        try {
+          final driverCheck = await _supabase
+              .from('drivers')
+              .select('id')
+              .or('user_id.eq.${user.id},mobile_number.cs.${rawPhone.replaceAll(RegExp(r'\D'), '')}')
+              .maybeSingle();
 
-      if (driverCheck != null) {
-        state = state.copyWith(isLoading: false, role: UserRole.driver, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
+          if (driverCheck != null) {
+            isDriver = true;
+          } else {
+            final profileDriverCheck = await _supabase
+                .from('driver_profiles')
+                .select('id')
+                .or('phone.cs.${rawPhone.replaceAll(RegExp(r'\D'), '')}')
+                .maybeSingle();
+            if (profileDriverCheck != null) isDriver = true;
+          }
+        } catch (e) {
+          debugPrint('Driver table check error: $e');
+        }
+      }
+
+      if (isDriver) {
+        state = state.copyWith(
+          isLoading: false,
+          role: UserRole.driver,
+          supabaseUser: user,
+          defaultModule: defaultModule,
+          isProfileComplete: isProfileComplete,
+        );
         return;
       }
 
-      // 3. Fallback to User
-      state = state.copyWith(isLoading: false, role: UserRole.user, supabaseUser: user, defaultModule: defaultModule, isProfileComplete: isProfileComplete);
+      // 3. Fallback to Standard User
+      state = state.copyWith(
+        isLoading: false,
+        role: UserRole.user,
+        supabaseUser: user,
+        defaultModule: defaultModule,
+        isProfileComplete: isProfileComplete,
+      );
     } catch (e) {
       debugPrint('Role resolution error: $e');
       state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());
     } finally {
-      // Initialize Push Notifications if logged in
       if (state.role != UserRole.guest) {
         PushService.init();
       }

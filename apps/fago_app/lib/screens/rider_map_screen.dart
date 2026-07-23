@@ -1,11 +1,15 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
 import '../features/driver/screens/driver_registration_screen.dart';
+import 'rento_screen.dart';
 
 class RiderMapScreen extends StatefulWidget {
   const RiderMapScreen({Key? key}) : super(key: key);
@@ -23,11 +27,16 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   String _selectedCategory = 'Bike';
   double _estimatedFare = 0.0;
   bool _isBooking = false;
-  bool _isSearching = false;
+  bool _isSearchingDropoff = false;
+  bool _isSearchingPickup = false;
 
-  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _pickupController = TextEditingController();
+  final TextEditingController _dropoffController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController(text: '+91');
+
+  List<dynamic> _pickupSuggestions = [];
+  List<dynamic> _dropoffSuggestions = [];
 
   final Map<String, Map<String, dynamic>> _categories = {
     'Bike': {'baseFare': 30, 'perKm': 10, 'icon': Icons.two_wheeler, 'color': Colors.orange},
@@ -60,6 +69,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       setState(() {
         _currentLocation = loc;
         _currentAddress = address;
+        _pickupController.text = address;
         _quickLandmarks = nearbyChips;
       });
       _mapController?.animateCamera(
@@ -92,57 +102,268 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     }
   }
 
-  Future<void> _searchDestination(String query) async {
-    if (query.trim().isEmpty) return;
-
-    setState(() => _isSearching = true);
-    
-    // Add current locality context if available
-    String fullQuery = query;
-    if (_currentAddress.contains(',')) {
-      final parts = _currentAddress.split(',');
-      if (parts.length > 1) {
-        fullQuery = '$query, ${parts[parts.length - 2]}';
-      }
+  // Live Auto-Suggestions API for Pickup Place
+  Future<void> _onPickupQueryChanged(String query) async {
+    if (query.trim().length < 3) {
+      setState(() => _pickupSuggestions = []);
+      return;
     }
-
-    final searchedLoc = await LocationService().searchAddressCoordinates(fullQuery) ??
-        await LocationService().searchAddressCoordinates(query);
-
-    setState(() => _isSearching = false);
-
-    if (searchedLoc != null) {
-      _setDestinationCoordinates(searchedLoc.latitude, searchedLoc.longitude, query);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not locate "$query". Tap directly on the map to set pin.')),
-        );
+    setState(() => _isSearchingPickup = true);
+    try {
+      final res = await http.get(Uri.parse(
+          'https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(query)}&countrycodes=in&limit=5'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (mounted) setState(() => _pickupSuggestions = data);
       }
+    } catch (e) {
+      debugPrint('Pickup suggestion error: $e');
+    } finally {
+      if (mounted) setState(() => _isSearchingPickup = false);
     }
   }
 
-  void _setDestinationCoordinates(double lat, double lng, [String? addressLabel]) async {
+  // Live Auto-Suggestions API for Dropoff Place
+  Future<void> _onDropoffQueryChanged(String query) async {
+    if (query.trim().length < 3) {
+      setState(() => _dropoffSuggestions = []);
+      return;
+    }
+    setState(() => _isSearchingDropoff = true);
+    try {
+      final res = await http.get(Uri.parse(
+          'https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(query)}&countrycodes=in&limit=5'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (mounted) setState(() => _dropoffSuggestions = data);
+      }
+    } catch (e) {
+      debugPrint('Dropoff suggestion error: $e');
+    } finally {
+      if (mounted) setState(() => _isSearchingDropoff = false);
+    }
+  }
+
+  void _selectPickupSuggestion(dynamic item) {
+    final lat = double.parse(item['lat']);
+    final lon = double.parse(item['lon']);
+    final name = item['display_name'];
+
     setState(() {
-      _destinationLocation = Location(latitude: lat, longitude: lng);
-      _destinationAddress = addressLabel ?? 'Selected Pin ($lat, $lng)';
+      _currentLocation = Location(latitude: lat, longitude: lon);
+      _currentAddress = name;
+      _pickupController.text = name;
+      _pickupSuggestions = [];
     });
     _updateFare();
 
     _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15),
+      CameraUpdate.newLatLngZoom(LatLng(lat, lon), 15),
     );
+  }
 
-    final resolvedAddress = await LocationService().getAddressFromCoordinates(lat, lng);
-    if (mounted) {
-      setState(() {
-        _destinationAddress = resolvedAddress;
-      });
+  void _selectDropoffSuggestion(dynamic item) {
+    final lat = double.parse(item['lat']);
+    final lon = double.parse(item['lon']);
+    final name = item['display_name'];
+
+    setState(() {
+      _destinationLocation = Location(latitude: lat, longitude: lon);
+      _destinationAddress = name;
+      _dropoffController.text = name;
+      _dropoffSuggestions = [];
+    });
+    _updateFare();
+
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(LatLng(lat, lon), 15),
+    );
+  }
+
+  void _swapPickupAndDropoff() {
+    if (_currentLocation != null && _destinationLocation != null) {
+      final tempLoc = _currentLocation;
+      _currentLocation = _destinationLocation;
+      _destinationLocation = tempLoc;
+
+      final tempAddr = _currentAddress;
+      _currentAddress = _destinationAddress;
+      _destinationAddress = tempAddr;
+
+      _pickupController.text = _currentAddress;
+      _dropoffController.text = _destinationAddress;
+
+      _updateFare();
     }
   }
 
   void _onMapTapped(LatLng target) {
-    _setDestinationCoordinates(target.latitude, target.longitude);
+    setState(() {
+      _destinationLocation = Location(latitude: target.latitude, longitude: target.longitude);
+      _destinationAddress = 'Pinned Dropoff (${target.latitude.toStringAsFixed(4)}, ${target.longitude.toStringAsFixed(4)})';
+      _dropoffController.text = _destinationAddress;
+    });
+    _updateFare();
+  }
+
+  // Open Direct In-App Chat Modal between Rider and Driver
+  void _openRiderDriverChatModal() {
+    final List<Map<String, String>> messages = [
+      {'sender': 'driver', 'text': 'Hello! I am assigned to your trip. Where exactly are you standing?'},
+      {'sender': 'rider', 'text': 'Hi, I am waiting near the main entrance landmark.'},
+    ];
+    final TextEditingController chatMsgController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: SizedBox(
+                height: 480,
+                child: Column(
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: const [
+                            CircleAvatar(
+                              backgroundColor: Color(0xFF10B981),
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                            SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Driver Partner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text('TN-39-M-9988 • Yamaha FZ (Online)', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white12),
+
+                    // Quick Template Messages
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          'I am waiting near the main gate',
+                          'Please reach in 2 mins',
+                          'What is your vehicle color?',
+                        ].map((template) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ActionChip(
+                              backgroundColor: const Color(0xFF1E293B),
+                              label: Text(template, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                              onPressed: () {
+                                setModalState(() {
+                                  messages.add({'sender': 'rider', 'text': template});
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Messages List
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: messages.length,
+                        itemBuilder: (context, idx) {
+                          final msg = messages[idx];
+                          final isRider = msg['sender'] == 'rider';
+                          return Align(
+                            alignment: isRider ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isRider ? const Color(0xFF10B981) : const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                msg['text']!,
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Input Field & Action Buttons
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12, top: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: chatMsgController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: 'Type message to driver...',
+                                hintStyle: const TextStyle(color: Colors.white38),
+                                filled: true,
+                                fillColor: const Color(0xFF1E293B),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.send, color: Color(0xFF10B981)),
+                            onPressed: () {
+                              if (chatMsgController.text.trim().isNotEmpty) {
+                                setModalState(() {
+                                  messages.add({'sender': 'rider', 'text': chatMsgController.text.trim()});
+                                  chatMsgController.clear();
+                                });
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chat, color: Colors.greenAccent),
+                            tooltip: 'Chat on WhatsApp',
+                            onPressed: () {
+                              WhatsAppService.openWhatsApp(phone: '916381029380', message: 'Hello driver, I am waiting for pickup!');
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showBookingConfirmationDialog() {
@@ -224,41 +445,15 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
               const SizedBox(height: 16),
 
               OutlinedButton.icon(
-                onPressed: () {
-                  final msg = '🚨 *RideO Live Trip Update*\n\n'
-                      '• *Pickup*: $_currentAddress\n'
-                      '• *Dropoff*: $_destinationAddress\n'
-                      '• *Vehicle*: $_selectedCategory\n'
-                      '• *Fare*: ₹${_estimatedFare.toStringAsFixed(0)}\n\n'
-                      'Track my ride status!';
-                  WhatsAppService.openWhatsApp(phone: '', message: msg);
-                },
-                icon: const Icon(Icons.share, color: Colors.green),
-                label: const Text('Share Live Trip via WhatsApp'),
+                onPressed: _openRiderDriverChatModal,
+                icon: const Icon(Icons.chat_bubble_outline, color: Colors.blueAccent),
+                label: const Text('Open Direct In-App Rider-Driver Chat'),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 44),
-                  side: const BorderSide(color: Colors.green),
+                  side: const BorderSide(color: Colors.blueAccent),
                 ),
               ),
               const SizedBox(height: 8),
-
-              OutlinedButton.icon(
-                onPressed: () {
-                  WhatsAppService.openUpiPayment(
-                    upiId: 'wacrm@upi',
-                    name: 'WACRM RideO Fare',
-                    amount: _estimatedFare,
-                    note: 'RideO $_selectedCategory Fare',
-                  );
-                },
-                icon: const Icon(Icons.account_balance_wallet, color: Colors.indigo),
-                label: Text('Pay ₹${_estimatedFare.toStringAsFixed(0)} via UPI (GPay / PhonePe / Paytm)'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 44),
-                  side: const BorderSide(color: Colors.indigo),
-                ),
-              ),
-              const SizedBox(height: 12),
 
               SizedBox(
                 width: double.infinity,
@@ -273,7 +468,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('CONFIRM & NOTIFY NEARBY DRIVERS'),
+                  child: const Text('CONFIRM & NOTIFY NEARBY DRIVERS'),
                 ),
               ),
             ],
@@ -291,7 +486,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     final riderName = _nameController.text.trim().isEmpty ? 'Anonymous Rider' : _nameController.text.trim();
     final riderPhone = _phoneController.text.trim().isEmpty ? '+919876543210' : _phoneController.text.trim();
 
-    // 1. Save Lead Contact directly to WhatsApp CRM Contacts list for future marketing/follow-up
     await SupabaseBackendService().saveCrmContact(
       name: riderName,
       phone: riderPhone,
@@ -300,7 +494,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       category: _selectedCategory,
     );
 
-    // 2. Create Ride Request
     final newRide = RideRequest(
       id: 'RIDE_${DateTime.now().millisecondsSinceEpoch}',
       riderId: 'RIDER_001',
@@ -364,18 +557,11 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
-          // 💬 Support Chat Button
           IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: Colors.greenAccent),
-            tooltip: 'WhatsApp Support',
-            onPressed: () {
-              WhatsAppService.openWhatsApp(
-                phone: '+919876543210',
-                message: 'Hello WACRM Support! I have a question about booking a ride or registering as a driver.',
-              );
-            },
+            icon: const Icon(Icons.chat, color: Colors.greenAccent),
+            tooltip: 'Live Rider-Driver Chat',
+            onPressed: _openRiderDriverChatModal,
           ),
-          // 🚚 Driver Registration Quick Link
           IconButton(
             icon: const Icon(Icons.badge_outlined, color: Colors.amber),
             tooltip: 'Register as Driver',
@@ -403,41 +589,121 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
             myLocationButtonEnabled: false,
           ),
 
-          // 🔍 Top Floating Search Bar
+          // 🔍 Top Floating Dual Input Search Bar (Pickup & Dropoff Auto-Suggestions)
           Positioned(
             top: 12,
             left: 12,
             right: 12,
             child: Card(
-              elevation: 6,
+              elevation: 8,
+              color: const Color(0xFF0F172A),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                child: Row(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.search, color: Colors.black54),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: _searchDestination,
-                        decoration: const InputDecoration(
-                          hintText: 'Search place (e.g. THALA THALAPATHY SALOON)...',
-                          border: InputBorder.none,
+                    // Pickup Input
+                    Row(
+                      children: [
+                        const Icon(Icons.circle, color: Colors.green, size: 14),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _pickupController,
+                            onChanged: _onPickupQueryChanged,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: const InputDecoration(
+                              hintText: 'Type Pickup Place (e.g. Chennai Central)',
+                              hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        if (_isSearchingPickup)
+                          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
+                      ],
+                    ),
+
+                    // Pickup Suggestions Dropdown List
+                    if (_pickupSuggestions.isNotEmpty)
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 180),
+                        margin: const EdgeInsets.only(top: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _pickupSuggestions.length,
+                          itemBuilder: (context, idx) {
+                            final item = _pickupSuggestions[idx];
+                            return ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.pin_drop, color: Colors.green, size: 16),
+                              title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
+                              onTap: () => _selectPickupSuggestion(item),
+                            );
+                          },
                         ),
                       ),
+
+                    const Divider(color: Colors.white12, height: 12),
+
+                    // Swap Button & Dropoff Input Row
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _dropoffController,
+                            onChanged: _onDropoffQueryChanged,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: const InputDecoration(
+                              hintText: 'Type Dropoff Place (e.g. Marina Beach)',
+                              hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        if (_isSearchingDropoff)
+                          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red)),
+                        IconButton(
+                          icon: const Icon(Icons.swap_vert, color: Colors.cyanAccent, size: 20),
+                          tooltip: 'Swap Locations',
+                          onPressed: _swapPickupAndDropoff,
+                        ),
+                      ],
                     ),
-                    if (_isSearching)
-                      const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      IconButton(
-                        icon: const Icon(Icons.arrow_forward, color: Colors.black87),
-                        onPressed: () => _searchDestination(_searchController.text),
+
+                    // Dropoff Suggestions Dropdown List
+                    if (_dropoffSuggestions.isNotEmpty)
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 180),
+                        margin: const EdgeInsets.only(top: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _dropoffSuggestions.length,
+                          itemBuilder: (context, idx) {
+                            final item = _dropoffSuggestions[idx];
+                            return ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.place, color: Colors.red, size: 16),
+                              title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
+                              onTap: () => _selectDropoffSuggestion(item),
+                            );
+                          },
+                        ),
                       ),
                   ],
                 ),
@@ -482,7 +748,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _destinationAddress.isEmpty ? 'Search place above or tap map to set pin' : _destinationAddress,
+                          _destinationAddress.isEmpty ? 'Search dropoff above or tap map' : _destinationAddress,
                           style: TextStyle(
                             color: _destinationAddress.isEmpty ? Colors.grey : Colors.black,
                             fontSize: 13,
@@ -506,8 +772,8 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                             avatar: const Icon(Icons.place, size: 14, color: Colors.redAccent),
                             label: Text(landmark, style: const TextStyle(fontSize: 11)),
                             onPressed: () {
-                              _searchController.text = landmark;
-                              _searchDestination(landmark);
+                              _dropoffController.text = landmark;
+                              _onDropoffQueryChanged(landmark);
                             },
                           ),
                         );
@@ -533,7 +799,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                             margin: const EdgeInsets.only(right: 12),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: isSelected ? (cat['color'] as Color).withOpacity(0.15) : Colors.grey.shade100,
+                              color: isSelected ? (cat['color'] as Color).withValues(alpha: 0.15) : Colors.grey.shade100,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected ? (cat['color'] as Color) : Colors.transparent,
@@ -589,6 +855,57 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
+
+                  // 30-Second Auto-Rotating Upcoming Modules Banner (RentO, TeachO, TourO)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8, bottom: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF15803D), Color(0xFF166534)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('🚜', style: TextStyle(fontSize: 22)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                'NEW: RentO Module (இயந்திர வாடகை)',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              Text(
+                                'உழவு டிராக்டர், அறுவடை & சந்தை Mini-Van வாடகை',
+                                style: TextStyle(color: Colors.greenAccent, fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RentOScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF15803D),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Explore RentO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   SizedBox(
                     width: double.infinity,

@@ -32,10 +32,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       router.push("/login");
       return;
     }
-
-    if (!loading && user) {
-      // Allow all users to access the CRM paths (WhatsApp CRM)
-    }
   }, [user, loading, isAdmin, pathname, router]);
 
   if (loading) {
@@ -50,15 +46,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return null;
-
-  if (!isAdmin) {
-    return (
-      <div className="flex h-screen overflow-hidden bg-background w-full relative">
-        <PresenceHeartbeat />
-        <main className="flex-1 overflow-y-auto w-full">{children}</main>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

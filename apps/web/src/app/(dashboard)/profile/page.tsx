@@ -89,12 +89,18 @@ function ProfilePageInner() {
     router.replace(`/profile?${params.toString()}`, { scroll: false });
   };
 
-  // STRICT ADMIN CHECK: ONLY 9486335870 or aishleetechnology@gmail.com
+  // ADMIN CHECK: 9486335870 or 9123596988 or aishleetechnology@gmail.com
   const isAdmin = Boolean(
-    profile?.email === "aishleetechnology@gmail.com" ||
+    profile?.email?.includes("aishleetechnology@gmail.com") ||
+    profile?.email?.includes("9486335870") ||
+    profile?.email?.includes("9123596988") ||
     profile?.phone?.includes("9486335870") ||
-    user?.email === "aishleetechnology@gmail.com" ||
-    user?.phone?.includes("9486335870")
+    profile?.phone?.includes("9123596988") ||
+    user?.email?.includes("aishleetechnology@gmail.com") ||
+    user?.email?.includes("9486335870") ||
+    user?.email?.includes("9123596988") ||
+    user?.phone?.includes("9486335870") ||
+    user?.phone?.includes("9123596988")
   );
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
@@ -114,6 +120,18 @@ function ProfilePageInner() {
     };
     fetchDriverData();
   }, [user?.id]);
+
+  const formatCleanPhone = (raw?: string) => {
+    if (!raw) return '+91 94863 35870';
+    let clean = raw;
+    if (clean.includes('@')) clean = clean.split('@')[0];
+    clean = clean.replace(/\D/g, '');
+    if (clean.startsWith('91') && clean.length === 12) clean = clean.substring(2);
+    if (clean.length === 10) return `+91 ${clean.substring(0, 5)} ${clean.substring(5)}`;
+    return raw;
+  };
+
+  const displayPhone = formatCleanPhone(profile?.phone || profile?.email || user?.phone || user?.email);
 
   const goSettings = (section: string) => {
     setActiveTab(`crm_${section}`);
@@ -159,7 +177,7 @@ function ProfilePageInner() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">WhatsApp Phone</p>
-            <p className="font-medium">{profile?.phone || 'Not provided'}</p>
+            <p className="font-medium">{displayPhone}</p>
           </div>
         </div>
         <hr className="border-border" />

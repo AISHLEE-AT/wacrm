@@ -17,13 +17,18 @@ subprojects {
 }
 
 subprojects {
-    project.evaluationDependsOn(":app")
+    afterEvaluate {
+        if (project.hasProperty("android")) {
+            val android = project.extensions.findByName("android")
+            if (android is com.android.build.gradle.BaseExtension) {
+                android.compileSdkVersion(36)
+            }
+        }
+    }
 }
 
 subprojects {
-    tasks.withType<com.android.build.gradle.internal.tasks.CheckAarMetadataTask>().configureEach {
-        enabled = false
-    }
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register<Delete>("clean") {
