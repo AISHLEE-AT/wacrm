@@ -63,8 +63,6 @@ class _TourOScreenState extends State<TourOScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activePkg = _tourPackages[_selectedPackage]!;
-
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(

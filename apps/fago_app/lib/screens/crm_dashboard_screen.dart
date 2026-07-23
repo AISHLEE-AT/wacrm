@@ -351,7 +351,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.temple_hindu, color: Colors.skyAccent),
+              leading: const Icon(Icons.temple_hindu, color: Colors.lightBlueAccent),
               title: const Text('TourO - ஆன்மீக பயணம்', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);

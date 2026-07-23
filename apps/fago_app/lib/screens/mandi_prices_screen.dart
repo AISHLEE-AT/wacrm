@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../services/whatsapp_service.dart';
 
 class MandiPricesScreen extends StatefulWidget {
