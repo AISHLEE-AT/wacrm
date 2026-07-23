@@ -4,13 +4,17 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     from: (table: string) => {
+      const mockData = [
+        { id: '1', name: 'John Driver', is_verified: false, vehicle_type: 'Car' },
+        { id: '2', name: 'Jane Driver', is_verified: true, vehicle_type: 'Bike' },
+      ];
+
       const mockQuery = {
-        data: [
-          { id: '1', name: 'John Driver', is_verified: false, vehicle_type: 'Car' },
-          { id: '2', name: 'Jane Driver', is_verified: true, vehicle_type: 'Bike' },
-        ],
-        error: null,
+        data: mockData,
+        error: null as any,
         eq: (col: string, val: any) => ({
+          data: mockData,
+          error: null as any,
           single: async () => {
             if (table === 'profiles') {
               return { data: { id: val, full_name: 'Test User', profile_complete: true, role: 'admin' }, error: null };
@@ -46,7 +50,7 @@ describe('E2E Integration Flows - Frontend UI/UX & Supabase API', () => {
 
   it('Flow 1: User Profile & Onboarding Completion Flow', async () => {
     const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
+    const supabase = createClient() as any;
 
     // 1. Fetch user session
     const { data: { user } } = await supabase.auth.getUser();
@@ -55,8 +59,8 @@ describe('E2E Integration Flows - Frontend UI/UX & Supabase API', () => {
 
     // 2. Fetch profile data
     const profileRes = await supabase.from('profiles').select('*').eq('id', user!.id).single();
-    expect(profileRes.data.profile_complete).toBe(true);
-    expect(profileRes.data.role).toBe('admin');
+    expect(profileRes.data?.profile_complete).toBe(true);
+    expect(profileRes.data?.role).toBe('admin');
 
     // 3. Update profile details (e.g. location, UPI)
     const updateRes = supabase.from('profiles').update({
@@ -69,7 +73,7 @@ describe('E2E Integration Flows - Frontend UI/UX & Supabase API', () => {
 
   it('Flow 2: WhatsApp CRM Contacts & Pipeline Lead Management', async () => {
     const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
+    const supabase = createClient() as any;
 
     // 1. Create a new lead contact
     const contactRes = await supabase.from('contacts').insert({
@@ -92,12 +96,12 @@ describe('E2E Integration Flows - Frontend UI/UX & Supabase API', () => {
 
   it('Flow 3: RideO & Driver Verification Admin Flow', async () => {
     const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
+    const supabase = createClient() as any;
 
     // 1. Fetch driver list
     const driversRes = await supabase.from('drivers').select('*');
     expect(driversRes.data).toBeDefined();
-    expect(driversRes.data.length).toBeGreaterThan(0);
+    expect(driversRes.data!.length).toBeGreaterThan(0);
 
     // 2. Admin toggles driver verification status
     const updateDriverRes = supabase.from('drivers').update({
@@ -133,12 +137,12 @@ describe('E2E Integration Flows - Frontend UI/UX & Supabase API', () => {
 
   it('Flow 5: Admin Overview Statistics & Provider Audit', async () => {
     const { createClient } = await import('@/lib/supabase/client');
-    const supabase = createClient();
+    const supabase = createClient() as any;
 
     // Fetch all profiles for provider management
     const providersRes = await supabase.from('profiles').select('*');
     expect(providersRes.data).toBeDefined();
-    expect(providersRes.data.length).toBeGreaterThan(0);
+    expect(providersRes.data!.length).toBeGreaterThan(0);
   });
 
 });
