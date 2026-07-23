@@ -7,9 +7,11 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/auth_provider.dart';
+import '../auth/login_screen.dart';
 import 'rider_map_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'rento_screen.dart';
+import '../features/profile/screens/profile_dashboard.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
   const CrmDashboardScreen({super.key});
@@ -20,8 +22,8 @@ class CrmDashboardScreen extends ConsumerStatefulWidget {
 
 class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   late final WebViewController _controller;
-  bool _isLoading = true;
-  int _currentTab = 0; // 0: Native RideO, 1: Native DriveO, 2: Native RentO, 3: CRM Web
+  bool _isLoadingWeb = true;
+  int _currentTab = 0; // 0: RideO, 1: DriveO, 2: RentO, 3: Profile & ID
 
   @override
   void initState() {
@@ -37,23 +39,15 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoading = true;
-              });
-            }
+            if (mounted) setState(() => _isLoadingWeb = true);
           },
           onPageFinished: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoading = false;
-              });
-            }
+            if (mounted) setState(() => _isLoadingWeb = false);
           },
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url;
 
-            // 1. Intercept WhatsApp Deep-Links & Launch Native Mobile App
+            // Intercept WhatsApp Deep-Links
             if (url.startsWith('whatsapp://') ||
                 url.contains('wa.me') ||
                 url.contains('api.whatsapp.com')) {
@@ -61,14 +55,13 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               return NavigationDecision.prevent;
             }
 
-            // 2. Intercept Google Maps Navigation Intents & Launch Installed App ($0 Cost)
-            if (url.startsWith('google.navigation:') ||
-                url.contains('google.com/maps')) {
+            // Intercept Google Maps Intents ($0 Cost)
+            if (url.startsWith('google.navigation:') || url.contains('google.com/maps')) {
               _launchExternalUri(Uri.parse(url));
               return NavigationDecision.prevent;
             }
 
-            // 3. Intercept RideO / DriveO / RentO routes & open native screens
+            // Intercept Native screen routes
             if (url.endsWith('/rideo')) {
               if (mounted) setState(() => _currentTab = 0);
               return NavigationDecision.prevent;
@@ -79,6 +72,10 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
             }
             if (url.endsWith('/rento')) {
               if (mounted) setState(() => _currentTab = 2);
+              return NavigationDecision.prevent;
+            }
+            if (url.endsWith('/profile')) {
+              if (mounted) setState(() => _currentTab = 3);
               return NavigationDecision.prevent;
             }
 
@@ -149,13 +146,63 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
     return raw.isNotEmpty ? raw : '+91 94863 35870';
   }
 
+  void _openCrmWebModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: const Color(0xFF1E293B),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('WhatsApp CRM Web Portal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Stack(
+                  children: [
+                    WebViewWidget(controller: _controller),
+                    if (_isLoadingWeb)
+                      const Center(
+                        child: CircularProgressIndicator(color: Color(0xFF10B981)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    // MANDATORY AUTHENTICATION FIRST: If user is not logged in, render LoginScreen directly
+    if (authState.role == UserRole.guest || (authState.firebaseUser == null && authState.supabaseUser == null)) {
+      return const LoginScreen();
+    }
+
     final formattedPhone = _formatDisplayPhone(authState);
     final isAdmin = authState.role == UserRole.admin;
     final isDriver = authState.role == UserRole.driver || isAdmin;
-    final isLoggedIn = authState.role != UserRole.guest;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -163,7 +210,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
         backgroundColor: const Color(0xFF0F172A),
         child: Column(
           children: [
-            // Drawer Header with FAGO Logo & User Info
+            // Drawer Header with User Avatar & Role Badge
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -267,7 +314,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
 
             const Divider(color: Colors.white12),
 
-            // Navigation Items
+            // Drawer Navigation Options
             ListTile(
               leading: const Icon(Icons.directions_car, color: Color(0xFF10B981)),
               title: const Text('RideO - Book Ride', style: TextStyle(color: Colors.white)),
@@ -296,8 +343,8 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.chat_bubble, color: Color(0xFF3B82F6)),
-              title: const Text('CRM Web & WhatsApp', style: TextStyle(color: Colors.white)),
+              leading: const Icon(Icons.badge, color: Colors.cyanAccent),
+              title: const Text('Digital ID & Profile', style: TextStyle(color: Colors.white)),
               selected: _currentTab == 3,
               onTap: () {
                 Navigator.pop(context);
@@ -321,54 +368,21 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.people, color: Colors.amber),
-                title: const Text('Manage Drivers & Applications', style: TextStyle(color: Colors.white)),
+                leading: const Icon(Icons.chat_bubble_outline, color: Colors.greenAccent),
+                title: const Text('WhatsApp CRM Portal', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
-                  _controller.loadRequest(Uri.parse('https://watscrm.vercel.app/admin/drivers'));
-                  setState(() => _currentTab = 3);
+                  _openCrmWebModal();
                 },
               ),
             ],
 
             const Spacer(),
 
-            // LOGIN VIA WHATSAPP BUTTON (Prominent Button at Drawer Bottom)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    context.push('/login');
-                  },
-                  icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-                  label: Text(
-                    isLoggedIn ? 'SWITCH ACCOUNT VIA WHATSAPP' : 'LOGIN VIA WHATSAPP',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF25D366),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-            ),
-
-            // Profile & Digital ID Link
-            ListTile(
-              leading: const Icon(Icons.badge, color: Colors.cyanAccent),
-              title: const Text('Digital ID & Profile', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/profile');
-              },
-            ),
+            // Logout Option in Side Drawer
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Sign Out', style: TextStyle(color: Colors.redAccent)),
+              title: const Text('Sign Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
               onTap: () {
                 Navigator.pop(context);
                 ref.read(authProvider.notifier).signOut();
@@ -381,54 +395,59 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
       body: SafeArea(
         child: IndexedStack(
           index: _currentTab,
-          children: [
+          children: const [
             // Tab 0: Native RideO Screen
-            const RiderMapScreen(),
+            RiderMapScreen(),
 
             // Tab 1: Native DriveO Screen
-            const DriverDashboardScreen(),
+            DriverDashboardScreen(),
 
             // Tab 2: Native RentO Machinery Rental Screen
-            const RentOScreen(),
+            RentOScreen(),
 
-            // Tab 3: WhatsApp Web CRM
-            Stack(
-              children: [
-                WebViewWidget(controller: _controller),
-                if (_isLoading)
-                  const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF10B981)),
-                  ),
-              ],
-            ),
+            // Tab 3: Native Profile & Digital ID Screen
+            ProfileDashboard(),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentTab,
-        onTap: (index) => setState(() => _currentTab = index),
-        backgroundColor: Colors.black,
-        selectedItemColor: const Color(0xFF10B981),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car),
-            label: 'RideO Native',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_shipping),
-            label: 'DriveO Native',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.agriculture),
-            label: 'RentO Native',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat),
-            label: 'CRM Web',
-          ),
-        ],
+      // Master App Bottom Navigation Bar (No CRM Web button!)
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          border: Border(top: BorderSide(color: Colors.white12, width: 0.5)),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentTab,
+          onTap: (index) => setState(() => _currentTab = index),
+          backgroundColor: Colors.black,
+          selectedItemColor: const Color(0xFF10B981), // Emerald Green
+          unselectedItemColor: Colors.grey.shade500,
+          selectedFontSize: 11,
+          unselectedFontSize: 11,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.directions_car_filled_rounded),
+              activeIcon: Icon(Icons.directions_car_filled_rounded, color: Color(0xFF10B981)),
+              label: 'RideO',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.local_shipping_rounded),
+              activeIcon: Icon(Icons.local_shipping_rounded, color: Color(0xFFF97316)),
+              label: 'DriveO',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.agriculture_rounded),
+              activeIcon: Icon(Icons.agriculture_rounded, color: Color(0xFF22C55E)),
+              label: 'RentO',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              activeIcon: Icon(Icons.person_rounded, color: Colors.cyanAccent),
+              label: 'Profile & ID',
+            ),
+          ],
+        ),
       ),
     );
   }
