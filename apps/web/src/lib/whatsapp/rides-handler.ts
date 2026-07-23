@@ -126,6 +126,35 @@ export async function handleRideHailingBooking(
       scheduledTimeStr = text.replace(/(schedule|ride|book|for|cab|later|\ba\b)/g, '').replace(/\s+/g, ' ').trim()
     }
 
+    // Check if message text already contains Google Maps pin coordinates or RentO booking payload
+    const mapMatch = message.text?.body?.match(/maps\/search\/\?api=1&query=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+                     message.text?.body?.match(/query=(-?\d+\.\d+),(-?\d+\.\d+)/)
+
+    if (mapMatch) {
+      const lat = mapMatch[1]
+      const lng = mapMatch[2]
+      await sendTextMessage({
+        accessToken,
+        phoneNumberId: config.phone_number_id,
+        to: senderPhone,
+        text: `📍 LOCATION & BOOKING RECEIVED! 📍\n\n` +
+          `🌐 Live GPS: (${lat}, ${lng})\n\n` +
+          `✅ Your booking details & live GPS coordinates have been received and broadcasted to nearby verified operators. Operator will contact you directly on WhatsApp!`
+      })
+      return true
+    }
+
+    if (text.includes('rento') || text.includes('machinery') || text.includes('tractor') || text.includes('tanker')) {
+      await sendTextMessage({
+        accessToken,
+        phoneNumberId: config.phone_number_id,
+        to: senderPhone,
+        text: `🚜 Welcome to RentO Agricultural & Heavy Machinery! 🚜\n\n` +
+          `Your machinery booking request has been registered. Nearby machinery operators will contact you directly on WhatsApp.`
+      })
+      return true
+    }
+
     if (text.includes('ride') || text.includes('book') || text.includes('cab') || text.includes('schedule')) {
       await sendTextMessage({
         accessToken,

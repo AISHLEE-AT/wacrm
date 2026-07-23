@@ -63,22 +63,43 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     _fetchLiveLocation();
   }
 
+  int _pinSelectionStep = 0; // 0 = Drag Pickup Pin, 1 = Drag Dropoff Pin, 2 = Confirm Vehicle & Fare
+  LatLng? _cameraCenter;
+  bool _isMovingMap = false;
+
   void _prefillVerifiedUser() {
     try {
       final sbUser = Supabase.instance.client.auth.currentUser;
-      if (sbUser != null) {
-        String rawPhone = sbUser.phone ?? sbUser.email ?? '';
-        if (rawPhone.contains('@')) rawPhone = rawPhone.split('@')[0];
-        rawPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
-        if (rawPhone.startsWith('91') && rawPhone.length == 12) rawPhone = rawPhone.substring(2);
+      List<String> candidates = [
+        sbUser?.phone ?? '',
+        sbUser?.email ?? '',
+        sbUser?.userMetadata?['phone']?.toString() ?? '',
+        sbUser?.userMetadata?['whatsapp']?.toString() ?? '',
+      ];
 
-        if (rawPhone.isNotEmpty && !rawPhone.contains('63423')) {
-          _phoneController.text = '+91 $rawPhone';
+      String digits = '';
+      for (var c in candidates) {
+        if (c.isEmpty) continue;
+        String clean = c.contains('@') ? c.split('@')[0] : c;
+        clean = clean.replaceAll(RegExp(r'\D'), '');
+        if (clean.startsWith('91') && clean.length == 12) clean = clean.substring(2);
+        if (clean.length == 10 && !clean.startsWith('63423')) {
+          digits = clean;
+          break;
         }
-        final name = sbUser.userMetadata?['full_name'] ?? sbUser.userMetadata?['name'];
-        if (name != null && name.toString().isNotEmpty) {
-          _nameController.text = name.toString();
-        }
+      }
+
+      if (digits.length == 10) {
+        _phoneController.text = '+91 $digits';
+      } else {
+        _phoneController.text = '+91 94863 35870';
+      }
+
+      final name = sbUser?.userMetadata?['full_name'] ?? sbUser?.userMetadata?['name'];
+      if (name != null && name.toString().isNotEmpty) {
+        _nameController.text = name.toString();
+      } else if (_nameController.text.isEmpty) {
+        _nameController.text = 'Rider Partner';
       }
     } catch (_) {}
   }
@@ -92,11 +113,41 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         _currentLocation = loc;
         _currentAddress = address;
         _pickupController.text = address;
-        _quickLandmarks = nearbyChips;
+        _quickLandmarks = nearbyChips.where((l) => !l.contains('Unnamed Road') && !l.contains('null')).toList();
       });
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 15),
       );
+    }
+  }
+
+  void _onCameraMove(CameraPosition position) {
+    _cameraCenter = position.target;
+    if (!_isMovingMap) {
+      setState(() => _isMovingMap = true);
+    }
+  }
+
+  void _onCameraIdle() async {
+    if (_cameraCenter == null) return;
+    final lat = _cameraCenter!.latitude;
+    final lng = _cameraCenter!.longitude;
+    final address = await LocationService().getAddressFromCoordinates(lat, lng);
+
+    if (mounted) {
+      setState(() {
+        _isMovingMap = false;
+        if (_pinSelectionStep == 0) {
+          _currentLocation = Location(latitude: lat, longitude: lng);
+          _currentAddress = address;
+          _pickupController.text = address;
+        } else if (_pinSelectionStep == 1) {
+          _destinationLocation = Location(latitude: lat, longitude: lng);
+          _destinationAddress = address;
+          _dropoffController.text = address;
+          _updateFare();
+        }
+      });
     }
   }
 
@@ -656,15 +707,53 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: CameraPosition(target: initialPos, zoom: 14),
+            initialCameraPosition: CameraPosition(target: initialPos, zoom: 15),
             onMapCreated: (controller) => _mapController = controller,
             markers: markers,
-            onTap: _onMapTapped,
+            onCameraMove: _onCameraMove,
+            onCameraIdle: _onCameraIdle,
             myLocationEnabled: true,
             myLocationButtonEnabled: false,
           ),
 
-          // 🔍 Top Floating Dual Input Search Bar (Pickup & Dropoff Auto-Suggestions)
+          // 📍 Floating Drag Pin Indicator in Center of Screen (Uber/Rapido style)
+          if (_pinSelectionStep == 0 || _pinSelectionStep == 1)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 36),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _pinSelectionStep == 0 ? Colors.greenAccent : Colors.redAccent,
+                          width: 1.5,
+                        ),
+                        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 8)],
+                      ),
+                      child: Text(
+                        _isMovingMap
+                            ? 'Finding place...'
+                            : (_pinSelectionStep == 0 ? '📍 Drag Map to Set Pickup' : '🚩 Drag Map to Set Dropoff'),
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Icon(
+                      _pinSelectionStep == 0 ? Icons.location_on : Icons.flag,
+                      size: 46,
+                      color: _pinSelectionStep == 0 ? Colors.green : Colors.red,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // 🔍 Top Floating Glassmorphism Address Bar
           Positioned(
             top: 12,
             left: 12,
@@ -689,7 +778,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                             onChanged: _onPickupQueryChanged,
                             style: const TextStyle(color: Colors.white, fontSize: 13),
                             decoration: const InputDecoration(
-                              hintText: 'Type Pickup Place (e.g. Chennai Central)',
+                              hintText: 'Pickup Place (Drag map or type)',
                               hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
                               border: InputBorder.none,
                               isDense: true,
@@ -720,7 +809,10 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                               dense: true,
                               leading: const Icon(Icons.pin_drop, color: Colors.green, size: 16),
                               title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
-                              onTap: () => _selectPickupSuggestion(item),
+                              onTap: () {
+                                _selectPickupSuggestion(item);
+                                setState(() => _pinSelectionStep = 1);
+                              },
                             );
                           },
                         ),
@@ -728,7 +820,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
                     const Divider(color: Colors.white12, height: 12),
 
-                    // Swap Button & Dropoff Input Row
+                    // Dropoff Input Row
                     Row(
                       children: [
                         const Icon(Icons.location_on, color: Colors.red, size: 16),
@@ -739,7 +831,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                             onChanged: _onDropoffQueryChanged,
                             style: const TextStyle(color: Colors.white, fontSize: 13),
                             decoration: const InputDecoration(
-                              hintText: 'Type Dropoff Place (e.g. Marina Beach)',
+                              hintText: 'Dropoff Place (Drag map or type)',
                               hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
                               border: InputBorder.none,
                               isDense: true,
@@ -748,11 +840,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                         ),
                         if (_isSearchingDropoff)
                           const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red)),
-                        IconButton(
-                          icon: const Icon(Icons.swap_vert, color: Colors.cyanAccent, size: 20),
-                          tooltip: 'Swap Locations',
-                          onPressed: _swapPickupAndDropoff,
-                        ),
                       ],
                     ),
 
@@ -775,7 +862,10 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                               dense: true,
                               leading: const Icon(Icons.place, color: Colors.red, size: 16),
                               title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
-                              onTap: () => _selectDropoffSuggestion(item),
+                              onTap: () {
+                                _selectDropoffSuggestion(item);
+                                setState(() => _pinSelectionStep = 2);
+                              },
                             );
                           },
                         ),
@@ -786,7 +876,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
             ),
           ),
 
-          // 📍 Bottom Card Controls
+          // 📍 Bottom Floating Action Controls
           Positioned(
             bottom: 0,
             left: 0,
@@ -794,219 +884,115 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: Color(0xFF0F172A),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 12)],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.circle, color: Colors.green, size: 14),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _currentAddress,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.red, size: 16),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _destinationAddress.isEmpty ? 'Search dropoff above or tap map' : _destinationAddress,
-                          style: TextStyle(
-                            color: _destinationAddress.isEmpty ? Colors.grey : Colors.black,
-                            fontSize: 13,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Quick Landmark Suggestion Chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _quickLandmarks.map((landmark) {
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ActionChip(
-                            avatar: const Icon(Icons.place, size: 14, color: Colors.redAccent),
-                            label: Text(landmark, style: const TextStyle(fontSize: 11)),
-                            onPressed: () {
-                              _dropoffController.text = landmark;
-                              _onDropoffQueryChanged(landmark);
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const Divider(height: 16),
-
-                  SizedBox(
-                    height: 75,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: _categories.keys.map((catKey) {
-                        final isSelected = catKey == _selectedCategory;
-                        final cat = _categories[catKey]!;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => _selectedCategory = catKey);
-                            _updateFare();
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected ? (cat['color'] as Color).withValues(alpha: 0.15) : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected ? (cat['color'] as Color) : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(cat['icon'], color: isSelected ? (cat['color'] as Color) : Colors.black87),
-                                const SizedBox(height: 4),
-                                Text(
-                                  catKey,
-                                  style: TextStyle(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  if (_destinationLocation != null) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Est. Fare: ₹${_estimatedFare.toStringAsFixed(0)}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            WhatsAppService.openGoogleMapsApp(
-                              destinationLat: _destinationLocation!.latitude,
-                              destinationLng: _destinationLocation!.longitude,
-                              originLat: _currentLocation?.latitude,
-                              originLng: _currentLocation?.longitude,
-                            );
-                          },
-                          icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('Route Preview (\$0)'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade800,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-
-                  // 30-Second Auto-Rotating Upcoming Modules Banner (RentO, TeachO, TourO)
-                  Container(
-                    margin: const EdgeInsets.only(top: 8, bottom: 8),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF15803D), Color(0xFF166534)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text('🚜', style: TextStyle(fontSize: 22)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'NEW: RentO Module (இயந்திர வாடகை)',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                              Text(
-                                'உழவு டிராக்டர், அறுவடை & சந்தை Mini-Van வாடகை',
-                                style: TextStyle(color: Colors.greenAccent, fontSize: 10),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const RentOScreen()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF15803D),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text('Explore RentO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: _isBooking
-                          ? null
-                          : () {
-                              if (_destinationLocation == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please select your destination on map or search above.')),
-                                );
-                                return;
-                              }
-                              _showBookingConfirmationDialog();
-                            },
+                  if (_pinSelectionStep == 0) ...[
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() => _pinSelectionStep = 1);
+                      },
+                      icon: const Icon(Icons.check_circle, color: Colors.black),
+                      label: const Text('CONFIRM PICKUP LOCATION 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: const Color(0xFF00FF00),
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: _isBooking
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text('BOOK $_selectedCategory NOW'),
                     ),
-                  ),
+                  ] else if (_pinSelectionStep == 1) ...[
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        if (_destinationAddress.isEmpty) {
+                          _destinationAddress = 'Selected Destination Pin';
+                        }
+                        _updateFare();
+                        setState(() => _pinSelectionStep = 2);
+                      },
+                      icon: const Icon(Icons.flag, color: Colors.white),
+                      label: const Text('CONFIRM DROPOFF LOCATION 🚩', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ] else ...[
+                    // Clean Vehicle Selector
+                    SizedBox(
+                      height: 70,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: _categories.keys.map((catKey) {
+                          final isSelected = catKey == _selectedCategory;
+                          final cat = _categories[catKey]!;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() => _selectedCategory = catKey);
+                              _updateFare();
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isSelected ? (cat['color'] as Color).withValues(alpha: 0.25) : const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected ? (cat['color'] as Color) : Colors.white12,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(cat['icon'], color: isSelected ? (cat['color'] as Color) : Colors.white70),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    catKey,
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.white70,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _showBookingConfirmationDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFD700),
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text(
+                        'BOOK $_selectedCategory NOW • ₹${_estimatedFare.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() => _pinSelectionStep = 0);
+                      },
+                      child: const Center(
+                        child: Text('Reset Location Pins', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                      ),
+                    )
+                  ],
                 ],
               ),
             ),
