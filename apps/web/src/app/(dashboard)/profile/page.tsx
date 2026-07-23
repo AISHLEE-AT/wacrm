@@ -99,9 +99,25 @@ function ProfilePageInner() {
     user?.email?.includes("9486335870") ||
     user?.phone?.includes("9486335870")
   );
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
   const [driverProfile, setDriverProfile] = useState<any>(null);
+
+  const handleSaveName = async () => {
+    if (!nameValue.trim() || !user?.id) return;
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      await supabase.from('profiles').update({ full_name: nameValue.trim() }).or(`id.eq.${user.id},user_id.eq.${user.id}`);
+      await supabase.auth.updateUser({ data: { full_name: nameValue.trim() } });
+      setEditingName(false);
+      window.location.reload();
+    } catch (err) {
+      console.error('Error saving name:', err);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -158,9 +174,41 @@ function ProfilePageInner() {
           </div>
         )}
         <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            {profile?.full_name || 'User'}
-          </h2>
+          {editingName ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                type="text"
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                placeholder="Your Full Name"
+                className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm font-bold text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition"
+              />
+              <button
+                onClick={handleSaveName}
+                className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-bold hover:opacity-90 transition"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditingName(false)}
+                className="text-xs text-muted-foreground hover:text-foreground transition px-2 py-1"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground">
+                {profile?.full_name || 'User'}
+              </h2>
+              <button
+                onClick={() => { setNameValue(profile?.full_name || ''); setEditingName(true); }}
+                className="text-xs text-muted-foreground hover:text-primary font-medium transition px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-primary/10 flex items-center gap-1 border border-border/50"
+              >
+                ✏️ Edit Name
+              </button>
+            </div>
+          )}
           <p className="text-primary text-sm font-medium mt-0.5 uppercase tracking-wider">
             {isAdmin ? 'Admin / Owner' : 'User'}
           </p>
