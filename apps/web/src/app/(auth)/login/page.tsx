@@ -32,11 +32,15 @@ function LoginPageInner() {
 
   const categories = [
     { key: 'Traveller', label: '🧳 Traveller (RideO)', route: '/rideo' },
-    { key: 'Farmer', label: '🚜 Farmer (RentO)', route: '/rento' },
+    { key: 'Farmer', label: '🚜 Farmer (RentO Agri)', route: '/rento' },
+    { key: 'Shopper', label: '🛍️ Shopper (ShopO / Mandi)', route: '/mandi' },
     { key: 'Driver', label: '🚖 Driver (DriveO)', route: '/drivo' },
-    { key: 'Student', label: '🎓 Student (TestO)', route: '/teacho' },
-    { key: 'Teacher', label: '👨‍🏫 Teacher (TutorO)', route: '/teacho' },
+    { key: 'Student', label: '🎓 Student (TestO Exam)', route: '/teacho' },
+    { key: 'Teacher', label: '👨‍🏫 Teacher (TeachO Tutor)', route: '/teacho' },
     { key: 'Financier', label: '💰 Financier (LoanO)', route: '/mandi' },
+    { key: 'JobSeeker', label: '💼 Job Seeker (WorkO)', route: '/teacho' },
+    { key: 'Employer', label: '🏢 Employer (BizHub)', route: '/' },
+    { key: 'Tourist', label: '🛕 Tourist (TourO ஆன்மீகம்)', route: '/touro' },
   ];
   
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);

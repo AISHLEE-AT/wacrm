@@ -24,11 +24,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   final List<Map<String, dynamic>> _userCategories = [
     {'key': 'Traveller', 'label': '🧳 Traveller (RideO)', 'route': '/rideo', 'color': Colors.amber},
-    {'key': 'Farmer', 'label': '🚜 Farmer (RentO)', 'route': '/rento', 'color': Colors.greenAccent},
+    {'key': 'Farmer', 'label': '🚜 Farmer (RentO Agri)', 'route': '/rento', 'color': Colors.greenAccent},
+    {'key': 'Shopper', 'label': '🛍️ Shopper (ShopO / Mandi)', 'route': '/mandi', 'color': Colors.pinkAccent},
     {'key': 'Driver', 'label': '🚖 Driver (DriveO)', 'route': '/drivo', 'color': Colors.orangeAccent},
-    {'key': 'Student', 'label': '🎓 Student (TestO)', 'route': '/teacho', 'color': Colors.purpleAccent},
-    {'key': 'Teacher', 'label': '👨‍🏫 Teacher (TutorO)', 'route': '/teacho', 'color': Colors.cyanAccent},
+    {'key': 'Student', 'label': '🎓 Student (TestO Exam)', 'route': '/teacho', 'color': Colors.purpleAccent},
+    {'key': 'Teacher', 'label': '👨‍🏫 Teacher (TeachO Tutor)', 'route': '/teacho', 'color': Colors.cyanAccent},
     {'key': 'Financier', 'label': '💰 Financier (LoanO)', 'route': '/mandi', 'color': Colors.blueAccent},
+    {'key': 'JobSeeker', 'label': '💼 Job Seeker (WorkO)', 'route': '/teacho', 'color': Colors.limeAccent},
+    {'key': 'Employer', 'label': '🏢 Employer (BizHub)', 'route': '/', 'color': Colors.indigoAccent},
+    {'key': 'Tourist', 'label': '🛕 Tourist (TourO ஆன்மீகம்)', 'route': '/touro', 'color': Colors.deepOrangeAccent},
   ];
 
   void _sendOTP() async {
