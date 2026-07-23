@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -58,7 +59,28 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   @override
   void initState() {
     super.initState();
+    _prefillVerifiedUser();
     _fetchLiveLocation();
+  }
+
+  void _prefillVerifiedUser() {
+    try {
+      final sbUser = Supabase.instance.client.auth.currentUser;
+      if (sbUser != null) {
+        String rawPhone = sbUser.phone ?? sbUser.email ?? '';
+        if (rawPhone.contains('@')) rawPhone = rawPhone.split('@')[0];
+        rawPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
+        if (rawPhone.startsWith('91') && rawPhone.length == 12) rawPhone = rawPhone.substring(2);
+
+        if (rawPhone.isNotEmpty && !rawPhone.contains('63423')) {
+          _phoneController.text = '+91 $rawPhone';
+        }
+        final name = sbUser.userMetadata?['full_name'] ?? sbUser.userMetadata?['name'];
+        if (name != null && name.toString().isNotEmpty) {
+          _nameController.text = name.toString();
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchLiveLocation() async {
@@ -432,11 +454,34 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
               ),
               const SizedBox(height: 12),
 
+              if (_phoneController.text.isNotEmpty && _phoneController.text != '+91') ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified, color: Colors.green, size: 16),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Verified WhatsApp Login Number',
+                          style: TextStyle(color: Colors.green.shade900, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  labelText: 'Your WhatsApp Phone Number',
+                  labelText: 'WhatsApp Phone Number',
                   hintText: '+919876543210',
                   prefixIcon: const Icon(Icons.phone_android, color: Colors.green),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

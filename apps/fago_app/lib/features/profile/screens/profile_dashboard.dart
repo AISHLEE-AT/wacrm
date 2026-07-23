@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
 
@@ -71,19 +72,24 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
   }
 
   String _cleanPhone(String? raw) {
-    if (raw == null || raw.isEmpty) return '+91 94863 35870';
-    String cleaned = raw;
-    if (cleaned.contains('@')) {
-      cleaned = cleaned.split('@')[0];
+    final sbUser = Supabase.instance.client.auth.currentUser;
+    final String userAuthPhone = sbUser?.phone ?? sbUser?.email ?? '';
+
+    String target = (userAuthPhone.isNotEmpty && !userAuthPhone.contains('63423'))
+        ? userAuthPhone
+        : ((raw != null && raw.isNotEmpty && !raw.contains('63423')) ? raw : userAuthPhone);
+
+    if (target.contains('@')) {
+      target = target.split('@')[0];
     }
-    cleaned = cleaned.replaceAll(RegExp(r'\D'), '');
-    if (cleaned.startsWith('91') && cleaned.length == 12) {
-      cleaned = cleaned.substring(2);
+    target = target.replaceAll(RegExp(r'\D'), '');
+    if (target.startsWith('91') && target.length == 12) {
+      target = target.substring(2);
     }
-    if (cleaned.length == 10) {
-      return '+91 ${cleaned.substring(0, 5)} ${cleaned.substring(5)}';
+    if (target.length == 10) {
+      return '+91 ${target.substring(0, 5)} ${target.substring(5)}';
     }
-    return raw;
+    return target.isNotEmpty ? '+91 $target' : '+91 Verified User';
   }
 
   Widget _buildProfileTab(ProfileModel profile) {

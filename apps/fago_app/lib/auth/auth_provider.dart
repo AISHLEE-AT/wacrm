@@ -276,6 +276,75 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  Future<Map<String, dynamic>> sendWhatsAppOtp(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final response = await http.post(
+      Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/send-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': cleanPhone}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to send WhatsApp OTP');
+    }
+  }
+
+  Future<void> verifyWhatsAppOtp(String phone, String otp) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final response = await http.post(
+      Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/verify-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': cleanPhone, 'otp': otp}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['session'] != null) {
+        final session = data['session'];
+        final accessToken = session['access_token'];
+        final refreshToken = session['refresh_token'];
+        if (accessToken != null && refreshToken != null) {
+          final sessionJson = jsonEncode({
+            'access_token': accessToken,
+            'refresh_token': refreshToken,
+            'expires_in': 3600,
+            'token_type': 'bearer',
+            'user': session['user']
+          });
+          await _supabase.auth.recoverSession(sessionJson);
+
+          if (session['user'] != null) {
+            final userId = session['user']['id'];
+            try {
+              await _supabase.from('profiles').upsert({
+                'id': userId,
+                'phone': cleanPhone,
+                'whatsapp': cleanPhone,
+                'updated_at': DateTime.now().toIso8601String(),
+              });
+              await _supabase.from('contacts').upsert({
+                'user_id': userId,
+                'phone': cleanPhone,
+                'name': 'WhatsApp Verified User',
+              });
+            } catch (e) {
+              debugPrint('Error syncing whatsapp profile: $e');
+            }
+          }
+          await _resolveRole(cleanPhone);
+          return;
+        }
+      }
+      throw Exception('Session missing from verification response');
+    } else {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Invalid WhatsApp OTP');
+    }
+  }
+
   Future<void> verifyPhoneNumber({
     required String phoneNumber,
     required Function(String verificationId, int? resendToken) codeSent,

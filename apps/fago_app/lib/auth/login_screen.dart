@@ -16,6 +16,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   
   bool _isOTPSent = false;
   bool _isLoading = false;
+  bool _useWhatsAppAuth = true; // Default to WhatsApp Login OTP
   String _verificationId = '';
 
   void _sendOTP() async {
@@ -27,41 +28,83 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-    String phoneNumber = '+91${_phoneController.text.trim()}';
+    String rawPhone = _phoneController.text.trim();
+    String phoneNumber = '+91$rawPhone';
 
-    await ref.read(authProvider.notifier).verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      codeSent: (verificationId, resendToken) {
+    if (_useWhatsAppAuth) {
+      try {
+        final res = await ref.read(authProvider.notifier).sendWhatsAppOtp(rawPhone);
         setState(() {
           _isLoading = false;
           _isOTPSent = true;
-          _verificationId = verificationId;
         });
-      },
-      verificationFailed: (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'OTP sent via WhatsApp! Check your WhatsApp messages.'),
+              backgroundColor: Colors.green.shade800,
+            ),
+          );
+        }
+      } catch (e) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification Failed: ${e.message}')),
-        );
-      },
-    );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('WhatsApp OTP Error: ${e.toString().replaceAll("Exception: ", "")}')),
+          );
+        }
+      }
+    } else {
+      await ref.read(authProvider.notifier).verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        codeSent: (verificationId, resendToken) {
+          setState(() {
+            _isLoading = false;
+            _isOTPSent = true;
+            _verificationId = verificationId;
+          });
+        },
+        verificationFailed: (e) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Verification Failed: ${e.message}')),
+          );
+        },
+      );
+    }
   }
 
   void _verifyOTP() async {
     if (_otpController.text.length != 6) return;
 
     setState(() => _isLoading = true);
-    try {
-      await ref.read(authProvider.notifier).verifyOTP(
-        verificationId: _verificationId,
-        smsCode: _otpController.text.trim(),
-      );
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid OTP. Please try again.')),
+    String rawPhone = _phoneController.text.trim();
+    String otpCode = _otpController.text.trim();
+
+    if (_useWhatsAppAuth) {
+      try {
+        await ref.read(authProvider.notifier).verifyWhatsAppOtp(rawPhone, otpCode);
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString().replaceAll("Exception: ", ""))),
+          );
+        }
+      }
+    } else {
+      try {
+        await ref.read(authProvider.notifier).verifyOTP(
+          verificationId: _verificationId,
+          smsCode: otpCode,
         );
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid OTP. Please try again.')),
+          );
+        }
       }
     }
   }
@@ -76,11 +119,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60),
-              // Glowing Nature Logo Placeholder
+              const SizedBox(height: 40),
+              // Glowing Logo
               Container(
-                width: 120,
-                height: 120,
+                width: 110,
+                height: 110,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   boxShadow: [
@@ -97,32 +140,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ],
                 ),
                 child: const Icon(
-                  Icons.eco,
-                  size: 100,
+                  Icons.chat_bubble_outline_rounded,
+                  size: 80,
                   color: Color(0xFF00FF00), // Vibrant Green
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               const Text(
                 'FAGO',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 42,
+                  fontSize: 40,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFFFD700), // Golden Yellow
                   letterSpacing: 2,
                 ),
               ),
               const Text(
-                'AishleeTech',
+                'AishleeTech • WhatsApp Verified',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   color: Colors.white70,
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
               Consumer(
                 builder: (context, ref, child) {
                   final errorMessage = ref.watch(authProvider).errorMessage;
@@ -145,7 +188,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   return const SizedBox.shrink();
                 },
               ),
-              const SizedBox(height: 10),
               if (!_isOTPSent) ...[
                 TextField(
                   controller: _phoneController,
@@ -156,7 +198,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     prefixIcon: const Icon(Icons.phone, color: Colors.greenAccent),
                     prefixText: '+91 ',
                     prefixStyle: const TextStyle(color: Colors.white, fontSize: 16),
-                    labelText: 'Mobile Number',
+                    labelText: 'Mobile WhatsApp Number',
                     labelStyle: const TextStyle(color: Colors.greenAccent),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -168,9 +210,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
                   onPressed: _isLoading ? null : _sendOTP,
+                  icon: const Icon(Icons.chat, color: Colors.black),
+                  label: Text(
+                    _useWhatsAppAuth ? 'Send WhatsApp OTP' : 'Send SMS OTP',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00FF00), // Green
                     foregroundColor: Colors.black, // Dark text
@@ -181,16 +228,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     elevation: 10,
                     shadowColor: Colors.greenAccent.withValues(alpha: 0.5),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                        )
-                      : const Text(
-                          'Continue',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() => _useWhatsAppAuth = !_useWhatsAppAuth);
+                  },
+                  child: Text(
+                    _useWhatsAppAuth ? 'Switch to SMS OTP Method' : 'Switch to WhatsApp Login OTP Method',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ),
               ] else ...[
                 TextField(
@@ -200,7 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8),
                   maxLength: 6,
                   decoration: InputDecoration(
-                    labelText: 'Enter 6-digit OTP',
+                    labelText: _useWhatsAppAuth ? 'Enter 6-digit WhatsApp OTP' : 'Enter 6-digit SMS OTP',
                     labelStyle: const TextStyle(color: Colors.amber),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

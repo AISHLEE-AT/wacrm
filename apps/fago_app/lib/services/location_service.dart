@@ -126,32 +126,49 @@ class LocationService {
   /// Generates dynamic local landmark suggestions based on user's current GPS locality ($0 API Cost)
   Future<List<String>> getNearbyLandmarkSuggestions(double lat, double lng) async {
     List<String> suggestions = [];
+
+    try {
+      final url = Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=bus+station+hospital+market&lat=$lat&lon=$lng&limit=5');
+      final response = await http.get(url, headers: {'User-Agent': 'WacrmRideApp/1.0'});
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List;
+        for (var item in data) {
+          if (item['display_name'] != null) {
+            String name = item['display_name'].toString().split(',')[0];
+            if (name.isNotEmpty && !suggestions.contains(name)) {
+              suggestions.add(name);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('OSM landmark fetch error: $e');
+    }
+
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         final subArea = place.subLocality?.isNotEmpty == true
             ? place.subLocality!
-            : (place.thoroughfare?.isNotEmpty == true ? place.thoroughfare! : 'Local Area');
+            : (place.thoroughfare?.isNotEmpty == true ? place.thoroughfare! : 'Main Road');
         final city = place.locality?.isNotEmpty == true ? place.locality! : subArea;
 
-        suggestions.add('THALA THALAPATHY SALOON, $subArea');
-        suggestions.add('$subArea Bus Stand');
-        suggestions.add('$subArea Main Market');
-        suggestions.add('$city Railway Station');
-        suggestions.add('$city General Hospital');
+        if (suggestions.length < 3) suggestions.add('$subArea Bus Stand');
+        if (suggestions.length < 3) suggestions.add('$subArea Main Junction');
+        if (suggestions.length < 3) suggestions.add('$city Railway Station');
+        if (suggestions.length < 3) suggestions.add('$city Government Hospital');
       }
     } catch (_) {}
 
     if (suggestions.isEmpty) {
       suggestions = [
-        'THALA THALAPATHY SALOON',
         'Nearby Bus Stand',
         'Railway Station',
         'Government Hospital',
         'Town Market Center',
       ];
     }
-    return suggestions;
+    return suggestions.take(5).toList();
   }
 }
