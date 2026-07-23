@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   ShoppingBag, Search, PlusCircle, Filter, MapPin, Phone, 
   MessageCircle, Tag, CheckCircle2, Share2, Sparkles, X, 
-  ShieldCheck, Image as ImageIcon, Mic, Video, Camera, Navigation, Radius
+  ShieldCheck, Image as ImageIcon, Mic, Video, Camera, Navigation, Radius, Truck
 } from 'lucide-react';
 import { validateFullName, validateIndianPhone, validateUpiId } from '@/lib/validation';
 
@@ -108,6 +108,23 @@ export default function DealOMarketplacePage() {
       phone: prev.phone || formattedPhone,
     }));
   }, [profile?.full_name, profile?.phone, currentUser?.phone, currentUser?.email]);
+
+  // Dynamic Category Auto-Selection based on User's Primary Goal / Role Point of View
+  useEffect(() => {
+    const userCategory = (profile as any)?.main_category || (currentUser as any)?.user_metadata?.category || '';
+    if (userCategory) {
+      const lowerCat = userCategory.toLowerCase();
+      if (lowerCat.includes('farmer')) {
+        setSelectedCategory('agri');
+      } else if (lowerCat.includes('driver')) {
+        setSelectedCategory('vehicles');
+      } else if (lowerCat.includes('student') || lowerCat.includes('teacher') || lowerCat.includes('job')) {
+        setSelectedCategory('services');
+      } else if (lowerCat.includes('shopper') || lowerCat.includes('seller')) {
+        setSelectedCategory('electronics');
+      }
+    }
+  }, [profile, currentUser]);
 
   // Tamil Voice Recognition Trigger (குரல் தட்டச்சு)
   const startTamilSpeech = (field: 'title' | 'description') => {
@@ -571,6 +588,13 @@ export default function DealOMarketplacePage() {
                       Video Call
                     </button>
                   </div>
+
+                  <a
+                    href={`/rideo?pickup=${encodeURIComponent(deal.location_name)}&note=${encodeURIComponent(`Delivery for item: ${deal.title}`)}`}
+                    className="w-full py-2 px-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md transition"
+                  >
+                    <Truck className="w-4 h-4 text-white" /> Book DriveO Delivery Vehicle
+                  </a>
                 </div>
               </div>
             </div>

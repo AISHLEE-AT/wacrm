@@ -1,8 +1,12 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState } from 'react';
-import { ShoppingBag, Truck, TrendingUp, TrendingDown, Minus, MapPin, MessageSquare, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShoppingBag, Truck, TrendingUp, TrendingDown, Minus, MapPin, MessageSquare, ShieldCheck, PlusCircle, ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
 
 const MANDI_DATA = [
   {
@@ -53,7 +57,25 @@ const MANDI_DATA = [
 
 export default function MandiWebDashboard() {
   const [selectedMandiId, setSelectedMandiId] = useState('oddanchatram');
+  const [agriDeals, setAgriDeals] = useState<any[]>([]);
   const currentMandi = MANDI_DATA.find((m) => m.id === selectedMandiId) || MANDI_DATA[0];
+
+  useEffect(() => {
+    const fetchAgriDeals = async () => {
+      try {
+        const { data } = await supabase
+          .from('local_deals')
+          .select('*')
+          .in('category', ['agri', 'tools'])
+          .order('created_at', { ascending: false })
+          .limit(6);
+        if (data) setAgriDeals(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchAgriDeals();
+  }, []);
 
   const handleBookMandiTransport = () => {
     const message =
@@ -82,13 +104,21 @@ export default function MandiWebDashboard() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleBookMandiTransport}
-          className="px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition shrink-0"
-        >
-          <Truck className="w-4 h-4" /> Book Produce Transport to Mandi
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <Link
+            href="/dealo"
+            className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition"
+          >
+            <PlusCircle className="w-4 h-4" /> List Farm Produce on DealO
+          </Link>
+          <button
+            type="button"
+            onClick={handleBookMandiTransport}
+            className="px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition"
+          >
+            <Truck className="w-4 h-4" /> Book Produce Transport
+          </button>
+        </div>
       </div>
 
       {/* Mandi Selector Tabs */}
@@ -141,6 +171,44 @@ export default function MandiWebDashboard() {
             );
           })}
         </div>
+      </div>
+
+      {/* Integrated Live Agri Produce Deals Section (Powered by DealO) */}
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-emerald-500" /> 🌾 Direct Farm Produce & Machinery Deals (FAGO DealO)
+          </h2>
+          <Link href="/dealo" className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1">
+            View All Agri Deals <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {agriDeals.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-4">No direct farm produce listed yet. Farmers can list crops for sale on DealO!</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {agriDeals.map((deal) => (
+              <div key={deal.id} className="p-4 bg-muted/40 border border-border rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-foreground">{deal.title}</h3>
+                  <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">₹{deal.price}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">📍 {deal.location_name} • Farmer: {deal.seller_name}</p>
+                <div className="pt-2">
+                  <a
+                    href={`https://wa.me/91${deal.phone}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-1.5 bg-[#25D366] text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1"
+                  >
+                    <MessageSquare className="w-3 h-3 fill-white" /> Contact Farmer on WhatsApp
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
