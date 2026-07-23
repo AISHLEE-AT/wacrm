@@ -11,6 +11,7 @@ import '../auth/login_screen.dart';
 import 'rider_map_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'rento_screen.dart';
+import '../features/dealo/screens/dealo_marketplace_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
@@ -23,13 +24,18 @@ class CrmDashboardScreen extends ConsumerStatefulWidget {
 class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   late final WebViewController _controller;
   bool _isLoadingWeb = true;
-  int _currentTab = 0; // 0: RideO, 1: DriveO, 2: RentO, 3: Profile & ID
+  int _currentTab = 0; // 0: Transport (RideO/DriveO), 1: DealO, 2: RentO, 3: Profile
+  bool _isDriverMode = false; // User-selected Rider vs Driver mode toggle
 
   @override
   void initState() {
     super.initState();
     _requestLocationPermission();
     _initWebViewController();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    await Permission.location.request();
   }
 
   void _initWebViewController() {
@@ -47,7 +53,6 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url;
 
-            // Intercept WhatsApp Deep-Links
             if (url.startsWith('whatsapp://') ||
                 url.contains('wa.me') ||
                 url.contains('api.whatsapp.com')) {
@@ -55,27 +60,8 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               return NavigationDecision.prevent;
             }
 
-            // Intercept Google Maps Intents ($0 Cost)
             if (url.startsWith('google.navigation:') || url.contains('google.com/maps')) {
               _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            // Intercept Native screen routes
-            if (url.endsWith('/rideo')) {
-              if (mounted) setState(() => _currentTab = 0);
-              return NavigationDecision.prevent;
-            }
-            if (url.endsWith('/drivo')) {
-              if (mounted) setState(() => _currentTab = 1);
-              return NavigationDecision.prevent;
-            }
-            if (url.endsWith('/rento')) {
-              if (mounted) setState(() => _currentTab = 2);
-              return NavigationDecision.prevent;
-            }
-            if (url.endsWith('/profile')) {
-              if (mounted) setState(() => _currentTab = 3);
               return NavigationDecision.prevent;
             }
 
@@ -98,33 +84,8 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   }
 
   Future<void> _launchExternalUri(Uri uri) async {
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (uri.toString().contains('whatsapp://')) {
-          final cleanPhone = uri.queryParameters['phone'] ?? '';
-          final text = uri.queryParameters['text'] ?? '';
-          final webFallback = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent(text)}');
-          await launchUrl(webFallback, mode: LaunchMode.externalApplication);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error launching external URI: $e');
-    }
-  }
-
-  Future<void> _requestLocationPermission() async {
-    try {
-      await [
-        Permission.location,
-        Permission.locationWhenInUse,
-        Permission.camera,
-        Permission.notification,
-        Permission.microphone,
-      ].request();
-    } catch (e) {
-      debugPrint('Permission request error: $e');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -146,43 +107,95 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
     return raw.isNotEmpty ? raw : '+91 94863 35870';
   }
 
-  void _openCrmWebModal() {
+  // 10 Super App Categories Grid Selector Modal
+  void _openCategoryGridModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF141414),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.9,
+      builder: (ctx) {
+        final categories = [
+          {'name': '🏷️ DealO (Marketplace)', 'desc': '5km Radius P2P Deals', 'route': '/dealo', 'tab': 1},
+          {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides', 'route': '/rideo', 'tab': 0},
+          {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance', 'route': '/drivo', 'tab': 0},
+          {'name': '🚜 RentO (Agri Rental)', 'desc': 'Machinery Rentals', 'route': '/rento', 'tab': 2},
+          {'name': '🥬 Mandi (சந்தை)', 'desc': 'Wholesale Crop Rates', 'route': '/mandi', 'tab': -1},
+          {'name': '🎓 TeachO (Learning)', 'desc': 'Courses & TestO', 'route': '/teacho', 'tab': -1},
+          {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro', 'tab': -1},
+          {'name': '👤 Profile & ID', 'desc': 'KYC & Settings', 'route': '/profile', 'tab': 3},
+        ];
+
+        return Padding(
+          padding: const EdgeInsets.all(20),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                color: const Color(0xFF1E293B),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('WhatsApp CRM Web Portal', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '⚡ FAGO Super App (அனைத்து சேவைகள்)',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
               ),
-              Expanded(
-                child: Stack(
-                  children: [
-                    WebViewWidget(controller: _controller),
-                    if (_isLoadingWeb)
-                      const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF10B981)),
-                      ),
-                  ],
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 2.2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
+                itemCount: categories.length,
+                itemBuilder: (context, index) {
+                  final cat = categories[index];
+                  return InkWell(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      final int tab = cat['tab'] as int;
+                      if (tab >= 0) {
+                        setState(() {
+                          _currentTab = tab;
+                          if (cat['name'].toString().contains('DriveO')) {
+                            _isDriverMode = true;
+                          } else if (cat['name'].toString().contains('RideO')) {
+                            _isDriverMode = false;
+                          }
+                        });
+                      } else {
+                        context.push(cat['route'] as String);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF222222),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(cat['name'] as String, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          const SizedBox(height: 2),
+                          Text(cat['desc'] as String, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -195,215 +208,102 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // MANDATORY AUTHENTICATION FIRST: If user is not logged in, render LoginScreen directly
     if (authState.role == UserRole.guest || (authState.firebaseUser == null && authState.supabaseUser == null)) {
       return const LoginScreen();
     }
 
     final formattedPhone = _formatDisplayPhone(authState);
     final isAdmin = authState.role == UserRole.admin;
-    final isDriver = authState.role == UserRole.driver || isAdmin;
+    final isDriverRole = authState.role == UserRole.driver || isAdmin;
+    final showDriverView = _isDriverMode || isDriverRole;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF0A0A0A),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF141414),
+        foregroundColor: Colors.white,
+        title: Text(
+          showDriverView ? '🚚 DriveO (Driver Mode)' : '🚖 RideO (Rider Mode)',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        actions: [
+          // 🔄 Rider <-> Driver Mode Toggle Button in AppBar
+          TextButton.icon(
+            onPressed: () {
+              setState(() => _isDriverMode = !_isDriverMode);
+            },
+            icon: Icon(showDriverView ? Icons.directions_car : Icons.local_shipping, size: 16, color: const Color(0xFF00FF00)),
+            label: Text(
+              showDriverView ? 'Rider Mode' : 'Driver Mode',
+              style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 11),
+            ),
+          ),
+          IconButton(
+            onPressed: _openCategoryGridModal,
+            icon: const Icon(Icons.grid_view_rounded, color: Colors.white),
+            tooltip: 'All Services Grid',
+          ),
+        ],
+      ),
       drawer: Drawer(
         backgroundColor: const Color(0xFF0F172A),
         child: Column(
           children: [
-            // Drawer Header with User Avatar & Role Badge
             UserAccountsDrawerHeader(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF10B981), Color(0xFF065F46)],
+                  colors: [Color(0xFF00FF00), Color(0xFF008000)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Text(
-                  isAdmin ? '🛡️' : (isDriver ? '🚛' : '🛵'),
-                  style: const TextStyle(fontSize: 28),
-                ),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.black,
+                child: Text('F', style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 24)),
               ),
               accountName: Text(
-                isAdmin ? 'ADMINISTRATOR' : (isDriver ? 'DRIVER PARTNER' : 'RIDER USER'),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                showDriverView ? 'Verified Driver' : 'FAGO User',
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
               ),
-              accountEmail: Row(
-                children: [
-                  Text(formattedPhone, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isAdmin ? Colors.amber : (isDriver ? Colors.orange : Colors.blue),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      authState.role.name.toUpperCase(),
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
-                    ),
-                  ),
-                ],
-              ),
+              accountEmail: Text(formattedPhone, style: const TextStyle(color: Colors.black87)),
             ),
 
-            // Mode Toggle Switch (Rider <-> Driver)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          setState(() => _currentTab = 0);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _currentTab == 0 ? const Color(0xFF10B981) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.directions_car, size: 16, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text('Rider View', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          setState(() => _currentTab = 1);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _currentTab == 1 ? const Color(0xFFF97316) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.local_shipping, size: 16, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text('Driver View', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const Divider(color: Colors.white12),
-
-            // Drawer Navigation Options
             ListTile(
-              leading: const Icon(Icons.directions_car, color: Color(0xFF10B981)),
-              title: const Text('RideO - Book Ride', style: TextStyle(color: Colors.white)),
-              selected: _currentTab == 0,
+              leading: Icon(showDriverView ? Icons.directions_car : Icons.local_shipping, color: const Color(0xFF00FF00)),
+              title: Text(showDriverView ? 'Switch to Rider Mode' : 'Switch to Driver Mode', style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentTab = 0);
+                setState(() => _isDriverMode = !_isDriverMode);
               },
             ),
+            const Divider(color: Colors.white12),
+
             ListTile(
-              leading: const Icon(Icons.local_shipping, color: Color(0xFFF97316)),
-              title: const Text('DriveO - Driver Radar', style: TextStyle(color: Colors.white)),
-              selected: _currentTab == 1,
+              leading: const Icon(Icons.shopping_bag, color: Color(0xFF00FF00)),
+              title: const Text('DealO (Marketplace 5km)', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentTab = 1);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.agriculture, color: Color(0xFF22C55E)),
-              title: const Text('RentO - Agri Machinery', style: TextStyle(color: Colors.white)),
-              selected: _currentTab == 2,
+              leading: const Icon(Icons.agriculture, color: Colors.amber),
+              title: const Text('RentO (Agri Rental)', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentTab = 2);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.shopping_basket, color: Colors.greenAccent),
+              leading: const Icon(Icons.shopping_basket, color: Color(0xFF00FF00)),
               title: const Text('உழவர் சந்தை (Mandi Prices)', style: TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
                 context.push('/mandi');
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.temple_hindu, color: Colors.lightBlueAccent),
-              title: const Text('TourO - ஆன்மீக பயணம்', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/touro');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.school, color: Colors.purpleAccent),
-              title: const Text('TeachO - விவசாய பயிற்சி', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/teacho');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.badge, color: Colors.cyanAccent),
-              title: const Text('Digital ID & Profile', style: TextStyle(color: Colors.white)),
-              selected: _currentTab == 3,
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentTab = 3);
-              },
-            ),
-
-            // ADMIN CONTROLS SECTION (Visible ONLY if Admin)
-            if (isAdmin) ...[
-              const Divider(color: Colors.amber),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Text('ADMINISTRATION CONTROLS', style: TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.shield, color: Colors.amber),
-                title: const Text('Admin Overview', style: TextStyle(color: Colors.amber)),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/admin');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.chat_bubble_outline, color: Colors.greenAccent),
-                title: const Text('WhatsApp CRM Portal', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openCrmWebModal();
-                },
-              ),
-            ],
 
             const Spacer(),
-
-            // Logout Option in Side Drawer
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text('Sign Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
@@ -419,56 +319,62 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
       body: SafeArea(
         child: IndexedStack(
           index: _currentTab,
-          children: const [
-            // Tab 0: Native RideO Screen
-            RiderMapScreen(),
+          children: [
+            // Tab 0: Role-based Transport Screen (RiderMapScreen for Rider vs DriverDashboardScreen for Driver)
+            showDriverView ? const DriverDashboardScreen() : const RiderMapScreen(),
 
-            // Tab 1: Native DriveO Screen
-            DriverDashboardScreen(),
+            // Tab 1: DealO P2P Marketplace Screen
+            const DealoMarketplaceScreen(),
 
-            // Tab 2: Native RentO Machinery Rental Screen
-            RentOScreen(),
+            // Tab 2: RentO Machinery Rental Screen
+            const RentOScreen(),
 
-            // Tab 3: Native Profile & Digital ID Screen
-            ProfileDashboard(),
+            // Tab 3: Profile & Digital ID Screen
+            const ProfileDashboard(),
           ],
         ),
       ),
-      // Master App Bottom Navigation Bar (No CRM Web button!)
+      // Clean Role-Based Bottom Navigation Bar (No duplicate DriveO/RideO tabs!)
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          color: Colors.black,
+          color: Color(0xFF141414),
           border: Border(top: BorderSide(color: Colors.white12, width: 0.5)),
         ),
         child: BottomNavigationBar(
           currentIndex: _currentTab,
-          onTap: (index) => setState(() => _currentTab = index),
-          backgroundColor: Colors.black,
-          selectedItemColor: const Color(0xFF10B981), // Emerald Green
+          onTap: (index) {
+            if (index == 4) {
+              _openCategoryGridModal();
+            } else {
+              setState(() => _currentTab = index);
+            }
+          },
+          backgroundColor: const Color(0xFF141414),
+          selectedItemColor: const Color(0xFF00FF00),
           unselectedItemColor: Colors.grey.shade500,
           selectedFontSize: 11,
           unselectedFontSize: 11,
           type: BottomNavigationBarType.fixed,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.directions_car_filled_rounded),
-              activeIcon: Icon(Icons.directions_car_filled_rounded, color: Color(0xFF10B981)),
-              label: 'RideO',
+              icon: Icon(showDriverView ? Icons.local_shipping_rounded : Icons.directions_car_filled_rounded),
+              activeIcon: Icon(showDriverView ? Icons.local_shipping_rounded : Icons.directions_car_filled_rounded, color: const Color(0xFF00FF00)),
+              label: showDriverView ? 'DriveO (Driver)' : 'RideO (Rider)',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.local_shipping_rounded),
-              activeIcon: Icon(Icons.local_shipping_rounded, color: Color(0xFFF97316)),
-              label: 'DriveO',
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag_rounded),
+              activeIcon: Icon(Icons.shopping_bag_rounded, color: Color(0xFF00FF00)),
+              label: 'DealO',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.agriculture_rounded),
-              activeIcon: Icon(Icons.agriculture_rounded, color: Color(0xFF22C55E)),
+              activeIcon: Icon(Icons.agriculture_rounded, color: Colors.amber),
               label: 'RentO',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.person_rounded),
               activeIcon: Icon(Icons.person_rounded, color: Colors.cyanAccent),
-              label: 'Profile & ID',
+              label: 'Profile',
             ),
           ],
         ),
