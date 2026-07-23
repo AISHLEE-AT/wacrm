@@ -2,11 +2,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Truck, TrendingUp, TrendingDown, Minus, MapPin, MessageSquare, ShieldCheck, PlusCircle, ArrowUpRight } from 'lucide-react';
+import { ShoppingBag, Truck, TrendingUp, TrendingDown, Minus, MapPin, MessageSquare, ShieldCheck, PlusCircle, ArrowUpRight, BarChart3, LineChart } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 const supabase = createClient();
+
+const SEVEN_DAY_TRENDS = [
+  { item: 'தக்காளி (Tomato)', d1: '₹18', d2: '₹20', d3: '₹22', d4: '₹22', d5: '₹24', d6: '₹25', d7: '₹26', status: '📈 Up +33%', isUp: true },
+  { item: 'சின்ன வெங்காயம் (Small Onion)', d1: '₹55', d2: '₹52', d3: '₹50', d4: '₹48', d5: '₹48', d6: '₹47', d7: '₹48', status: '📉 Down -12%', isUp: false },
+  { item: 'நெல் (Paddy - Ponni)', d1: '₹1350', d2: '₹1380', d3: '₹1400', d4: '₹1400', d5: '₹1410', d6: '₹1420', d7: '₹1420', status: '📈 Up +5%', isUp: true },
+  { item: 'முருங்கைக்காய் (Drumstick)', d1: '₹50', d2: '₹52', d3: '₹55', d4: '₹58', d5: '₹60', d6: '₹62', d7: '₹65', status: '📈 Up +30%', isUp: true },
+];
 
 const MANDI_DATA = [
   {
@@ -118,6 +125,35 @@ export default function MandiWebDashboard() {
           >
             <Truck className="w-4 h-4" /> Book Produce Transport
           </button>
+        </div>
+      </div>
+
+      {/* 📈 7-Day Historic Price Trend Analytics */}
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <LineChart className="w-5 h-5 text-emerald-500" /> 📈 7-Day Wholesale Price Trend Analytics (7 நாள் விலை மாற்றம்)
+          </h2>
+          <span className="text-xs text-muted-foreground font-semibold">Updated Daily at 6:00 AM</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {SEVEN_DAY_TRENDS.map((t, idx) => (
+            <div key={idx} className="p-4 bg-muted/40 border border-border rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-sm text-foreground">{t.item}</h3>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded ${t.isUp ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                  {t.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/50">
+                <span>Day 1: {t.d1}</span>
+                <span>Day 3: {t.d3}</span>
+                <span>Day 5: {t.d5}</span>
+                <span className="font-bold text-foreground">Today: {t.d7}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -282,6 +282,33 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             ),
           ),
 
+          // Daily Driver Earnings & Trips Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: const Color(0xFF141414),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.account_balance_wallet, color: Color(0xFF00FF00), size: 18),
+                    SizedBox(width: 6),
+                    Text("Today's Earnings: ", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text("₹1,250", style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 14)),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text("5 Trips Completed", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+
           if (Supabase.instance.client.auth.currentUser == null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

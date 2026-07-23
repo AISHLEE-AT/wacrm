@@ -602,6 +602,34 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                           ),
                         ),
 
+                      // Quick Destination Pins (Home & Work)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            ActionChip(
+                              avatar: const Icon(Icons.home, size: 14, color: Color(0xFF00FF00)),
+                              label: const Text('Home', style: TextStyle(color: Colors.white, fontSize: 11)),
+                              backgroundColor: const Color(0xFF1E293B),
+                              onPressed: () {
+                                _dropoffController.text = 'Home (Saved Pin)';
+                                _onDropoffQueryChanged('Chennai Central');
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            ActionChip(
+                              avatar: const Icon(Icons.work, size: 14, color: Colors.cyanAccent),
+                              label: const Text('Work', style: TextStyle(color: Colors.white, fontSize: 11)),
+                              backgroundColor: const Color(0xFF1E293B),
+                              onPressed: () {
+                                _dropoffController.text = 'Work (Saved Pin)';
+                                _onDropoffQueryChanged('T. Nagar, Chennai');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
                       const Divider(color: Colors.white12, height: 12),
 
                       Row(
