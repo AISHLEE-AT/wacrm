@@ -176,6 +176,23 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               elevation: 8,
             ),
           ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () async {
+              final rawPhone = cleanWhatsapp.replaceAll(RegExp(r'\D'), '');
+              final url = Uri.parse("https://thamizhan.vercel.app?phone=$rawPhone&name=${Uri.encodeComponent(profile.fullName)}");
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            icon: const Icon(Icons.language, color: Colors.cyanAccent),
+            label: const Text('Open Aishlee Web (தமிழன் Portal)', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              side: const BorderSide(color: Colors.cyanAccent),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
         ],
       ),
     );
