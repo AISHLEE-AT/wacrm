@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 export async function POST(request: Request) {
   try {
-    const { phone, otp } = await request.json()
+    const { phone, otp, fullName, category } = await request.json()
 
     if (!phone || !otp) {
       return NextResponse.json({ error: 'Phone and OTP are required' }, { status: 400 })
@@ -56,16 +56,20 @@ export async function POST(request: Request) {
     
     let user = users.find(u => u.email === syntheticEmail)
     
+    const userMetadata: any = {
+      phone: cleanPhone,
+      whatsapp_verified: true
+    }
+    if (fullName && fullName.trim()) userMetadata.full_name = fullName.trim()
+    if (category && category.trim()) userMetadata.main_category = category.trim()
+
     if (!user) {
       // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: syntheticEmail,
         email_confirm: true,
         password: securePassword,
-        user_metadata: {
-          phone: cleanPhone,
-          whatsapp_verified: true
-        }
+        user_metadata: userMetadata
       })
       
       if (createError) {
@@ -74,24 +78,41 @@ export async function POST(request: Request) {
       }
       user = newUser.user
     } else {
-      // Update existing user with the new secure password so we can sign in
+      // Update existing user with the new secure password and latest name/category
       const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
-        password: securePassword
+        password: securePassword,
+        user_metadata: {
+          ...user.user_metadata,
+          ...userMetadata
+        }
       })
       
       if (updateError) {
-        console.error('Error updating user password:', updateError)
+        console.error('Error updating user:', updateError)
         return NextResponse.json({ error: 'Failed to authenticate user' }, { status: 500 })
       }
     }
 
-    // Auto-update profiles table with verified phone and default full_name
-    await supabase.from('profiles').upsert({
+    // Auto-update profiles table with verified phone, full_name and main_category
+    const profilePayload: any = {
       id: user.id,
       phone: cleanPhone,
-      full_name: user.user_metadata?.full_name || `User ${cleanPhone.slice(-4)}`,
+      whatsapp: cleanPhone,
       updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
+    }
+    if (fullName && fullName.trim()) {
+      profilePayload.full_name = fullName.trim()
+    } else if (user.user_metadata?.full_name) {
+      profilePayload.full_name = user.user_metadata.full_name
+    } else {
+      profilePayload.full_name = `User ${cleanPhone.slice(-4)}`
+    }
+
+    if (category && category.trim()) {
+      profilePayload.main_category = category.trim()
+    }
+
+    await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' });
 
     // 3. Sign in to generate a session (using standard client to get session)
     const standardSupabase = createClient(

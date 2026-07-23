@@ -99,6 +99,30 @@ function LoginPageInner() {
     }
   };
 
+  const handlePhoneChange = async (val: string) => {
+    const clean = val.replace(/\D/g, '').slice(0, 10);
+    setPhone(clean);
+    if (clean.length === 10) {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("full_name, main_category")
+          .eq("phone", clean)
+          .maybeSingle();
+        if (data) {
+          if (data.full_name && !data.full_name.startsWith("User ")) {
+            setFullName(data.full_name);
+          }
+          if (data.main_category) {
+            setSelectedCategory(data.main_category);
+          }
+        }
+      } catch (err) {
+        console.error("Auto prefill profile error:", err);
+      }
+    }
+  };
+
   const handleVerifyWhatsAppOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -111,7 +135,7 @@ function LoginPageInner() {
       const res = await fetch("/api/auth/whatsapp/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone, otp, fullName: fullName.trim(), category: selectedCategory }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Invalid OTP");
@@ -133,11 +157,8 @@ function LoginPageInner() {
         }
 
         const targetRoute = categories.find(c => c.key === selectedCategory)?.route || "/rideo";
-        if (inviteToken) {
-          router.push(`/join/${encodeURIComponent(inviteToken)}`);
-        } else {
-          router.push(targetRoute);
-        }
+        const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
+        window.location.href = finalUrl;
       } else {
         throw new Error("Invalid session payload");
       }
@@ -374,10 +395,7 @@ function LoginPageInner() {
                       type="tel"
                       placeholder="98765 43210"
                       value={phone}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                        setPhone(val);
-                      }}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
                     />
                   </div>

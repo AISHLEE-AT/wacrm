@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -21,6 +22,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   final TextEditingController _nameController = TextEditingController();
   String _selectedCategory = 'Traveller';
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() async {
+    final text = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    if (text.length == 10) {
+      try {
+        final res = await Supabase.instance.client
+            .from('profiles')
+            .select('full_name, main_category')
+            .eq('phone', text)
+            .maybeSingle();
+        if (res != null) {
+          final String? existingName = res['full_name'];
+          final String? existingCat = res['main_category'];
+          if (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User ')) {
+            if (_nameController.text.isEmpty || _nameController.text != existingName) {
+              setState(() {
+                _nameController.text = existingName;
+              });
+            }
+          }
+          if (existingCat != null && existingCat.isNotEmpty) {
+            setState(() {
+              _selectedCategory = existingCat;
+            });
+          }
+        }
+      } catch (_) {}
+    }
+  }
+
+  @override
+  void dispose() {
+    _phoneController.removeListener(_onPhoneChanged);
+    _phoneController.dispose();
+    _otpController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
 
   final List<Map<String, dynamic>> _userCategories = [
     {'key': 'Traveller', 'label': '🧳 Traveller (RideO)', 'route': '/rideo', 'color': Colors.amber},

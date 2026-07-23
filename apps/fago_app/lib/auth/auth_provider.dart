@@ -297,7 +297,12 @@ class AuthNotifier extends Notifier<AuthState> {
     final response = await http.post(
       Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/verify-otp'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'phone': cleanPhone, 'otp': otp}),
+      body: jsonEncode({
+        'phone': cleanPhone,
+        'otp': otp,
+        if (fullName != null && fullName.trim().isNotEmpty) 'fullName': fullName.trim(),
+        if (userCategory != null && userCategory.trim().isNotEmpty) 'category': userCategory.trim(),
+      }),
     );
 
     if (response.statusCode == 200) {
