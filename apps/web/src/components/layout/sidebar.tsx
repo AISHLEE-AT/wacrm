@@ -24,6 +24,11 @@ import {
   Zap,
   Car,
   Truck,
+  Tractor,
+  Store,
+  Compass,
+  GraduationCap,
+  Gauge,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -169,12 +174,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   // Dynamic Mobility & Local Services Items
   const mobilityItems: NavItem[] = [
     { href: "/rideo", label: "RideO", icon: Car },
-    { href: "/rento", label: "RentO (Agri)", icon: Truck },
-    { href: "/mandi", label: "உழவர் சந்தை (Mandi)", icon: Truck },
-    { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Car },
-    { href: "/teacho", label: "TeachO (பயிற்சி)", icon: Truck },
+    { href: "/rento", label: "RentO (Agri)", icon: Tractor },
+    { href: "/mandi", label: "உழவர் சந்தை (Mandi)", icon: Store },
+    { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Compass },
+    { href: "/teacho", label: "TeachO (பயிற்சி)", icon: GraduationCap },
     ...(isAdmin || isRegisteredDriver
-      ? [{ href: "/drivo", label: "DriveO", icon: Truck }]
+      ? [{ href: "/drivo", label: "DriveO", icon: Gauge }]
       : []),
   ];
 
