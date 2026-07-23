@@ -189,6 +189,7 @@ export default function DriveODashboard() {
         await supabase.from('drivers').upsert({
           user_id: currentUser.id,
           driver_name: regForm.name,
+          full_name: regForm.name,
           phone: cleanPhone,
           whatsapp: cleanPhone,
           vehicle_type: regForm.category,
