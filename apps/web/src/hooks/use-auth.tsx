@@ -130,14 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          // `account:accounts!inner(id, name)` — explicit join on the
-          // single FK profiles.account_id → accounts.id. `!inner` so a
-          // missing account collapses to null rather than a half-
-          // populated row (shouldn't happen post-017 NOT NULL, but
-          // belt-and-braces against forks running older schemas).
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, account:accounts!inner(id, name, default_currency)",
+          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role",
         )
-        .eq("user_id", userId)
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
         .maybeSingle();
 
       if (error) {
@@ -151,41 +146,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
-        // Supabase's typed client surfaces an embedded `!inner` row
-        // as either an object or a single-element array depending on
-        // the schema's inferred cardinality — normalise to the object
-        // form before reading.
-        const accountRaw = Array.isArray(data.account)
-          ? data.account[0] ?? null
-          : (data.account as {
-              id: string;
-              name: string;
-              default_currency: string | null;
-            } | null);
-        // Narrow default_currency defensively: forks running pre-021
-        // schemas won't have the column, so a missing/null value reads
-        // as the safe USD fallback rather than crashing the picker.
-        const accountRow: AccountSummary | null = accountRaw
-          ? {
-              id: accountRaw.id,
-              name: accountRaw.name,
-              default_currency: accountRaw.default_currency ?? DEFAULT_CURRENCY,
-            }
-          : null;
-
-        // Narrow the DB enum into our AccountRole union. The DB
-        // constraint should make this unconditional, but a future
-        // migration that broadens the enum without updating TS would
-        // otherwise crash here — fall back to null and let UI gates
-        // treat the caller as least-privileged.
         const accountRole = isAccountRole(data.account_role)
           ? data.account_role
           : null;
 
         setProfile({
           id: data.id,
-          full_name: data.full_name,
-          email: data.email,
+          full_name: data.full_name || null,
+          email: data.email || "",
           avatar_url: data.avatar_url,
           role: data.role,
           beta_features: data.beta_features ?? [],
@@ -194,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           pincode: (data as Record<string, unknown>).pincode as string | null ?? null,
           phone: (data as Record<string, unknown>).phone as string | null ?? null,
         });
-        setAccount(accountRow);
       }
     } catch (err) {
       console.error("[AuthProvider] fetchProfile threw:", err);

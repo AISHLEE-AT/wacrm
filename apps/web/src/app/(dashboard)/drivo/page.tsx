@@ -26,8 +26,8 @@ export default function DriveODashboard() {
   const { user: currentUser, profile } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [operatorCategory, setOperatorCategory] = useState<string>('truck');
-  const [regNumber, setRegNumber] = useState<string>('TN-39-AB-1234');
-  const [upiId, setUpiId] = useState<string>('916381029380@upi');
+  const [regNumber, setRegNumber] = useState<string>('');
+  const [upiId, setUpiId] = useState<string>('');
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('monthly');
   const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any>(null);

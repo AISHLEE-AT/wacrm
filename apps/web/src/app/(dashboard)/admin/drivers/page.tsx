@@ -30,12 +30,22 @@ export default function AdminDriversPage() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('driver_profiles')
+        .from('drivers')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setDrivers(data);
+        const mapped = data.map((d: any) => ({
+          id: d.id,
+          full_name: d.driver_name || d.full_name || 'Driver Partner',
+          phone: d.phone || 'N/A',
+          license_number: d.license_number || d.vehicle_registration || 'Submitted',
+          rc_number: d.vehicle_number || d.vehicle_registration || 'Submitted',
+          vehicle_category: d.vehicle_type || 'Vehicle',
+          status: d.is_verified ? 'active' : 'pending',
+          created_at: d.created_at || new Date().toISOString()
+        }));
+        setDrivers(mapped);
       }
     } catch (e) {
       console.error('Error fetching drivers', e);
@@ -52,8 +62,8 @@ export default function AdminDriversPage() {
     setUpdatingId(driver.id);
     try {
       const { error } = await supabase
-        .from('driver_profiles')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .from('drivers')
+        .update({ is_verified: newStatus === 'active', is_online: newStatus === 'active' })
         .eq('id', driver.id);
 
       if (!error) {
