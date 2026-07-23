@@ -315,7 +315,7 @@ function LoginPageInner() {
                   By Aishlee Technology
                 </p>
                 <p className="text-white/60 text-sm mt-2">
-                  Choose your preferred OTP login method
+                  Instant WhatsApp OTP Verification
                 </p>
               </>
             )}
@@ -339,33 +339,6 @@ function LoginPageInner() {
           <div id="recaptcha-container"></div>
 
           <div className="w-full">
-            {/* Dual Login Method Selector */}
-            {!otpRequested && (
-              <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-6">
-                <button
-                  type="button"
-                  onClick={() => { setLoginMode('whatsapp'); setError(null); }}
-                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-                    loginMode === 'whatsapp'
-                      ? 'bg-[#25D366] text-white shadow-lg shadow-[#25D366]/20'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  <MessageCircle className="w-4 h-4" /> WhatsApp OTP
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setLoginMode('firebase'); setError(null); }}
-                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-                    loginMode === 'firebase'
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4" /> SMS Phone OTP
-                </button>
-              </div>
-            )}
 
             <AnimatePresence mode="wait">
               {!otpRequested ? (

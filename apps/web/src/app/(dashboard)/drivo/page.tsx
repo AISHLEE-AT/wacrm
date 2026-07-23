@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink, UserPlus, Check, Compass } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
+import { validateFullName, validateIndianPhone, validateVehicleRegNumber, validateDrivingLicense, validateUpiId } from '@/lib/validation';
 
 const supabase = createClient();
 
@@ -79,12 +80,25 @@ export default function DriveODashboard() {
   // User Enrollment Form State
   const [regForm, setRegForm] = useState({
     name: profile?.full_name || '',
-    mobile: profile?.phone || '',
+    mobile: '',
     category: 'truck',
     regNo: '',
     licenseNo: '',
     upi: '',
   });
+
+  // Auto pre-fill user's real name and WhatsApp phone number upon auth resolve
+  useEffect(() => {
+    const rawPhone = profile?.phone || currentUser?.phone || currentUser?.email?.split('@')[0] || '';
+    const cleanDigits = rawPhone.replace(/\D/g, '').slice(-10);
+    const autoPhone = cleanDigits.length === 10 ? `+91 ${cleanDigits}` : rawPhone;
+
+    setRegForm((prev) => ({
+      ...prev,
+      name: profile?.full_name || prev.name,
+      mobile: prev.mobile || autoPhone,
+    }));
+  }, [profile?.full_name, profile?.phone, currentUser?.phone, currentUser?.email]);
 
   // Fetch real-time rides from Supabase matching vehicle category
   useEffect(() => {
@@ -119,9 +133,40 @@ export default function DriveODashboard() {
 
   const handleUserDriverRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regForm.name || !regForm.mobile || !regForm.regNo) {
-      alert("Name, Mobile Number, and Vehicle Registration are required.");
+
+    // 0. Strict Content Validations
+    const nameVal = validateFullName(regForm.name);
+    if (!nameVal.isValid) {
+      alert(`⚠️ INVALID FULL NAME:\n${nameVal.error}`);
       return;
+    }
+
+    const phoneVal = validateIndianPhone(regForm.mobile);
+    if (!phoneVal.isValid) {
+      alert(`⚠️ INVALID MOBILE NUMBER:\n${phoneVal.error}`);
+      return;
+    }
+
+    const vehicleVal = validateVehicleRegNumber(regForm.regNo);
+    if (!vehicleVal.isValid) {
+      alert(`⚠️ INVALID VEHICLE REGISTRATION NUMBER:\n${vehicleVal.error}`);
+      return;
+    }
+
+    if (regForm.licenseNo) {
+      const dlVal = validateDrivingLicense(regForm.licenseNo);
+      if (!dlVal.isValid) {
+        alert(`⚠️ INVALID DRIVING LICENSE:\n${dlVal.error}`);
+        return;
+      }
+    }
+
+    if (regForm.upi) {
+      const upiVal = validateUpiId(regForm.upi);
+      if (!upiVal.isValid) {
+        alert(`⚠️ INVALID UPI ID:\n${upiVal.error}`);
+        return;
+      }
     }
 
     const cleanPhone = regForm.mobile.replace(/\D/g, '').slice(-10);
@@ -416,7 +461,7 @@ export default function DriveODashboard() {
                 <input
                   type="text"
                   required
-                  placeholder="+91 9876543210"
+                  placeholder="Enter 10-digit Mobile Number"
                   value={regForm.mobile}
                   onChange={(e) => setRegForm({ ...regForm, mobile: e.target.value })}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
