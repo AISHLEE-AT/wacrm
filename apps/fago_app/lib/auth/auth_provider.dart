@@ -65,9 +65,21 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   void _init() {
+    _supabase.auth.onAuthStateChange.listen((data) async {
+      if (data.session?.user != null) {
+        final sbUser = data.session!.user;
+        await _resolveRole(sbUser.phone ?? sbUser.email);
+      }
+    });
+
     _auth.authStateChanges().listen((user) async {
       if (user == null) {
-        state = AuthState(isLoading: false, role: UserRole.guest);
+        final sbUser = _supabase.auth.currentUser;
+        if (sbUser != null) {
+          await _resolveRole(sbUser.phone ?? sbUser.email);
+        } else {
+          state = AuthState(isLoading: false, role: UserRole.guest);
+        }
       } else {
         state = state.copyWith(isLoading: true, firebaseUser: user, errorMessage: null);
         try {
@@ -75,10 +87,16 @@ class AuthNotifier extends Notifier<AuthState> {
           await _resolveRole(user.phoneNumber);
         } catch (e) {
           debugPrint('Auth initialization error: $e');
-          state = AuthState(isLoading: false, role: UserRole.guest, errorMessage: e.toString());
+          final sbUser = _supabase.auth.currentUser;
+          await _resolveRole(user.phoneNumber ?? sbUser?.phone ?? sbUser?.email);
         }
       }
     });
+
+    final sbUser = _supabase.auth.currentUser;
+    if (sbUser != null) {
+      _resolveRole(sbUser.phone ?? sbUser.email);
+    }
   }
 
   Future<void> refreshRole() async {
@@ -101,6 +119,10 @@ class AuthNotifier extends Notifier<AuthState> {
       final String fbPhone = fbUser?.phoneNumber ?? '';
       final String sbEmail = user?.email ?? '';
       final String sbPhone = user?.phone ?? '';
+      final String userMetaPhone = user?.userMetadata?['phone'] ?? '';
+      final String userMetaEmail = user?.userMetadata?['email'] ?? '';
+      final String metaJson = jsonEncode(user?.userMetadata ?? {});
+      final String appMetaJson = jsonEncode(user?.appMetadata ?? {});
 
       String? profilePhone;
       String? profileRole;
@@ -147,7 +169,7 @@ class AuthNotifier extends Notifier<AuthState> {
       bool isAdmin = profileRole == 'admin';
 
       if (!isAdmin) {
-        final allText = '$rawPhone $fbPhone $sbEmail $sbPhone ${profilePhone ?? ''}'.toLowerCase();
+        final allText = '$rawPhone $fbPhone $sbEmail $sbPhone ${profilePhone ?? ''} $userMetaPhone $userMetaEmail $metaJson $appMetaJson'.toLowerCase();
         for (final adminId in adminIdentifiers) {
           if (allText.contains(adminId)) {
             isAdmin = true;

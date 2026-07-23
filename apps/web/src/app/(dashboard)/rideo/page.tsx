@@ -480,38 +480,45 @@ export default function RideODashboard() {
                 </button>
               </div>
 
-              {!isManualSourceMode ? (
-                <div className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs font-medium text-emerald-400 truncate">
-                  {pickupAddress}
-                </div>
-              ) : (
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Type Pickup Place (e.g. Chennai Central, Salem Stand)"
-                    value={sourceSearchQuery}
-                    onChange={(e) => setSourceSearchQuery(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-emerald-500/50 bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500 transition"
-                  />
-                  {isSearchingSource && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-2.5 text-emerald-500" />}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Type Pickup Place (e.g. Chennai Central, Salem Stand)"
+                  value={sourceSearchQuery}
+                  onChange={(e) => {
+                    setSourceSearchQuery(e.target.value);
+                    setIsManualSourceMode(true);
+                  }}
+                  onFocus={() => {
+                    if (sourceSearchQuery.length >= 3 && sourceSuggestions.length === 0) {
+                      setIsSearchingSource(true);
+                      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sourceSearchQuery)}&countrycodes=in&limit=5`)
+                        .then((res) => res.json())
+                        .then((data) => setSourceSuggestions(data || []))
+                        .catch((err) => console.warn(err))
+                        .finally(() => setIsSearchingSource(false));
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-lg border border-emerald-500/50 bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500 transition"
+                />
+                {isSearchingSource && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-2.5 text-emerald-500" />}
 
-                  {sourceSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 divide-y divide-border">
-                      {sourceSuggestions.map((place, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleSelectSourceSuggestion(place)}
-                          className="w-full p-3 text-left hover:bg-emerald-500/10 transition flex items-start gap-2.5 text-xs"
-                        >
-                          <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                          <span className="text-foreground font-medium truncate">{place.display_name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                {sourceSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl overflow-hidden z-50 divide-y divide-border">
+                    {sourceSuggestions.map((place, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectSourceSuggestion(place)}
+                        className="w-full p-3 text-left hover:bg-emerald-500/10 transition flex items-start gap-2.5 text-xs"
+                      >
+                        <MapPin className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <span className="text-foreground font-medium truncate">{place.display_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 1-Click Swap Locations Button */}

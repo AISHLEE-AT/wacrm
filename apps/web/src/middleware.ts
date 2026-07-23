@@ -80,7 +80,13 @@ export async function middleware(request: NextRequest) {
       }
       
       // Direct logged-in users straight to Dashboard or RideO
-      const isAdmin = user.email === 'aishleetechnology@gmail.com' || user.phone?.includes('9486335870');
+      const isAdmin = Boolean(
+        user.email?.includes('aishleetechnology@gmail.com') ||
+        user.email?.includes('9486335870') ||
+        user.email?.includes('9123596988') ||
+        user.phone?.includes('9486335870') ||
+        user.phone?.includes('9123596988')
+      );
       url.pathname = isAdmin ? '/dashboard' : '/rideo';
       supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
       url.search = ''
