@@ -124,7 +124,45 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     }
   }
 
-  // Live Auto-Suggestions API for Pickup Place
+  Future<List<dynamic>> _fetchCombinedSuggestions(String query) async {
+    List<dynamic> results = [];
+
+    // 1. Google Native Geocoder Engine ($0 Cost, Native Google Play Services)
+    try {
+      final loc = await LocationService().searchAddressCoordinates(query);
+      if (loc != null) {
+        final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
+        results.add({
+          'display_name': '$query ($address)',
+          'lat': loc.latitude.toString(),
+          'lon': loc.longitude.toString(),
+          'source': 'Google Maps',
+        });
+      }
+    } catch (e) {
+      debugPrint('Google Native Geocode query error: $e');
+    }
+
+    // 2. OpenStreetMap POI Search
+    try {
+      final res = await http.get(Uri.parse(
+          'https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(query)}&countrycodes=in&limit=5'));
+      if (res.statusCode == 200) {
+        final osmData = jsonDecode(res.body) as List;
+        for (var item in osmData) {
+          if (!results.any((r) => r['display_name'].toString().toLowerCase().contains(item['display_name'].toString().split(',')[0].toLowerCase()))) {
+            results.add(item);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('OSM suggestion error: $e');
+    }
+
+    return results;
+  }
+
+  // Live Auto-Suggestions API for Pickup Place (Google + OpenStreetMap)
   Future<void> _onPickupQueryChanged(String query) async {
     if (query.trim().length < 3) {
       setState(() => _pickupSuggestions = []);
@@ -132,12 +170,8 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     }
     setState(() => _isSearchingPickup = true);
     try {
-      final res = await http.get(Uri.parse(
-          'https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(query)}&countrycodes=in&limit=5'));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (mounted) setState(() => _pickupSuggestions = data);
-      }
+      final data = await _fetchCombinedSuggestions(query);
+      if (mounted) setState(() => _pickupSuggestions = data);
     } catch (e) {
       debugPrint('Pickup suggestion error: $e');
     } finally {
@@ -145,7 +179,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     }
   }
 
-  // Live Auto-Suggestions API for Dropoff Place
+  // Live Auto-Suggestions API for Dropoff Place (Google + OpenStreetMap)
   Future<void> _onDropoffQueryChanged(String query) async {
     if (query.trim().length < 3) {
       setState(() => _dropoffSuggestions = []);
@@ -153,12 +187,8 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     }
     setState(() => _isSearchingDropoff = true);
     try {
-      final res = await http.get(Uri.parse(
-          'https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(query)}&countrycodes=in&limit=5'));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        if (mounted) setState(() => _dropoffSuggestions = data);
-      }
+      final data = await _fetchCombinedSuggestions(query);
+      if (mounted) setState(() => _dropoffSuggestions = data);
     } catch (e) {
       debugPrint('Dropoff suggestion error: $e');
     } finally {

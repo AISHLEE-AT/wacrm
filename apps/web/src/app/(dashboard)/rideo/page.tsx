@@ -158,7 +158,70 @@ export default function RideODashboard() {
     fetchAddress();
   }, [currentLocation, isManualSourceMode]);
 
-  // Source Places Search Suggestions Autocomplete
+  const fetchCombinedWebSuggestions = async (query: string) => {
+    let results: any[] = [];
+
+    // 1. Google Places Autocomplete (Google Maps JS SDK)
+    if (typeof window !== 'undefined' && (window as any).google && (window as any).google.maps && (window as any).google.maps.places) {
+      try {
+        const autocompleteService = new (window as any).google.maps.places.AutocompleteService();
+        const predictions = await new Promise<any[]>((resolve) => {
+          autocompleteService.getPlacePredictions(
+            { input: query, componentRestrictions: { country: 'in' } },
+            (preds: any[], status: any) => {
+              if (status === (window as any).google.maps.places.PlacesServiceStatus.OK && preds) {
+                resolve(preds);
+              } else {
+                resolve([]);
+              }
+            }
+          );
+        });
+
+        if (predictions && predictions.length > 0) {
+          const geocoder = new (window as any).google.maps.Geocoder();
+          for (const pred of predictions.slice(0, 3)) {
+            try {
+              const geoRes = await new Promise<any>((resGeo) => {
+                geocoder.geocode({ placeId: pred.place_id }, (res: any[], stat: string) => {
+                  if (stat === 'OK' && res && res[0]) resGeo(res[0]);
+                  else resGeo(null);
+                });
+              });
+              if (geoRes) {
+                results.push({
+                  display_name: pred.description,
+                  lat: geoRes.geometry.location.lat().toString(),
+                  lon: geoRes.geometry.location.lng().toString(),
+                });
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (err) {
+        console.warn('Google Places suggestion error:', err);
+      }
+    }
+
+    // 2. OpenStreetMap Nominatim Fallback / Supplement
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=4`);
+      const osmData = await res.json();
+      if (osmData && osmData.length > 0) {
+        for (const item of osmData) {
+          if (!results.some(r => r.display_name.toLowerCase().includes(item.display_name.slice(0, 15).toLowerCase()))) {
+            results.push(item);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('OSM search suggestion error:', err);
+    }
+
+    return results;
+  };
+
+  // Source Places Search Suggestions Autocomplete (Google Maps + OpenStreetMap)
   useEffect(() => {
     if (!sourceSearchQuery.trim() || sourceSearchQuery.length < 3) {
       setSourceSuggestions([]);
@@ -167,9 +230,8 @@ export default function RideODashboard() {
     const timer = setTimeout(async () => {
       setIsSearchingSource(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sourceSearchQuery)}&countrycodes=in&limit=5`);
-        const data = await res.json();
-        if (data) setSourceSuggestions(data);
+        const data = await fetchCombinedWebSuggestions(sourceSearchQuery);
+        setSourceSuggestions(data);
       } catch (err) {
         console.warn('Source search suggestion error:', err);
       } finally {
@@ -180,7 +242,7 @@ export default function RideODashboard() {
     return () => clearTimeout(timer);
   }, [sourceSearchQuery]);
 
-  // Destination Places Search Suggestions Autocomplete
+  // Destination Places Search Suggestions Autocomplete (Google Maps + OpenStreetMap)
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.length < 3) {
       setSearchSuggestions([]);
@@ -189,9 +251,8 @@ export default function RideODashboard() {
     const timer = setTimeout(async () => {
       setIsSearchingSuggestions(true);
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=in&limit=5`);
-        const data = await res.json();
-        if (data) setSearchSuggestions(data);
+        const data = await fetchCombinedWebSuggestions(searchQuery);
+        setSearchSuggestions(data);
       } catch (err) {
         console.warn('Search suggestion error:', err);
       } finally {

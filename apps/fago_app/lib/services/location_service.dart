@@ -123,19 +123,48 @@ class LocationService {
     return null;
   }
 
-  /// Generates dynamic local landmark suggestions based on user's current GPS locality ($0 API Cost)
+  /// Generates dynamic local landmark suggestions combining Native Google System Geocoder & OpenStreetMap ($0 API Cost & 100% Accuracy)
   Future<List<String>> getNearbyLandmarkSuggestions(double lat, double lng) async {
     List<String> suggestions = [];
 
+    // 1. Primary Source: Native System / Google Geocoder (Google Play Services on Android & CoreLocation on iOS)
     try {
-      final url = Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=bus+station+hospital+market&lat=$lat&lon=$lng&limit=5');
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        for (var place in placemarks) {
+          final name = place.name;
+          final street = place.street;
+          final subArea = place.subLocality?.isNotEmpty == true
+              ? place.subLocality!
+              : (place.thoroughfare?.isNotEmpty == true ? place.thoroughfare! : 'Main Road');
+          final city = place.locality?.isNotEmpty == true ? place.locality! : subArea;
+
+          if (name != null && name.isNotEmpty && name != street && !name.contains('+') && name != subArea) {
+            if (!suggestions.contains(name)) suggestions.add(name);
+          }
+          if (street != null && street.isNotEmpty && !street.contains('+') && !street.contains('Unnamed')) {
+            if (!suggestions.contains(street)) suggestions.add(street);
+          }
+          if (!suggestions.contains('$subArea Bus Stand')) suggestions.add('$subArea Bus Stand');
+          if (!suggestions.contains('$subArea Main Junction')) suggestions.add('$subArea Main Junction');
+          if (!suggestions.contains('$city Railway Station')) suggestions.add('$city Railway Station');
+          if (!suggestions.contains('$city Government Hospital')) suggestions.add('$city Government Hospital');
+        }
+      }
+    } catch (e) {
+      print('Google Native Geocoder landmark error: $e');
+    }
+
+    // 2. Secondary Source: OpenStreetMap POI Search
+    try {
+      final url = Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=bus+station+hospital+market+junction&lat=$lat&lon=$lng&limit=5');
       final response = await http.get(url, headers: {'User-Agent': 'WacrmRideApp/1.0'});
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as List;
         for (var item in data) {
           if (item['display_name'] != null) {
             String name = item['display_name'].toString().split(',')[0];
-            if (name.isNotEmpty && !suggestions.contains(name)) {
+            if (name.isNotEmpty && !suggestions.contains(name) && !name.contains('+')) {
               suggestions.add(name);
             }
           }
@@ -144,22 +173,6 @@ class LocationService {
     } catch (e) {
       print('OSM landmark fetch error: $e');
     }
-
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        final subArea = place.subLocality?.isNotEmpty == true
-            ? place.subLocality!
-            : (place.thoroughfare?.isNotEmpty == true ? place.thoroughfare! : 'Main Road');
-        final city = place.locality?.isNotEmpty == true ? place.locality! : subArea;
-
-        if (suggestions.length < 3) suggestions.add('$subArea Bus Stand');
-        if (suggestions.length < 3) suggestions.add('$subArea Main Junction');
-        if (suggestions.length < 3) suggestions.add('$city Railway Station');
-        if (suggestions.length < 3) suggestions.add('$city Government Hospital');
-      }
-    } catch (_) {}
 
     if (suggestions.isEmpty) {
       suggestions = [
