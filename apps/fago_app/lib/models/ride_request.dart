@@ -1,4 +1,4 @@
-enum RideStatus { requested, accepted, inProgress, completed, cancelled }
+enum RideStatus { requested, accepted, arrived, inProgress, completed, cancelled }
 
 class Location {
   final double latitude;

@@ -71,6 +71,41 @@ class SupabaseBackendService {
     }
   }
 
+  /// Update ride status ('accepted', 'arrived', 'in_progress', 'completed', 'cancelled')
+  Future<bool> updateRideStatus({
+    required String rideId,
+    required String status,
+  }) async {
+    try {
+      await _client.from('ride_requests').update({
+        'status': status,
+      }).eq('id', rideId);
+      return true;
+    } catch (e) {
+      print('Supabase Update Ride Status Error: $e');
+      return false;
+    }
+  }
+
+  /// Realtime stream of accepted/active rides for a driver
+  Stream<List<RideRequest>> getDriverActiveRidesStream(String driverId, String driverPhone) {
+    try {
+      final cleanPhone = driverPhone.replaceAll(RegExp(r'[^\d+]'), '');
+      return _client
+          .from('ride_requests')
+          .stream(primaryKey: ['id'])
+          .map((data) => data
+              .map((json) => RideRequest.fromJson(json))
+              .where((r) =>
+                  (r.driverId == driverId || (r.driverPhone != null && r.driverPhone!.contains(cleanPhone))) &&
+                  (r.status == RideStatus.accepted || r.status == RideStatus.arrived || r.status == RideStatus.inProgress))
+              .toList());
+    } catch (e) {
+      print('Supabase Driver Active Rides Error: $e');
+      return const Stream.empty();
+    }
+  }
+
   /// Save Rider/Lead Contact to WhatsApp CRM Database for Future Follow-ups & CRM Marketing
   Future<bool> saveCrmContact({
     required String name,

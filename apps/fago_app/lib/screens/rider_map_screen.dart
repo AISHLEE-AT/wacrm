@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
-import '../features/driver/screens/driver_registration_screen.dart';
 
 class RiderMapScreen extends StatefulWidget {
   const RiderMapScreen({Key? key}) : super(key: key);
@@ -29,6 +29,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   bool _isBooking = false;
   bool _isSearchingDropoff = false;
   bool _isSearchingPickup = false;
+  String? _activeRideId; // Tracks active ride status
 
   final TextEditingController _pickupController = TextEditingController();
   final TextEditingController _dropoffController = TextEditingController();
@@ -47,106 +48,26 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     'Bus': {'baseFare': 600, 'perKm': 75, 'icon': Icons.directions_bus, 'color': Colors.teal},
   };
 
-  List<String> _quickLandmarks = [
-    'THALA THALAPATHY SALOON',
-    'Bus Stand',
-    'Railway Station',
-    'Government Hospital',
-    'Main Market Center',
-  ];
+  int _pinSelectionStep = 0; // 0 = pickup, 1 = dropoff, 2 = confirm
 
   @override
   void initState() {
     super.initState();
-    _prefillVerifiedUser();
-    _fetchLiveLocation();
+    _initCurrentLocation();
   }
 
-  int _pinSelectionStep = 0; // 0 = Drag Pickup Pin, 1 = Drag Dropoff Pin, 2 = Confirm Vehicle & Fare
-  LatLng? _cameraCenter;
-  bool _isMovingMap = false;
-
-  void _prefillVerifiedUser() {
-    try {
-      final sbUser = Supabase.instance.client.auth.currentUser;
-      List<String> candidates = [
-        sbUser?.phone ?? '',
-        sbUser?.email ?? '',
-        sbUser?.userMetadata?['phone']?.toString() ?? '',
-        sbUser?.userMetadata?['whatsapp']?.toString() ?? '',
-      ];
-
-      String digits = '';
-      for (var c in candidates) {
-        if (c.isEmpty) continue;
-        String clean = c.contains('@') ? c.split('@')[0] : c;
-        clean = clean.replaceAll(RegExp(r'\D'), '');
-        if (clean.startsWith('91') && clean.length == 12) clean = clean.substring(2);
-        if (clean.length == 10 && !clean.startsWith('63423')) {
-          digits = clean;
-          break;
-        }
-      }
-
-      if (digits.length == 10) {
-        _phoneController.text = '+91 $digits';
-      } else {
-        _phoneController.text = '+91 94863 35870';
-      }
-
-      final name = sbUser?.userMetadata?['full_name'] ?? sbUser?.userMetadata?['name'];
-      if (name != null && name.toString().isNotEmpty) {
-        _nameController.text = name.toString();
-      } else if (_nameController.text.isEmpty) {
-        _nameController.text = 'Rider Partner';
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _fetchLiveLocation() async {
+  Future<void> _initCurrentLocation() async {
     final loc = await LocationService().getCurrentLocation();
     final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
-    final nearbyChips = await LocationService().getNearbyLandmarkSuggestions(loc.latitude, loc.longitude);
     if (mounted) {
       setState(() {
         _currentLocation = loc;
         _currentAddress = address;
         _pickupController.text = address;
-        _quickLandmarks = nearbyChips.where((l) => !l.contains('Unnamed Road') && !l.contains('null')).toList();
       });
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 15),
       );
-    }
-  }
-
-  void _onCameraMove(CameraPosition position) {
-    _cameraCenter = position.target;
-    if (!_isMovingMap) {
-      setState(() => _isMovingMap = true);
-    }
-  }
-
-  void _onCameraIdle() async {
-    if (_cameraCenter == null) return;
-    final lat = _cameraCenter!.latitude;
-    final lng = _cameraCenter!.longitude;
-    final address = await LocationService().getAddressFromCoordinates(lat, lng);
-
-    if (mounted) {
-      setState(() {
-        _isMovingMap = false;
-        if (_pinSelectionStep == 0) {
-          _currentLocation = Location(latitude: lat, longitude: lng);
-          _currentAddress = address;
-          _pickupController.text = address;
-        } else if (_pinSelectionStep == 1) {
-          _destinationLocation = Location(latitude: lat, longitude: lng);
-          _destinationAddress = address;
-          _dropoffController.text = address;
-          _updateFare();
-        }
-      });
     }
   }
 
@@ -176,8 +97,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
   Future<List<dynamic>> _fetchCombinedSuggestions(String query) async {
     List<dynamic> results = [];
-
-    // 1. Google Native Geocoder Engine ($0 Cost, Native Google Play Services)
     try {
       final loc = await LocationService().searchAddressCoordinates(query);
       if (loc != null) {
@@ -193,7 +112,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       debugPrint('Google Native Geocode query error: $e');
     }
 
-    // 2. OpenStreetMap POI Search
     try {
       final res = await http.get(Uri.parse(
           'https://nominatim.openstreetmap.org/search?format=json&q=${Uri.encodeComponent(query)}&countrycodes=in&limit=5'));
@@ -212,37 +130,33 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     return results;
   }
 
-  // Live Auto-Suggestions API for Pickup Place (Google + OpenStreetMap)
   Future<void> _onPickupQueryChanged(String query) async {
     if (query.trim().length < 3) {
       setState(() => _pickupSuggestions = []);
       return;
     }
     setState(() => _isSearchingPickup = true);
-    try {
-      final data = await _fetchCombinedSuggestions(query);
-      if (mounted) setState(() => _pickupSuggestions = data);
-    } catch (e) {
-      debugPrint('Pickup suggestion error: $e');
-    } finally {
-      if (mounted) setState(() => _isSearchingPickup = false);
+    final list = await _fetchCombinedSuggestions(query);
+    if (mounted) {
+      setState(() {
+        _pickupSuggestions = list;
+        _isSearchingPickup = false;
+      });
     }
   }
 
-  // Live Auto-Suggestions API for Dropoff Place (Google + OpenStreetMap)
   Future<void> _onDropoffQueryChanged(String query) async {
     if (query.trim().length < 3) {
       setState(() => _dropoffSuggestions = []);
       return;
     }
     setState(() => _isSearchingDropoff = true);
-    try {
-      final data = await _fetchCombinedSuggestions(query);
-      if (mounted) setState(() => _dropoffSuggestions = data);
-    } catch (e) {
-      debugPrint('Dropoff suggestion error: $e');
-    } finally {
-      if (mounted) setState(() => _isSearchingDropoff = false);
+    final list = await _fetchCombinedSuggestions(query);
+    if (mounted) {
+      setState(() {
+        _dropoffSuggestions = list;
+        _isSearchingDropoff = false;
+      });
     }
   }
 
@@ -279,192 +193,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
     _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(LatLng(lat, lon), 15),
-    );
-  }
-
-  void _swapPickupAndDropoff() {
-    if (_currentLocation != null && _destinationLocation != null) {
-      final tempLoc = _currentLocation;
-      _currentLocation = _destinationLocation;
-      _destinationLocation = tempLoc;
-
-      final tempAddr = _currentAddress;
-      _currentAddress = _destinationAddress;
-      _destinationAddress = tempAddr;
-
-      _pickupController.text = _currentAddress;
-      _dropoffController.text = _destinationAddress;
-
-      _updateFare();
-    }
-  }
-
-  void _onMapTapped(LatLng target) {
-    setState(() {
-      _destinationLocation = Location(latitude: target.latitude, longitude: target.longitude);
-      _destinationAddress = 'Pinned Dropoff (${target.latitude.toStringAsFixed(4)}, ${target.longitude.toStringAsFixed(4)})';
-      _dropoffController.text = _destinationAddress;
-    });
-    _updateFare();
-  }
-
-  // Open Direct In-App Chat Modal between Rider and Driver
-  void _openRiderDriverChatModal() {
-    final List<Map<String, String>> messages = [
-      {'sender': 'driver', 'text': 'Hello! I am assigned to your trip. Where exactly are you standing?'},
-      {'sender': 'rider', 'text': 'Hi, I am waiting near the main entrance landmark.'},
-    ];
-    final TextEditingController chatMsgController = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0F172A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: SizedBox(
-                height: 480,
-                child: Column(
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: const [
-                            CircleAvatar(
-                              backgroundColor: Color(0xFF10B981),
-                              child: Icon(Icons.person, color: Colors.white),
-                            ),
-                            SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Driver Partner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                                Text('TN-39-M-9988 • Yamaha FZ (Online)', style: TextStyle(color: Colors.greenAccent, fontSize: 12)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white70),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    const Divider(color: Colors.white12),
-
-                    // Quick Template Messages
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          'I am waiting near the main gate',
-                          'Please reach in 2 mins',
-                          'What is your vehicle color?',
-                        ].map((template) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: ActionChip(
-                              backgroundColor: const Color(0xFF1E293B),
-                              label: Text(template, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                              onPressed: () {
-                                setModalState(() {
-                                  messages.add({'sender': 'rider', 'text': template});
-                                });
-                              },
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Messages List
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: messages.length,
-                        itemBuilder: (context, idx) {
-                          final msg = messages[idx];
-                          final isRider = msg['sender'] == 'rider';
-                          return Align(
-                            alignment: isRider ? Alignment.centerRight : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isRider ? const Color(0xFF10B981) : const Color(0xFF1E293B),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Text(
-                                msg['text']!,
-                                style: const TextStyle(color: Colors.white, fontSize: 13),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // Input Field & Action Buttons
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12, top: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: chatMsgController,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                hintText: 'Type message to driver...',
-                                hintStyle: const TextStyle(color: Colors.white38),
-                                filled: true,
-                                fillColor: const Color(0xFF1E293B),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.send, color: Color(0xFF10B981)),
-                            onPressed: () {
-                              if (chatMsgController.text.trim().isNotEmpty) {
-                                setModalState(() {
-                                  messages.add({'sender': 'rider', 'text': chatMsgController.text.trim()});
-                                  chatMsgController.clear();
-                                });
-                              }
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.chat, color: Colors.greenAccent),
-                            tooltip: 'Chat on WhatsApp',
-                            onPressed: () {
-                              WhatsAppService.openWhatsApp(phone: '916381029380', message: 'Hello driver, I am waiting for pickup!');
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -534,29 +262,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
               ),
               const SizedBox(height: 12),
 
-              if (_phoneController.text.isNotEmpty && _phoneController.text != '+91') ...[
-                Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.verified, color: Colors.green, size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Verified WhatsApp Login Number',
-                          style: TextStyle(color: Colors.green.shade900, fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -568,17 +273,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              OutlinedButton.icon(
-                onPressed: _openRiderDriverChatModal,
-                icon: const Icon(Icons.chat_bubble_outline, color: Colors.blueAccent),
-                label: const Text('Open Direct In-App Rider-Driver Chat'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 44),
-                  side: const BorderSide(color: Colors.blueAccent),
-                ),
-              ),
-              const SizedBox(height: 8),
 
               SizedBox(
                 width: double.infinity,
@@ -619,8 +313,9 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       category: _selectedCategory,
     );
 
+    final rideId = 'RIDE_${DateTime.now().millisecondsSinceEpoch}';
     final newRide = RideRequest(
-      id: 'RIDE_${DateTime.now().millisecondsSinceEpoch}',
+      id: rideId,
       riderId: 'RIDER_001',
       riderPhone: '$riderName ($riderPhone)',
       pickupLocation: _currentLocation!,
@@ -634,7 +329,11 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     );
 
     await SupabaseBackendService().createRideRequest(newRide);
-    setState(() => _isBooking = false);
+
+    setState(() {
+      _isBooking = false;
+      _activeRideId = rideId; // Set active ride tracking!
+    });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -644,6 +343,158 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         ),
       );
     }
+  }
+
+  Widget _buildActiveRideTrackingSheet() {
+    if (_activeRideId == null) return const SizedBox.shrink();
+
+    return StreamBuilder<RideRequest?>(
+      stream: SupabaseBackendService().getRideStatusStream(_activeRideId!),
+      builder: (context, snapshot) {
+        final ride = snapshot.data;
+        if (ride == null) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFF0F172A),
+            child: Row(
+              children: [
+                const CircularProgressIndicator(color: Color(0xFF00FF00)),
+                const SizedBox(width: 12),
+                const Text("Connecting live ride status...", style: TextStyle(color: Colors.white)),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => setState(() => _activeRideId = null),
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+
+        String statusMsg = "Searching for nearest driver...";
+        Color statusColor = Colors.amber;
+        if (ride.status == RideStatus.accepted) {
+          statusMsg = "Driver Assigned & On The Way!";
+          statusColor = Colors.orange;
+        } else if (ride.status == RideStatus.arrived) {
+          statusMsg = "Driver Arrived at Pickup Point!";
+          statusColor = Colors.blue;
+        } else if (ride.status == RideStatus.inProgress) {
+          statusMsg = "Trip in Progress to Destination!";
+          statusColor = Colors.green;
+        } else if (ride.status == RideStatus.completed) {
+          statusMsg = "Trip Completed! Pay ₹${ride.estimatedFare.toStringAsFixed(0)} via UPI";
+          statusColor = const Color(0xFF00FF00);
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: Color(0xFF0F172A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 16)],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "🚕 LIVE TRIP TRACKER",
+                          style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11),
+                        ),
+                        Text(
+                          statusMsg,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    "₹${ride.estimatedFare.toStringAsFixed(0)}",
+                    style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.w900, fontSize: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Contact Driver Actions
+              if (ride.driverPhone != null && ride.driverPhone!.isNotEmpty) ...[
+                Row(
+                  children: [
+                    const Icon(Icons.drive_eta, color: Color(0xFF00FF00), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text("Driver: ${ride.driverPhone}", style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    ),
+                    IconButton(
+                      onPressed: () => WhatsAppService.openWhatsApp(phone: ride.driverPhone!, message: "Hi Driver!"),
+                      icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        final clean = ride.driverPhone!.replaceAll(RegExp(r'\D'), '');
+                        final url = Uri.parse("tel:+$clean");
+                        if (await canLaunchUrl(url)) await launchUrl(url);
+                      },
+                      icon: const Icon(Icons.phone, color: Colors.blueAccent),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              if (ride.status == RideStatus.completed)
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00), foregroundColor: Colors.black),
+                    onPressed: () async {
+                      final upiUri = Uri.parse(
+                          "upi://pay?pa=9486335870@hdfcbank&pn=FAGO%20DriveO&am=${ride.estimatedFare.toStringAsFixed(0)}&cu=INR&tn=RideO%20Trip%20Payment");
+                      if (await canLaunchUrl(upiUri)) {
+                        await launchUrl(upiUri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(Icons.account_balance_wallet),
+                    label: Text("💳 PAY ₹${ride.estimatedFare.toStringAsFixed(0)} VIA INSTANT UPI", style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                        onPressed: () {
+                          SupabaseBackendService().updateRideStatus(rideId: ride.id, status: 'cancelled');
+                          setState(() => _activeRideId = null);
+                        },
+                        child: const Text("CANCEL RIDE"),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white12, foregroundColor: Colors.white),
+                        onPressed: () => setState(() => _activeRideId = null),
+                        child: const Text("RESET MAP"),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -669,332 +520,260 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           markerId: const MarkerId('dropoff'),
           position: LatLng(_destinationLocation!.latitude, _destinationLocation!.longitude),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: InfoWindow(
-            title: _destinationAddress.isNotEmpty ? _destinationAddress : 'Drop-off Pin',
-          ),
+          infoWindow: const InfoWindow(title: 'Dropoff Location'),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('RideO - Book $_selectedCategory'),
+        title: const Text('RideO - Book Ride'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.chat, color: Colors.greenAccent),
-            tooltip: 'Live Rider-Driver Chat',
-            onPressed: _openRiderDriverChatModal,
-          ),
-          IconButton(
-            icon: const Icon(Icons.badge_outlined, color: Colors.amber),
-            tooltip: 'Register as Driver',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const DriverRegistrationScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.my_location),
-            onPressed: _fetchLiveLocation,
-          ),
-        ],
       ),
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: CameraPosition(target: initialPos, zoom: 15),
+            initialCameraPosition: CameraPosition(target: initialPos, zoom: 14),
             onMapCreated: (controller) => _mapController = controller,
             markers: markers,
-            onCameraMove: _onCameraMove,
-            onCameraIdle: _onCameraIdle,
             myLocationEnabled: true,
-            myLocationButtonEnabled: false,
+            myLocationButtonEnabled: true,
           ),
 
-          // 📍 Floating Drag Pin Indicator in Center of Screen (Uber/Rapido style)
-          if (_pinSelectionStep == 0 || _pinSelectionStep == 1)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 36),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _pinSelectionStep == 0 ? Colors.greenAccent : Colors.redAccent,
-                          width: 1.5,
+          // Search Address Container
+          if (_activeRideId == null)
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: Card(
+                color: const Color(0xFF0F172A),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.circle, color: Colors.green, size: 14),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _pickupController,
+                              onChanged: _onPickupQueryChanged,
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              decoration: const InputDecoration(
+                                hintText: 'Pickup Location',
+                                hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          if (_isSearchingPickup)
+                            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
+                        ],
+                      ),
+
+                      if (_pickupSuggestions.isNotEmpty)
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 180),
+                          margin: const EdgeInsets.only(top: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _pickupSuggestions.length,
+                            itemBuilder: (context, idx) {
+                              final item = _pickupSuggestions[idx];
+                              return ListTile(
+                                dense: true,
+                                leading: const Icon(Icons.pin_drop, color: Colors.green, size: 16),
+                                title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                onTap: () {
+                                  _selectPickupSuggestion(item);
+                                  setState(() => _pinSelectionStep = 1);
+                                },
+                              );
+                            },
+                          ),
                         ),
-                        boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 8)],
+
+                      const Divider(color: Colors.white12, height: 12),
+
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.red, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _dropoffController,
+                              onChanged: _onDropoffQueryChanged,
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              decoration: const InputDecoration(
+                                hintText: 'Dropoff Place',
+                                hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          if (_isSearchingDropoff)
+                            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red)),
+                        ],
                       ),
-                      child: Text(
-                        _isMovingMap
-                            ? 'Finding place...'
-                            : (_pinSelectionStep == 0 ? '📍 Drag Map to Set Pickup' : '🚩 Drag Map to Set Dropoff'),
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Icon(
-                      _pinSelectionStep == 0 ? Icons.location_on : Icons.flag,
-                      size: 46,
-                      color: _pinSelectionStep == 0 ? Colors.green : Colors.red,
-                    ),
-                  ],
+
+                      if (_dropoffSuggestions.isNotEmpty)
+                        Container(
+                          constraints: const BoxConstraints(maxHeight: 180),
+                          margin: const EdgeInsets.only(top: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _dropoffSuggestions.length,
+                            itemBuilder: (context, idx) {
+                              final item = _dropoffSuggestions[idx];
+                              return ListTile(
+                                dense: true,
+                                leading: const Icon(Icons.place, color: Colors.red, size: 16),
+                                title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                onTap: () {
+                                  _selectDropoffSuggestion(item);
+                                  setState(() => _pinSelectionStep = 2);
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
-          // 🔍 Top Floating Glassmorphism Address Bar
-          Positioned(
-            top: 12,
-            left: 12,
-            right: 12,
-            child: Card(
-              elevation: 8,
-              color: const Color(0xFF0F172A),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Pickup Input
-                    Row(
-                      children: [
-                        const Icon(Icons.circle, color: Colors.green, size: 14),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _pickupController,
-                            onChanged: _onPickupQueryChanged,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                            decoration: const InputDecoration(
-                              hintText: 'Pickup Place (Drag map or type)',
-                              hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
-                              border: InputBorder.none,
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        if (_isSearchingPickup)
-                          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
-                      ],
-                    ),
-
-                    // Pickup Suggestions Dropdown List
-                    if (_pickupSuggestions.isNotEmpty)
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 180),
-                        margin: const EdgeInsets.only(top: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _pickupSuggestions.length,
-                          itemBuilder: (context, idx) {
-                            final item = _pickupSuggestions[idx];
-                            return ListTile(
-                              dense: true,
-                              leading: const Icon(Icons.pin_drop, color: Colors.green, size: 16),
-                              title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
-                              onTap: () {
-                                _selectPickupSuggestion(item);
-                                setState(() => _pinSelectionStep = 1);
-                              },
-                            );
-                          },
-                        ),
-                      ),
-
-                    const Divider(color: Colors.white12, height: 12),
-
-                    // Dropoff Input Row
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, color: Colors.red, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _dropoffController,
-                            onChanged: _onDropoffQueryChanged,
-                            style: const TextStyle(color: Colors.white, fontSize: 13),
-                            decoration: const InputDecoration(
-                              hintText: 'Dropoff Place (Drag map or type)',
-                              hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
-                              border: InputBorder.none,
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                        if (_isSearchingDropoff)
-                          const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red)),
-                      ],
-                    ),
-
-                    // Dropoff Suggestions Dropdown List
-                    if (_dropoffSuggestions.isNotEmpty)
-                      Container(
-                        constraints: const BoxConstraints(maxHeight: 180),
-                        margin: const EdgeInsets.only(top: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
-                        ),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _dropoffSuggestions.length,
-                          itemBuilder: (context, idx) {
-                            final item = _dropoffSuggestions[idx];
-                            return ListTile(
-                              dense: true,
-                              leading: const Icon(Icons.place, color: Colors.red, size: 16),
-                              title: Text(item['display_name'], style: const TextStyle(color: Colors.white, fontSize: 12)),
-                              onTap: () {
-                                _selectDropoffSuggestion(item);
-                                setState(() => _pinSelectionStep = 2);
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // 📍 Bottom Floating Action Controls
+          // Bottom Action Sheet: Active Ride Tracking vs Booking Form
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F172A),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 12)],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_pinSelectionStep == 0) ...[
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() => _pinSelectionStep = 1);
-                      },
-                      icon: const Icon(Icons.check_circle, color: Colors.black),
-                      label: const Text('CONFIRM PICKUP LOCATION 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00FF00),
-                        foregroundColor: Colors.black,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
+            child: _activeRideId != null
+                ? _buildActiveRideTrackingSheet()
+                : Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF0F172A),
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                      boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 12)],
                     ),
-                  ] else if (_pinSelectionStep == 1) ...[
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        if (_destinationAddress.isEmpty) {
-                          _destinationAddress = 'Selected Destination Pin';
-                        }
-                        _updateFare();
-                        setState(() => _pinSelectionStep = 2);
-                      },
-                      icon: const Icon(Icons.flag, color: Colors.white),
-                      label: const Text('CONFIRM DROPOFF LOCATION 🚩', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                    ),
-                  ] else ...[
-                    // Clean Vehicle Selector
-                    SizedBox(
-                      height: 70,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: _categories.keys.map((catKey) {
-                          final isSelected = catKey == _selectedCategory;
-                          final cat = _categories[catKey]!;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() => _selectedCategory = catKey);
-                              _updateFare();
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_pinSelectionStep == 0) ...[
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              setState(() => _pinSelectionStep = 1);
                             },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.only(right: 10),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? (cat['color'] as Color).withValues(alpha: 0.25) : const Color(0xFF1E293B),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? (cat['color'] as Color) : Colors.white12,
-                                  width: 2,
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(cat['icon'], color: isSelected ? (cat['color'] as Color) : Colors.white70),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    catKey,
-                                    style: TextStyle(
-                                      color: isSelected ? Colors.white : Colors.white70,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                      fontSize: 12,
+                            icon: const Icon(Icons.check_circle, color: Colors.black),
+                            label: const Text('CONFIRM PICKUP LOCATION 📍', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF00FF00),
+                              foregroundColor: Colors.black,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ] else if (_pinSelectionStep == 1) ...[
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              if (_destinationAddress.isEmpty) {
+                                _destinationAddress = 'Selected Destination Pin';
+                              }
+                              _updateFare();
+                              setState(() => _pinSelectionStep = 2);
+                            },
+                            icon: const Icon(Icons.flag, color: Colors.white),
+                            label: const Text('CONFIRM DROPOFF LOCATION 🚩', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ] else ...[
+                          // Clean Vehicle Selector
+                          SizedBox(
+                            height: 70,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: _categories.keys.map((catKey) {
+                                final isSelected = catKey == _selectedCategory;
+                                final cat = _categories[catKey]!;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() => _selectedCategory = catKey);
+                                    _updateFare();
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    margin: const EdgeInsets.only(right: 10),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? (cat['color'] as Color).withOpacity(0.25) : const Color(0xFF1E293B),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: isSelected ? (cat['color'] as Color) : Colors.white12,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(cat['icon'] as IconData, color: isSelected ? (cat['color'] as Color) : Colors.white60, size: 22),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          catKey,
+                                          style: TextStyle(
+                                            color: isSelected ? Colors.white : Colors.white60,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
+                                );
+                              }).toList(),
                             ),
-                          );
-                        }).toList(),
-                      ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          ElevatedButton(
+                            onPressed: _isBooking ? null : _showBookingConfirmationDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF00FF00),
+                              foregroundColor: Colors.black,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: _isBooking
+                                ? const CircularProgressIndicator(color: Colors.black)
+                                : Text(
+                                    'BOOK $_selectedCategory NOW • ₹${_estimatedFare.toStringAsFixed(0)}',
+                                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                                  ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: _showBookingConfirmationDialog,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFD700),
-                        foregroundColor: Colors.black,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: Text(
-                        'BOOK $_selectedCategory NOW • ₹${_estimatedFare.toStringAsFixed(0)}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        setState(() => _pinSelectionStep = 0);
-                      },
-                      child: const Center(
-                        child: Text('Reset Location Pins', style: TextStyle(color: Colors.white60, fontSize: 12)),
-                      ),
-                    )
-                  ],
-                ],
-              ),
-            ),
+                  ),
           ),
         ],
       ),
