@@ -10,7 +10,6 @@ import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
 import '../features/driver/screens/driver_registration_screen.dart';
-import 'rento_screen.dart';
 
 class RiderMapScreen extends StatefulWidget {
   const RiderMapScreen({Key? key}) : super(key: key);
