@@ -389,6 +389,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               )}
             </div>
           ) : null}
+          {/* 1-Tap Viral WhatsApp Invite Button */}
+          <a
+            href="https://wa.me/?text=Hey!%20Book%20local%20rides,%20rentals%20%26%20services%20with%200%25%20commission%20on%20FAGO%20Super%20App:%20https://watscrm.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-2 flex items-center justify-center gap-2 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 px-3 py-2.5 text-xs font-bold text-white shadow-lg shadow-emerald-500/20 transition-all border border-emerald-400/30"
+          >
+            <MessageSquare className="size-4 animate-bounce text-white" />
+            <span>Invite & Earn on WhatsApp</span>
+          </a>
+
           <DropdownMenu>
             <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-muted/60 focus:bg-muted/60 focus:outline-none data-popup-open:bg-muted/60">
               <Avatar className="size-8 shrink-0">

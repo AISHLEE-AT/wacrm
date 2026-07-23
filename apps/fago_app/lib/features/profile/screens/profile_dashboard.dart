@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
 
@@ -143,6 +144,25 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           _buildInfoRow(Icons.location_on, 'Address', profile.address ?? 'Tamil Nadu, India'),
           const SizedBox(height: 16),
           _buildInfoRow(Icons.account_balance_wallet, 'UPI ID', profile.upiId ?? 'wacrm@upi', isEditable: true, profile: profile),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final text = Uri.encodeComponent("Hey! Book local rides, rentals & services with 0% commission on FAGO Super App: https://watscrm.vercel.app");
+              final url = Uri.parse("https://wa.me/?text=$text");
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            icon: const Icon(Icons.share, color: Colors.black),
+            label: const Text('Invite Friends & Drivers via WhatsApp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00FF00),
+              foregroundColor: Colors.black,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 8,
+            ),
+          ),
         ],
       ),
     );

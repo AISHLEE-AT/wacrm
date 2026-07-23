@@ -95,7 +95,43 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
                   color: Colors.white.withValues(alpha: 0.6), // text-muted-foreground
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
+
+              // 0% Commission Hero Badge
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green.shade900.withValues(alpha: 0.8), const Color(0xFF047857).withValues(alpha: 0.6)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.greenAccent, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.greenAccent.withValues(alpha: 0.2),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.verified, color: Colors.greenAccent, size: 36),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('0% Commission Platform', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                          SizedBox(height: 2),
+                          Text('Keep 100% of your ride fares. Direct WhatsApp passenger connectivity!', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Info Cards
               _buildInfoCard(
