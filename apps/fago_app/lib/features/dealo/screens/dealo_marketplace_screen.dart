@@ -49,6 +49,27 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
     }
   }
 
+  void _shareToWhatsAppStatus(Map<String, dynamic> deal) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final String text = Uri.encodeComponent(
+      "🔥 *விற்பனைக்கு / FOR SALE on FAGO DealO*:\n\n"
+      "📌 *${deal['title']}*\n"
+      "💰 விலை: ₹${deal['price']}\n"
+      "📍 இடம்: ${deal['location_name']} (5 km radius)\n"
+      "🛡️ சரிபார்க்கப்பட்ட விற்பனையாளர் (Verified Seller)\n\n"
+      "💬 தொடர்புக்கு: https://wa.me/91${deal['phone']}\n"
+      "📲 FAGO Super App மூலம் நேரடியாக வாங்குங்கள்!"
+    );
+    final Uri url = Uri.parse("https://api.whatsapp.com/send?text=$text");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Could not launch WhatsApp")),
+      );
+    }
+  }
+
   void _openWhatsAppDealChat(Map<String, dynamic> deal, {String actionType = 'chat'}) async {
     final messenger = ScaffoldMessenger.of(context);
     final String rawPhone = (deal['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
@@ -59,6 +80,9 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       messageText = "📸 *Request for Item Live Photos & Videos*\n\nHi ${deal['seller_name']}, I saw *${deal['title']}* on FAGO DealO. Could you please send me 2-3 live photos or a short video recording of the item?";
     } else if (actionType == 'videocall') {
       messageText = "📹 *WhatsApp Video Call Live Inspection*\n\nHi ${deal['seller_name']}, can we have a quick WhatsApp Video Call to inspect *${deal['title']}* live?";
+    } else if (actionType == 'bargain') {
+      final int bargainPrice = ((deal['price'] ?? 0) * 0.85).round();
+      messageText = "🏷️ *FAGO DealO - விலை பேரம் பேசல் (Price Offer)*\n\nவணக்கம் ${deal['seller_name']}, உங்கள் *${deal['title']}* பொருளுக்கு நான் ₹$bargainPrice வழங்கத் தயார். சம்மதமா?";
     } else {
       messageText = "🛍️ *FAGO DealO P2P Inquiry*\n\nவணக்கம் *${deal['seller_name']}*,\nI am interested in your item on *FAGO DealO*:\n📌 *${deal['title']}*\n💰 Price: ₹${deal['price']}\n📍 Location: ${deal['location_name']} (${deal['pincode']})\n\nIs this available? Let's talk!";
     }
@@ -95,12 +119,20 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Contact Seller: ${deal['seller_name']}",
+                "Contact Seller: ${deal['seller_name']} 🛡️ Verified",
                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
               Text(deal['title'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
               const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.share_outlined, color: Color(0xFF00FF00)),
+                title: const Text("Share to WhatsApp Status (ஸ்டேட்டஸ்)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _shareToWhatsAppStatus(deal);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.chat, color: Color(0xFF25D366)),
                 title: const Text("Chat on WhatsApp", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -110,19 +142,19 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.monetization_on, color: Colors.amber),
+                title: const Text("🏷️ பேரம் பேசல் (1-Click Bargain Offer)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _openWhatsAppDealChat(deal, actionType: 'bargain');
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.phone, color: Colors.blueAccent),
                 title: const Text("Direct Phone Call", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _makePhoneCall(deal);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: Colors.amber),
-                title: const Text("Request Live Photos / Video", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _openWhatsAppDealChat(deal, actionType: 'photos');
                 },
               ),
               ListTile(
@@ -378,13 +410,32 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  "📍 ${deal['location_name'] ?? 'Local'} (${deal['pincode'] ?? ''}) • Seller: ${deal['seller_name'] ?? 'User'}",
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.verified, size: 14, color: Color(0xFF00FF00)),
+                    const SizedBox(width: 4),
+                    Text(
+                      "📍 ${deal['location_name'] ?? 'Local'} (${deal['pincode'] ?? ''}) • Seller: ${deal['seller_name'] ?? 'User'}",
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00FF00),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () => _shareToWhatsAppStatus(deal),
+                        icon: const Icon(Icons.share, size: 18),
+                        label: const Text("Share to Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
@@ -394,7 +445,7 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                         ),
                         onPressed: () => _showContactOptionsBottomSheet(deal),
                         icon: const Icon(Icons.contact_phone, size: 18),
-                        label: const Text("Contact Seller Options", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: const Text("Contact Seller", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                     ),
                   ],

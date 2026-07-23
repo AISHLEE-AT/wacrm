@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { 
   ShoppingBag, Search, PlusCircle, Filter, MapPin, Phone, 
   MessageCircle, Tag, CheckCircle2, Share2, Sparkles, X, 
-  ShieldCheck, Image as ImageIcon, Mic, Video, Camera, Navigation, Radius, Truck
+  ShieldCheck, Image as ImageIcon, Mic, Video, Camera, Navigation, Radius, Truck, BadgeCheck, Zap
 } from 'lucide-react';
 import { validateFullName, validateIndianPhone, validateUpiId } from '@/lib/validation';
 
@@ -71,6 +71,7 @@ export default function DealOMarketplacePage() {
     category: 'electronics',
     price: '',
     isNegotiable: true,
+    allowBarter: false, // Tamilnadu Barter Option
     imageUrl: '',
     pincode: '',
     locationName: 'Coimbatore, Tamil Nadu',
@@ -131,12 +132,12 @@ export default function DealOMarketplacePage() {
     if (typeof window === 'undefined') return;
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('தமிழ் குரல் தட்டச்சு பெற Chrome / Edge உலாவியைப் பயன்படுத்தவும். (Speech recognition requires Chrome/Edge).');
+      alert('தமிழ் குரல் தட்டச்சு பெற Chrome / Edge உலாவியைப் பயன்படுத்தவும்.');
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'ta-IN'; // Tamil (India)
+    recognition.lang = 'ta-IN';
     recognition.interimResults = false;
 
     if (field === 'title') setIsListeningTitle(true);
@@ -242,6 +243,7 @@ export default function DealOMarketplacePage() {
         category: dealForm.category,
         price: parseFloat(dealForm.price) || 0,
         is_negotiable: dealForm.isNegotiable,
+        allow_barter: dealForm.allowBarter,
         images: dealForm.imageUrl ? [dealForm.imageUrl] : [],
         pincode: dealForm.pincode || '641001',
         location_name: dealForm.locationName,
@@ -271,7 +273,7 @@ export default function DealOMarketplacePage() {
     }
   };
 
-  // WhatsApp Contact Handlers
+  // WhatsApp Contact & Viral Status Handlers
   const openWhatsAppDealChat = (deal: any) => {
     const cleanPhone = deal.phone.replace(/\D/g, '').slice(-10);
     const message = encodeURIComponent(
@@ -279,11 +281,47 @@ export default function DealOMarketplacePage() {
       `வணக்கம் *${deal.seller_name}*,\n` +
       `I am interested in your item on *FAGO DealO*:\n` +
       `📌 *${deal.title}*\n` +
-      `💰 Price: ₹${deal.price} ${deal.is_negotiable ? '(Negotiable)' : ''}\n` +
+      `💰 Price: ₹${deal.price} ${deal.is_negotiable ? '(பேச்சுவார்த்தைக்கு உட்பட்டது)' : ''}\n` +
       `📍 Location: ${deal.location_name} (${deal.pincode})\n\n` +
       `Is this item available? Let's talk!`
     );
     window.open(`https://wa.me/91${cleanPhone}?text=${message}`, '_blank');
+  };
+
+  // 1-Click WhatsApp Status / Story Auto-Share
+  const shareToWhatsAppStatus = (deal: any) => {
+    const statusText = encodeURIComponent(
+      `🔥 *விற்பனைக்கு / FOR SALE on FAGO DealO*:\n\n` +
+      `📌 *${deal.title}*\n` +
+      `💰 விலை (Price): ₹${deal.price} ${deal.is_negotiable ? '(Negotiable)' : ''}\n` +
+      `📍 இடம் (Location): ${deal.location_name} (5 km radius)\n` +
+      `🛡️ சரிபார்க்கப்பட்ட விற்பனையாளர் (Verified Seller)\n\n` +
+      `💬 வாட்ஸ்அப் தொடர்புக்கு: https://wa.me/91${deal.phone}\n` +
+      `📲 FAGO Super App மூலம் நேரடியாக வாங்குங்கள்!`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${statusText}`, '_blank');
+  };
+
+  // 1-Click Tamil Bargain Offer
+  const sendTamilBargainOffer = (deal: any) => {
+    const cleanPhone = deal.phone.replace(/\D/g, '').slice(-10);
+    const bargainPrice = Math.round(deal.price * 0.85);
+    const offerText = encodeURIComponent(
+      `🏷️ *FAGO DealO - விலை பேரம் பேசல் (Price Offer)*\n\n` +
+      `வணக்கம் ${deal.seller_name}, உங்கள் *${deal.title}* (₹${deal.price}) பொருளுக்கு நான் ₹${bargainPrice} வழங்கத் தயார்.\n` +
+      `நீங்கள் இந்த விலைக்கு சம்மதிக்கிறீர்களா?`
+    );
+    window.open(`https://wa.me/91${cleanPhone}?text=${offerText}`, '_blank');
+  };
+
+  // Voice Note Inquiry Alert
+  const sendVoiceNoteInquiry = (deal: any) => {
+    const cleanPhone = deal.phone.replace(/\D/g, '').slice(-10);
+    const msg = encodeURIComponent(
+      `🎙️ *குரல் செய்தி (Tamil Voice Inquiry)*\n\n` +
+      `வணக்கம் ${deal.seller_name}, உங்கள் *${deal.title}* (₹${deal.price}) பொருள் குறித்து பேச குரல் பதிவு அனுப்பியுள்ளேன்.`
+    );
+    window.open(`https://wa.me/91${cleanPhone}?text=${msg}`, '_blank');
   };
 
   const askForPhotosOnWhatsApp = (deal: any) => {
@@ -305,17 +343,6 @@ export default function DealOMarketplacePage() {
   const makePhoneCall = (deal: any) => {
     const cleanPhone = deal.phone.replace(/\D/g, '').slice(-10);
     window.open(`tel:+91${cleanPhone}`, '_self');
-  };
-
-  const shareDealOnWhatsApp = (deal: any) => {
-    const text = encodeURIComponent(
-      `🔥 *Local P2P Deal on FAGO DealO*:\n\n` +
-      `*${deal.title}*\n` +
-      `💰 Price: ₹${deal.price}\n` +
-      `📍 Location: ${deal.location_name}\n` +
-      `📞 Contact Seller: https://wa.me/91${deal.phone}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   // Filter Deals by Search, Pincode, and Radius (5 km default)
@@ -344,13 +371,13 @@ export default function DealOMarketplacePage() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider mb-1">
             <ShoppingBag className="w-4 h-4" />
-            FAGO DealO • 5 km Radius Nearby P2P Marketplace (வியாபாரம்)
+            FAGO DealO • 5 km Radius Nearby Marketplace (தமிழ்நாடு சந்தை)
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
-            Local Seller vs Buyer Hub <span className="text-sm font-normal text-emerald-400"> (தமிழ் குரல் தட்டச்சு)</span>
+            Local Seller vs Buyer Hub <span className="text-sm font-normal text-emerald-400"> (குரல் தட்டச்சு & Status Share)</span>
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm mt-1 max-w-xl">
-            Filter deals in your <strong>5 km radius</strong>. Type or speak in <strong>Tamil (குரல் தட்டச்சு)</strong>, request live photo/video inspections over WhatsApp, and pay 0-commission direct UPI!
+            Filter deals in your <strong>5 km radius</strong>. Type or speak in <strong>Tamil (குரல் தட்டச்சு)</strong>, share directly to <strong>WhatsApp Status</strong>, and connect 1-click P2P!
           </p>
         </div>
 
@@ -502,6 +529,12 @@ export default function DealOMarketplacePage() {
                   {deal.is_negotiable && <span className="text-[10px] opacity-80 font-normal">(Negotiable)</span>}
                 </div>
 
+                {/* Verified Seller Trust Badge */}
+                <div className="absolute bottom-3 right-3 bg-emerald-500/90 text-slate-950 font-bold text-[10px] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                  <BadgeCheck className="w-3.5 h-3.5 text-slate-950 fill-emerald-300" />
+                  <span>சரிபார்க்கப்பட்டது (Verified)</span>
+                </div>
+
                 {/* Distance Badge */}
                 {deal.distanceKm !== undefined && (
                   <div className="absolute bottom-3 left-3 bg-slate-950/90 text-emerald-400 font-bold text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1">
@@ -551,8 +584,17 @@ export default function DealOMarketplacePage() {
                   )}
                 </div>
 
-                {/* Enhanced Contact Action Buttons */}
+                {/* Enhanced Contact & Viral Actions */}
                 <div className="space-y-2 pt-2">
+                  {/* 1-Click Viral WhatsApp Status Share */}
+                  <button
+                    onClick={() => shareToWhatsAppStatus(deal)}
+                    className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 via-green-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition"
+                  >
+                    <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                    📲 Share to WhatsApp Status (வாட்ஸ்அப் ஸ்டேட்டஸ்)
+                  </button>
+
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => openWhatsAppDealChat(deal)}
@@ -568,6 +610,22 @@ export default function DealOMarketplacePage() {
                     >
                       <Phone className="w-3.5 h-3.5" />
                       Call Seller
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => sendTamilBargainOffer(deal)}
+                      className="py-2 px-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1 border border-amber-500/30 transition"
+                    >
+                      🏷️ பேரம் பேச (Bargain)
+                    </button>
+
+                    <button
+                      onClick={() => sendVoiceNoteInquiry(deal)}
+                      className="py-2 px-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold text-[11px] rounded-xl flex items-center justify-center gap-1 border border-purple-500/30 transition"
+                    >
+                      🎙️ குரல் செய்தி (Voice)
                     </button>
                   </div>
 
