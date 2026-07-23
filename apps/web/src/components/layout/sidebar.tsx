@@ -166,10 +166,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     };
   }, [open, onClose]);
 
-  // Dynamic Mobility Items: RideO for everyone, RentO for Agri/Machinery, DriveO for admins/drivers
+  // Dynamic Mobility & Local Services Items
   const mobilityItems: NavItem[] = [
     { href: "/rideo", label: "RideO", icon: Car },
     { href: "/rento", label: "RentO (Agri)", icon: Truck },
+    { href: "/mandi", label: "உழவர் சந்தை (Mandi)", icon: Truck },
+    { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Car },
+    { href: "/teacho", label: "TeachO (பயிற்சி)", icon: Truck },
     ...(isAdmin || isRegisteredDriver
       ? [{ href: "/drivo", label: "DriveO", icon: Truck }]
       : []),

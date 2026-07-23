@@ -343,6 +343,30 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.shopping_basket, color: Colors.greenAccent),
+              title: const Text('உழவர் சந்தை (Mandi Prices)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/mandi');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.temple_hindu, color: Colors.skyAccent),
+              title: const Text('TourO - ஆன்மீக பயணம்', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/touro');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.school, color: Colors.purpleAccent),
+              title: const Text('TeachO - விவசாய பயிற்சி', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/teacho');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.badge, color: Colors.cyanAccent),
               title: const Text('Digital ID & Profile', style: TextStyle(color: Colors.white)),
               selected: _currentTab == 3,

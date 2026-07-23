@@ -15,6 +15,9 @@ import '../screens/rider_map_screen.dart';
 import '../screens/driver_dashboard_screen.dart';
 
 import '../screens/rento_screen.dart';
+import '../screens/mandi_prices_screen.dart';
+import '../screens/touro_screen.dart';
+import '../screens/teacho_screen.dart';
 
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
@@ -81,6 +84,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rento',
         builder: (context, state) => const RentOScreen(),
+      ),
+      GoRoute(
+        path: '/mandi',
+        builder: (context, state) => const MandiPricesScreen(),
+      ),
+      GoRoute(
+        path: '/touro',
+        builder: (context, state) => const TourOScreen(),
+      ),
+      GoRoute(
+        path: '/teacho',
+        builder: (context, state) => const TeachOScreen(),
       ),
       GoRoute(
         path: '/rider',
