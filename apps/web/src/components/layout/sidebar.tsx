@@ -31,6 +31,7 @@ import {
   Gauge,
   Share2,
   Globe,
+  ShoppingBag,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -175,6 +176,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/rideo", label: "RideO", icon: Car },
     { href: "/rento", label: "RentO (Agri)", icon: Tractor },
     { href: "/mandi", label: "உழவர் சந்தை (Mandi)", icon: Store },
+    { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
     { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Compass },
     { href: "/teacho", label: "TeachO (பயிற்சி)", icon: GraduationCap },
     { href: "https://thamizhan.vercel.app", label: "Aishlee Web (தமிழன்)", icon: Globe, isExternal: true },
