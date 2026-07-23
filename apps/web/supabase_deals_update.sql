@@ -1,5 +1,5 @@
 -- ==============================================================================
--- FAGO SUPER APP: FULL SQL SCHEMA UPDATES FOR DEALO & PROFILES
+-- FAGO SUPER APP: FULL SAFE SQL SCHEMA UPDATES FOR DEALO & PROFILES
 -- Run this script in Supabase SQL Editor (https://supabase.com/dashboard)
 -- ==============================================================================
 
@@ -34,9 +34,15 @@ ALTER TABLE public.local_deals ADD COLUMN IF NOT EXISTS upi_id TEXT;
 ALTER TABLE public.local_deals ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION DEFAULT 11.0168;
 ALTER TABLE public.local_deals ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION DEFAULT 76.9558;
 
--- Enable Row Level Security (RLS) and grant open public access
+-- Enable Row Level Security (RLS)
 ALTER TABLE public.local_deals ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to prevent "policy already exists" error 42710
+DROP POLICY IF EXISTS "Allow public read access to local_deals" ON public.local_deals;
+DROP POLICY IF EXISTS "Allow public insert access to local_deals" ON public.local_deals;
+DROP POLICY IF EXISTS "Allow users to update their own deals" ON public.local_deals;
+
+-- Create policies safely
 CREATE POLICY "Allow public read access to local_deals" ON public.local_deals
     FOR SELECT USING (true);
 
