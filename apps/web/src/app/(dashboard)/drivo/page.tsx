@@ -124,20 +124,80 @@ export default function DriveODashboard() {
       return;
     }
 
+    const cleanPhone = regForm.mobile.replace(/\D/g, '').slice(-10);
+    const cleanRegNo = regForm.regNo.trim().toUpperCase();
+    const cleanLicenseNo = regForm.licenseNo.trim().toUpperCase();
+
     try {
+      // 1. Check duplicate registration for the SAME category under this user
+      if (currentUser?.id) {
+        const { data: existingCat } = await supabase
+          .from('drivers')
+          .select('id, vehicle_type')
+          .eq('user_id', currentUser.id)
+          .eq('vehicle_type', regForm.category)
+          .maybeSingle();
+
+        if (existingCat) {
+          alert(`⚠️ DUPLICATE REGISTRATION BLOCKED:\nYou are already registered as an operator for vehicle category (${regForm.category.toUpperCase()}). You cannot submit duplicate applications for the same vehicle category!`);
+          return;
+        }
+      }
+
+      // 2. Check duplicate Vehicle Registration Number across system
+      const { data: existingVehicle } = await supabase
+        .from('drivers')
+        .select('id, user_id')
+        .eq('vehicle_number', cleanRegNo)
+        .neq('user_id', currentUser?.id || '')
+        .maybeSingle();
+
+      if (existingVehicle) {
+        alert(`⚠️ DUPLICATE VEHICLE REGISTRATION NUMBER:\nVehicle number "${cleanRegNo}" is already registered under another driver account!`);
+        return;
+      }
+
+      // 3. Check duplicate Phone Number across system
+      const { data: existingPhone } = await supabase
+        .from('drivers')
+        .select('id, user_id')
+        .eq('phone', cleanPhone)
+        .neq('user_id', currentUser?.id || '')
+        .maybeSingle();
+
+      if (existingPhone) {
+        alert(`⚠️ DUPLICATE MOBILE NUMBER:\nMobile number "+91 ${cleanPhone}" is already registered under another driver account!`);
+        return;
+      }
+
+      // 4. Check duplicate Driving License across system (if provided)
+      if (cleanLicenseNo && cleanLicenseNo !== 'PENDING-VERIFICATION') {
+        const { data: existingDL } = await supabase
+          .from('drivers')
+          .select('id, user_id')
+          .eq('driving_license', cleanLicenseNo)
+          .neq('user_id', currentUser?.id || '')
+          .maybeSingle();
+
+        if (existingDL) {
+          alert(`⚠️ DUPLICATE DRIVING LICENSE:\nLicense number "${cleanLicenseNo}" is already registered under another driver account!`);
+          return;
+        }
+      }
+
       if (currentUser) {
         await supabase.from('drivers').upsert({
           user_id: currentUser.id,
-          name: regForm.name,
-          mobile_number: regForm.mobile,
-          whatsapp_number: regForm.mobile,
+          driver_name: regForm.name,
+          phone: cleanPhone,
+          whatsapp: cleanPhone,
           vehicle_type: regForm.category,
-          vehicle_number: regForm.regNo,
-          driving_license: regForm.licenseNo || 'PENDING-VERIFICATION',
-          upi_id: regForm.upi || `${regForm.mobile}@upi`,
-          status: 'online',
+          vehicle_number: cleanRegNo,
+          driving_license: cleanLicenseNo || 'PENDING-VERIFICATION',
+          upi_id: regForm.upi || `${cleanPhone}@upi`,
+          is_online: true,
           is_verified: false,
-          updated_at: new Date().toISOString()
+          created_at: new Date().toISOString()
         });
       }
       setRegisterSubmitted(true);

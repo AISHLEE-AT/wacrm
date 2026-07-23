@@ -9,6 +9,8 @@ import 'router/app_router.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:fago_app/core/providers/cache_provider.dart';
 
+import 'package:fago_app/core/services/notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -33,6 +35,9 @@ void main() async {
       url: 'https://gmahjdzqitbomtmdzlfp.supabase.co',
       publishableKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE',
     );
+
+    // Initialize Push Notifications
+    await NotificationService.initialize();
   } catch (e) {
     debugPrint("Supabase init error: $e");
   }
