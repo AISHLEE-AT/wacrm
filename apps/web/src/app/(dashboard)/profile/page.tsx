@@ -12,7 +12,8 @@ import {
   Smartphone, MapPin,
   LayoutGrid, User, Shield, Palette, PlugZap, Tags, Coins,
   UsersRound, KeyRound, Sparkles,
-  CreditCard, QrCode, FileText, Clock, ExternalLink, MessageCircle, Truck
+  CreditCard, QrCode, FileText, Clock, ExternalLink, MessageCircle, Truck,
+  Heart, Copy
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -281,6 +282,52 @@ function ProfilePageInner() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Support & Contribute to FAGO Card */}
+      <div className="bg-gradient-to-br from-rose-500/10 via-purple-500/10 to-cyan-500/10 border border-rose-500/30 rounded-2xl p-6 space-y-4 shadow-md backdrop-blur-md">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              <Heart className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                Support FAGO Good Cause <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold">Community Support</span>
+              </h3>
+              <p className="text-xs text-muted-foreground">Empowering Farmers, Drivers, Tutors & Local Buyers with 0% Commission</p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          FAGO is a community-first ecosystem designed to serve Tamil Nadu and India with zero middleman fees. Contribute ₹10, ₹50, ₹100 or more to directly support platform upkeep & local community development.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 bg-background/60 border border-border/80 rounded-xl p-3">
+          <div className="flex items-center gap-2 flex-1 w-full">
+            <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-lg border border-amber-400/20">Official UPI ID</span>
+            <span className="text-sm font-mono font-bold text-foreground tracking-wide">9486335870@hdfcbank</span>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText("9486335870@hdfcbank");
+              alert("UPI ID copied to clipboard: 9486335870@hdfcbank");
+            }}
+            className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition flex items-center justify-center gap-1.5"
+          >
+            <Copy className="w-3.5 h-3.5" /> Copy UPI ID
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <a
+            href="upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR"
+            className="flex-1 min-w-[200px] py-3 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg"
+          >
+            <Heart className="w-4 h-4" /> Contribute via UPI (₹10 / ₹100+)
+          </a>
+        </div>
       </div>
 
       <button
