@@ -292,7 +292,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> verifyWhatsAppOtp(String phone, String otp) async {
+  Future<void> verifyWhatsAppOtp(String phone, String otp, {String? fullName, String? userCategory}) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     final response = await http.post(
       Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/verify-otp'),
@@ -323,12 +323,15 @@ class AuthNotifier extends Notifier<AuthState> {
                 'id': userId,
                 'phone': cleanPhone,
                 'whatsapp': cleanPhone,
+                if (fullName != null && fullName.trim().isNotEmpty) 'full_name': fullName.trim(),
+                if (userCategory != null && userCategory.trim().isNotEmpty) 'main_category': userCategory.trim(),
                 'updated_at': DateTime.now().toIso8601String(),
               });
               await _supabase.from('contacts').upsert({
                 'user_id': userId,
                 'phone': cleanPhone,
-                'name': 'WhatsApp Verified User',
+                if (fullName != null && fullName.trim().isNotEmpty) 'name': fullName.trim(),
+                if (userCategory != null && userCategory.trim().isNotEmpty) 'notes': 'Category: $userCategory',
               });
             } catch (e) {
               debugPrint('Error syncing whatsapp profile: $e');

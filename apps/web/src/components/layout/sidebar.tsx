@@ -29,6 +29,8 @@ import {
   Compass,
   GraduationCap,
   Gauge,
+  Share2,
+  Globe,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -75,6 +77,7 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   beta?: boolean;
+  isExternal?: boolean;
 }
 
 const crmItems: NavItem[] = [

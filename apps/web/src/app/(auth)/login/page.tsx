@@ -25,8 +25,19 @@ function LoginPageInner() {
   
   const [loginMode, setLoginMode] = useState<"whatsapp" | "firebase">("whatsapp");
   const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Traveller");
   const [otp, setOtp] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
+
+  const categories = [
+    { key: 'Traveller', label: '🧳 Traveller (RideO)', route: '/rideo' },
+    { key: 'Farmer', label: '🚜 Farmer (RentO)', route: '/rento' },
+    { key: 'Driver', label: '🚖 Driver (DriveO)', route: '/drivo' },
+    { key: 'Student', label: '🎓 Student (TestO)', route: '/teacho' },
+    { key: 'Teacher', label: '👨‍🏫 Teacher (TutorO)', route: '/teacho' },
+    { key: 'Financier', label: '💰 Financier (LoanO)', route: '/mandi' },
+  ];
   
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const supabase = createClient();
@@ -58,6 +69,10 @@ function LoginPageInner() {
   const handleRequestWhatsAppOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!fullName.trim()) {
+      setError("Please enter your Full Name");
+      return;
+    }
     if (!phone || phone.length !== 10) {
       setError("Please enter a valid 10-digit phone number");
       return;
@@ -102,10 +117,22 @@ function LoginPageInner() {
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
         });
+
+        if (data.session.user) {
+          await supabase.from("profiles").upsert({
+            id: data.session.user.id,
+            phone: phone,
+            whatsapp: phone,
+            full_name: fullName.trim() || "User",
+            main_category: selectedCategory,
+          });
+        }
+
+        const targetRoute = categories.find(c => c.key === selectedCategory)?.route || "/rideo";
         if (inviteToken) {
           router.push(`/join/${encodeURIComponent(inviteToken)}`);
         } else {
-          router.push("/");
+          router.push(targetRoute);
         }
       } else {
         throw new Error("Invalid session payload");
@@ -199,7 +226,7 @@ function LoginPageInner() {
   };
 
   const getWhatsAppDirectMsgUrl = () => {
-    const text = `Hello FAGO Support, please reply with my Login OTP for mobile +91 ${phone || 'YOUR_PHONE'}`;
+    const text = `Hello FAGO Support, my name is ${fullName || 'User'} (${selectedCategory}). Please reply with my Login OTP for mobile +91 ${phone || 'YOUR_PHONE'}`;
     return `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(text)}`;
   };
 
@@ -326,6 +353,17 @@ function LoginPageInner() {
                   onSubmit={loginMode === 'whatsapp' ? handleRequestWhatsAppOTP : handleRequestFirebaseOTP} 
                   className="flex flex-col gap-4 w-full"
                 >
+                  {/* Full Name Input */}
+                  <input
+                    type="text"
+                    placeholder="Your Full Name (பெயர்)"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 text-white text-base placeholder:text-white/30 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all backdrop-blur-sm"
+                  />
+
+                  {/* Phone Input */}
                   <div className="relative flex items-center group">
                     <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
                     <input
@@ -338,6 +376,27 @@ function LoginPageInner() {
                       }}
                       className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
                     />
+                  </div>
+
+                  {/* Category Selector Grid */}
+                  <div className="flex flex-col gap-2 my-1">
+                    <label className="text-xs font-semibold text-white/70">Select Your Goal (வகைப்பாடு):</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {categories.map((cat) => (
+                        <button
+                          key={cat.key}
+                          type="button"
+                          onClick={() => setSelectedCategory(cat.key)}
+                          className={`py-2 px-3 text-xs font-bold rounded-xl transition text-left border ${
+                            selectedCategory === cat.key
+                              ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md'
+                              : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {loginMode === 'whatsapp' ? (

@@ -19,10 +19,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _useWhatsAppAuth = true; // Default to WhatsApp Login OTP
   String _verificationId = '';
 
+  final TextEditingController _nameController = TextEditingController();
+  String _selectedCategory = 'Traveller';
+
+  final List<Map<String, dynamic>> _userCategories = [
+    {'key': 'Traveller', 'label': '🧳 Traveller (RideO)', 'route': '/rideo', 'color': Colors.amber},
+    {'key': 'Farmer', 'label': '🚜 Farmer (RentO)', 'route': '/rento', 'color': Colors.greenAccent},
+    {'key': 'Driver', 'label': '🚖 Driver (DriveO)', 'route': '/drivo', 'color': Colors.orangeAccent},
+    {'key': 'Student', 'label': '🎓 Student (TestO)', 'route': '/teacho', 'color': Colors.purpleAccent},
+    {'key': 'Teacher', 'label': '👨‍🏫 Teacher (TutorO)', 'route': '/teacho', 'color': Colors.cyanAccent},
+    {'key': 'Financier', 'label': '💰 Financier (LoanO)', 'route': '/mandi', 'color': Colors.blueAccent},
+  ];
+
   void _sendOTP() async {
     if (_phoneController.text.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(_phoneController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid 10-digit Indian mobile number')),
+      );
+      return;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your Full Name')),
       );
       return;
     }
@@ -83,7 +102,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (_useWhatsAppAuth) {
       try {
-        await ref.read(authProvider.notifier).verifyWhatsAppOtp(rawPhone, otpCode);
+        await ref.read(authProvider.notifier).verifyWhatsAppOtp(
+          rawPhone,
+          otpCode,
+          fullName: _nameController.text.trim(),
+          userCategory: _selectedCategory,
+        );
       } catch (e) {
         setState(() => _isLoading = false);
         if (mounted) {
@@ -189,6 +213,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 },
               ),
               if (!_isOTPSent) ...[
+                // Full Name Input Field
+                TextField(
+                  controller: _nameController,
+                  textCapitalization: TextCapitalization.words,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent),
+                    labelText: 'Your Full Name (பெயர்)',
+                    labelStyle: const TextStyle(color: Colors.cyanAccent),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Phone Input Field
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -210,6 +256,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
+
+                // User Category Selector Grid
+                const Text('Choose Your Primary Goal (வகைப்பாட்டைத் தேர்வு செய்க):', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _userCategories.map((cat) {
+                    final isSelected = cat['key'] == _selectedCategory;
+                    return ChoiceChip(
+                      selected: isSelected,
+                      label: Text(cat['label']),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.black : Colors.white,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                      selectedColor: cat['color'] as Color,
+                      backgroundColor: const Color(0xFF1E293B),
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => _selectedCategory = cat['key']);
+                        }
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: _isLoading ? null : _sendOTP,
