@@ -31,16 +31,16 @@ function LoginPageInner() {
   const [otpRequested, setOtpRequested] = useState(false);
 
   const categories = [
-    { key: 'Traveller', label: '🧳 Traveller (RideO)', route: '/rideo' },
-    { key: 'Farmer', label: '🚜 Farmer (RentO Agri)', route: '/rento' },
-    { key: 'Shopper', label: '🛍️ Shopper (ShopO / Mandi)', route: '/mandi' },
-    { key: 'Driver', label: '🚖 Driver (DriveO)', route: '/drivo' },
-    { key: 'Student', label: '🎓 Student (TestO Exam)', route: '/teacho' },
-    { key: 'Teacher', label: '👨‍🏫 Teacher (TeachO Tutor)', route: '/teacho' },
-    { key: 'Financier', label: '💰 Financier (LoanO)', route: '/mandi' },
-    { key: 'JobSeeker', label: '💼 Job Seeker (WorkO)', route: '/teacho' },
-    { key: 'Employer', label: '🏢 Employer (BizHub)', route: '/' },
-    { key: 'Tourist', label: '🛕 Tourist (TourO ஆன்மீகம்)', route: '/touro' },
+    { key: 'Traveller', label: '🧳 Traveller (பயணி - RideO)', route: '/rideo' },
+    { key: 'Farmer', label: '🚜 Farmer (விவசாயி - RentO)', route: '/rento' },
+    { key: 'Shopper', label: '🛍️ Shopper (வியாபாரி / பொருட்கள் - DealO)', route: '/dealo' },
+    { key: 'Driver', label: '🚖 Driver (ஓட்டுநர் - DriveO)', route: '/drivo' },
+    { key: 'Student', label: '🎓 Student (மாணவர் - TeachO)', route: '/teacho' },
+    { key: 'Teacher', label: '👨‍🏫 Teacher (ஆசிரியர் - TeachO)', route: '/teacho' },
+    { key: 'Financier', label: '💰 Financier (நிதியாளர் - LoanO)', route: '/mandi' },
+    { key: 'JobSeeker', label: '💼 Job Seeker (வேலைதேடுவோர்)', route: '/teacho' },
+    { key: 'Employer', label: '🏢 Employer (நிறுவனம்)', route: '/' },
+    { key: 'Tourist', label: '🛕 Tourist (சுற்றுலா - TourO)', route: '/touro' },
   ];
   
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);

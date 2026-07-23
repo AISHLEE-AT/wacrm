@@ -273,9 +273,41 @@ function ProfilePageInner() {
           {!editingUpi && (
             <button
               onClick={() => { setUpiValue((profile as any)?.upi_id || ''); setEditingUpi(true); }}
-              className="text-xs text-muted-foreground hover:text-primary font-medium transition px-3 py-1 rounded-lg hover:bg-primary/10"
-            >Edit</button>
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Edit
+            </button>
           )}
+        </div>
+
+        {/* Merchant & Driver UPI QR Code Card */}
+        <hr className="border-border" />
+        <div className="p-4 bg-muted/30 border border-border rounded-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+              <QrCode className="w-4 h-4 text-emerald-400" />
+              வணிகர் & ஓட்டுநர் UPI QR குறியீடு (Merchant & Driver QR)
+            </span>
+            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              Verified P2P Pay
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Direct 0-commission instant payment QR code generated from your verified UPI ID: <strong>{(profile as any)?.upi_id || `${displayPhone.replace(/\D/g, '')}@upi`}</strong>
+          </p>
+          <div className="flex items-center gap-4 pt-1">
+            <div className="p-3 bg-white rounded-xl shadow-md shrink-0">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=${encodeURIComponent((profile as any)?.upi_id || `${displayPhone.replace(/\D/g, '')}@upi`)}&pn=${encodeURIComponent(profile?.full_name || 'FAGO Partner')}`}
+                alt="UPI QR Code"
+                className="w-24 h-24 object-contain"
+              />
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-foreground block">📲 Instant Scan & Pay</span>
+              <p className="text-[11px] text-muted-foreground">Customers can scan this QR code using PhonePe, Google Pay, or Paytm for direct 0% commission payment.</p>
+            </div>
+          </div>
         </div>
       </div>
 

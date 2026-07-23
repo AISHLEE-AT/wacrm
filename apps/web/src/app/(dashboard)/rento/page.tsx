@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Tractor, Truck, Droplet, Zap, Wheat, MapPin, MessageSquare, Phone, Compass, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Tractor, Truck, Droplet, Zap, Wheat, MapPin, MessageSquare, Phone, Compass, ArrowRight, ShieldCheck, UserCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const RENTO_CATEGORIES = [
@@ -57,6 +57,7 @@ export default function RentODashboard() {
   const { user, profile } = useAuth();
   const [selectedCatId, setSelectedCatId] = useState('tractor');
   const [unitsCount, setUnitsCount] = useState(2);
+  const [withOperator, setWithOperator] = useState(true); // Machine Operator Option
   const [farmerName, setFarmerName] = useState('');
   const [farmerPhone, setFarmerPhone] = useState('');
   const [villageAddress, setVillageAddress] = useState('Locating farm GPS...');
@@ -87,7 +88,8 @@ export default function RentODashboard() {
   }, []);
 
   const currentCatObj = RENTO_CATEGORIES.find((c) => c.id === selectedCatId) || RENTO_CATEGORIES[0];
-  const totalRentAmount = currentCatObj.baseRate * unitsCount;
+  const operatorFee = withOperator ? 150 * unitsCount : 0;
+  const totalRentAmount = (currentCatObj.baseRate * unitsCount) + operatorFee;
 
   const handleBookViaWhatsApp = () => {
     const name = farmerName || 'Local Farmer';
@@ -100,61 +102,62 @@ export default function RentODashboard() {
       `📞 *Contact Phone*: ${phone}\n` +
       `🚜 *Machinery Category*: ${currentCatObj.title}\n` +
       `⏱️ *Requirement*: ${unitsCount} ${currentCatObj.unit}(s)\n` +
+      `👨‍🌾 *Operator Mode*: ${withOperator ? 'With Operator Included (இயந்திர ஓட்டுநருடன்)' : 'Self-Driven (சுய பயன்பாடு)'}\n` +
       `📌 *Village / Farm Location*: ${villageAddress}\n` +
       `📍 *Live Farm GPS*: ${gpsUrl}\n\n` +
-      `💵 *Estimated Total Rent*: ₹${totalRentAmount} (Base Rate: ₹${currentCatObj.baseRate}/${currentCatObj.unit})\n\n` +
+      `💵 *Estimated Total Rent*: ₹${totalRentAmount} (Base: ₹${currentCatObj.baseRate}/${currentCatObj.unit}${withOperator ? ' + ₹150 Operator Fee' : ''})\n\n` +
       `👉 Please confirm equipment availability & arrival time with machine operator!`;
 
     const formattedPhone = '916381029380';
     const isMobileDevice = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const waUrl = isMobileDevice
-      ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`
+      ? `whatsapp://send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`
       : `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(message)}`;
-    
+
     window.open(waUrl, '_blank');
   };
 
   return (
     <div className="flex flex-col space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border border-emerald-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-2 z-10">
+      {/* Top Banner */}
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-3xl">🚜</span>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              RentO - தமிழ்நாட்டு விவசாய & கனரக இயந்திர வாடகை
+              RentO - விவசாய இயந்திரங்கள் வாடகை (Agri Equipment Rental)
             </h1>
           </div>
           <p className="text-emerald-300 text-sm max-w-2xl">
-            உழவு டிராக்டர், அறுவடை இயந்திரம், பவர் டில்லர் மற்றும் சந்தைக்கு விளைபொருட்கள் கொண்டுசெல்லும் சரக்கு வாகனங்களை எளிதாக வாடகைக்கு அமர்த்தலாம் ($0 API Cost Map GPS Location).
+            டிராக்டர், அறுவடை இயந்திரம், பவர் டில்லர் மற்றும் தண்ணீர் டேங்கர் இயந்திரங்களை அருகிலுள்ள நிலத்து உரிமையாளர்களிடம் வாடகைக்கு எடுக்கலாம் ($0 Commission P2P Booking).
           </p>
         </div>
 
-        <div className="shrink-0 z-10 flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/40 flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> Verified TN Local Operators
-          </span>
+        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-emerald-400 font-bold text-xs shrink-0">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span>0% Commission Direct Pay</span>
         </div>
       </div>
 
+      {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Machinery Categories */}
+        {/* Left Column: Equipment Categories */}
         <div className="lg:col-span-7 space-y-4">
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            Select Machinery Category (இயந்திரத்தை தேர்வுசெய்க):
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Tractor className="w-5 h-5 text-emerald-500" /> 🚜 Select Agri Equipment Category
           </h2>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3">
             {RENTO_CATEGORIES.map((cat) => {
-              const isSelected = selectedCatId === cat.id;
+              const isSelected = cat.id === selectedCatId;
               return (
                 <div
                   key={cat.id}
                   onClick={() => setSelectedCatId(cat.id)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                  className={`p-4 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-4 ${
                     isSelected
-                      ? 'bg-emerald-500/15 border-emerald-500 text-foreground shadow-lg ring-1 ring-emerald-500/50'
-                      : 'bg-card border-border hover:border-emerald-500/40 text-muted-foreground'
+                      ? 'bg-emerald-500/10 border-emerald-500 shadow-md'
+                      : 'bg-card border-border hover:border-emerald-500/30'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -219,67 +222,76 @@ export default function RentODashboard() {
               </div>
             </div>
 
-            {/* Form Fields */}
+            {/* Operator Included Option Toggle */}
+            <div className="p-4 rounded-xl bg-muted/40 border border-border flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                  <UserCheck className="w-4 h-4 text-emerald-400" /> Operator Included (இயந்திர ஓட்டுநர்)
+                </span>
+                <span className="text-[10px] text-muted-foreground block">Includes skilled operator (+ ₹150/unit)</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={withOperator}
+                onChange={(e) => setWithOperator(e.target.checked)}
+                className="w-5 h-5 accent-emerald-500 rounded cursor-pointer"
+              />
+            </div>
+
+            {/* Farmer Details Input */}
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                  Farmer / Customer Name:
-                </label>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">Your Name *</label>
                 <input
                   type="text"
-                  placeholder="e.g. Arumugam / றுமுகம்"
+                  placeholder="Farmer / Customer Name"
                   value={farmerName}
                   onChange={(e) => setFarmerName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                  WhatsApp Contact Phone:
-                </label>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">WhatsApp Mobile *</label>
                 <input
                   type="text"
-                  placeholder="+91 98765 43210"
+                  placeholder="+919876543210"
                   value={farmerPhone}
                   onChange={(e) => setFarmerPhone(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-muted-foreground block mb-1">
-                  Village / Farm Location:
-                </label>
+                <label className="text-xs font-bold text-muted-foreground block mb-1">Farm / Village Address *</label>
                 <input
                   type="text"
                   value={villageAddress}
                   onChange={(e) => setVillageAddress(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
 
-            {/* Rent Total Breakdown */}
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+            {/* Estimated Total Rent */}
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-foreground block">Calculated Rent:</span>
-                <span className="text-[10px] text-muted-foreground">
-                  {unitsCount} {currentCatObj.unit}(s) @ ₹{currentCatObj.baseRate}/{currentCatObj.unit}
-                </span>
+                <span className="text-xs text-muted-foreground font-semibold block">Total Estimated Rent:</span>
+                <span className="text-2xl font-black text-emerald-400">₹{totalRentAmount}</span>
               </div>
-              <span className="text-3xl font-black text-emerald-400">
-                ₹{totalRentAmount}
+              <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/20 px-2.5 py-1 rounded-md">
+                $0 Booking Fee
               </span>
             </div>
 
-            {/* Book via WhatsApp Button */}
+            {/* WhatsApp Booking Action */}
             <button
               type="button"
               onClick={handleBookViaWhatsApp}
-              className="w-full py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition"
+              className="w-full py-3.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl transition"
             >
-              <MessageSquare className="w-4 h-4" /> Book Machinery via WhatsApp (1-Click)
+              <MessageSquare className="w-5 h-5 fill-white" />
+              Book Equipment via WhatsApp
             </button>
           </div>
         </div>
