@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
 import '../../../screens/web_module_screen.dart';
+import '../../promo/screens/whatsapp_status_promo_screen.dart';
 
 class ProfileDashboard extends ConsumerStatefulWidget {
   const ProfileDashboard({super.key});
@@ -208,6 +209,23 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00FF00),
               foregroundColor: Colors.black,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 8,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WhatsappStatusPromoScreen()),
+              );
+            },
+            icon: const Icon(Icons.amp_stories, color: Colors.black),
+            label: const Text('📸 Share Tamil Promo on WhatsApp Status', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF25D366),
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 8,

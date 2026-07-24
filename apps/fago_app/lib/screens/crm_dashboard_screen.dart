@@ -15,6 +15,7 @@ import '../features/dealo/screens/dealo_marketplace_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
 import '../features/admin/screens/area_admin_hub_screen.dart';
 import '../services/whatsapp_service.dart';
+import '../features/promo/screens/whatsapp_status_promo_screen.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
   const CrmDashboardScreen({super.key});
@@ -236,6 +237,16 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               showDriverView ? 'Rider Mode' : 'Driver Mode',
               style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 11),
             ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WhatsappStatusPromoScreen()),
+              );
+            },
+            icon: const Icon(Icons.amp_stories, color: Color(0xFF25D366)),
+            tooltip: 'Share Tamil Promo to WhatsApp Status',
           ),
           IconButton(
             onPressed: _openCategoryGridModal,
