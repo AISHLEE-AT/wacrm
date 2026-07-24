@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/whatsapp_service.dart';
+import '../services/location_service.dart';
+import '../features/profile/services/profile_service.dart';
 
 class TourOScreen extends StatefulWidget {
   const TourOScreen({super.key});
@@ -47,18 +49,31 @@ class _TourOScreenState extends State<TourOScreen> {
     },
   };
 
-  void _bookTourPackage() {
-    final pkg = _tourPackages[_selectedPackage]!;
-    final message = 
-        '🕉️ *TOURO TAMIL NADU TEMPLE & HILL TOUR BOOKING* 🕉️\n\n'
-        '🚩 *Selected Package*: ${pkg['title']}\n'
-        '⏱️ *Duration*: ${pkg['duration']}\n'
-        '🚘 *Vehicle Type*: ${pkg['vehicle']}\n'
-        '👥 *Passengers*: $_passengersCount Persons\n\n'
-        '💵 *Package Base Fare*: ₹${(pkg['baseRate'] as double).toStringAsFixed(0)}\n\n'
-        '👉 Please confirm pickup date & driver assignment!';
+  Future<void> _bookTourPackage() async {
+    final loc = await LocationService().getCurrentLocation();
+    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
+    final userDetails = await ProfileService.getCurrentUserProfileDetails();
+    final userName = userDetails['name'] ?? '';
 
-    WhatsAppService.openWhatsApp(phone: '916381029380', message: message);
+    final pkg = _tourPackages[_selectedPackage]!;
+    final StringBuffer sb = StringBuffer();
+    sb.writeln('🕉️ *TOURO TAMIL NADU TEMPLE & HILL TOUR BOOKING* 🕉️\n');
+    if (userName.isNotEmpty) {
+      sb.writeln('👤 *Customer Name*: $userName');
+    }
+    sb.writeln('🚩 *Selected Package*: ${pkg['title']}');
+    sb.writeln('⏱️ *Duration*: ${pkg['duration']}');
+    sb.writeln('🚘 *Vehicle Type*: ${pkg['vehicle']}');
+    sb.writeln('👥 *Passengers*: $_passengersCount Persons');
+    sb.writeln('💵 *Package Base Fare*: ₹${(pkg['baseRate'] as double).toStringAsFixed(0)}');
+    sb.writeln('\n📍 *Live Pickup Address*: ${pinData['address']}');
+    if (pinData['pincode']!.isNotEmpty) {
+      sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
+    }
+    sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=${loc.latitude},${loc.longitude}');
+    sb.writeln('\n👉 Please confirm pickup date & driver assignment!');
+
+    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
   }
 
   @override

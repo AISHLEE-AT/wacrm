@@ -95,28 +95,35 @@ class _RentOScreenState extends State<RentOScreen> {
     return (baseRate * _workingHoursOrAcres) + _extraTip;
   }
 
-  void _bookMachineryViaWhatsApp() {
+  Future<void> _bookMachineryViaWhatsApp() async {
+    if (_currentLocation == null) {
+      _currentLocation = await LocationService().getCurrentLocation();
+    }
+    final lat = _currentLocation?.latitude ?? 13.0827;
+    final lng = _currentLocation?.longitude ?? 80.2707;
+    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(lat, lng);
+
     final cat = _machineryCategories[_selectedCategory]!;
     final farmerName = _farmerNameController.text.trim().isEmpty ? 'Local Farmer' : _farmerNameController.text.trim();
     final farmerPhone = _farmerPhoneController.text.trim().isEmpty ? '+919876543210' : _farmerPhoneController.text.trim();
-    final locationText = _villageController.text.trim().isEmpty ? _currentAddress : _villageController.text.trim();
-    final lat = _currentLocation?.latitude ?? 13.0827;
-    final lng = _currentLocation?.longitude ?? 80.2707;
-    final gpsUrl = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    final locationText = _villageController.text.trim().isEmpty ? pinData['address']! : _villageController.text.trim();
     final totalRent = _calculateRent();
 
-    final message = 
-        '🌾 *RENTO AGRICULTURAL & HEAVY MACHINERY BOOKING* 🌾\n\n'
-        '👤 *Farmer / Customer*: $farmerName\n'
-        '📞 *Contact*: $farmerPhone\n'
-        '🚜 *Machine Category*: ${cat['title']}\n'
-        '⏱️ *Requirement*: $_workingHoursOrAcres ${cat['unit']}(s)\n'
-        '📌 *Village / Farm Location*: $locationText\n'
-        '📍 *Live Farm GPS*: $gpsUrl\n\n'
-        '💵 *Calculated Rent*: ₹${totalRent.toStringAsFixed(0)} (Base Rate: ₹${cat['baseRate']}/${cat['unit']})\n\n'
-        '👉 Please confirm machine availability & timing with local operator!';
+    final StringBuffer sb = StringBuffer();
+    sb.writeln('🌾 *RENTO AGRICULTURAL & HEAVY MACHINERY BOOKING* 🌾\n');
+    sb.writeln('👤 *Farmer / Customer*: $farmerName');
+    sb.writeln('📞 *Contact*: $farmerPhone');
+    sb.writeln('🚜 *Machine Category*: ${cat['title']}');
+    sb.writeln('⏱️ *Requirement*: $_workingHoursOrAcres ${cat['unit']}(s)');
+    sb.writeln('📍 *Farm Address*: $locationText');
+    if (pinData['pincode']!.isNotEmpty) {
+      sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
+    }
+    sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=$lat,$lng');
+    sb.writeln('\n💵 *Calculated Rent*: ₹${totalRent.toStringAsFixed(0)} (Base Rate: ₹${cat['baseRate']}/${cat['unit']})');
+    sb.writeln('\n👉 Please confirm machine availability & timing with local operator!');
 
-    WhatsAppService.openWhatsApp(phone: '916381029380', message: message);
+    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
   }
 
   @override

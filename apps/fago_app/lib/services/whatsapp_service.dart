@@ -88,18 +88,61 @@ class WhatsAppService {
     }
   }
 
-  /// Automated Ride Confirmation Message Template for WhatsApp
+  /// Automated Ride Confirmation Message Template for WhatsApp with Auto Live GPS Pin
   static String getRideConfirmationTemplate({
     required String vehicleCategory,
     required String pickupAddress,
     required String dropoffAddress,
     required double fare,
+    String? pincode,
+    double? lat,
+    double? lng,
+    String? riderName,
   }) {
-    return '🚗 *RideO Booking Request*\n\n'
-        '• *Vehicle*: $vehicleCategory\n'
-        '• *Pickup*: $pickupAddress\n'
-        '• *Dropoff*: $dropoffAddress\n'
-        '• *Estimated Fare*: ₹${fare.toStringAsFixed(0)}\n\n'
-        'Please confirm availability!';
+    StringBuffer sb = StringBuffer();
+    sb.writeln('🚗 *RideO Booking Request*');
+    if (riderName != null && riderName.isNotEmpty) {
+      sb.writeln('👤 *Rider*: $riderName');
+    }
+    sb.writeln('• *Vehicle*: $vehicleCategory');
+    sb.writeln('• *Pickup*: $pickupAddress');
+    if (pincode != null && pincode.isNotEmpty) {
+      sb.writeln('• *Pincode*: $pincode');
+    }
+    sb.writeln('• *Dropoff*: $dropoffAddress');
+    sb.writeln('• *Estimated Fare*: ₹${fare.toStringAsFixed(0)}');
+    
+    if (lat != null && lng != null) {
+      sb.writeln('\n📍 *Live GPS Location Pin*: https://maps.google.com/?q=$lat,$lng');
+    }
+    sb.writeln('\nPlease confirm availability!');
+    return sb.toString();
+  }
+
+  /// Generic Auto Location-Pinned WhatsApp Message Helper
+  static String buildLocationPinnedMessage({
+    required String header,
+    required Map<String, String> details,
+    required String address,
+    required String pincode,
+    double? lat,
+    double? lng,
+  }) {
+    StringBuffer sb = StringBuffer();
+    sb.writeln(header);
+    sb.writeln('');
+    details.forEach((key, value) {
+      if (value.isNotEmpty) {
+        sb.writeln('• *$key*: $value');
+      }
+    });
+    sb.writeln('• *Address*: $address');
+    if (pincode.isNotEmpty) {
+      sb.writeln('• *Pincode*: $pincode');
+    }
+    if (lat != null && lng != null) {
+      sb.writeln('📍 *Live GPS Location Pin*: https://maps.google.com/?q=$lat,$lng');
+    }
+    return sb.toString();
   }
 }

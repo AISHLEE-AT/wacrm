@@ -79,19 +79,42 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
     final String rawPhone = (deal['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
     final String cleanPhone = rawPhone.length >= 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
     
-    String messageText = "";
+    final loc = await LocationService().getCurrentLocation();
+    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
+    final userDetails = await ProfileService.getCurrentUserProfileDetails();
+    final buyerName = userDetails['name'] ?? '';
+
+    StringBuffer sb = StringBuffer();
     if (actionType == 'photos') {
-      messageText = "📸 *Request for Item Live Photos & Videos*\n\nHi ${deal['seller_name']}, I saw *${deal['title']}* on FAGO DealO. Could you please send me 2-3 live photos or a short video recording of the item?";
+      sb.writeln("📸 *Request for Item Live Photos & Videos*\n");
+      sb.writeln("Hi ${deal['seller_name']}, I saw *${deal['title']}* on FAGO DealO. Could you please send me 2-3 live photos or a short video recording of the item?");
     } else if (actionType == 'videocall') {
-      messageText = "📹 *WhatsApp Video Call Live Inspection*\n\nHi ${deal['seller_name']}, can we have a quick WhatsApp Video Call to inspect *${deal['title']}* live?";
+      sb.writeln("📹 *WhatsApp Video Call Live Inspection*\n");
+      sb.writeln("Hi ${deal['seller_name']}, can we have a quick WhatsApp Video Call to inspect *${deal['title']}* live?");
     } else if (actionType == 'bargain') {
       final int bargainPrice = ((deal['price'] ?? 0) * 0.85).round();
-      messageText = "🏷️ *FAGO DealO - விலை பேரம் பேசல் (Price Offer)*\n\nவணக்கம் ${deal['seller_name']}, உங்கள் *${deal['title']}* பொருளுக்கு நான் ₹$bargainPrice வழங்கத் தயார். சம்மதமா?";
+      sb.writeln("🏷️ *FAGO DealO - விலை பேரம் பேசல் (Price Offer)*\n");
+      sb.writeln("வணக்கம் ${deal['seller_name']}, உங்கள் *${deal['title']}* பொருளுக்கு நான் ₹$bargainPrice வழங்கத் தயார். சம்மதமா?");
     } else {
-      messageText = "🛍️ *FAGO DealO P2P Inquiry*\n\nவணக்கம் *${deal['seller_name']}*,\nI am interested in your item on *FAGO DealO*:\n📌 *${deal['title']}*\n💰 Price: ₹${deal['price']}\n📍 Location: ${deal['location_name']} (${deal['pincode']})\n\nIs this available? Let's talk!";
+      sb.writeln("🛍️ *FAGO DealO P2P Inquiry*\n");
+      sb.writeln("வணக்கம் *${deal['seller_name']}*,");
+      sb.writeln("I am interested in your item on *FAGO DealO*:");
+      sb.writeln("📌 *${deal['title']}*");
+      sb.writeln("💰 Price: ₹${deal['price']}");
+      sb.writeln("📍 Item Location: ${deal['location_name']} (${deal['pincode']})");
+      sb.writeln("\nIs this available? Let's talk!");
     }
 
-    final success = await WhatsAppService.openWhatsApp(phone: cleanPhone, message: messageText);
+    if (buyerName.isNotEmpty) {
+      sb.writeln("\n👤 *Buyer Name*: $buyerName");
+    }
+    sb.writeln("📍 *Buyer Live Location Pin*: ${pinData['address']}");
+    if (pinData['pincode']!.isNotEmpty) {
+      sb.writeln("📮 *Pincode*: ${pinData['pincode']}");
+    }
+    sb.writeln("🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=${loc.latitude},${loc.longitude}");
+
+    final success = await WhatsAppService.openWhatsApp(phone: cleanPhone, message: sb.toString());
     if (!success) {
       messenger.showSnackBar(
         const SnackBar(content: Text("Could not launch WhatsApp")),

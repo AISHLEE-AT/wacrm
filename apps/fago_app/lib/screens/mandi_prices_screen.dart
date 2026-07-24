@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../services/whatsapp_service.dart';
+import '../services/location_service.dart';
+import '../features/profile/services/profile_service.dart';
 
 class MandiPricesScreen extends StatefulWidget {
   const MandiPricesScreen({super.key});
@@ -118,15 +120,23 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
     }
   }
 
-  void _bookMandiTransport(String mandiName) {
-    final message = 
-        '🚛 *UZHAVAR SANDHAI & MANDI TRANSPORT BOOKING* 🚛\n\n'
-        '📌 *Target Mandi Market*: $mandiName\n'
-        '📦 *Requirement*: Agricultural Produce Goods Transport (Tata Ace / Bolero Pickup)\n'
-        '📍 *Farm Pickup*: Please dispatch nearest empty mini-van to my farm location.\n\n'
-        '👉 Please confirm pickup time & estimated freight fare!';
+  Future<void> _bookMandiTransport(String mandiName) async {
+    final loc = await LocationService().getCurrentLocation();
+    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
+    final userDetails = await ProfileService.getCurrentUserProfileDetails();
+    final farmerName = userDetails['name'] ?? '';
 
-    WhatsAppService.openWhatsApp(phone: '916381029380', message: message);
+    StringBuffer sb = StringBuffer();
+    sb.writeln('🚛 *UZHAVAR SANDHAI & MANDI TRANSPORT BOOKING* 🚛\n');
+    if (farmerName.isNotEmpty) sb.writeln('👤 *Farmer Name*: $farmerName');
+    sb.writeln('📌 *Target Mandi Market*: $mandiName');
+    sb.writeln('📦 *Requirement*: Agricultural Produce Goods Transport (Tata Ace / Bolero Pickup)');
+    sb.writeln('\n📍 *Live Farm Pickup Address*: ${pinData['address']}');
+    if (pinData['pincode']!.isNotEmpty) sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
+    sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=${loc.latitude},${loc.longitude}');
+    sb.writeln('\n👉 Please confirm pickup time & estimated freight fare!');
+
+    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
   }
 
   @override

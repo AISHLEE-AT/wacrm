@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/whatsapp_service.dart';
+import '../services/location_service.dart';
+import '../features/profile/services/profile_service.dart';
 
 class TestOScreen extends StatelessWidget {
   const TestOScreen({super.key});
@@ -120,9 +122,22 @@ class TestOScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  onPressed: () {
-                    final message = '📝 *TESTO EXAM ACCESS*: I want to start mock exam on ${item['title']}';
-                    WhatsAppService.openWhatsApp(phone: '916381029380', message: message);
+                  onPressed: () async {
+                    final loc = await LocationService().getCurrentLocation();
+                    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
+                    final userDetails = await ProfileService.getCurrentUserProfileDetails();
+                    final userName = userDetails['name'] ?? '';
+
+                    StringBuffer sb = StringBuffer();
+                    sb.writeln('📝 *TESTO EXAM & CERTIFICATION ACCESS*');
+                    if (userName.isNotEmpty) sb.writeln('👤 *Candidate Name*: $userName');
+                    sb.writeln('📚 *Test Title*: ${item['title']}');
+                    sb.writeln('🏷️ *Category*: ${item['category']}');
+                    sb.writeln('\n📍 *Candidate Location Pin*: ${pinData['address']}');
+                    if (pinData['pincode']!.isNotEmpty) sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
+                    sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=${loc.latitude},${loc.longitude}');
+
+                    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
                   },
                   child: const Text('Start Test', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),

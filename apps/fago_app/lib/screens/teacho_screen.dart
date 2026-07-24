@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/whatsapp_service.dart';
+import '../services/location_service.dart';
+import '../features/profile/services/profile_service.dart';
 
 class TeachOScreen extends StatelessWidget {
   const TeachOScreen({super.key});
@@ -115,9 +117,22 @@ class TeachOScreen extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.play_circle_fill, color: Colors.purpleAccent, size: 32),
-                  onPressed: () {
-                    final message = '🎓 *TEACHO ACADEMY INQUIRY*: Want to access video guide on ${item['title']}';
-                    WhatsAppService.openWhatsApp(phone: '916381029380', message: message);
+                  onPressed: () async {
+                    final loc = await LocationService().getCurrentLocation();
+                    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
+                    final userDetails = await ProfileService.getCurrentUserProfileDetails();
+                    final userName = userDetails['name'] ?? '';
+
+                    StringBuffer sb = StringBuffer();
+                    sb.writeln('🎓 *TEACHO ACADEMY INQUIRY*');
+                    if (userName.isNotEmpty) sb.writeln('👤 *Student Name*: $userName');
+                    sb.writeln('📚 *Course Title*: ${item['title']}');
+                    sb.writeln('🏷️ *Category*: ${item['category']}');
+                    sb.writeln('\n📍 *Student Location Pin*: ${pinData['address']}');
+                    if (pinData['pincode']!.isNotEmpty) sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
+                    sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=${loc.latitude},${loc.longitude}');
+
+                    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
                   },
                 ),
               ],

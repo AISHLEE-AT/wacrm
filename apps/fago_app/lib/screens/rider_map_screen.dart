@@ -336,6 +336,22 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
     await SupabaseBackendService().createRideRequest(newRide);
 
+    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(_currentLocation!.latitude, _currentLocation!.longitude);
+
+    final whatsappMessage = WhatsAppService.getRideConfirmationTemplate(
+      vehicleCategory: _selectedCategory,
+      pickupAddress: _currentAddress,
+      pincode: pinData['pincode'],
+      dropoffAddress: _destinationAddress,
+      fare: _estimatedFare,
+      lat: _currentLocation!.latitude,
+      lng: _currentLocation!.longitude,
+      riderName: riderName,
+    );
+
+    // Send WhatsApp notification with auto-pinned live GPS location & maps link
+    await WhatsAppService.openWhatsApp(phone: '919486335870', message: whatsappMessage);
+
     setState(() {
       _isBooking = false;
       _activeRideId = rideId; // Set active ride tracking!
@@ -344,7 +360,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Ride requested for $riderName ($riderPhone)! Contact saved to WhatsApp CRM.'),
+          content: Text('Ride requested for $riderName! WhatsApp booking message sent with live GPS location pin.'),
           backgroundColor: Colors.green.shade800,
         ),
       );
