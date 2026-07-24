@@ -147,7 +147,58 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              // 1-Tap Category Dropdown Selector for Mobile Screens
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF222222),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.5)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    hint: const Text("⚡ Select Category / Module Dropdown", style: TextStyle(color: Color(0xFFFFD700), fontSize: 13, fontWeight: FontWeight.bold)),
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFF1E1E1E),
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    items: categories.map((cat) {
+                      return DropdownMenuItem<String>(
+                        value: cat['name'].toString(),
+                        child: Text("${cat['name']} - ${cat['desc']}", overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (selectedName) {
+                      if (selectedName == null) return;
+                      final cat = categories.firstWhere((c) => c['name'] == selectedName);
+                      Navigator.pop(ctx);
+                      final int tab = cat['tab'] as int;
+                      if (tab >= 0) {
+                        setState(() {
+                          _currentTab = tab;
+                          if (cat['name'].toString().contains('DriveO')) {
+                            _isDriverMode = true;
+                          } else if (cat['name'].toString().contains('RideO')) {
+                            _isDriverMode = false;
+                          }
+                        });
+                      } else {
+                        final String path = (cat['route'] as String).replaceAll('/', '');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WebModuleScreen(
+                              title: cat['name'] as String,
+                              modulePath: path,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

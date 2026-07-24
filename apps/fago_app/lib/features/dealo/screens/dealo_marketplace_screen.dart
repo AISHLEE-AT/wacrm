@@ -21,8 +21,17 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
   List<Map<String, dynamic>> _buyDeals = [];
   bool _isLoading = true;
   int _radiusKm = 5; // 5 km default radius!
+  String _selectedCategory = 'all';
 
   final List<int> _radiusOptions = [5, 10, 20, 50, 999];
+  final List<Map<String, String>> _categories = const [
+    {'id': 'all', 'name': '✨ All Categories (அனைத்தும்)'},
+    {'id': 'agri', 'name': '🌾 Agri Produce & Seeds'},
+    {'id': 'vehicles', 'name': '🚗 Vehicles & Tractors'},
+    {'id': 'property', 'name': '🏠 Property & Farmland'},
+    {'id': 'electronics', 'name': '📱 Electronics & Mobiles'},
+    {'id': 'services', 'name': '🛠️ Services & Jobs'},
+  ];
 
   @override
   void initState() {
@@ -485,16 +494,20 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
   }
 
   Widget _buildDealList(List<Map<String, dynamic>> deals) {
-    if (deals.isEmpty) {
+    final filtered = _selectedCategory == 'all'
+        ? deals
+        : deals.where((d) => (d['category'] ?? '').toString().toLowerCase() == _selectedCategory).toList();
+
+    if (filtered.isEmpty) {
       return const Center(
-        child: Text("No local deals available. Tap + to post first deal!", style: TextStyle(color: Colors.grey)),
+        child: Text("No deals available for selected category. Tap + to post deal!", style: TextStyle(color: Colors.grey)),
       );
     }
     return ListView.builder(
-      itemCount: deals.length,
+      itemCount: filtered.length,
       padding: const EdgeInsets.all(12),
       itemBuilder: (context, index) {
-        final deal = deals[index];
+        final deal = filtered[index];
         return Card(
           color: const Color(0xFF1E1E1E),
           margin: const EdgeInsets.only(bottom: 12),
@@ -618,26 +631,72 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       ),
       body: Column(
         children: [
-          // Radius Bar
+          // Category & Radius Filter Dropdown Row (Mobile Optimized - No Long Screen Scrolling)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: const Color(0xFF181818),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  const Text("📍 Radius: ", style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 12)),
-                  ..._radiusOptions.map((r) => Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: ChoiceChip(
-                      label: Text(r == 999 ? 'All' : '$r km'),
-                      selected: _radiusKm == r,
-                      selectedColor: const Color(0xFF00FF00),
-                      onSelected: (val) => setState(() => _radiusKm = r),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            color: const Color(0xFF141414),
+            child: Row(
+              children: [
+                // Category Dropdown
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF222222),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF00FF00).withValues(alpha: 0.4)),
                     ),
-                  )),
-                ],
-              ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedCategory,
+                        isExpanded: true,
+                        dropdownColor: const Color(0xFF1E1E1E),
+                        style: const TextStyle(color: Color(0xFF00FF00), fontSize: 12, fontWeight: FontWeight.bold),
+                        items: _categories.map((cat) {
+                          return DropdownMenuItem<String>(
+                            value: cat['id'],
+                            child: Text(cat['name']!, overflow: TextOverflow.ellipsis),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedCategory = val);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Radius Dropdown
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF222222),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _radiusKm,
+                        isExpanded: true,
+                        dropdownColor: const Color(0xFF1E1E1E),
+                        style: const TextStyle(color: Color(0xFFFFD700), fontSize: 12, fontWeight: FontWeight.bold),
+                        items: _radiusOptions.map((r) {
+                          return DropdownMenuItem<int>(
+                            value: r,
+                            child: Text(r == 999 ? '📍 All Areas' : '📍 $r km Radius'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _radiusKm = val);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
