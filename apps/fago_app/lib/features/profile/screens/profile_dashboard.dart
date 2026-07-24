@@ -128,11 +128,25 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: const Color(0xFF334155),
-            backgroundImage: profile.avatarUrl != null ? NetworkImage(profile.avatarUrl!) : null,
-            child: profile.avatarUrl == null ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFFFD700), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.greenAccent.withValues(alpha: 0.3),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                )
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: const Color(0xFF334155),
+              backgroundImage: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
+                  ? NetworkImage(profile.avatarUrl!)
+                  : const AssetImage('assets/images/default_avatar.png') as ImageProvider,
+            ),
           ),
           const SizedBox(height: 16),
           Text(profile.fullName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),

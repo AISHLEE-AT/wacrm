@@ -193,49 +193,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              // Glowing Logo
-              Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.greenAccent.withValues(alpha: 0.3),
-                      blurRadius: 40,
-                      spreadRadius: 10,
+              // Glowing Thamizhan FAGO Brand Logo
+              Center(
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.greenAccent.withValues(alpha: 0.4),
+                        blurRadius: 30,
+                        spreadRadius: 8,
+                      ),
+                      BoxShadow(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        spreadRadius: 3,
+                      )
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: Image.asset(
+                      'assets/images/app_logo.png',
+                      fit: BoxFit.cover,
                     ),
-                    BoxShadow(
-                      color: Colors.amber.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    )
-                  ],
-                ),
-                child: const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 80,
-                  color: Color(0xFF00FF00), // Vibrant Green
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
-                'FAGO',
+                'தமிழன் • FAGO',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 40,
+                  fontSize: 34,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFFFD700), // Golden Yellow
-                  letterSpacing: 2,
+                  letterSpacing: 1.5,
                 ),
               ),
               const Text(
-                'AishleeTech • WhatsApp Verified',
+                'Thamizhan Growth Engine • WhatsApp Verified',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                  letterSpacing: 1.2,
+                  fontSize: 13,
+                  color: Colors.greenAccent,
+                  letterSpacing: 1.1,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 24),

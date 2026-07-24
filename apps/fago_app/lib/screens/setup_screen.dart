@@ -164,10 +164,36 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Let\'s get to know you', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-        const SizedBox(height: 8),
-        const Text('Enter your details below.', style: TextStyle(color: Colors.white70)),
-        const SizedBox(height: 32),
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.greenAccent.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.asset('assets/images/app_logo.png', fit: BoxFit.cover),
+            ),
+          ),
+        ),
+        const Center(
+          child: Text('தமிழன் • FAGO', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFFFD700))),
+        ),
+        const SizedBox(height: 20),
+        const Text('Let\'s get to know you', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 6),
+        const Text('Enter your details below to set up your Thamizhan profile.', style: TextStyle(color: Colors.white70)),
+        const SizedBox(height: 24),
         TextFormField(
           controller: _nameController,
           style: const TextStyle(color: Colors.white),
