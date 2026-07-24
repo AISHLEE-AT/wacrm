@@ -258,38 +258,85 @@ class _AreaAdminHubScreenState extends State<AreaAdminHubScreen> {
 
                   const SizedBox(height: 10),
 
-                  // QR Code & Join Link Modal Button
+                  // Dual QR Generator (WhatsApp Group Join & App Referral Download)
                   OutlinedButton.icon(
                     onPressed: () {
+                      int qrTab = 0; // 0: WhatsApp Group, 1: App Referral QR
                       showModalBottomSheet(
                         context: context,
+                        isScrollControlled: true,
                         backgroundColor: const Color(0xFF141414),
-                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                        builder: (_) => Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text("📲 Pincode $_selectedPincode WhatsApp Community Group", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                              const SizedBox(height: 12),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                                child: Image.network(
-                                  "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${Uri.encodeComponent("https://chat.whatsapp.com/FagoCommunity$_selectedPincode")}",
-                                  width: 160,
-                                  height: 160,
-                                ),
+                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                        builder: (_) => StatefulBuilder(
+                          builder: (modalContext, setModalState) {
+                            final String groupUrl = "https://chat.whatsapp.com/FagoCommunity$_selectedPincode";
+                            final String referralUrl = "https://watscrm.vercel.app?ref=ADMIN9486335870&pincode=$_selectedPincode";
+                            final String activeUrl = qrTab == 0 ? groupUrl : referralUrl;
+
+                            return Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ChoiceChip(
+                                        label: const Text("💬 WhatsApp Group QR"),
+                                        selected: qrTab == 0,
+                                        selectedColor: const Color(0xFF00FF00),
+                                        onSelected: (val) => setModalState(() => qrTab = 0),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      ChoiceChip(
+                                        label: const Text("🎁 App Referral QR"),
+                                        selected: qrTab == 1,
+                                        selectedColor: Colors.amber,
+                                        onSelected: (val) => setModalState(() => qrTab = 1),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    qrTab == 0
+                                        ? "📲 Scan to Join Pincode $_selectedPincode WhatsApp Group"
+                                        : "🎁 Scan to Download FAGO App & Register (Ref Code)",
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                                    child: Image.network(
+                                      "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${Uri.encodeComponent(activeUrl)}",
+                                      width: 180,
+                                      height: 180,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SelectableText(
+                                    activeUrl,
+                                    style: TextStyle(color: qrTab == 0 ? const Color(0xFF00FF00) : Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    qrTab == 0
+                                        ? "100% Free WhatsApp community group link for Pincode $_selectedPincode"
+                                        : "Share this referral QR code to enroll new local users under your Area Admin account!",
+                                    style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 12),
-                              const Text("Scan to join local WhatsApp community group for free!", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                       );
                     },
-                    icon: const Icon(Icons.qr_code, color: Colors.cyanAccent),
-                    label: Text("📲 Show Pincode $_selectedPincode WhatsApp Community QR", style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                    icon: const Icon(Icons.qr_code_2, color: Colors.cyanAccent),
+                    label: Text("📲 Pincode $_selectedPincode Dual QR (WhatsApp Group & App Referral)", style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 48),
                       side: const BorderSide(color: Colors.cyanAccent),
