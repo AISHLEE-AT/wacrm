@@ -45,12 +45,12 @@ class TeachOScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.language, color: Colors.purpleAccent),
-            tooltip: 'Open Aishlee-Web Live Academy',
+            tooltip: 'Open TeachO Web Portal',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'TeachO - Aishlee Web Academy', modulePath: 'teacho'),
+                  builder: (_) => const WebModuleScreen(title: 'TeachO - Online Academy & Courses', modulePath: 'teacho'),
                 ),
               );
             },

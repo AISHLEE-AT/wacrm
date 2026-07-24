@@ -45,12 +45,12 @@ class TestOScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.language, color: Colors.cyanAccent),
-            tooltip: 'Open Aishlee-Web Live Hub',
+            tooltip: 'Open TestO Exam Hub',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'TestO - Aishlee Web Exam Hub', modulePath: 'testo'),
+                  builder: (_) => const WebModuleScreen(title: 'TestO - Online Exam & Certification', modulePath: 'testo'),
                 ),
               );
             },

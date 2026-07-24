@@ -279,7 +279,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               }
             },
             icon: const Icon(Icons.language, color: Colors.cyanAccent),
-            label: const Text('Open Aishlee Web (தமிழன் Portal)', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 14)),
+            label: const Text('Open Thamizhan Super Pass Portal', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 14)),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
               side: const BorderSide(color: Colors.cyanAccent),

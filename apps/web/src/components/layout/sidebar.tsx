@@ -32,6 +32,9 @@ import {
   Share2,
   Globe,
   ShoppingBag,
+  FileCheck,
+  Tv,
+  Wrench,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -173,15 +176,17 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
   // Dynamic Mobility & Local Services Items
   const mobilityItems: NavItem[] = [
-    { href: "/rideo", label: "RideO", icon: Car },
+    { href: "/rideo", label: "RideO (பயணி)", icon: Car },
     { href: "/rento", label: "RentO (Agri)", icon: Tractor },
     { href: "/mandi", label: "உழவர் சந்தை (Mandi)", icon: Store },
     { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
     { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Compass },
     { href: "/teacho", label: "TeachO (பயிற்சி)", icon: GraduationCap },
-    { href: "https://thamizhan.vercel.app", label: "Aishlee Web (தமிழன்)", icon: Globe, isExternal: true },
+    { href: "/testo", label: "TestO (தேர்வு)", icon: FileCheck },
+    { href: "/tvo", label: "TvO (தமிழ் டிவி)", icon: Tv },
+    { href: "/toolso", label: "ToolsO (கருவிகள்)", icon: Wrench },
     ...(isAdmin || isRegisteredDriver
-      ? [{ href: "/drivo", label: "DriveO", icon: Gauge }]
+      ? [{ href: "/drivo", label: "DriveO (டிரைவர்)", icon: Gauge }]
       : []),
   ];
 
