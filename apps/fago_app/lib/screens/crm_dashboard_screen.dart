@@ -16,6 +16,7 @@ import '../features/profile/screens/profile_dashboard.dart';
 import '../features/admin/screens/area_admin_hub_screen.dart';
 import '../services/whatsapp_service.dart';
 import '../features/promo/screens/whatsapp_status_promo_screen.dart';
+import 'web_module_screen.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
   const CrmDashboardScreen({super.key});
