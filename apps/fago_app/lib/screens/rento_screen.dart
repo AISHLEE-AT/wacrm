@@ -96,9 +96,7 @@ class _RentOScreenState extends State<RentOScreen> {
   }
 
   Future<void> _bookMachineryViaWhatsApp() async {
-    if (_currentLocation == null) {
-      _currentLocation = await LocationService().getCurrentLocation();
-    }
+    _currentLocation ??= await LocationService().getCurrentLocation();
     final lat = _currentLocation?.latitude ?? 13.0827;
     final lng = _currentLocation?.longitude ?? 80.2707;
     final pinData = await LocationService().getPincodeAndAddressFromCoordinates(lat, lng);
@@ -296,6 +294,8 @@ class _RentOScreenState extends State<RentOScreen> {
               decoration: InputDecoration(
                 hintText: 'Village / Farm Address (கிராமம் / தோட்டம்)',
                 hintStyle: const TextStyle(color: Colors.white38),
+                helperText: '📍 Live GPS: $_currentAddress',
+                helperStyle: const TextStyle(color: Colors.greenAccent, fontSize: 10),
                 filled: true,
                 fillColor: const Color(0xFF1E293B),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

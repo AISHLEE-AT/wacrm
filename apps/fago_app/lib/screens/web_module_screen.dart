@@ -29,9 +29,18 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
 
   void _initWebViewController() {
     final cleanPath = widget.modulePath.startsWith('/') ? widget.modulePath : '/${widget.modulePath}';
-    final targetUrl = 'https://watscrm.vercel.app$cleanPath';
+    
+    final List<String> urlCandidates = [
+      'https://watscrm.vercel.app$cleanPath',
+      'https://watscrm.vercel.app/#$cleanPath',
+      'https://thamizhan.vercel.app$cleanPath',
+      'https://thamizhan.vercel.app/#$cleanPath',
+    ];
 
-    final WebViewController controller = WebViewController()
+    int attemptIndex = 0;
+    late final WebViewController controller;
+
+    controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0F172A))
       ..setNavigationDelegate(
@@ -41,6 +50,18 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
           },
           onPageFinished: (String url) {
             if (mounted) setState(() => _isLoading = false);
+          },
+          onHttpError: (HttpResponseError error) {
+            if (error.response?.statusCode == 404 && attemptIndex < urlCandidates.length - 1) {
+              attemptIndex++;
+              controller.loadRequest(Uri.parse(urlCandidates[attemptIndex]));
+            }
+          },
+          onWebResourceError: (WebResourceError error) {
+            if (error.description.contains('404') && attemptIndex < urlCandidates.length - 1) {
+              attemptIndex++;
+              controller.loadRequest(Uri.parse(urlCandidates[attemptIndex]));
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url;
@@ -66,7 +87,7 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(targetUrl));
+      ..loadRequest(Uri.parse(urlCandidates[0]));
 
     if (controller.platform is AndroidWebViewController) {
       final androidController = controller.platform as AndroidWebViewController;
