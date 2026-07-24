@@ -294,27 +294,33 @@ function LoginPageInner() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex flex-col items-center text-center mb-8"
           >
-            <div className="relative flex items-center justify-center w-24 h-24 mb-4">
+            <div className="relative flex items-center justify-center w-36 h-36 mb-5">
               <div className="absolute inset-0 rounded-3xl bg-amber-500/20 blur-2xl" />
               <div className="absolute inset-0 rounded-3xl bg-emerald-500/20 blur-xl" />
-              <div className="relative z-10 w-20 h-20 rounded-2xl overflow-hidden border-2 border-amber-400/60 shadow-[0_0_35px_rgba(250,204,21,0.4)]">
+              <div className="relative z-10 w-32 h-32 rounded-3xl overflow-hidden border border-amber-400/60 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
                 <img src="/app_logo.png" alt="Thamizhan FAGO Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             
-            <h1 className="text-3xl font-black text-amber-400 tracking-tight mb-1">
-              {inviteToken ? "Accept Invitation" : "தமிழன் • FAGO"}
+            {!inviteToken && (
+              <span className="text-sm font-bold text-emerald-400 tracking-[0.2em] uppercase mb-0.5">
+                தமிழன்
+              </span>
+            )}
+
+            <h1 className="text-5xl font-black text-amber-400 tracking-wider leading-none mb-2">
+              {inviteToken ? "Accept Invitation" : "FAGO"}
             </h1>
             
             {!inviteToken && (
               <>
-                <p className="text-emerald-400 font-bold tracking-[0.2em] text-xs uppercase mb-2">
-                  Thamizhan Growth Engine
+                <p className="text-emerald-400 font-extrabold tracking-[0.2em] text-xs uppercase mb-3">
+                  வாழ்க • வளர்க • வெல்க
                 </p>
-                <p className="text-white/40 text-[10px] tracking-widest uppercase mb-4 border-t border-white/10 pt-2 px-4">
+                <p className="text-white/40 text-[10px] tracking-widest uppercase border-t border-white/10 pt-2 px-4">
                   By Aishlee Technology • Official Partner
                 </p>
-                <p className="text-white/60 text-sm mt-1">
+                <p className="text-white/60 text-sm mt-3">
                   Instant WhatsApp OTP Verification
                 </p>
               </>

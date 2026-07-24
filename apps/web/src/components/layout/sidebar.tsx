@@ -216,14 +216,14 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <img 
               src="/app_logo.png" 
               alt="Thamizhan FAGO Logo" 
-              className="h-9 w-9 rounded-lg object-cover border border-amber-400/50 shadow-[0_0_12px_rgba(250,204,21,0.3)]" 
+              className="h-10 w-10 rounded-xl object-cover border border-amber-400/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]" 
             />
             <div className="flex flex-col">
-              <span className="text-sm font-black tracking-tight text-amber-400 leading-none">
-                தமிழன் • FAGO
+              <span className="text-[10px] font-bold tracking-widest text-emerald-400 leading-none uppercase">
+                தமிழன்
               </span>
-              <span className="text-[9px] font-bold tracking-widest text-emerald-400 uppercase mt-1 leading-none">
-                Thamizhan Engine
+              <span className="text-lg font-black tracking-wider text-amber-400 leading-none mt-0.5">
+                FAGO
               </span>
             </div>
           </Link>

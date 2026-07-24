@@ -598,9 +598,9 @@ export default function DealOMarketplacePage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => openWhatsAppDealChat(deal)}
-                      className="py-2.5 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md transition"
+                      className="py-2.5 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md transition"
                     >
-                      <MessageCircle className="w-4 h-4 fill-white" />
+                      <MessageCircle className="w-4 h-4 fill-slate-950 text-slate-950" />
                       Chat WhatsApp
                     </button>
 

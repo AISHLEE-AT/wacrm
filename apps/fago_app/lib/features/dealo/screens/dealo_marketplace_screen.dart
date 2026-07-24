@@ -559,12 +559,12 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF25D366),
-                          foregroundColor: Colors.white,
+                          foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         onPressed: () => _showContactOptionsBottomSheet(deal),
-                        icon: const Icon(Icons.contact_phone, size: 18),
-                        label: const Text("Contact Seller", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        icon: const Icon(Icons.contact_phone, size: 18, color: Colors.black),
+                        label: const Text("Contact Seller", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.black)),
                       ),
                     ),
                   ],

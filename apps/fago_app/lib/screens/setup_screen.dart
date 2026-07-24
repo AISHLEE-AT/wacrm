@@ -166,28 +166,33 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       children: [
         Center(
           child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            width: 80,
-            height: 80,
+            margin: const EdgeInsets.only(bottom: 12),
+            width: 110,
+            height: 110,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.greenAccent.withValues(alpha: 0.3),
-                  blurRadius: 20,
+                  blurRadius: 25,
                   spreadRadius: 4,
                 ),
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(22),
               child: Image.asset('assets/images/app_logo.png', fit: BoxFit.cover),
             ),
           ),
         ),
         const Center(
-          child: Text('தமிழன் • FAGO', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFFFD700))),
+          child: Column(
+            children: [
+              Text('தமிழன்', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.greenAccent, letterSpacing: 1.5)),
+              Text('FAGO', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Color(0xFFFFD700), letterSpacing: 2, height: 1.1)),
+            ],
+          ),
         ),
         const SizedBox(height: 20),
         const Text('Let\'s get to know you', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),

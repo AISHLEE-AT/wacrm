@@ -192,30 +192,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               // Glowing Thamizhan FAGO Brand Logo
               Center(
                 child: Container(
-                  width: 120,
-                  height: 120,
+                  width: 145,
+                  height: 145,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 2),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.greenAccent.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 8,
+                        color: Colors.greenAccent.withValues(alpha: 0.35),
+                        blurRadius: 35,
+                        spreadRadius: 6,
                       ),
                       BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        spreadRadius: 3,
+                        color: Colors.amber.withValues(alpha: 0.25),
+                        blurRadius: 20,
+                        spreadRadius: 2,
                       )
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(26),
+                    borderRadius: BorderRadius.circular(30),
                     child: Image.asset(
                       'assets/images/app_logo.png',
                       fit: BoxFit.cover,
@@ -223,25 +223,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               const Text(
-                'தமிழன் • FAGO',
+                'தமிழன்',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFFFFD700), // Golden Yellow
-                  letterSpacing: 1.5,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.greenAccent,
+                  letterSpacing: 2,
                 ),
               ),
+              const SizedBox(height: 2),
               const Text(
-                'Thamizhan Growth Engine • WhatsApp Verified',
+                'FAGO',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFFFD700), // Golden Yellow
+                  letterSpacing: 3,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'வாழ்க • வளர்க • வெல்க • WhatsApp Verified',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.greenAccent,
-                  letterSpacing: 1.1,
-                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 24),
