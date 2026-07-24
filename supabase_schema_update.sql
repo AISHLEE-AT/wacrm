@@ -1,9 +1,9 @@
 -- ====================================================================
--- FAGO & WACRM SUPABASE DATABASE SCHEMA UPDATE SCRIPT
+-- FAGO & WACRM PRODUCTION SUPABASE DATABASE SCHEMA UPDATE SCRIPT
 -- Run this script in your Supabase SQL Editor (https://supabase.com/dashboard)
 -- ====================================================================
 
--- 1. Ensure `profiles` table has all required columns (UPI ID, Role, Location)
+-- 1. Ensure `profiles` table has all required columns (UPI ID, Role, Location, Pincode, Referral)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
@@ -14,52 +14,90 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   default_module TEXT DEFAULT 'rideo',
   profile_complete BOOLEAN DEFAULT false,
   location TEXT,
+  address TEXT,
+  pincode TEXT DEFAULT '641001',
+  referred_by TEXT DEFAULT '9344532738',
+  points INTEGER DEFAULT 0,
   upi_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Add any missing columns safely
+-- Safely add missing columns
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS default_module TEXT DEFAULT 'rideo';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_complete BOOLEAN DEFAULT false;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS pincode TEXT DEFAULT '641001';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS referred_by TEXT DEFAULT '9344532738';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS upi_id TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS whatsapp TEXT;
 
--- 2. Ensure `contacts` table exists (For Lead Capture & WhatsApp CRM)
-CREATE TABLE IF NOT EXISTS public.contacts (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  phone TEXT NOT NULL,
-  name TEXT,
-  city TEXT,
-  category TEXT,
-  role TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS role TEXT;
-ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS city TEXT;
-ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS category TEXT;
-
--- 3. Ensure `drivers` table exists (DriveO Verification)
+-- 2. Ensure `drivers` table exists (DriveO Driver Partner Records & Verification)
 CREATE TABLE IF NOT EXISTS public.drivers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT,
+  driver_name TEXT,
   mobile_number TEXT,
+  phone TEXT,
+  whatsapp TEXT,
   vehicle_number TEXT,
   vehicle_type TEXT,
   vehicle_category TEXT,
-  is_verified BOOLEAN DEFAULT false,
+  driving_license TEXT DEFAULT 'PENDING-VERIFICATION',
+  upi_id TEXT,
+  status TEXT DEFAULT 'online',
+  is_online BOOLEAN DEFAULT true,
+  is_verified BOOLEAN DEFAULT true,
+  verification_status TEXT DEFAULT 'approved',
+  pickup_latitude NUMERIC,
+  pickup_longitude NUMERIC,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS driver_name TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS whatsapp TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS driving_license TEXT DEFAULT 'PENDING-VERIFICATION';
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS upi_id TEXT;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT true;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT true;
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'approved';
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS vehicle_category TEXT;
+
+-- 3. Ensure `area_admins` table exists (Area Admin & Pincode Territory Management)
+CREATE TABLE IF NOT EXISTS public.area_admins (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  assigned_pincodes TEXT[] DEFAULT ARRAY['641001', '606703'],
+  status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
-ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS vehicle_category TEXT;
+-- 4. Ensure `rides` & `ride_requests` tables exist (RideO & Transport Bookings)
+CREATE TABLE IF NOT EXISTS public.rides (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  rider_id TEXT,
+  driver_id TEXT,
+  phone TEXT,
+  pickup_address TEXT,
+  dropoff_address TEXT,
+  pickup_latitude NUMERIC,
+  pickup_longitude NUMERIC,
+  dropoff_latitude NUMERIC,
+  dropoff_longitude NUMERIC,
+  vehicle_category TEXT,
+  fare NUMERIC DEFAULT 100,
+  status TEXT DEFAULT 'requested',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- 4. Ensure `ride_requests` table exists (RideO & Transport Bookings)
 CREATE TABLE IF NOT EXISTS public.ride_requests (
   id TEXT PRIMARY KEY,
   rider_id TEXT,
@@ -72,50 +110,58 @@ CREATE TABLE IF NOT EXISTS public.ride_requests (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Optional `mandi_prices` cache table
-CREATE TABLE IF NOT EXISTS public.mandi_prices (
+-- 5. Ensure `deals` table exists (DealO 5km Hyperlocal Marketplace)
+CREATE TABLE IF NOT EXISTS public.deals (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  mandi_name TEXT NOT NULL,
-  district TEXT,
-  commodity TEXT NOT NULL,
-  modal_price NUMERIC,
-  unit TEXT DEFAULT 'kg',
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  user_id TEXT,
+  title TEXT NOT NULL,
+  price NUMERIC NOT NULL,
+  type TEXT DEFAULT 'sell',
+  location TEXT,
+  pincode TEXT DEFAULT '641001',
+  seller_name TEXT,
+  seller_phone TEXT,
+  upi_id TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 6. Enable Row Level Security (RLS) & Policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.drivers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.area_admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ride_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.deals ENABLE ROW LEVEL SECURITY;
 
--- Allow authenticated users to read/update their own profile
+-- Allow public reading & authenticated updates
 DROP POLICY IF EXISTS "Public profiles read" ON public.profiles;
 CREATE POLICY "Public profiles read" ON public.profiles FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users update profiles" ON public.profiles;
+CREATE POLICY "Users update profiles" ON public.profiles FOR ALL USING (true);
 
--- Allow authenticated and guest users to insert into contacts & ride_requests
-DROP POLICY IF EXISTS "Anyone can insert contacts" ON public.contacts;
-CREATE POLICY "Anyone can insert contacts" ON public.contacts FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public drivers read" ON public.drivers;
+CREATE POLICY "Public drivers read" ON public.drivers FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Anyone can read contacts" ON public.contacts;
-CREATE POLICY "Anyone can read contacts" ON public.contacts FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public drivers all" ON public.drivers;
+CREATE POLICY "Public drivers all" ON public.drivers FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Anyone can insert ride requests" ON public.ride_requests;
-CREATE POLICY "Anyone can insert ride requests" ON public.ride_requests FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public area_admins all" ON public.area_admins;
+CREATE POLICY "Public area_admins all" ON public.area_admins FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Anyone can read ride requests" ON public.ride_requests;
-CREATE POLICY "Anyone can read ride requests" ON public.ride_requests FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public rides all" ON public.rides;
+CREATE POLICY "Public rides all" ON public.rides FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Anyone can read drivers" ON public.drivers;
-CREATE POLICY "Anyone can read drivers" ON public.drivers FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public ride_requests all" ON public.ride_requests;
+CREATE POLICY "Public ride_requests all" ON public.ride_requests FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Drivers can insert profile" ON public.drivers;
-CREATE POLICY "Drivers can insert profile" ON public.drivers FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public deals all" ON public.deals;
+CREATE POLICY "Public deals all" ON public.deals FOR ALL USING (true);
 
--- Create fast indexes for phone numbers & roles
-CREATE INDEX IF NOT EXISTS idx_contacts_phone ON public.contacts(phone);
-CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
+-- Fast Indexes for Performance
+CREATE INDEX IF NOT EXISTS idx_profiles_phone ON public.profiles(phone);
+CREATE INDEX IF NOT EXISTS idx_profiles_pincode ON public.profiles(pincode);
 CREATE INDEX IF NOT EXISTS idx_drivers_user ON public.drivers(user_id);
+CREATE INDEX IF NOT EXISTS idx_drivers_pincode ON public.drivers(vehicle_number);
+CREATE INDEX IF NOT EXISTS idx_deals_pincode ON public.deals(pincode);
