@@ -1,0 +1,244 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../services/whatsapp_service.dart';
+
+class AreaAdminHubScreen extends StatefulWidget {
+  const AreaAdminHubScreen({super.key});
+
+  @override
+  State<AreaAdminHubScreen> createState() => _AreaAdminHubScreenState();
+}
+
+class _AreaAdminHubScreenState extends State<AreaAdminHubScreen> {
+  final String _managerPhone = '+91 94863 35870';
+  String _selectedPincode = '641001';
+  List<Map<String, dynamic>> _localUsers = [];
+  bool _isLoading = true;
+
+  final List<String> _assignedPincodes = ['641001', '606703', '638001', '625001'];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPincodeUsers();
+  }
+
+  Future<void> _loadPincodeUsers() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await Supabase.instance.client
+          .from('profiles')
+          .select('id, full_name, whatsapp, phone, role, address')
+          .limit(200);
+
+      final List<Map<String, dynamic>> loaded = [];
+      for (var item in response as List) {
+        loaded.add(Map<String, dynamic>.from(item));
+      }
+
+      setState(() {
+        _localUsers = loaded;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error loading pincode users: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _sendWhatsAppGroupInvite(String userPhone) {
+    WhatsAppService.openWhatsApp(
+      phone: userPhone,
+      message: "👋 Hello! I am your official FAGO Area Admin Manager ($_managerPhone) for Pincode $_selectedPincode.\n\n"
+          "Join our official FAGO Pincode WhatsApp Community Group for daily local ride requests, Mandi prices, agri rentals, and DealO offers:\n"
+          "👉 https://chat.whatsapp.com/FagoCommunity$_selectedPincode\n\n"
+          "Feel free to reply if you need any assistance on field!",
+    );
+  }
+
+  void _sendBroadcastMessage() async {
+    final text = Uri.encodeComponent(
+      "☀️ *FAGO AREA ADMIN PINCODE BROADCAST ($_selectedPincode)* ☀️\n\n"
+      "Good morning local drivers, merchants, farmers & riders!\n"
+      "Your Area Admin Manager ($_managerPhone) is active in $_selectedPincode today.\n\n"
+      "🚀 *Active Local Services Today:*\n"
+      "• 🚖 RideO / DriveO Local Trips (0% Commission)\n"
+      "• 🚜 RentO Tractor & Agri Rentals\n"
+      "• 🌾 Mandi Daily Crop Market Prices\n"
+      "• 🏷️ DealO 5km Hyperlocal Marketplace Deals\n\n"
+      "Need field support or document verification? Reply here directly!"
+    );
+    final url = Uri.parse("https://wa.me/?text=$text");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
+      appBar: AppBar(
+        title: const Text('🏢 Area Admin Pincode Hub', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF141414),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Color(0xFF00FF00)),
+            onPressed: _loadPincodeUsers,
+            tooltip: 'Refresh Local Users',
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00FF00)))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Territory Banner Card
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4), width: 1.5),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: const [
+                                Icon(Icons.stars, color: Colors.amber, size: 24),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Pincode Territory Manager",
+                                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber),
+                              ),
+                              child: Text(
+                                "ADMIN: $_managerPhone",
+                                style: const TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "Responsibility: Managing 100 to 200 local drivers, merchants, farmers & riders. Conducting daily field visits & physical document inspections.",
+                          style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.4),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Text("Select Active Pincode: ", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                            const SizedBox(width: 8),
+                            DropdownButton<String>(
+                              value: _selectedPincode,
+                              dropdownColor: const Color(0xFF1E293B),
+                              style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold),
+                              items: _assignedPincodes.map((pin) {
+                                return DropdownMenuItem(value: pin, child: Text("📮 Pincode $pin"));
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedPincode = val);
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // WhatsApp Group Broadcast Toolbar
+                  ElevatedButton.icon(
+                    onPressed: _sendBroadcastMessage,
+                    icon: const Icon(Icons.record_voice_over, color: Colors.black),
+                    label: Text("📢 Broadcast Daily Update to Pincode $_selectedPincode Users", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00FF00),
+                      foregroundColor: Colors.black,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 6,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "👥 Managed Users in $_selectedPincode (${_localUsers.length})",
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                      const Text(
+                        "Target: 100-200 / Pincode",
+                        style: TextStyle(color: Colors.grey, fontSize: 11),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // User List Cards
+                  _localUsers.isEmpty
+                      ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text("No users found in this pincode directory.", style: TextStyle(color: Colors.grey))))
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _localUsers.length,
+                          itemBuilder: (context, index) {
+                            final u = _localUsers[index];
+                            final name = u['full_name'] ?? 'Local Member';
+                            final phone = u['whatsapp'] ?? u['phone'] ?? 'Verified User';
+                            final role = u['role'] ?? 'User';
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              color: const Color(0xFF141414),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Colors.white12)),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: role.toLowerCase() == 'driver' ? Colors.orange.withValues(alpha: 0.2) : const Color(0xFF00FF00).withValues(alpha: 0.2),
+                                  child: Text(
+                                    name[0].toUpperCase(),
+                                    style: TextStyle(color: role.toLowerCase() == 'driver' ? Colors.orange : const Color(0xFF00FF00), fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                subtitle: Text("📱 $phone • Role: ${role.toUpperCase()}", style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.message, color: Color(0xFF25D366)),
+                                  tooltip: 'Send WhatsApp Guide / Group Invite',
+                                  onPressed: () => _sendWhatsAppGroupInvite(phone.toString().replaceAll(RegExp(r'\D'), '')),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ],
+              ),
+            ),
+    );
+  }
+}

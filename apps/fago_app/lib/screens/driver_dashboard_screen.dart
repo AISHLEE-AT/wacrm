@@ -48,13 +48,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           .eq('user_id', user.id)
           .maybeSingle();
 
-      final userPhone = user.phone ?? user.userMetadata?['phone']?.toString() ?? '';
-      final isAdmin = user.email == 'aishleetechnology@gmail.com' || userPhone.contains('9486335870');
-
       if (mounted) {
         setState(() {
           _driverRecord = data;
-          _isDriverVerified = isAdmin || (data != null && (data['is_verified'] == true || data['verification_status'] == 'approved'));
+          // Auto approve instant trial for all registered drivers; physical inspection by Area Admin on field!
+          _isDriverVerified = true;
           _isLoadingDriver = false;
         });
       }
@@ -439,6 +437,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       ),
       body: Column(
         children: [
+          // ⚡ Field Verification Notice Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            color: Colors.amber.withValues(alpha: 0.15),
+            child: Row(
+              children: const [
+                Icon(Icons.verified_user_outlined, color: Colors.amber, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '⚡ Auto-Approved Trial Active! Physical document verification will be conducted by your local Area Admin (+91 94863 35870) on field. Keep DL & RC ready.',
+                    style: TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
           Container(
             padding: const EdgeInsets.all(16),
             color: _isOnline ? const Color(0xFF1B2E1E) : const Color(0xFF222222),

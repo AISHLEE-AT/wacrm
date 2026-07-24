@@ -13,6 +13,7 @@ import 'driver_dashboard_screen.dart';
 import 'rento_screen.dart';
 import '../features/dealo/screens/dealo_marketplace_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
+import '../features/admin/screens/area_admin_hub_screen.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
   const CrmDashboardScreen({super.key});
@@ -356,6 +357,17 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               onTap: () {
                 Navigator.pop(context);
                 context.push('/toolso');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings, color: Colors.amber),
+              title: const Text('🏢 Area Admin (Pincode Manager Hub)', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AreaAdminHubScreen()),
+                );
               },
             ),
 
