@@ -368,6 +368,14 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          const Center(
+            child: Text(
+              'FAGO Super App • Version v1.0.3beta',
+              style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
