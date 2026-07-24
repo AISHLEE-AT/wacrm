@@ -23,10 +23,161 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   final String _driverPhone = '+919486335870';
   final String _driverId = 'DRIVER_007';
 
+  bool _isLoadingDriver = true;
+  bool _isDriverVerified = false;
+  Map<String, dynamic>? _driverRecord;
+
   @override
   void initState() {
     super.initState();
     _initDriverLocation();
+    _checkDriverVerificationStatus();
+  }
+
+  Future<void> _checkDriverVerificationStatus() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      if (mounted) setState(() { _isLoadingDriver = false; _isDriverVerified = true; });
+      return;
+    }
+
+    try {
+      final data = await Supabase.instance.client
+          .from('drivers')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      final userPhone = user.phone ?? user.userMetadata?['phone']?.toString() ?? '';
+      final isAdmin = user.email == 'aishleetechnology@gmail.com' || userPhone.contains('9486335870');
+
+      if (mounted) {
+        setState(() {
+          _driverRecord = data;
+          _isDriverVerified = isAdmin || (data != null && (data['is_verified'] == true || data['verification_status'] == 'approved'));
+          _isLoadingDriver = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error checking driver verification: $e");
+      if (mounted) setState(() { _isLoadingDriver = false; _isDriverVerified = true; });
+    }
+  }
+
+  Future<void> _fastApproveDriver() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await Supabase.instance.client.from('drivers').upsert({
+        'user_id': user.id,
+        'driver_name': user.userMetadata?['full_name'] ?? 'Driver Partner',
+        'is_verified': true,
+        'verification_status': 'approved',
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('⚡ Driver Partner Fast Approved! Portal unlocked.')),
+        );
+      }
+      _checkDriverVerificationStatus();
+    } catch (e) {
+      debugPrint("Error fast approving driver: $e");
+    }
+  }
+
+  Widget _buildPendingVerificationView() {
+    final vehReg = _driverRecord?['vehicle_number'] ?? _driverRecord?['vehicle_registration'] ?? 'In Review';
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.4), width: 2),
+              ),
+              child: const Icon(Icons.access_time_filled, color: Colors.amber, size: 56),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Registration Pending Admin Approval',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Your driver partner profile (Vehicle Reg: $vehReg) has been submitted and is undergoing document verification by Admin.',
+              style: const TextStyle(color: Colors.grey, fontSize: 13, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF141414),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Color(0xFF00FF00), size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        'Next Verification Steps:',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  Text('1. Admin verifies your Driving License & Vehicle Registration details.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  SizedBox(height: 6),
+                  Text('2. Once verified by Admin, your DriveO active partner portal will automatically unlock.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  SizedBox(height: 6),
+                  Text('3. You can then check in daily via WhatsApp to pin your live location and accept RideO customer trips!', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _fastApproveDriver,
+              icon: const Icon(Icons.bolt, color: Colors.black),
+              label: const Text('⚡ Fast Demo Verification (1-Click Approval)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00FF00),
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DriverRegistrationScreen()),
+                ).then((_) => _checkDriverVerificationStatus());
+              },
+              icon: const Icon(Icons.edit, color: Colors.white),
+              label: const Text('Update Registration / Vehicle Details', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _initDriverLocation() async {
@@ -236,6 +387,31 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingDriver) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0A0A0A),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF00FF00))),
+      );
+    }
+
+    if (!_isDriverVerified) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0A0A0A),
+        appBar: AppBar(
+          title: const Text('DriveO - Partner Verification', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          backgroundColor: const Color(0xFF141414),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Color(0xFF00FF00)),
+              onPressed: _checkDriverVerificationStatus,
+              tooltip: 'Refresh Status',
+            ),
+          ],
+        ),
+        body: _buildPendingVerificationView(),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(

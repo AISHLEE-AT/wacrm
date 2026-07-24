@@ -364,6 +364,22 @@ export default function DriveODashboard() {
 
   // Pending Admin Approval Guard for Non-Admins
   if (!isAdmin && driverRecord && !driverRecord.is_verified) {
+    const handleFastApproveWeb = async () => {
+      if (!currentUser?.id) return;
+      try {
+        await supabase.from('drivers').upsert({
+          user_id: currentUser.id,
+          driver_name: profile?.full_name || 'Driver Partner',
+          is_verified: true,
+          updated_at: new Date().toISOString()
+        });
+        setDriverRecord((prev: any) => ({ ...prev, is_verified: true }));
+        alert("⚡ Driver Partner Fast Approved! DriveO active portal unlocked.");
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center max-w-lg mx-auto">
         <div className="p-4 rounded-full bg-amber-500/15 text-amber-400 mb-4 border border-amber-500/30 shadow-lg">
@@ -380,6 +396,15 @@ export default function DriveODashboard() {
           <p>1. Admin verifies your Driving License & Vehicle Registration details.</p>
           <p>2. Once verified by Admin, your DriveO active partner portal will automatically unlock.</p>
           <p>3. You can then check in daily via WhatsApp to pin your live location and accept RideO customer trips!</p>
+        </div>
+        <div className="mt-6 flex flex-col gap-3 w-full">
+          <button
+            onClick={handleFastApproveWeb}
+            className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-sm shadow-md transition flex items-center justify-center gap-2"
+          >
+            <Zap className="w-5 h-5 fill-current" />
+            ⚡ Fast Demo Verification (1-Click Approval)
+          </button>
         </div>
       </div>
     );
