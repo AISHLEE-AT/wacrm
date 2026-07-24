@@ -5,6 +5,7 @@ import 'package:fago_app/core/utils/validation.dart';
 import 'package:fago_app/services/location_service.dart';
 import 'package:fago_app/services/whatsapp_service.dart';
 import 'package:fago_app/features/profile/services/profile_service.dart';
+import 'package:fago_app/screens/web_module_screen.dart';
 
 class DealoMarketplaceScreen extends StatefulWidget {
   const DealoMarketplaceScreen({super.key});
@@ -571,6 +572,20 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       appBar: AppBar(
         backgroundColor: const Color(0xFF141414),
         title: const Text("FAGO DealO (5km Nearby)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Color(0xFF00FF00)),
+            tooltip: 'Open Aishlee-Web DealO',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'DealO - Aishlee Web Marketplace', modulePath: 'dealo'),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: const Color(0xFF00FF00),

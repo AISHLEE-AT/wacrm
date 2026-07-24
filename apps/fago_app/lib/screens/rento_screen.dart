@@ -3,6 +3,7 @@ import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../features/profile/services/profile_service.dart';
+import 'web_module_screen.dart';
 
 class RentOScreen extends StatefulWidget {
   const RentOScreen({super.key});
@@ -136,6 +137,18 @@ class _RentOScreenState extends State<RentOScreen> {
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.greenAccent),
+            tooltip: 'Open Aishlee-Web RentO',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'RentO - Aishlee Web Agri Rentals', modulePath: 'rento'),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.my_location, color: Colors.greenAccent),
             onPressed: _fetchFarmLocation,

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
+import '../../../screens/web_module_screen.dart';
 
 class ProfileDashboard extends ConsumerStatefulWidget {
   const ProfileDashboard({super.key});
@@ -37,6 +38,20 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E293B), // Slate 800
         title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Color(0xFF00F0FF)),
+            tooltip: 'Open Aishlee-Web Profile Pass',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'Profile - Aishlee Web Pass', modulePath: 'profile'),
+                ),
+              );
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,

@@ -7,6 +7,7 @@ import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
 import '../features/driver/screens/driver_registration_screen.dart';
+import 'web_module_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});
@@ -241,6 +242,18 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         title: const Text('DriveO - Driver Radar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF141414),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Color(0xFF00FF00)),
+            tooltip: 'Open Aishlee-Web DriveO',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'DriveO - Aishlee Web Driver Radar', modulePath: 'drivo'),
+                ),
+              );
+            },
+          ),
           Switch(
             value: _isOnline,
             onChanged: (val) => setState(() => _isOnline = val),

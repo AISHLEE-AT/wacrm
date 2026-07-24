@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../services/whatsapp_service.dart';
 import '../services/location_service.dart';
 import '../features/profile/services/profile_service.dart';
+import 'web_module_screen.dart';
 
 class MandiPricesScreen extends StatefulWidget {
   const MandiPricesScreen({super.key});
@@ -151,6 +152,18 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.greenAccent),
+            tooltip: 'Open Aishlee-Web Mandi Rates',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'Mandi - Aishlee Web Wholesale Rates', modulePath: 'mandi'),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: _isLoadingLiveApi
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent))

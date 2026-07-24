@@ -9,6 +9,7 @@ import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
+import 'web_module_screen.dart';
 import '../features/profile/services/profile_service.dart';
 
 class RiderMapScreen extends StatefulWidget {
@@ -552,6 +553,20 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         title: const Text('RideO - Book Ride'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Color(0xFF00FF00)),
+            tooltip: 'Open Aishlee-Web RideO',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'RideO - Aishlee Web Booking', modulePath: 'rideo'),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
