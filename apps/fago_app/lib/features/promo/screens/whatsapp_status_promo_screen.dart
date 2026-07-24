@@ -99,9 +99,10 @@ class _WhatsappStatusPromoScreenState extends State<WhatsappStatusPromoScreen> {
         title: const Text('📸 Share to WhatsApp Status', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF141414),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 32 + MediaQuery.of(context).padding.bottom),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Banner Header
@@ -224,6 +225,7 @@ class _WhatsappStatusPromoScreenState extends State<WhatsappStatusPromoScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

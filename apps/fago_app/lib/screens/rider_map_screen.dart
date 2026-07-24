@@ -727,19 +727,21 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
             bottom: 0,
             left: 0,
             right: 0,
-            child: _activeRideId != null
-                ? _buildActiveRideTrackingSheet()
-                : Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0F172A),
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 12)],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+            child: SafeArea(
+              top: false,
+              child: _activeRideId != null
+                  ? _buildActiveRideTrackingSheet()
+                  : Container(
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0F172A),
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 12)],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                         if (_pinSelectionStep == 0) ...[
                           ElevatedButton.icon(
                             onPressed: () {
@@ -839,6 +841,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                       ],
                     ),
                   ),
+            ),
           ),
         ],
       ),
