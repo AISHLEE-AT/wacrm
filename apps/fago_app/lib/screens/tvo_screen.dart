@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'web_module_screen.dart';
 
 class TvOScreen extends StatelessWidget {
   const TvOScreen({super.key});
@@ -50,6 +51,20 @@ class TvOScreen extends StatelessWidget {
         title: const Text('TvO - விவசாய & பயிற்சி வீடியோக்கள்', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.redAccent),
+            tooltip: 'Open Aishlee-Web Live TvO',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'TvO - Aishlee Web Streaming', modulePath: 'tvo'),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

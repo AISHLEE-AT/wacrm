@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/whatsapp_service.dart';
 import '../services/location_service.dart';
 import '../features/profile/services/profile_service.dart';
+import 'web_module_screen.dart';
 
 class TestOScreen extends StatelessWidget {
   const TestOScreen({super.key});
@@ -41,6 +42,20 @@ class TestOScreen extends StatelessWidget {
         title: const Text('TestO - ஆன்லைன் மாதிரித் தேர்வுகள்', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.cyanAccent),
+            tooltip: 'Open Aishlee-Web Live Hub',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'TestO - Aishlee Web Exam Hub', modulePath: 'testo'),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),

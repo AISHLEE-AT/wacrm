@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/whatsapp_service.dart';
 import '../services/location_service.dart';
 import '../features/profile/services/profile_service.dart';
+import 'web_module_screen.dart';
 
 class TeachOScreen extends StatelessWidget {
   const TeachOScreen({super.key});
@@ -14,20 +15,20 @@ class TeachOScreen extends StatelessWidget {
       'category': 'Agri Machinery',
     },
     {
-      'title': 'சொட்டு நீர் பாசனம் & பம்ப் பராமரிப்பு',
-      'subtitle': 'Drip Irrigation Filter Cleaning & Submersible Motor Fixes',
+      'title': 'சொட்டு நீர் பாசனம் & உரக் கரைசல் மேலாண்மை',
+      'subtitle': 'Drip Irrigation & Fertigation Dosing Masterclass',
       'icon': '💧',
-      'category': 'Water Management',
+      'category': 'Smart Farming',
     },
     {
-      'title': 'இயற்கை விவசாய பஞ்சகவ்விய & ஜீவாமிர்தம் தயாரிப்பு',
-      'subtitle': 'Organic Panchagavya & Natural Bio-Fertilizer Formulas',
-      'icon': '🍃',
-      'category': 'Organic Farming',
+      'title': 'இயற்கைப் பூச்சி விரட்டி தயாரிக்க எளிய முறைகள்',
+      'subtitle': 'Organic Pest Control & Neem Oil Preparation Guide',
+      'icon': '🌿',
+      'category': 'Organic Agri',
     },
     {
-      'title': 'வணிக ஓட்டுநர் உரிமம் & பேட்ஜ் அனுமதி வழிகாட்டி',
-      'subtitle': 'Commercial Driving Permit Renewal & Road Safety Rules',
+      'title': 'ஹெவி டூட்டி டிரைவிங் & பாதுகாப்பு விதிகள்',
+      'subtitle': 'Commercial Truck & Bus Safety Operations Guide',
       'icon': '🚛',
       'category': 'Driver Skills',
     },
@@ -41,6 +42,20 @@ class TeachOScreen extends StatelessWidget {
         title: const Text('TeachO - விவசாய நுட்பங்கள் & பயிற்சி', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.purpleAccent),
+            tooltip: 'Open Aishlee-Web Live Academy',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WebModuleScreen(title: 'TeachO - Aishlee Web Academy', modulePath: 'teacho'),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
