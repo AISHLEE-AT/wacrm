@@ -207,16 +207,18 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         aria-label="Primary"
       >
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4">
-          <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-600 shadow-[0_0_10px_rgba(16,185,129,0.3)] border border-white/10">
-              <span className="text-lg font-black text-white tracking-tighter">F</span>
-            </div>
+          <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2.5">
+            <img 
+              src="/app_logo.png" 
+              alt="Thamizhan FAGO Logo" 
+              className="h-9 w-9 rounded-lg object-cover border border-amber-400/50 shadow-[0_0_12px_rgba(250,204,21,0.3)]" 
+            />
             <div className="flex flex-col">
-              <span className="text-sm font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 leading-none">
-                FAGO
+              <span className="text-sm font-black tracking-tight text-amber-400 leading-none">
+                தமிழன் • FAGO
               </span>
-              <span className="text-[9px] font-bold tracking-widest text-emerald-500/80 uppercase mt-0.5 leading-none">
-                LetsGo...
+              <span className="text-[9px] font-bold tracking-widest text-emerald-400 uppercase mt-1 leading-none">
+                Thamizhan Engine
               </span>
             </div>
           </Link>
