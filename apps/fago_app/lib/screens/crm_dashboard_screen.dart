@@ -14,6 +14,7 @@ import 'rento_screen.dart';
 import '../features/dealo/screens/dealo_marketplace_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
 import '../features/admin/screens/area_admin_hub_screen.dart';
+import '../services/whatsapp_service.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
   const CrmDashboardScreen({super.key});
@@ -385,20 +386,54 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
         ),
       ),
       body: SafeArea(
-        child: IndexedStack(
-          index: _currentTab,
+        child: Column(
           children: [
-            // Tab 0: Role-based Transport Screen (RiderMapScreen for Rider vs DriverDashboardScreen for Driver)
-            showDriverView ? const DriverDashboardScreen() : const RiderMapScreen(),
+            // ⚡ Instant Area Admin WhatsApp Auto-Link Banner
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              color: const Color(0xFF1E293B),
+              child: Row(
+                children: [
+                  const Icon(Icons.groups, color: Color(0xFF00FF00), size: 18),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      '💬 Registered via QR? Auto-link cell to Area Admin WhatsApp Group!',
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      final phone = formattedPhone.replaceAll(RegExp(r'\D'), '');
+                      WhatsAppService.openWhatsApp(
+                        phone: '919486335870',
+                        message: "👋 Hello Area Admin! I registered on FAGO App via QR code (Cell: +91 $phone). Please add me to the local Pincode WhatsApp Group & send my welcome guide!",
+                      );
+                    },
+                    icon: const Icon(Icons.double_arrow, size: 14, color: Color(0xFF00FF00)),
+                    label: const Text('Link Group', style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 11)),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: IndexedStack(
+                index: _currentTab,
+                children: [
+                  // Tab 0: Role-based Transport Screen (RiderMapScreen for Rider vs DriverDashboardScreen for Driver)
+                  showDriverView ? const DriverDashboardScreen() : const RiderMapScreen(),
 
-            // Tab 1: DealO P2P Marketplace Screen
-            const DealoMarketplaceScreen(),
+                  // Tab 1: DealO P2P Marketplace Screen
+                  const DealoMarketplaceScreen(),
 
-            // Tab 2: RentO Machinery Rental Screen
-            const RentOScreen(),
+                  // Tab 2: RentO Machinery Rental Screen
+                  const RentOScreen(),
 
-            // Tab 3: Profile & Digital ID Screen
-            const ProfileDashboard(),
+                  // Tab 3: Profile & Digital ID Screen
+                  const ProfileDashboard(),
+                ],
+              ),
+            ),
           ],
         ),
       ),

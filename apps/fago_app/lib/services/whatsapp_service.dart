@@ -34,6 +34,22 @@ class WhatsAppService {
     }
   }
 
+  /// Immediately auto-links newly registered user's WhatsApp number to their local Area Admin & WhatsApp Group
+  static Future<void> autoLinkToAreaAdminWhatsAppGroup({
+    required String userPhone,
+    required String userName,
+    String adminPhone = '919486335870',
+    String pincode = '641001',
+  }) async {
+    final message = "👋 *NEW USER QR REGISTERED ON FAGO APP* 👋\n\n"
+        "👤 *User Name:* $userName\n"
+        "📱 *Registered WhatsApp Cell:* $userPhone\n"
+        "📮 *Pincode Area:* $pincode\n\n"
+        "👉 *Please add me to the official Pincode $pincode Area Admin WhatsApp Group and send my local welcome guide!*";
+
+    await openWhatsApp(phone: adminPhone, message: message);
+  }
+
   /// Launch Native Google Maps App for Turn-by-Turn Navigation ($0 API Cost)
   static Future<bool> openGoogleMapsApp({
     required double destinationLat,
