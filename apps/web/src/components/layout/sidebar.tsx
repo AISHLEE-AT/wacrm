@@ -178,7 +178,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const mobilityItems: NavItem[] = [
     { href: "/rideo", label: "RideO (பயணி)", icon: Car },
     { href: "/rento", label: "RentO (Agri)", icon: Tractor },
-    { href: "/mandi", label: "உழவர் சந்தை (Mandi)", icon: Store },
+    { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
     { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
     { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Compass },
     { href: "/teacho", label: "TeachO (பயிற்சி)", icon: GraduationCap },

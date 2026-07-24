@@ -148,18 +148,18 @@ class _MandiPricesScreenState extends State<MandiPricesScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: const Text('உழவர் சந்தை & காய்கறி விலை', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('AgrO - உழவர் சந்தை & விதைகள்', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF1E293B),
         foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.language, color: Colors.greenAccent),
-            tooltip: 'Open Aishlee-Web Mandi Rates',
+            tooltip: 'Open AgrO Web Portal',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'Mandi - Aishlee Web Wholesale Rates', modulePath: 'mandi'),
+                  builder: (_) => const WebModuleScreen(title: 'AgrO - Wholesale Rates & Agri Tools', modulePath: 'agro'),
                 ),
               );
             },

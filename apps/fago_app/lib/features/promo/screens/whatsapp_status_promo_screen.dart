@@ -34,7 +34,7 @@ class _WhatsappStatusPromoScreenState extends State<WhatsappStatusPromoScreen> {
           '#RentO #AgriRentals #TamilNaduFarmers',
     },
     'mandi': {
-      'title': '🌾 உழவர் சந்தை (Mandi Crop Prices)',
+      'title': '🌾 AgrO (உழவர் சந்தை & விதைகள்)',
       'icon': '🌾',
       'tamilText': '🥦 *இன்றைய காய்கறி & நெல் சந்தை விலை நிலவரம்!* 🥦\n\n'
           '📊 தமிழ்நாட்டின் அனைத்து மாவட்ட உழவர் சந்தை காய்கறி & விவசாய பொருட்கள் நேரடி விலை நிலவரம் உடனுக்குடன்!\n\n'

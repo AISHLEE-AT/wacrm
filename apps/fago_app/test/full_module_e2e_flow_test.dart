@@ -34,8 +34,8 @@ void main() {
         ),
       );
 
-      // Verify Mandi Header
-      expect(find.text('உழவர் சந்தை & காய்கறி விலை'), findsOneWidget);
+      // Verify AgrO Header
+      expect(find.text('AgrO - உழவர் சந்தை & விதைகள்'), findsOneWidget);
       expect(find.byIcon(Icons.language), findsOneWidget);
     });
 

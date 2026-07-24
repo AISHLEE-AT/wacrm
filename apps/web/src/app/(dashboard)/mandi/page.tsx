@@ -1,19 +1,9 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Truck, TrendingUp, TrendingDown, Minus, MapPin, MessageSquare, ShieldCheck, PlusCircle, ArrowUpRight, BarChart3, LineChart } from 'lucide-react';
+import React, { useState } from 'react';
+import { Store, ShoppingBag, Truck, TrendingUp, TrendingDown, Minus, MapPin, Calculator, Wrench, Zap, CheckCircle2, ShieldCheck, ArrowUpRight, BarChart3, LineChart, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
-
-const supabase = createClient();
-
-const SEVEN_DAY_TRENDS = [
-  { item: 'தக்காளி (Tomato)', d1: '₹18', d2: '₹20', d3: '₹22', d4: '₹22', d5: '₹24', d6: '₹25', d7: '₹26', status: '📈 Up +33%', isUp: true },
-  { item: 'சின்ன வெங்காயம் (Small Onion)', d1: '₹55', d2: '₹52', d3: '₹50', d4: '₹48', d5: '₹48', d6: '₹47', d7: '₹48', status: '📉 Down -12%', isUp: false },
-  { item: 'நெல் (Paddy - Ponni)', d1: '₹1350', d2: '₹1380', d3: '₹1400', d4: '₹1400', d5: '₹1410', d6: '₹1420', d7: '₹1420', status: '📈 Up +5%', isUp: true },
-  { item: 'முருங்கைக்காய் (Drumstick)', d1: '₹50', d2: '₹52', d3: '₹55', d4: '₹58', d5: '₹60', d6: '₹62', d7: '₹65', status: '📈 Up +30%', isUp: true },
-];
 
 const MANDI_DATA = [
   {
@@ -47,205 +37,183 @@ const MANDI_DATA = [
       { name: 'சின்ன வெங்காயம் (Small Onion)', price: '₹52 / kg', trend: 'up', change: '+₹4' },
       { name: 'மல்லிகை பூ (Jasmine Flower)', price: '₹450 / kg', trend: 'up', change: '+₹50' },
       { name: 'தக்காளி (Tomato)', price: '₹25 / kg', trend: 'stable', change: '0' },
-      { name: 'வாழை இலை (Plantain Leaf)', price: '₹3.50 / piece', trend: 'stable', change: '0' },
-    ],
-  },
-  {
-    id: 'trichy',
-    name: 'திருச்சி காந்தி மார்க்கெட் (Trichy Gandhi Market)',
-    district: 'Tiruchirappalli',
-    commodities: [
-      { name: 'நெல் (Paddy - Ponni)', price: '₹1,420 / 60kg bag', trend: 'up', change: '+₹30' },
-      { name: 'வாழைப்பழம் (Poovan Banana)', price: '₹350 / comb', trend: 'stable', change: '0' },
-      { name: 'வெங்காயம் (Big Onion)', price: '₹30 / kg', trend: 'down', change: '-₹2' },
     ],
   },
 ];
 
-export default function MandiWebDashboard() {
-  const [selectedMandiId, setSelectedMandiId] = useState('oddanchatram');
-  const [agriDeals, setAgriDeals] = useState<any[]>([]);
-  const currentMandi = MANDI_DATA.find((m) => m.id === selectedMandiId) || MANDI_DATA[0];
+export default function AgrOPage() {
+  const [activeTab, setActiveTab] = useState('mandi'); // 'mandi' | 'tools' | 'analytics'
+  const [landArea, setLandArea] = useState('1');
+  const [cropType, setCropType] = useState('Paddy');
+  const [calculatedSeed, setCalculatedSeed] = useState(25);
 
-  useEffect(() => {
-    const fetchAgriDeals = async () => {
-      try {
-        const { data } = await supabase
-          .from('local_deals')
-          .select('*')
-          .in('category', ['agri', 'tools'])
-          .order('created_at', { ascending: false })
-          .limit(6);
-        if (data) setAgriDeals(data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchAgriDeals();
-  }, []);
-
-  const handleBookMandiTransport = () => {
-    const message =
-      `🚛 *UZHAVAR SANDHAI & MANDI TRANSPORT BOOKING* 🚛\n\n` +
-      `📌 *Target Mandi Market*: ${currentMandi.name}\n` +
-      `📦 *Requirement*: Agricultural Goods Transport (Tata Ace / Bolero Pickup)\n` +
-      `📍 *Farm Pickup*: Dispatch nearest empty mini-van to my farm location.\n\n` +
-      `👉 Please confirm pickup time & estimated freight fare!`;
-
-    window.open(`https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(message)}`, '_blank');
+  const calculateSeedRequirements = (acres, crop) => {
+    const acresNum = parseFloat(acres) || 0;
+    let ratePerAcre = 25;
+    if (crop === 'Groundnut') ratePerAcre = 50;
+    if (crop === 'Cotton') ratePerAcre = 2.5;
+    if (crop === 'Sugarcane') ratePerAcre = 3000;
+    setCalculatedSeed(acresNum * ratePerAcre);
   };
 
   return (
-    <div className="flex flex-col space-y-6 max-w-6xl mx-auto p-4 sm:p-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 border border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl">🥬</span>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              உழவர் சந்தை & காய்கறி விலை (Mandi Tracker)
+    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400">
+              <Store className="h-6 w-6" />
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-amber-300 to-cyan-400">
+              AgrO • உழவர் சந்தை, விதைகள் &amp; கருவிகள்
             </h1>
           </div>
-          <p className="text-emerald-300 text-sm max-w-2xl">
-            தமிழ்நாட்டின் முன்னணி காய்கறி மற்றும் விவசாய விளைபொருட்கள் சந்தைகளின் அன்றாட மொத்த விலை விவரங்கள் ($0 API Cost Direct Transport Booking).
+          <p className="text-slate-400 text-sm">
+            தமிழ்நாடு நேரடி உழவர் சந்தை தினசரி காய்கறி விலைகள், விதை &amp; உரம் கணிப்பான் மற்றும் விவசாயக் கருவிகள்.
           </p>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
-          <Link
-            href="/dealo"
-            className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition"
-          >
-            <PlusCircle className="w-4 h-4" /> List Farm Produce on DealO
-          </Link>
-          <button
-            type="button"
-            onClick={handleBookMandiTransport}
-            className="px-5 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition"
-          >
-            <Truck className="w-4 h-4" /> Book Produce Transport
-          </button>
-        </div>
       </div>
 
-      {/* 📈 7-Day Historic Price Trend Analytics */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <LineChart className="w-5 h-5 text-emerald-500" /> 📈 7-Day Wholesale Price Trend Analytics (7 நாள் விலை மாற்றம்)
-          </h2>
-          <span className="text-xs text-muted-foreground font-semibold">Updated Daily at 6:00 AM</span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {SEVEN_DAY_TRENDS.map((t, idx) => (
-            <div key={idx} className="p-4 bg-muted/40 border border-border rounded-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-bold text-sm text-foreground">{t.item}</h3>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded ${t.isUp ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
-                  {t.status}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/50">
-                <span>Day 1: {t.d1}</span>
-                <span>Day 3: {t.d3}</span>
-                <span>Day 5: {t.d5}</span>
-                <span className="font-bold text-foreground">Today: {t.d7}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Tabs Bar */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+        <button
+          onClick={() => setActiveTab('mandi')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === 'mandi'
+              ? 'bg-emerald-500 text-black shadow-lg'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Store className="h-4 w-4" /> 🌾 நேரடி சந்தை விலைகள் (Mandi Rates)
+        </button>
+        <button
+          onClick={() => setActiveTab('tools')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === 'tools'
+              ? 'bg-amber-400 text-black shadow-lg'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Wrench className="h-4 w-4" /> 🛠️ ToolsO விவசாயக் கருவிகள் &amp; கணிப்பான்
+        </button>
       </div>
 
-      {/* Mandi Selector Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {MANDI_DATA.map((m) => {
-          const isSelected = m.id === selectedMandiId;
-          return (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setSelectedMandiId(m.id)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition border ${
-                isSelected
-                  ? 'bg-emerald-500 text-black border-emerald-400 shadow-md'
-                  : 'bg-card border-border text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {m.district}: {m.id.toUpperCase()}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected Mandi Prices Grid */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
-        <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-emerald-500" /> {currentMandi.name}
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {currentMandi.commodities.map((item, idx) => {
-            const isUp = item.trend === 'up';
-            return (
-              <div
-                key={idx}
-                className="p-4 rounded-xl bg-muted/40 border border-border flex items-center justify-between"
-              >
-                <div>
-                  <h3 className="text-sm font-bold text-foreground">{item.name}</h3>
-                  <span className="text-xs text-emerald-400 font-black block mt-0.5">{item.price}</span>
+      {/* TAB 1: Mandi Live Prices */}
+      {activeTab === 'mandi' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {MANDI_DATA.map((mandi) => (
+              <div key={mandi.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-xs text-emerald-400 font-bold uppercase">{mandi.district} District</span>
+                    <h3 className="text-lg font-bold text-white mt-1">{mandi.name}</h3>
+                  </div>
+                  <span className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+                    <MapPin className="h-5 w-5" />
+                  </span>
                 </div>
-
-                <div className={`px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1 ${
-                  isUp ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
-                  {item.change}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Integrated Live Agri Produce Deals Section (Powered by DealO) */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-md space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-emerald-500" /> 🌾 Direct Farm Produce & Machinery Deals (FAGO DealO)
-          </h2>
-          <Link href="/dealo" className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1">
-            View All Agri Deals <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {agriDeals.length === 0 ? (
-          <p className="text-xs text-muted-foreground py-4">No direct farm produce listed yet. Farmers can list crops for sale on DealO!</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {agriDeals.map((deal) => (
-              <div key={deal.id} className="p-4 bg-muted/40 border border-border rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-sm text-foreground">{deal.title}</h3>
-                  <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">₹{deal.price}</span>
-                </div>
-                <p className="text-xs text-muted-foreground">📍 {deal.location_name} • Farmer: {deal.seller_name}</p>
-                <div className="pt-2">
-                  <a
-                    href={`https://wa.me/91${deal.phone}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full py-1.5 bg-[#25D366] text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1"
-                  >
-                    <MessageSquare className="w-3 h-3 fill-white" /> Contact Farmer on WhatsApp
-                  </a>
+                <div className="space-y-2 border-t border-slate-800 pt-4">
+                  {mandi.commodities.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-2 border-b border-slate-800/50 last:border-0">
+                      <span className="text-slate-300 text-sm font-medium">{item.name}</span>
+                      <div className="text-right">
+                        <span className="text-emerald-400 font-extrabold text-sm block">{item.price}</span>
+                        <span className="text-[10px] text-slate-400">{item.change} today</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* TAB 2: Integrated ToolsO Tools & Calculators */}
+      {activeTab === 'tools' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Tool 1: Agri Seed & Fertilizer Calculator */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                <Calculator className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">உழவர் விதை &amp; உரம் கணிப்பான்</h3>
+                <p className="text-xs text-slate-400">நிலப் பரப்பளவிற்குத் தேவையான விதை அளவைக் கணக்கிடுங்கள்.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">நிலப் பரப்பளவு (ஏக்கர்)</label>
+                <input
+                  type="number"
+                  value={landArea}
+                  onChange={(e) => {
+                    setLandArea(e.target.value);
+                    calculateSeedRequirements(e.target.value, cropType);
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-amber-400 outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 block mb-1">பயிர் வகை</label>
+                <select
+                  value={cropType}
+                  onChange={(e) => {
+                    setCropType(e.target.value);
+                    calculateSeedRequirements(landArea, e.target.value);
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:border-amber-400 outline-none"
+                >
+                  <option value="Paddy">நெல் (Paddy)</option>
+                  <option value="Groundnut">நிலக்கடலை (Groundnut)</option>
+                  <option value="Cotton">பருத்தி (Cotton)</option>
+                  <option value="Sugarcane">கரும்பு (Sugarcane)</option>
+                </select>
+              </div>
+
+              <div className="p-4 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl">
+                <span className="text-xs text-emerald-400 font-bold block uppercase">தேவையான தோராய அளவு</span>
+                <span className="text-2xl font-black text-white mt-1 block">
+                  {calculatedSeed} {cropType === 'Sugarcane' ? 'கரணைகள்' : 'கி.கி (Kg)'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Tool 2: 0% Commission Savings Calculator */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6">
+            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+              <div className="p-2 bg-amber-500/10 text-amber-400 rounded-lg">
+                <Zap className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">0% கமிஷன் சேமிப்புக் கணிப்பான்</h3>
+                <p className="text-xs text-slate-400">AgrO நேரடி உழவர் சந்தை மூலம் நீங்கள் சேமிக்கும் தொகை.</p>
+              </div>
+            </div>
+
+            <div className="p-5 bg-amber-950/30 border border-amber-500/30 rounded-2xl space-y-3">
+              <div className="flex justify-between items-center text-sm text-slate-300">
+                <span>மாதாந்திர உழவர் சந்தை விற்பனை:</span>
+                <span className="font-bold text-white">₹25,000</span>
+              </div>
+              <div className="flex justify-between items-center text-sm text-slate-300">
+                <span>இடைத்தரகர் கமிஷன் (15-20%):</span>
+                <span className="font-bold text-red-400">-₹4,000</span>
+              </div>
+              <div className="border-t border-amber-500/20 pt-2 flex justify-between items-center text-base font-extrabold text-amber-300">
+                <span>AgrO 0% கமிஷன் மூலம் உங்கள் நிகர லாபம்:</span>
+                <span className="text-xl text-emerald-400">+₹4,000/மாதம்</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
