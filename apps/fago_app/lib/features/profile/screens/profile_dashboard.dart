@@ -118,7 +118,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       return '+91 ${extractedDigits.substring(0, 5)} ${extractedDigits.substring(5)}';
     }
 
-    return '+91 94863 35870';
+    return extractedDigits.isNotEmpty ? '+91 $extractedDigits' : '+91 Verified User';
   }
 
   Widget _buildProfileTab(ProfileModel profile) {
@@ -167,6 +167,28 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             ),
           ),
           const SizedBox(height: 32),
+          // Permanent Security Lock Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.lock, color: Colors.amber, size: 16),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Permanent Registered Profile (Admin approval required to change cell or identity details)',
+                    style: TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           _buildInfoRow(Icons.phone, 'Cell / WhatsApp', cleanWhatsapp),
           const SizedBox(height: 16),
           _buildInfoRow(Icons.location_on, 'Address', profile.address ?? 'Tamil Nadu, India'),

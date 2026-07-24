@@ -198,14 +198,24 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
     );
   }
 
-  void _showPostDealBottomSheet() {
+  Future<void> _showPostDealBottomSheet() async {
+    final profile = await ProfileService.getCurrentUserProfileDetails();
+    final user = Supabase.instance.client.auth.currentUser;
+    String initialPhone = profile['phone'] ?? '';
+    if (initialPhone.isEmpty && user?.phone != null) {
+      initialPhone = user!.phone!.replaceAll(RegExp(r'\D'), '');
+      if (initialPhone.startsWith('91') && initialPhone.length == 12) {
+        initialPhone = initialPhone.substring(2);
+      }
+    }
+
     final titleController = TextEditingController();
     final priceController = TextEditingController();
-    final pincodeController = TextEditingController(text: 'Detecting GPS...');
-    final locationController = TextEditingController(text: 'Detecting GPS...');
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final upiController = TextEditingController();
+    final pincodeController = TextEditingController(text: '641001');
+    final locationController = TextEditingController(text: profile['address'] ?? 'Tamil Nadu, India');
+    final nameController = TextEditingController(text: profile['name'] ?? '');
+    final phoneController = TextEditingController(text: initialPhone);
+    final upiController = TextEditingController(text: profile['upi_id'] ?? '');
     String dealType = 'sell';
     bool isPinningGps = false;
     bool hasAutoLoaded = false;
@@ -243,6 +253,8 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
         });
       }
     }
+
+    if (!mounted) return;
 
     showModalBottomSheet(
       context: context,

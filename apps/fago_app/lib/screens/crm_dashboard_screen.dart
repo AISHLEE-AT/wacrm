@@ -85,7 +85,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
     final fbUser = authState.firebaseUser;
     final sbUser = authState.supabaseUser;
 
-    String raw = fbUser?.phoneNumber ?? sbUser?.phone ?? sbUser?.email ?? '9486335870';
+    String raw = fbUser?.phoneNumber ?? sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.email ?? '';
     if (raw.contains('@')) {
       raw = raw.split('@')[0];
     }
@@ -96,7 +96,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
     if (raw.length == 10) {
       return '+91 ${raw.substring(0, 5)} ${raw.substring(5)}';
     }
-    return raw.isNotEmpty ? raw : '+91 94863 35870';
+    return raw.isNotEmpty ? '+91 $raw' : 'Registered WhatsApp User';
   }
 
   // 10 Super App Categories Grid Selector Modal
@@ -270,7 +270,10 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               title: Text(showDriverView ? 'Switch to Rider Mode' : 'Switch to Driver Mode', style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _isDriverMode = !_isDriverMode);
+                setState(() {
+                  _isDriverMode = !_isDriverMode;
+                  _currentTab = 0;
+                });
               },
             ),
             const Divider(color: Colors.white12),
