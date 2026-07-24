@@ -168,17 +168,132 @@ class _AreaAdminHubScreenState extends State<AreaAdminHubScreen> {
 
                   const SizedBox(height: 20),
 
+                  // Zero-Cost Device WhatsApp Notice
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.check_circle_outline, color: Color(0xFF00FF00), size: 18),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '⚡ 100% FREE WhatsApp Broadcasts! Uses device WhatsApp directly via deep-link (Zero Meta API charges).',
+                            style: TextStyle(color: Color(0xFF00FF00), fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Area Admin Earnings & Performance Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text("📊 Pincode Leaderboard & Earnings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            Text("Pincode Goal: 100-200 Users", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Column(
+                              children: [
+                                Text("${_localUsers.length}", style: const TextStyle(color: Color(0xFF00FF00), fontSize: 20, fontWeight: FontWeight.bold)),
+                                const Text("Pincode Users", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                              ],
+                            ),
+                            Container(width: 1, height: 30, color: Colors.white12),
+                            Column(
+                              children: const [
+                                Text("₹2,100", style: TextStyle(color: Colors.amber, fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text("Field Admin Bonus", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                              ],
+                            ),
+                            Container(width: 1, height: 30, color: Colors.white12),
+                            Column(
+                              children: const [
+                                Text("42 / 50", style: TextStyle(color: Colors.cyanAccent, fontSize: 20, fontWeight: FontWeight.bold)),
+                                Text("Verified Drivers", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
                   // WhatsApp Group Broadcast Toolbar
                   ElevatedButton.icon(
                     onPressed: _sendBroadcastMessage,
                     icon: const Icon(Icons.record_voice_over, color: Colors.black),
-                    label: Text("📢 Broadcast Daily Update to Pincode $_selectedPincode Users", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    label: Text("📢 Device Broadcast to Pincode $_selectedPincode Users (₹0 Cost)", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00FF00),
                       foregroundColor: Colors.black,
                       minimumSize: const Size(double.infinity, 48),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 6,
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // QR Code & Join Link Modal Button
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: const Color(0xFF141414),
+                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                        builder: (_) => Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text("📲 Pincode $_selectedPincode WhatsApp Community Group", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                                child: Image.network(
+                                  "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${Uri.encodeComponent("https://chat.whatsapp.com/FagoCommunity$_selectedPincode")}",
+                                  width: 160,
+                                  height: 160,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text("Scan to join local WhatsApp community group for free!", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.qr_code, color: Colors.cyanAccent),
+                    label: Text("📲 Show Pincode $_selectedPincode WhatsApp Community QR", style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 48),
+                      side: const BorderSide(color: Colors.cyanAccent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
 
