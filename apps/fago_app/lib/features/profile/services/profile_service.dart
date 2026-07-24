@@ -9,6 +9,71 @@ class ProfileService {
 
   ProfileService(this._supabase, this._cache);
 
+  /// Fetch current user's profile details (Name, WhatsApp Phone, Address, UPI ID)
+  static Future<Map<String, String>> getCurrentUserProfileDetails() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    String name = '';
+    String phone = '';
+    String address = '';
+    String upiId = '';
+
+    if (user != null) {
+      final meta = user.userMetadata ?? {};
+      if (meta['full_name'] != null && meta['full_name'].toString().isNotEmpty) {
+        name = meta['full_name'].toString();
+      } else if (meta['name'] != null && meta['name'].toString().isNotEmpty) {
+        name = meta['name'].toString();
+      }
+
+      if (user.phone != null && user.phone!.isNotEmpty) {
+        phone = user.phone!;
+      } else if (meta['phone'] != null && meta['phone'].toString().isNotEmpty) {
+        phone = meta['phone'].toString();
+      } else if (meta['whatsapp'] != null && meta['whatsapp'].toString().isNotEmpty) {
+        phone = meta['whatsapp'].toString();
+      }
+
+      try {
+        final profileData = await Supabase.instance.client
+            .from('profiles')
+            .select('full_name, whatsapp, phone, address, upi_id')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        if (profileData != null) {
+          if ((profileData['full_name'] ?? '').toString().isNotEmpty) {
+            name = profileData['full_name'].toString();
+          }
+          final pPhone = (profileData['whatsapp'] ?? profileData['phone'] ?? '').toString();
+          if (pPhone.isNotEmpty) {
+            phone = pPhone;
+          }
+          if ((profileData['address'] ?? '').toString().isNotEmpty) {
+            address = profileData['address'].toString();
+          }
+          if ((profileData['upi_id'] ?? '').toString().isNotEmpty) {
+            upiId = profileData['upi_id'].toString();
+          }
+        }
+      } catch (e) {
+        debugPrint('Error fetching user profile details: $e');
+      }
+    }
+
+    // Clean phone number to 10-digit format
+    String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.startsWith('91') && cleanPhone.length == 12) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+
+    return {
+      'name': name.isNotEmpty ? name : 'User',
+      'phone': cleanPhone.isNotEmpty ? cleanPhone : '',
+      'address': address.isNotEmpty ? address : 'Tamil Nadu, India',
+      'upi_id': upiId.isNotEmpty ? upiId : (cleanPhone.isNotEmpty ? '$cleanPhone@upi' : 'wacrm@upi'),
+    };
+  }
+
   Future<ProfileModel?> getProfile(String userId) async {
     final cacheKey = 'profile_$userId';
     

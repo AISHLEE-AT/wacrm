@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
+import '../features/profile/services/profile_service.dart';
 
 class RentOScreen extends StatefulWidget {
   const RentOScreen({super.key});
@@ -73,11 +74,17 @@ class _RentOScreenState extends State<RentOScreen> {
   Future<void> _fetchFarmLocation() async {
     final loc = await LocationService().getCurrentLocation();
     final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
+    final profile = await ProfileService.getCurrentUserProfileDetails();
     if (mounted) {
       setState(() {
         _currentLocation = loc;
         _currentAddress = address;
         _villageController.text = address;
+        if (_farmerNameController.text.isEmpty) _farmerNameController.text = profile['name'] ?? '';
+        if (_farmerPhoneController.text.isEmpty || _farmerPhoneController.text == '+91') {
+          final p = profile['phone'] ?? '';
+          _farmerPhoneController.text = p.isNotEmpty ? '+91$p' : '+91';
+        }
       });
     }
   }

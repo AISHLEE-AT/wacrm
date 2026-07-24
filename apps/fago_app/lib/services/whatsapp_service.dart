@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class WhatsAppService {
@@ -7,7 +8,10 @@ class WhatsAppService {
     required String message,
   }) async {
     // Clean phone number (strip spaces, +, hyphens)
-    final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    String cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleanPhone.length == 10) {
+      cleanPhone = '91$cleanPhone';
+    }
     final encodedMessage = Uri.encodeComponent(message);
 
     // Primary: Mobile App Deep-Link Intent
@@ -25,7 +29,7 @@ class WhatsAppService {
         return false;
       }
     } catch (e) {
-      print('Error launching WhatsApp: $e');
+      debugPrint('Error launching WhatsApp: $e');
       return false;
     }
   }
@@ -54,7 +58,7 @@ class WhatsAppService {
         return false;
       }
     } catch (e) {
-      print('Error launching Google Maps: $e');
+      debugPrint('Error launching Google Maps: $e');
       return false;
     }
   }
@@ -79,7 +83,7 @@ class WhatsAppService {
         return false;
       }
     } catch (e) {
-      print('Error launching UPI Payment: $e');
+      debugPrint('Error launching UPI Payment: $e');
       return false;
     }
   }

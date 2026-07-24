@@ -18,6 +18,9 @@ import '../screens/rento_screen.dart';
 import '../screens/mandi_prices_screen.dart';
 import '../screens/touro_screen.dart';
 import '../screens/teacho_screen.dart';
+import '../screens/testo_screen.dart';
+import '../screens/tvo_screen.dart';
+import '../screens/web_module_screen.dart';
 
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
@@ -96,6 +99,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/teacho',
         builder: (context, state) => const TeachOScreen(),
+      ),
+      GoRoute(
+        path: '/testo',
+        builder: (context, state) => const TestOScreen(),
+      ),
+      GoRoute(
+        path: '/tvo',
+        builder: (context, state) => const TvOScreen(),
+      ),
+      GoRoute(
+        path: '/moneyo',
+        builder: (context, state) => const WebModuleScreen(title: 'MoneyO - Agri Ledger & Finance', modulePath: 'moneyo'),
+      ),
+      GoRoute(
+        path: '/tasko',
+        builder: (context, state) => const WebModuleScreen(title: 'TaskO - Daily Tasks & Gig Work', modulePath: 'tasko'),
+      ),
+      GoRoute(
+        path: '/toolso',
+        builder: (context, state) => const WebModuleScreen(title: 'ToolsO - Calculators & Agri Tools', modulePath: 'toolso'),
+      ),
+      GoRoute(
+        path: '/careers',
+        builder: (context, state) => const WebModuleScreen(title: 'Careers & Opportunities', modulePath: 'careers'),
+      ),
+      GoRoute(
+        path: '/admino',
+        builder: (context, state) => const WebModuleScreen(title: 'AdminO - Super Admin Hub', modulePath: 'admino'),
       ),
       GoRoute(
         path: '/rider',

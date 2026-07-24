@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fago_app/core/utils/validation.dart';
+import 'package:fago_app/services/location_service.dart';
+import 'package:fago_app/services/whatsapp_service.dart';
+import 'package:fago_app/features/profile/services/profile_service.dart';
 
 class DealoMarketplaceScreen extends StatefulWidget {
   const DealoMarketplaceScreen({super.key});
@@ -51,16 +54,17 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
 
   void _shareToWhatsAppStatus(Map<String, dynamic> deal) async {
     final messenger = ScaffoldMessenger.of(context);
-    final String text = Uri.encodeComponent(
+    final String rawPhone = (deal['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+    final String cleanPhone = rawPhone.length >= 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
+    final String text =
       "🔥 *விற்பனைக்கு / FOR SALE on FAGO DealO*:\n\n"
       "📌 *${deal['title']}*\n"
       "💰 விலை: ₹${deal['price']}\n"
       "📍 இடம்: ${deal['location_name']} (5 km radius)\n"
       "🛡️ சரிபார்க்கப்பட்ட விற்பனையாளர் (Verified Seller)\n\n"
-      "💬 தொடர்புக்கு: https://wa.me/91${deal['phone']}\n"
-      "📲 FAGO Super App மூலம் நேரடியாக வாங்குங்கள்!"
-    );
-    final Uri url = Uri.parse("https://api.whatsapp.com/send?text=$text");
+      "💬 தொடர்புக்கு: https://wa.me/91$cleanPhone\n"
+      "📲 FAGO Super App மூலம் நேரடியாக வாங்குங்கள்!";
+    final Uri url = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encodeComponent(text)}");
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -87,10 +91,8 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       messageText = "🛍️ *FAGO DealO P2P Inquiry*\n\nவணக்கம் *${deal['seller_name']}*,\nI am interested in your item on *FAGO DealO*:\n📌 *${deal['title']}*\n💰 Price: ₹${deal['price']}\n📍 Location: ${deal['location_name']} (${deal['pincode']})\n\nIs this available? Let's talk!";
     }
 
-    final Uri url = Uri.parse("https://wa.me/91$cleanPhone?text=${Uri.encodeComponent(messageText)}");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
+    final success = await WhatsAppService.openWhatsApp(phone: cleanPhone, message: messageText);
+    if (!success) {
       messenger.showSnackBar(
         const SnackBar(content: Text("Could not launch WhatsApp")),
       );
@@ -175,12 +177,48 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
   void _showPostDealBottomSheet() {
     final titleController = TextEditingController();
     final priceController = TextEditingController();
-    final pincodeController = TextEditingController(text: '641001');
-    final locationController = TextEditingController(text: 'Coimbatore, Tamil Nadu');
+    final pincodeController = TextEditingController(text: 'Detecting GPS...');
+    final locationController = TextEditingController(text: 'Detecting GPS...');
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
     final upiController = TextEditingController();
     String dealType = 'sell';
+    bool isPinningGps = false;
+    bool hasAutoLoaded = false;
+
+    Future<void> autoLoadData(StateSetter setModalState) async {
+      setModalState(() => isPinningGps = true);
+      try {
+        // 1. Auto load profile name, phone, address
+        final profile = await ProfileService.getCurrentUserProfileDetails();
+        setModalState(() {
+          if (nameController.text.isEmpty || nameController.text == 'User') {
+            nameController.text = profile['name'] ?? '';
+          }
+          if (phoneController.text.isEmpty) {
+            phoneController.text = profile['phone'] ?? '';
+          }
+          if (upiController.text.isEmpty) {
+            upiController.text = profile['upi_id'] ?? '';
+          }
+        });
+
+        // 2. Auto pin live GPS location and pincode
+        final loc = await LocationService().getCurrentLocation();
+        final details = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
+        setModalState(() {
+          pincodeController.text = details['pincode'] ?? '641001';
+          locationController.text = details['address'] ?? 'Tamil Nadu, India';
+        });
+      } catch (e) {
+        debugPrint("Error auto pinning location/profile in DealO: $e");
+      } finally {
+        setModalState(() {
+          isPinningGps = false;
+          hasAutoLoaded = true;
+        });
+      }
+    }
 
     showModalBottomSheet(
       context: context,
@@ -192,6 +230,10 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       builder: (modalContext) {
         return StatefulBuilder(
           builder: (modalContext, setModalState) {
+            if (!hasAutoLoaded && !isPinningGps) {
+              autoLoadData(setModalState);
+            }
+
             return Padding(
               padding: EdgeInsets.only(
                 top: 20,
@@ -263,16 +305,57 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                       ),
                     ),
                     const SizedBox(height: 10),
-                    TextField(
-                      controller: pincodeController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: "Pincode *",
-                        labelStyle: TextStyle(color: Colors.grey),
-                        filled: true,
-                        fillColor: Color(0xFF222222),
+                    // Auto-Pin Live GPS Location Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isPinningGps ? null : () => autoLoadData(setModalState),
+                        icon: isPinningGps
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00FF00)))
+                            : const Icon(Icons.my_location, color: Color(0xFF00FF00), size: 16),
+                        label: Text(
+                          isPinningGps ? "Detecting Live GPS Pincode..." : "📍 Auto-Pin My Live GPS Location & Pincode",
+                          style: const TextStyle(color: Color(0xFF00FF00), fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF00FF00)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
                       ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: TextField(
+                            controller: pincodeController,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              labelText: "Pincode *",
+                              labelStyle: TextStyle(color: Colors.grey),
+                              filled: true,
+                              fillColor: Color(0xFF222222),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: locationController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              labelText: "Address / Location *",
+                              labelStyle: TextStyle(color: Colors.grey),
+                              filled: true,
+                              fillColor: Color(0xFF222222),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     TextField(

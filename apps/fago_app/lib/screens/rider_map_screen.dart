@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
@@ -10,9 +9,10 @@ import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
+import '../features/profile/services/profile_service.dart';
 
 class RiderMapScreen extends StatefulWidget {
-  const RiderMapScreen({Key? key}) : super(key: key);
+  const RiderMapScreen({super.key});
 
   @override
   State<RiderMapScreen> createState() => _RiderMapScreenState();
@@ -59,11 +59,17 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   Future<void> _initCurrentLocation() async {
     final loc = await LocationService().getCurrentLocation();
     final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
+    final profile = await ProfileService.getCurrentUserProfileDetails();
     if (mounted) {
       setState(() {
         _currentLocation = loc;
         _currentAddress = address;
         _pickupController.text = address;
+        if (_nameController.text.isEmpty) _nameController.text = profile['name'] ?? '';
+        if (_phoneController.text.isEmpty || _phoneController.text == '+91') {
+          final p = profile['phone'] ?? '';
+          _phoneController.text = p.isNotEmpty ? '+91$p' : '+91';
+        }
       });
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 15),
@@ -754,7 +760,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                                     margin: const EdgeInsets.only(right: 10),
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? (cat['color'] as Color).withOpacity(0.25) : const Color(0xFF1E293B),
+                                      color: isSelected ? (cat['color'] as Color).withValues(alpha: 0.25) : const Color(0xFF1E293B),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: isSelected ? (cat['color'] as Color) : Colors.white12,

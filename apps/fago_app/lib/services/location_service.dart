@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
@@ -21,7 +22,7 @@ class LocationService {
     // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      print('Location services are disabled.');
+      debugPrint('Location services are disabled.');
       return defaultLocation;
     }
 
@@ -29,13 +30,13 @@ class LocationService {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        print('Location permissions are denied');
+        debugPrint('Location permissions are denied');
         return defaultLocation;
       }
     }
     
     if (permission == LocationPermission.deniedForever) {
-      print('Location permissions are permanently denied');
+      debugPrint('Location permissions are permanently denied');
       return defaultLocation;
     }
 
@@ -49,7 +50,7 @@ class LocationService {
       );
       return model.Location(latitude: position.latitude, longitude: position.longitude);
     } catch (e) {
-      print('Error getting high-accuracy location: $e. Falling back to last known position.');
+      debugPrint('Error getting high-accuracy location: $e. Falling back to last known position.');
       try {
         Position? lastKnown = await Geolocator.getLastKnownPosition();
         if (lastKnown != null) {
@@ -91,7 +92,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('Native Geocoder fallback: $e');
+      debugPrint('Native Geocoder fallback: $e');
     }
 
     // 2. Secondary Fallback: Nominatim OpenStreetMap
@@ -109,6 +110,63 @@ class LocationService {
     return 'GPS Pin: ${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
   }
 
+  /// High Precision Native Pincode & Address Reverse-Geocoding
+  Future<Map<String, String>> getPincodeAndAddressFromCoordinates(double lat, double lng) async {
+    String pincode = '';
+    String address = '';
+
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
+          pincode = place.postalCode!;
+        }
+        List<String> addressParts = [];
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+          addressParts.add(place.subLocality!);
+        } else if (place.street != null && place.street!.isNotEmpty && place.street != place.name) {
+          addressParts.add(place.street!);
+        }
+        if (place.locality != null && place.locality!.isNotEmpty) {
+          addressParts.add(place.locality!);
+        }
+        if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
+          addressParts.add(place.administrativeArea!);
+        }
+
+        if (addressParts.isNotEmpty) {
+          address = addressParts.join(', ');
+        }
+      }
+    } catch (e) {
+      debugPrint('Native Geocoder pincode error: $e');
+    }
+
+    if (pincode.isEmpty || address.isEmpty) {
+      try {
+        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng');
+        final response = await http.get(url, headers: {'User-Agent': 'WacrmRideApp/1.0'});
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          if (data != null) {
+            if (pincode.isEmpty && data['address'] != null && data['address']['postcode'] != null) {
+              pincode = data['address']['postcode'].toString();
+            }
+            if (address.isEmpty && data['display_name'] != null) {
+              address = data['display_name'].toString();
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    return {
+      'pincode': pincode.isNotEmpty ? pincode : '641001',
+      'address': address.isNotEmpty ? address : 'GPS Pin ($lat, $lng)',
+    };
+  }
+
   /// Forward Geocoding: Search location coordinates from text input ($0 API Cost & 100% Native Precision)
   Future<model.Location?> searchAddressCoordinates(String address) async {
     try {
@@ -118,7 +176,7 @@ class LocationService {
         return model.Location(latitude: loc.latitude, longitude: loc.longitude);
       }
     } catch (e) {
-      print('Native forward geocoding search error: $e');
+      debugPrint('Native forward geocoding search error: $e');
     }
     return null;
   }
@@ -152,7 +210,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('Google Native Geocoder landmark error: $e');
+      debugPrint('Google Native Geocoder landmark error: $e');
     }
 
     // 2. Secondary Source: OpenStreetMap POI Search
@@ -171,7 +229,7 @@ class LocationService {
         }
       }
     } catch (e) {
-      print('OSM landmark fetch error: $e');
+      debugPrint('OSM landmark fetch error: $e');
     }
 
     if (suggestions.isEmpty) {

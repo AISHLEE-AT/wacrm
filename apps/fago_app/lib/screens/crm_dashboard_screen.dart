@@ -22,8 +22,6 @@ class CrmDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
-  late final WebViewController _controller;
-  bool _isLoadingWeb = true;
   int _currentTab = 0; // 0: Transport (RideO/DriveO), 1: DealO, 2: RentO, 3: Profile
   bool _isDriverMode = false; // User-selected Rider vs Driver mode toggle
 
@@ -44,12 +42,8 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
       ..setBackgroundColor(const Color(0xFF000000))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (String url) {
-            if (mounted) setState(() => _isLoadingWeb = true);
-          },
-          onPageFinished: (String url) {
-            if (mounted) setState(() => _isLoadingWeb = false);
-          },
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url;
 
@@ -79,8 +73,6 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
         },
       );
     }
-
-    _controller = controller;
   }
 
   Future<void> _launchExternalUri(Uri uri) async {
@@ -122,10 +114,15 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides', 'route': '/rideo', 'tab': 0},
           {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance', 'route': '/drivo', 'tab': 0},
           {'name': '🚜 RentO (Agri Rental)', 'desc': 'Machinery Rentals', 'route': '/rento', 'tab': 2},
+          {'name': '🎓 TeachO (Academy)', 'desc': 'Skill Guides & Courses', 'route': '/teacho', 'tab': -1},
+          {'name': '📝 TestO (Exam Hub)', 'desc': 'Mock Tests & Certification', 'route': '/testo', 'tab': -1},
+          {'name': '📺 TvO (Video Guides)', 'desc': 'Agri & Driver Streaming', 'route': '/tvo', 'tab': -1},
+          {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo', 'tab': -1},
+          {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko', 'tab': -1},
+          {'name': '🛠️ ToolsO (Suite)', 'desc': 'Calculators & Agri Tools', 'route': '/toolso', 'tab': -1},
           {'name': '🥬 Mandi (சந்தை)', 'desc': 'Wholesale Crop Rates', 'route': '/mandi', 'tab': -1},
-          {'name': '🎓 TeachO (Learning)', 'desc': 'Courses & TestO', 'route': '/teacho', 'tab': -1},
           {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro', 'tab': -1},
-          {'name': '👤 Profile & ID', 'desc': 'KYC & Settings', 'route': '/profile', 'tab': 3},
+          {'name': '👤 Profile & ID', 'desc': 'KYC & Digital Pass', 'route': '/profile', 'tab': 3},
         ];
 
         return Padding(
@@ -300,6 +297,62 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               onTap: () {
                 Navigator.pop(context);
                 context.push('/mandi');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.school, color: Colors.purpleAccent),
+              title: const Text('TeachO (Skill Academy)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/teacho');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.assignment, color: Colors.cyanAccent),
+              title: const Text('TestO (Mock Exam Hub)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/testo');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.temple_hindu, color: Colors.orangeAccent),
+              title: const Text('TourO (ஆன்மீக சுற்றுலா)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/touro');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.play_circle_fill, color: Colors.redAccent),
+              title: const Text('TvO (Media & Video Guides)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/tvo');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance, color: Color(0xFF10B981)),
+              title: const Text('MoneyO (Agri Ledger & Finance)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/moneyo');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.check_box, color: Colors.blueAccent),
+              title: const Text('TaskO (Gig Tasks & Work)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/tasko');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.build_circle, color: Colors.amberAccent),
+              title: const Text('ToolsO (Calculators & Tools)', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/toolso');
               },
             ),
 

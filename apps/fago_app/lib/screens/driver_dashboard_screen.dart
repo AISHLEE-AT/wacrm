@@ -9,7 +9,7 @@ import '../services/supabase_backend_service.dart';
 import '../features/driver/screens/driver_registration_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
-  const DriverDashboardScreen({Key? key}) : super(key: key);
+  const DriverDashboardScreen({super.key});
 
   @override
   State<DriverDashboardScreen> createState() => _DriverDashboardScreenState();
@@ -100,7 +100,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.2),
+                    color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: statusColor),
                   ),
@@ -244,7 +244,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Switch(
             value: _isOnline,
             onChanged: (val) => setState(() => _isOnline = val),
-            activeColor: const Color(0xFF00FF00),
+            activeThumbColor: const Color(0xFF00FF00),
           ),
         ],
       ),
@@ -270,7 +270,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
                       ),
                       Text(
-                        _driverAddress,
+                        _driverLocation != null
+                            ? '📍 $_driverAddress (${_driverLocation!.latitude.toStringAsFixed(3)}, ${_driverLocation!.longitude.toStringAsFixed(3)})'
+                            : _driverAddress,
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

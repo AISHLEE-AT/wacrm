@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ride_request.dart';
 
@@ -19,7 +20,7 @@ class SupabaseBackendService {
           .single();
       return RideRequest.fromJson(response);
     } catch (e) {
-      print('Supabase Create Ride Error: $e');
+      debugPrint('Supabase Create Ride Error: $e');
       return null;
     }
   }
@@ -33,7 +34,7 @@ class SupabaseBackendService {
           .eq('status', 'requested')
           .map((data) => data.map((json) => RideRequest.fromJson(json)).toList());
     } catch (e) {
-      print('Supabase Stream Error: $e');
+      debugPrint('Supabase Stream Error: $e');
       return const Stream.empty();
     }
   }
@@ -52,7 +53,7 @@ class SupabaseBackendService {
       }).eq('id', rideId);
       return true;
     } catch (e) {
-      print('Supabase Accept Ride Error: $e');
+      debugPrint('Supabase Accept Ride Error: $e');
       return false;
     }
   }
@@ -66,7 +67,7 @@ class SupabaseBackendService {
           .eq('id', rideId)
           .map((data) => data.isNotEmpty ? RideRequest.fromJson(data.first) : null);
     } catch (e) {
-      print('Supabase Ride Status Stream Error: $e');
+      debugPrint('Supabase Ride Status Stream Error: $e');
       return const Stream.empty();
     }
   }
@@ -82,7 +83,7 @@ class SupabaseBackendService {
       }).eq('id', rideId);
       return true;
     } catch (e) {
-      print('Supabase Update Ride Status Error: $e');
+      debugPrint('Supabase Update Ride Status Error: $e');
       return false;
     }
   }
@@ -101,7 +102,7 @@ class SupabaseBackendService {
                   (r.status == RideStatus.accepted || r.status == RideStatus.arrived || r.status == RideStatus.inProgress))
               .toList());
     } catch (e) {
-      print('Supabase Driver Active Rides Error: $e');
+      debugPrint('Supabase Driver Active Rides Error: $e');
       return const Stream.empty();
     }
   }
@@ -128,7 +129,7 @@ class SupabaseBackendService {
       }, onConflict: 'phone');
       return true;
     } catch (e) {
-      print('Supabase Save CRM Contact Error: $e');
+      debugPrint('Supabase Save CRM Contact Error: $e');
       return false;
     }
   }
@@ -164,7 +165,7 @@ class SupabaseBackendService {
 
       return true;
     } catch (e) {
-      print('Supabase Driver Profile Registration Error: $e');
+      debugPrint('Supabase Driver Profile Registration Error: $e');
       return false;
     }
   }
