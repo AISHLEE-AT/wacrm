@@ -2,14 +2,23 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
--- Fully defensive – converts BIGINT IDs to TEXT & adds missing columns.
+-- Fully defensive – drops IDENTITY sequences & converts BIGINT IDs to TEXT.
 -- ==============================================================================
 
--- ── 0. CONVERT INTEGER/BIGINT IDs TO TEXT IF THEY EXISTED AS BIGINT ──────────
+-- ── 0. DROP IDENTITY CONSTRAINTS & CONVERT IDs TO TEXT IF NEEDED ───────────────
+ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id TYPE TEXT USING id::TEXT;
+
+ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN id TYPE TEXT USING id::TEXT;
+
+ALTER TABLE IF EXISTS public.purchases ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.purchases ALTER COLUMN id TYPE TEXT USING id::TEXT;
+
+ALTER TABLE IF EXISTS public.point_logs ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.point_logs ALTER COLUMN id TYPE TEXT USING id::TEXT;
+
+ALTER TABLE IF EXISTS public.notifications ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.notifications ALTER COLUMN id TYPE TEXT USING id::TEXT;
 
 -- ── 1. PROFILES TABLE ────────────────────────────────────────────────────────
