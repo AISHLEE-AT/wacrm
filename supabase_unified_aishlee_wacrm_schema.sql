@@ -267,4 +267,4 @@ CREATE INDEX IF NOT EXISTS idx_drivers_user ON public.drivers(user_id);
 -- ── 13. RELOAD API SCHEMA CACHE ───────────────────────────────────────────────
 NOTIFY pgrst, 'reload schema';
 
-RAISE NOTICE '=== ✅ Unified Aishlee-Web & WACRM Schema Update Complete! ===';
+SELECT '=== ✅ Unified Aishlee-Web & WACRM Schema Update Complete! ===' AS status;

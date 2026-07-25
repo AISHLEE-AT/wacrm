@@ -125,4 +125,4 @@ ON CONFLICT (id) DO UPDATE SET
 -- 4. Reload schema cache
 NOTIFY pgrst, 'reload schema';
 
-RAISE NOTICE '✅ LMS Courses setup complete!';
+SELECT '✅ LMS Courses setup complete!' AS status;
