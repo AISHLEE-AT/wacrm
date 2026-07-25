@@ -19,8 +19,10 @@ export default function ToolsOPage() {
         const { data: { session } } = await supabase.auth.getSession();
         const phone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
         const name = profile?.full_name || user?.user_metadata?.full_name || 'User';
+        const geminiKey = localStorage.getItem('fago_gemini_api_key') || localStorage.getItem('gemini_api_key') || '';
 
         let params = `?embed=true&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`;
+        if (geminiKey) params += `&gemini_api_key=${encodeURIComponent(geminiKey)}`;
         if (session) {
           params += `&access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
         }
