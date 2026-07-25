@@ -42,17 +42,18 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
     
     String authQueryParams = '';
     String authHashFragment = '';
+    final currentSession = session;
     if (user != null) {
       final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
       final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       authQueryParams = '?embed=true&phone=$cleanPhone&user_id=${user.id}';
-      if (session?.accessToken != null) {
-        authQueryParams += '&access_token=${session.accessToken}';
-        authHashFragment = '#access_token=${session.accessToken}';
+      if (currentSession != null && currentSession.accessToken.isNotEmpty) {
+        authQueryParams += '&access_token=${currentSession.accessToken}';
+        authHashFragment = '#access_token=${currentSession.accessToken}';
       }
-      if (session?.refreshToken != null) {
-        authQueryParams += '&refresh_token=${session.refreshToken}';
-        authHashFragment += '&refresh_token=${session.refreshToken}&token_type=bearer';
+      if (currentSession != null && currentSession.refreshToken != null && currentSession.refreshToken!.isNotEmpty) {
+        authQueryParams += '&refresh_token=${currentSession.refreshToken}';
+        authHashFragment += '&refresh_token=${currentSession.refreshToken}&token_type=bearer';
       }
     } else {
       authQueryParams = '?embed=true';
