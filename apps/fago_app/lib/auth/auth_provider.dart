@@ -230,6 +230,19 @@ class AuthNotifier extends Notifier<AuthState> {
         }
       }
 
+      // Auto-heal: if resolved as admin but DB role column is wrong, fix it now.
+      if (isAdmin && user != null && profileRole != 'admin') {
+        try {
+          await _supabase
+              .from('profiles')
+              .update({'role': 'admin'})
+              .eq('id', user.id);
+          debugPrint('Auto-corrected role to admin for user ${user.id}');
+        } catch (e) {
+          debugPrint('Could not auto-correct admin role: $e');
+        }
+      }
+
       if (isAdmin) {
         state = state.copyWith(
           isLoading: false,
@@ -543,11 +556,17 @@ class AuthNotifier extends Notifier<AuthState> {
     await _resolveRole(cleanPhone, isSessionResume: false);
   }
 
-  /// Instant Device PIN / Biometric Login for returning registered devices
-  Future<void> verifyDevicePinAndAutoLogin(String phone) async {
+  /// Instant Device PIN / Biometric Login for returning registered devices.
+  /// Returns the resolved [UserRole] so the caller can route correctly.
+  Future<UserRole> verifyDevicePinAndAutoLogin(String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final tenDigit = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+    // Accept 10-digit or 12-digit (91XXXXXXXXXX) stored numbers
+    final tenDigit = cleanPhone.length > 10
+        ? cleanPhone.substring(cleanPhone.length - 10)
+        : cleanPhone;
     await _directSupabasePhoneLogin(tenDigit, null, null);
+    // _directSupabasePhoneLogin internally calls _resolveRole, so state is set.
+    return state.role;
   }
 
   Future<void> verifyPhoneNumber({

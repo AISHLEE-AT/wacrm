@@ -9,6 +9,7 @@ import '../screens/setup_screen.dart';
 import '../features/rider/screens/home_screen.dart' as rider;
 import '../features/driver/screens/home_screen.dart' as driver;
 import '../features/driver/screens/admin_home_screen.dart' as admin;
+import '../screens/admin_crm_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
 
 import '../screens/rider_map_screen.dart';
@@ -157,7 +158,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin',
-        builder: (context, state) => const admin.AdminHomeScreen(),
+        builder: (context, state) => const AdminCrmScreen(),
       ),
       GoRoute(
         path: '/profile',

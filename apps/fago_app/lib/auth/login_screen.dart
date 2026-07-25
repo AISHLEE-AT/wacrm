@@ -25,6 +25,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _useWhatsAppAuth = true; // Default to WhatsApp Login OTP
   String _verificationId = '';
   bool _isReturningUser = false;
+  // _deviceRegistered is set ONLY from device storage and is never cleared by
+  // the DB lookup in _onPhoneChanged — this prevents the race condition where
+  // an async DB call resets the biometric login card before it renders.
+  bool _deviceRegistered = false;
   
   int _resendCooldown = 0;
   Timer? _cooldownTimer;
@@ -74,16 +78,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (didAuthenticate && mounted) {
         setState(() => _isLoading = true);
+        // Prefer stored device phone; fall back to what the user typed
         final registeredPhone = await DeviceAuthService.getRegisteredPhone();
-        final targetPhone = (registeredPhone != null && registeredPhone.isNotEmpty) 
-            ? registeredPhone 
-            : _phoneController.text.trim();
+        final rawTyped = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+        final targetPhone = (registeredPhone != null && registeredPhone.isNotEmpty)
+            ? registeredPhone
+            : rawTyped;
 
-        if (targetPhone.length == 10 || targetPhone.length == 12) {
+        // Accept 10-digit or 12-digit (91XXXXXXXXXX) phones
+        final cleanLen = targetPhone.replaceAll(RegExp(r'\D'), '').length;
+        if (cleanLen == 10 || cleanLen == 12) {
           try {
-            await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(targetPhone);
+            // verifyDevicePinAndAutoLogin now returns the resolved UserRole
+            final resolvedRole = await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(targetPhone);
             if (mounted) {
-              context.go('/rideo');
+              // Route based on role — admin goes to CRM, driver to drivo, user to rideo
+              if (resolvedRole == UserRole.admin) {
+                context.go('/');
+              } else if (resolvedRole == UserRole.driver) {
+                context.go('/drivo');
+              } else {
+                context.go('/rideo');
+              }
             }
           } catch (e) {
             setState(() => _isLoading = false);
@@ -121,13 +137,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _checkAndAutoFillRegisteredDevice() async {
     final registeredPhone = await DeviceAuthService.getRegisteredPhone();
     final registeredName = await DeviceAuthService.getRegisteredName();
-    if (registeredPhone != null && registeredPhone.isNotEmpty && mounted) {
+    final isLocked = await DeviceAuthService.isProfileLocked();
+    if (registeredPhone != null && registeredPhone.isNotEmpty && isLocked && mounted) {
       setState(() {
         _phoneController.text = registeredPhone;
         if (registeredName != null && registeredName.isNotEmpty) {
           _nameController.text = registeredName;
-          _isReturningUser = true;
         }
+        // Set BOTH flags — _deviceRegistered is the stable flag that is never
+        // overridden by the async DB lookup in _onPhoneChanged.
+        _isReturningUser = true;
+        _deviceRegistered = true;
       });
     }
   }
@@ -154,17 +174,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             });
           }
         } else {
-          if (mounted && _isReturningUser) {
+          // Only reset if this device has NOT already been registered.
+          // _deviceRegistered stays true even when DB has no profile yet.
+          if (mounted && _isReturningUser && !_deviceRegistered) {
             setState(() => _isReturningUser = false);
           }
         }
       } catch (_) {
-        if (mounted && _isReturningUser) {
+        if (mounted && _isReturningUser && !_deviceRegistered) {
           setState(() => _isReturningUser = false);
         }
       }
     } else {
-      if (mounted && _isReturningUser) {
+      if (mounted && _isReturningUser && !_deviceRegistered) {
         setState(() => _isReturningUser = false);
       }
     }
@@ -311,9 +333,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (isValid) {
       setState(() => _isLoading = true);
       final phone = _phoneController.text.trim();
-      await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(phone);
+      // verifyDevicePinAndAutoLogin returns the resolved UserRole
+      final resolvedRole = await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(phone);
       if (!mounted) return;
-      context.go('/rideo');
+      // Route based on role
+      if (resolvedRole == UserRole.admin) {
+        context.go('/');
+      } else if (resolvedRole == UserRole.driver) {
+        context.go('/drivo');
+      } else {
+        context.go('/rideo');
+      }
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

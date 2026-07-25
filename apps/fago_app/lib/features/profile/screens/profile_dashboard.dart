@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
 import '../../../screens/web_module_screen.dart';
+import '../../../auth/auth_provider.dart' as fago;
 import '../../promo/screens/whatsapp_status_promo_screen.dart';
 
 class ProfileDashboard extends ConsumerStatefulWidget {
@@ -33,26 +34,14 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(currentProfileProvider);
+    final authState = ref.watch(fago.authProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A), // Slate 900
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E293B), // Slate 800
         title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.language, color: Color(0xFF00F0FF)),
-            tooltip: 'Open Aishlee-Web Profile Pass',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'Profile - Aishlee Web Pass', modulePath: 'profile'),
-                ),
-              );
-            },
-          ),
-        ],
+        actions: const [],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -75,8 +64,8 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           return TabBarView(
             controller: _tabController,
             children: [
-              _buildProfileTab(profile),
-              _buildDigitalIdTab(profile),
+              _buildProfileTab(profile, authState),
+              _buildDigitalIdTab(profile, authState),
               _buildResumeTab(profile),
               _buildHistoryTab(),
             ],
@@ -158,7 +147,18 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
     }
   }
 
-  Widget _buildProfileTab(ProfileModel profile) {
+  /// Resolves the display role label from the live AuthState (authoritative)
+  /// falling back to the DB profile role column.
+  String _resolveDisplayRole(ProfileModel profile, fago.AuthState authState) {
+    if (authState.role == fago.UserRole.admin) return 'admin';
+    if (authState.role == fago.UserRole.driver) return 'driver';
+    if (authState.role == fago.UserRole.user) return 'user';
+    // Fall back to DB value if auth state is still loading/guest
+    return profile.role.toLowerCase();
+  }
+
+  Widget _buildProfileTab(ProfileModel profile, fago.AuthState authState) {
+    final displayRole = _resolveDisplayRole(profile, authState);
     final cleanWhatsapp = _cleanPhone(profile.whatsapp, fallbackPhone: profile.phone);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -190,26 +190,26 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
-              color: profile.role.toLowerCase() == 'admin'
+              color: displayRole == 'admin'
                   ? Colors.amber.withValues(alpha: 0.2)
-                  : profile.role.toLowerCase() == 'driver'
+                  : displayRole == 'driver'
                       ? Colors.orange.withValues(alpha: 0.2)
                       : const Color(0xFF00F0FF).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: profile.role.toLowerCase() == 'admin'
+                color: displayRole == 'admin'
                     ? Colors.amber
-                    : profile.role.toLowerCase() == 'driver'
+                    : displayRole == 'driver'
                         ? Colors.orange
                         : const Color(0xFF00F0FF),
               ),
             ),
             child: Text(
-              profile.role.toUpperCase(),
+              displayRole.toUpperCase(),
               style: TextStyle(
-                color: profile.role.toLowerCase() == 'admin'
+                color: displayRole == 'admin'
                     ? Colors.amber
-                    : profile.role.toLowerCase() == 'driver'
+                    : displayRole == 'driver'
                         ? Colors.orange
                         : const Color(0xFF00F0FF),
                 fontWeight: FontWeight.bold,
@@ -450,7 +450,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           const SizedBox(height: 24),
           const Center(
             child: Text(
-              'FAGO Super App • Version v1.0.3beta',
+              'FAGO Super App • Version v1.0.5 Beta (n&f)',
               style: TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ),
@@ -528,7 +528,8 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
     );
   }
 
-  Widget _buildDigitalIdTab(ProfileModel profile) {
+  Widget _buildDigitalIdTab(ProfileModel profile, fago.AuthState authState) {
+    final displayRole = _resolveDisplayRole(profile, authState);
     final String qrData = profile.digitalIdHash ?? 'fago-id-${profile.id}';
     final cleanWhatsapp = _cleanPhone(profile.whatsapp, fallbackPhone: profile.phone);
     
@@ -588,11 +589,13 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
                 decoration: BoxDecoration(
-                  color: profile.role.toLowerCase() == 'admin' ? Colors.amber : (profile.role.toLowerCase() == 'driver' ? Colors.orange : Colors.blue),
+                  color: displayRole == 'admin'
+                      ? Colors.amber
+                      : (displayRole == 'driver' ? Colors.orange : Colors.blue),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  profile.role.toUpperCase(),
+                  displayRole.toUpperCase(),
                   style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.5),
                 ),
               ),

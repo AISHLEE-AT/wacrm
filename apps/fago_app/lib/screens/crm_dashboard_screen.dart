@@ -12,6 +12,7 @@ import '../features/dealo/screens/dealo_marketplace_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
 import '../services/whatsapp_service.dart';
 import '../features/promo/screens/whatsapp_status_promo_screen.dart';
+import 'admin_crm_screen.dart';
 import 'web_module_screen.dart';
 
 class CrmDashboardScreen extends ConsumerStatefulWidget {
@@ -23,7 +24,7 @@ class CrmDashboardScreen extends ConsumerStatefulWidget {
 
 class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   int _currentTab = 0; // 0: Transport (RideO/DriveO), 1: DealO, 2: RentO, 3: Profile
-  bool _isDriverMode = false; // User-selected Rider vs Driver mode toggle
+  bool? _isDriverMode; // Nullable so default follows user role until user explicitly toggles
 
   @override
   void initState() {
@@ -77,6 +78,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           {'name': '🤖 AI & ToolsO (AI + கருவிகள்)', 'desc': 'Gemini AI + ToolsO Suite', 'route': '/toolso', 'tab': -2},
           {'name': '🌾 AgrO (சந்தை & விதைகள்)', 'desc': 'Crop Rates & Agri Tools', 'route': '/mandi', 'tab': -1},
           {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro', 'tab': -1},
+          {'name': '👑 Admin CRM Hub', 'desc': 'Driver Management & WhatsApp CRM', 'route': '/admin', 'tab': -1},
           {'name': '👤 Profile & ID', 'desc': 'KYC & Digital Pass', 'route': '/profile', 'tab': 3},
         ];
 
@@ -213,7 +215,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
     final formattedPhone = _formatDisplayPhone(authState);
     final isAdmin = authState.role == UserRole.admin;
     final isDriverRole = authState.role == UserRole.driver || isAdmin;
-    final showDriverView = _isDriverMode || isDriverRole;
+    final showDriverView = _isDriverMode ?? isDriverRole;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
@@ -228,7 +230,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           // 🔄 Rider <-> Driver Mode Toggle Button in AppBar
           TextButton.icon(
             onPressed: () {
-              setState(() => _isDriverMode = !_isDriverMode);
+              setState(() => _isDriverMode = !showDriverView);
             },
             icon: Icon(showDriverView ? Icons.directions_car : Icons.local_shipping, size: 16, color: const Color(0xFF00FF00)),
             label: Text(
@@ -236,6 +238,17 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
               style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 11),
             ),
           ),
+          if (isAdmin)
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminCrmScreen()),
+                );
+              },
+              icon: const Icon(Icons.admin_panel_settings, color: Colors.amber),
+              tooltip: 'Admin CRM & Driver Hub',
+            ),
           IconButton(
             onPressed: () {
               Navigator.push(

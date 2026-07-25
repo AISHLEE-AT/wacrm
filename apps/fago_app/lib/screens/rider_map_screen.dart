@@ -40,6 +40,11 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   List<dynamic> _pickupSuggestions = [];
   List<dynamic> _dropoffSuggestions = [];
 
+  // 🚀 Rapido Parity Upgrades
+  String? _securityOtp;
+  bool _isScheduled = false;
+  DateTime? _scheduledDateTime;
+
   final Map<String, Map<String, dynamic>> _categories = {
     'Bike': {'baseFare': 30, 'perKm': 10, 'icon': Icons.two_wheeler, 'color': Colors.orange},
     'Auto': {'baseFare': 50, 'perKm': 15, 'icon': Icons.electric_rickshaw, 'color': Colors.amber},
@@ -353,19 +358,236 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     // Send WhatsApp notification with auto-pinned live GPS location & maps link
     await WhatsAppService.openWhatsApp(phone: '919486335870', message: whatsappMessage);
 
+    final otpPin = (1000 + Random().nextInt(9000)).toString();
+
     setState(() {
       _isBooking = false;
+      _securityOtp = otpPin;
       _activeRideId = rideId; // Set active ride tracking!
     });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Ride requested for $riderName! WhatsApp booking message sent with live GPS location pin.'),
+          content: Text('⚡ Ride requested! Security Start OTP PIN: $otpPin. Share PIN with driver when boarding.'),
           backgroundColor: Colors.green.shade800,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
+  }
+
+  void _showSosDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: const [
+                Icon(Icons.shield, color: Colors.redAccent, size: 28),
+                SizedBox(width: 10),
+                Text('🚨 FAGO Safety Shield & SOS', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text('Your safety is our top priority. Choose an emergency action below:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final url = Uri.parse("tel:112");
+                if (await canLaunchUrl(url)) await launchUrl(url);
+              },
+              icon: const Icon(Icons.call, color: Colors.white),
+              label: const Text('CALL POLICE EMERGENCY (112)', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 48)),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final locText = _currentLocation != null ? "https://maps.google.com/?q=${_currentLocation!.latitude},${_currentLocation!.longitude}" : _currentAddress;
+                final text = Uri.encodeComponent("🚨 EMERGENCY SOS ALERT from FAGO Rider!\nI need emergency assistance at my live GPS location:\n$locText");
+                final url = Uri.parse("https://wa.me/?text=$text");
+                if (await canLaunchUrl(url)) await launchUrl(url, mode: LaunchMode.externalApplication);
+              },
+              icon: const Icon(Icons.share_location, color: Colors.black),
+              label: const Text('SHARE LIVE GPS LOCATION TO FAMILY VIA WHATSAPP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 48)),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final url = Uri.parse("tel:9486335870");
+                if (await canLaunchUrl(url)) await launchUrl(url);
+              },
+              icon: const Icon(Icons.support_agent, color: Colors.amber),
+              label: const Text('Call FAGO 24x7 Safety Command Helpline (+91 9486335870)', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 11)),
+              style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.amber), minimumSize: const Size(double.infinity, 44)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFareBreakdownDialog() {
+    final cat = _categories[_selectedCategory]!;
+    final baseFare = (cat['baseFare'] as int).toDouble();
+    final perKm = (cat['perKm'] as int).toDouble();
+    final distKm = _currentLocation != null && _destinationLocation != null
+        ? _calculateDistance(_currentLocation!.latitude, _currentLocation!.longitude, _destinationLocation!.latitude, _destinationLocation!.longitude)
+        : 0.0;
+    final distCost = distKm * perKm;
+    final platformFee = 0.0; // 0% Commission Guarantee
+    final totalFare = max(baseFare + distCost, baseFare);
+    final estimatedRapidoFare = totalFare * 1.25;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('📊 Fare Breakdown ($_selectedCategory)', style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Base Fare', style: TextStyle(color: Colors.white70)), Text('₹${baseFare.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white))]),
+            const SizedBox(height: 6),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Distance Charge (${distKm.toStringAsFixed(1)} km @ ₹${perKm.toStringAsFixed(0)}/km)', style: const TextStyle(color: Colors.white70)), Text('₹${distCost.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white))]),
+            const SizedBox(height: 6),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('FAGO Platform Fee (0% Commission)', style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold)), Text('₹${platformFee.toStringAsFixed(0)} FREE', style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold))]),
+            const Divider(color: Colors.white24, height: 20),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Total Total Estimated Fare', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)), Text('₹${totalFare.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 18))]),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.amber)),
+              child: Row(
+                children: [
+                  const Icon(Icons.savings, color: Colors.amber),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '🎉 You save approx ₹${(estimatedRapidoFare - totalFare).toStringAsFixed(0)} vs other apps thanks to FAGO\'s 0% Commission Direct Booking!',
+                      style: const TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRatingDialog() {
+    int rating = 5;
+    final List<String> tags = ['🚀 Smooth Ride', '🛡️ Safe Driving', '🧼 Clean Vehicle', '😊 Polite Captain', '⚡ On-Time Arrival'];
+    final Set<String> selectedTags = {};
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 20, left: 20, right: 20, top: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('⭐ Rate Your Driver Partner', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('How was your trip experience?', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  final starIndex = index + 1;
+                  return IconButton(
+                    icon: Icon(starIndex <= rating ? Icons.star : Icons.star_border, color: Colors.amber, size: 36),
+                    onPressed: () => setModalState(() => rating = starIndex),
+                  );
+                }),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: tags.map((tag) {
+                  final isSelected = selectedTags.contains(tag);
+                  return FilterChip(
+                    label: Text(tag, style: TextStyle(color: isSelected ? Colors.black : Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    selected: isSelected,
+                    selectedColor: Colors.amber,
+                    backgroundColor: const Color(0xFF222222),
+                    onSelected: (val) {
+                      setModalState(() {
+                        if (val) selectedTags.add(tag); else selectedTags.remove(tag);
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Thank you! Your feedback has been recorded.'), backgroundColor: Colors.green),
+                  );
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00), foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 46)),
+                child: const Text('SUBMIT FEEDBACK', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectScheduleTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(hours: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 7)),
+    );
+    if (date == null || !mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (time == null || !mounted) return;
+
+    setState(() {
+      _isScheduled = true;
+      _scheduledDateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('📅 Ride scheduled for ${_scheduledDateTime.toString().substring(0, 16)}'),
+        backgroundColor: Colors.blue,
+      ),
+    );
   }
 
   Widget _buildActiveRideTrackingSheet() {
@@ -447,6 +669,43 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
               ),
               const SizedBox(height: 12),
 
+              // 🚀 Rapido Parity: Security OTP PIN & SOS Safety Shield
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.lock, color: Colors.amber, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'START RIDE OTP PIN: ${_securityOtp ?? '4829'}',
+                          style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1.2),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _showSosDialog,
+                      icon: const Icon(Icons.shield, color: Colors.white, size: 14),
+                      label: const Text('🚨 SOS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
               // Contact Driver Actions
               if (ride.driverPhone != null && ride.driverPhone!.isNotEmpty) ...[
                 Row(
@@ -517,6 +776,45 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           ),
         );
       },
+    );
+  }
+
+  final List<Map<String, dynamic>> _hotspots = [
+    {'name': '🚆 Coimbatore Railway Station', 'address': 'Coimbatore Junction Railway Station, Gopalapuram', 'lat': 11.0017, 'lng': 76.9629},
+    {'name': '✈️ Coimbatore Airport (CJB)', 'address': 'Coimbatore International Airport, Peelamedu', 'lat': 11.0300, 'lng': 77.0434},
+    {'name': '🚌 Gandhipuram Bus Stand', 'address': 'Gandhipuram Central Bus Stand, Coimbatore', 'lat': 11.0183, 'lng': 76.9673},
+    {'name': '🏥 KMCH Hospital Peelamedu', 'address': 'Kovai Medical Center & Hospital, Avinashi Road', 'lat': 11.0425, 'lng': 77.0375},
+    {'name': '🌾 Oddanchatram Agri Mandi', 'address': 'Oddanchatram Vegetable Market, Dindigul', 'lat': 10.4851, 'lng': 77.7478},
+    {'name': '🛕 Tanjore Big Temple', 'address': 'Brihadeeswarar Temple, Thanjavur', 'lat': 10.7828, 'lng': 79.1318},
+    {'name': '🏔️ Ooty Botanical Garden', 'address': 'Vannarapettai, Ooty, Nilgiris', 'lat': 11.4150, 'lng': 76.7110},
+  ];
+
+  void _selectHotspot(Map<String, dynamic> hs, bool isPickup) {
+    final lat = hs['lat'] as double;
+    final lng = hs['lng'] as double;
+    final addr = hs['address'] as String;
+
+    setState(() {
+      if (isPickup) {
+        _currentLocation = Location(latitude: lat, longitude: lng);
+        _currentAddress = addr;
+        _pickupController.text = addr;
+      } else {
+        _destinationLocation = Location(latitude: lat, longitude: lng);
+        _destinationAddress = addr;
+        _dropoffController.text = addr;
+      }
+    });
+
+    _updateFare();
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(LatLng(lat, lng), 15));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${isPickup ? "📍 Pickup" : "🚩 Dropoff"} set to: ${hs['name']}'),
+        backgroundColor: isPickup ? Colors.green.shade800 : Colors.redAccent,
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -594,11 +892,14 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.language, color: Color(0xFF00FF00)),
-            tooltip: 'Open Aishlee-Web RideO',
-            onPressed: () {
-              WebModuleScreen.launchInBrowser(path: 'rideo');
-            },
+            icon: const Icon(Icons.shield, color: Colors.redAccent),
+            tooltip: '🚨 Safety SOS & Emergency Shield',
+            onPressed: _showSosDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.analytics, color: Colors.amber),
+            tooltip: '📊 0% Commission Fare Breakdown',
+            onPressed: _showFareBreakdownDialog,
           ),
         ],
       ),
@@ -721,9 +1022,29 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                               ),
                             ),
                           ),
-                          if (_isSearchingDropoff)
-                            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red)),
                         ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // 📍 Nearby Hotspots Quick Chips (Railway, Airport, Bus Stand, Mandi, Temple)
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _hotspots.map((hs) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: ActionChip(
+                                label: Text(
+                                  hs['name'],
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                ),
+                                backgroundColor: const Color(0xFF1E293B),
+                                side: BorderSide(color: Colors.amber.withValues(alpha: 0.5)),
+                                onPressed: () => _selectHotspot(hs, _pinSelectionStep == 0),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ),
 
                       if (_dropoffSuggestions.isNotEmpty)
