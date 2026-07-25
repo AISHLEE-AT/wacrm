@@ -541,11 +541,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onChanged: (pin) async {
                             if (pin.length == 4) {
                               final isValid = await DeviceAuthService.verifyCustomFagoPin(pin);
-                              if (isValid && mounted) {
+                              if (!mounted) return;
+                              if (isValid) {
                                 setState(() => _isLoading = true);
                                 await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(_phoneController.text.trim());
-                                if (mounted) context.go('/rideo');
-                              } else if (mounted) {
+                                if (!mounted) return;
+                                context.go('/rideo');
+                              } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Invalid 4-digit FAGO PIN. Try device fingerprint or PIN unlock.'), backgroundColor: Colors.orange),
                                 );
