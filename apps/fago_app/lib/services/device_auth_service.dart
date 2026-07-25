@@ -102,4 +102,33 @@ class DeviceAuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyBiometricEnabled, enabled);
   }
+
+  static const String _keyCustomFagoPin = 'custom_fago_pin';
+
+  /// Save custom 4-digit FAGO PIN for instant device unlock
+  static Future<void> setCustomFagoPin(String pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyCustomFagoPin, pin);
+  }
+
+  /// Retrieve custom 4-digit FAGO PIN
+  static Future<String?> getCustomFagoPin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyCustomFagoPin);
+  }
+
+  /// Verify entered 4-digit FAGO PIN
+  static Future<bool> verifyCustomFagoPin(String pin) async {
+    final stored = await getCustomFagoPin();
+    if (stored == null) {
+      // Default initial PIN set to last 4 digits of registered phone or 1234
+      final phone = await getRegisteredPhone();
+      if (phone != null && phone.length >= 4) {
+        final lastFour = phone.substring(phone.length - 4);
+        return pin == lastFour || pin == '1234';
+      }
+      return pin == '1234';
+    }
+    return stored == pin;
+  }
 }

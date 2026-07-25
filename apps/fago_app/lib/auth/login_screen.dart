@@ -428,32 +428,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 14),
 
                 if (_isReturningUser) ...[
-                  // Welcome Card for Returning User
+                  // 🛡️ BHIM / IRCTC Style Dedicated Device Lock Card
                   Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(16),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: Colors.greenAccent.withValues(alpha: 0.5),
-                        width: 1.5,
+                        color: const Color(0xFF00FF00).withValues(alpha: 0.6),
+                        width: 1.8,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.greenAccent.withValues(alpha: 0.15),
-                          blurRadius: 12,
-                          spreadRadius: 1,
+                          color: Colors.greenAccent.withValues(alpha: 0.25),
+                          blurRadius: 20,
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Row(
                           children: [
-                            const CircleAvatar(
-                              backgroundColor: Colors.greenAccent,
-                              child: Icon(Icons.person, color: Colors.black),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.greenAccent.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.shield_outlined, color: Color(0xFF00FF00), size: 24),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -464,16 +473,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     'Welcome back, ${_nameController.text}! 🙏',
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 16,
+                                      fontSize: 17,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    'Category: $_selectedCategory',
+                                    'Cell: +91 ${_phoneController.text} • Device Verified 🔒',
                                     style: const TextStyle(
                                       color: Colors.greenAccent,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -482,25 +491,82 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _isReturningUser = false;
-                              });
-                            },
-                            icon: const Icon(Icons.edit, size: 14, color: Colors.white70),
-                            label: const Text(
-                              'Not you? Change name or role',
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                        const SizedBox(height: 18),
+                        // 1. Primary BHIM / IRCTC Instant Device Lock Button
+                        ElevatedButton.icon(
+                          onPressed: _authenticateWithDeviceBiometrics,
+                          icon: const Icon(Icons.fingerprint, color: Colors.black, size: 22),
+                          label: const Text(
+                            '🔐 UNLOCK VIA FINGERPRINT / DEVICE PIN',
+                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00FF00),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 8,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Center(
+                          child: Text(
+                            '— OR ENTER 4-DIGIT FAGO PIN —',
+                            style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // 2. Custom 4-digit PIN input
+                        TextField(
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          obscureText: true,
+                          maxLength: 4,
+                          style: const TextStyle(color: Colors.white, fontSize: 22, letterSpacing: 10),
+                          decoration: InputDecoration(
+                            hintText: '••••',
+                            hintStyle: const TextStyle(color: Colors.white24, fontSize: 22, letterSpacing: 10),
+                            counterText: '',
+                            labelText: '4-Digit Quick FAGO PIN',
+                            labelStyle: const TextStyle(color: Colors.cyanAccent, fontSize: 12),
+                            isDense: true,
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.5)),
                             ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
                             ),
+                          ),
+                          onChanged: (pin) async {
+                            if (pin.length == 4) {
+                              final isValid = await DeviceAuthService.verifyCustomFagoPin(pin);
+                              if (isValid && mounted) {
+                                setState(() => _isLoading = true);
+                                await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(_phoneController.text.trim());
+                                if (mounted) context.go('/rideo');
+                              } else if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Invalid 4-digit FAGO PIN. Try device fingerprint or PIN unlock.'), backgroundColor: Colors.orange),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton.icon(
+                          onPressed: () {
+                            DeviceAuthService.clearDeviceSignature();
+                            setState(() {
+                              _isReturningUser = false;
+                              _phoneController.clear();
+                              _nameController.clear();
+                            });
+                          },
+                          icon: const Icon(Icons.swap_horiz, size: 14, color: Colors.white60),
+                          label: const Text(
+                            'Switch Account / Re-verify WhatsApp OTP',
+                            style: TextStyle(color: Colors.white60, fontSize: 11),
                           ),
                         ),
                       ],
@@ -566,37 +632,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 14),
-                ],
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: (_isLoading || _resendCooldown > 0) ? null : _sendOTP,
-                  icon: const Icon(Icons.chat, color: Colors.black),
-                  label: Text(
-                    _resendCooldown > 0
-                        ? 'Resend OTP in ${_resendCooldown}s'
-                        : (_useWhatsAppAuth ? 'Send WhatsApp OTP' : 'Send SMS OTP'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00FF00), // Green
-                    foregroundColor: Colors.black, // Dark text
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+
+                  ElevatedButton.icon(
+                    onPressed: (_isLoading || _resendCooldown > 0) ? null : _sendOTP,
+                    icon: const Icon(Icons.chat, color: Colors.black),
+                    label: Text(
+                      _resendCooldown > 0
+                          ? 'Resend OTP in ${_resendCooldown}s'
+                          : (_useWhatsAppAuth ? 'Send WhatsApp OTP' : 'Send SMS OTP'),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    elevation: 10,
-                    shadowColor: Colors.greenAccent.withValues(alpha: 0.5),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00FF00), // Green
+                      foregroundColor: Colors.black, // Dark text
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 10,
+                      shadowColor: Colors.greenAccent.withValues(alpha: 0.5),
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() => _useWhatsAppAuth = !_useWhatsAppAuth);
-                  },
-                  child: Text(
-                    _useWhatsAppAuth ? 'Switch to SMS OTP Method' : 'Switch to WhatsApp Login OTP Method',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  TextButton(
+                    onPressed: () {
+                      setState(() => _useWhatsAppAuth = !_useWhatsAppAuth);
+                    },
+                    child: Text(
+                      _useWhatsAppAuth ? 'Switch to SMS OTP Method' : 'Switch to WhatsApp Login OTP Method',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
                   onPressed: _authenticateWithDeviceBiometrics,
