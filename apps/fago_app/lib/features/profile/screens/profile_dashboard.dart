@@ -127,6 +127,37 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
   }
 
 
+  Future<void> _launchUpiApp({String? amount}) async {
+    final upiUrl = "upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution${amount != null ? '&am=$amount' : ''}&cu=INR";
+    final uri = Uri.parse(upiUrl);
+
+    try {
+      bool launched = false;
+      if (await canLaunchUrl(uri)) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
+      }
+      if (!launched) {
+        launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Copied 9486335870@hdfcbank! Open GPay, PhonePe or Paytm to pay.'),
+            backgroundColor: Colors.amber,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Copied 9486335870@hdfcbank! Open GPay, PhonePe or Paytm to pay.'),
+          backgroundColor: Colors.amber,
+        ),
+      );
+    }
+  }
+
   Widget _buildProfileTab(ProfileModel profile) {
     final cleanWhatsapp = _cleanPhone(profile.whatsapp, fallbackPhone: profile.phone);
     return SingleChildScrollView(
@@ -357,33 +388,62 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
                   ),
                 ),
                 const SizedBox(height: 14),
+                // Quick UPI Amount Options
                 Row(
                   children: [
                     Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final uri = Uri.parse("upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR");
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri);
-                          } else {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Open GPay / PhonePe / Paytm & pay to 9486335870@hdfcbank')),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.flash_on, color: Colors.white, size: 18),
-                        label: const Text('Contribute via UPI (₹10 / ₹100+)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF43F5E),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF00FF00),
+                          side: const BorderSide(color: Color(0xFF00FF00)),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
+                        onPressed: () => _launchUpiApp(amount: '10'),
+                        child: const Text('₹10', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.amber,
+                          side: const BorderSide(color: Colors.amber),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () => _launchUpiApp(amount: '50'),
+                        child: const Text('₹50', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.cyanAccent,
+                          side: const BorderSide(color: Colors.cyanAccent),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onPressed: () => _launchUpiApp(amount: '100'),
+                        child: const Text('₹100', style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
-                )
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _launchUpiApp(),
+                    icon: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 20),
+                    label: const Text('⚡ PAY VIA GPAY / PHONEPE / PAYTM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF43F5E),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 6,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
