@@ -48,6 +48,9 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
       if (session?.accessToken != null) {
         authQueryParams += '&access_token=${session!.accessToken}';
       }
+      if (session?.refreshToken != null) {
+        authQueryParams += '&refresh_token=${session!.refreshToken}';
+      }
     }
 
     final List<String> urlCandidates = [
