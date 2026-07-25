@@ -346,7 +346,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Welcome back, ${_nameController.text}! 🙏',

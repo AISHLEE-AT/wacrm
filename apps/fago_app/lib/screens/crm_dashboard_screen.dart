@@ -6,7 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
@@ -86,7 +86,6 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
 
     if (controller.platform is AndroidWebViewController) {
       final androidController = controller.platform as AndroidWebViewController;
-      androidController.setDomStorageEnabled(true);
       androidController.setMediaPlaybackRequiresUserGesture(false);
       androidController.setOnPlatformPermissionRequest(
         (PlatformWebViewPermissionRequest request) {

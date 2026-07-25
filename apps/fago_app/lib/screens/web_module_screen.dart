@@ -146,7 +146,6 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
     // Enable essential Android WebView features for Next.js web apps
     if (controller.platform is AndroidWebViewController) {
       final androidController = controller.platform as AndroidWebViewController;
-      androidController.setDomStorageEnabled(true);
       androidController.setMediaPlaybackRequiresUserGesture(false);
       androidController.setOnPlatformPermissionRequest(
         (PlatformWebViewPermissionRequest request) {
