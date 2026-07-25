@@ -16,7 +16,7 @@ export default function TaskOPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          const tokens = `?access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}`;
+          const tokens = `?access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
           setSessionParams(tokens);
           setIframeUrl(`https://thamizhan.vercel.app/tasko${tokens}`);
         }
