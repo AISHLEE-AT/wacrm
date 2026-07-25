@@ -35,6 +35,7 @@ import {
   FileCheck,
   Tv,
   Wrench,
+  Bot,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -176,6 +177,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
   // Dynamic Mobility & Local Services Items with Intuitive Bilingual Tamil Labels
   const mobilityItems: NavItem[] = [
+    { href: "/ai-assistant", label: "Gemini AI (தமிழ் AI உதவி)", icon: Bot },
     { href: "/rideo", label: "RideO (பயணி / Taxi)", icon: Car },
     { href: "/rento", label: "RentO (விவசாயக் கருவிகள் வாடகை)", icon: Tractor },
     { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
