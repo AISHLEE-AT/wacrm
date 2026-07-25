@@ -2,14 +2,15 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
--- Defensive: Converts JSONB/JSON columns to TEXT for clean string insertions.
+-- Completely defensive – checks column existence before altering types.
 -- ==============================================================================
 
--- ── 0. CONVERT ID & JSONB COLUMNS TO TEXT IF NEEDED ───────────────────────────
+-- ── 0. CONVERT ID COLUMNS TO TEXT & DISCOVER ALL REFERENCING FOREIGN KEYS ────
 DO $$
 DECLARE
     r RECORD;
 BEGIN
+    -- Drop any foreign key referencing lms_courses
     FOR r IN (
         SELECT tc.table_schema, tc.table_name, tc.constraint_name, kcu.column_name
         FROM information_schema.table_constraints AS tc
@@ -26,6 +27,7 @@ BEGIN
         EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I TYPE TEXT USING %I::TEXT;', r.table_schema, r.table_name, r.column_name, r.column_name);
     END LOOP;
 
+    -- Drop any foreign key referencing unified_master_data
     FOR r IN (
         SELECT tc.table_schema, tc.table_name, tc.constraint_name, kcu.column_name
         FROM information_schema.table_constraints AS tc
@@ -41,25 +43,45 @@ BEGIN
         EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I;', r.table_schema, r.table_name, r.constraint_name);
         EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I TYPE TEXT USING %I::TEXT;', r.table_schema, r.table_name, r.column_name, r.column_name);
     END LOOP;
+
+    -- Safely alter column types only if columns exist
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'lms_courses' AND column_name = 'id') THEN
+        ALTER TABLE public.lms_courses ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        ALTER TABLE public.lms_courses ALTER COLUMN id TYPE TEXT USING id::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'lms_courses' AND column_name = 'curriculum') THEN
+        ALTER TABLE public.lms_courses ALTER COLUMN curriculum TYPE TEXT USING curriculum::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'unified_master_data' AND column_name = 'id') THEN
+        ALTER TABLE public.unified_master_data ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        ALTER TABLE public.unified_master_data ALTER COLUMN id TYPE TEXT USING id::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'unified_master_data' AND column_name = 'links_data') THEN
+        ALTER TABLE public.unified_master_data ALTER COLUMN links_data TYPE TEXT USING links_data::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'unified_master_data' AND column_name = 'metadata') THEN
+        ALTER TABLE public.unified_master_data ALTER COLUMN metadata TYPE TEXT USING metadata::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'purchases' AND column_name = 'id') THEN
+        ALTER TABLE public.purchases ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        ALTER TABLE public.purchases ALTER COLUMN id TYPE TEXT USING id::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'point_logs' AND column_name = 'id') THEN
+        ALTER TABLE public.point_logs ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        ALTER TABLE public.point_logs ALTER COLUMN id TYPE TEXT USING id::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'id') THEN
+        ALTER TABLE public.notifications ALTER COLUMN id DROP IDENTITY IF EXISTS;
+        ALTER TABLE public.notifications ALTER COLUMN id TYPE TEXT USING id::TEXT;
+    END IF;
 END $$;
-
-ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id DROP IDENTITY IF EXISTS;
-ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id TYPE TEXT USING id::TEXT;
-ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN curriculum TYPE TEXT USING curriculum::TEXT;
-
-ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN id DROP IDENTITY IF EXISTS;
-ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN id TYPE TEXT USING id::TEXT;
-ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN links_data TYPE TEXT USING links_data::TEXT;
-ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN metadata TYPE TEXT USING metadata::TEXT;
-
-ALTER TABLE IF EXISTS public.purchases ALTER COLUMN id DROP IDENTITY IF EXISTS;
-ALTER TABLE IF EXISTS public.purchases ALTER COLUMN id TYPE TEXT USING id::TEXT;
-
-ALTER TABLE IF EXISTS public.point_logs ALTER COLUMN id DROP IDENTITY IF EXISTS;
-ALTER TABLE IF EXISTS public.point_logs ALTER COLUMN id TYPE TEXT USING id::TEXT;
-
-ALTER TABLE IF EXISTS public.notifications ALTER COLUMN id DROP IDENTITY IF EXISTS;
-ALTER TABLE IF EXISTS public.notifications ALTER COLUMN id TYPE TEXT USING id::TEXT;
 
 -- ── 1. PROFILES TABLE ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.profiles (
