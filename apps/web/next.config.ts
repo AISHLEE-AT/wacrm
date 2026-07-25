@@ -25,14 +25,17 @@ const SECURITY_HEADERS = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
-    // Microphone is allowed for same-origin (`self`) AND for the embedded
-    // thamizhan.vercel.app iframe (ToolsO / LetterPDF AI speech recognition).
-    // The iframe `allow="microphone"` attribute alone is not enough — the
-    // PARENT page's Permissions-Policy must also delegate the permission to
-    // the child origin, otherwise browsers silently block it.
-    // Everything else stays denied.
+    // Microphone + camera are delegated to the embedded Aishlee modules
+    // (thamizhan.vercel.app) so that speech recognition, camera capture,
+    // and geolocation work inside the iframe on TradeO, MoneyO, TaskO etc.
+    // The iframe `allow` attribute alone is NOT enough — the parent page's
+    // Permissions-Policy must also explicitly list the child origin.
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(self \"https://thamizhan.vercel.app\"), geolocation=(), payment=(), usb=()",
+    value:
+      "camera=(self \"https://thamizhan.vercel.app\"), " +
+      "microphone=(self \"https://thamizhan.vercel.app\"), " +
+      "geolocation=(self \"https://thamizhan.vercel.app\"), " +
+      "payment=(), usb=()",
   },
   {
     key: "Content-Security-Policy-Report-Only",
@@ -54,7 +57,12 @@ const SECURITY_HEADERS = [
       "font-src 'self' data:",
       // Supabase REST + realtime (WSS). All Meta API calls happen
       // server-side, so graph.facebook.com does not belong here.
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://thamizhan.vercel.app",
+      // Allow the Aishlee Web App modules to be embedded as iframes.
+      // Without frame-src, Chromium/Edge blocks cross-origin iframes even
+      // if the child page allows frame-ancestors.
+      "frame-src 'self' https://thamizhan.vercel.app",
+      "child-src 'self' https://thamizhan.vercel.app",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
