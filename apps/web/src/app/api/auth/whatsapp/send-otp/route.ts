@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         await sendTextMessage({
           accessToken: META_ACCESS_TOKEN,
           phoneNumberId: META_PHONE_NUMBER_ID,
-          to: cleanPhone,
+          to: ninetyOnePhone,
           text: `🔑 YOUR FAGO LOGIN OTP IS: ${otp}\n\nValid for 10 minutes. Enter this code on your FAGO login screen to sign in.\n\nDo not share this code with anyone.`
         })
       } catch (err) {

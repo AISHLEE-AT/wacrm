@@ -135,13 +135,16 @@ export async function POST(request: Request) {
 
     await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' });
 
-    // Sync to contacts table with onConflict phone to prevent duplicate contact records
-    await supabase.from('contacts').upsert({
-      user_id: user.id,
-      phone: cleanPhone,
-      name: profilePayload.full_name,
-      notes: profilePayload.main_category ? `Category: ${profilePayload.main_category}` : undefined
-    }, { onConflict: 'phone' });
+    try {
+      await supabase.from('contacts').upsert({
+        user_id: user.id,
+        phone: cleanPhone,
+        name: profilePayload.full_name,
+        notes: profilePayload.main_category ? `Category: ${profilePayload.main_category}` : undefined
+      });
+    } catch (contactErr) {
+      console.warn('Contact sync note:', contactErr);
+    }
 
     // 3. Sign in to generate a session (using standard client to get session)
     const standardSupabase = createClient(

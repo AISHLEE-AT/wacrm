@@ -131,10 +131,12 @@ export async function middleware(request: NextRequest) {
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // API routes that need auth (not webhooks)
+  // API routes that need auth (except auth/otp endpoints and webhooks)
   if (!user && 
       (request.nextUrl.pathname.startsWith('/api/whatsapp/') || request.nextUrl.pathname.startsWith('/api/admin/')) &&
-      !request.nextUrl.pathname.includes('/webhook')) {
+      !request.nextUrl.pathname.includes('/webhook') &&
+      !request.nextUrl.pathname.includes('/send-otp') &&
+      !request.nextUrl.pathname.includes('/verify-otp')) {
     return withRefreshedCookies(
       NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     )
