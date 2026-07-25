@@ -164,13 +164,30 @@ function LoginPageInner() {
     if (pin === savedPin) {
       setLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const targetRoute = categories.find(c => c.key === selectedCategory)?.route || "/rideo";
-        const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
-        window.location.href = finalUrl;
+        const res = await fetch("/api/auth/pin-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, pin }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to authenticate PIN login");
+
+        if (data.session) {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+
+          const userCat = data.category || selectedCategory;
+          const targetRoute = categories.find(c => c.key === userCat)?.route || "/rideo";
+          const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
+          window.location.href = finalUrl;
+        } else {
+          throw new Error("Invalid session data returned from server");
+        }
       } catch (err: any) {
         console.error(err);
-        setError("Error during PIN login");
+        setError(err.message || "Error during PIN login");
       } finally {
         setLoading(false);
       }
