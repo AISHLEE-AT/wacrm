@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.gemini_ai_history (
 -- 2. Enable Row Level Security (RLS)
 ALTER TABLE public.gemini_ai_history ENABLE ROW LEVEL SECURITY;
 
--- 3. Policy: Users can view their own recent AI conversation history
+-- 3. Policy: Users can view their own recent AI conversation history (Safe Drop & Recreate)
 DROP POLICY IF EXISTS "Users can view own AI history" ON public.gemini_ai_history;
 CREATE POLICY "Users can view own AI history"
 ON public.gemini_ai_history FOR SELECT
@@ -28,7 +28,7 @@ USING (
     OR auth.role() = 'anon'
 );
 
--- 4. Policy: Users can insert AI conversation history
+-- 4. Policy: Users can insert AI conversation history (Safe Drop & Recreate)
 DROP POLICY IF EXISTS "Users can insert AI history" ON public.gemini_ai_history;
 CREATE POLICY "Users can insert AI history"
 ON public.gemini_ai_history FOR INSERT
