@@ -19,7 +19,7 @@ export default function AiAssistantPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    const saved = localStorage.getItem('fago_gemini_api_key');
+    const saved = localStorage.getItem('fago_gemini_api_key') || localStorage.getItem('gemini_api_key');
     if (saved) {
       setApiKey(saved);
       setIsConnected(true);
@@ -28,7 +28,6 @@ export default function AiAssistantPage() {
   }, [user?.id]);
 
   async function loadLocalAndCloudHistory() {
-    // 1. Load full history from device local storage
     const localSaved = localStorage.getItem('fago_ai_history');
     let localItems: any[] = [];
     if (localSaved) {
@@ -37,7 +36,6 @@ export default function AiAssistantPage() {
       } catch (_) {}
     }
 
-    // 2. Load recent 7-day history from Supabase cloud
     try {
       const userPhone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
       const { data } = await supabase
@@ -48,7 +46,6 @@ export default function AiAssistantPage() {
         .limit(20);
 
       if (data && data.length > 0) {
-        // Merge local & cloud items without duplicates
         const combined = [...data, ...localItems];
         const uniqueMap = new Map();
         combined.forEach(item => {
@@ -71,6 +68,7 @@ export default function AiAssistantPage() {
     const clean = key.trim();
     if (!clean) return;
     localStorage.setItem('fago_gemini_api_key', clean);
+    localStorage.setItem('gemini_api_key', clean);
     setApiKey(clean);
     setIsConnected(true);
   };
@@ -88,47 +86,66 @@ export default function AiAssistantPage() {
 
     const fullPrompt = `${instructions[mode]}\n\nQuestion: ${prompt}`;
 
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'பதில் பெறப்படவில்லை.';
-        setResponse(text);
+    // Candidate models in order of priority: Gemini 2.5 Flash -> 2.0 Flash -> 1.5 Flash Latest -> 1.5 Pro Latest
+    const models = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro-latest'
+    ];
 
-        const newItem = {
-          id: Date.now().toString(),
-          mode,
-          prompt: prompt.trim(),
-          response: text,
-          created_at: new Date().toISOString()
-        };
+    let successText = '';
+    let lastError = '';
 
-        // Save locally to device storage immediately
-        const updatedLocal = [newItem, ...history];
-        setHistory(updatedLocal);
-        localStorage.setItem('fago_ai_history', JSON.stringify(updatedLocal.slice(0, 50)));
+    for (const modelName of models) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+        });
+        const data = await res.json();
+        if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          successText = data.candidates[0].content.parts[0].text;
+          break;
+        } else if (data.error?.message) {
+          lastError = data.error.message;
+        }
+      } catch (err) {
+        lastError = String(err);
+      }
+    }
 
-        // Save recent record to Supabase (7-day light cloud storage)
+    if (successText) {
+      setResponse(successText);
+
+      const newItem = {
+        id: Date.now().toString(),
+        mode,
+        prompt: prompt.trim(),
+        response: successText,
+        created_at: new Date().toISOString()
+      };
+
+      const updatedLocal = [newItem, ...history];
+      setHistory(updatedLocal);
+      localStorage.setItem('fago_ai_history', JSON.stringify(updatedLocal.slice(0, 50)));
+
+      try {
         const userPhone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
         await supabase.from('gemini_ai_history').insert({
           user_id: user?.id || null,
           phone: userPhone,
           mode,
           prompt: prompt.trim(),
-          response: text
+          response: successText
         });
-      } else {
-        setResponse(`❌ Error: ${data.error?.message || 'Invalid API Key'}`);
-      }
-    } catch (err) {
-      setResponse(`❌ Connection Error: ${err}`);
-    } finally {
-      setLoading(false);
+      } catch (_) {}
+    } else {
+      setResponse(`❌ API Error: ${lastError || 'Check your Gemini API Key or try again.'}`);
     }
+
+    setLoading(false);
   };
 
   return (
@@ -144,7 +161,7 @@ export default function AiAssistantPage() {
               FAGO Gemini AI Assistant • தமிழ் AI உதவி மையம்
             </h1>
             <p className="text-xs md:text-sm text-slate-400 mt-0.5">
-              Connect your free Google Gemini API Key for 100% free Agri, Exam & Business AI
+              Powered by Google Gemini 2.5 & 2.0 Flash • 100% Free Unlimited Usage
             </p>
           </div>
         </div>
@@ -171,7 +188,7 @@ export default function AiAssistantPage() {
                 {isConnected ? 'Google Gemini AI Connected' : 'Connect Your Free Gemini API Key'}
               </h3>
               <p className="text-xs text-slate-400">
-                {isConnected ? 'Gemini 1.5 Flash Active • 100% Free Unlimited Usage' : 'Get your key in 1-tap from Google AI Studio and paste below'}
+                {isConnected ? 'Gemini 2.5 Flash / 2.0 Flash Active • 100% Free Unlimited Usage' : 'Get your key in 1-tap from Google AI Studio and paste below'}
               </p>
             </div>
           </div>

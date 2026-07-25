@@ -113,39 +113,59 @@ class _GeminiAiAssistantScreenState extends State<GeminiAiAssistantScreen> {
 
     final fullPrompt = '$systemInstruction\n\nUser Question: $query';
 
-    try {
-      final endpoint = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_activeApiKey',
-      );
+    final List<String> models = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-pro-latest'
+    ];
 
-      final response = await http.post(
-        endpoint,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
-                {'text': fullPrompt}
-              ]
-            }
-          ]
-        }),
-      );
+    String successText = '';
+    String lastError = '';
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final String text = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? 'பதில் பெறப்படவில்லை.';
-        setState(() => _aiResponse = text);
-      } else {
-        final errData = jsonDecode(response.body);
-        final errMsg = errData['error']?['message'] ?? 'API Error ${response.statusCode}';
-        setState(() => _aiResponse = '❌ Error: $errMsg\n\nCheck your Gemini API Key or try again.');
+    for (final modelName in models) {
+      try {
+        final endpoint = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/$modelName:generateContent?key=$_activeApiKey',
+        );
+
+        final response = await http.post(
+          endpoint,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'contents': [
+              {
+                'parts': [
+                  {'text': fullPrompt}
+                ]
+              }
+            ]
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final String text = data['candidates']?[0]?['content']?['parts']?[0]?['text'] ?? '';
+          if (text.isNotEmpty) {
+            successText = text;
+            break;
+          }
+        } else {
+          final errData = jsonDecode(response.body);
+          lastError = errData['error']?['message'] ?? 'API Error ${response.statusCode}';
+        }
+      } catch (e) {
+        lastError = e.toString();
       }
-    } catch (e) {
-      setState(() => _aiResponse = '❌ Connection Error: $e');
-    } finally {
-      setState(() => _isGenerating = false);
     }
+
+    if (successText.isNotEmpty) {
+      setState(() => _aiResponse = successText);
+    } else {
+      setState(() => _aiResponse = '❌ API Error: $lastError\n\nCheck your Gemini API Key or try again.');
+    }
+
+    setState(() => _isGenerating = false);
   }
 
   @override
