@@ -2,10 +2,24 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
--- Fully defensive – drops IDENTITY sequences & converts BIGINT IDs to TEXT.
+-- Defensive: drops FK constraints & converts BIGINT FK/ID columns to TEXT.
 -- ==============================================================================
 
--- ── 0. DROP IDENTITY CONSTRAINTS & CONVERT IDs TO TEXT IF NEEDED ───────────────
+-- ── 0. DROP FK CONSTRAINTS & CONVERT FK/ID COLUMNS TO TEXT ───────────────────
+DO $$
+BEGIN
+  ALTER TABLE IF EXISTS public.course_progress DROP CONSTRAINT IF EXISTS course_progress_course_id_fkey;
+  ALTER TABLE IF EXISTS public.lms_contents DROP CONSTRAINT IF EXISTS lms_contents_course_id_fkey;
+  ALTER TABLE IF EXISTS public.user_lessons DROP CONSTRAINT IF EXISTS user_lessons_course_id_fkey;
+  ALTER TABLE IF EXISTS public.purchases DROP CONSTRAINT IF EXISTS purchases_item_id_fkey;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+ALTER TABLE IF EXISTS public.course_progress ALTER COLUMN course_id TYPE TEXT USING course_id::TEXT;
+ALTER TABLE IF EXISTS public.lms_contents ALTER COLUMN course_id TYPE TEXT USING course_id::TEXT;
+ALTER TABLE IF EXISTS public.user_lessons ALTER COLUMN course_id TYPE TEXT USING course_id::TEXT;
+ALTER TABLE IF EXISTS public.purchases ALTER COLUMN item_id TYPE TEXT USING item_id::TEXT;
+
 ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id TYPE TEXT USING id::TEXT;
 
