@@ -304,6 +304,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _onPinEntered(String pin) async {
+    if (pin.length != 4) return;
+    final isValid = await DeviceAuthService.verifyCustomFagoPin(pin);
+    if (!mounted) return;
+    if (isValid) {
+      setState(() => _isLoading = true);
+      final phone = _phoneController.text.trim();
+      await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(phone);
+      if (!context.mounted) return;
+      context.go('/rideo');
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid 4-digit FAGO PIN. Try device fingerprint or PIN unlock.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -538,25 +559,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
                             ),
                           ),
-                          onChanged: (pin) async {
-                            if (pin.length == 4) {
-                              final isValid = await DeviceAuthService.verifyCustomFagoPin(pin);
-                              if (!mounted) return;
-                              if (isValid) {
-                                setState(() => _isLoading = true);
-                                final auth = ref.read(authProvider.notifier);
-                                final phone = _phoneController.text.trim();
-                                await auth.verifyDevicePinAndAutoLogin(phone);
-                                if (!mounted) return;
-                                context.go('/rideo');
-                              } else {
-                                if (!mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Invalid 4-digit FAGO PIN. Try device fingerprint or PIN unlock.'), backgroundColor: Colors.orange),
-                                );
-                              }
-                            }
-                          },
+                          onChanged: _onPinEntered,
                         ),
                         const SizedBox(height: 10),
                         TextButton.icon(
