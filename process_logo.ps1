@@ -1,46 +1,50 @@
 Add-Type -AssemblyName System.Drawing
 
-$srcPath = "C:\Users\fastg\.gemini\antigravity\brain\6d04832a-1da9-49ff-b584-83a2e39bd966\.user_uploaded\media__1784973140760.png"
+$srcPath = "C:\Users\fastg\.gemini\antigravity\brain\6d04832a-1da9-49ff-b584-83a2e39bd966\.user_uploaded\media__1784976428415.png"
 if (-not (Test-Path $srcPath)) {
-    Write-Host "Source image not found at $srcPath"
+    $srcPath = "C:\Users\fastg\.gemini\antigravity\brain\6d04832a-1da9-49ff-b584-83a2e39bd966\.user_uploaded\media__1784973140760.png"
+}
+
+if (-not (Test-Path $srcPath)) {
+    Write-Host "Source image not found!"
     exit 1
 }
 
 $srcImg = [System.Drawing.Image]::FromFile($srcPath)
+Write-Host "Processing Immersive Logo from $srcPath (W: $($srcImg.Width), H: $($srcImg.Height))"
 
-# 256x256 crisp square size
-$targetSize = 256
+# Target resolution: 512x512
+$targetSize = 512
 $bmp = New-Object System.Drawing.Bitmap($targetSize, $targetSize)
 $g = [System.Drawing.Graphics]::FromImage($bmp)
 $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
 $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
 $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
-# Background
-$bgBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 5, 7, 10))
+# Dark Cosmic Background fill
+$bgBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 3, 5, 8))
 $g.FillRectangle($bgBrush, 0, 0, $targetSize, $targetSize)
 
-# Outer Golden Glow Ring
-$goldPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(255, 255, 215, 0), 4)
-$g.DrawArc($goldPen, 8, 8, 240, 240, 0, 360)
-
-# Draw Leaf centered
-$scale = [Math]::Min(220.0 / $srcImg.Width, 220.0 / $srcImg.Height)
+# Draw full height image keeping aspect ratio intact
+$scale = [Math]::Min(512.0 / $srcImg.Width, 512.0 / $srcImg.Height)
 $destW = [int]($srcImg.Width * $scale)
 $destH = [int]($srcImg.Height * $scale)
-$destX = [int]((256 - $destW) / 2)
-$destY = [int]((256 - $destH) / 2)
+$destX = [int]((512 - $destW) / 2)
+$destY = [int]((512 - $destH) / 2)
 
 $g.DrawImage($srcImg, $destX, $destY, $destW, $destH)
 
-# Dispose graphics
+# Draw outer golden border glow
+$goldPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(255, 245, 158, 11), 6)
+$g.DrawRectangle($goldPen, 3, 3, 506, 506)
+
 $g.Dispose()
 $srcImg.Dispose()
 
-# Configure JPEG Encoder Quality = 85
+# Configure JPEG Encoder Quality = 88
 $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq "image/jpeg" }
 $encoderParams = New-Object System.Drawing.Imaging.EncoderParameters(1)
-$encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 85L)
+$encoderParams.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter([System.Drawing.Imaging.Encoder]::Quality, 88L)
 
 # Destination targets
 $targets = @(
@@ -69,4 +73,4 @@ foreach ($target in $targets) {
 }
 
 $bmp.Dispose()
-Write-Host "Ultra-compressed high-res leaf assets generated successfully!"
+Write-Host "Full Immersive Logo with Background Pattern processed successfully!"
