@@ -24,10 +24,20 @@ export default function AiAssistantPage() {
       setApiKey(saved);
       setIsConnected(true);
     }
-    loadAiHistory();
+    loadLocalAndCloudHistory();
   }, [user?.id]);
 
-  async function loadAiHistory() {
+  async function loadLocalAndCloudHistory() {
+    // 1. Load full history from device local storage
+    const localSaved = localStorage.getItem('fago_ai_history');
+    let localItems: any[] = [];
+    if (localSaved) {
+      try {
+        localItems = JSON.parse(localSaved);
+      } catch (_) {}
+    }
+
+    // 2. Load recent 7-day history from Supabase cloud
     try {
       const userPhone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
       const { data } = await supabase
@@ -37,10 +47,24 @@ export default function AiAssistantPage() {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      if (data) setHistory(data);
+      if (data && data.length > 0) {
+        // Merge local & cloud items without duplicates
+        const combined = [...data, ...localItems];
+        const uniqueMap = new Map();
+        combined.forEach(item => {
+          const key = `${item.prompt}_${item.created_at}`;
+          if (!uniqueMap.has(key)) uniqueMap.set(key, item);
+        });
+        const merged = Array.from(uniqueMap.values());
+        setHistory(merged);
+        localStorage.setItem('fago_ai_history', JSON.stringify(merged.slice(0, 50)));
+        return;
+      }
     } catch (err) {
-      console.error('History load note:', err);
+      console.warn('Cloud sync fallback to local:', err);
     }
+
+    setHistory(localItems);
   }
 
   const saveKey = (key: string) => {
@@ -75,7 +99,20 @@ export default function AiAssistantPage() {
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'பதில் பெறப்படவில்லை.';
         setResponse(text);
 
-        // Save to Supabase AI History
+        const newItem = {
+          id: Date.now().toString(),
+          mode,
+          prompt: prompt.trim(),
+          response: text,
+          created_at: new Date().toISOString()
+        };
+
+        // Save locally to device storage immediately
+        const updatedLocal = [newItem, ...history];
+        setHistory(updatedLocal);
+        localStorage.setItem('fago_ai_history', JSON.stringify(updatedLocal.slice(0, 50)));
+
+        // Save recent record to Supabase (7-day light cloud storage)
         const userPhone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
         await supabase.from('gemini_ai_history').insert({
           user_id: user?.id || null,
@@ -84,8 +121,6 @@ export default function AiAssistantPage() {
           prompt: prompt.trim(),
           response: text
         });
-
-        loadAiHistory();
       } else {
         setResponse(`❌ Error: ${data.error?.message || 'Invalid API Key'}`);
       }
@@ -240,8 +275,8 @@ export default function AiAssistantPage() {
           </h3>
 
           <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-            {history.map((h) => (
-              <div key={h.id} className="p-4 rounded-2xl bg-card/40 border border-white/10 space-y-2 text-xs backdrop-blur-md">
+            {history.map((h, idx) => (
+              <div key={h.id || idx} className="p-4 rounded-2xl bg-card/40 border border-white/10 space-y-2 text-xs backdrop-blur-md">
                 <div className="flex items-center justify-between text-[10px] text-emerald-400 font-bold">
                   <span>{h.mode || 'Agri'}</span>
                   <span className="text-slate-400 flex items-center gap-1">
