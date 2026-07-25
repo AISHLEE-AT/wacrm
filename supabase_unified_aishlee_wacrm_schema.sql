@@ -349,6 +349,42 @@ VALUES
   '• அலகு 1: பொதுத் தமிழ் இலக்கணம் & இலக்கியம்'||chr(10)||'• அலகு 2: இந்திய தேசிய இயக்கம் & தமிழ்நாடு வரலாறு'||chr(10)||'• அலகு 3: கணிதம் & திறனறி தேர்வு (Aptitude)'
 ),
 (
+  'computer_ops',
+  'கணினி செயல்பாடுகள் & அலுவலக தொகுப்பு - மேம்பட்ட பயிற்சி',
+  'COMPUTER OPERATIONS & OFFICE SUITE - ADVANCED',
+  'கணினி இயக்க முறைமை, MS Office, தமிழ் தட்டச்சு மற்றும் இணைய பயன்பாடுகள் பற்றிய முழுமையான தொடக்கநிலை பாடங்கள்.',
+  'Tech & Careers',
+  'Advanced',
+  '💻',
+  'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+  '• 1. Introduction to Computer & Windows OS'||chr(10)||'• 2. MS Word & Tamil Typing Mastery'||chr(10)||'• 3. MS Excel Data Analysis & Formatting'
+),
+(
+  'tn_11_maths',
+  '11th Standard Mathematics (TN Board)',
+  '11TH STANDARD MATHEMATICS (TN BOARD)',
+  'Tamil Nadu State Board 11th Mathematics complete chapter-wise video lessons and study guides.',
+  'TN State Board',
+  'High School',
+  '📐',
+  'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+  '• Chapter 1: Sets, Relations and Functions'||chr(10)||'• Chapter 2: Basic Algebra'||chr(10)||'• Chapter 3: Trigonometry'
+),
+(
+  'tn_11_bio',
+  '11th Standard Biology (TN Board)',
+  '11TH STANDARD BIOLOGY (TN BOARD)',
+  'Tamil Nadu State Board 11th Biology (Botany & Zoology) comprehensive concepts & diagram guides.',
+  'TN State Board',
+  'High School',
+  '🧬',
+  'https://www.youtube.com/embed/dQw4w9WgXcQ',
+  'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+  '• Unit 1: Diversity of Living World'||chr(10)||'• Unit 2: Plant Morphology and Taxonomy'||chr(10)||'• Unit 3: Cell Biology and Genetics'
+),
+(
   'tractor_depth',
   'டிராக்டர் உழவு ஆழம் & ரோட்டவேட்டர் அமைத்தல்',
   'Tractor Rotavator & Disc Plough Depth Calibration Guide',

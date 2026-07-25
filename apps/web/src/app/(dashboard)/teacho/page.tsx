@@ -71,15 +71,51 @@ const DAILY_GOOGLE_TASKS = [
   }
 ];
 
-// Rich fallback courses with working YouTube video embeds & PDF notes
+// Rich courses matched with Aishlee Technology catalog
 const PRESEEDED_COURSES = [
+  {
+    id: 'computer_ops',
+    title: 'கணினி செயல்பாடுகள் & அலுவலக தொகுப்பு - மேம்பட்ட பயிற்சி',
+    subtitle: 'COMPUTER OPERATIONS & OFFICE SUITE - ADVANCED',
+    category: 'Tech & Careers',
+    icon: '💻',
+    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    description: 'கணினி இயக்க முறைமை, MS Office, தமிழ் தட்டச்சு மற்றும் இணைய பயன்பாடுகள் பற்றிய முழுமையான தொடக்கநிலை பாடங்கள்.',
+    curriculum: '• 1. Introduction to Computer & Windows OS\n• 2. MS Word & Tamil Typing Mastery\n• 3. MS Excel Data Analysis & Formatting',
+    level: 'Advanced'
+  },
+  {
+    id: 'tn_11_maths',
+    title: '11th Standard Mathematics (TN Board)',
+    subtitle: '11TH STANDARD MATHEMATICS (TN BOARD)',
+    category: 'TN State Board',
+    icon: '📐',
+    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    description: 'Tamil Nadu State Board 11th Mathematics complete chapter-wise video lessons and study guides.',
+    curriculum: '• Chapter 1: Sets, Relations and Functions\n• Chapter 2: Basic Algebra\n• Chapter 3: Trigonometry',
+    level: 'High School'
+  },
+  {
+    id: 'tn_11_bio',
+    title: '11th Standard Biology (TN Board)',
+    subtitle: '11TH STANDARD BIOLOGY (TN BOARD)',
+    category: 'TN State Board',
+    icon: '🧬',
+    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    description: 'Tamil Nadu State Board 11th Biology (Botany & Zoology) comprehensive concepts & diagram guides.',
+    curriculum: '• Unit 1: Diversity of Living World\n• Unit 2: Plant Morphology and Taxonomy\n• Unit 3: Cell Biology and Genetics',
+    level: 'High School'
+  },
   {
     id: 'tnpsc_group4',
     title: 'TNPSC Group 4 & Group 2 பொதுத் தமிழ் & பொது அறிவு',
     subtitle: 'Complete TNPSC Tamil & General Studies Mastery Course',
     category: 'TNPSC Exam',
     icon: '📚',
-    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', // Standard embed
+    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     description: 'TNPSC தேர்வுக்கான 6 முதல் 10-ஆம் வகுப்பு வரையிலான சமச்சீர் கல்வி தமிழ் வினா-விடைகள், வரலாறு, அரசியல் மற்றும் கணிதம் பாடக் குறிப்புகள்.',
     curriculum: '• அலகு 1: பொதுத் தமிழ் இலக்கணம் & இலக்கியம்\n• அலகு 2: இந்திய தேசிய இயக்கம் & தமிழ்நாடு வரலாறு\n• அலகு 3: கணிதம் & திறனறி தேர்வு (Aptitude)',
@@ -108,42 +144,6 @@ const PRESEEDED_COURSES = [
     description: 'சொட்டு நீர் பாசன பில்டர் அடைப்பு நீக்குதல், வென்ச்சுரி உரம் செலுத்துதல் மற்றும் சப்மர்சிபிள் பம்ப் பராமரிப்பு செய்முறை.',
     curriculum: '• பகுதி 1: டிஸ்க் பில்டர் ஆசிட் வாஷ்\n• பகுதி 2: வென்ச்சுரி இன்ஜெக்டர் இயக்கம்\n• பகுதி 3: மோட்டார் ஸ்டார்ட்டர் பழுதுநீக்கம்',
     level: 'Practical Guide'
-  },
-  {
-    id: 'panchagavya',
-    title: 'இயற்கை விவசாய பஞ்சகவ்விய & ஜீவாமிர்தம் தயாரிப்பு',
-    subtitle: 'Organic Panchagavya & Natural Bio-Fertilizer Formulas',
-    category: 'Organic Farming',
-    icon: '🍃',
-    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    description: 'பஞ்சகவ்வியம், ஜீவாமிர்தம் மற்றும் மீன் அமிலம் தயாரிக்கும் முறைகள், பயன்படுத்தும் அளவுகள் மற்றும் நன்மைகள்.',
-    curriculum: '• பகுதி 1: பஞ்சகவ்விய தயாரிப்பு பொருட்கள் & நாட்கள்\n• பகுதி 2: ஜீவாமிர்தம் கரைசல் தயாரிப்பு\n• பகுதி 3: தெளிக்கும் முறை & பூச்சி விரட்டி தயாரிப்பு',
-    level: 'Organic Guide'
-  },
-  {
-    id: 'commercial_permit',
-    title: 'வணிக ஓட்டுநர் உரிமம் & பேட்ஜ் அனுமதி வழிகாட்டி',
-    subtitle: 'Commercial Driving Permit Renewal & Road Safety Rules',
-    category: 'Driver Skills',
-    icon: '🚛',
-    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    description: 'வணிக வாகன ஓட்டுநர் உரிமம் (Badge) புதுப்பித்தல், மருத்துவ சான்றிதழ் படிவம் 1A மற்றும் சாலை பாதுகாப்பு விதிகள்.',
-    curriculum: '• பகுதி 1: RTO புதுப்பித்தல் விண்ணப்பம்\n• பகுதி 2: மருத்துவ தகுதி சான்றிதழ் சமர்ப்பித்தல்\n• பகுதி 3: ஹெவி வாகன சாலை பாதுகாப்பு விதிகள்',
-    level: 'Driver Guide'
-  },
-  {
-    id: 'police_constable',
-    title: 'தமிழ்நாடு காவலர் தேர்வு (TNUSRB Police Constable)',
-    subtitle: 'TNUSRB Grade II Police Constable Prep',
-    category: 'Police Exam',
-    icon: '👮‍♂️',
-    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-    pdf_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    description: 'TNUSRB இரண்டாம் நிலை காவலர் தேர்வுக்கான உளவியல், பொது அறிவு மற்றும் உடற்தகுதி தேர்வு வழிகாட்டி பாடங்கள்.',
-    curriculum: '• பகுதி 1: உளவியல் & கணித புதிர்கள்\n• பகுதி 2: அறிவியல் & சமூக அறிவியல் வினாக்கள்\n• பகுதி 3: உடற்தகுதி தேர்வு பயிற்சி',
-    level: 'Exam Prep'
   }
 ];
 
