@@ -209,7 +209,7 @@ class _GeminiAiAssistantScreenState extends State<GeminiAiAssistantScreen> {
                                 icon: const Icon(Icons.open_in_new, size: 16),
                                 label: const Text('Auto-Get Key (Google AI Studio)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black80,
+                                  backgroundColor: Colors.black87,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 ),

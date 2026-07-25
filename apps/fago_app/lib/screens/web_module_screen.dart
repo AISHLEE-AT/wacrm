@@ -45,15 +45,17 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
     if (user != null) {
       final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
       final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-      authQueryParams = '?phone=$cleanPhone&user_id=${user.id}';
+      authQueryParams = '?embed=true&phone=$cleanPhone&user_id=${user.id}';
       if (session?.accessToken != null) {
-        authQueryParams += '&access_token=${session!.accessToken}';
-        authHashFragment = '#access_token=${session!.accessToken}';
+        authQueryParams += '&access_token=${session.accessToken}';
+        authHashFragment = '#access_token=${session.accessToken}';
       }
       if (session?.refreshToken != null) {
-        authQueryParams += '&refresh_token=${session!.refreshToken}';
-        authHashFragment += '&refresh_token=${session!.refreshToken}&token_type=bearer';
+        authQueryParams += '&refresh_token=${session.refreshToken}';
+        authHashFragment += '&refresh_token=${session.refreshToken}&token_type=bearer';
       }
+    } else {
+      authQueryParams = '?embed=true';
     }
 
     final String fullAuthSuffix = '$authQueryParams$authHashFragment';
