@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -23,6 +25,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   final TextEditingController _nameController = TextEditingController();
   String _selectedCategory = 'Traveller';
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
+  Future<void> _authenticateWithDeviceBiometrics() async {
+    try {
+      final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
+      final bool canAuthenticate = canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
+
+      if (!canAuthenticate) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Device Lock / Biometrics not setup on this phone')),
+          );
+        }
+        return;
+      }
+
+      final bool didAuthenticate = await _localAuth.authenticate(
+        localizedReason: 'Unlock FAGO WACRM using Fingerprint, Face ID, or Device PIN/Pattern',
+        options: const AuthenticationOptions(
+          biometricOnly: false,
+          stickyAuth: true,
+        ),
+      );
+
+      if (didAuthenticate && mounted) {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          context.go('/rideo');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Device Lock Verified! 🙏 Select category to log in.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Device Auth Info: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -481,6 +525,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Text(
                     _useWhatsAppAuth ? 'Switch to SMS OTP Method' : 'Switch to WhatsApp Login OTP Method',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _authenticateWithDeviceBiometrics,
+                  icon: const Icon(Icons.fingerprint, color: Colors.greenAccent),
+                  label: const Text(
+                    'Unlock via Fingerprint / Pattern / PIN (Banking & BHIM UPI Mode)',
+                    style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.6)),
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ] else ...[
