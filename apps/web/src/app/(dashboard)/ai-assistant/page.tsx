@@ -2,17 +2,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bot, Sparkles, Key, ExternalLink, Send, Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Bot, Sparkles, Key, ExternalLink, Send, Loader2, CheckCircle2, History, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AiAssistantPage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [apiKey, setApiKey] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [mode, setMode] = useState<'Agri' | 'Tutor' | 'Business'>('Agri');
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState('');
+  const [history, setHistory] = useState<any[]>([]);
+
+  const supabase = createClient();
 
   useEffect(() => {
     const saved = localStorage.getItem('fago_gemini_api_key');
@@ -20,7 +24,24 @@ export default function AiAssistantPage() {
       setApiKey(saved);
       setIsConnected(true);
     }
-  }, []);
+    loadAiHistory();
+  }, [user?.id]);
+
+  async function loadAiHistory() {
+    try {
+      const userPhone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
+      const { data } = await supabase
+        .from('gemini_ai_history')
+        .select('*')
+        .or(`user_id.eq.${user?.id || '00000000-0000-0000-0000-000000000000'},phone.eq.${userPhone}`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (data) setHistory(data);
+    } catch (err) {
+      console.error('History load note:', err);
+    }
+  }
 
   const saveKey = (key: string) => {
     const clean = key.trim();
@@ -51,7 +72,20 @@ export default function AiAssistantPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setResponse(data.candidates?.[0]?.content?.parts?.[0]?.text || 'பதில் பெறப்படவில்லை.');
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'பதில் பெறப்படவில்லை.';
+        setResponse(text);
+
+        // Save to Supabase AI History
+        const userPhone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
+        await supabase.from('gemini_ai_history').insert({
+          user_id: user?.id || null,
+          phone: userPhone,
+          mode,
+          prompt: prompt.trim(),
+          response: text
+        });
+
+        loadAiHistory();
       } else {
         setResponse(`❌ Error: ${data.error?.message || 'Invalid API Key'}`);
       }
@@ -153,48 +187,76 @@ export default function AiAssistantPage() {
         ))}
       </div>
 
-      {/* Query Input Box */}
-      <div className="bg-card/40 border border-white/10 rounded-3xl p-6 space-y-4 backdrop-blur-md">
-        <textarea
-          rows={3}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={
-            mode === 'Agri'
-              ? 'கேள்வி கேளுங்கள் (எ.கா: தக்காளி இலையில் மஞ்சள் புள்ளி வந்தால் என்ன இயற்கை மருந்து தெளிக்க வேண்டும்?)'
-              : 'கேள்வி கேளுங்கள் (எ.கா: TNPSC குரூப் 4 தேர்வுக்கான தமிழ் இலக்கணக் குறிப்புகள்)'
-          }
-          className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 resize-none"
-        />
+      {/* Main Grid: Query & History */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Query & Live Answer */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-card/40 border border-white/10 rounded-3xl p-6 space-y-4 backdrop-blur-md">
+            <textarea
+              rows={3}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={
+                mode === 'Agri'
+                  ? 'கேள்வி கேளுங்கள் (எ.கா: தக்காளி இலையில் மஞ்சள் புள்ளி வந்தால் என்ன இயற்கை மருந்து தெளிக்க வேண்டும்?)'
+                  : 'கேள்வி கேளுங்கள் (எ.கா: TNPSC குரூப் 4 தேர்வுக்கான தமிழ் இலக்கணக் குறிப்புகள்)'
+              }
+              className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 resize-none"
+            />
 
-        <button
-          onClick={askGemini}
-          disabled={loading || !isConnected}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-sm flex items-center justify-center gap-2 shadow-xl hover:opacity-90 disabled:opacity-50 transition"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" /> AI சிந்தித்துக் கொண்டிருக்கிறது...
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4" /> Gemini AI-யிடம் கேளுங்கள்
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* Response Box */}
-      {response && (
-        <div className="bg-[#0F172A] border border-emerald-500/30 rounded-3xl p-6 space-y-3 backdrop-blur-md">
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-            <Sparkles className="w-5 h-5" /> Gemini AI பதில் (Response):
+            <button
+              onClick={askGemini}
+              disabled={loading || !isConnected}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-sm flex items-center justify-center gap-2 shadow-xl hover:opacity-90 disabled:opacity-50 transition"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> AI சிந்தித்துக் கொண்டிருக்கிறது...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" /> Gemini AI-யிடம் கேளுங்கள்
+                </>
+              )}
+            </button>
           </div>
-          <div className="p-4 bg-slate-900/60 border border-white/10 rounded-2xl text-xs text-slate-200 whitespace-pre-line leading-relaxed">
-            {response}
+
+          {response && (
+            <div className="bg-[#0F172A] border border-emerald-500/30 rounded-3xl p-6 space-y-3 backdrop-blur-md">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                <Sparkles className="w-5 h-5" /> Gemini AI பதில் (Response):
+              </div>
+              <div className="p-4 bg-slate-900/60 border border-white/10 rounded-2xl text-xs text-slate-200 whitespace-pre-line leading-relaxed">
+                {response}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: AI Conversation History */}
+        <div className="space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <History className="w-5 h-5 text-emerald-400" /> AI வரலாற்றுக் குறிப்புகள் ({history.length})
+          </h3>
+
+          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+            {history.map((h) => (
+              <div key={h.id} className="p-4 rounded-2xl bg-card/40 border border-white/10 space-y-2 text-xs backdrop-blur-md">
+                <div className="flex items-center justify-between text-[10px] text-emerald-400 font-bold">
+                  <span>{h.mode || 'Agri'}</span>
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {new Date(h.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="font-bold text-white line-clamp-2">Q: {h.prompt}</p>
+                <p className="text-slate-300 line-clamp-3 leading-relaxed border-t border-white/5 pt-2">
+                  A: {h.response}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
