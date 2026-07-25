@@ -184,6 +184,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/teacho", label: "TeachO (பயிற்சி)", icon: GraduationCap },
     { href: "/testo", label: "TestO (தேர்வு)", icon: FileCheck },
     { href: "/tvo", label: "TvO (தமிழ் டிவி)", icon: Tv },
+    { href: "/moneyo", label: "MoneyO (பணம் / Wallet)", icon: Zap },
+    { href: "/tasko", label: "TaskO (பணிகள்)", icon: Globe },
+    { href: "/tradeo", label: "TradeO (வர்த்தகம்)", icon: Share2 },
     { href: "/toolso", label: "ToolsO (கருவிகள்)", icon: Wrench },
     ...(isAdmin || isRegisteredDriver
       ? [{ href: "/drivo", label: "DriveO (டிரைவர்)", icon: Gauge }]
