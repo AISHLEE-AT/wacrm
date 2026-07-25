@@ -41,21 +41,26 @@ class _WebModuleScreenState extends State<WebModuleScreen> {
     final session = Supabase.instance.client.auth.currentSession;
     
     String authQueryParams = '';
+    String authHashFragment = '';
     if (user != null) {
       final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
       final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       authQueryParams = '?phone=$cleanPhone&user_id=${user.id}';
       if (session?.accessToken != null) {
         authQueryParams += '&access_token=${session!.accessToken}';
+        authHashFragment = '#access_token=${session!.accessToken}';
       }
       if (session?.refreshToken != null) {
         authQueryParams += '&refresh_token=${session!.refreshToken}';
+        authHashFragment += '&refresh_token=${session!.refreshToken}&token_type=bearer';
       }
     }
 
+    final String fullAuthSuffix = '$authQueryParams$authHashFragment';
+
     final List<String> urlCandidates = [
-      'https://watscrm.vercel.app$cleanPath$authQueryParams',
-      'https://thamizhan.vercel.app$cleanPath$authQueryParams',
+      'https://watscrm.vercel.app$cleanPath$fullAuthSuffix',
+      'https://thamizhan.vercel.app$cleanPath$fullAuthSuffix',
       'https://watscrm.vercel.app$cleanPath',
     ];
 
