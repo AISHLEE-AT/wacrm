@@ -174,22 +174,22 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     };
   }, [open, onClose]);
 
-  // Dynamic Mobility & Local Services Items
+  // Dynamic Mobility & Local Services Items with Intuitive Bilingual Tamil Labels
   const mobilityItems: NavItem[] = [
-    { href: "/rideo", label: "RideO (பயணி)", icon: Car },
-    { href: "/rento", label: "RentO (Agri)", icon: Tractor },
+    { href: "/rideo", label: "RideO (பயணி / Taxi)", icon: Car },
+    { href: "/rento", label: "RentO (விவசாயக் கருவிகள் வாடகை)", icon: Tractor },
     { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
     { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
-    { href: "/touro", label: "TourO (ஆன்மீகம்)", icon: Compass },
-    { href: "/teacho", label: "TeachO (பயிற்சி)", icon: GraduationCap },
-    { href: "/testo", label: "TestO (தேர்வு)", icon: FileCheck },
-    { href: "/tvo", label: "TvO (தமிழ் டிவி)", icon: Tv },
-    { href: "/moneyo", label: "MoneyO (பணம் / Wallet)", icon: Zap },
-    { href: "/tasko", label: "TaskO (பணிகள்)", icon: Globe },
-    { href: "/tradeo", label: "TradeO (வர்த்தகம்)", icon: Share2 },
+    { href: "/touro", label: "TourO (ஆன்மீகம் & சுற்றுலா)", icon: Compass },
+    { href: "/teacho", label: "TeachO (கல்வி பாடங்கள்)", icon: GraduationCap },
+    { href: "/testo", label: "TestO (ஆன்லைன் மாதிரித் தேர்வு)", icon: FileCheck },
+    { href: "/tvo", label: "TvO (தமிழ் டிவி & நேரலை)", icon: Tv },
+    { href: "/moneyo", label: "MoneyO (பணம் & பரிசுகள்)", icon: Zap },
+    { href: "/tasko", label: "TaskO (பணிகள் & படிவம்)", icon: Globe },
+    { href: "/tradeo", label: "TradeO (மொத்த வர்த்தகம்)", icon: Share2 },
     { href: "/toolso", label: "ToolsO (கருவிகள்)", icon: Wrench },
     ...(isAdmin || isRegisteredDriver
-      ? [{ href: "/drivo", label: "DriveO (டிரைவர்)", icon: Gauge }]
+      ? [{ href: "/drivo", label: "DriveO (ஓட்டுநர் சேவை)", icon: Gauge }]
       : []),
   ];
 
