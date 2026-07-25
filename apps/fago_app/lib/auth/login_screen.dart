@@ -34,11 +34,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final text = _phoneController.text.replaceAll(RegExp(r'\D'), '');
     if (text.length == 10) {
       try {
-        final res = await Supabase.instance.client
+        final resList = await Supabase.instance.client
             .from('profiles')
             .select('full_name, main_category')
-            .eq('phone', text)
-            .maybeSingle();
+            .or('phone.eq.$text,phone.eq.91$text,phone.eq.+91$text,email.eq.$text@whatsapp.wacrm.local');
+        final res = (resList != null && resList.isNotEmpty) ? resList.first : null;
         if (res != null && res['full_name'] != null && (res['full_name'] as String).isNotEmpty) {
           final String existingName = res['full_name'];
           final String? existingCat = res['main_category'];

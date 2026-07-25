@@ -111,11 +111,12 @@ function LoginPageInner() {
     setPhone(clean);
     if (clean.length === 10) {
       try {
-        const { data } = await supabase
+        const { data: records } = await supabase
           .from("profiles")
           .select("full_name, main_category")
-          .eq("phone", clean)
-          .maybeSingle();
+          .or(`phone.eq.${clean},phone.eq.91${clean},phone.eq.+91${clean},email.eq.${clean}@whatsapp.wacrm.local`);
+        
+        const data = records?.[0];
 
         const savedPin = typeof window !== "undefined" ? localStorage.getItem("fago_pin_" + clean) : null;
 
