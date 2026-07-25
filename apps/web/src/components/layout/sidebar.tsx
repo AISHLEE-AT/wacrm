@@ -219,7 +219,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4">
           <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2.5">
             <img 
-              src="/app_logo.png" 
+              src="/brand-leaf-logo.png?v=3" 
               alt="Thamizhan FAGO Logo" 
               className="h-10 w-10 rounded-xl object-cover border border-amber-400/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]" 
             />

@@ -372,7 +372,7 @@ function LoginPageInner() {
               <div className="absolute inset-0 rounded-3xl bg-amber-500/20 blur-2xl" />
               <div className="absolute inset-0 rounded-3xl bg-emerald-500/20 blur-xl" />
               <div className="relative z-10 w-32 h-32 rounded-3xl overflow-hidden border border-amber-400/60 shadow-[0_0_40px_rgba(250,204,21,0.3)]">
-                <img src="/app_logo.png" alt="Thamizhan FAGO Logo" className="w-full h-full object-cover" />
+                <img src="/brand-leaf-logo.png?v=3" alt="Thamizhan FAGO Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             
