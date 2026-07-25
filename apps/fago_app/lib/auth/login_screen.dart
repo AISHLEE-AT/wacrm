@@ -544,10 +544,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (!mounted) return;
                               if (isValid) {
                                 setState(() => _isLoading = true);
-                                await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(_phoneController.text.trim());
+                                final auth = ref.read(authProvider.notifier);
+                                final phone = _phoneController.text.trim();
+                                await auth.verifyDevicePinAndAutoLogin(phone);
                                 if (!mounted) return;
                                 context.go('/rideo');
                               } else {
+                                if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('Invalid 4-digit FAGO PIN. Try device fingerprint or PIN unlock.'), backgroundColor: Colors.orange),
                                 );
