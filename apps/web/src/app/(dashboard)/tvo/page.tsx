@@ -4,37 +4,32 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
-import { Tv, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Tv, ExternalLink, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
+import { buildAishleeIframeUrl } from '@/lib/aishlee-sso';
 
 export default function TvOPage() {
   const { user, profile } = useAuth();
-  const [iframeUrl, setIframeUrl] = useState('https://thamizhan.vercel.app/tvo');
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [key, setKey] = useState(0);
 
   const supabase = createClient();
 
   useEffect(() => {
+    if (user === undefined) return; // wait for auth to resolve
+
     async function syncAishleeSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const phone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
-        const name = profile?.full_name || user?.user_metadata?.full_name || 'User';
-
-        let params = `?embed=true&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`;
-        if (session) {
-          params += `&access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
-        }
-        setIframeUrl(`https://thamizhan.vercel.app/tvo${params}`);
+        setIframeUrl(buildAishleeIframeUrl('tvo', user, profile, session));
       } catch (err) {
-        console.error('SSO sync error:', err);
+        console.error('TvO SSO sync error:', err);
+        setIframeUrl('https://thamizhan.vercel.app/tvo');
       }
     }
     syncAishleeSession();
   }, [user, profile]);
 
-  const handleRefresh = () => {
-    setKey(prev => prev + 1);
-  };
+  const handleRefresh = () => setKey(prev => prev + 1);
 
   return (
     <div className="w-full h-[calc(100vh-4rem)] flex flex-col p-2 md:p-4 space-y-2 bg-[#0A0D14]">
@@ -60,13 +55,14 @@ export default function TvOPage() {
           </span>
           <button
             onClick={handleRefresh}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs flex items-center gap-1 transition"
+            disabled={!iframeUrl}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs flex items-center gap-1 transition disabled:opacity-40"
             title="Refresh Window"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <a
-            href={iframeUrl}
+            href={iframeUrl ?? '#'}
             target="_blank"
             rel="noreferrer"
             className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-purple-600 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
@@ -78,13 +74,21 @@ export default function TvOPage() {
 
       {/* Embedded Aishlee Web Window Container */}
       <div className="flex-1 w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
-        <iframe
-          key={key}
-          src={iframeUrl}
-          title="Aishlee TvO Module Window"
-          className="w-full h-full border-0"
-          allow="camera; microphone; geolocation; clipboard-write; encrypted-media; autoplay"
-        />
+        {!iframeUrl ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-slate-500">
+            <Loader2 className="w-10 h-10 animate-spin text-red-500" />
+            <p className="text-sm font-medium">Connecting to Aishlee TvO…</p>
+            <p className="text-xs text-slate-600">Authenticating your session</p>
+          </div>
+        ) : (
+          <iframe
+            key={key}
+            src={iframeUrl}
+            title="Aishlee TvO Module Window"
+            className="w-full h-full border-0"
+            allow="camera; microphone; geolocation; clipboard-write; encrypted-media; autoplay"
+          />
+        )}
       </div>
     </div>
   );

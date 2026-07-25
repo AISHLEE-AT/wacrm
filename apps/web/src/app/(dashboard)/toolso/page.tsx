@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { createClient } from '@/lib/supabase/client';
+import { buildAishleeIframeUrl } from '@/lib/aishlee-sso';
 
 /* ─────────────────────────────────────────────
    TAB IDs
@@ -374,29 +375,29 @@ function GeminiAiPanel({ user, profile }: { user: any; profile: any }) {
 ───────────────────────────────────────────── */
 function ToolsOPanel({ user, profile }: { user: any; profile: any }) {
   const supabase = createClient();
-  const [iframeUrl, setIframeUrl] = useState('https://thamizhan.vercel.app/toolso');
+  // null = session not resolved yet, string = ready to embed
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [iframeKey, setIframeKey] = useState(0);
 
   useEffect(() => {
+    // ⚡ Guard: wait until auth resolves before building URL.
+    // Without this the iframe loads with phone='' → guest_user in aishlee-web.
+    if (user === undefined) return;
+
     async function syncSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const phone =
-          profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
-        const name =
-          profile?.full_name || user?.user_metadata?.full_name || 'User';
         const geminiKey =
           localStorage.getItem('fago_gemini_api_key') ||
           localStorage.getItem('gemini_api_key') || '';
-
-        let params = `?embed=true&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`;
-        if (geminiKey) params += `&gemini_api_key=${encodeURIComponent(geminiKey)}`;
-        if (session) {
-          params += `&access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
-        }
-        setIframeUrl(`https://thamizhan.vercel.app/toolso${params}`);
+        setIframeUrl(
+          buildAishleeIframeUrl('toolso', user, profile, session,
+            geminiKey ? { gemini_api_key: geminiKey } : {}
+          )
+        );
       } catch (err) {
-        console.error('SSO sync error:', err);
+        console.error('ToolsO SSO sync error:', err);
+        setIframeUrl('https://thamizhan.vercel.app/toolso');
       }
     }
     syncSession();
@@ -441,15 +442,22 @@ function ToolsOPanel({ user, profile }: { user: any; profile: any }) {
 
       {/* Iframe */}
       <div className="flex-1 w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl" style={{ minHeight: '600px' }}>
-        <iframe
-          key={iframeKey}
-          src={iframeUrl}
-          title="Aishlee ToolsO Module"
-          className="w-full h-full border-0"
-          allow="camera *; microphone *; geolocation *; clipboard-write *; encrypted-media *; autoplay *"
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads"
-          style={{ minHeight: '600px' }}
-        />
+        {!iframeUrl ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-slate-500" style={{ minHeight: '600px' }}>
+            <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+            <p className="text-sm font-medium">Connecting to Aishlee ToolsO…</p>
+            <p className="text-xs text-slate-600">Authenticating your session</p>
+          </div>
+        ) : (
+          <iframe
+            key={iframeKey}
+            src={iframeUrl}
+            title="Aishlee ToolsO Module"
+            className="w-full h-full border-0"
+            allow="camera *; microphone *; geolocation *; clipboard-write *; encrypted-media *; autoplay *"
+            style={{ minHeight: '600px' }}
+          />
+        )}
       </div>
     </div>
   );
