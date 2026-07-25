@@ -2,16 +2,14 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
--- Dynamic & Defensive: Automatically discovers and drops ALL referencing FK 
--- constraints across any table before altering id columns to TEXT.
+-- Defensive: Converts JSONB/JSON columns to TEXT for clean string insertions.
 -- ==============================================================================
 
--- ── 0. DYNAMICALLY DROP ALL REFERENCING FOREIGN KEYS & CONVERT COLUMNS ─────────
+-- ── 0. CONVERT ID & JSONB COLUMNS TO TEXT IF NEEDED ───────────────────────────
 DO $$
 DECLARE
     r RECORD;
 BEGIN
-    -- Automatically discover and drop ALL foreign key constraints in the database referencing lms_courses
     FOR r IN (
         SELECT tc.table_schema, tc.table_name, tc.constraint_name, kcu.column_name
         FROM information_schema.table_constraints AS tc
@@ -28,7 +26,6 @@ BEGIN
         EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN %I TYPE TEXT USING %I::TEXT;', r.table_schema, r.table_name, r.column_name, r.column_name);
     END LOOP;
 
-    -- Automatically discover and drop ALL foreign key constraints in the database referencing unified_master_data
     FOR r IN (
         SELECT tc.table_schema, tc.table_name, tc.constraint_name, kcu.column_name
         FROM information_schema.table_constraints AS tc
@@ -46,12 +43,14 @@ BEGIN
     END LOOP;
 END $$;
 
--- Drop identity sequences and convert parent table primary keys to TEXT
 ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN id TYPE TEXT USING id::TEXT;
+ALTER TABLE IF EXISTS public.lms_courses ALTER COLUMN curriculum TYPE TEXT USING curriculum::TEXT;
 
 ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN id TYPE TEXT USING id::TEXT;
+ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN links_data TYPE TEXT USING links_data::TEXT;
+ALTER TABLE IF EXISTS public.unified_master_data ALTER COLUMN metadata TYPE TEXT USING metadata::TEXT;
 
 ALTER TABLE IF EXISTS public.purchases ALTER COLUMN id DROP IDENTITY IF EXISTS;
 ALTER TABLE IF EXISTS public.purchases ALTER COLUMN id TYPE TEXT USING id::TEXT;
