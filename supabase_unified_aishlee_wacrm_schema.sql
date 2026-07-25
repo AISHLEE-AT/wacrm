@@ -2,8 +2,33 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
--- Fully defensive – adds any missing columns automatically.
+-- Fully defensive – converts BIGINT IDs to TEXT & adds missing columns.
 -- ==============================================================================
+
+-- ── 0. CONVERT INTEGER/BIGINT IDs TO TEXT IF NEEDED ───────────────────────────
+DO $$
+BEGIN
+  BEGIN
+    ALTER TABLE public.lms_courses ALTER COLUMN id TYPE TEXT USING id::TEXT;
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  BEGIN
+    ALTER TABLE public.unified_master_data ALTER COLUMN id TYPE TEXT USING id::TEXT;
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  BEGIN
+    ALTER TABLE public.purchases ALTER COLUMN id TYPE TEXT USING id::TEXT;
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  BEGIN
+    ALTER TABLE public.point_logs ALTER COLUMN id TYPE TEXT USING id::TEXT;
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  BEGIN
+    ALTER TABLE public.notifications ALTER COLUMN id TYPE TEXT USING id::TEXT;
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+END $$;
 
 -- ── 1. PROFILES TABLE ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.profiles (
