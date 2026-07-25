@@ -97,6 +97,22 @@ export default function AgrOPage() {
         </div>
       </div>
 
+      {/* Live Commodity Price Ticker Tape */}
+      <div className="bg-emerald-950/80 border border-emerald-500/40 rounded-xl p-2.5 overflow-hidden shadow-inner">
+        <div className="flex items-center gap-4 text-xs font-bold whitespace-nowrap overflow-x-auto scrollbar-none animate-pulse">
+          <span className="bg-emerald-500 text-black px-2 py-0.5 rounded font-black">🔴 LIVE MANDI TICKER</span>
+          <span className="text-amber-300">🍅 Oddanchatram Tomato: ₹24/kg (+₹2)</span>
+          <span className="text-slate-400">|</span>
+          <span className="text-emerald-400">🧅 Small Onion: ₹48/kg</span>
+          <span className="text-slate-400">|</span>
+          <span className="text-amber-300">🥥 Coconut: ₹18/nut (+₹1)</span>
+          <span className="text-slate-400">|</span>
+          <span className="text-cyan-300">🌺 Madurai Jasmine: ₹450/kg (+₹50)</span>
+          <span className="text-slate-400">|</span>
+          <span className="text-rose-400">🌶️ Green Chilli: ₹32/kg (-₹3)</span>
+        </div>
+      </div>
+
       {/* Tabs Bar */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
         <button

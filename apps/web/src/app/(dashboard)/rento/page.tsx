@@ -248,12 +248,20 @@ export default function RentOPage() {
                 <CheckCircle2 className="w-4 h-4" /> WhatsApp வாடகை செய்தி அனுப்பப்பட்டது!
               </div>
             ) : (
-              <button
-                onClick={confirmBooking}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-black text-xs flex items-center justify-center gap-2 shadow-xl hover:opacity-90 transition"
-              >
-                <Send className="w-4 h-4" /> 1-Click WhatsApp வாடகை பதிவு
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={confirmBooking}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-black text-xs flex items-center justify-center gap-2 shadow-xl hover:opacity-90 transition"
+                >
+                  <Send className="w-4 h-4" /> 1-Click WhatsApp வாடகை பதிவு
+                </button>
+                <a
+                  href={`upi://pay?pa=9486335870@hdfcbank&pn=FAGO%20RentO&am=100&cu=INR&tn=RentO%20Booking%20Deposit`}
+                  className="w-full py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs flex items-center justify-center gap-2 transition"
+                >
+                  💳 PAY ₹100 ADVANCE DEPOSIT VIA UPI
+                </a>
+              </div>
             )}
           </div>
         </div>

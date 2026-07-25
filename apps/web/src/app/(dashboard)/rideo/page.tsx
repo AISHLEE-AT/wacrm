@@ -482,22 +482,27 @@ export default function RideODashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowSosModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 text-xs font-bold hover:bg-rose-500/30 transition shadow-sm"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-500" />
+            🚨 SOS Shield
+          </button>
+          <button
+            onClick={() => setShowFareBreakdownModal(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 transition shadow-sm"
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            📊 0% Commission Fare
+          </button>
           <button
             onClick={handleCenterOnUser}
             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-xs font-semibold hover:bg-muted transition"
           >
             <Compass className="w-4 h-4 text-primary animate-pulse" />
-            Reset to Device Live GPS
-          </button>
-          <button
-            onClick={() => setIsOnline(!isOnline)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition ${
-              isOnline ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30' : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            <Power className="w-4 h-4" />
-            {isOnline ? 'GPS Active' : 'GPS Offline'}
+            Live GPS
           </button>
         </div>
       </div>
