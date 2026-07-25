@@ -137,22 +137,16 @@ class TestOScreen extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  onPressed: () async {
-                    final loc = await LocationService().getCurrentLocation();
-                    final pinData = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
-                    final userDetails = await ProfileService.getCurrentUserProfileDetails();
-                    final userName = userDetails['name'] ?? '';
-
-                    StringBuffer sb = StringBuffer();
-                    sb.writeln('📝 *TESTO EXAM & CERTIFICATION ACCESS*');
-                    if (userName.isNotEmpty) sb.writeln('👤 *Candidate Name*: $userName');
-                    sb.writeln('📚 *Test Title*: ${item['title']}');
-                    sb.writeln('🏷️ *Category*: ${item['category']}');
-                    sb.writeln('\n📍 *Candidate Location Pin*: ${pinData['address']}');
-                    if (pinData['pincode']!.isNotEmpty) sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
-                    sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=${loc.latitude},${loc.longitude}');
-
-                    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => WebModuleScreen(
+                          title: item['title']!,
+                          modulePath: 'testo',
+                        ),
+                      ),
+                    );
                   },
                   child: const Text('Start Test', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
