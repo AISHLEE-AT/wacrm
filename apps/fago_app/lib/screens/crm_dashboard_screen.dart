@@ -10,7 +10,6 @@ import 'driver_dashboard_screen.dart';
 import 'rento_screen.dart';
 import '../features/dealo/screens/dealo_marketplace_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
-import '../features/admin/screens/area_admin_hub_screen.dart';
 import '../services/whatsapp_service.dart';
 import '../features/promo/screens/whatsapp_status_promo_screen.dart';
 import 'web_module_screen.dart';
