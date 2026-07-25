@@ -90,4 +90,16 @@ class DeviceAuthService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyRegisteredName);
   }
+
+  /// Returns true if biometric authentication preference is explicitly enabled.
+  static Future<bool> isBiometricEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyBiometricEnabled) ?? true;
+  }
+
+  /// Toggle biometric authentication preference for this device.
+  static Future<void> setBiometricEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyBiometricEnabled, enabled);
+  }
 }

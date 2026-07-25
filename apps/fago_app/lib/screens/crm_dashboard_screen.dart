@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:go_router/go_router.dart';
-
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
@@ -35,70 +30,10 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   void initState() {
     super.initState();
     _requestLocationPermission();
-    _initWebViewController();
   }
 
   Future<void> _requestLocationPermission() async {
     await Permission.location.request();
-  }
-
-  void _initWebViewController() {
-    final user = Supabase.instance.client.auth.currentUser;
-    final session = Supabase.instance.client.auth.currentSession;
-    
-    String authParams = '';
-    if (user != null) {
-      final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
-      final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-      authParams = '?phone=$cleanPhone';
-      if (session?.accessToken != null && session?.refreshToken != null) {
-        authParams += '&access_token=${session!.accessToken}&refresh_token=${session.refreshToken}';
-      }
-    }
-
-    final WebViewController controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {},
-          onPageFinished: (String url) {},
-          onNavigationRequest: (NavigationRequest request) {
-            final url = request.url;
-
-            if (url.startsWith('whatsapp://') ||
-                url.contains('wa.me') ||
-                url.contains('api.whatsapp.com')) {
-              _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            if (url.startsWith('google.navigation:') || url.contains('google.com/maps')) {
-              _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse('https://watscrm.vercel.app/rideo$authParams'));
-
-    if (controller.platform is AndroidWebViewController) {
-      final androidController = controller.platform as AndroidWebViewController;
-      androidController.setMediaPlaybackRequiresUserGesture(false);
-      androidController.setOnPlatformPermissionRequest(
-        (PlatformWebViewPermissionRequest request) {
-          request.grant();
-        },
-      );
-    }
-  }
-
-  Future<void> _launchExternalUri(Uri uri) async {
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   String _formatDisplayPhone(AuthState authState) {
@@ -130,6 +65,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
       ),
       builder: (ctx) {
         final categories = [
+          {'name': '🌐 AISHLEE-WEB Portal', 'desc': 'Open Web Flow in Browser', 'route': '/', 'tab': -2},
           {'name': '🏷️ DealO (Marketplace)', 'desc': '5km Radius P2P Deals', 'route': '/dealo', 'tab': 1},
           {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides', 'route': '/rideo', 'tab': 0},
           {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance', 'route': '/drivo', 'tab': 0},
@@ -137,9 +73,9 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           {'name': '🎓 TeachO (Academy)', 'desc': 'Skill Guides & Courses', 'route': '/teacho', 'tab': -1},
           {'name': '📝 TestO (Exam Hub)', 'desc': 'Mock Tests & Certification', 'route': '/testo', 'tab': -1},
           {'name': '📺 TvO (Video Guides)', 'desc': 'Agri & Driver Streaming', 'route': '/tvo', 'tab': -1},
-          {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo', 'tab': -1},
-          {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko', 'tab': -1},
-          {'name': '🤖 AI & ToolsO (AI + கருவிகள்)', 'desc': 'Gemini AI + ToolsO Suite', 'route': '/toolso', 'tab': -1},
+          {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo', 'tab': -2},
+          {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko', 'tab': -2},
+          {'name': '🤖 AI & ToolsO (AI + கருவிகள்)', 'desc': 'Gemini AI + ToolsO Suite', 'route': '/toolso', 'tab': -2},
           {'name': '🌾 AgrO (சந்தை & விதைகள்)', 'desc': 'Crop Rates & Agri Tools', 'route': '/mandi', 'tab': -1},
           {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro', 'tab': -1},
           {'name': '👤 Profile & ID', 'desc': 'KYC & Digital Pass', 'route': '/profile', 'tab': 3},
@@ -200,17 +136,10 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                             _isDriverMode = false;
                           }
                         });
+                      } else if (tab == -2) {
+                        WebModuleScreen.launchInBrowser(path: cat['route'] as String);
                       } else {
-                        final String path = (cat['route'] as String).replaceAll('/', '');
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => WebModuleScreen(
-                              title: cat['name'] as String,
-                              modulePath: path,
-                            ),
-                          ),
-                        );
+                        context.push(cat['route'] as String);
                       }
                     },
                   ),
@@ -241,6 +170,8 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                             _isDriverMode = false;
                           }
                         });
+                      } else if (tab == -2) {
+                        WebModuleScreen.launchInBrowser(path: cat['route'] as String);
                       } else {
                         context.push(cat['route'] as String);
                       }
@@ -355,6 +286,15 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                   _isDriverMode = !_isDriverMode;
                   _currentTab = 0;
                 });
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.language, color: Colors.cyanAccent),
+              title: const Text('🌐 AISHLEE-WEB Portal', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+              subtitle: const Text('Open web flow in browser', style: TextStyle(color: Colors.grey, fontSize: 11)),
+              onTap: () {
+                Navigator.pop(context);
+                WebModuleScreen.launchInBrowser(path: '/');
               },
             ),
             const Divider(color: Colors.white12),

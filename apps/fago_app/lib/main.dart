@@ -62,7 +62,7 @@ class FagoSuperApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'FAGO - AishleeTech',
+      title: 'FAGO',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // Nature aesthetic from user logo

@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/whatsapp_service.dart';
-import '../services/location_service.dart';
-import '../features/profile/services/profile_service.dart';
 import 'web_module_screen.dart';
 
 class TeachOScreen extends StatelessWidget {
@@ -47,12 +44,7 @@ class TeachOScreen extends StatelessWidget {
             icon: const Icon(Icons.language, color: Colors.purpleAccent),
             tooltip: 'Open TeachO Web Portal',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'TeachO - Online Academy & Courses', modulePath: 'teacho'),
-                ),
-              );
+              WebModuleScreen.launchInBrowser(path: 'teacho');
             },
           ),
         ],
@@ -133,15 +125,7 @@ class TeachOScreen extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.play_circle_fill, color: Colors.purpleAccent, size: 32),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => WebModuleScreen(
-                          title: item['title']!,
-                          modulePath: 'teacho',
-                        ),
-                      ),
-                    );
+                    WebModuleScreen.launchInBrowser(path: 'teacho');
                   },
                 ),
               ],

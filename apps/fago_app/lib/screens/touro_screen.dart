@@ -90,12 +90,7 @@ class _TourOScreenState extends State<TourOScreen> {
             icon: const Icon(Icons.language, color: Colors.cyanAccent),
             tooltip: 'Open Aishlee-Web TourO',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'TourO - Aishlee Web Spiritual Tours', modulePath: 'touro'),
-                ),
-              );
+              WebModuleScreen.launchInBrowser(path: 'touro');
             },
           ),
         ],

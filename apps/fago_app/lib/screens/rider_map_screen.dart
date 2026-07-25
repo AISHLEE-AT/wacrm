@@ -520,6 +520,41 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     );
   }
 
+  Future<void> _handleMapTap(LatLng point) async {
+    final address = await LocationService().getAddressFromCoordinates(point.latitude, point.longitude);
+    if (!mounted) return;
+
+    if (_pinSelectionStep == 0) {
+      setState(() {
+        _currentLocation = Location(latitude: point.latitude, longitude: point.longitude);
+        _currentAddress = address;
+        _pickupController.text = address;
+      });
+      _updateFare();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('📍 Pickup set to: $address'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green.shade800,
+        ),
+      );
+    } else {
+      setState(() {
+        _destinationLocation = Location(latitude: point.latitude, longitude: point.longitude);
+        _destinationAddress = address;
+        _dropoffController.text = address;
+      });
+      _updateFare();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🚩 Dropoff set to: $address'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final initialPos = _currentLocation != null
@@ -533,7 +568,9 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           markerId: const MarkerId('pickup'),
           position: LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: const InfoWindow(title: 'Pickup Location'),
+          infoWindow: InfoWindow(title: 'Pickup Location', snippet: _currentAddress),
+          draggable: true,
+          onDragEnd: (newPosition) => _handleMapTap(newPosition),
         ),
       );
     }
@@ -543,7 +580,9 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           markerId: const MarkerId('dropoff'),
           position: LatLng(_destinationLocation!.latitude, _destinationLocation!.longitude),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: const InfoWindow(title: 'Dropoff Location'),
+          infoWindow: InfoWindow(title: 'Dropoff Location', snippet: _destinationAddress),
+          draggable: true,
+          onDragEnd: (newPosition) => _handleMapTap(newPosition),
         ),
       );
     }
@@ -558,12 +597,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
             icon: const Icon(Icons.language, color: Color(0xFF00FF00)),
             tooltip: 'Open Aishlee-Web RideO',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'RideO - Aishlee Web Booking', modulePath: 'rideo'),
-                ),
-              );
+              WebModuleScreen.launchInBrowser(path: 'rideo');
             },
           ),
         ],
@@ -573,6 +607,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           GoogleMap(
             initialCameraPosition: CameraPosition(target: initialPos, zoom: 14),
             onMapCreated: (controller) => _mapController = controller,
+            onTap: _handleMapTap,
             markers: markers,
             myLocationEnabled: true,
             myLocationButtonEnabled: true,

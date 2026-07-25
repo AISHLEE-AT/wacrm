@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// Clean External Web Module Launcher for AISHLEE-WEB Portal
 class WebModuleScreen extends StatefulWidget {
   final String title;
   final String modulePath;
@@ -14,285 +13,115 @@ class WebModuleScreen extends StatefulWidget {
     required this.modulePath,
   });
 
-  @override
-  State<WebModuleScreen> createState() => _WebModuleScreenState();
-}
-
-class _WebModuleScreenState extends State<WebModuleScreen> {
-  late final WebViewController _controller;
-  bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
-  String _currentUrl = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _initWebViewController();
-  }
-
-  void _initWebViewController() {
-    final cleanPath = widget.modulePath.startsWith('/')
-        ? widget.modulePath
-        : '/${widget.modulePath}';
-
-    // Retrieve active Supabase user credentials for seamless WebView auto-login
+  /// Helper to launch AISHLEE-WEB modules directly in external browser
+  static Future<void> launchInBrowser({
+    required String path,
+    BuildContext? context,
+  }) async {
+    final cleanPath = path.startsWith('/') ? path : '/$path';
     final user = Supabase.instance.client.auth.currentUser;
     final session = Supabase.instance.client.auth.currentSession;
-    
-    String authQueryParams = '';
+
+    String authQueryParams = '?embed=true';
     String authHashFragment = '';
-    final currentSession = session;
     if (user != null) {
       final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
       final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-      authQueryParams = '?embed=true&phone=$cleanPhone&user_id=${user.id}';
-      if (currentSession != null && currentSession.accessToken.isNotEmpty) {
-        authQueryParams += '&access_token=${currentSession.accessToken}';
-        authHashFragment = '#access_token=${currentSession.accessToken}';
+      authQueryParams += '&phone=$cleanPhone&user_id=${user.id}';
+      if (session?.accessToken != null && session!.accessToken.isNotEmpty) {
+        authHashFragment = '#access_token=${session.accessToken}';
+        if (session.refreshToken != null && session.refreshToken!.isNotEmpty) {
+          authHashFragment += '&refresh_token=${session.refreshToken}&token_type=bearer';
+        }
       }
-      if (currentSession != null && currentSession.refreshToken != null && currentSession.refreshToken!.isNotEmpty) {
-        authQueryParams += '&refresh_token=${currentSession.refreshToken}';
-        authHashFragment += '&refresh_token=${currentSession.refreshToken}&token_type=bearer';
-      }
-    } else {
-      authQueryParams = '?embed=true';
     }
 
-    final String fullAuthSuffix = '$authQueryParams$authHashFragment';
-
-    final List<String> urlCandidates = [
-      'https://watscrm.vercel.app$cleanPath$fullAuthSuffix',
-      'https://thamizhan.vercel.app$cleanPath$fullAuthSuffix',
-      'https://watscrm.vercel.app$cleanPath',
-    ];
-
-    int attemptIndex = 0;
-    _currentUrl = urlCandidates[0];
-
-    final WebViewController controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF0F172A))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageStarted: (String url) {
-            if (mounted) {
-              setState(() {
-                _isLoading = true;
-                _hasError = false;
-                _currentUrl = url;
-              });
-            }
-          },
-          onPageFinished: (String url) {
-            if (mounted) {
-              setState(() => _isLoading = false);
-            }
-          },
-          onHttpError: (HttpResponseError error) {
-            final statusCode = error.response?.statusCode ?? 0;
-            if (statusCode >= 400 && attemptIndex < urlCandidates.length - 1) {
-              attemptIndex++;
-              _controller.loadRequest(Uri.parse(urlCandidates[attemptIndex]));
-            } else if (statusCode >= 400) {
-              if (mounted) {
-                setState(() {
-                  _hasError = true;
-                  _errorMessage = 'Module page returned HTTP $statusCode';
-                });
-              }
-            }
-          },
-          onWebResourceError: (WebResourceError error) {
-            // Only trigger error state for main frame load failures
-            if (error.isForMainFrame == true && attemptIndex < urlCandidates.length - 1) {
-              attemptIndex++;
-              _controller.loadRequest(Uri.parse(urlCandidates[attemptIndex]));
-            } else if (error.isForMainFrame == true) {
-              if (mounted) {
-                setState(() {
-                  _hasError = true;
-                  _errorMessage = error.description;
-                });
-              }
-            }
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            final url = request.url;
-
-            // Handle WhatsApp Deep Links
-            if (url.startsWith('whatsapp://') ||
-                url.contains('wa.me') ||
-                url.contains('api.whatsapp.com')) {
-              _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            // Handle Navigation / Maps Links
-            if (url.startsWith('google.navigation:') ||
-                url.contains('google.com/maps') ||
-                url.contains('maps.google.com')) {
-              _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            // Handle Telephone Calls
-            if (url.startsWith('tel:')) {
-              _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            // Handle UPI Payment Links
-            if (url.startsWith('upi://')) {
-              _launchExternalUri(Uri.parse(url));
-              return NavigationDecision.prevent;
-            }
-
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(urlCandidates[0]));
-
-    // Enable essential Android WebView features for Next.js web apps
-    if (controller.platform is AndroidWebViewController) {
-      final androidController = controller.platform as AndroidWebViewController;
-      androidController.setMediaPlaybackRequiresUserGesture(false);
-      androidController.setOnPlatformPermissionRequest(
-        (PlatformWebViewPermissionRequest request) {
-          request.grant();
-        },
-      );
-    }
-
-    _controller = controller;
-  }
-
-  Future<void> _launchExternalUri(Uri uri) async {
+    final Uri uri = Uri.parse('https://thamizhan.vercel.app$cleanPath$authQueryParams$authHashFragment');
     try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      debugPrint('Could not launch URI $uri: $e');
+      debugPrint('Error launching web module $uri: $e');
     }
   }
 
   @override
+  State<WebModuleScreen> createState() => _WebModuleScreenState();
+}
+
+class _WebModuleScreenState extends State<WebModuleScreen> {
+  bool _launched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _triggerLaunch();
+    });
+  }
+
+  Future<void> _triggerLaunch() async {
+    if (_launched) return;
+    setState(() => _launched = true);
+    await WebModuleScreen.launchInBrowser(path: widget.modulePath);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        if (await _controller.canGoBack()) {
-          await _controller.goBack();
-        } else {
-          if (context.mounted) {
-            Navigator.of(context).pop();
-          }
-        }
-      },
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0F172A),
-        appBar: AppBar(
-          title: Text(
-            widget.title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          backgroundColor: const Color(0xFF1E293B),
-          foregroundColor: Colors.white,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.white70),
-              onPressed: () {
-                setState(() => _hasError = false);
-                _controller.reload();
-              },
-              tooltip: 'Reload Module',
-            ),
-            IconButton(
-              icon: const Icon(Icons.open_in_browser, color: Colors.cyanAccent),
-              onPressed: () {
-                if (_currentUrl.isNotEmpty) {
-                  _launchExternalUri(Uri.parse(_currentUrl));
-                }
-              },
-              tooltip: 'Open in Browser',
-            ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            WebViewWidget(controller: _controller),
-            if (_isLoading)
-              const Center(
-                child: CircularProgressIndicator(color: Color(0xFF00FF00)),
-              ),
-            if (_hasError)
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        backgroundColor: const Color(0xFF1E293B),
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
               Container(
-                color: const Color(0xFF0F172A),
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.cloud_off, color: Colors.amber, size: 64),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Unable to load ${widget.title}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _errorMessage.isNotEmpty
-                            ? _errorMessage
-                            : 'Please check your internet connection and try again.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              setState(() => _hasError = false);
-                              _controller.reload();
-                            },
-                            icon: const Icon(Icons.refresh, color: Colors.black),
-                            label: const Text('Retry'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00FF00),
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              if (_currentUrl.isNotEmpty) {
-                                _launchExternalUri(Uri.parse(_currentUrl));
-                              }
-                            },
-                            icon: const Icon(Icons.language, color: Colors.cyanAccent),
-                            label: const Text('Open Web', style: TextStyle(color: Colors.cyanAccent)),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.cyanAccent),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.cyan.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                ),
+                child: const Icon(Icons.language, color: Colors.cyanAccent, size: 64),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                widget.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'AISHLEE-WEB Separate Flow Portal',
+                style: TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Opening web portal in your device browser for full performance...',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const SizedBox(height: 28),
+              ElevatedButton.icon(
+                onPressed: _triggerLaunch,
+                icon: const Icon(Icons.open_in_browser, color: Colors.black),
+                label: const Text('Open in Browser', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00FF00),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );

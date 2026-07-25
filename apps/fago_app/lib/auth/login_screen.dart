@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
+import '../services/whatsapp_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? role;
@@ -22,6 +24,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _useWhatsAppAuth = true; // Default to WhatsApp Login OTP
   String _verificationId = '';
   bool _isReturningUser = false;
+  
+  int _resendCooldown = 0;
+  Timer? _cooldownTimer;
+
+  void _startCooldown() {
+    _cooldownTimer?.cancel();
+    setState(() => _resendCooldown = 60);
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_resendCooldown > 1) {
+        setState(() => _resendCooldown--);
+      } else {
+        setState(() => _resendCooldown = 0);
+        timer.cancel();
+      }
+    });
+  }
 
   final TextEditingController _nameController = TextEditingController();
   String _selectedCategory = 'Traveller';
@@ -82,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             .from('profiles')
             .select('full_name, main_category')
             .or('phone.eq.$text,phone.eq.91$text,phone.eq.+91$text,email.eq.$text@whatsapp.wacrm.local');
-        final res = (resList != null && resList.isNotEmpty) ? resList.first : null;
+        final res = resList.isNotEmpty ? resList.first : null;
         if (res != null && res['full_name'] != null && (res['full_name'] as String).isNotEmpty) {
           final String existingName = res['full_name'];
           final String? existingCat = res['main_category'];
@@ -114,6 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _phoneController.removeListener(_onPhoneChanged);
     _phoneController.dispose();
     _otpController.dispose();
@@ -135,6 +158,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   ];
 
   void _sendOTP() async {
+    if (_resendCooldown > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please wait ${_resendCooldown}s before requesting a new OTP.')),
+      );
+      return;
+    }
+
     if (_phoneController.text.length != 10 || !RegExp(r'^[6-9]\d{9}$').hasMatch(_phoneController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid 10-digit Indian mobile number')),
@@ -150,6 +180,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
+    _startCooldown();
     String rawPhone = _phoneController.text.trim();
     String phoneNumber = '+91$rawPhone';
 
@@ -163,8 +194,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(res['message'] ?? 'OTP sent via WhatsApp! Check your WhatsApp messages.'),
+              content: Text(res['message'] ?? 'OTP requested! Check your WhatsApp messages or tap Open WhatsApp.'),
               backgroundColor: Colors.green.shade800,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -172,7 +204,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() => _isLoading = false);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('WhatsApp OTP Error: ${e.toString().replaceAll("Exception: ", "")}')),
+            SnackBar(content: Text('WhatsApp OTP Note: ${e.toString().replaceAll("Exception: ", "")}')),
           );
         }
       }
@@ -462,7 +494,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                   // User Category Selector Dropdown
                   DropdownButtonFormField<String>(
-                    value: _userCategories.any((cat) => cat['key'] == _selectedCategory)
+                    initialValue: _userCategories.any((cat) => cat['key'] == _selectedCategory)
                         ? _selectedCategory
                         : _userCategories.first['key'] as String,
                     dropdownColor: const Color(0xFF1E293B),
@@ -501,10 +533,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ],
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _sendOTP,
+                  onPressed: (_isLoading || _resendCooldown > 0) ? null : _sendOTP,
                   icon: const Icon(Icons.chat, color: Colors.black),
                   label: Text(
-                    _useWhatsAppAuth ? 'Send WhatsApp OTP' : 'Send SMS OTP',
+                    _resendCooldown > 0
+                        ? 'Resend OTP in ${_resendCooldown}s'
+                        : (_useWhatsAppAuth ? 'Send WhatsApp OTP' : 'Send SMS OTP'),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -542,6 +576,72 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ] else ...[
+                if (_useWhatsAppAuth) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF062D1B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF25D366), width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF25D366).withValues(alpha: 0.2),
+                          blurRadius: 12,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.mark_chat_read, color: Color(0xFF25D366), size: 28),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'WhatsApp OTP Connection Ready',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'If you haven\'t received your OTP message automatically, tap below to open WhatsApp & receive your OTP code directly:',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                        const SizedBox(height: 14),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            final rawPhone = _phoneController.text.trim();
+                            WhatsAppService.openWhatsApp(
+                              phone: '916381029380',
+                              message: '🔑 Hello FAGO! Please send my 6-digit Login OTP code for mobile number +91$rawPhone',
+                            );
+                          },
+                          icon: const Icon(Icons.chat, color: Colors.black),
+                          label: const Text(
+                            '📱 Open WhatsApp to Get OTP',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 TextField(
                   controller: _otpController,
                   keyboardType: TextInputType.number,
@@ -585,14 +685,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _isOTPSent = false;
-                      _otpController.clear();
-                    });
-                  },
-                  child: const Text('Change Number', style: TextStyle(color: Colors.greenAccent)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _isOTPSent = false;
+                          _otpController.clear();
+                        });
+                      },
+                      child: const Text('Change Number', style: TextStyle(color: Colors.greenAccent)),
+                    ),
+                    TextButton(
+                      onPressed: (_isLoading || _resendCooldown > 0) ? null : _sendOTP,
+                      child: Text(
+                        _resendCooldown > 0 ? 'Resend in ${_resendCooldown}s' : 'Resend OTP',
+                        style: TextStyle(
+                          color: _resendCooldown > 0 ? Colors.white38 : Colors.amber,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 )
               ],
             ],

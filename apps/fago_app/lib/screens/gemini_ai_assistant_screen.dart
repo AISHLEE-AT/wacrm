@@ -69,6 +69,7 @@ class _GeminiAiAssistantScreenState extends State<GeminiAiAssistantScreen> {
       _isConnected = true;
     });
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('✅ Google Gemini AI Connected Successfully!')),
     );

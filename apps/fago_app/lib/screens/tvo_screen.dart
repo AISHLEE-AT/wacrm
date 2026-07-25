@@ -56,12 +56,7 @@ class TvOScreen extends StatelessWidget {
             icon: const Icon(Icons.language, color: Colors.redAccent),
             tooltip: 'Open TvO Live Stream',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const WebModuleScreen(title: 'TvO - Tamil Live TV & Streaming', modulePath: 'tvo'),
-                ),
-              );
+              WebModuleScreen.launchInBrowser(path: 'tvo');
             },
           ),
         ],
