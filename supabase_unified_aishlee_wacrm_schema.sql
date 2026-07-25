@@ -2,9 +2,10 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
+-- Fully defensive – adds any missing columns automatically.
 -- ==============================================================================
 
--- ── 1. PROFILES TABLE (User Accounts, Roles, Pincodes & Referrals) ────────────
+-- ── 1. PROFILES TABLE ────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name TEXT,
@@ -43,7 +44,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS upi_id TEXT;
 -- ── 2. LMS_COURSES TABLE (TeachO, TestO, TvO Courses & Video Guides) ─────────
 CREATE TABLE IF NOT EXISTS public.lms_courses (
     id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
+    title TEXT,
     description TEXT,
     subtitle TEXT,
     thumbnail_url TEXT,
@@ -59,14 +60,25 @@ CREATE TABLE IF NOT EXISTS public.lms_courses (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS subtitle TEXT;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'General';
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS sub_category TEXT;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS level TEXT DEFAULT 'Beginner';
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS pdf_url TEXT;
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS curriculum TEXT;
 ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS icon TEXT DEFAULT '📚';
+ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS admin_id TEXT;
 
 -- ── 3. UNIFIED_MASTER_DATA TABLE (Mandi Rates, RentO, TourO, ToolsO, TaskO) ───
 CREATE TABLE IF NOT EXISTS public.unified_master_data (
     id TEXT PRIMARY KEY,
-    item_type TEXT NOT NULL, -- MANDI_PRICE, RENTO_EQUIPMENT, TOURO_SPOT, TOOL, TASK
-    title_name TEXT NOT NULL,
+    item_type TEXT,
+    title_name TEXT,
     description_purpose TEXT,
     category TEXT,
     permanent_pincode TEXT DEFAULT '641001',
@@ -80,11 +92,23 @@ CREATE TABLE IF NOT EXISTS public.unified_master_data (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS item_type TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS title_name TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS description_purpose TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS permanent_pincode TEXT DEFAULT '641001';
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'APPROVED';
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS links_data TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS additional_info TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'ta';
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS metadata TEXT;
+
 -- ── 4. DEALS TABLE (DealO 5km Radius Hyperlocal Marketplace) ─────────────────
 CREATE TABLE IF NOT EXISTS public.deals (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id TEXT,
-  title TEXT NOT NULL,
+  title TEXT,
   price NUMERIC DEFAULT 0,
   type TEXT DEFAULT 'sell',
   location TEXT,
@@ -95,6 +119,16 @@ CREATE TABLE IF NOT EXISTS public.deals (
   status TEXT DEFAULT 'active',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS user_id TEXT;
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'sell';
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS pincode TEXT DEFAULT '641001';
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS seller_name TEXT;
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS seller_phone TEXT;
+ALTER TABLE public.deals ADD COLUMN IF NOT EXISTS upi_id TEXT;
 
 -- ── 5. DRIVERS TABLE (DriveO Driver Fleet & Verification) ────────────────────
 CREATE TABLE IF NOT EXISTS public.drivers (
@@ -126,14 +160,18 @@ CREATE TABLE IF NOT EXISTS public.contacts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID,
   name TEXT,
-  phone TEXT UNIQUE,
+  phone TEXT,
   email TEXT,
   pincode TEXT DEFAULT '641001',
   tags TEXT[],
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ── 7. PURCHASES TABLE (Course Enrollments & Booking Transactions) ───────────
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS user_id UUID;
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS phone TEXT;
+
+-- ── 7. PURCHASES TABLE ───────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.purchases (
     id TEXT PRIMARY KEY,
     user_id TEXT,
@@ -146,7 +184,7 @@ CREATE TABLE IF NOT EXISTS public.purchases (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ── 8. POINT_LOGS TABLE (Streak Scores & Rewards) ───────────────────────────
+-- ── 8. POINT_LOGS TABLE ──────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.point_logs (
     id TEXT PRIMARY KEY,
     user_id TEXT,
@@ -155,7 +193,7 @@ CREATE TABLE IF NOT EXISTS public.point_logs (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ── 9. NOTIFICATIONS TABLE (System & In-App Alerts) ──────────────────────────
+-- ── 9. NOTIFICATIONS TABLE ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.notifications (
     id TEXT PRIMARY KEY,
     user_id TEXT,
