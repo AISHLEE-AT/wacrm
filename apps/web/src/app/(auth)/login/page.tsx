@@ -128,13 +128,9 @@ function LoginPageInner() {
           if (data.main_category) {
             setSelectedCategory(data.main_category);
           }
-          if (savedPin) {
-            setHasSavedPin(true);
-            setIsPinLogin(true);
-          } else {
-            setHasSavedPin(false);
-            setIsPinLogin(false);
-          }
+          // Enable PIN login mode by default for returning registered accounts across any browser
+          setHasSavedPin(true);
+          setIsPinLogin(true);
         } else {
           setIsReturningUser(false);
           setHasSavedPin(false);
@@ -160,39 +156,38 @@ function LoginPageInner() {
       setError("Please enter your 4-digit PIN");
       return;
     }
-    const savedPin = typeof window !== "undefined" ? localStorage.getItem("fago_pin_" + phone) : null;
-    if (pin === savedPin) {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/auth/pin-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, pin }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to authenticate PIN login");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/pin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, pin }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to authenticate PIN login");
 
-        if (data.session) {
-          await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          });
-
-          const userCat = data.category || selectedCategory;
-          const targetRoute = categories.find(c => c.key === userCat)?.route || "/rideo";
-          const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
-          window.location.href = finalUrl;
-        } else {
-          throw new Error("Invalid session data returned from server");
+      if (data.session) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("fago_pin_" + phone, pin);
         }
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Error during PIN login");
-      } finally {
-        setLoading(false);
+
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+
+        const userCat = data.category || selectedCategory;
+        const targetRoute = categories.find(c => c.key === userCat)?.route || "/rideo";
+        const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
+        window.location.href = finalUrl;
+      } else {
+        throw new Error("Invalid session data returned from server");
       }
-    } else {
-      setError("Incorrect PIN. Please try again or login via WhatsApp OTP.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Error during PIN login");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -208,7 +203,7 @@ function LoginPageInner() {
       const res = await fetch("/api/auth/whatsapp/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp, fullName: fullName.trim(), category: selectedCategory }),
+        body: JSON.stringify({ phone, otp, fullName: fullName.trim(), category: selectedCategory, pin: newPin }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Invalid OTP");
@@ -602,8 +597,8 @@ function LoginPageInner() {
                       </div>
                     )}
 
-                    {/* Switch back to PIN login if saved PIN exists */}
-                    {hasSavedPin && (
+                    {/* Switch back to PIN login if returning user or saved PIN exists */}
+                    {(hasSavedPin || isReturningUser) && (
                       <button
                         type="button"
                         onClick={() => setIsPinLogin(true)}

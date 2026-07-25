@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 export async function POST(request: Request) {
   try {
-    const { phone, otp, fullName, category } = await request.json()
+    const { phone, otp, fullName, category, pin } = await request.json()
 
     if (!phone || !otp) {
       return NextResponse.json({ error: 'Phone and OTP are required' }, { status: 400 })
@@ -68,6 +68,7 @@ export async function POST(request: Request) {
     }
     if (fullName && fullName.trim()) userMetadata.full_name = fullName.trim()
     if (category && category.trim()) userMetadata.main_category = category.trim()
+    if (pin && pin.length === 4) userMetadata.quick_pin = pin
 
     if (!user) {
       // Create new user

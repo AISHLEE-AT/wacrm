@@ -67,7 +67,8 @@ export default function TradeOPage() {
           src={iframeUrl}
           title="Aishlee TradeO Module"
           className="w-full h-full border-0 rounded-2xl"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; camera; microphone"
+          allow="camera *; microphone *; geolocation *; clipboard-write *; encrypted-media *; autoplay *"
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads"
           allowFullScreen
         />
       </div>

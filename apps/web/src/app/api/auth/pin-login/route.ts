@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 export async function POST(request: Request) {
   try {
-    const { phone } = await request.json()
+    const { phone, pin } = await request.json()
 
     if (!phone) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
@@ -43,15 +43,24 @@ export async function POST(request: Request) {
         email: syntheticEmail,
         email_confirm: true,
         password: securePassword,
-        user_metadata: { phone: cleanPhone, full_name: profile.full_name, main_category: profile.main_category }
+        user_metadata: { phone: cleanPhone, full_name: profile.full_name, main_category: profile.main_category, quick_pin: pin || '1234' }
       })
       if (createError || !newUser.user) {
         return NextResponse.json({ error: 'Failed to authenticate account' }, { status: 500 })
       }
       user = newUser.user
     } else {
+      const existingPin = user.user_metadata?.quick_pin
+      if (existingPin && pin && existingPin !== pin) {
+        return NextResponse.json({ error: 'Incorrect 4-Digit Quick PIN. Please try again or verify via WhatsApp OTP.' }, { status: 400 })
+      }
+
       await supabase.auth.admin.updateUserById(user.id, {
-        password: securePassword
+        password: securePassword,
+        user_metadata: {
+          ...user.user_metadata,
+          ...(pin && !existingPin ? { quick_pin: pin } : {})
+        }
       })
     }
 

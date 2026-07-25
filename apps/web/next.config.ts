@@ -25,12 +25,14 @@ const SECURITY_HEADERS = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
-    // Microphone is allowed for same-origin (`self`) so the inbox
-    // composer can record voice notes via MediaRecorder. Everything
-    // else stays denied — a compromised dependency can't silently grab
-    // the camera / geolocation / etc.
+    // Microphone is allowed for same-origin (`self`) AND for the embedded
+    // thamizhan.vercel.app iframe (ToolsO / LetterPDF AI speech recognition).
+    // The iframe `allow="microphone"` attribute alone is not enough — the
+    // PARENT page's Permissions-Policy must also delegate the permission to
+    // the child origin, otherwise browsers silently block it.
+    // Everything else stays denied.
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=()",
+    value: "camera=(), microphone=(self \"https://thamizhan.vercel.app\"), geolocation=(), payment=(), usb=()",
   },
   {
     key: "Content-Security-Policy-Report-Only",

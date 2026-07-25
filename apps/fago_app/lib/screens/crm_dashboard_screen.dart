@@ -139,7 +139,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           {'name': '📺 TvO (Video Guides)', 'desc': 'Agri & Driver Streaming', 'route': '/tvo', 'tab': -1},
           {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo', 'tab': -1},
           {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko', 'tab': -1},
-          {'name': '🛠️ ToolsO (Suite)', 'desc': 'Calculators & Agri Tools', 'route': '/toolso', 'tab': -1},
+          {'name': '🤖 AI & ToolsO (AI + கருவிகள்)', 'desc': 'Gemini AI + ToolsO Suite', 'route': '/toolso', 'tab': -1},
           {'name': '🌾 AgrO (சந்தை & விதைகள்)', 'desc': 'Crop Rates & Agri Tools', 'route': '/mandi', 'tab': -1},
           {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro', 'tab': -1},
           {'name': '👤 Profile & ID', 'desc': 'KYC & Digital Pass', 'route': '/profile', 'tab': 3},

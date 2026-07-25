@@ -176,8 +176,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   }, [open, onClose]);
 
   // Dynamic Mobility & Local Services Items with Intuitive Bilingual Tamil Labels
+  // Merged: Gemini AI + ToolsO are now one unified page at /toolso
   const mobilityItems: NavItem[] = [
-    { href: "/ai-assistant", label: "Gemini AI (தமிழ் AI உதவி)", icon: Bot },
+    { href: "/toolso", label: "AI & ToolsO (Gemini + கருவிகள்)", icon: Bot },
     { href: "/rideo", label: "RideO (பயணி / Taxi)", icon: Car },
     { href: "/rento", label: "RentO (விவசாயக் கருவிகள் வாடகை)", icon: Tractor },
     { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
@@ -189,7 +190,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/moneyo", label: "MoneyO (பணம் & பரிசுகள்)", icon: Zap },
     { href: "/tasko", label: "TaskO (பணிகள் & படிவம்)", icon: Globe },
     { href: "/tradeo", label: "TradeO (மொத்த வர்த்தகம்)", icon: Share2 },
-    { href: "/toolso", label: "ToolsO (கருவிகள்)", icon: Wrench },
     ...(isAdmin || isRegisteredDriver
       ? [{ href: "/drivo", label: "DriveO (ஓட்டுநர் சேவை)", icon: Gauge }]
       : []),
