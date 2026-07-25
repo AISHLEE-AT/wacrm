@@ -2,7 +2,7 @@
 -- FAGO & WACRM – UNIFIED AISHLEE-WEB & WACRM DATABASE SCHEMA & SEED SCRIPT
 -- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
 -- This connects & merges ALL 10 Super App modules into a single database.
--- Completely defensive – checks column existence before altering types.
+-- Defensive: Drops NOT NULL constraints on legacy columns & maps both column schemas.
 -- ==============================================================================
 
 -- ── 0. CONVERT ID COLUMNS TO TEXT & DISCOVER ALL REFERENCING FOREIGN KEYS ────
@@ -65,6 +65,10 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'unified_master_data' AND column_name = 'metadata') THEN
         ALTER TABLE public.unified_master_data ALTER COLUMN metadata TYPE TEXT USING metadata::TEXT;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'unified_master_data' AND column_name = 'type') THEN
+        ALTER TABLE public.unified_master_data ALTER COLUMN "type" DROP NOT NULL;
     END IF;
 
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'purchases' AND column_name = 'id') THEN
@@ -156,6 +160,7 @@ ALTER TABLE public.lms_courses ADD COLUMN IF NOT EXISTS admin_id TEXT;
 CREATE TABLE IF NOT EXISTS public.unified_master_data (
     id TEXT PRIMARY KEY,
     item_type TEXT,
+    type TEXT,
     title_name TEXT,
     description_purpose TEXT,
     category TEXT,
@@ -171,6 +176,7 @@ CREATE TABLE IF NOT EXISTS public.unified_master_data (
 );
 
 ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS item_type TEXT;
+ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS type TEXT;
 ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS title_name TEXT;
 ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS description_purpose TEXT;
 ALTER TABLE public.unified_master_data ADD COLUMN IF NOT EXISTS category TEXT;
@@ -363,14 +369,14 @@ VALUES
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, video_url = EXCLUDED.video_url;
 
 -- Seed Unified Master Data (Mandi Prices, RentO, TourO, ToolsO, TaskO)
-INSERT INTO public.unified_master_data (id, item_type, title_name, description_purpose, category, permanent_pincode, links_data)
+INSERT INTO public.unified_master_data (id, item_type, type, title_name, description_purpose, category, permanent_pincode, links_data)
 VALUES
-('mandi_tomato_641001', 'MANDI_PRICE', 'தக்காளி (Tomato) - உழவர் சந்தை விலை', '₹35 - ₹42 / கிலோ (கோயம்புத்தூர் உழவர் சந்தை தினசரி விலை)', 'Vegetables', '641001', 'https://watscrm.vercel.app/mandi'),
-('mandi_onion_641001',  'MANDI_PRICE', 'வெங்காயம் (Onion) - உழவர் சந்தை விலை',  '₹45 - ₹55 / கிலோ (சின்ன வெங்காயம் & பல்லாரி விலை)',      'Vegetables', '641001', 'https://watscrm.vercel.app/mandi'),
-('rento_tractor_55hp',  'RENTO_EQUIPMENT', 'Mahindra 575 DI Tractor (55 HP)', 'ரோட்டவேட்டர் & கலப்பை வாடகைக்கு - ₹900 / மணிநேரம்',    'Machinery',  '641001', 'https://watscrm.vercel.app/rento'),
-('touro_palani_temple', 'TOURO_SPOT', 'பழனி தண்டாயுதபாணி சுவாமி திருக்கோயில்', 'அருள்மிகு பழனி முருகன் கோயில் தரிசனம் & தங்கும் வசதி',    'Spiritual',  '624601', 'https://watscrm.vercel.app/touro'),
-('tool_seed_calc',      'TOOL',        'விதை & உரம் கணக்கிடும் கருவி (Seed Calc)', 'நிலப்பரப்புக்கு தேவையான விதை மற்றும் உரம் அளவு கணக்கீடு', 'Agri Tool',  '641001', 'https://watscrm.vercel.app/toolso'),
-('task_field_survey',   'TASK',        'தினசரி கள ஆய்வு & உழவர் சந்தை பதிவு பணி', 'TNPSC மாதிரி தேர்வு & உழவர் சந்தை தினசரி பதிவு படிவம்', 'Survey Task','641001', 'https://forms.gle/sample_tnpsc_registration')
+('mandi_tomato_641001', 'MANDI_PRICE', 'MANDI_PRICE', 'தக்காளி (Tomato) - உழவர் சந்தை விலை', '₹35 - ₹42 / கிலோ (கோயம்புத்தூர் உழவர் சந்தை தினசரி விலை)', 'Vegetables', '641001', 'https://watscrm.vercel.app/mandi'),
+('mandi_onion_641001',  'MANDI_PRICE', 'MANDI_PRICE', 'வெங்காயம் (Onion) - உழவர் சந்தை விலை',  '₹45 - ₹55 / கிலோ (சின்ன வெங்காயம் & பல்லாரி விலை)',      'Vegetables', '641001', 'https://watscrm.vercel.app/mandi'),
+('rento_tractor_55hp',  'RENTO_EQUIPMENT', 'RENTO_EQUIPMENT', 'Mahindra 575 DI Tractor (55 HP)', 'ரோட்டவேட்டர் & கலப்பை வாடகைக்கு - ₹900 / மணிநேரம்',    'Machinery',  '641001', 'https://watscrm.vercel.app/rento'),
+('touro_palani_temple', 'TOURO_SPOT', 'TOURO_SPOT', 'பழனி தண்டாயுதபாணி சுவாமி திருக்கோயில்', 'அருள்மிகு பழனி முருகன் கோயில் தரிசனம் & தங்கும் வசதி',    'Spiritual',  '624601', 'https://watscrm.vercel.app/touro'),
+('tool_seed_calc',      'TOOL', 'TOOL', 'விதை & உரம் கணக்கிடும் கருவி (Seed Calc)', 'நிலப்பரப்புக்கு தேவையான விதை மற்றும் உரம் அளவு கணக்கீடு', 'Agri Tool',  '641001', 'https://watscrm.vercel.app/toolso'),
+('task_field_survey',   'TASK', 'TASK', 'தினசரி கள ஆய்வு & உழவர் சந்தை பதிவு பணி', 'TNPSC மாதிரி தேர்வு & உழவர் சந்தை தினசரி பதிவு படிவம்', 'Survey Task','641001', 'https://forms.gle/sample_tnpsc_registration')
 ON CONFLICT (id) DO UPDATE SET title_name = EXCLUDED.title_name;
 
 -- ── 12. FAST PERFORMANCE INDEXES ──────────────────────────────────────────────
