@@ -2,127 +2,89 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, RefreshCw, Zap, Wallet, CreditCard, ArrowUpRight, ArrowDownLeft, ShieldCheck, PlusCircle, CheckCircle2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
+import { Zap, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
 
 export default function MoneyOPage() {
   const { user, profile } = useAuth();
-  const [authQuery, setAuthQuery] = useState('');
-  const [points, setPoints] = useState(profile?.points || 250);
+  const [iframeUrl, setIframeUrl] = useState('https://thamizhan.vercel.app/moneyo');
+  const [key, setKey] = useState(0);
 
   const supabase = createClient();
 
   useEffect(() => {
-    async function syncSession() {
+    async function syncAishleeSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        const phone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
+        const name = profile?.full_name || user?.user_metadata?.full_name || 'User';
+
+        let params = `?embed=true&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`;
         if (session) {
-          const tokens = `?access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
-          setAuthQuery(tokens);
+          params += `&access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
         }
+        setIframeUrl(`https://thamizhan.vercel.app/moneyo${params}`);
       } catch (err) {
-        console.error('Session sync error:', err);
+        console.error('SSO sync error:', err);
       }
     }
-    syncSession();
-  }, []);
+    syncAishleeSession();
+  }, [user, profile]);
 
-  const openAishleeWeb = () => {
-    window.open(`https://thamizhan.vercel.app/moneyo${authQuery}`, '_blank');
+  const handleRefresh = () => {
+    setKey(prev => prev + 1);
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-white p-4 md:p-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+    <div className="w-full h-[calc(100vh-4rem)] flex flex-col p-2 md:p-4 space-y-2 bg-[#0A0D14]">
+      {/* Window Header Toolbar */}
+      <div className="flex items-center justify-between bg-card/60 border border-white/10 px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-400">
-            <Zap className="h-7 w-7" />
+          <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400">
+            <Zap className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
-              MoneyO • Aishlee Wallet & Financial Rewards
+            <h1 className="text-sm md:text-base font-extrabold text-white flex items-center gap-2">
+              MoneyO • பணம் & பரிசுகள்
             </h1>
-            <p className="text-xs md:text-sm text-slate-400 mt-0.5">
-              FAGO Reward Points, Cashback, Earnings & Instant UPI Payouts
+            <p className="text-[11px] text-slate-400 hidden sm:block">
+              Direct Live Window into Aishlee Web App MoneyO Wallet & Financial Rewards
             </p>
           </div>
         </div>
 
-        <button
-          onClick={openAishleeWeb}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs flex items-center gap-2 shadow-xl hover:opacity-90 transition self-start md:self-auto"
-        >
-          Open Full Screen on Aishlee Web <ExternalLink className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" /> SSO Connected
+          </span>
+          <button
+            onClick={handleRefresh}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs flex items-center gap-1 transition"
+            title="Refresh Window"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+          <a
+            href={iframeUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
+          >
+            Full Screen <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
       </div>
 
-      {/* Wallet Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Balance Card */}
-        <div className="bg-gradient-to-br from-amber-500/20 via-orange-600/10 to-transparent border border-amber-500/30 rounded-3xl p-6 relative overflow-hidden backdrop-blur-md shadow-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-amber-300">FAGO REWARD BALANCE</span>
-            <Wallet className="w-6 h-6 text-amber-400" />
-          </div>
-          <div className="space-y-1">
-            <h2 className="text-4xl font-black text-white">{points} PTS</h2>
-            <p className="text-xs text-amber-300 font-semibold">≈ ₹{points} INR Wallet Equivalent</p>
-          </div>
-          <div className="mt-6 flex items-center gap-3">
-            <button
-              onClick={() => {
-                const text = `Hello FAGO Support, I want to redeem my ${points} reward points via UPI on MoneyO! Mobile: +91 ${profile?.phone || 'USER'}`;
-                window.open(`https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(text)}`, '_blank');
-              }}
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs shadow-lg transition flex items-center gap-2"
-            >
-              <ArrowUpRight className="w-4 h-4" /> Redeem via UPI
-            </button>
-          </div>
-        </div>
-
-        {/* Cashback Status */}
-        <div className="bg-card/40 border border-white/10 rounded-3xl p-6 flex flex-col justify-between backdrop-blur-md">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-400 uppercase">RideO & RentO Cashback</span>
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            </div>
-            <h3 className="text-2xl font-extrabold text-emerald-400">0% Commission Guaranteed</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Earn 100% direct income on RideO bookings & RentO machinery rentals with zero platform cuts.
-            </p>
-          </div>
-          <div className="pt-4 border-t border-white/5 text-xs text-emerald-300 font-bold flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> Verified Driver & Farmer Partner Benefits
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-card/40 border border-white/10 rounded-3xl p-6 space-y-4 backdrop-blur-md flex flex-col justify-between">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Quick Financial Actions</h3>
-          <div className="space-y-2">
-            <button
-              onClick={openAishleeWeb}
-              className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs flex items-center justify-between px-4 transition"
-            >
-              <span>View Full Savings Ledger</span>
-              <ExternalLink className="w-4 h-4 text-amber-400" />
-            </button>
-            <button
-              onClick={() => {
-                const text = `Hey! Book local rides & rentals with 0% commission on FAGO Super App: https://watscrm.vercel.app`;
-                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
-              }}
-              className="w-full py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center justify-between px-4 transition"
-            >
-              <span>Refer Friends & Earn 50 Points</span>
-              <PlusCircle className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+      {/* Embedded Aishlee Web Window Container */}
+      <div className="flex-1 w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
+        <iframe
+          key={key}
+          src={iframeUrl}
+          title="Aishlee MoneyO Module Window"
+          className="w-full h-full border-0"
+          allow="camera; microphone; geolocation; clipboard-write; encrypted-media; autoplay"
+        />
       </div>
     </div>
   );
