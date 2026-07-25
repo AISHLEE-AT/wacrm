@@ -2,52 +2,66 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, RefreshCw, Compass } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
+import { Compass, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
 
 export default function TourOPage() {
-  const [sessionParams, setSessionParams] = useState('');
+  const { user, profile } = useAuth();
   const [iframeUrl, setIframeUrl] = useState('https://thamizhan.vercel.app/touro');
+  const [key, setKey] = useState(0);
 
   const supabase = createClient();
 
   useEffect(() => {
-    async function syncSession() {
+    async function syncAishleeSession() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        const phone = profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
+        const name = profile?.full_name || user?.user_metadata?.full_name || 'Tourist';
+
+        let params = `?embed=true&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`;
         if (session) {
-          const tokens = `?access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}`;
-          setSessionParams(tokens);
-          setIframeUrl(`https://thamizhan.vercel.app/touro${tokens}`);
+          params += `&access_token=${encodeURIComponent(session.access_token)}&refresh_token=${encodeURIComponent(session.refresh_token)}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&token_type=bearer`;
         }
+        setIframeUrl(`https://thamizhan.vercel.app/touro${params}`);
       } catch (err) {
-        console.error('Session sync error:', err);
+        console.error('SSO sync error:', err);
       }
     }
-    syncSession();
-  }, []);
+    syncAishleeSession();
+  }, [user, profile]);
+
+  const handleRefresh = () => {
+    setKey(prev => prev + 1);
+  };
 
   return (
-    <div className="w-full h-[calc(100vh-5rem)] flex flex-col space-y-3 p-2 sm:p-4">
-      <div className="flex items-center justify-between bg-card/80 border border-white/10 px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-2">
-          <Compass className="w-5 h-5 text-amber-400" />
-          <h1 className="text-sm sm:text-base font-bold text-foreground">
-            TourO - Aishlee Technology Spiritual & Pilgrimage Tours
-          </h1>
-          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            Live Connected Module
-          </span>
+    <div className="w-full h-[calc(100vh-4rem)] flex flex-col p-2 md:p-4 space-y-2 bg-[#0A0D14]">
+      {/* Window Header Toolbar */}
+      <div className="flex items-center justify-between bg-card/60 border border-white/10 px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-orange-500/10 border border-orange-500/30 rounded-xl text-orange-400">
+            <Compass className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-sm md:text-base font-extrabold text-white flex items-center gap-2">
+              TourO • ஆன்மீகம் & ஆன்மீகச் சுற்றுலா
+            </h1>
+            <p className="text-[11px] text-slate-400 hidden sm:block">
+              Spiritual Tours, Temple Guides & Packages from Aishlee Web
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" /> SSO Connected
+          </span>
           <button
-            onClick={() => {
-              const base = 'https://thamizhan.vercel.app/touro';
-              setIframeUrl(sessionParams ? `${base}${sessionParams}` : base);
-            }}
-            className="p-2 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground text-xs flex items-center gap-1 transition"
-            title="Refresh Module"
+            onClick={handleRefresh}
+            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs flex items-center gap-1 transition"
+            title="Refresh Window"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -55,20 +69,21 @@ export default function TourOPage() {
             href={iframeUrl}
             target="_blank"
             rel="noreferrer"
-            className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 shadow transition"
+            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
           >
-            Open Full Screen <ExternalLink className="w-3 h-3" />
+            Full Screen <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
 
-      <div className="w-full flex-1 bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
+      {/* Embedded Aishlee Web Window Container */}
+      <div className="flex-1 w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
         <iframe
+          key={key}
           src={iframeUrl}
-          title="Aishlee TourO Module"
-          className="w-full h-full border-0 rounded-2xl"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; camera; microphone"
-          allowFullScreen
+          title="Aishlee TourO Module Window"
+          className="w-full h-full border-0"
+          allow="camera; microphone; geolocation; clipboard-write; encrypted-media; autoplay"
         />
       </div>
     </div>
