@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import {
   GraduationCap,
   PlayCircle,
@@ -159,6 +160,15 @@ export default function TeachOWebDashboard() {
     loadAishleeCoursesAndSession();
   }, []);
 
+  const { user, profile } = useAuth();
+  const isAdmin = Boolean(
+    profile?.email?.includes('aishleetechnology@gmail.com') ||
+    profile?.email?.includes('9486335870') ||
+    profile?.phone?.includes('9486335870') ||
+    user?.email?.includes('aishleetechnology@gmail.com') ||
+    user?.phone?.includes('9486335870')
+  );
+
   const openAishleeWeb = (path: string = '/teacho') => {
     const targetUrl = `https://thamizhan.vercel.app${path}${authQuery}`;
     window.open(targetUrl, '_blank');
@@ -187,18 +197,22 @@ export default function TeachOWebDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => openAishleeWeb('/teacho/approvals')}
-            className="px-4 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 font-bold text-xs flex items-center gap-2 hover:bg-purple-500/20 transition"
-          >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Approvals
-          </button>
-          <button
-            onClick={() => openAishleeWeb('/teacho/create')}
-            className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition"
-          >
-            <Plus className="w-4 h-4" /> Create New
-          </button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => openAishleeWeb('/teacho/approvals')}
+                className="px-4 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 font-bold text-xs flex items-center gap-2 hover:bg-purple-500/20 transition"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Approvals
+              </button>
+              <button
+                onClick={() => openAishleeWeb('/teacho/create')}
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition"
+              >
+                <Plus className="w-4 h-4" /> Create New
+              </button>
+            </>
+          )}
           <button
             onClick={() => openAishleeWeb('/teacho')}
             className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-bold text-xs flex items-center gap-2 shadow-xl hover:opacity-90 transition"
