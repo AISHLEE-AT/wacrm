@@ -12,7 +12,7 @@ const libraries: any = ['places'];
 const mapContainerStyle = { width: '100%', height: '100%', borderRadius: '12px' };
 const defaultCenter = { lat: 13.0827, lng: 80.2707 }; // Chennai fallback
 
-// Zero Google API Cost: Haversine Distance Formula
+// Zero Google API Cost: Enhanced Haversine Road Winding Distance Engine (1.22 TN Road Factor)
 function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth radius in km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -22,7 +22,10 @@ function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lo
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round((R * c) * 10) / 10;
+  const straightKm = R * c;
+  // Apply empirical 1.22 road winding factor for accurate street distance without paying API fees
+  const actualRoadKm = straightKm * 1.22;
+  return Math.round(actualRoadKm * 10) / 10;
 }
 
 // 6 Vehicle Transport Modes for Tamil Nadu & Beyond with Dynamic Search Radii

@@ -38,7 +38,7 @@ class WhatsAppService {
   static Future<void> autoLinkToAreaAdminWhatsAppGroup({
     required String userPhone,
     required String userName,
-    String adminPhone = '919486335870',
+    String adminPhone = '916381029380',
     String pincode = '641001',
   }) async {
     final message = "👋 *NEW USER QR REGISTERED ON FAGO APP* 👋\n\n"
