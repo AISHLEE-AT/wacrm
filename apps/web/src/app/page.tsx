@@ -1,8 +1,13 @@
 import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 
-// Root page: always redirect to the WhatsApp CRM dashboard.
-// Auth is enforced by middleware — unauthenticated visitors are
-// sent to /login before they ever reach this redirect.
-export default function RootPage() {
-  redirect('/rideo');
+export default async function RootPage() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+
+  if (data?.user) {
+    redirect('/rideo');
+  } else {
+    redirect('/login');
+  }
 }
