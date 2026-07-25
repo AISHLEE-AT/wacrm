@@ -6,6 +6,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
 import '../services/whatsapp_service.dart';
+import '../services/device_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? role;
@@ -64,7 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       final bool didAuthenticate = await _localAuth.authenticate(
-        localizedReason: 'Unlock FAGO WACRM using Fingerprint, Face ID, or Device PIN/Pattern',
+        localizedReason: 'Unlock FAGO Super App using Fingerprint, Face ID, or Device PIN/Pattern',
         options: const AuthenticationOptions(
           biometricOnly: false,
           stickyAuth: true,
@@ -72,13 +73,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
 
       if (didAuthenticate && mounted) {
-        final user = Supabase.instance.client.auth.currentUser;
-        if (user != null) {
-          context.go('/rideo');
+        setState(() => _isLoading = true);
+        final registeredPhone = await DeviceAuthService.getRegisteredPhone();
+        final targetPhone = (registeredPhone != null && registeredPhone.isNotEmpty) 
+            ? registeredPhone 
+            : _phoneController.text.trim();
+
+        if (targetPhone.length == 10 || targetPhone.length == 12) {
+          try {
+            await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(targetPhone);
+            if (mounted) {
+              context.go('/rideo');
+            }
+          } catch (e) {
+            setState(() => _isLoading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Instant Login Error: $e')),
+              );
+            }
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Device Lock Verified! 🙏 Select category to log in.')),
-          );
+          setState(() => _isLoading = false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please enter your 10-digit mobile number first.')),
+            );
+          }
         }
       }
     } catch (e) {
@@ -94,6 +115,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     _phoneController.addListener(_onPhoneChanged);
+    _checkAndAutoFillRegisteredDevice();
+  }
+
+  Future<void> _checkAndAutoFillRegisteredDevice() async {
+    final registeredPhone = await DeviceAuthService.getRegisteredPhone();
+    final registeredName = await DeviceAuthService.getRegisteredName();
+    if (registeredPhone != null && registeredPhone.isNotEmpty && mounted) {
+      setState(() {
+        _phoneController.text = registeredPhone;
+        if (registeredName != null && registeredName.isNotEmpty) {
+          _nameController.text = registeredName;
+          _isReturningUser = true;
+        }
+      });
+    }
   }
 
   void _onPhoneChanged() async {

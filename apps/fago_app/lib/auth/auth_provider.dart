@@ -543,6 +543,13 @@ class AuthNotifier extends Notifier<AuthState> {
     await _resolveRole(cleanPhone, isSessionResume: false);
   }
 
+  /// Instant Device PIN / Biometric Login for returning registered devices
+  Future<void> verifyDevicePinAndAutoLogin(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final tenDigit = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+    await _directSupabasePhoneLogin(tenDigit, null, null);
+  }
+
   Future<void> verifyPhoneNumber({
     required String phoneNumber,
     required Function(String verificationId, int? resendToken) codeSent,
