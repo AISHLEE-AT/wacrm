@@ -19,6 +19,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
   bool _useWhatsAppAuth = true; // Default to WhatsApp Login OTP
   String _verificationId = '';
+  bool _isReturningUser = false;
 
   final TextEditingController _nameController = TextEditingController();
   String _selectedCategory = 'Traveller';
@@ -38,23 +39,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             .select('full_name, main_category')
             .eq('phone', text)
             .maybeSingle();
-        if (res != null) {
-          final String? existingName = res['full_name'];
+        if (res != null && res['full_name'] != null && (res['full_name'] as String).isNotEmpty) {
+          final String existingName = res['full_name'];
           final String? existingCat = res['main_category'];
-          if (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User ')) {
-            if (_nameController.text.isEmpty || _nameController.text != existingName) {
-              setState(() {
-                _nameController.text = existingName;
-              });
-            }
-          }
-          if (existingCat != null && existingCat.isNotEmpty) {
+          if (mounted) {
             setState(() {
-              _selectedCategory = existingCat;
+              _nameController.text = existingName;
+              if (existingCat != null && existingCat.isNotEmpty) {
+                _selectedCategory = existingCat;
+              }
+              _isReturningUser = true;
             });
           }
+        } else {
+          if (mounted && _isReturningUser) {
+            setState(() => _isReturningUser = false);
+          }
         }
-      } catch (_) {}
+      } catch (_) {
+        if (mounted && _isReturningUser) {
+          setState(() => _isReturningUser = false);
+        }
+      }
+    } else {
+      if (mounted && _isReturningUser) {
+        setState(() => _isReturningUser = false);
+      }
     }
   }
 
@@ -71,13 +81,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     {'key': 'Traveller', 'label': '🧳 Traveller (RideO)', 'route': '/rideo', 'color': Colors.amber},
     {'key': 'Farmer', 'label': '🚜 Farmer (RentO Agri)', 'route': '/rento', 'color': Colors.greenAccent},
     {'key': 'Shopper', 'label': '🛍️ Shopper (ShopO / Mandi)', 'route': '/mandi', 'color': Colors.pinkAccent},
-    {'key': 'Driver', 'label': '🚖 Driver (DriveO)', 'route': '/drivo', 'color': Colors.orangeAccent},
+    {'key': 'Driver', 'label': '𚟖 Driver (DriveO)', 'route': '/drivo', 'color': Colors.orangeAccent},
     {'key': 'Student', 'label': '🎓 Student (TestO Exam)', 'route': '/teacho', 'color': Colors.purpleAccent},
     {'key': 'Teacher', 'label': '👨‍🏫 Teacher (TeachO Tutor)', 'route': '/teacho', 'color': Colors.cyanAccent},
     {'key': 'Financier', 'label': '💰 Financier (LoanO)', 'route': '/mandi', 'color': Colors.blueAccent},
     {'key': 'JobSeeker', 'label': '💼 Job Seeker (WorkO)', 'route': '/teacho', 'color': Colors.limeAccent},
     {'key': 'Employer', 'label': '🏢 Employer (BizHub)', 'route': '/', 'color': Colors.indigoAccent},
-    {'key': 'Tourist', 'label': '🛕 Tourist (TourO ஆன்மீகம்)', 'route': '/touro', 'color': Colors.deepOrangeAccent},
+    {'key': 'Tourist', 'label': '𛈕 Tourist (TourO ஆன்மீகம்)', 'route': '/touro', 'color': Colors.deepOrangeAccent},
   ];
 
   void _sendOTP() async {
@@ -88,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    if (_nameController.text.trim().isEmpty) {
+    if (!_isReturningUser && _nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter your Full Name')),
       );
@@ -281,27 +291,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 },
               ),
               if (!_isOTPSent) ...[
-                // Full Name Input Field
-                TextField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent),
-                    labelText: 'Your Full Name (பெயர்)',
-                    labelStyle: const TextStyle(color: Colors.cyanAccent),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.5)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
                 // Phone Input Field
                 TextField(
                   controller: _phoneController,
@@ -324,35 +313,148 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
 
-                // User Category Selector Grid
-                const Text('Choose Your Primary Goal (வகைப்பாட்டைத் தேர்வு செய்க):', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _userCategories.map((cat) {
-                    final isSelected = cat['key'] == _selectedCategory;
-                    return ChoiceChip(
-                      selected: isSelected,
-                      label: Text(cat['label']),
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 12,
+                if (_isReturningUser) ...[
+                  // Welcome Card for Returning User
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.greenAccent.withValues(alpha: 0.5),
+                        width: 1.5,
                       ),
-                      selectedColor: cat['color'] as Color,
-                      backgroundColor: const Color(0xFF1E293B),
-                      onSelected: (selected) {
-                        if (selected) {
-                          setState(() => _selectedCategory = cat['key']);
-                        }
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.greenAccent.withValues(alpha: 0.15),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              backgroundColor: Colors.greenAccent,
+                              child: Icon(Icons.person, color: Colors.black),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAlignment.start,
+                                children: [
+                                  Text(
+                                    'Welcome back, ${_nameController.text}! 🙏',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Category: $_selectedCategory',
+                                    style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _isReturningUser = false;
+                              });
+                            },
+                            icon: const Icon(Icons.edit, size: 14, color: Colors.white70),
+                            label: const Text(
+                              'Not you? Change name or role',
+                              style: TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Full Name Input Field
+                  TextField(
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent),
+                      labelText: 'Your Full Name (பெயர்)',
+                      labelStyle: const TextStyle(color: Colors.cyanAccent),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // User Category Selector Dropdown
+                  DropdownButtonFormField<String>(
+                    value: _userCategories.any((cat) => cat['key'] == _selectedCategory)
+                        ? _selectedCategory
+                        : _userCategories.first['key'] as String,
+                    dropdownColor: const Color(0xFF1E293B),
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.category, color: Colors.cyanAccent),
+                      labelText: 'Choose Your Primary Goal',
+                      labelStyle: const TextStyle(color: Colors.cyanAccent),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.cyanAccent, width: 2),
+                      ),
+                    ),
+                    items: _userCategories.map((cat) {
+                      return DropdownMenuItem<String>(
+                        value: cat['key'] as String,
+                        child: Text(
+                          cat['label'] as String,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedCategory = val;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: _isLoading ? null : _sendOTP,

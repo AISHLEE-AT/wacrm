@@ -23,7 +23,32 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const accessToken = request.nextUrl.searchParams.get('access_token')
+  const refreshToken = request.nextUrl.searchParams.get('refresh_token')
+
+  let user = null
+
+  if (accessToken) {
+    try {
+      const { data: tokenData } = await supabase.auth.getUser(accessToken)
+      if (tokenData?.user) {
+        user = tokenData.user
+        if (refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Middleware token auth error:', err)
+    }
+  }
+
+  if (!user) {
+    const { data } = await supabase.auth.getUser()
+    user = data?.user
+  }
 
   // getUser() transparently refreshes an expired access token, which
   // ROTATES the refresh token and writes the new cookies onto
@@ -83,9 +108,7 @@ export async function middleware(request: NextRequest) {
       const isAdmin = Boolean(
         user.email?.includes('aishleetechnology@gmail.com') ||
         user.email?.includes('9486335870') ||
-        user.email?.includes('9123596988') ||
-        user.phone?.includes('9486335870') ||
-        user.phone?.includes('9123596988')
+        user.phone?.includes('9486335870')
       );
       url.pathname = isAdmin ? '/dashboard' : '/rideo';
       supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });

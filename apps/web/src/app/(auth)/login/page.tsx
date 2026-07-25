@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, ArrowRight, Loader2, Smartphone, Send } from "lucide-react";
+import { MessageCircle, ArrowRight, Loader2, Smartphone, Send, Lock, UserCheck } from "lucide-react";
 import type { ConfirmationResult } from "firebase/auth";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,6 +29,13 @@ function LoginPageInner() {
   const [selectedCategory, setSelectedCategory] = useState("Traveller");
   const [otp, setOtp] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
+
+  const [isReturningUser, setIsReturningUser] = useState(false);
+  const [pin, setPin] = useState("");
+  const [hasSavedPin, setHasSavedPin] = useState(false);
+  const [isPinLogin, setIsPinLogin] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [newPin, setNewPin] = useState("");
 
   const categories = [
     { key: 'Traveller', label: '🧳 Traveller (பயணி - RideO)', route: '/rideo' },
@@ -73,7 +80,7 @@ function LoginPageInner() {
   const handleRequestWhatsAppOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!fullName.trim()) {
+    if (!isReturningUser && !fullName.trim()) {
       setError("Please enter your Full Name");
       return;
     }
@@ -109,17 +116,65 @@ function LoginPageInner() {
           .select("full_name, main_category")
           .eq("phone", clean)
           .maybeSingle();
+
+        const savedPin = typeof window !== "undefined" ? localStorage.getItem("fago_pin_" + clean) : null;
+
         if (data) {
-          if (data.full_name && !data.full_name.startsWith("User ")) {
+          setIsReturningUser(true);
+          if (data.full_name) {
             setFullName(data.full_name);
           }
           if (data.main_category) {
             setSelectedCategory(data.main_category);
           }
+          if (savedPin) {
+            setHasSavedPin(true);
+            setIsPinLogin(true);
+          } else {
+            setHasSavedPin(false);
+            setIsPinLogin(false);
+          }
+        } else {
+          setIsReturningUser(false);
+          setHasSavedPin(false);
+          setIsPinLogin(false);
         }
       } catch (err) {
         console.error("Auto prefill profile error:", err);
+        setIsReturningUser(false);
+        setHasSavedPin(false);
+        setIsPinLogin(false);
       }
+    } else {
+      setIsReturningUser(false);
+      setHasSavedPin(false);
+      setIsPinLogin(false);
+    }
+  };
+
+  const handlePinLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!pin || pin.length !== 4) {
+      setError("Please enter your 4-digit PIN");
+      return;
+    }
+    const savedPin = typeof window !== "undefined" ? localStorage.getItem("fago_pin_" + phone) : null;
+    if (pin === savedPin) {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const targetRoute = categories.find(c => c.key === selectedCategory)?.route || "/rideo";
+        const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
+        window.location.href = finalUrl;
+      } catch (err: any) {
+        console.error(err);
+        setError("Error during PIN login");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setError("Incorrect PIN. Please try again or login via WhatsApp OTP.");
     }
   };
 
@@ -141,6 +196,10 @@ function LoginPageInner() {
       if (!res.ok) throw new Error(data.error || "Invalid OTP");
 
       if (data.session) {
+        if (newPin && newPin.length === 4) {
+          localStorage.setItem("fago_pin_" + phone, newPin);
+        }
+
         await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token,
@@ -229,16 +288,18 @@ function LoginPageInner() {
       if (!res.ok) throw new Error(data.error || "Failed to bridge auth");
       
       if (data.access_token && data.refresh_token) {
+        if (newPin && newPin.length === 4) {
+          localStorage.setItem("fago_pin_" + phone, newPin);
+        }
+
         await supabase.auth.setSession({
           access_token: data.access_token,
           refresh_token: data.refresh_token,
         });
         
-        if (inviteToken) {
-          router.push(`/join/${encodeURIComponent(inviteToken)}`);
-        } else {
-          router.push("/");
-        }
+        const targetRoute = categories.find(c => c.key === selectedCategory)?.route || "/rideo";
+        const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
+        window.location.href = finalUrl;
       } else {
         throw new Error("Invalid session data from bridge");
       }
@@ -345,91 +406,226 @@ function LoginPageInner() {
           <div id="recaptcha-container"></div>
 
           <div className="w-full">
-
             <AnimatePresence mode="wait">
               {!otpRequested ? (
-                <motion.form 
-                  key="phone-form"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  onSubmit={loginMode === 'whatsapp' ? handleRequestWhatsAppOTP : handleRequestFirebaseOTP} 
-                  className="flex flex-col gap-4 w-full"
-                >
-                  {/* Full Name Input */}
-                  <input
-                    type="text"
-                    placeholder="Your Full Name (பெயர்)"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 text-white text-base placeholder:text-white/30 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all backdrop-blur-sm"
-                  />
-
-                  {/* Phone Input */}
-                  <div className="relative flex items-center group">
-                    <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
-                    <input
-                      type="tel"
-                      placeholder="98765 43210"
-                      value={phone}
-                      onChange={(e) => handlePhoneChange(e.target.value)}
-                      className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
-                    />
-                  </div>
-
-                  {/* Category Selector Grid */}
-                  <div className="flex flex-col gap-2 my-1">
-                    <label className="text-xs font-semibold text-white/70">Select Your Goal (வகைப்பாடு):</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {categories.map((cat) => (
-                        <button
-                          key={cat.key}
-                          type="button"
-                          onClick={() => setSelectedCategory(cat.key)}
-                          className={`py-2 px-3 text-xs font-bold rounded-xl transition text-left border ${
-                            selectedCategory === cat.key
-                              ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md'
-                              : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
-                          }`}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
+                isPinLogin && hasSavedPin ? (
+                  <motion.form 
+                    key="pin-form"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    onSubmit={handlePinLogin}
+                    className="flex flex-col gap-4 w-full"
+                  >
+                    {/* Phone Input */}
+                    <div className="relative flex items-center group">
+                      <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
+                      <input
+                        type="tel"
+                        placeholder="98765 43210"
+                        value={phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
+                      />
                     </div>
-                  </div>
 
-                  {loginMode === 'whatsapp' ? (
-                    <a
-                      href={getWhatsAppDirectMsgUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        if (phone.length === 10) setOtpRequested(true);
-                      }}
-                      className="w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base flex items-center justify-center gap-2 transition shadow-lg group"
-                    >
-                      <Send className="w-5 h-5" />
-                      Get Instant OTP via WhatsApp
-                    </a>
-                  ) : (
+                    {/* Welcome Back Badge for Returning User */}
+                    {isReturningUser && (
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm text-center w-full">
+                        <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-base">
+                          <UserCheck className="w-5 h-5" />
+                          <span>Welcome back, {fullName}! 👋</span>
+                        </div>
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          {categories.find(c => c.key === selectedCategory)?.label || selectedCategory}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsReturningUser(false);
+                            setHasSavedPin(false);
+                            setIsPinLogin(false);
+                            setFullName("");
+                            setPhone("");
+                          }}
+                          className="text-xs text-white/50 hover:text-white underline underline-offset-2 transition-colors mt-1"
+                        >
+                          Not {fullName}? Switch user
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 4-Digit Quick PIN Input */}
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold text-white/70 text-center">Enter 4-Digit Quick PIN:</label>
+                      <input
+                        type="password"
+                        placeholder="••••"
+                        value={pin}
+                        onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                        maxLength={4}
+                        className="w-full h-16 px-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all text-center tracking-[1em] text-2xl font-mono backdrop-blur-sm"
+                      />
+                    </div>
+
                     <Button
                       type="submit"
-                      disabled={loading || phone.length !== 10}
-                      className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 transition-all text-base font-semibold shadow-lg group flex items-center justify-center gap-2"
+                      disabled={loading || pin.length !== 4}
+                      className="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white transition-all text-base font-semibold shadow-lg flex items-center justify-center gap-2"
                     >
                       {loading ? (
                         <Loader2 className="h-5 w-5 animate-spin opacity-80" />
                       ) : (
                         <>
-                          Request SMS OTP
-                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 opacity-70" />
+                          <Lock className="h-4 w-4" />
+                          Sign In with PIN
                         </>
                       )}
                     </Button>
-                  )}
-                </motion.form>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPinLogin(false)}
+                      className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors p-2 text-center"
+                    >
+                      Login via WhatsApp OTP instead
+                    </button>
+                  </motion.form>
+                ) : (
+                  <motion.form 
+                    key="phone-form"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    onSubmit={loginMode === 'whatsapp' ? handleRequestWhatsAppOTP : handleRequestFirebaseOTP} 
+                    className="flex flex-col gap-4 w-full"
+                  >
+                    {/* Welcome Back Badge for Returning User */}
+                    {isReturningUser ? (
+                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm text-center w-full">
+                        <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-base">
+                          <UserCheck className="w-5 h-5" />
+                          <span>Welcome back, {fullName}! 👋</span>
+                        </div>
+                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          {categories.find(c => c.key === selectedCategory)?.label || selectedCategory}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsReturningUser(false);
+                            setHasSavedPin(false);
+                            setIsPinLogin(false);
+                            setFullName("");
+                            setPhone("");
+                          }}
+                          className="text-xs text-white/50 hover:text-white underline underline-offset-2 transition-colors mt-1"
+                        >
+                          Not {fullName}? Switch user
+                        </button>
+                      </div>
+                    ) : (
+                      /* Full Name Input for non-returning users */
+                      <input
+                        type="text"
+                        placeholder="Your Full Name (பெயர்)"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                        className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 text-white text-base placeholder:text-white/30 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all backdrop-blur-sm"
+                      />
+                    )}
+
+                    {/* Phone Input */}
+                    <div className="relative flex items-center group">
+                      <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
+                      <input
+                        type="tel"
+                        placeholder="98765 43210"
+                        value={phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
+                      />
+                    </div>
+
+                    {/* Category Selector Dropdown for non-returning users */}
+                    {!isReturningUser && (
+                      <div className="flex flex-col gap-2 my-1">
+                        <label className="text-xs font-semibold text-white/70">Select Your Goal (வகைப்பாடு):</label>
+                        <select
+                          value={selectedCategory}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 text-white text-base focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm appearance-none cursor-pointer"
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff' %3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1.25rem' }}
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat.key} value={cat.key} className="bg-zinc-900 text-white py-2">
+                              {cat.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Quick PIN setup field if user doesn't have a saved PIN */}
+                    {!hasSavedPin && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-white/70">Set 4-Digit Quick PIN (Optional):</label>
+                        <input
+                          type="password"
+                          maxLength={4}
+                          placeholder="••••"
+                          value={newPin}
+                          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                          className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 text-white text-base placeholder:text-white/30 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm tracking-widest text-center"
+                        />
+                      </div>
+                    )}
+
+                    {/* Switch back to PIN login if saved PIN exists */}
+                    {hasSavedPin && (
+                      <button
+                        type="button"
+                        onClick={() => setIsPinLogin(true)}
+                        className="text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors text-center"
+                      >
+                        Use 4-Digit Quick PIN instead
+                      </button>
+                    )}
+
+                    {loginMode === 'whatsapp' ? (
+                      <a
+                        href={getWhatsAppDirectMsgUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          if (phone.length === 10) setOtpRequested(true);
+                        }}
+                        className="w-full h-14 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-base flex items-center justify-center gap-2 transition shadow-lg group"
+                      >
+                        <Send className="w-5 h-5" />
+                        Get Instant OTP via WhatsApp
+                      </a>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={loading || phone.length !== 10}
+                        className="w-full h-14 rounded-2xl bg-white text-black hover:bg-white/90 disabled:opacity-50 transition-all text-base font-semibold shadow-lg group flex items-center justify-center gap-2"
+                      >
+                        {loading ? (
+                          <Loader2 className="h-5 w-5 animate-spin opacity-80" />
+                        ) : (
+                          <>
+                            Request SMS OTP
+                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 opacity-70" />
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </motion.form>
+                )
               ) : (
                 <motion.form 
                   key="otp-form"

@@ -40,6 +40,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (authState.isLoading) return null;
 
+      // If biometric gate failed (user cancelled or failed auth), force logout to login
+      if (authState.biometricGate == BiometricGateState.failed) {
+        return '/login';
+      }
+
       // Direct all mobile entry straight to CrmDashboardScreen (WebView)
       // Authentication is handled seamlessly ONCE via web session persistence.
       if (state.uri.path == '/' && !hasRoutedInitially) {
@@ -63,10 +68,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           return Consumer(
             builder: (context, ref, _) {
               final authState = ref.watch(authProvider);
-              if (authState.isLoading) {
+              if (authState.isLoading ||
+                  authState.biometricGate == BiometricGateState.pending) {
                 return const Scaffold(
+                  backgroundColor: Color(0xFF0A0A0A),
                   body: Center(
-                    child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.fingerprint, color: Color(0xFF00FF00), size: 64),
+                        SizedBox(height: 20),
+                        CircularProgressIndicator(color: Color(0xFF00FF00)),
+                        SizedBox(height: 16),
+                        Text(
+                          'Verifying identity...',
+                          style: TextStyle(color: Colors.white70, fontSize: 15),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }

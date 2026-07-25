@@ -6,6 +6,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
 import 'rider_map_screen.dart';
@@ -41,6 +43,19 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   }
 
   void _initWebViewController() {
+    final user = Supabase.instance.client.auth.currentUser;
+    final session = Supabase.instance.client.auth.currentSession;
+    
+    String authParams = '';
+    if (user != null) {
+      final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
+      final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+      authParams = '?phone=$cleanPhone';
+      if (session?.accessToken != null && session?.refreshToken != null) {
+        authParams += '&access_token=${session!.accessToken}&refresh_token=${session.refreshToken}';
+      }
+    }
+
     final WebViewController controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF000000))
@@ -67,10 +82,12 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://watscrm.vercel.app/rideo'));
+      ..loadRequest(Uri.parse('https://watscrm.vercel.app/rideo$authParams'));
 
     if (controller.platform is AndroidWebViewController) {
       final androidController = controller.platform as AndroidWebViewController;
+      androidController.setDomStorageEnabled(true);
+      androidController.setMediaPlaybackRequiresUserGesture(false);
       androidController.setOnPlatformPermissionRequest(
         (PlatformWebViewPermissionRequest request) {
           request.grant();

@@ -88,42 +88,47 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
     );
   }
 
-  String _cleanPhone(String? raw) {
+  /// Returns a formatted '+91 XXXXX XXXXX' string from the profile's DB phone.
+  /// Priority: profile.whatsapp > profile.phone > Supabase userMetadata phone/whatsapp.
+  /// Never extracts from the synthetic email (e.g. 9123456789@whatsapp.wacrm.local).
+  String _cleanPhone(String? rawWhatsapp, {String? fallbackPhone}) {
     final sbUser = Supabase.instance.client.auth.currentUser;
-    List<String> candidates = [
-      raw ?? '',
-      sbUser?.phone ?? '',
-      sbUser?.email ?? '',
+
+    // Build candidate list in priority order.
+    // Skip any value that looks like an email to prevent extracting digits from it.
+    final List<String> candidates = [
+      rawWhatsapp ?? '',
+      fallbackPhone ?? '',
       sbUser?.userMetadata?['phone']?.toString() ?? '',
       sbUser?.userMetadata?['whatsapp']?.toString() ?? '',
+      // Explicitly skip sbUser.phone and sbUser.email — the Supabase auth phone
+      // field is often empty for WhatsApp-OTP users, and the email is synthetic.
     ];
 
-    String extractedDigits = '';
     for (var candidate in candidates) {
       if (candidate.isEmpty) continue;
-      String clean = candidate;
-      if (clean.contains('@')) {
-        clean = clean.split('@')[0];
-      }
-      clean = clean.replaceAll(RegExp(r'\D'), '');
+      // Skip anything that looks like an email address
+      if (candidate.contains('@')) continue;
+
+      String clean = candidate.replaceAll(RegExp(r'\D'), '');
+
+      // Strip +91 or 91 country code prefix
       if (clean.startsWith('91') && clean.length == 12) {
         clean = clean.substring(2);
       }
-      if (clean.length == 10 && !clean.startsWith('63423')) {
-        extractedDigits = clean;
-        break;
+
+      // Accept only valid 10-digit Indian mobile numbers starting with 6-9
+      if (clean.length == 10 && RegExp(r'^[6-9]\d{9}$').hasMatch(clean)) {
+        return '+91 ${clean.substring(0, 5)} ${clean.substring(5)}';
       }
     }
 
-    if (extractedDigits.length == 10) {
-      return '+91 ${extractedDigits.substring(0, 5)} ${extractedDigits.substring(5)}';
-    }
-
-    return extractedDigits.isNotEmpty ? '+91 $extractedDigits' : '+91 Verified User';
+    return '+91 Verified User';
   }
 
+
   Widget _buildProfileTab(ProfileModel profile) {
-    final cleanWhatsapp = _cleanPhone(profile.whatsapp);
+    final cleanWhatsapp = _cleanPhone(profile.whatsapp, fallbackPhone: profile.phone);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -465,7 +470,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
 
   Widget _buildDigitalIdTab(ProfileModel profile) {
     final String qrData = profile.digitalIdHash ?? 'fago-id-${profile.id}';
-    final cleanWhatsapp = _cleanPhone(profile.whatsapp);
+    final cleanWhatsapp = _cleanPhone(profile.whatsapp, fallbackPhone: profile.phone);
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),

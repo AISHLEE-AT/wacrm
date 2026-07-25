@@ -35,12 +35,18 @@ export async function POST(request: Request) {
     const now = new Date()
     const expiresAt = new Date(record.expires_at)
     
-    // Delete OTP to prevent reuse
-    await supabase.from('whatsapp_otps').delete().eq('phone_number', cleanPhone)
-
+    // CRITICAL: Check expiry BEFORE deleting — otherwise user cannot retry with a valid OTP
     if (now > expiresAt) {
-      return NextResponse.json({ error: 'OTP has expired' }, { status: 400 })
+      // Clean up the expired record
+      await supabase.from('whatsapp_otps').delete()
+        .or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
+      return NextResponse.json({ error: 'OTP has expired. Please request a new OTP.' }, { status: 400 })
     }
+
+    // Delete OTP (both 10-digit and 91-prefixed entries) to prevent reuse
+    await supabase.from('whatsapp_otps').delete()
+      .or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
+
 
     // 2. Manage the User in Supabase Auth
     const syntheticEmail = `${cleanPhone}@whatsapp.wacrm.local`
@@ -93,6 +99,13 @@ export async function POST(request: Request) {
       }
     }
 
+    // Check if profile already exists for this user/phone to prevent duplicate registrations or overwriting existing user names
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('full_name, main_category')
+      .eq('id', user.id)
+      .maybeSingle()
+
     // Auto-update profiles table with verified phone, full_name and main_category
     const profilePayload: any = {
       id: user.id,
@@ -100,7 +113,12 @@ export async function POST(request: Request) {
       whatsapp: cleanPhone,
       updated_at: new Date().toISOString()
     }
-    if (fullName && fullName.trim()) {
+
+    // Only set/update full_name if existing profile doesn't already have a valid custom name
+    if (existingProfile?.full_name && !existingProfile.full_name.startsWith('User ')) {
+      // Retain existing registered name to prevent name hijacking on duplicate login
+      profilePayload.full_name = existingProfile.full_name
+    } else if (fullName && fullName.trim()) {
       profilePayload.full_name = fullName.trim()
     } else if (user.user_metadata?.full_name) {
       profilePayload.full_name = user.user_metadata.full_name
@@ -108,11 +126,22 @@ export async function POST(request: Request) {
       profilePayload.full_name = `User ${cleanPhone.slice(-4)}`
     }
 
-    if (category && category.trim()) {
+    // Only update category if existing profile doesn't have one or if category was explicitly passed
+    if (existingProfile?.main_category) {
+      profilePayload.main_category = existingProfile.main_category
+    } else if (category && category.trim()) {
       profilePayload.main_category = category.trim()
     }
 
     await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' });
+
+    // Sync to contacts table with onConflict phone to prevent duplicate contact records
+    await supabase.from('contacts').upsert({
+      user_id: user.id,
+      phone: cleanPhone,
+      name: profilePayload.full_name,
+      notes: profilePayload.main_category ? `Category: ${profilePayload.main_category}` : undefined
+    }, { onConflict: 'phone' });
 
     // 3. Sign in to generate a session (using standard client to get session)
     const standardSupabase = createClient(

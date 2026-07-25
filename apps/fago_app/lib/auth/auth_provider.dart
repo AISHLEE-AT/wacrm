@@ -6,9 +6,13 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../features/push/push_service.dart';
+import '../services/device_auth_service.dart';
 
 // Represents the resolved user role
 enum UserRole { guest, admin, user, provider, driver, lister, professional }
+
+// Represents the biometric gate state during an active session
+enum BiometricGateState { pending, passed, failed }
 
 class AuthState {
   final bool isLoading;
@@ -18,6 +22,7 @@ class AuthState {
   final String? errorMessage;
   final String? defaultModule;
   final bool isProfileComplete;
+  final BiometricGateState biometricGate;
 
   AuthState({
     this.isLoading = true,
@@ -27,6 +32,7 @@ class AuthState {
     this.errorMessage,
     this.defaultModule,
     this.isProfileComplete = false,
+    this.biometricGate = BiometricGateState.passed,
   });
 
   AuthState copyWith({
@@ -37,6 +43,7 @@ class AuthState {
     String? errorMessage,
     String? defaultModule,
     bool? isProfileComplete,
+    BiometricGateState? biometricGate,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -46,6 +53,7 @@ class AuthState {
       errorMessage: errorMessage ?? this.errorMessage,
       defaultModule: defaultModule ?? this.defaultModule,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      biometricGate: biometricGate ?? this.biometricGate,
     );
   }
 }
@@ -53,10 +61,11 @@ class AuthState {
 class AuthNotifier extends Notifier<AuthState> {
   final firebase.FirebaseAuth _auth = firebase.FirebaseAuth.instance;
   final SupabaseClient _supabase = Supabase.instance.client;
-  
+
   // Dynamic bridge URL from environment, fallback to production
-  String get _bridgeUrl => 
-      dotenv.env['FIREBASE_BRIDGE_URL'] ?? 'https://watscrm.vercel.app/api/auth/firebase-bridge';
+  String get _bridgeUrl =>
+      dotenv.env['FIREBASE_BRIDGE_URL'] ??
+      'https://watscrm.vercel.app/api/auth/firebase-bridge';
 
   @override
   AuthState build() {
@@ -68,7 +77,8 @@ class AuthNotifier extends Notifier<AuthState> {
     _supabase.auth.onAuthStateChange.listen((data) async {
       if (data.session?.user != null) {
         final sbUser = data.session!.user;
-        await _resolveRole(sbUser.phone ?? sbUser.email);
+        await _resolveRole(sbUser.phone ?? sbUser.email,
+            isSessionResume: true);
       }
     });
 
@@ -76,26 +86,30 @@ class AuthNotifier extends Notifier<AuthState> {
       if (user == null) {
         final sbUser = _supabase.auth.currentUser;
         if (sbUser != null) {
-          await _resolveRole(sbUser.phone ?? sbUser.email);
+          await _resolveRole(sbUser.phone ?? sbUser.email,
+              isSessionResume: true);
         } else {
           state = AuthState(isLoading: false, role: UserRole.guest);
         }
       } else {
-        state = state.copyWith(isLoading: true, firebaseUser: user, errorMessage: null);
+        state = state.copyWith(
+            isLoading: true, firebaseUser: user, errorMessage: null);
         try {
           await exchangeFirebaseForSupabase();
-          await _resolveRole(user.phoneNumber);
+          await _resolveRole(user.phoneNumber, isSessionResume: true);
         } catch (e) {
           debugPrint('Auth initialization error: $e');
           final sbUser = _supabase.auth.currentUser;
-          await _resolveRole(user.phoneNumber ?? sbUser?.phone ?? sbUser?.email);
+          await _resolveRole(
+              user.phoneNumber ?? sbUser?.phone ?? sbUser?.email,
+              isSessionResume: true);
         }
       }
     });
 
     final sbUser = _supabase.auth.currentUser;
     if (sbUser != null) {
-      _resolveRole(sbUser.phone ?? sbUser.email);
+      _resolveRole(sbUser.phone ?? sbUser.email, isSessionResume: true);
     }
   }
 
@@ -103,10 +117,35 @@ class AuthNotifier extends Notifier<AuthState> {
     final user = _supabase.auth.currentUser;
     final fbUser = _auth.currentUser;
     final phone = fbUser?.phoneNumber ?? user?.phone ?? user?.email;
-    await _resolveRole(phone);
+    await _resolveRole(phone, isSessionResume: false);
   }
 
-  Future<void> _resolveRole(String? phoneNumber) async {
+  // ── Biometric Gate ────────────────────────────────────────────────────────
+  // Called after _resolveRole resolves a non-guest role on an app resume/open.
+  // Passes biometric only if the device has a registered profile lock.
+  Future<void> _gateBiometric() async {
+    final isLocked = await DeviceAuthService.isProfileLocked();
+    if (!isLocked) {
+      // Device not yet registered for biometric (first install or fresh login)
+      state = state.copyWith(biometricGate: BiometricGateState.passed);
+      return;
+    }
+
+    // Show biometric / PIN / pattern prompt every time the app opens
+    final didPass =
+        await DeviceAuthService.authenticateWithBiometricsOrDevicePin();
+
+    if (didPass) {
+      state = state.copyWith(biometricGate: BiometricGateState.passed);
+    } else {
+      // User cancelled or failed biometric — force sign out for security
+      state = state.copyWith(biometricGate: BiometricGateState.failed);
+      await signOut();
+    }
+  }
+
+  Future<void> _resolveRole(String? phoneNumber,
+      {bool isSessionResume = false}) async {
     try {
       final user = _supabase.auth.currentUser;
       final fbUser = _auth.currentUser;
@@ -131,20 +170,25 @@ class AuthNotifier extends Notifier<AuthState> {
         try {
           final profileData = await _supabase
               .from('profiles')
-              .select('default_module, profile_complete, full_name, whatsapp, phone, role')
+              .select(
+                  'default_module, profile_complete, full_name, whatsapp, phone, role')
               .eq('id', user.id)
               .maybeSingle();
 
           if (profileData != null) {
             defaultModule = profileData['default_module'];
+            // Prefer whatsapp field, fall back to phone column
             profilePhone = profileData['whatsapp'] ?? profileData['phone'];
             profileRole = profileData['role'];
             isProfileComplete = profileData['profile_complete'] == true ||
-                (profileData['full_name'] != null && (profileData['whatsapp'] != null || profileData['phone'] != null));
+                (profileData['full_name'] != null &&
+                    (profileData['whatsapp'] != null ||
+                        profileData['phone'] != null));
           }
 
           // Sync user's cell number to WhatsApp CRM contact list
-          final contactPhone = (profilePhone ?? rawPhone).replaceAll(RegExp(r'\D'), '');
+          final contactPhone =
+              (profilePhone ?? rawPhone).replaceAll(RegExp(r'\D'), '');
           if (contactPhone.isNotEmpty) {
             final existingContact = await _supabase
                 .from('contacts')
@@ -164,12 +208,20 @@ class AuthNotifier extends Notifier<AuthState> {
         }
       }
 
-      // 1. Comprehensive Admin Check: 9486335870 or 9123596988 or aishleetechnology@gmail.com
-      final adminIdentifiers = ['9486335870', '919486335870', '9123596988', '919123596988', 'aishleetechnology@gmail.com'];
+      // 1. Comprehensive Admin Check
+      // Only the primary owner number 9486335870 and aishleetechnology@gmail.com
+      // are hardcoded admins. All other admins should have role='admin' in DB.
+      final adminIdentifiers = [
+        '9486335870',
+        '919486335870',
+        'aishleetechnology@gmail.com'
+      ];
       bool isAdmin = profileRole == 'admin';
 
       if (!isAdmin) {
-        final allText = '$rawPhone $fbPhone $sbEmail $sbPhone ${profilePhone ?? ''} $userMetaPhone $userMetaEmail $metaJson $appMetaJson'.toLowerCase();
+        final allText =
+            '$rawPhone $fbPhone $sbEmail $sbPhone ${profilePhone ?? ''} $userMetaPhone $userMetaEmail $metaJson $appMetaJson'
+                .toLowerCase();
         for (final adminId in adminIdentifiers) {
           if (allText.contains(adminId)) {
             isAdmin = true;
@@ -186,6 +238,7 @@ class AuthNotifier extends Notifier<AuthState> {
           defaultModule: defaultModule,
           isProfileComplete: isProfileComplete,
         );
+        if (isSessionResume) await _gateBiometric();
         return;
       }
 
@@ -196,7 +249,8 @@ class AuthNotifier extends Notifier<AuthState> {
           final driverCheck = await _supabase
               .from('drivers')
               .select('id')
-              .or('user_id.eq.${user.id},mobile_number.cs.${rawPhone.replaceAll(RegExp(r'\D'), '')}')
+              .or(
+                  'user_id.eq.${user.id},mobile_number.cs.${rawPhone.replaceAll(RegExp(r'\D'), '')}')
               .maybeSingle();
 
           if (driverCheck != null) {
@@ -222,6 +276,7 @@ class AuthNotifier extends Notifier<AuthState> {
           defaultModule: defaultModule,
           isProfileComplete: isProfileComplete,
         );
+        if (isSessionResume) await _gateBiometric();
         return;
       }
 
@@ -233,9 +288,11 @@ class AuthNotifier extends Notifier<AuthState> {
         defaultModule: defaultModule,
         isProfileComplete: isProfileComplete,
       );
+      if (isSessionResume) await _gateBiometric();
     } catch (e) {
       debugPrint('Role resolution error: $e');
-      state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());
+      state = state.copyWith(
+          isLoading: false, role: UserRole.guest, errorMessage: e.toString());
     } finally {
       if (state.role != UserRole.guest) {
         PushService.init();
@@ -269,10 +326,12 @@ class AuthNotifier extends Notifier<AuthState> {
         await _supabase.auth.recoverSession(sessionJson);
         return;
       } else {
-        throw Exception('Bridge response missing tokens: ${response.body}');
+        throw Exception(
+            'Bridge response missing tokens: ${response.body}');
       }
     } else {
-      throw Exception('Bridge API failed (${response.statusCode}): ${response.body}');
+      throw Exception(
+          'Bridge API failed (${response.statusCode}): ${response.body}');
     }
   }
 
@@ -292,7 +351,8 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> verifyWhatsAppOtp(String phone, String otp, {String? fullName, String? userCategory}) async {
+  Future<void> verifyWhatsAppOtp(String phone, String otp,
+      {String? fullName, String? userCategory}) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     final response = await http.post(
       Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/verify-otp'),
@@ -300,8 +360,10 @@ class AuthNotifier extends Notifier<AuthState> {
       body: jsonEncode({
         'phone': cleanPhone,
         'otp': otp,
-        if (fullName != null && fullName.trim().isNotEmpty) 'fullName': fullName.trim(),
-        if (userCategory != null && userCategory.trim().isNotEmpty) 'category': userCategory.trim(),
+        if (fullName != null && fullName.trim().isNotEmpty)
+          'fullName': fullName.trim(),
+        if (userCategory != null && userCategory.trim().isNotEmpty)
+          'category': userCategory.trim(),
       }),
     );
 
@@ -324,25 +386,51 @@ class AuthNotifier extends Notifier<AuthState> {
           if (session['user'] != null) {
             final userId = session['user']['id'];
             try {
+              final existingProf = await _supabase
+                  .from('profiles')
+                  .select('full_name, main_category')
+                  .eq('id', userId)
+                  .maybeSingle();
+
+              final String? existingName = existingProf?['full_name'];
+              final String? existingCat = existingProf?['main_category'];
+
               await _supabase.from('profiles').upsert({
                 'id': userId,
                 'phone': cleanPhone,
                 'whatsapp': cleanPhone,
-                if (fullName != null && fullName.trim().isNotEmpty) 'full_name': fullName.trim(),
-                if (userCategory != null && userCategory.trim().isNotEmpty) 'main_category': userCategory.trim(),
+                'full_name': (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User '))
+                    ? existingName
+                    : (fullName != null && fullName.trim().isNotEmpty ? fullName.trim() : 'User ${cleanPhone.substring(cleanPhone.length > 4 ? cleanPhone.length - 4 : 0)}'),
+                if (existingCat != null && existingCat.isNotEmpty)
+                  'main_category': existingCat
+                else if (userCategory != null && userCategory.trim().isNotEmpty)
+                  'main_category': userCategory.trim(),
                 'updated_at': DateTime.now().toIso8601String(),
               });
+
               await _supabase.from('contacts').upsert({
                 'user_id': userId,
                 'phone': cleanPhone,
-                if (fullName != null && fullName.trim().isNotEmpty) 'name': fullName.trim(),
-                if (userCategory != null && userCategory.trim().isNotEmpty) 'notes': 'Category: $userCategory',
+                'name': (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User '))
+                    ? existingName
+                    : (fullName != null && fullName.trim().isNotEmpty ? fullName.trim() : 'App User'),
               });
             } catch (e) {
               debugPrint('Error syncing whatsapp profile: $e');
             }
           }
-          await _resolveRole(cleanPhone);
+
+          // ── Save device biometric signature after first successful OTP login ──
+          // On all subsequent app opens, biometric/PIN will be required.
+          final resolvedName = fullName?.trim().isNotEmpty == true
+              ? fullName!.trim()
+              : 'FAGO User';
+          await DeviceAuthService.saveRegisteredUserDeviceSignature(
+              cleanPhone, resolvedName);
+
+          // isSessionResume=false because this is a fresh login – no biometric gate yet
+          await _resolveRole(cleanPhone, isSessionResume: false);
           return;
         }
       }
@@ -373,7 +461,8 @@ class AuthNotifier extends Notifier<AuthState> {
     required String verificationId,
     required String smsCode,
   }) async {
-    firebase.PhoneAuthCredential credential = firebase.PhoneAuthProvider.credential(
+    firebase.PhoneAuthCredential credential =
+        firebase.PhoneAuthProvider.credential(
       verificationId: verificationId,
       smsCode: smsCode,
     );
@@ -381,6 +470,9 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> signOut() async {
+    // Clear the device biometric signature so next login starts fresh
+    await DeviceAuthService.clearDeviceSignature();
+
     try {
       await _auth.signOut();
     } catch (e) {

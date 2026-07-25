@@ -3,6 +3,7 @@ class ProfileModel {
   final String fullName;
   final String role;
   final String? whatsapp;
+  final String? phone;
   final String? digitalIdHash;
   final String? resumeUrl;
   final String? avatarUrl;
@@ -18,6 +19,7 @@ class ProfileModel {
     required this.fullName,
     required this.role,
     this.whatsapp,
+    this.phone,
     this.digitalIdHash,
     this.resumeUrl,
     this.avatarUrl,
@@ -35,6 +37,7 @@ class ProfileModel {
       fullName: json['full_name'] ?? 'User',
       role: json['role'] ?? 'User',
       whatsapp: json['whatsapp'],
+      phone: json['phone'],
       digitalIdHash: json['digital_id_hash'],
       resumeUrl: json['resume_url'],
       avatarUrl: json['avatar_url'],
@@ -53,6 +56,7 @@ class ProfileModel {
       'full_name': fullName,
       'role': role,
       'whatsapp': whatsapp,
+      'phone': phone,
       'digital_id_hash': digitalIdHash,
       'resume_url': resumeUrl,
       'avatar_url': avatarUrl,

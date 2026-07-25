@@ -52,8 +52,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: 'OTP generated successfully. Tap "Send WhatsApp Message" to receive it for FREE via WhatsApp!',
-      fallbackOtp: otp 
+      message: 'OTP sent to your WhatsApp! Check your WhatsApp messages and enter the 6-digit code.'
     })
   } catch (error: any) {
     console.error('Send OTP Error:', error)
