@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
-import '../../../screens/web_module_screen.dart';
 import '../../../auth/auth_provider.dart' as fago;
 import '../../promo/screens/whatsapp_status_promo_screen.dart';
 
