@@ -9,7 +9,6 @@ import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
-import 'web_module_screen.dart';
 import '../features/profile/services/profile_service.dart';
 
 class RiderMapScreen extends StatefulWidget {
@@ -28,7 +27,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   String _selectedCategory = 'Bike';
   double _estimatedFare = 0.0;
   bool _isBooking = false;
-  bool _isSearchingDropoff = false;
   bool _isSearchingPickup = false;
   String? _activeRideId; // Tracks active ride status
 
@@ -42,7 +40,6 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
   // 🚀 Rapido Parity Upgrades
   String? _securityOtp;
-  bool _isScheduled = false;
   DateTime? _scheduledDateTime;
 
   final Map<String, Map<String, dynamic>> _categories = {

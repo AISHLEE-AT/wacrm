@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_provider.dart';
 import '../auth/login_screen.dart';
+import '../auth/pin_setup_screen.dart';
 import '../screens/crm_dashboard_screen.dart';
 import '../screens/setup_screen.dart';
 import '../features/rider/screens/home_screen.dart' as rider;
 import '../features/driver/screens/home_screen.dart' as driver;
-import '../features/driver/screens/admin_home_screen.dart' as admin;
 import '../screens/admin_crm_screen.dart';
 import '../features/profile/screens/profile_dashboard.dart';
 
@@ -22,6 +22,15 @@ import '../screens/teacho_screen.dart';
 import '../screens/testo_screen.dart';
 import '../screens/tvo_screen.dart';
 import '../screens/web_module_screen.dart';
+
+import '../services/device_auth_service.dart';
+
+/// Tracks whether PIN setup has been completed this session.
+/// Checked from SharedPreferences via DeviceAuthService.
+final pinSetupCompleteProvider = FutureProvider<bool>((ref) async {
+  final pin = await DeviceAuthService.getCustomFagoPin();
+  return pin != null && pin.isNotEmpty;
+});
 
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
@@ -37,19 +46,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     redirect: (context, state) {
       final authState = notifier.value;
-      final hasRoutedInitially = ref.read(hasRoutedInitiallyProvider);
+      final currentPath = state.uri.path;
 
+      // While loading, stay on current page
       if (authState.isLoading) return null;
 
-      // If biometric gate failed (user cancelled or failed auth), force logout to login
+      // If biometric gate failed, force to login
       if (authState.biometricGate == BiometricGateState.failed) {
-        return '/login';
+        return currentPath == '/login' ? null : '/login';
       }
 
-      // Direct all mobile entry straight to CrmDashboardScreen (WebView)
-      // Authentication is handled seamlessly ONCE via web session persistence.
-      if (state.uri.path == '/' && !hasRoutedInitially) {
-        ref.read(hasRoutedInitiallyProvider.notifier).state = true;
+      // Guest users MUST go to login
+      if (authState.role == UserRole.guest) {
+        return currentPath == '/login' ? null : '/login';
+      }
+
+      // Authenticated user on login page — redirect to home
+      if (currentPath == '/login') {
+        // Check if PIN setup is needed (first-time login)
+        // The PIN setup screen itself will check and redirect
+        return '/pin-check';
       }
 
       return null;
@@ -58,6 +74,51 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/pin-setup',
+        builder: (context, state) => const PinSetupScreen(),
+      ),
+      // Intermediate route that checks PIN status and redirects
+      GoRoute(
+        path: '/pin-check',
+        builder: (context, state) {
+          return Consumer(
+            builder: (context, ref, _) {
+              final pinStatus = ref.watch(pinSetupCompleteProvider);
+              return pinStatus.when(
+                data: (hasPinSetup) {
+                  // Use addPostFrameCallback to navigate after build
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!hasPinSetup) {
+                      context.go('/pin-setup');
+                    } else {
+                      context.go('/');
+                    }
+                  });
+                  return const Scaffold(
+                    backgroundColor: Color(0xFF0A0A0A),
+                    body: Center(
+                      child: CircularProgressIndicator(color: Color(0xFF00FF00)),
+                    ),
+                  );
+                },
+                loading: () => const Scaffold(
+                  backgroundColor: Color(0xFF0A0A0A),
+                  body: Center(
+                    child: CircularProgressIndicator(color: Color(0xFF00FF00)),
+                  ),
+                ),
+                error: (e, st) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    context.go('/');
+                  });
+                  return const SizedBox();
+                },
+              );
+            },
+          );
+        },
       ),
       GoRoute(
         path: '/setup',
@@ -90,7 +151,21 @@ final routerProvider = Provider<GoRouter>((ref) {
                   ),
                 );
               }
-              // All authenticated users go straight to the WhatsApp CRM
+
+              // Guest goes to login
+              if (authState.role == UserRole.guest) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  context.go('/login');
+                });
+                return const SizedBox();
+              }
+
+              // Admin gets the CRM dashboard (full admin access on mobile now!)
+              if (authState.role == UserRole.admin) {
+                return const CrmDashboardScreen();
+              }
+
+              // All authenticated users go to CRM dashboard
               return const CrmDashboardScreen();
             },
           );

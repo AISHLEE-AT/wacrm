@@ -11,6 +11,7 @@ import kotlinx.serialization.json.*
 data class RideRequestItem(
     val id: String,
     val riderId: String,
+    val riderName: String? = "Rider",
     val riderPhone: String,
     val pickupAddress: String,
     val dropoffAddress: String,
@@ -20,9 +21,12 @@ data class RideRequestItem(
     val dropoffLng: Double,
     val vehicleCategory: String,
     val estimatedFare: Double,
-    val status: String,
+    val status: String, // "requested", "assigned", "arrived", "in_progress", "completed", "cancelled"
     val driverId: String? = null,
-    val driverPhone: String? = null
+    val driverName: String? = "Captain Senthil",
+    val driverPhone: String? = "+919486335870",
+    val vehicleNumber: String? = "TN 38 BL 9486",
+    val otpCode: String? = "4826"
 )
 
 /**
@@ -101,6 +105,7 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
                 buildJsonObject {
                     put("id", ride.id)
                     put("rider_id", ride.riderId)
+                    put("rider_name", ride.riderName ?: "Rider")
                     put("rider_phone", ride.riderPhone)
                     put("pickup_address", ride.pickupAddress)
                     put("dropoff_address", ride.dropoffAddress)
@@ -110,6 +115,7 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
                     put("dropoff_lng", ride.dropoffLng)
                     put("vehicle_category", ride.vehicleCategory)
                     put("estimated_fare", ride.estimatedFare)
+                    put("otp_code", ride.otpCode ?: "4826")
                     put("status", "requested")
                     put("created_at", java.time.Instant.now().toString())
                 }
@@ -122,13 +128,21 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
     }
 
     /** Driver accepts a ride request */
-    suspend fun acceptRideRequest(rideId: String, driverId: String, driverPhone: String): Boolean {
+    suspend fun acceptRideRequest(
+        rideId: String,
+        driverId: String,
+        driverName: String,
+        driverPhone: String,
+        vehicleNumber: String = "TN 38 BL 9486"
+    ): Boolean {
         return try {
             supabase.postgrest["ride_requests"].update(
                 buildJsonObject {
                     put("status", "accepted")
                     put("driver_id", driverId)
+                    put("driver_name", driverName)
                     put("driver_phone", driverPhone)
+                    put("vehicle_number", vehicleNumber)
                     put("updated_at", java.time.Instant.now().toString())
                 }
             ) { filter { eq("id", rideId) } }

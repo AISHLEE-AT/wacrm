@@ -67,8 +67,11 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val supabaseRepo: SupabaseRepository = koinInject()
+    val locationService: com.fago.fagoapp.services.LocationService = koinInject()
 
-    var pickupAddress by remember { mutableStateOf("Coimbatore Railway Station, Tamil Nadu") }
+    var pickupLatLng by remember { mutableStateOf(LatLng(11.0168, 76.9558)) }
+    var dropoffLatLng by remember { mutableStateOf(LatLng(11.0300, 77.0434)) }
+    var pickupAddress by remember { mutableStateOf("Detecting GPS location...") }
     var dropoffAddress by remember { mutableStateOf("Coimbatore Airport (CJB), Peelamedu") }
     var riderName by remember { mutableStateOf("") }
     var riderPhone by remember { mutableStateOf("") }
@@ -81,9 +84,23 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
     var showFareBreakdownSheet by remember { mutableStateOf(false) }
     var activeSecurityOtp by remember { mutableStateOf<String?>(null) }
 
-    val defaultPos = LatLng(11.0168, 76.9558)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(defaultPos, 14f)
+        position = CameraPosition.fromLatLngZoom(pickupLatLng, 14f)
+    }
+
+    // Auto-fetch real device GPS location on launch
+    LaunchedEffect(Unit) {
+        val currentLoc = locationService.getCurrentLocation()
+        if (currentLoc != null) {
+            pickupLatLng = currentLoc
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLoc, 15f))
+            val resolvedAddress = locationService.getAddressFromLatLng(currentLoc)
+            if (resolvedAddress.isNotEmpty()) {
+                pickupAddress = resolvedAddress
+            }
+        } else {
+            pickupAddress = "Coimbatore Railway Station, Tamil Nadu"
+        }
     }
 
     val hotspots = listOf(
@@ -113,7 +130,10 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
         return 12742 * asin(sqrt(a))
     }
 
-    val estimatedDistKm = calculateDistanceKm(11.0168, 76.9558, 11.0300, 77.0434)
+    val estimatedDistKm = calculateDistanceKm(
+        pickupLatLng.latitude, pickupLatLng.longitude,
+        dropoffLatLng.latitude, dropoffLatLng.longitude
+    )
     val calculatedFare = max(selectedCat.baseFare, selectedCat.baseFare + (estimatedDistKm * selectedCat.perKm))
 
     Scaffold(
@@ -141,9 +161,28 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState
+                cameraPositionState = cameraPositionState,
+                uiSettings = MapUiSettings(zoomControlsEnabled = true, myLocationButtonEnabled = true),
+                properties = MapProperties(isMyLocationEnabled = true)
             ) {
-                Marker(state = MarkerState(position = defaultPos), title = "Pickup Location")
+                // Pickup Marker (Green)
+                Marker(
+                    state = MarkerState(position = pickupLatLng),
+                    title = "Pickup Location",
+                    snippet = pickupAddress
+                )
+                // Dropoff Marker (Red)
+                Marker(
+                    state = MarkerState(position = dropoffLatLng),
+                    title = "Dropoff Destination",
+                    snippet = dropoffAddress
+                )
+                // Polyline Route Connection
+                Polyline(
+                    points = listOf(pickupLatLng, dropoffLatLng),
+                    color = Color(0xFF00FF00),
+                    width = 8f
+                )
             }
 
             Column(
@@ -184,6 +223,7 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                                 .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f), RoundedCornerShape(20.dp))
                                 .clickable {
                                     dropoffAddress = hs.address
+                                    dropoffLatLng = hs.latLng
                                     scope.launch {
                                         cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(hs.latLng, 15f))
                                     }
@@ -200,25 +240,64 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                     }
                 }
 
-                // Security OTP PIN Badge if active
+                // Active Ride & Captain Details Badge (Uber & Rapido Parity)
                 if (activeSecurityOtp != null) {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFFFFD700).copy(alpha = 0.15f),
-                        modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp))
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFF1E293B),
+                        modifier = Modifier.fillMaxWidth().border(1.5.dp, Color(0xFF00FF00), RoundedCornerShape(16.dp))
                     ) {
-                        Row(modifier = Modifier.padding(10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text("START RIDE OTP PIN: $activeSecurityOtp", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = Color(0xFF00FF00), modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Column {
+                                        Text("Captain Senthil (Verified)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("Vehicle: TN 38 BL 9486 • White Bajaj RE Auto", color = Color.Gray, fontSize = 11.sp)
+                                    }
+                                }
+                                Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFFFD700).copy(alpha = 0.2f)) {
+                                    Text("OTP: $activeSecurityOtp", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                }
                             }
-                            Button(
-                                onClick = { showSosSheet = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF43F5E)),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text("🚨 SOS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+
+                            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Button(
+                                        onClick = {
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tel:+919486335870")))
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF166534)),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Call Captain", fontSize = 11.sp)
+                                    }
+                                    Button(
+                                        onClick = {
+                                            val text = Uri.encode("Hi Captain Senthil! I am waiting at pickup: $pickupAddress")
+                                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=919486335870&text=$text")))
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                    ) {
+                                        Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("WhatsApp", fontSize = 11.sp)
+                                    }
+                                }
+
+                                Button(
+                                    onClick = { showSosSheet = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF43F5E)),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text("🚨 SOS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                }
                             }
                         }
                     }
@@ -315,15 +394,16 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                 Button(
                     onClick = {
                         showSosSheet = false
-                        val text = Uri.encode("🚨 EMERGENCY SOS ALERT from FAGO Rider!\nI need emergency assistance at my live location: $pickupAddress")
+                        val mapLink = "https://maps.google.com/?q=${pickupLatLng.latitude},${pickupLatLng.longitude}"
+                        val text = Uri.encode("🚨 EMERGENCY SOS ALERT from FAGO Rider!\nI need urgent help at my live location: $pickupAddress\n📍 Live GPS Map: $mapLink")
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/?text=$text")))
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
                 ) {
-                    Icon(Icons.Default.ShareLocation, contentDescription = null, tint = Color.Black)
+                    Icon(Icons.Default.Share, contentDescription = null, tint = Color.White)
                     Spacer(Modifier.width(8.dp))
-                    Text("SHARE LIVE GPS LOCATION VIA WHATSAPP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("SHARE LIVE GPS LOCATION ON WHATSAPP", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
 
                 OutlinedButton(
@@ -437,10 +517,10 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                                 riderPhone = "$rName ($rPhone)",
                                 pickupAddress = pickupAddress,
                                 dropoffAddress = dropoffAddress,
-                                pickupLat = 11.0168,
-                                pickupLng = 76.9558,
-                                dropoffLat = 11.0300,
-                                dropoffLng = 77.0434,
+                                pickupLat = pickupLatLng.latitude,
+                                pickupLng = pickupLatLng.longitude,
+                                dropoffLat = dropoffLatLng.latitude,
+                                dropoffLng = dropoffLatLng.longitude,
                                 vehicleCategory = selectedCat.key,
                                 estimatedFare = calculatedFare,
                                 status = "requested"

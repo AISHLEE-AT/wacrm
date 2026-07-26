@@ -69,6 +69,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
     var isDeviceRegistered by remember { mutableStateOf(false) }
     var registeredPhone by remember { mutableStateOf<String?>(null) }
+    var isSimAutofetched by remember { mutableStateOf(false) }
 
     // Check device signature on start
     LaunchedEffect(Unit) {
@@ -80,6 +81,12 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
             phone = regPhone
             if (!regName.isNullOrEmpty()) name = regName
             isDeviceRegistered = true
+        } else {
+            val simPhone = deviceAuthService.getExtractedSimPhoneNumber()
+            if (!simPhone.isNullOrEmpty() && phone.isEmpty()) {
+                phone = simPhone
+                isSimAutofetched = true
+            }
         }
     }
 
@@ -202,19 +209,36 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
             }
             Spacer(Modifier.height(20.dp))
 
-            // ── Mobile Number Input ──────────────────────────────────────────
+            // ── Mobile Number Input (First Input Box - Autofetched Cell / WhatsApp Number) ──
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it.filter { c -> c.isDigit() }.take(10) },
-                label = { Text("WhatsApp Cell Number", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF00F0FF)) },
+                label = {
+                    Text(
+                        if (isSimAutofetched) "⚡ WhatsApp Cell Number (Autofetched SIM)" else "WhatsApp Cell Number",
+                        color = if (isSimAutofetched) Color(0xFF00FF00) else Color.Gray,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                supportingText = {
+                    if (isSimAutofetched) {
+                        Text("✓ Auto-detected SIM card number from your device", color = Color(0xFF00FF00), fontSize = 11.sp)
+                    }
+                },
+                leadingIcon = {
+                    Icon(
+                        if (isSimAutofetched) Icons.Default.SimCard else Icons.Default.Phone,
+                        contentDescription = null,
+                        tint = if (isSimAutofetched) Color(0xFF00FF00) else Color(0xFF00F0FF)
+                    )
+                },
                 prefix = { Text("+91 ", color = Color.White, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF00F0FF),
-                    unfocusedBorderColor = Color(0xFF334155),
+                    focusedBorderColor = if (isSimAutofetched) Color(0xFF00FF00) else Color(0xFF00F0FF),
+                    unfocusedBorderColor = if (isSimAutofetched) Color(0xFF00FF00).copy(alpha = 0.6f) else Color(0xFF334155),
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White
                 )
@@ -310,7 +334,12 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             if (otp.length != 6) { errorMsg = "Enter 6-digit OTP code"; isLoading = false; return@launch }
                             val result = authViewModel.verifyWhatsAppOtp(phone, otp, name.ifBlank { null })
                             isLoading = false
-                            result.onFailure { errorMsg = it.message ?: "Invalid OTP. Please check your WhatsApp." }
+                            result.onSuccess {
+                                val resolvedRole = authViewModel.authState.value.role
+                                onLoginSuccess(resolvedRole)
+                            }.onFailure {
+                                errorMsg = it.message ?: "Invalid OTP. Please check your WhatsApp."
+                            }
                         }
                     }
                 },

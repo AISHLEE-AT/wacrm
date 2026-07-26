@@ -76,6 +76,19 @@ function LoginPageInner() {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const phoneParam = urlParams.get('phone');
+      if (phoneParam) {
+        const clean = phoneParam.replace(/\D/g, '').slice(-10);
+        if (clean.length === 10) {
+          handlePhoneChange(clean);
+        }
+      }
+    }
+  }, []);
+
   // ───── WhatsApp CRM Instant OTP Handlers ─────
   const handleRequestWhatsAppOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -515,32 +528,20 @@ function LoginPageInner() {
                     onSubmit={loginMode === 'whatsapp' ? handleRequestWhatsAppOTP : handleRequestFirebaseOTP} 
                     className="flex flex-col gap-4 w-full"
                   >
-                    {/* Welcome Back Badge for Returning User */}
-                    {isReturningUser ? (
-                      <div className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-sm text-center w-full">
-                        <div className="flex items-center justify-center gap-2 text-emerald-400 font-bold text-base">
-                          <UserCheck className="w-5 h-5" />
-                          <span>Welcome back, {fullName}! 👋</span>
-                        </div>
-                        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                          {categories.find(c => c.key === selectedCategory)?.label || selectedCategory}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsReturningUser(false);
-                            setHasSavedPin(false);
-                            setIsPinLogin(false);
-                            setFullName("");
-                            setPhone("");
-                          }}
-                          className="text-xs text-white/50 hover:text-white underline underline-offset-2 transition-colors mt-1"
-                        >
-                          Not {fullName}? Switch user
-                        </button>
-                      </div>
-                    ) : (
-                      /* Full Name Input for non-returning users */
+                    {/* 1. Phone Input Field — FIRST INPUT BOX */}
+                    <div className="relative flex items-center group">
+                      <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
+                      <input
+                        type="tel"
+                        placeholder="Mobile WhatsApp Number (98765 43210)"
+                        value={phone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        className="w-full h-14 pl-16 pr-5 rounded-2xl border border-emerald-500/30 bg-white/5 text-white text-lg placeholder:text-white/30 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm font-semibold"
+                      />
+                    </div>
+
+                    {/* 2. Full Name Input for non-returning users */}
+                    {!isReturningUser && (
                       <input
                         type="text"
                         placeholder="Your Full Name (பெயர்)"
@@ -550,18 +551,6 @@ function LoginPageInner() {
                         className="w-full h-14 px-5 rounded-2xl border border-white/10 bg-white/5 text-white text-base placeholder:text-white/30 focus:outline-none focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all backdrop-blur-sm"
                       />
                     )}
-
-                    {/* Phone Input */}
-                    <div className="relative flex items-center group">
-                      <span className="absolute left-5 text-white/40 font-medium text-lg transition-colors group-focus-within:text-white/70">+91</span>
-                      <input
-                        type="tel"
-                        placeholder="98765 43210"
-                        value={phone}
-                        onChange={(e) => handlePhoneChange(e.target.value)}
-                        className="w-full h-14 pl-16 pr-5 rounded-2xl border border-white/10 bg-white/5 text-white text-lg placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all backdrop-blur-sm"
-                      />
-                    </div>
 
                     {/* Category Selector Dropdown for non-returning users */}
                     {!isReturningUser && (

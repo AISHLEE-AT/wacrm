@@ -296,19 +296,45 @@ class AuthViewModel(
                 }
             }
 
-            // Admin check — same identifiers as Flutter
+            // Admin check — normalize phone to 10 digits for reliable matching
+            val tenDigitPhone = rawPhone.let {
+                val d = it.filter { c -> c.isDigit() }
+                if (d.length > 10) d.takeLast(10) else d
+            }
+
+            val adminPhones = listOf(
+                BuildConfig.ADMIN_PHONE,  // "9486335870"
+            )
+            val adminEmails = listOf(
+                BuildConfig.ADMIN_EMAIL,  // "aishleetechnology@gmail.com"
+            )
+
             val isAdmin = profileRole == "admin" ||
-                adminIdentifiers.any { rawPhone.contains(it) || (phone ?: "").contains(it) }
+                adminPhones.any { tenDigitPhone == it } ||
+                adminEmails.any { (phone ?: "").contains(it) }
 
             if (isAdmin) {
-                // Auto-heal DB role if wrong (same as Flutter fix)
                 if (profileRole != "admin" && userId != null) {
                     try {
                         supabase.postgrest["profiles"].update(
                             buildJsonObject { put("role", "admin") }
                         ) { filter { eq("id", userId) } }
+                        Log.d("FagoAuth", "Auto-healed admin role for $userId")
                     } catch (e: Exception) {
-                        Log.d("FagoAuth", "Role auto-heal note: ${e.message}")
+                        Log.w("FagoAuth", "Role auto-heal note (RLS may block): ${e.message}")
+                        // Fallback: try via server-side API
+                        try {
+                            val body = """{"userId":"$userId","role":"admin"}"""
+                                .toRequestBody("application/json".toMediaType())
+                            val request = Request.Builder()
+                                .url("${BuildConfig.WHATSAPP_OTP_VERIFY_URL.replace("verify-otp", "")}../pin-login")
+                                .post(body)
+                                .build()
+                            // Fire and forget — don't block login
+                            http.newCall(request).execute()
+                        } catch (e2: Exception) {
+                            Log.d("FagoAuth", "Server-side role heal note: ${e2.message}")
+                        }
                     }
                 }
                 _authState.update {

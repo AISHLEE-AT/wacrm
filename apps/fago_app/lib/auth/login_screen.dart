@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'auth_provider.dart';
 import '../services/whatsapp_service.dart';
 import '../services/device_auth_service.dart';
+import '../features/onboarding/device_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? role;
@@ -134,20 +135,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _checkAndAutoFillRegisteredDevice();
   }
 
+  bool _isAutofetchedSim = false;
+
   Future<void> _checkAndAutoFillRegisteredDevice() async {
     final registeredPhone = await DeviceAuthService.getRegisteredPhone();
     final registeredName = await DeviceAuthService.getRegisteredName();
     final isLocked = await DeviceAuthService.isProfileLocked();
+
     if (registeredPhone != null && registeredPhone.isNotEmpty && isLocked && mounted) {
       setState(() {
         _phoneController.text = registeredPhone;
         if (registeredName != null && registeredName.isNotEmpty) {
           _nameController.text = registeredName;
         }
-        // Set BOTH flags — _deviceRegistered is the stable flag that is never
-        // overridden by the async DB lookup in _onPhoneChanged.
         _isReturningUser = true;
         _deviceRegistered = true;
+      });
+      return;
+    }
+
+    // Auto-fill SIM Card Number extracted at setup permissions level
+    final extractedSim = await DeviceService.getExtractedSimPhone();
+
+    if (mounted) {
+      setState(() {
+        if (_phoneController.text.isEmpty && extractedSim != null && extractedSim.isNotEmpty) {
+          _phoneController.text = extractedSim;
+          _isAutofetchedSim = true;
+        }
       });
     }
   }
@@ -301,6 +316,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           fullName: _nameController.text.trim(),
           userCategory: _selectedCategory,
         );
+        if (mounted) {
+          context.go('/pin-check');
+        }
       } catch (e) {
         setState(() => _isLoading = false);
         if (mounted) {
@@ -315,6 +333,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           verificationId: _verificationId,
           smsCode: otpCode,
         );
+        if (mounted) {
+          context.go('/pin-check');
+        }
       } catch (e) {
         setState(() => _isLoading = false);
         if (mounted) {
@@ -454,25 +475,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 },
               ),
               if (!_isOTPSent) ...[
-                // Phone Input Field
+                // Phone Input Field (First Input Box - Autofetched Cell / WhatsApp Number)
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   maxLength: 10,
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.phone, color: Colors.greenAccent),
+                    prefixIcon: Icon(
+                      _isAutofetchedSim ? Icons.sim_card_rounded : Icons.phone,
+                      color: _isAutofetchedSim ? const Color(0xFF00FF00) : Colors.greenAccent,
+                    ),
                     prefixText: '+91 ',
-                    prefixStyle: const TextStyle(color: Colors.white, fontSize: 16),
-                    labelText: 'Mobile WhatsApp Number',
-                    labelStyle: const TextStyle(color: Colors.greenAccent),
+                    prefixStyle: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    labelText: _isAutofetchedSim ? '⚡ WhatsApp Cell Number (Autofetched SIM)' : 'Mobile WhatsApp Number',
+                    labelStyle: TextStyle(
+                      color: _isAutofetchedSim ? const Color(0xFF00FF00) : Colors.greenAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    helperText: _isAutofetchedSim ? '✓ Auto-detected SIM card number from your device' : null,
+                    helperStyle: const TextStyle(color: Color(0xFF00FF00), fontSize: 12),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.greenAccent.withValues(alpha: 0.5)),
+                      borderSide: BorderSide(
+                        color: _isAutofetchedSim ? const Color(0xFF00FF00) : Colors.greenAccent.withValues(alpha: 0.5),
+                        width: _isAutofetchedSim ? 2 : 1,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.greenAccent, width: 2),
+                      borderSide: const BorderSide(color: Color(0xFF00FF00), width: 2),
                     ),
                   ),
                 ),

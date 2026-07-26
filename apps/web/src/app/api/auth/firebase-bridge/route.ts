@@ -115,6 +115,27 @@ export async function POST(request: Request) {
       }
     }
 
+    // ── 3b. Sync profile to profiles table (same as verify-otp) ─────
+    const phoneDigitsClean = phoneDigits.replace(/^91/, '').slice(-10)
+    const adminPhones = ['9486335870']
+    const adminEmails = ['aishleetechnology@gmail.com']
+    const isAdmin = adminPhones.includes(phoneDigitsClean) || adminEmails.includes(user.email || '')
+
+    const profilePayload: any = {
+      id: user.id,
+      phone: phoneDigitsClean,
+      whatsapp: phoneDigitsClean,
+      updated_at: new Date().toISOString(),
+    }
+    if (isAdmin) profilePayload.role = 'admin'
+    if (fbUser.displayName) profilePayload.full_name = fbUser.displayName
+
+    try {
+      await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+    } catch (profileErr) {
+      console.warn('Profile sync note:', profileErr)
+    }
+
     // ── 4. Generate Supabase Custom JWT ──────────────────────────────
     const jwtSecret = process.env.SUPABASE_JWT_SECRET;
     if (!jwtSecret) {
@@ -145,6 +166,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       phone: phoneDigits,
       firebase_uid: firebaseUid,
+      is_admin: isAdmin,
       access_token: token,
       refresh_token: token,
       user: user,

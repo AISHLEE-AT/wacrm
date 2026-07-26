@@ -20,6 +20,7 @@ fun appModule(supabaseClient: SupabaseClient) = module {
     // ── Repositories & Services ────────────────────────────────────────────
     single { SupabaseRepository(get()) }
     single { DeviceAuthService(androidContext()) }
+    single { com.fago.fagoapp.services.LocationService(androidContext()) }
 
     // ── ViewModels ─────────────────────────────────────────────────────────
     viewModel { AuthViewModel(get(), get()) }

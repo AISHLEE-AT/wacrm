@@ -7,7 +7,6 @@ import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
 import '../features/driver/screens/driver_registration_screen.dart';
-import 'web_module_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});

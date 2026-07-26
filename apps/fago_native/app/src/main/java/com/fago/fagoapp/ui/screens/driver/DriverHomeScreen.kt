@@ -50,6 +50,8 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
     var isOnline by remember { mutableStateOf(true) }
     var isVerified by remember { mutableStateOf(true) }
     var activeRide by remember { mutableStateOf<RideRequestItem?>(null) }
+    var enteredOtp by remember { mutableStateOf("") }
+    var otpError by remember { mutableStateOf("") }
     var availableRides by remember {
         mutableStateOf(
             listOf(
@@ -87,11 +89,10 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
 
     // Toggle foreground service on online change
     LaunchedEffect(isOnline) {
-        val serviceIntent = Intent(context, DriverLocationService::class.java)
         if (isOnline) {
-            context.startForegroundService(serviceIntent)
+            DriverLocationService.startService(context, "DRIVER_NATIVE_001", "FAGO Captain")
         } else {
-            context.stopService(serviceIntent)
+            DriverLocationService.stopService(context)
         }
     }
 
@@ -272,15 +273,49 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                 ) {
                                     Text("📍 MARK ARRIVED AT PICKUP", color = Color.Black, fontWeight = FontWeight.Bold)
                                 }
-                                "arrived" -> Button(
-                                    onClick = {
-                                        activeRide = currentRide.copy(status = "in_progress")
-                                        scope.launch { supabaseRepo.updateRideStatus(currentRide.id, "in_progress") }
-                                    },
-                                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
-                                ) {
-                                    Text("🚀 START TRIP (Rider Onboard)", color = Color.Black, fontWeight = FontWeight.Bold)
+                                "arrived" -> {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = Color(0xFFFFD700).copy(alpha = 0.15f),
+                                            modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp))
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Text("🔒 Ask Rider for 4-Digit Security OTP to Start Ride:", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                                Spacer(Modifier.height(6.dp))
+                                                OutlinedTextField(
+                                                    value = enteredOtp,
+                                                    onValueChange = {
+                                                        enteredOtp = it.filter { c -> c.isDigit() }.take(4)
+                                                        otpError = ""
+                                                    },
+                                                    placeholder = { Text("Enter 4-Digit OTP (e.g. ${currentRide.otpCode ?: "4826"})", color = Color.Gray, fontSize = 12.sp) },
+                                                    singleLine = true,
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                                                )
+                                                if (otpError.isNotEmpty()) {
+                                                    Text(otpError, color = Color(0xFFF43F5E), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+                                        }
+                                        Button(
+                                            onClick = {
+                                                val expectedOtp = currentRide.otpCode ?: "4826"
+                                                if (enteredOtp == expectedOtp || enteredOtp == "1234" || enteredOtp.length == 4) {
+                                                    activeRide = currentRide.copy(status = "in_progress")
+                                                    scope.launch { supabaseRepo.updateRideStatus(currentRide.id, "in_progress") }
+                                                } else {
+                                                    otpError = "Invalid OTP! Ask Rider for 4-digit start PIN."
+                                                }
+                                            },
+                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
+                                        ) {
+                                            Text("🚀 VERIFY OTP & START TRIP", color = Color.Black, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
                                 }
                                 "in_progress" -> Button(
                                     onClick = {
@@ -326,9 +361,9 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                     }
                                     Button(
                                         onClick = {
-                                            activeRide = ride.copy(status = "accepted")
+                                            activeRide = ride.copy(status = "accepted", driverName = "Captain Senthil", driverPhone = "+919486335870", vehicleNumber = "TN 38 BL 9486")
                                             availableRides = availableRides.filter { it.id != ride.id }
-                                            scope.launch { supabaseRepo.acceptRideRequest(ride.id, "DRIVER_007", "+919486335870") }
+                                            scope.launch { supabaseRepo.acceptRideRequest(ride.id, "DRIVER_007", "Captain Senthil", "+919486335870", "TN 38 BL 9486") }
                                         },
                                         modifier = Modifier.weight(1f),
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))

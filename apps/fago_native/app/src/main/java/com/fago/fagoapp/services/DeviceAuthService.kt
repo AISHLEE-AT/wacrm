@@ -1,6 +1,10 @@
 package com.fago.fagoapp.services
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Build
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -51,6 +55,45 @@ class DeviceAuthService(private val context: Context) {
 
     suspend fun getRegisteredName(): String? =
         context.dataStore.data.map { it[KEY_REGISTERED_NAME]?.ifEmpty { null } }.first()
+
+    /** Extract cell SIM card phone number automatically via Telephony & Subscription Manager */
+    @SuppressLint("HardwareIds", "MissingPermission")
+    fun getExtractedSimPhoneNumber(): String? {
+        try {
+            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+            val rawNumber = telephonyManager?.line1Number
+            if (!rawNumber.isNullOrEmpty()) {
+                val digits = rawNumber.filter { it.isDigit() }
+                if (digits.length >= 10) {
+                    val tenDigit = digits.takeLast(10)
+                    if (tenDigit.matches(Regex("^[6-9]\\d{9}$"))) {
+                        return tenDigit
+                    }
+                }
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as? SubscriptionManager
+                val activeList = subscriptionManager?.activeSubscriptionInfoList
+                if (!activeList.isNullOrEmpty()) {
+                    for (info in activeList) {
+                        val num = info.number
+                        if (!num.isNullOrEmpty()) {
+                            val digits = num.filter { it.isDigit() }
+                            if (digits.length >= 10) {
+                                val tenDigit = digits.takeLast(10)
+                                if (tenDigit.matches(Regex("^[6-9]\\d{9}$"))) {
+                                    return tenDigit
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.d("DeviceAuthService", "SIM extraction note: ${e.message}")
+        }
+        return null
+    }
 
     /** Verify 4-digit FAGO PIN — same fallback logic as Flutter */
     suspend fun verifyCustomPin(pin: String): Boolean {
