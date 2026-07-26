@@ -21,10 +21,44 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   String _driverAddress = 'Detecting high-precision driver location...';
   final String _driverPhone = '+919486335870';
   final String _driverId = 'DRIVER_007';
+  String _selectedCategoryFilter = 'ALL';
 
   bool _isLoadingDriver = true;
   bool _isDriverVerified = false;
   Map<String, dynamic>? _driverRecord;
+
+  Widget _buildCategoryFilterChips() {
+    final categories = ['ALL', 'Auto', 'Car', 'Bike', 'Truck'];
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final cat = categories[index];
+          final isSelected = _selectedCategoryFilter.toUpperCase() == cat.toUpperCase();
+          return FilterChip(
+            selected: isSelected,
+            label: Text(
+              cat,
+              style: TextStyle(
+                color: isSelected ? Colors.black : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12,
+              ),
+            ),
+            selectedColor: const Color(0xFF00FF00),
+            backgroundColor: const Color(0xFF1E293B),
+            onSelected: (_) {
+              setState(() => _selectedCategoryFilter = cat);
+            },
+          );
+        },
+      ),
+    );
+  }
 
   @override
   void initState() {

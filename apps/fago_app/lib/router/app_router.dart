@@ -63,11 +63,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         return currentPath == '/login' ? null : '/login';
       }
 
-      // Authenticated user on login page — redirect to home
+      // Authenticated user on login page — redirect to appropriate role home page
       if (currentPath == '/login') {
-        // Check if PIN setup is needed (first-time login)
-        // The PIN setup screen itself will check and redirect
-        return '/pin-check';
+        if (authState.role == UserRole.admin) {
+          return '/admin';
+        } else if (authState.role == UserRole.driver) {
+          return '/drivo';
+        } else {
+          return '/rideo';
+        }
       }
 
       return null;

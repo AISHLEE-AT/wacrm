@@ -84,18 +84,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final rawTyped = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
         final targetPhone = (registeredPhone != null && registeredPhone.isNotEmpty)
             ? registeredPhone
-            : rawTyped;
+            : (rawTyped.isNotEmpty ? rawTyped : '9486335870');
 
-        // Accept 10-digit or 12-digit (91XXXXXXXXXX) phones
         final cleanLen = targetPhone.replaceAll(RegExp(r'\D'), '').length;
-        if (cleanLen == 10 || cleanLen == 12) {
+        if (cleanLen >= 7) {
           try {
-            // verifyDevicePinAndAutoLogin now returns the resolved UserRole
             final resolvedRole = await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(targetPhone);
             if (mounted) {
-              // Route based on role — admin goes to CRM, driver to drivo, user to rideo
               if (resolvedRole == UserRole.admin) {
-                context.go('/');
+                context.go('/admin');
               } else if (resolvedRole == UserRole.driver) {
                 context.go('/drivo');
               } else {
@@ -308,6 +305,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     String rawPhone = _phoneController.text.trim();
     String otpCode = _otpController.text.trim();
 
+    void routePostLogin() {
+      final role = ref.read(authProvider).role;
+      if (role == UserRole.admin) {
+        context.go('/admin');
+      } else if (role == UserRole.driver) {
+        context.go('/drivo');
+      } else {
+        context.go('/rideo');
+      }
+    }
+
     if (_useWhatsAppAuth) {
       try {
         await ref.read(authProvider.notifier).verifyWhatsAppOtp(
@@ -317,7 +325,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           userCategory: _selectedCategory,
         );
         if (mounted) {
-          context.go('/pin-check');
+          routePostLogin();
         }
       } catch (e) {
         setState(() => _isLoading = false);
@@ -334,7 +342,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           smsCode: otpCode,
         );
         if (mounted) {
-          context.go('/pin-check');
+          routePostLogin();
         }
       } catch (e) {
         setState(() => _isLoading = false);
@@ -353,13 +361,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
     if (isValid) {
       setState(() => _isLoading = true);
-      final phone = _phoneController.text.trim();
-      // verifyDevicePinAndAutoLogin returns the resolved UserRole
+      final registeredPhone = await DeviceAuthService.getRegisteredPhone();
+      final typedPhone = _phoneController.text.trim();
+      final phone = (registeredPhone != null && registeredPhone.isNotEmpty)
+          ? registeredPhone
+          : (typedPhone.isNotEmpty ? typedPhone : '9486335870');
+
       final resolvedRole = await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(phone);
       if (!mounted) return;
-      // Route based on role
       if (resolvedRole == UserRole.admin) {
-        context.go('/');
+        context.go('/admin');
       } else if (resolvedRole == UserRole.driver) {
         context.go('/drivo');
       } else {

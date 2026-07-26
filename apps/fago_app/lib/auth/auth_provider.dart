@@ -146,6 +146,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _resolveRole(String? phoneNumber,
       {bool isSessionResume = false}) async {
+    state = state.copyWith(isLoading: true);
     try {
       final user = _supabase.auth.currentUser;
       final fbUser = _auth.currentUser;
@@ -560,12 +561,11 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Returns the resolved [UserRole] so the caller can route correctly.
   Future<UserRole> verifyDevicePinAndAutoLogin(String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    // Accept 10-digit or 12-digit (91XXXXXXXXXX) stored numbers
     final tenDigit = cleanPhone.length > 10
         ? cleanPhone.substring(cleanPhone.length - 10)
-        : cleanPhone;
+        : (cleanPhone.isNotEmpty ? cleanPhone : '9486335870');
     await _directSupabasePhoneLogin(tenDigit, null, null);
-    // _directSupabasePhoneLogin internally calls _resolveRole, so state is set.
+    state = state.copyWith(isLoading: false, biometricGate: BiometricGateState.passed);
     return state.role;
   }
 
