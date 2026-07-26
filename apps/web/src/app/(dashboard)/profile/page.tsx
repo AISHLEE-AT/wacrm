@@ -75,11 +75,56 @@ function resolveTab(raw: string | null): string {
   return legacyMap[raw] || 'account';
 }
 
+class ProfileErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("ProfileErrorBoundary caught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-[450px] w-full flex-col items-center justify-center gap-4 p-6 text-center">
+          <div className="rounded-2xl bg-destructive/10 p-4 text-destructive border border-destructive/20 max-w-md">
+            <h2 className="text-lg font-bold">Profile Page Encountered an Issue</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {this.state.error?.message || 'An unexpected error occurred while rendering your profile.'}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold hover:opacity-90 transition shadow-md"
+          >
+            🔄 Reload Profile & Settings
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function UnifiedProfilePage() {
   return (
-    <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
-      <ProfilePageInner />
-    </Suspense>
+    <ProfileErrorBoundary>
+      <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+        <ProfilePageInner />
+      </Suspense>
+    </ProfileErrorBoundary>
   );
 }
 
@@ -96,20 +141,47 @@ function ProfilePageInner() {
     router.replace(`/profile?${params.toString()}`, { scroll: false });
   };
 
-  // STRICT ADMIN CHECK: Only 9486335870 or aishleetechnology@gmail.com is Administrator
-  const isAdmin = Boolean(
-    profile?.email?.includes("aishleetechnology@gmail.com") ||
-    profile?.email?.includes("9486335870") ||
-    profile?.phone?.includes("9486335870") ||
-    user?.email?.includes("aishleetechnology@gmail.com") ||
-    user?.email?.includes("9486335870") ||
-    user?.phone?.includes("9486335870")
-  );
+  const [dbProfile, setDbProfile] = useState<any>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
+  const [upiIdState, setUpiIdState] = useState('');
   const [driverProfile, setDriverProfile] = useState<any>(null);
+
+  const activeProfile = dbProfile || profile;
+
+  // STRICT ADMIN CHECK: Only 9486335870 or aishleetechnology@gmail.com is Administrator
+  const isAdmin = Boolean(
+    activeProfile?.email?.includes("aishleetechnology@gmail.com") ||
+    activeProfile?.email?.includes("9486335870") ||
+    activeProfile?.phone?.includes("9486335870") ||
+    user?.email?.includes("aishleetechnology@gmail.com") ||
+    user?.email?.includes("9486335870") ||
+    user?.phone?.includes("9486335870")
+  );
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchDbProfile = async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+          .maybeSingle();
+        if (data) {
+          setDbProfile(data);
+          if (data.upi_id) setUpiIdState(data.upi_id);
+        }
+      } catch (err) {
+        console.error('Error fetching db profile:', err);
+      }
+    };
+    fetchDbProfile();
+  }, [user?.id]);
 
   const handleSaveName = async () => {
     if (!nameValue.trim() || !user?.id) return;
@@ -150,7 +222,7 @@ function ProfilePageInner() {
     return raw;
   };
 
-  const displayPhone = formatCleanPhone(profile?.phone || profile?.email || user?.phone || user?.email);
+  const displayPhone = formatCleanPhone(activeProfile?.phone || activeProfile?.email || user?.phone || user?.email);
 
   if (loading && !user) {
     return (
@@ -170,7 +242,7 @@ function ProfilePageInner() {
   const availableCrmTabs = CRM_TABS.filter(t => !t.adminOnly || isAdmin);
 
   const getAdminVerificationWhatsAppUrl = () => {
-    const name = profile?.full_name || 'Driver Partner';
+    const name = activeProfile?.full_name || 'Driver Partner';
     const vehicle = driverProfile?.vehicle_number || driverProfile?.vehicle_registration || 'Vehicle';
     const text = `Hello Admin! I have registered as a DriveO Driver Partner (Name: ${name}, Vehicle: ${vehicle}). Please verify my driver account.`;
     return `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(text)}`;
@@ -179,9 +251,9 @@ function ProfilePageInner() {
   const renderAccount = () => (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-6">
-        {profile?.avatar_url ? (
+        {activeProfile?.avatar_url ? (
           <img
-            src={profile.avatar_url}
+            src={activeProfile.avatar_url}
             alt="Avatar"
             className="w-20 h-20 rounded-2xl border-2 border-border object-cover shadow-lg"
           />
@@ -216,10 +288,10 @@ function ProfilePageInner() {
           ) : (
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {profile?.full_name || 'User'}
+                {activeProfile?.full_name || 'User'}
               </h2>
               <button
-                onClick={() => { setNameValue(profile?.full_name || ''); setEditingName(true); }}
+                onClick={() => { setNameValue(activeProfile?.full_name || ''); setEditingName(true); }}
                 className="text-xs text-muted-foreground hover:text-primary font-medium transition px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-primary/10 flex items-center gap-1 border border-border/50"
               >
                 ✏️ Edit Name

@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role",
+          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode",
         )
         .or(`id.eq.${userId},user_id.eq.${userId}`)
         .maybeSingle();
@@ -160,8 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           account_id: data.account_id ?? null,
           account_role: accountRole,
           pincode: (data as Record<string, unknown>).pincode as string | null ?? null,
-          phone: (data as Record<string, unknown>).phone as string | null ?? null,
-        });
+          phone: (data as Record<string, unknown>).phone as string | null ?? (data as Record<string, unknown>).whatsapp as string | null ?? null,
+          upi_id: (data as Record<string, unknown>).upi_id as string | null ?? null,
+          location: (data as Record<string, unknown>).location as string | null ?? null,
+        } as any);
       }
     } catch (err) {
       console.error("[AuthProvider] fetchProfile threw:", err);
