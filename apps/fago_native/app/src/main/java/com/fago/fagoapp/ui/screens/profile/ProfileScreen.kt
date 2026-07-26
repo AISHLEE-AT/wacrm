@@ -283,7 +283,21 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
+
+            // ── Sign Out / Logout Button ─────────────────────────────────
+            Button(
+                onClick = onSignOut,
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RoseAccent),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
+                Spacer(Modifier.width(8.dp))
+                Text("🚪 SIGN OUT / LOGOUT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
+
+            Spacer(Modifier.height(24.dp))
             Text(
                 "FAGO Native • Version v1.0.5 Beta (n&f)",
                 color = Color.White.copy(alpha = 0.35f),

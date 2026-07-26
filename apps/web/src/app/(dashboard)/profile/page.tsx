@@ -50,6 +50,12 @@ const CRM_TABS = [
 // ───── Legacy tab resolver (handles old /settings?tab=xxx links) ─────
 function resolveTab(raw: string | null): string {
   if (!raw) return 'account';
+  const validTabs = [
+    'account', 'digital_id',
+    'crm_overview', 'crm_profile', 'crm_security', 'crm_appearance',
+    'crm_whatsapp', 'crm_templates', 'crm_fields', 'crm_members', 'crm_api'
+  ];
+  if (validTabs.includes(raw)) return raw;
   const legacyMap: Record<string, string> = {
     overview: 'crm_overview',
     profile: 'crm_profile',
@@ -254,11 +260,21 @@ function ProfilePageInner() {
                   />
                   <button
                     onClick={async () => {
-                      if (upiValue.trim()) {
+                      if (!upiValue.trim() || !user?.id) return;
+                      try {
                         const { createClient } = await import('@/lib/supabase/client');
                         const supabase = createClient();
-                        await supabase.from('profiles').update({ upi_id: upiValue.trim() }).eq('id', user?.id);
+                        const cleanUpi = upiValue.trim();
+                        await supabase
+                          .from('profiles')
+                          .update({ upi_id: cleanUpi })
+                          .or(`id.eq.${user.id},user_id.eq.${user.id}`);
+                        setUpiIdState(cleanUpi);
                         setEditingUpi(false);
+                        alert('✅ UPI ID saved successfully!');
+                      } catch (err) {
+                        console.error('Error saving UPI ID:', err);
+                        alert('Failed to save UPI ID. Please try again.');
                       }
                     }}
                     className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:opacity-90 transition"
@@ -266,13 +282,13 @@ function ProfilePageInner() {
                   <button onClick={() => setEditingUpi(false)} className="text-muted-foreground text-sm hover:text-foreground transition">Cancel</button>
                 </div>
               ) : (
-                <p className="font-medium">{(profile as any)?.upi_id || 'Not provided'}</p>
+                <p className="font-medium">{upiIdState || (profile as any)?.upi_id || 'Not provided'}</p>
               )}
             </div>
           </div>
           {!editingUpi && (
             <button
-              onClick={() => { setUpiValue((profile as any)?.upi_id || ''); setEditingUpi(true); }}
+              onClick={() => { setUpiValue(upiIdState || (profile as any)?.upi_id || ''); setEditingUpi(true); }}
               className="text-xs text-primary hover:underline font-medium"
             >
               Edit
@@ -293,12 +309,12 @@ function ProfilePageInner() {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Direct 0-commission instant payment QR code generated from your verified UPI ID: <strong>{(profile as any)?.upi_id || `${displayPhone.replace(/\D/g, '')}@upi`}</strong>
+            Direct 0-commission instant payment QR code generated from your verified UPI ID: <strong>{upiIdState || (profile as any)?.upi_id || `${displayPhone.replace(/\D/g, '')}@upi`}</strong>
           </p>
           <div className="flex items-center gap-4 pt-1">
             <div className="p-3 bg-white rounded-xl shadow-md shrink-0">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=${encodeURIComponent((profile as any)?.upi_id || `${displayPhone.replace(/\D/g, '')}@upi`)}&pn=${encodeURIComponent(profile?.full_name || 'FAGO Partner')}`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=${encodeURIComponent(upiIdState || (profile as any)?.upi_id || `${displayPhone.replace(/\D/g, '')}@upi`)}&pn=${encodeURIComponent(profile?.full_name || 'FAGO Partner')}`}
                 alt="UPI QR Code"
                 className="w-24 h-24 object-contain"
               />
@@ -420,30 +436,48 @@ function ProfilePageInner() {
   );
 
   const renderDigitalId = () => {
-    const qrData = (profile as any)?.digital_id_hash || `fago-id-${user?.id || 'guest'}`;
+    const idHash = (profile as any)?.digital_id_hash || `FAGO-TN-${displayPhone.replace(/\D/g, '') || user?.id || '9486335870'}`;
+    const qrData = `https://watscrm.vercel.app/profile?id=${idHash}`;
 
     return (
-      <div className="flex justify-center items-center py-8">
-        <div className="bg-gradient-to-br from-card to-background border-2 border-primary/30 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(var(--color-primary-rgb),0.15)] relative overflow-hidden">
-          <div className="absolute top-4 right-4 opacity-20">
-            <Sparkles size={60} className="text-primary" />
-          </div>
-          <div className="flex justify-between items-center mb-6 relative z-10">
-            <span className="text-primary font-bold text-lg tracking-wide">FAGO Digital ID</span>
-            <CheckCircle className="text-primary" size={24} />
+      <div className="flex justify-center items-center py-6">
+        <div className="bg-gradient-to-br from-card via-background to-card border-2 border-primary/40 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(var(--color-primary-rgb),0.2)] relative overflow-hidden space-y-6">
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex justify-between items-center relative z-10">
+            <div>
+              <span className="text-primary font-bold text-xl tracking-wider block">FAGO DIGITAL ID</span>
+              <span className="text-[10px] font-mono text-muted-foreground tracking-widest uppercase">Official Tamil Nadu Pass</span>
+            </div>
+            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+              <CheckCircle size={14} /> VERIFIED
+            </span>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl flex justify-center mb-6 shadow-inner">
-            <QRCodeSVG value={qrData} size={200} />
+          <div className="bg-white p-5 rounded-2xl flex justify-center shadow-inner relative z-10 border border-border">
+            <QRCodeSVG value={qrData} size={190} />
           </div>
 
-          <div className="text-center relative z-10">
+          <div className="text-center relative z-10 space-y-2">
             <h3 className="text-foreground text-xl font-bold tracking-wider">
-              {(profile?.full_name || 'USER')?.toUpperCase()}
+              {(profile?.full_name || 'FAGO User')?.toUpperCase()}
             </h3>
-            <p className="text-muted-foreground text-sm tracking-widest mt-1 uppercase">
-              {(accountRole || 'User')?.toUpperCase()}
+            <p className="text-primary text-xs font-semibold tracking-widest uppercase">
+              {isAdmin ? '👑 ADMIN / REGIONAL DIRECTOR' : (accountRole || 'USER')?.toUpperCase()}
             </p>
+            <p className="text-muted-foreground text-xs font-mono">
+              📱 {displayPhone}
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(idHash);
+                  alert(`✅ Digital ID copied: ${idHash}`);
+                }}
+                className="px-4 py-2 text-xs font-bold rounded-xl bg-primary/15 text-primary hover:bg-primary/25 border border-primary/30 transition flex items-center justify-center gap-1.5 w-full"
+              >
+                <Copy size={14} /> Copy ID: {idHash}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -41,7 +41,33 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E293B), // Slate 800
         title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        actions: const [],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Color(0xFFF43F5E)),
+            tooltip: 'Sign Out',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: const Color(0xFF1E293B),
+                  title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                  content: const Text('Are you sure you want to sign out from FAGO?', style: TextStyle(color: Colors.white70)),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF43F5E)),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                ref.read(fago.authProvider.notifier).signOut();
+              }
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -445,6 +471,41 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: const Color(0xFF1E293B),
+                    title: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                    content: const Text('Are you sure you want to sign out from FAGO?', style: TextStyle(color: Colors.white70)),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF43F5E)),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  ref.read(fago.authProvider.notifier).signOut();
+                }
+              },
+              icon: const Icon(Icons.logout, color: Colors.white, size: 20),
+              label: const Text('🚪 SIGN OUT / LOGOUT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF43F5E),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 6,
+              ),
             ),
           ),
           const SizedBox(height: 24),
