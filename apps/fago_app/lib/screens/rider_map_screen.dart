@@ -561,6 +561,75 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     );
   }
 
+  void _openCategoryGridModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF141414),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final categories = [
+          {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides'},
+          {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance'},
+          {'name': '🚜 RentO (Agri Rental)', 'desc': 'Machinery Rentals'},
+          {'name': '🌾 Mandi Rates (சந்தை)', 'desc': 'Agri Crop Prices'},
+          {'name': '🎓 TeachO (Academy)', 'desc': 'Skill Guides & Courses'},
+          {'name': '📝 TestO (Exam Hub)', 'desc': 'Mock Tests & Certification'},
+          {'name': '📺 TvO (Live Channels)', 'desc': 'Agri & Driver Streaming'},
+          {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours'},
+          {'name': '🤖 Gemini AI Assistant', 'desc': 'Tamil AI Smart Assistant'},
+          {'name': '👑 WhatsApp CRM Hub', 'desc': 'Customer Management'},
+          {'name': '👤 Profile & Digital Pass', 'desc': 'KYC & UPI Settlements'},
+        ];
+
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '⚡ FAGO Super App (அனைத்து சேவைகள்)',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: categories.length,
+                  separatorBuilder: (ctx, i) => const Divider(color: Colors.white12, height: 1),
+                  itemBuilder: (ctx, i) {
+                    final item = categories[i];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(item['name']!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                      subtitle: Text(item['desc']!, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF00), size: 14),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _selectScheduleTime() async {
     final date = await showDatePicker(
       context: context,
@@ -890,6 +959,11 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.grid_view_rounded, color: Color(0xFF00FF00)),
+            tooltip: 'All FAGO Modules GridView',
+            onPressed: () => _openCategoryGridModal(context),
+          ),
           IconButton(
             icon: const Icon(Icons.shield, color: Colors.redAccent),
             tooltip: '🚨 Safety SOS & Emergency Shield',
