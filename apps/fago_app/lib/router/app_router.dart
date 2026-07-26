@@ -22,7 +22,9 @@ import '../screens/teacho_screen.dart';
 import '../screens/testo_screen.dart';
 import '../screens/tvo_screen.dart';
 import '../screens/web_module_screen.dart';
-
+import '../screens/gemini_ai_assistant_screen.dart';
+import '../features/dealo/screens/dealo_marketplace_screen.dart';
+import '../features/promo/screens/whatsapp_status_promo_screen.dart';
 import '../services/device_auth_service.dart';
 
 /// Tracks whether PIN setup has been completed this session.
@@ -202,6 +204,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/tvo',
         builder: (context, state) => const TvOScreen(),
+      ),
+      GoRoute(
+        path: '/dealo',
+        builder: (context, state) => const DealoMarketplaceScreen(),
+      ),
+      GoRoute(
+        path: '/gemini',
+        builder: (context, state) => const GeminiAiAssistantScreen(),
+      ),
+      GoRoute(
+        path: '/promo',
+        builder: (context, state) => const WhatsappStatusPromoScreen(),
       ),
       GoRoute(
         path: '/moneyo',

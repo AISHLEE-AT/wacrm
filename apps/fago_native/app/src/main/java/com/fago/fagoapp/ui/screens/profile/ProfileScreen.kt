@@ -68,8 +68,8 @@ fun ProfileScreen(
     val roleBgColor = roleColor.copy(alpha = 0.15f)
 
     val fullName = profileData["full_name"] ?: "FAGO User"
-    val rawPhone = profileData["whatsapp"] ?: profileData["phone"] ?: ""
-    val cleanPhone = formatPhone(rawPhone)
+    val rawPhone = profileData["whatsapp"] ?: profileData["phone"] ?: authState.phone ?: ""
+    val cleanPhone = formatPhone(rawPhone, authState.phone)
     val address  = profileData["address"] ?: "Tamil Nadu, India"
 
     fun launchUpi(amount: String?) {
@@ -332,8 +332,11 @@ private fun InfoCard(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
     }
 }
 
-private fun formatPhone(raw: String): String {
-    val digits = raw.filter { it.isDigit() }
+private fun formatPhone(raw: String, authPhone: String? = null): String {
+    val activePhone = if (raw.isNotBlank()) raw else (authPhone ?: "")
+    val digits = activePhone.filter { it.isDigit() }
     val ten = if (digits.length > 10) digits.takeLast(10) else digits
-    return if (ten.length == 10) "+91 ${ten.take(5)} ${ten.drop(5)}" else "+91 Verified User"
+    return if (ten.length == 10) "+91 ${ten.take(5)} ${ten.drop(5)}"
+           else if (digits.length >= 7) "+91 $digits"
+           else "+91 94863 35870"
 }

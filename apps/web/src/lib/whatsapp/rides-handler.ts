@@ -18,7 +18,10 @@ export async function handleRideHailingBooking(
     const tenDigitPhone = cleanPhone.slice(-10)
 
     // ───── 0. AUTOMATED WHATSAPP LOGIN OTP GENERATION HOOK ─────
-    if (text.includes('otp') || text.includes('login') || text.includes('code') || text.includes('help')) {
+    // Exclude ride booking / transport dispatch messages from triggering automated login OTP
+    const isRideRequestMessage = text.includes('rideo') || text.includes('ride request') || text.includes('start trip pin') || text.includes('start ride') || text.includes('pickup') || text.includes('estimated fare');
+
+    if (!isRideRequestMessage && (text.includes('login otp') || text === 'otp' || text === 'login' || text === 'code' || text === 'help')) {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 

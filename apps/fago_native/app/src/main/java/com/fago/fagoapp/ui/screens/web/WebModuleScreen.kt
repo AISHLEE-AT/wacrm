@@ -18,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.fago.fagoapp.BuildConfig
+import com.fago.fagoapp.auth.AuthViewModel
+import org.koin.androidx.compose.koinViewModel
 
 /**
  * Native Android WebView Module for web-backed FAGO modules:
@@ -31,10 +33,19 @@ fun WebModuleScreen(
     modulePath: String,
     onBack: () -> Unit
 ) {
+    val authViewModel: AuthViewModel = koinViewModel()
+    val authState by authViewModel.authState.collectAsState()
+
     val baseUrl = BuildConfig.WHATSAPP_OTP_SEND_URL
         .replace("/api/auth/whatsapp/send-otp", "")
         .ifEmpty { "https://watscrm.vercel.app" }
-    val fullUrl = if (modulePath.startsWith("http")) modulePath else "$baseUrl/$modulePath"
+    
+    val tokenQuery = if (!authState.accessToken.isNullOrEmpty() && !authState.refreshToken.isNullOrEmpty()) {
+        val separator = if (modulePath.contains("?")) "&" else "?"
+        "${separator}access_token=${authState.accessToken}&refresh_token=${authState.refreshToken}"
+    } else ""
+
+    val fullUrl = if (modulePath.startsWith("http")) "$modulePath$tokenQuery" else "$baseUrl/$modulePath$tokenQuery"
 
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
@@ -92,6 +103,26 @@ fun WebModuleScreen(
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
                                 isLoading = false
+
+                                val accessToken = authState.accessToken
+                                val refreshToken = authState.refreshToken
+                                if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
+                                    val js = """
+                                        (function() {
+                                            try {
+                                                var sessionData = {
+                                                    access_token: '$accessToken',
+                                                    refresh_token: '$refreshToken',
+                                                    expires_in: 3600,
+                                                    token_type: 'bearer'
+                                                };
+                                                localStorage.setItem('sb-gmahjdzqitbomtmdzlfp-auth-token', JSON.stringify(sessionData));
+                                                localStorage.setItem('supabase.auth.token', JSON.stringify(sessionData));
+                                            } catch(e) {}
+                                        })();
+                                    """.trimIndent()
+                                    view?.evaluateJavascript(js, null)
+                                }
                             }
                         }
 

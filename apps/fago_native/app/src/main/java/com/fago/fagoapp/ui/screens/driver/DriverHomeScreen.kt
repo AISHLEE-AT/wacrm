@@ -54,6 +54,8 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
     var activeRide by remember { mutableStateOf<RideRequestItem?>(null) }
     var enteredOtp by remember { mutableStateOf("") }
     var otpError by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Auto") }
+
     var availableRides by remember {
         mutableStateOf(
             listOf(
@@ -87,6 +89,12 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                 )
             )
         )
+    }
+
+    val categories = listOf("Auto", "Car", "Bike", "Truck", "ALL")
+
+    val filteredRides = availableRides.filter { ride ->
+        selectedCategory == "ALL" || ride.vehicleCategory.equals(selectedCategory, ignoreCase = true)
     }
 
     // Toggle foreground service on online change
@@ -165,21 +173,48 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                 }
             }
 
-            // Daily Earnings Bar
+            // Daily Earnings & Vehicle Filter Bar
             Surface(color = Color(0xFF141414), modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF00FF00), modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Today's Earnings: ", color = Color.Gray, fontSize = 12.sp)
-                        Text("₹1,250", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF00FF00), modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Today's Earnings: ", color = Color.Gray, fontSize = 12.sp)
+                            Text("₹1,250", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color.White.copy(alpha = 0.1f)) {
+                            Text("5 Trips Completed", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        }
                     }
-                    Surface(shape = RoundedCornerShape(10.dp), color = Color.White.copy(alpha = 0.1f)) {
-                        Text("5 Trips Completed", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Vehicle Category Filter Chips
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categories.forEach { cat ->
+                            val isSelected = selectedCategory.equals(cat, ignoreCase = true)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { selectedCategory = cat },
+                                label = { Text(cat, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Color(0xFF00FF00),
+                                    selectedLabelColor = Color.Black,
+                                    containerColor = Color(0xFF1E293B),
+                                    labelColor = Color.White
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -283,7 +318,7 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                             modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFFFD700), RoundedCornerShape(12.dp))
                                         ) {
                                             Column(modifier = Modifier.padding(12.dp)) {
-                                                Text("🔒 Ask Rider for 4-Digit Security OTP to Start Ride:", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                                Text("🔑 Ask Rider for 4-Digit Start Trip Security PIN:", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                                 Spacer(Modifier.height(6.dp))
                                                 OutlinedTextField(
                                                     value = enteredOtp,
@@ -291,7 +326,7 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                                         enteredOtp = it.filter { c -> c.isDigit() }.take(4)
                                                         otpError = ""
                                                     },
-                                                    placeholder = { Text("Enter 4-Digit OTP (e.g. ${currentRide.otpCode ?: "4826"})", color = Color.Gray, fontSize = 12.sp) },
+                                                    placeholder = { Text("Enter 4-Digit PIN (e.g. ${currentRide.otpCode ?: "4826"})", color = Color.Gray, fontSize = 12.sp) },
                                                     singleLine = true,
                                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                                     modifier = Modifier.fillMaxWidth(),
@@ -309,13 +344,13 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                                     activeRide = currentRide.copy(status = "in_progress")
                                                     scope.launch { supabaseRepo.updateRideStatus(currentRide.id, "in_progress") }
                                                 } else {
-                                                    otpError = "Invalid OTP! Ask Rider for 4-digit start PIN."
+                                                    otpError = "Invalid PIN! Ask Rider for 4-digit start PIN."
                                                 }
                                             },
                                             modifier = Modifier.fillMaxWidth().height(48.dp),
                                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
                                         ) {
-                                            Text("🚀 VERIFY OTP & START TRIP", color = Color.Black, fontWeight = FontWeight.Bold)
+                                            Text("🚀 VERIFY PIN & START TRIP", color = Color.Black, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }
@@ -334,43 +369,49 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(availableRides) { ride ->
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFF1E1E1E),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF00FF00)) {
-                                        Text(ride.vehicleCategory, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                if (filteredRides.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No active $selectedCategory rides nearby.", color = Color.Gray, fontSize = 14.sp)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize().padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(filteredRides) { ride ->
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color(0xFF1E1E1E),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF00FF00)) {
+                                            Text(ride.vehicleCategory, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                                        }
+                                        Text("₹${ride.estimatedFare.toInt()}", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 20.sp)
                                     }
-                                    Text("₹${ride.estimatedFare.toInt()}", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                                }
-                                Text("Pickup: ${ride.pickupAddress}", color = Color.White, fontSize = 13.sp)
-                                Text("Dropoff: ${ride.dropoffAddress}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    Text("Pickup: ${ride.pickupAddress}", color = Color.White, fontSize = 13.sp)
+                                    Text("Dropoff: ${ride.dropoffAddress}", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
 
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedButton(
-                                        onClick = { openGoogleMapsNav(ride.pickupLat, ride.pickupLng) },
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text("Nav Pickup", color = Color.White, fontSize = 12.sp)
-                                    }
-                                    Button(
-                                        onClick = {
-                                            activeRide = ride.copy(status = "accepted", driverName = "Captain Senthil", driverPhone = "+919486335870", vehicleNumber = "TN 38 BL 9486")
-                                            availableRides = availableRides.filter { it.id != ride.id }
-                                            scope.launch { supabaseRepo.acceptRideRequest(ride.id, "DRIVER_007", "Captain Senthil", "+919486335870", "TN 38 BL 9486") }
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
-                                    ) {
-                                        Text("ACCEPT RIDE", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedButton(
+                                            onClick = { openGoogleMapsNav(ride.pickupLat, ride.pickupLng) },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text("Nav Pickup", color = Color.White, fontSize = 12.sp)
+                                        }
+                                        Button(
+                                            onClick = {
+                                                activeRide = ride.copy(status = "accepted", driverName = "Captain Senthil", driverPhone = "+919486335870", vehicleNumber = "TN 38 BL 9486")
+                                                availableRides = availableRides.filter { it.id != ride.id }
+                                                scope.launch { supabaseRepo.acceptRideRequest(ride.id, "DRIVER_007", "Captain Senthil", "+919486335870", "TN 38 BL 9486") }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
+                                        ) {
+                                            Text("ACCEPT RIDE", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
                                     }
                                 }
                             }

@@ -28,7 +28,9 @@ class FagoApplication : Application() {
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
         ) {
-            install(Auth)
+            install(Auth) {
+                sessionManager = com.fago.fagoapp.auth.SecureSessionManager(this@FagoApplication)
+            }
             install(Postgrest)
             install(Realtime)
             install(Storage)

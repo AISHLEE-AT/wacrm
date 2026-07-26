@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
+import 'package:go_router/go_router.dart';
+import 'web_module_screen.dart';
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
@@ -571,17 +573,22 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       ),
       builder: (ctx) {
         final categories = [
-          {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides'},
-          {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance'},
-          {'name': '🚜 RentO (Agri Rental)', 'desc': 'Machinery Rentals'},
-          {'name': '🌾 Mandi Rates (சந்தை)', 'desc': 'Agri Crop Prices'},
-          {'name': '🎓 TeachO (Academy)', 'desc': 'Skill Guides & Courses'},
-          {'name': '📝 TestO (Exam Hub)', 'desc': 'Mock Tests & Certification'},
-          {'name': '📺 TvO (Live Channels)', 'desc': 'Agri & Driver Streaming'},
-          {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours'},
-          {'name': '🤖 Gemini AI Assistant', 'desc': 'Tamil AI Smart Assistant'},
-          {'name': '👑 WhatsApp CRM Hub', 'desc': 'Customer Management'},
-          {'name': '👤 Profile & Digital Pass', 'desc': 'KYC & UPI Settlements'},
+          {'name': '🌐 AISHLEE-WEB Portal', 'desc': 'Open Web Flow in Browser', 'route': '/'},
+          {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides', 'route': '/rideo'},
+          {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance', 'route': '/drivo'},
+          {'name': '🚜 RentO (Agri Rental)', 'desc': 'Machinery Rentals', 'route': '/rento'},
+          {'name': '🏷️ DealO (Marketplace)', 'desc': '5km Radius P2P Deals', 'route': '/dealo'},
+          {'name': '🌾 Mandi Rates (சந்தை)', 'desc': 'Agri Crop Prices', 'route': '/mandi'},
+          {'name': '🎓 TeachO (Academy)', 'desc': 'Skill Guides & Courses', 'route': '/teacho'},
+          {'name': '📝 TestO (Exam Hub)', 'desc': 'Mock Tests & Certification', 'route': '/testo'},
+          {'name': '📺 TvO (Live Channels)', 'desc': 'Agri & Driver Streaming', 'route': '/tvo'},
+          {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro'},
+          {'name': '🤖 Gemini AI Assistant', 'desc': 'Tamil AI Smart Assistant', 'route': '/gemini'},
+          {'name': '👑 WhatsApp CRM Hub', 'desc': 'Customer Management & Admin CRM', 'route': '/admin'},
+          {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo'},
+          {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko'},
+          {'name': '🛠️ ToolsO (Agri Tools)', 'desc': 'Calculators & Tools Suite', 'route': '/toolso'},
+          {'name': '👤 Profile & Digital Pass', 'desc': 'KYC & UPI Settlements', 'route': '/profile'},
         ];
 
         return Padding(
@@ -618,6 +625,16 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF00FF00), size: 14),
                       onTap: () {
                         Navigator.pop(ctx);
+                        final route = item['route'];
+                        if (route != null) {
+                          if (route == '/rideo' || route == '/') {
+                            context.go('/');
+                          } else if (route == '/moneyo' || route == '/tasko' || route == '/toolso') {
+                            WebModuleScreen.launchInBrowser(path: route);
+                          } else {
+                            context.push(route);
+                          }
+                        }
                       },
                     );
                   },

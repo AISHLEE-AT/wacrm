@@ -31,6 +31,8 @@ data class AuthUiState(
     val role: UserRole = UserRole.GUEST,
     val userId: String? = null,
     val phone: String? = null,
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
     val errorMessage: String? = null,
     val isProfileComplete: Boolean = false
 )
@@ -315,6 +317,10 @@ class AuthViewModel(
 
             val effectivePhone = if (tenDigitPhone.length == 10) tenDigitPhone else rawPhone
 
+            val session = try { supabase.auth.currentSessionOrNull() } catch (e: Exception) { null }
+            val accessToken = session?.accessToken
+            val refreshToken = session?.refreshToken
+
             if (isAdmin) {
                 if (profileRole != "admin" && userId != null) {
                     try {
@@ -343,6 +349,7 @@ class AuthViewModel(
                     it.copy(
                         isLoading = false, role = UserRole.ADMIN,
                         userId = userId, phone = effectivePhone,
+                        accessToken = accessToken, refreshToken = refreshToken,
                         isProfileComplete = isProfileComplete
                     )
                 }
@@ -356,6 +363,7 @@ class AuthViewModel(
                     it.copy(
                         isLoading = false, role = UserRole.DRIVER,
                         userId = userId, phone = effectivePhone,
+                        accessToken = accessToken, refreshToken = refreshToken,
                         isProfileComplete = isProfileComplete
                     )
                 }
@@ -367,6 +375,7 @@ class AuthViewModel(
                 it.copy(
                     isLoading = false, role = UserRole.USER,
                     userId = userId, phone = effectivePhone,
+                    accessToken = accessToken, refreshToken = refreshToken,
                     isProfileComplete = isProfileComplete
                 )
             }

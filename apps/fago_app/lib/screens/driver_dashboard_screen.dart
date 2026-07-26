@@ -536,6 +536,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 ],
               ),
             ),
+          _buildCategoryFilterChips(),
 
           Expanded(
             child: !_isOnline
@@ -561,15 +562,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                             return const Center(child: CircularProgressIndicator(color: Color(0xFF00FF00)));
                           }
 
-                          final rides = snapshot.data ?? [];
+                          final rawRides = snapshot.data ?? [];
+                          final rides = rawRides.where((r) {
+                            return _selectedCategoryFilter == 'ALL' ||
+                                r.vehicleCategory.toLowerCase() == _selectedCategoryFilter.toLowerCase();
+                          }).toList();
+
                           if (rides.isEmpty) {
-                            return const Center(
+                            return Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.wifi_tethering, size: 48, color: Colors.grey),
-                                  SizedBox(height: 12),
-                                  Text('Searching for nearby ride requests...', style: TextStyle(color: Colors.grey)),
+                                  const Icon(Icons.wifi_tethering, size: 48, color: Colors.grey),
+                                  const SizedBox(height: 12),
+                                  Text('Searching for nearby $_selectedCategoryFilter ride requests...', style: const TextStyle(color: Colors.grey)),
                                 ],
                               ),
                             );

@@ -1,6 +1,7 @@
 package com.fago.fagoapp.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -60,7 +61,9 @@ fun FagoNavHost(
     val startDest = when {
         authState.isLoading              -> Routes.SPLASH
         authState.role == UserRole.GUEST -> Routes.LOGIN
-        else                             -> Routes.CRM
+        authState.role == UserRole.ADMIN -> Routes.CRM
+        authState.role == UserRole.DRIVER -> Routes.DRIVO
+        else                             -> Routes.RIDEO
     }
 
     NavHost(
@@ -75,30 +78,43 @@ fun FagoNavHost(
                     when (role) {
                         UserRole.ADMIN  -> navController.navigate(Routes.CRM)   { popUpTo(0) }
                         UserRole.DRIVER -> navController.navigate(Routes.DRIVO) { popUpTo(0) }
-                        else            -> navController.navigate(Routes.CRM)   { popUpTo(0) }
+                        else            -> navController.navigate(Routes.RIDEO) { popUpTo(0) }
                     }
                 }
             )
         }
 
         composable(Routes.CRM) {
-            CrmDashboardScreen(
-                authState = authState,
-                onNavigateProfile = { navController.navigate(Routes.PROFILE) },
-                onNavigateRideo = { navController.navigate(Routes.RIDEO) },
-                onNavigateDrivo = { navController.navigate(Routes.DRIVO) },
-                onNavigateModule = { title, path -> navController.navigate(Routes.buildWebRoute(title, path)) },
-                onSignOut = {
-                    onSignOut()
-                    navController.navigate(Routes.LOGIN) { popUpTo(0) }
+            // Guard: non-admins attempting to access CRM route get redirected to RIDEO
+            if (authState.role != UserRole.ADMIN && authState.role != UserRole.GUEST) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.RIDEO) { popUpTo(0) }
                 }
-            )
+            } else {
+                CrmDashboardScreen(
+                    authState = authState,
+                    onNavigateProfile = { navController.navigate(Routes.PROFILE) },
+                    onNavigateRideo = { navController.navigate(Routes.RIDEO) },
+                    onNavigateDrivo = { navController.navigate(Routes.DRIVO) },
+                    onNavigateModule = { title, path -> navController.navigate(Routes.buildWebRoute(title, path)) },
+                    onSignOut = {
+                        onSignOut()
+                        navController.navigate(Routes.LOGIN) { popUpTo(0) }
+                    }
+                )
+            }
         }
 
         composable(Routes.RIDEO) {
             RiderMapScreen(
                 onOpenDrawer = { navController.navigate(Routes.PROFILE) },
-                onNavigateCrm = { navController.navigate(Routes.CRM) },
+                onNavigateCrm = {
+                    if (authState.role == UserRole.ADMIN) {
+                        navController.navigate(Routes.CRM)
+                    } else {
+                        navController.navigate(Routes.PROFILE)
+                    }
+                },
                 onNavigateDrivo = { navController.navigate(Routes.DRIVO) },
                 onNavigateRento = { navController.navigate(Routes.RENTO) },
                 onNavigateMandi = { navController.navigate(Routes.MANDI) },
@@ -162,7 +178,11 @@ fun FagoNavHost(
         composable(Routes.PROFILE) {
             ProfileScreen(
                 authState = authState,
-                profileData = mapOf("role" to if (authState.role == UserRole.ADMIN) "admin" else "user"),
+                profileData = mapOf(
+                    "phone" to (authState.phone ?: "9486335870"),
+                    "whatsapp" to (authState.phone ?: "9486335870"),
+                    "role" to if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user"
+                ),
                 onSignOut = {
                     onSignOut()
                     navController.navigate(Routes.LOGIN) { popUpTo(0) }

@@ -38,7 +38,10 @@ fun CrmDashboardScreen(
     val rawPhone = authState.phone ?: ""
     val phoneDigits = rawPhone.filter { it.isDigit() }
     val phoneParam = if (phoneDigits.length >= 10) phoneDigits.takeLast(10) else ""
-    val crmUrl = if (phoneParam.isNotEmpty()) "https://watscrm.vercel.app?phone=$phoneParam" else "https://watscrm.vercel.app"
+    val tokenQuery = if (!authState.accessToken.isNullOrEmpty() && !authState.refreshToken.isNullOrEmpty()) {
+        "&access_token=${authState.accessToken}&refresh_token=${authState.refreshToken}"
+    } else ""
+    val crmUrl = if (phoneParam.isNotEmpty()) "https://watscrm.vercel.app?phone=$phoneParam$tokenQuery" else "https://watscrm.vercel.app"
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
@@ -181,6 +184,26 @@ fun CrmDashboardScreen(
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
                                 isLoading = false
+
+                                val accessToken = authState.accessToken
+                                val refreshToken = authState.refreshToken
+                                if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
+                                    val js = """
+                                        (function() {
+                                            try {
+                                                var sessionData = {
+                                                    access_token: '$accessToken',
+                                                    refresh_token: '$refreshToken',
+                                                    expires_in: 3600,
+                                                    token_type: 'bearer'
+                                                };
+                                                localStorage.setItem('sb-gmahjdzqitbomtmdzlfp-auth-token', JSON.stringify(sessionData));
+                                                localStorage.setItem('supabase.auth.token', JSON.stringify(sessionData));
+                                            } catch(e) {}
+                                        })();
+                                    """.trimIndent()
+                                    view?.evaluateJavascript(js, null)
+                                }
                             }
                         }
 

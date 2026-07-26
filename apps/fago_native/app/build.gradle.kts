@@ -135,8 +135,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // ── DataStore (replaces SharedPreferences for device auth) ───────────────
+    // ── DataStore & Security (replaces SharedPreferences for device auth) ───────────────
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // ── Dependency Injection ──────────────────────────────────────────────────
     implementation("io.insert-koin:koin-android:3.5.6")

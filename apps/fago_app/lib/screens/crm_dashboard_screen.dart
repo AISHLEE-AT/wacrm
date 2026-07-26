@@ -73,6 +73,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
           {'name': '🎓 TeachO (Academy)', 'desc': 'Skill Guides & Courses', 'route': '/teacho', 'tab': -1},
           {'name': '📝 TestO (Exam Hub)', 'desc': 'Mock Tests & Certification', 'route': '/testo', 'tab': -1},
           {'name': '📺 TvO (Video Guides)', 'desc': 'Agri & Driver Streaming', 'route': '/tvo', 'tab': -1},
+          {'name': '🤖 Gemini AI Assistant', 'desc': 'Tamil AI Smart Assistant', 'route': '/gemini', 'tab': -1},
           {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo', 'tab': -2},
           {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko', 'tab': -2},
           {'name': '🤖 AI & ToolsO (AI + கருவிகள்)', 'desc': 'Gemini AI + ToolsO Suite', 'route': '/toolso', 'tab': -2},
@@ -156,7 +157,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                   mainAxisSpacing: 10,
                 ),
                 itemCount: categories.length,
-                itemBuilder: (context, index) {
+                itemBuilder: (gridContext, index) {
                   final cat = categories[index];
                   return InkWell(
                     onTap: () {
@@ -174,7 +175,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
                       } else if (tab == -2) {
                         WebModuleScreen.launchInBrowser(path: cat['route'] as String);
                       } else {
-                        context.push(cat['route'] as String);
+                        this.context.push(cat['route'] as String);
                       }
                     },
                     child: Container(
