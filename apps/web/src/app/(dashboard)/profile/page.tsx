@@ -86,12 +86,12 @@ export default function UnifiedProfilePage() {
 function ProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, profile, accountRole, signOut } = useAuth();
+  const { user, profile, accountRole, signOut, loading } = useAuth();
   const { mode } = useTheme();
 
-  const activeTab = resolveTab(searchParams.get('tab'));
+  const activeTab = resolveTab(searchParams ? searchParams.get('tab') : null);
   const setActiveTab = (tab: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
     params.set('tab', tab);
     router.replace(`/profile?${params.toString()}`, { scroll: false });
   };
@@ -151,6 +151,17 @@ function ProfilePageInner() {
   };
 
   const displayPhone = formatCleanPhone(profile?.phone || profile?.email || user?.phone || user?.email);
+
+  if (loading && !user) {
+    return (
+      <div className="flex h-[400px] w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm font-semibold text-muted-foreground">Loading Profile & Settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   const goSettings = (section: string) => {
     setActiveTab(`crm_${section}`);
