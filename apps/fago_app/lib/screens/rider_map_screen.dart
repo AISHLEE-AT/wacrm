@@ -27,6 +27,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   String _selectedCategory = 'Bike';
   double _estimatedFare = 0.0;
   bool _isBooking = false;
+  bool _isSearchingDropoff = false;
   bool _isSearchingPickup = false;
   String? _activeRideId; // Tracks active ride status
 
@@ -40,6 +41,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
   // 🚀 Rapido Parity Upgrades
   String? _securityOtp;
+  bool _isScheduled = false;
   DateTime? _scheduledDateTime;
 
   final Map<String, Map<String, dynamic>> _categories = {
