@@ -97,7 +97,17 @@ fun FagoNavHost(
 
         composable(Routes.RIDEO) {
             RiderMapScreen(
-                onOpenDrawer = { navController.navigate(Routes.PROFILE) }
+                onOpenDrawer = { navController.navigate(Routes.PROFILE) },
+                onNavigateCrm = { navController.navigate(Routes.CRM) },
+                onNavigateDrivo = { navController.navigate(Routes.DRIVO) },
+                onNavigateRento = { navController.navigate(Routes.RENTO) },
+                onNavigateMandi = { navController.navigate(Routes.MANDI) },
+                onNavigateTouro = { navController.navigate(Routes.TOURO) },
+                onNavigateTeacho = { navController.navigate(Routes.TEACHO) },
+                onNavigateTesto = { navController.navigate(Routes.TESTO) },
+                onNavigateTvo = { navController.navigate(Routes.TVO) },
+                onNavigateAi = { navController.navigate(Routes.AI) },
+                onNavigateProfile = { navController.navigate(Routes.PROFILE) }
             )
         }
 

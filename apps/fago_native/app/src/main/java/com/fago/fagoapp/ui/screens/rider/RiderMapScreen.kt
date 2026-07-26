@@ -63,7 +63,19 @@ data class HotspotItem(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RiderMapScreen(onOpenDrawer: () -> Unit) {
+fun RiderMapScreen(
+    onOpenDrawer: () -> Unit,
+    onNavigateCrm: () -> Unit = {},
+    onNavigateDrivo: () -> Unit = {},
+    onNavigateRento: () -> Unit = {},
+    onNavigateMandi: () -> Unit = {},
+    onNavigateTouro: () -> Unit = {},
+    onNavigateTeacho: () -> Unit = {},
+    onNavigateTesto: () -> Unit = {},
+    onNavigateTvo: () -> Unit = {},
+    onNavigateAi: () -> Unit = {},
+    onNavigateProfile: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val supabaseRepo: SupabaseRepository = koinInject()
@@ -82,6 +94,7 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
     // Rapido Parity Modals & Hotspots
     var showSosSheet by remember { mutableStateOf(false) }
     var showFareBreakdownSheet by remember { mutableStateOf(false) }
+    var showAllModulesSheet by remember { mutableStateOf(false) }
     var activeSecurityOtp by remember { mutableStateOf<String?>(null) }
 
     val cameraPositionState = rememberCameraPositionState {
@@ -148,6 +161,9 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showAllModulesSheet = true }) {
+                        Icon(Icons.Default.GridView, contentDescription = "All FAGO Modules GridView", tint = Color(0xFF00FF00))
+                    }
                     IconButton(onClick = { showSosSheet = true }) {
                         Icon(Icons.Default.Shield, contentDescription = "SOS Safety Shield", tint = Color(0xFFF43F5E))
                     }
@@ -156,6 +172,57 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                     }
                 }
             )
+        },
+        bottomBar = {
+            NavigationBar(containerColor = Color(0xFF1E293B)) {
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateCrm,
+                    icon = { Icon(Icons.Default.Chat, contentDescription = null) },
+                    label = { Text("CRM", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFFFFD700)
+                    )
+                )
+                NavigationBarItem(
+                    selected = true,
+                    onClick = { },
+                    icon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
+                    label = { Text("RideO", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF00F0FF),
+                        indicatorColor = Color(0xFF00F0FF).copy(alpha = 0.2f)
+                    )
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateDrivo,
+                    icon = { Icon(Icons.Default.LocalShipping, contentDescription = null) },
+                    label = { Text("DriveO", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFFFF8C00)
+                    )
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { showAllModulesSheet = true },
+                    icon = { Icon(Icons.Default.GridView, contentDescription = null) },
+                    label = { Text("Modules", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF00FF00),
+                        indicatorColor = Color(0xFF00FF00).copy(alpha = 0.2f)
+                    )
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateProfile,
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    label = { Text("Profile", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color.White
+                    )
+                )
+            }
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -551,6 +618,87 @@ fun RiderMapScreen(onOpenDrawer: () -> Unit) {
                     enabled = !isPostingRide
                 ) {
                     Text("CONFIRM & NOTIFY DRIVERS VIA WHATSAPP", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+
+    // All Modules GridView Sheet
+    if (showAllModulesSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAllModulesSheet = false },
+            containerColor = Color(0xFF0F172A)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("🚀 All FAGO Modules", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("Explore 12+ Super App Services", color = Color.Gray, fontSize = 12.sp)
+                    }
+                    IconButton(onClick = { showAllModulesSheet = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    }
+                }
+
+                data class ModuleGridItem(val title: String, val subtitle: String, val icon: String, val color: Color, val onClick: () -> Unit)
+
+                val modulesList = listOf(
+                    ModuleGridItem("RideO", "0% Comm Rides", "🚲", Color(0xFF00F0FF)) { showAllModulesSheet = false },
+                    ModuleGridItem("DriveO", "Captain Partner", "🚖", Color(0xFFFF8C00)) { showAllModulesSheet = false; onNavigateDrivo() },
+                    ModuleGridItem("RentO", "Farm Equipment", "🚜", Color(0xFF10B981)) { showAllModulesSheet = false; onNavigateRento() },
+                    ModuleGridItem("Mandi Prices", "Agri Rates", "🌾", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateMandi() },
+                    ModuleGridItem("TourO", "Tamil Tours", "🛕", Color(0xFFA855F7)) { showAllModulesSheet = false; onNavigateTouro() },
+                    ModuleGridItem("TeachO", "Tamil Lessons", "🎓", Color(0xFF3B82F6)) { showAllModulesSheet = false; onNavigateTeacho() },
+                    ModuleGridItem("TestO", "TNPSC Prep", "📝", Color(0xFFEC4899)) { showAllModulesSheet = false; onNavigateTesto() },
+                    ModuleGridItem("TvO", "Live TV & News", "📺", Color(0xFFEF4444)) { showAllModulesSheet = false; onNavigateTvo() },
+                    ModuleGridItem("Gemini AI", "Smart Assistant", "🤖", Color(0xFF8B5CF6)) { showAllModulesSheet = false; onNavigateAi() },
+                    ModuleGridItem("WhatsApp CRM", "Customer Portal", "👑", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateCrm() },
+                    ModuleGridItem("My Profile", "Digital ID & UPI", "👤", Color.White) { showAllModulesSheet = false; onNavigateProfile() },
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val rows = modulesList.chunked(2)
+                    rows.forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            rowItems.forEach { mod ->
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { mod.onClick() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color(0xFF1E293B),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, mod.color.copy(alpha = 0.4f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(mod.icon, fontSize = 24.sp)
+                                        Column {
+                                            Text(mod.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(mod.subtitle, color = Color.Gray, fontSize = 10.sp, maxLines = 1)
+                                        }
+                                    }
+                                }
+                            }
+                            if (rowItems.size == 1) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
                 }
             }
         }
