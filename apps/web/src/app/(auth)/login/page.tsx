@@ -84,6 +84,11 @@ function LoginPageInner() {
         const clean = phoneParam.replace(/\D/g, '').slice(-10);
         if (clean.length === 10) {
           handlePhoneChange(clean);
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+              router.push('/');
+            }
+          });
         }
       }
     }

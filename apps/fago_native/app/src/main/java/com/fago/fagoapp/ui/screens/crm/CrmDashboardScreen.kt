@@ -35,7 +35,9 @@ fun CrmDashboardScreen(
     onNavigateModule: (String, String) -> Unit,
     onSignOut: () -> Unit
 ) {
-    val phoneParam = authState.phone?.filter { it.isDigit() }?.takeLast(10) ?: ""
+    val rawPhone = authState.phone ?: ""
+    val phoneDigits = rawPhone.filter { it.isDigit() }
+    val phoneParam = if (phoneDigits.length >= 10) phoneDigits.takeLast(10) else ""
     val crmUrl = if (phoneParam.isNotEmpty()) "https://watscrm.vercel.app?phone=$phoneParam" else "https://watscrm.vercel.app"
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }

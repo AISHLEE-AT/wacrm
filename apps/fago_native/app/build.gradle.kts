@@ -29,7 +29,7 @@ android {
                 .associate { it.substringBefore("=").trim() to it.substringAfter("=").trim() }
         } else emptyMap()
 
-        manifestPlaceholders["MAPS_API_KEY"] = env["MAPS_API_KEY"] ?: "AIzaSyB0UIfxvTHXmaiKCg2C5L1Vw8KCFwkVUKs"
+        manifestPlaceholders["MAPS_API_KEY"] = env["MAPS_API_KEY"] ?: "AIzaSyDdAePjhtVNhbCPhvsdEGrMUGA2kn5WDds"
 
         buildConfigField("String", "SUPABASE_URL",
             "\"${env["SUPABASE_URL"] ?: "https://gmahjdzqitbomtmdzlfp.supabase.co"}\"")

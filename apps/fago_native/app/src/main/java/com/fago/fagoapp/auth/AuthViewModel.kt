@@ -313,6 +313,8 @@ class AuthViewModel(
                 adminPhones.any { tenDigitPhone == it } ||
                 adminEmails.any { (phone ?: "").contains(it) }
 
+            val effectivePhone = if (tenDigitPhone.length == 10) tenDigitPhone else rawPhone
+
             if (isAdmin) {
                 if (profileRole != "admin" && userId != null) {
                     try {
@@ -340,7 +342,7 @@ class AuthViewModel(
                 _authState.update {
                     it.copy(
                         isLoading = false, role = UserRole.ADMIN,
-                        userId = userId, phone = rawPhone,
+                        userId = userId, phone = effectivePhone,
                         isProfileComplete = isProfileComplete
                     )
                 }
@@ -353,7 +355,7 @@ class AuthViewModel(
                 _authState.update {
                     it.copy(
                         isLoading = false, role = UserRole.DRIVER,
-                        userId = userId, phone = rawPhone,
+                        userId = userId, phone = effectivePhone,
                         isProfileComplete = isProfileComplete
                     )
                 }
@@ -364,7 +366,7 @@ class AuthViewModel(
             _authState.update {
                 it.copy(
                     isLoading = false, role = UserRole.USER,
-                    userId = userId, phone = rawPhone,
+                    userId = userId, phone = effectivePhone,
                     isProfileComplete = isProfileComplete
                 )
             }
