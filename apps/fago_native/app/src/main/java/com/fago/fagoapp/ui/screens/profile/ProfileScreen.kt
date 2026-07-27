@@ -54,11 +54,46 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationService = remember { LocationService(context) }
+    val deviceAuthService = remember { DeviceAuthService(context) }
+    val authViewModel: AuthViewModel = koinViewModel()
 
-    // Live GPS Location Detection
+    var livePhone by remember { mutableStateOf(authState.phone?.filter { it.isDigit() } ?: "") }
+    var liveName by remember { mutableStateOf(authState.fullName ?: profileData["full_name"] ?: "") }
+    var liveCategory by remember { mutableStateOf(authState.mainCategory ?: profileData["main_category"] ?: "Traveller") }
+    var liveRole by remember { mutableStateOf(profileData["role"] ?: if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user") }
+    var liveUpi by remember { mutableStateOf("") }
     var liveAddress by remember { mutableStateOf("Detecting GPS location...") }
+
+    // Live Supabase DB Profile Hydration on Launch
     LaunchedEffect(Unit) {
         scope.launch {
+            try {
+                val regPhone = deviceAuthService.getRegisteredPhone()
+                val targetPhone = (authState.phone?.takeIf { it.isNotBlank() }
+                    ?: regPhone?.takeIf { it.isNotBlank() }
+                    ?: profileData["phone"]?.takeIf { it.isNotBlank() }
+                    ?: "").filter { it.isDigit() }
+
+                val searchPhone = if (targetPhone.length >= 10) targetPhone.takeLast(10) else targetPhone
+                if (searchPhone.length == 10) {
+                    livePhone = searchPhone
+                    val profileMap = authViewModel.fetchProfileByPhone(searchPhone)
+                    if (profileMap != null) {
+                        val dbName = profileMap["full_name"]?.takeIf { it.isNotBlank() }
+                            ?: profileMap["email"]?.substringBefore("@")
+                        if (!dbName.isNullOrBlank()) liveName = dbName
+                        val dbCat = profileMap["main_category"]?.takeIf { it.isNotBlank() }
+                        if (!dbCat.isNullOrBlank()) liveCategory = dbCat
+                        val dbRole = profileMap["role"]?.takeIf { it.isNotBlank() }
+                        if (!dbRole.isNullOrBlank()) liveRole = dbRole
+                        val dbUpi = profileMap["upi_id"]?.takeIf { it.isNotBlank() }
+                        if (!dbUpi.isNullOrBlank()) liveUpi = dbUpi
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.d("ProfileScreen", "Profile auto-fetch note: ${e.message}")
+            }
+
             try {
                 val loc = locationService.getCurrentLocation()
                 if (loc != null) {
@@ -73,7 +108,7 @@ fun ProfileScreen(
         }
     }
 
-    val dbRole = profileData["role"]?.lowercase() ?: ""
+    val dbRole = liveRole.lowercase()
     val isDbAdmin = dbRole == "admin" || authState.role == UserRole.ADMIN
     val isDbDriver = dbRole == "driver" || authState.role == UserRole.DRIVER
 
@@ -89,15 +124,8 @@ fun ProfileScreen(
     }
     val roleBgColor = roleColor.copy(alpha = 0.15f)
 
-    val fullName = (profileData["full_name"]?.takeIf { it.isNotBlank() }
-        ?: authState.fullName?.takeIf { it.isNotBlank() }
-        ?: "FAGO User").trim()
-
-    // Real Phone Number Extraction — prioritize authState.phone, then profileData
-    val rawPhone = (authState.phone?.takeIf { it.isNotBlank() }
-        ?: profileData["phone"]?.takeIf { it.isNotBlank() }
-        ?: profileData["whatsapp"]?.takeIf { it.isNotBlank() }
-        ?: "").filter { it.isDigit() }
+    val fullName = liveName.ifBlank { authState.fullName?.ifBlank { null } ?: "FAGO User" }.trim()
+    val rawPhone = livePhone.ifBlank { authState.phone?.filter { it.isDigit() } ?: "" }
 
     val cleanPhone = if (rawPhone.length >= 10) {
         val ten = rawPhone.takeLast(10)
@@ -114,7 +142,8 @@ fun ProfileScreen(
         ?: liveAddress).trim()
 
     // Real UPI ID
-    val userUpi = (profileData["upi_id"]?.takeIf { it.isNotBlank() }
+    val userUpi = (liveUpi.takeIf { it.isNotBlank() }
+        ?: profileData["upi_id"]?.takeIf { it.isNotBlank() }
         ?: if (rawPhone.length >= 10) "${rawPhone.takeLast(10)}@upi" else "Not Set").trim()
 
     fun launchUpiContribution(amount: String?) {
