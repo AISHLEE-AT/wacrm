@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../services/supabase_backend_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../profile/services/profile_service.dart';
 
 class DriverRegistrationScreen extends ConsumerStatefulWidget {
   const DriverRegistrationScreen({super.key});

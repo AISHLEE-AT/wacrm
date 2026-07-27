@@ -149,7 +149,6 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true);
     try {
       final user = _supabase.auth.currentUser;
-      final fbUser = _auth.currentUser;
 
       String? defaultModule;
       bool isProfileComplete = false;

@@ -172,7 +172,6 @@ class ProfileService {
       return null;
     }
   }
-  }
 
   Future<void> updateProfile(String userId, Map<String, dynamic> updates) async {
     await _supabase.from('profiles').update(updates).eq('id', userId);
