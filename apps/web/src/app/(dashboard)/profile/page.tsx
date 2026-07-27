@@ -188,7 +188,7 @@ function ProfilePageInner() {
     try {
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
-      await supabase.from('profiles').update({ full_name: nameValue.trim() }).or(`id.eq.${user.id},user_id.eq.${user.id}`);
+      await supabase.from('profiles').update({ full_name: nameValue.trim() }).eq('id', user.id);
       await supabase.auth.updateUser({ data: { full_name: nameValue.trim() } });
       setEditingName(false);
       window.location.reload();
