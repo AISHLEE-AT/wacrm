@@ -511,7 +511,7 @@ class AuthViewModel(
         }
         if (cleanPhone.length < 10) return@withContext null
         return@withContext try {
-            supabase.postgrest["profiles"]
+            val res = supabase.postgrest["profiles"]
                 .select {
                     filter {
                         or {
@@ -524,7 +524,35 @@ class AuthViewModel(
                     limit(1)
                 }
                 .decodeList<Map<String, String?>>()
-                .firstOrNull()
+
+            if (res.isNotEmpty()) {
+                res.first()
+            } else {
+                try {
+                    val driverList = supabase.postgrest["drivers"]
+                        .select {
+                            filter {
+                                or {
+                                    eq("mobile_number", cleanPhone)
+                                    eq("mobile_number", "91$cleanPhone")
+                                    eq("whatsapp_number", cleanPhone)
+                                }
+                            }
+                            limit(1)
+                        }
+                        .decodeList<Map<String, String?>>()
+                    if (driverList.isNotEmpty()) {
+                        val drv = driverList.first()
+                        mapOf(
+                            "full_name" to drv["driver_name"],
+                            "main_category" to "Driver",
+                            "role" to "driver"
+                        )
+                    } else null
+                } catch (e: Exception) {
+                    null
+                }
+            }
         } catch (e: Exception) {
             Log.d("FagoAuth", "fetchProfileByPhone note: ${e.message}")
             null

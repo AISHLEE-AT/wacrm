@@ -8,6 +8,7 @@ import '../providers/profile_provider.dart';
 import '../models/profile_model.dart';
 import '../../../auth/auth_provider.dart' as fago;
 import '../../promo/screens/whatsapp_status_promo_screen.dart';
+import '../../../services/location_service.dart';
 
 class ProfileDashboard extends ConsumerStatefulWidget {
   const ProfileDashboard({super.key});
@@ -40,7 +41,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       backgroundColor: const Color(0xFF0F172A), // Slate 900
       appBar: AppBar(
         backgroundColor: const Color(0xFF1E293B), // Slate 800
-        title: const Text('My Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text('FAGO Profile & Super Pass', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFFF43F5E)),
@@ -326,9 +327,9 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           const SizedBox(height: 16),
           _buildInfoRow(Icons.phone, 'Cell / WhatsApp', cleanWhatsapp),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.location_on, 'Address / Live GPS', (profile.address != null && profile.address!.isNotEmpty) ? profile.address! : 'Live Location Active'),
+          _buildInfoRow(Icons.location_on, 'Address / Live GPS', (profile.address != null && profile.address!.isNotEmpty) ? profile.address! : 'Live Location Active', isEditable: true, profile: profile, onEdit: () => _editLocationDialog(profile)),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.account_balance_wallet, 'Your UPI ID', (profile.upiId != null && profile.upiId!.isNotEmpty) ? profile.upiId! : 'Not Set', isEditable: true, profile: profile),
+          _buildInfoRow(Icons.account_balance_wallet, 'Your UPI ID', (profile.upiId != null && profile.upiId!.isNotEmpty) ? profile.upiId! : 'Not Set', isEditable: true, profile: profile, onEdit: () => _editUpiId(profile)),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () async {
@@ -430,7 +431,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               }
             },
             icon: const Icon(Icons.web, color: Colors.black),
-            label: const Text('🌐 Open Aishlee Web App Modules & CRM', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+            label: const Text('🌐 Open FAGO Web App Modules & CRM', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF00F0FF),
               minimumSize: const Size(double.infinity, 48),
@@ -628,7 +629,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String title, String value, {bool isEditable = false, ProfileModel? profile}) {
+  Widget _buildInfoRow(IconData icon, String title, String value, {bool isEditable = false, ProfileModel? profile, VoidCallback? onEdit}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -649,12 +650,87 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               ],
             ),
           ),
-          if (isEditable)
+          if (isEditable && onEdit != null)
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.grey, size: 20),
-              onPressed: () => _editUpiId(profile!),
+              onPressed: onEdit,
             ),
         ],
+      ),
+    );
+  }
+
+  void _editLocationDialog(ProfileModel profile) {
+    final TextEditingController controller = TextEditingController(text: profile.address ?? '');
+    bool isDetecting = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('Update Live GPS / Address', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Enter city, area or pincode',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00F0FF))),
+                ),
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                onPressed: isDetecting
+                    ? null
+                    : () async {
+                        setDialogState(() => isDetecting = true);
+                        try {
+                          final loc = await LocationService().getCurrentLocation();
+                          final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
+                          setDialogState(() {
+                            controller.text = address;
+                            isDetecting = false;
+                          });
+                        } catch (e) {
+                          setDialogState(() => isDetecting = false);
+                        }
+                      },
+                icon: isDetecting
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                    : const Icon(Icons.my_location, color: Colors.black),
+                label: Text(
+                  isDetecting ? 'Detecting GPS...' : '⚡ Auto-Detect Live Location',
+                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00FF00),
+                  minimumSize: const Size(double.infinity, 42),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (controller.text.isNotEmpty) {
+                  final nav = Navigator.of(ctx);
+                  await ref.read(profileServiceProvider).updateProfile(profile.id, {'address': controller.text.trim()});
+                  ref.invalidate(currentProfileProvider);
+                  nav.pop();
+                }
+              },
+              child: const Text('Save', style: TextStyle(color: Color(0xFF00F0FF))),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -729,7 +805,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Aishlee ID', style: TextStyle(color: Color(0xFF00F0FF), fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Text('FAGO Super Pass ID', style: TextStyle(color: Color(0xFF00F0FF), fontWeight: FontWeight.bold, fontSize: 18)),
                   Row(
                     children: [
                       const Icon(Icons.verified, color: Color(0xFF00F0FF), size: 18),

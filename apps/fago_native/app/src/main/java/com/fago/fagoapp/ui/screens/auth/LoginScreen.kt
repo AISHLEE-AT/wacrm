@@ -99,18 +99,26 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
         if (cleanPhone.length >= 10) {
             val tenDigit = cleanPhone.takeLast(10)
             val profileMap = authViewModel.fetchProfileByPhone(tenDigit)
-            if (profileMap != null) {
-                val dbName = profileMap["full_name"] as? String
-                val dbCat  = profileMap["main_category"] as? String
+            val regPhone = deviceAuthService.getRegisteredPhone()
+            val isLocked = deviceAuthService.isProfileLocked()
+            val isLocalReg = isLocked && !regPhone.isNullOrEmpty() && (regPhone == tenDigit || regPhone.endsWith(tenDigit))
+
+            if (profileMap != null || isLocalReg) {
+                val dbName = profileMap?.get("full_name") as? String
+                val dbCat  = profileMap?.get("main_category") as? String
                 if (!dbName.isNullOrBlank() && !dbName.startsWith("User ")) {
                     name = dbName
                 }
                 if (!dbCat.isNullOrBlank()) {
                     selectedCategoryKey = dbCat
                 }
+                registeredPhone = tenDigit
+                isDeviceRegistered = true
+            } else {
+                isDeviceRegistered = false
             }
-            registeredPhone = tenDigit
-            isDeviceRegistered = true
+        } else {
+            isDeviceRegistered = false
         }
     }
 
@@ -204,7 +212,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
             // ── 3. Device Unlock Card (If registered phone/device) ───────────────
             val cleanCurrentPhone = phone.filter { it.isDigit() }
-            if (isDeviceRegistered || cleanCurrentPhone.length == 10) {
+            if (isDeviceRegistered) {
                 val targetPhone = if (cleanCurrentPhone.length == 10) cleanCurrentPhone else (registeredPhone ?: cleanCurrentPhone)
                 Surface(
                     shape = RoundedCornerShape(16.dp),
