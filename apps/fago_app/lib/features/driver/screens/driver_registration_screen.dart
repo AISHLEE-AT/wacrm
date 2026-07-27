@@ -29,24 +29,28 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
   }
 
   void _autoFillDriverProfile() async {
+    final profile = await ProfileService.getCurrentUserProfileDetails();
     final user = Supabase.instance.client.auth.currentUser;
-    final phone = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? '9486335870';
+    final phone = (profile['phone']?.isNotEmpty == true) ? profile['phone']! : (user?.phone ?? user?.userMetadata?['phone']?.toString() ?? '');
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final isAdmin = cleanPhone.contains('9486335870');
+    final isAdmin = cleanPhone.endsWith('9486335870');
 
-    final name = (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().trim().isNotEmpty && user.userMetadata!['full_name'] != 'User')
-        ? user.userMetadata!['full_name'].toString().trim()
-        : (isAdmin ? 'Rajakumaran (Area Admin)' : 'Captain Driver');
+    final name = (profile['name'] != null && profile['name']!.isNotEmpty && profile['name'] != 'User' && profile['name'] != 'FAGO User')
+        ? profile['name']!
+        : (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().trim().isNotEmpty && user.userMetadata!['full_name'] != 'User')
+            ? user.userMetadata!['full_name'].toString().trim()
+            : (isAdmin ? 'Rajakumaran (Area Admin)' : 'Captain Driver');
 
-    setState(() {
-      _nameController.text = name;
-      if (isAdmin) {
-        _vehicleController.text = 'TN 38 BL 9486';
-        _licenseController.text = 'TN1420240001234';
-        _insuranceController.text = 'POL9486335870';
-        _upiController.text = '9486335870@hdfcbank';
-      }
-    });
+    if (mounted) {
+      setState(() {
+        _nameController.text = name;
+        if (profile['upi_id']?.isNotEmpty == true) {
+          _upiController.text = profile['upi_id']!;
+        } else if (cleanPhone.isNotEmpty) {
+          _upiController.text = '$cleanPhone@upi';
+        }
+      });
+    }
   }
 
   Future<void> _submitRegistration() async {

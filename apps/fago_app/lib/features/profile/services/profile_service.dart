@@ -19,9 +19,13 @@ class ProfileService {
 
     if (user != null) {
       final meta = user.userMetadata ?? {};
-      if (meta['full_name'] != null && meta['full_name'].toString().isNotEmpty) {
+      final rawEmailPhone = (user.email != null && user.email!.contains('@whatsapp.wacrm.local'))
+          ? user.email!.split('@')[0].replaceAll(RegExp(r'\D'), '')
+          : '';
+
+      if (meta['full_name'] != null && meta['full_name'].toString().isNotEmpty && meta['full_name'] != 'User') {
         name = meta['full_name'].toString();
-      } else if (meta['name'] != null && meta['name'].toString().isNotEmpty) {
+      } else if (meta['name'] != null && meta['name'].toString().isNotEmpty && meta['name'] != 'User') {
         name = meta['name'].toString();
       }
 
@@ -31,17 +35,26 @@ class ProfileService {
         phone = meta['phone'].toString();
       } else if (meta['whatsapp'] != null && meta['whatsapp'].toString().isNotEmpty) {
         phone = meta['whatsapp'].toString();
+      } else if (rawEmailPhone.isNotEmpty) {
+        phone = rawEmailPhone;
+      }
+
+      String cleanDigits = phone.replaceAll(RegExp(r'\D'), '');
+      if (cleanDigits.startsWith('91') && cleanDigits.length == 12) {
+        cleanDigits = cleanDigits.substring(2);
+      } else if (cleanDigits.length > 10) {
+        cleanDigits = cleanDigits.substring(cleanDigits.length - 10);
       }
 
       try {
-        final profileData = await Supabase.instance.client
+        final List<dynamic> profileList = await Supabase.instance.client
             .from('profiles')
             .select('full_name, whatsapp, phone, address, upi_id')
-            .eq('id', user.id)
-            .maybeSingle();
+            .or('id.eq.${user.id}${cleanDigits.isNotEmpty ? ",phone.eq.$cleanDigits,phone.eq.91$cleanDigits,whatsapp.eq.$cleanDigits,whatsapp.eq.91$cleanDigits" : ""}');
 
-        if (profileData != null) {
-          if ((profileData['full_name'] ?? '').toString().isNotEmpty) {
+        if (profileList.isNotEmpty) {
+          final profileData = profileList.first;
+          if ((profileData['full_name'] ?? '').toString().isNotEmpty && profileData['full_name'] != 'User') {
             name = profileData['full_name'].toString();
           }
           final pPhone = (profileData['phone'] ?? profileData['whatsapp'] ?? '').toString();
@@ -60,14 +73,15 @@ class ProfileService {
       }
     }
 
-    // Clean phone number to 10-digit format
     String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     if (cleanPhone.startsWith('91') && cleanPhone.length == 12) {
       cleanPhone = cleanPhone.substring(2);
+    } else if (cleanPhone.length > 10) {
+      cleanPhone = cleanPhone.substring(cleanPhone.length - 10);
     }
 
     return {
-      'name': name.isNotEmpty ? name : '',
+      'name': name.isNotEmpty ? name : 'FAGO User',
       'phone': cleanPhone.isNotEmpty ? cleanPhone : '',
       'address': address.isNotEmpty ? address : 'Tamil Nadu, India',
       'upi_id': upiId.isNotEmpty ? upiId : (cleanPhone.isNotEmpty ? '$cleanPhone@upi' : ''),
@@ -78,58 +92,77 @@ class ProfileService {
     final cacheKey = 'profile_$userId';
     
     try {
-      final cached = _cache.getCache(cacheKey);
-      if (cached != null) {
-        return ProfileModel.fromJson(cached);
-      }
+      final sbUser = _supabase.auth.currentUser;
+      final rawEmailPhone = (sbUser?.email != null && sbUser!.email!.contains('@whatsapp.wacrm.local'))
+          ? sbUser.email!.split('@')[0].replaceAll(RegExp(r'\D'), '')
+          : '';
+      final rawPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.userMetadata?['whatsapp']?.toString() ?? rawEmailPhone;
+      final cleanDigits = rawPhone.replaceAll(RegExp(r'\D'), '');
+      final tenDigit = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
 
-      final responseList = await _supabase
+      final List<dynamic> responseList = await _supabase
           .from('profiles')
           .select()
-          .eq('id', userId);
+          .or('id.eq.$userId${tenDigit.isNotEmpty ? ",phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit" : ""}');
 
       Map<String, dynamic>? response;
       if (responseList.isNotEmpty) {
-        response = responseList.first;
-      } else {
-        // Fallback strategy: search profile by phone/whatsapp if user registered on Web
-        final sbUser = _supabase.auth.currentUser;
-        final rawPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.userMetadata?['whatsapp']?.toString() ?? '';
-        final cleanDigits = rawPhone.replaceAll(RegExp(r'\D'), '');
-        final tenDigit = cleanDigits.length > 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
-
-        if (tenDigit.isNotEmpty) {
-          final phoneList = await _supabase
-              .from('profiles')
-              .select()
-              .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
-          if (phoneList.isNotEmpty) {
-            response = phoneList.first;
-          }
-        }
+        response = Map<String, dynamic>.from(responseList.first);
       }
 
       if (response != null) {
+        // Auto-heal phone/whatsapp in response if missing
+        if ((response['whatsapp'] == null || response['whatsapp'].toString().isEmpty) && tenDigit.isNotEmpty) {
+          response['whatsapp'] = tenDigit;
+        }
+        if ((response['phone'] == null || response['phone'].toString().isEmpty) && tenDigit.isNotEmpty) {
+          response['phone'] = tenDigit;
+        }
+
+        // Auto-sync profile ID/phone into DB
+        try {
+          if (response['id'] != userId || response['whatsapp'] == null || response['whatsapp'].toString().isEmpty) {
+            await _supabase.from('profiles').upsert({
+              'id': userId,
+              'phone': tenDigit.isNotEmpty ? tenDigit : response['phone'],
+              'whatsapp': tenDigit.isNotEmpty ? tenDigit : response['whatsapp'],
+              'full_name': response['full_name'] ?? sbUser?.userMetadata?['full_name'] ?? 'FAGO User',
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+          }
+        } catch (_) {}
+
         await _cache.setCache(cacheKey, response);
         return ProfileModel.fromJson(response);
       }
 
-      // If profile row doesn't exist in DB yet, return default profile for the CURRENT user
-      final sbUser = _supabase.auth.currentUser;
-      final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
-      final rawPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.userMetadata?['whatsapp']?.toString() ?? rawEmailPhone;
-      final cleanDigits = rawPhone.replaceAll(RegExp(r'\D'), '');
-      final tenDigit = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+      // If profile row doesn't exist in DB yet, construct default profile for the CURRENT user
       final formattedPhone = tenDigit.length == 10 ? '+91 $tenDigit' : '';
+      final resolvedName = sbUser?.userMetadata?['full_name']?.toString() ?? (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User');
 
-      return ProfileModel(
+      final defaultProf = ProfileModel(
         id: userId,
-        fullName: sbUser?.userMetadata?['full_name']?.toString() ?? 'FAGO User',
+        fullName: resolvedName,
         role: 'USER',
         whatsapp: formattedPhone,
         phone: formattedPhone,
         address: 'Live Location Active',
       );
+
+      // Auto-create default profile row in DB
+      try {
+        if (tenDigit.isNotEmpty) {
+          await _supabase.from('profiles').upsert({
+            'id': userId,
+            'phone': tenDigit,
+            'whatsapp': tenDigit,
+            'full_name': resolvedName,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+        }
+      } catch (_) {}
+
+      return defaultProf;
     } catch (e) {
       debugPrint('Error fetching profile: $e');
       final cached = _cache.getCache(cacheKey);
@@ -138,6 +171,7 @@ class ProfileService {
       }
       return null;
     }
+  }
   }
 
   Future<void> updateProfile(String userId, Map<String, dynamic> updates) async {

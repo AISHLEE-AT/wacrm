@@ -143,9 +143,14 @@ class _RentOScreenState extends State<RentOScreen> {
     final lng = _currentLocation?.longitude ?? 76.9558;
     final pinData = await LocationService().getPincodeAndAddressFromCoordinates(lat, lng);
 
+    final profile = await ProfileService.getCurrentUserProfileDetails();
     final cat = _machineryCategories[_selectedCategory]!;
-    final farmerName = _farmerNameController.text.trim().isEmpty ? 'Rajakumaran' : _farmerNameController.text.trim();
-    final farmerPhone = _farmerPhoneController.text.trim().isEmpty ? '+919486335870' : _farmerPhoneController.text.trim();
+    final farmerName = _farmerNameController.text.trim().isNotEmpty
+        ? _farmerNameController.text.trim()
+        : (profile['name']?.isNotEmpty == true ? profile['name']! : 'Customer');
+    final farmerPhone = _farmerPhoneController.text.trim().isNotEmpty
+        ? _farmerPhoneController.text.trim()
+        : (profile['phone']?.isNotEmpty == true ? '+91${profile['phone']!}' : '');
     final locationText = _villageController.text.trim().isEmpty ? pinData['address']! : _villageController.text.trim();
     
     final selectedMach = _virtualMachineryList.firstWhere((m) => m['id'] == _selectedMachineId, orElse: () => _virtualMachineryList[0]);

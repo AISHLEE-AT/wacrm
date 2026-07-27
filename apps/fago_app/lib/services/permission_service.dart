@@ -12,17 +12,17 @@ class PermissionService {
     final bool isAlreadySetup = prefs.getBool(_keyPermissionsSetupDone) ?? false;
 
     if (isAlreadySetup && !forceShow) {
-      // One-time setup already completed! Silently request device permissions if missing without showing custom popup.
-      await [
-        Permission.location,
-        Permission.camera,
-        Permission.microphone,
-        Permission.notification,
-      ].request();
-      return true;
+      final isLocGranted = await Permission.location.isGranted;
+      if (isLocGranted) return true;
     }
 
     if (!context.mounted) return false;
+
+    final isLocGranted = await Permission.location.isGranted;
+    if (isLocGranted && !forceShow) {
+      await prefs.setBool(_keyPermissionsSetupDone, true);
+      return true;
+    }
 
     bool granted = false;
     await showDialog(
@@ -71,13 +71,13 @@ class PermissionService {
               ),
               onPressed: () async {
                 Navigator.pop(ctx);
+                await prefs.setBool(_keyPermissionsSetupDone, true);
                 final statuses = await [
                   Permission.location,
                   Permission.camera,
                   Permission.microphone,
                   Permission.notification,
                 ].request();
-                await prefs.setBool(_keyPermissionsSetupDone, true);
                 granted = statuses.values.any((status) => status.isGranted);
               },
               child: const Text('OK • GRANT ALL PERMISSIONS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),

@@ -235,12 +235,14 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
         // 1. Auto load profile name, phone, address
         final profile = await ProfileService.getCurrentUserProfileDetails();
         final user = Supabase.instance.client.auth.currentUser;
-        final userPhone = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? profile['phone'] ?? '9486335870';
-        final cleanPhone = userPhone.replaceAll(RegExp(r'\D'), '');
+        final rawPhone = (profile['phone']?.isNotEmpty == true)
+            ? profile['phone']!
+            : (user?.phone ?? user?.userMetadata?['phone']?.toString() ?? '');
+        final cleanPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
         final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-        final isAdmin = phone10.contains('9486335870');
+        final isAdmin = phone10.endsWith('9486335870');
 
-        final String resolvedName = (profile['name'] != null && profile['name'].toString().trim().isNotEmpty && profile['name'] != 'User')
+        final String resolvedName = (profile['name'] != null && profile['name'].toString().trim().isNotEmpty && profile['name'] != 'User' && profile['name'] != 'FAGO User')
             ? profile['name'].toString().trim()
             : (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().trim().isNotEmpty && user.userMetadata!['full_name'] != 'User')
                 ? user.userMetadata!['full_name'].toString().trim()
@@ -248,9 +250,9 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
 
         setModalState(() {
           nameController.text = resolvedName;
-          phoneController.text = phone10.isNotEmpty ? phone10 : '9486335870';
+          phoneController.text = phone10;
           if (upiController.text.isEmpty) {
-            upiController.text = profile['upi_id'] ?? '9486335870@hdfcbank';
+            upiController.text = profile['upi_id'] ?? (phone10.isNotEmpty ? '$phone10@upi' : '');
           }
         });
 
