@@ -968,14 +968,14 @@ export function MessageThread({
                         status={presence}
                         label={presenceLabel(
                           presence,
-                          getRow(p.user_id)?.last_seen_at ?? null,
+                          getRow(targetUserId)?.last_seen_at ?? null,
                           now
                         )}
                         className="mr-2"
                       />
                       <span className="flex-1">
                         {p.full_name}
-                        {p.user_id === user?.id ? " (me)" : ""}
+                        {targetUserId === user?.id ? " (me)" : ""}
                       </span>
                       {isSelected && <Check className="ml-2 h-3 w-3" />}
                     </DropdownMenuItem>
