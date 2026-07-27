@@ -120,7 +120,7 @@ export async function GET() {
             { onConflict: 'account_id' }
           )
           .select('*')
-          .single()
+          .maybeSingle()
 
         if (newConfig) {
           config = newConfig
@@ -128,6 +128,22 @@ export async function GET() {
       } catch (seedErr) {
         console.error('[whatsapp/config GET] Auto-seed failed:', seedErr)
       }
+    }
+
+    // Fallback: construct virtual config object from process.env if DB row is not present
+    if (!config && envDefaults.phone_number_id && envDefaults.access_token) {
+      config = {
+        account_id: accountId,
+        user_id: user.id,
+        phone_number_id: envDefaults.phone_number_id,
+        waba_id: envDefaults.waba_id,
+        verify_token: envDefaults.verify_token,
+        access_token: encrypt(envDefaults.access_token),
+        status: 'connected',
+        registered_at: new Date().toISOString(),
+        connected_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any
     }
 
     if (!config) {
