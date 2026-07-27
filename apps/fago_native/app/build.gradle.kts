@@ -31,10 +31,11 @@ android {
 
         manifestPlaceholders["MAPS_API_KEY"] = env["MAPS_API_KEY"] ?: "AIzaSyDdAePjhtVNhbCPhvsdEGrMUGA2kn5WDds"
 
-        buildConfigField("String", "SUPABASE_URL",
-            "\"${env["SUPABASE_URL"] ?: "https://gmahjdzqitbomtmdzlfp.supabase.co"}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY",
-            "\"${env["SUPABASE_ANON_KEY"] ?: ""}\"")
+        val supabaseUrl = env["NEXT_PUBLIC_SUPABASE_URL"] ?: env["SUPABASE_URL"] ?: "https://gmahjdzqitbomtmdzlfp.supabase.co"
+        val supabaseAnonKey = env["NEXT_PUBLIC_SUPABASE_ANON_KEY"] ?: env["SUPABASE_ANON_KEY"] ?: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
         buildConfigField("String", "FIREBASE_BRIDGE_URL",
             "\"${env["FIREBASE_BRIDGE_URL"] ?: "https://watscrm.vercel.app/api/auth/firebase-bridge"}\"")
         buildConfigField("String", "WHATSAPP_OTP_SEND_URL",
