@@ -94,10 +94,13 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
     var pinInput by remember { mutableStateOf("") }
     var pinError by remember { mutableStateOf("") }
 
+    var isCheckingProfile by remember { mutableStateOf(false) }
+
     // Live Database Auto-Detect when 10 digits are entered/autofetched
     LaunchedEffect(phone) {
         val cleanPhone = phone.filter { it.isDigit() }
         if (cleanPhone.length >= 10) {
+            isCheckingProfile = true
             val tenDigit = cleanPhone.takeLast(10)
             val profileMap = authViewModel.fetchProfileByPhone(tenDigit)
             val regPhone = deviceAuthService.getRegisteredPhone()
@@ -106,9 +109,12 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
             if (profileMap != null || isLocalReg) {
                 val dbName = profileMap?.get("full_name") as? String
+                val dbEmail = profileMap?.get("email") as? String
                 val dbCat  = profileMap?.get("main_category") as? String
                 if (!dbName.isNullOrBlank()) {
                     name = dbName
+                } else if (!dbEmail.isNullOrBlank()) {
+                    name = dbEmail.substringBefore("@")
                 }
                 if (!dbCat.isNullOrBlank()) {
                     selectedCategoryKey = dbCat
@@ -118,8 +124,10 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
             } else {
                 isDeviceRegistered = false
             }
+            isCheckingProfile = false
         } else {
             isDeviceRegistered = false
+            isCheckingProfile = false
         }
     }
 
@@ -425,7 +433,11 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                     },
                     supportingText = {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            if (isSimAutofetched) {
+                            if (isCheckingProfile) {
+                                Text("⏳ Checking registered FAGO profile...", color = Color(0xFFFFD700), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            } else if (isDeviceRegistered) {
+                                Text("✓ Registered Profile Loaded for +91 $phone", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            } else if (isSimAutofetched) {
                                 Text("✓ Auto-detected SIM number", color = Color(0xFF00FF00), fontSize = 11.sp)
                             } else {
                                 Spacer(Modifier.width(1.dp))

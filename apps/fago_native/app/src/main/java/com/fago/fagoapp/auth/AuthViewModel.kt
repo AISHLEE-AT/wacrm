@@ -511,7 +511,7 @@ class AuthViewModel(
         }
         if (cleanPhone.length < 10) return@withContext null
         return@withContext try {
-            val res = supabase.postgrest["profiles"]
+            val jsonList = supabase.postgrest["profiles"]
                 .select {
                     filter {
                         or {
@@ -524,10 +524,17 @@ class AuthViewModel(
                     }
                     limit(1)
                 }
-                .decodeList<Map<String, String?>>()
+                .decodeList<JsonObject>()
 
-            if (res.isNotEmpty()) {
-                res.first()
+            if (jsonList.isNotEmpty()) {
+                val obj = jsonList.first()
+                obj.mapValues { (_, value) ->
+                    try {
+                        value.jsonPrimitive.contentOrNull
+                    } catch (e: Exception) {
+                        value.toString().removeSurrounding("\"")
+                    }
+                }
             } else {
                 try {
                     val driverList = supabase.postgrest["drivers"]
@@ -541,11 +548,11 @@ class AuthViewModel(
                             }
                             limit(1)
                         }
-                        .decodeList<Map<String, String?>>()
+                        .decodeList<JsonObject>()
                     if (driverList.isNotEmpty()) {
                         val drv = driverList.first()
                         mapOf(
-                            "full_name" to drv["driver_name"],
+                            "full_name" to (drv["driver_name"]?.jsonPrimitive?.contentOrNull ?: "Driver"),
                             "main_category" to "Driver",
                             "role" to "driver"
                         )
@@ -555,7 +562,7 @@ class AuthViewModel(
                 }
             }
         } catch (e: Exception) {
-            Log.d("FagoAuth", "fetchProfileByPhone note: ${e.message}")
+            Log.e("FagoAuth", "fetchProfileByPhone error: ${e.message}", e)
             null
         }
     }
