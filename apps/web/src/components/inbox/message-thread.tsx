@@ -803,7 +803,7 @@ export function MessageThread({
     (s) => s.value === conversation.status
   );
   const assignedAgentId = conversation.assigned_agent_id ?? null;
-  const currentAssignee = profiles.find((p) => p.user_id === assignedAgentId);
+  const currentAssignee = profiles.find((p) => (p.user_id || p.id) === assignedAgentId);
   const assignLabel = assignedAgentId
     ? (currentAssignee?.full_name ?? "Assigned")
     : "Assign";
@@ -952,12 +952,13 @@ export function MessageThread({
                 </DropdownMenuItem>
               ) : (
                 profiles.map((p) => {
-                  const isSelected = p.user_id === assignedAgentId;
-                  const presence = getPresence(p.user_id);
+                  const targetUserId = p.user_id || p.id;
+                  const isSelected = targetUserId === assignedAgentId;
+                  const presence = getPresence(targetUserId);
                   return (
                     <DropdownMenuItem
                       key={p.id}
-                      onClick={() => handleAssignChange(p.user_id)}
+                      onClick={() => handleAssignChange(targetUserId)}
                       className={cn(
                         "text-sm",
                         isSelected ? "text-primary" : "text-popover-foreground"
