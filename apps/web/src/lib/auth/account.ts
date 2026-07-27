@@ -122,7 +122,7 @@ export async function getCurrentAccount(): Promise<AccountContext> {
   const { data, error } = await supabase
     .from("profiles")
     .select("account_id, account_role, account:accounts!inner(id, name)")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .maybeSingle();
 
   if (error) {

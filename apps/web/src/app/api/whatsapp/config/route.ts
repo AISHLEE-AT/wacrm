@@ -25,7 +25,7 @@ async function resolveAccountId(
   const { data, error } = await supabase
     .from('profiles')
     .select('account_id')
-    .eq('user_id', userId)
+    .eq('id', userId)
     .maybeSingle()
   if (error || !data?.account_id) return null
   return data.account_id as string

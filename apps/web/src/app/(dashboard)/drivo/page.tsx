@@ -89,16 +89,17 @@ export default function DriveODashboard() {
 
   // Auto pre-fill user's real name and WhatsApp phone number upon auth resolve
   useEffect(() => {
-    const rawPhone = profile?.phone || currentUser?.phone || currentUser?.email?.split('@')[0] || '';
+    const rawPhone = profile?.phone || profile?.whatsapp || currentUser?.phone || currentUser?.email?.split('@')[0] || '';
     const cleanDigits = rawPhone.replace(/\D/g, '').slice(-10);
     const autoPhone = cleanDigits.length === 10 ? `+91 ${cleanDigits}` : rawPhone;
+    const resolvedName = (profile?.full_name && profile.full_name !== 'User') ? profile.full_name : (currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || '');
 
     setRegForm((prev) => ({
       ...prev,
-      name: profile?.full_name || prev.name,
+      name: (prev.name && prev.name !== 'Your Full Name') ? prev.name : resolvedName,
       mobile: prev.mobile || autoPhone,
     }));
-  }, [profile?.full_name, profile?.phone, currentUser?.phone, currentUser?.email]);
+  }, [profile, currentUser]);
 
   // Fetch real-time rides from Supabase matching vehicle category
   useEffect(() => {

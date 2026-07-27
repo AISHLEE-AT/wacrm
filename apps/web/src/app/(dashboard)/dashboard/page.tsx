@@ -258,7 +258,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-5">
           <ConversationsChart
-            data={series[range]}
+            series={series}
             loading={seriesLoading}
             range={range}
             onRangeChange={handleRangeChange}
