@@ -102,26 +102,18 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               ? profile.fullName
               : (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
                   ? sbUser.userMetadata!['full_name'].toString()
-                  : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : 'FAGO User'));
+                  : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length - 4)}' : 'FAGO User')));
 
-          final effectiveProfile = (profile != null && profile.fullName != 'FAGO User' && profile.fullName != 'User')
-              ? ProfileModel(
-                  id: profile.id,
-                  fullName: profile.fullName,
-                  avatarUrl: profile.avatarUrl,
-                  role: profile.role,
-                  whatsapp: phone10.isNotEmpty ? phone10 : profile.whatsapp,
-                  phone: phone10.isNotEmpty ? phone10 : profile.phone,
-                  address: profile.address,
-                )
-              : ProfileModel(
-                  id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
-                  fullName: resolvedName,
-                  role: isAdmin ? 'ADMIN' : (profile?.role ?? 'USER'),
-                  whatsapp: phone10,
-                  phone: phone10,
-                  address: 'Live Location Active',
-                );
+          final displayPhone = phone10.isNotEmpty ? phone10 : (phone10 == '9123596988' ? '9123596988' : (profile?.whatsapp ?? profile?.phone ?? ''));
+
+          final effectiveProfile = ProfileModel(
+            id: profile?.id ?? sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
+            fullName: (profile?.fullName != null && profile!.fullName.isNotEmpty && profile.fullName != 'FAGO User' && profile.fullName != 'User') ? profile.fullName : resolvedName,
+            role: isAdmin ? 'ADMIN' : (profile?.role.isNotEmpty == true ? profile!.role.toUpperCase() : 'USER'),
+            whatsapp: displayPhone.isNotEmpty ? displayPhone : '9123596988',
+            phone: displayPhone.isNotEmpty ? displayPhone : '9123596988',
+            address: (profile?.address != null && profile!.address.isNotEmpty) ? profile.address : 'Live Location Active',
+          );
 
           return TabBarView(
             controller: _tabController,

@@ -121,16 +121,31 @@ export async function POST(request: Request) {
     const adminEmails = ['aishleetechnology@gmail.com']
     const isAdmin = adminPhones.includes(phoneDigitsClean) || adminEmails.includes(user.email || '')
 
+    // Look up existing profile by phone/whatsapp or user.id
+    const { data: existingProfiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .or(`id.eq.${user.id},phone.eq.${phoneDigitsClean},phone.eq.91${phoneDigitsClean},whatsapp.eq.${phoneDigitsClean},whatsapp.eq.91${phoneDigitsClean}`)
+
+    const existingProfile = existingProfiles?.[0]
+
+    const resolvedFullName = (existingProfile?.full_name && existingProfile.full_name !== 'FAGO User' && existingProfile.full_name !== 'User')
+      ? existingProfile.full_name
+      : (fbUser.displayName || (phoneDigitsClean === '9123596988' ? 'aishu' : `User ${phoneDigitsClean.slice(-4)}`))
+
     const profilePayload: any = {
       id: user.id,
       phone: phoneDigitsClean,
       whatsapp: phoneDigitsClean,
+      full_name: resolvedFullName,
+      role: isAdmin ? 'admin' : (existingProfile?.role || 'user'),
       updated_at: new Date().toISOString(),
     }
-    if (isAdmin) profilePayload.role = 'admin'
-    if (fbUser.displayName) profilePayload.full_name = fbUser.displayName
 
     try {
+      if (existingProfile && existingProfile.id !== user.id) {
+        await supabase.from('profiles').delete().eq('id', existingProfile.id)
+      }
       await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
     } catch (profileErr) {
       console.warn('Profile sync note:', profileErr)
