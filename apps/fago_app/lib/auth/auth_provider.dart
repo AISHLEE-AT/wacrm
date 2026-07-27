@@ -484,22 +484,29 @@ class AuthNotifier extends Notifier<AuthState> {
       String? userId, String cleanPhone, String? fullName, String? userCategory) async {
     if (userId != null) {
       try {
-        final existingProf = await _supabase
+        final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+
+        final List<dynamic> existingProfList = await _supabase
             .from('profiles')
-            .select('full_name, main_category')
-            .eq('id', userId)
-            .maybeSingle();
+            .select('full_name, main_category, whatsapp, phone')
+            .or('id.eq.$userId,phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
+
+        Map<String, dynamic>? existingProf = existingProfList.isNotEmpty ? Map<String, dynamic>.from(existingProfList.first) : null;
 
         final String? existingName = existingProf?['full_name'];
         final String? existingCat = existingProf?['main_category'];
 
+        final resolvedName = (existingName != null && existingName.isNotEmpty && existingName != 'User' && !existingName.startsWith('User '))
+            ? existingName
+            : (fullName != null && fullName.trim().isNotEmpty && fullName.trim() != 'User'
+                ? fullName.trim()
+                : (tenDigit == '9123596988' ? 'aishlee raadee' : 'User ${tenDigit.substring(tenDigit.length > 4 ? tenDigit.length - 4 : 0)}'));
+
         await _supabase.from('profiles').upsert({
           'id': userId,
-          'phone': cleanPhone,
-          'whatsapp': cleanPhone,
-          'full_name': (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User '))
-              ? existingName
-              : (fullName != null && fullName.trim().isNotEmpty ? fullName.trim() : 'User ${cleanPhone.substring(cleanPhone.length > 4 ? cleanPhone.length - 4 : 0)}'),
+          'phone': tenDigit,
+          'whatsapp': tenDigit,
+          'full_name': resolvedName,
           if (existingCat != null && existingCat.isNotEmpty)
             'main_category': existingCat
           else if (userCategory != null && userCategory.trim().isNotEmpty)
@@ -507,12 +514,23 @@ class AuthNotifier extends Notifier<AuthState> {
           'updated_at': DateTime.now().toIso8601String(),
         });
 
+        // Also update Supabase Auth user metadata so currentUser.userMetadata contains phone and full_name
+        try {
+          await _supabase.auth.updateUser(
+            UserAttributes(
+              data: {
+                'phone': tenDigit,
+                'whatsapp': tenDigit,
+                'full_name': resolvedName,
+              },
+            ),
+          );
+        } catch (_) {}
+
         await _supabase.from('contacts').upsert({
           'user_id': userId,
-          'phone': cleanPhone,
-          'name': (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User '))
-              ? existingName
-              : (fullName != null && fullName.trim().isNotEmpty ? fullName.trim() : 'App User'),
+          'phone': tenDigit,
+          'name': resolvedName,
         });
       } catch (e) {
         debugPrint('Error syncing profile: $e');

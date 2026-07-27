@@ -87,17 +87,33 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         data: (profile) {
           final sbUser = Supabase.instance.client.auth.currentUser;
           final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
-          final userPhone = (sbUser?.phone?.isNotEmpty == true) ? sbUser!.phone! : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
-          final isAdmin = (profile?.role.toLowerCase() == 'admin') || userPhone.replaceAll(RegExp(r'\D'), '').endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
+          final userPhone = (profile?.whatsapp.isNotEmpty == true && profile!.whatsapp != 'Not Set')
+              ? profile.whatsapp
+              : (profile?.phone.isNotEmpty == true && profile!.phone != 'Not Set')
+                  ? profile.phone
+                  : (sbUser?.phone?.isNotEmpty == true)
+                      ? sbUser!.phone!
+                      : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
+          final cleanPhone = userPhone.replaceAll(RegExp(r'\D'), '');
+          final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+          final isAdmin = (profile?.role.toLowerCase() == 'admin') || phone10.endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
 
-          final effectiveProfile = profile ?? ProfileModel(
-            id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
-            fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Admin' : 'FAGO User'),
-            role: isAdmin ? 'ADMIN' : (profile?.role ?? 'USER'),
-            whatsapp: userPhone,
-            phone: userPhone,
-            address: 'Live Location Active',
-          );
+          final resolvedName = (profile?.fullName != null && profile!.fullName.isNotEmpty && profile.fullName != 'User' && profile.fullName != 'FAGO User')
+              ? profile.fullName
+              : (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
+                  ? sbUser.userMetadata!['full_name'].toString()
+                  : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : 'FAGO User'));
+
+          final effectiveProfile = (profile != null && profile.fullName != 'FAGO User' && profile.fullName != 'User')
+              ? profile.copyWith(whatsapp: phone10.isNotEmpty ? phone10 : profile.whatsapp, phone: phone10.isNotEmpty ? phone10 : profile.phone)
+              : ProfileModel(
+                  id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
+                  fullName: resolvedName,
+                  role: isAdmin ? 'ADMIN' : (profile?.role ?? 'USER'),
+                  whatsapp: phone10,
+                  phone: phone10,
+                  address: 'Live Location Active',
+                );
 
           return TabBarView(
             controller: _tabController,
@@ -114,14 +130,20 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           final sbUser = Supabase.instance.client.auth.currentUser;
           final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
           final userPhone = (sbUser?.phone?.isNotEmpty == true) ? sbUser!.phone! : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
-          final isAdmin = userPhone.replaceAll(RegExp(r'\D'), '').endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
+          final cleanPhone = userPhone.replaceAll(RegExp(r'\D'), '');
+          final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+          final isAdmin = phone10.endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
+
+          final resolvedName = (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
+              ? sbUser.userMetadata!['full_name'].toString()
+              : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : 'FAGO User'));
 
           final fallbackProfile = ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
-            fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Admin' : 'FAGO User'),
+            fullName: resolvedName,
             role: isAdmin ? 'ADMIN' : 'USER',
-            whatsapp: userPhone,
-            phone: userPhone,
+            whatsapp: phone10,
+            phone: phone10,
             address: 'Live Location Active',
           );
 
