@@ -278,10 +278,7 @@ class AuthViewModel(
             var existing = supabase.postgrest["profiles"]
                 .select {
                     filter {
-                        or {
-                            eq("id", userId)
-                            eq("user_id", userId)
-                        }
+                        eq("id", userId)
                     }
                 }
                 .decodeList<Map<String, String?>>()
@@ -361,10 +358,7 @@ class AuthViewModel(
                         profile = supabase.postgrest["profiles"]
                             .select {
                                 filter {
-                                    or {
-                                        eq("id", userId)
-                                        eq("user_id", userId)
-                                    }
+                                    eq("id", userId)
                                 }
                                 limit(1)
                             }
