@@ -205,7 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final resList = await Supabase.instance.client
           .from('profiles')
           .select('full_name, main_category, role, phone, whatsapp')
-          .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,phone.eq.+$91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit,email.eq.$tenDigit@whatsapp.wacrm.local');
+          .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,phone.eq.+\$91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit,email.eq.$tenDigit@whatsapp.wacrm.local');
 
       Map<String, dynamic>? res = resList.isNotEmpty ? Map<String, dynamic>.from(resList.first) : null;
 
