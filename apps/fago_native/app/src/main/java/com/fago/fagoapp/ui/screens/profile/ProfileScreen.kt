@@ -73,16 +73,19 @@ fun ProfileScreen(
         }
     }
 
-    val displayRole = when (authState.role) {
-        UserRole.ADMIN  -> "ADMIN"
-        UserRole.DRIVER -> "DRIVER"
-        UserRole.USER   -> "USER"
-        else            -> profileData["role"]?.uppercase() ?: "USER"
+    val dbRole = profileData["role"]?.lowercase() ?: ""
+    val isDbAdmin = dbRole == "admin" || authState.role == UserRole.ADMIN
+    val isDbDriver = dbRole == "driver" || authState.role == UserRole.DRIVER
+
+    val displayRole = when {
+        isDbAdmin  -> "ADMIN"
+        isDbDriver -> "DRIVER"
+        else       -> dbRole.uppercase().ifEmpty { "USER" }
     }
-    val roleColor = when (authState.role) {
-        UserRole.ADMIN  -> GoldAdmin
-        UserRole.DRIVER -> OrangeDriver
-        else            -> CyanAccent
+    val roleColor = when {
+        isDbAdmin  -> GoldAdmin
+        isDbDriver -> OrangeDriver
+        else       -> CyanAccent
     }
     val roleBgColor = roleColor.copy(alpha = 0.15f)
 
@@ -257,6 +260,40 @@ fun ProfileScreen(
                 Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color.Black)
                 Spacer(Modifier.width(8.dp))
                 Text("🏢 Apply to Become Area Admin (Pincode Manager)", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // ── Register as DriveO Partner Button ────────────────────────
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app/drivo"))
+                    try { context.startActivity(intent) } catch (e: Exception) {}
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = OrangeDriver),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = Color.Black)
+                Spacer(Modifier.width(8.dp))
+                Text("🚗 Register as DriveO Partner (Driver Registration)", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // ── Open Aishlee Web App Modules Button ──────────────────────
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app?phone=$rawPhone"))
+                    try { context.startActivity(intent) } catch (e: Exception) {}
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = CyanAccent),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Web, contentDescription = null, tint = Color.Black)
+                Spacer(Modifier.width(8.dp))
+                Text("🌐 Open Aishlee Web App Modules & CRM", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
 
             Spacer(Modifier.height(24.dp))

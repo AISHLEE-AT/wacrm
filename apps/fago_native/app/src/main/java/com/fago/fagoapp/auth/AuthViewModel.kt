@@ -491,6 +491,32 @@ class AuthViewModel(
         }
     }
 
+    suspend fun fetchProfileByPhone(phone: String): Map<String, String?>? {
+        val cleanPhone = phone.filter { it.isDigit() }.let {
+            if (it.length > 10) it.takeLast(10) else it
+        }
+        if (cleanPhone.length < 10) return null
+        return try {
+            supabase.postgrest["profiles"]
+                .select {
+                    filter {
+                        or {
+                            eq("phone", cleanPhone)
+                            eq("phone", "91$cleanPhone")
+                            eq("whatsapp", cleanPhone)
+                            eq("whatsapp", "91$cleanPhone")
+                        }
+                    }
+                    limit(1)
+                }
+                .decodeList<Map<String, String?>>()
+                .firstOrNull()
+        } catch (e: Exception) {
+            Log.d("FagoAuth", "fetchProfileByPhone note: ${e.message}")
+            null
+        }
+    }
+
     // ── 7. Device Biometric / PIN Login ─────────────────────────────────────
     suspend fun verifyDeviceAndAutoLogin(phone: String): UserRole {
         val cleanPhone = phone.filter { it.isDigit() }.let {

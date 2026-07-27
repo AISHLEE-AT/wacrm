@@ -85,12 +85,12 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         data: (profile) {
           final sbUser = Supabase.instance.client.auth.currentUser;
           final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '';
-          final isAdmin = userPhone.contains('9486335870') || sbUser?.email?.contains('aishleetechnology@gmail.com') == true;
+          final isAdmin = (profile?.role.toLowerCase() == 'admin') || userPhone.contains('9486335870') || sbUser?.email?.contains('aishleetechnology@gmail.com') == true;
 
           final effectiveProfile = profile ?? ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
             fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Admin' : 'FAGO User'),
-            role: isAdmin ? 'ADMIN' : 'USER',
+            role: isAdmin ? 'ADMIN' : (profile?.role ?? 'USER'),
             whatsapp: userPhone,
             phone: userPhone,
             address: 'Live Location Active',
@@ -205,14 +205,13 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
     }
   }
 
-  /// Resolves the display role label from the live AuthState (authoritative)
-  /// falling back to the DB profile role column.
+  /// Resolves the display role label prioritizing the DB profile role column
+  /// then falling back to live AuthState.
   String _resolveDisplayRole(ProfileModel profile, fago.AuthState authState) {
-    if (authState.role == fago.UserRole.admin) return 'admin';
-    if (authState.role == fago.UserRole.driver) return 'driver';
-    if (authState.role == fago.UserRole.user) return 'user';
-    // Fall back to DB value if auth state is still loading/guest
-    return profile.role.toLowerCase();
+    if (profile.role.toLowerCase() == 'admin' || authState.role == fago.UserRole.admin) return 'admin';
+    if (profile.role.toLowerCase() == 'driver' || authState.role == fago.UserRole.driver) return 'driver';
+    if (authState.role == fago.UserRole.user) return profile.role.isNotEmpty ? profile.role.toLowerCase() : 'user';
+    return profile.role.isNotEmpty ? profile.role.toLowerCase() : 'user';
   }
 
   Widget _buildProfileTab(ProfileModel profile, fago.AuthState authState) {
@@ -358,6 +357,38 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             label: const Text('🏢 Apply to Become Area Admin (Pincode Manager)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 8,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () {
+              context.go('/drivo');
+            },
+            icon: const Icon(Icons.directions_car, color: Colors.black),
+            label: const Text('🚗 Register as DriveO Partner (Driver Registration)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orangeAccent,
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 8,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final rawPhone = cleanWhatsapp.replaceAll(RegExp(r'\D'), '');
+              final url = Uri.parse("https://watscrm.vercel.app?phone=$rawPhone");
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              }
+            },
+            icon: const Icon(Icons.web, color: Colors.black),
+            label: const Text('🌐 Open Aishlee Web App Modules & CRM', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00F0FF),
               minimumSize: const Size(double.infinity, 48),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 8,

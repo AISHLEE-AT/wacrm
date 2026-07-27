@@ -83,14 +83,37 @@ class ProfileService {
         return ProfileModel.fromJson(cached);
       }
 
-      final response = await _supabase
+      final responseList = await _supabase
           .from('profiles')
           .select()
-          .eq('id', userId)
-          .single();
+          .eq('id', userId);
 
-      await _cache.setCache(cacheKey, response);
-      return ProfileModel.fromJson(response);
+      Map<String, dynamic>? response;
+      if (responseList.isNotEmpty) {
+        response = responseList.first;
+      } else {
+        // Fallback strategy: search profile by phone/whatsapp if user registered on Web
+        final sbUser = _supabase.auth.currentUser;
+        final rawPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.userMetadata?['whatsapp']?.toString() ?? '';
+        final cleanDigits = rawPhone.replaceAll(RegExp(r'\D'), '');
+        final tenDigit = cleanDigits.length > 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+
+        if (tenDigit.isNotEmpty) {
+          final phoneList = await _supabase
+              .from('profiles')
+              .select()
+              .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
+          if (phoneList.isNotEmpty) {
+            response = phoneList.first;
+          }
+        }
+      }
+
+      if (response != null) {
+        await _cache.setCache(cacheKey, response);
+        return ProfileModel.fromJson(response);
+      }
+      return null;
     } catch (e) {
       debugPrint('Error fetching profile: $e');
       final cached = _cache.getCache(cacheKey);

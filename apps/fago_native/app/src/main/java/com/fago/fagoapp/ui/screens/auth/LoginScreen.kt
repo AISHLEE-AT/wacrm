@@ -89,6 +89,29 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
     val selectedCategoryLabel = userCategories.find { it.key == selectedCategoryKey }?.label ?: "🧳 Traveller (RideO)"
 
+    var showPinDialog by remember { mutableStateOf(false) }
+    var pinInput by remember { mutableStateOf("") }
+    var pinError by remember { mutableStateOf("") }
+
+    // Live Database Auto-Detect when 10 digits are entered/autofetched
+    LaunchedEffect(phone) {
+        val cleanPhone = phone.filter { it.isDigit() }
+        if (cleanPhone.length == 10) {
+            val profileMap = authViewModel.fetchProfileByPhone(cleanPhone)
+            if (profileMap != null) {
+                val dbName = profileMap["full_name"]
+                val dbCat  = profileMap["main_category"]
+                if (!dbName.isNullOrBlank() && !dbName.startsWith("User ")) {
+                    name = dbName
+                }
+                if (!dbCat.isNullOrBlank()) {
+                    selectedCategoryKey = dbCat
+                }
+                isDeviceRegistered = true
+            }
+        }
+    }
+
     // Check device signature on start
     LaunchedEffect(Unit) {
         val regPhone = deviceAuthService.getRegisteredPhone()
@@ -201,12 +224,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                         Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = {
-                                isLoading = true
-                                scope.launch {
-                                    val resolved = authViewModel.verifyDeviceAndAutoLogin(registeredPhone!!)
-                                    isLoading = false
-                                    onLoginSuccess(resolved)
-                                }
+                                showPinDialog = true
                             },
                             modifier = Modifier.fillMaxWidth().height(46.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
@@ -219,6 +237,75 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(20.dp))
+            }
+
+            if (showPinDialog) {
+                AlertDialog(
+                    onDismissRequest = { showPinDialog = false },
+                    containerColor = Color(0xFF1E293B),
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF00FF00))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Enter 4-Digit Security PIN", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    text = {
+                        Column {
+                            Text("Enter your 4-digit FAGO PIN to unlock (+91 ${registeredPhone ?: phone})", color = Color.Gray, fontSize = 12.sp)
+                            Spacer(Modifier.height(12.dp))
+                            if (pinError.isNotEmpty()) {
+                                Text(pinError, color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Spacer(Modifier.height(8.dp))
+                            }
+                            OutlinedTextField(
+                                value = pinInput,
+                                onValueChange = { pinInput = it.filter { c -> c.isDigit() }.take(4) },
+                                label = { Text("4-Digit PIN", color = Color(0xFF00FF00)) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Color(0xFF00FF00),
+                                    unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White
+                                )
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                if (pinInput.length != 4) {
+                                    pinError = "PIN must be 4 digits"
+                                    return@Button
+                                }
+                                scope.launch {
+                                    val isValid = deviceAuthService.verifyCustomPin(pinInput)
+                                    if (!isValid) {
+                                        pinError = "Incorrect PIN"
+                                        return@launch
+                                    }
+                                    showPinDialog = false
+                                    isLoading = true
+                                    val targetP = registeredPhone ?: phone
+                                    val resolved = authViewModel.verifyDeviceAndAutoLogin(targetP)
+                                    isLoading = false
+                                    onLoginSuccess(resolved)
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
+                        ) {
+                            Text("Verify PIN", color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showPinDialog = false }) {
+                            Text("Cancel", color = Color.Gray)
+                        }
+                    }
+                )
             }
 
             // ── 4. Fallback Error / Info Banner ──────────────────────────────

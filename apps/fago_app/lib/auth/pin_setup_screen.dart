@@ -117,7 +117,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: borderColor.withOpacity(0.15),
+            color: borderColor.withValues(alpha: 0.15),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -148,7 +148,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen>
           fillColor: const Color(0xFF1E293B),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: borderColor.withOpacity(0.5), width: 1.5),
+            borderSide: BorderSide(color: borderColor.withValues(alpha: 0.4), width: 1.5),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -191,7 +191,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF00FF00).withOpacity(0.3),
+                        color: const Color(0xFF00FF00).withValues(alpha: 0.3),
                         blurRadius: 30,
                         spreadRadius: 8,
                       ),
@@ -265,9 +265,9 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -299,7 +299,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen>
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 8,
-                      shadowColor: const Color(0xFF00FF00).withOpacity(0.4),
+                      shadowColor: const Color(0xFF00FF00).withValues(alpha: 0.4),
                     ),
                     child: _isLoading
                         ? const SizedBox(
@@ -333,7 +333,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B).withOpacity(0.5),
+                    color: const Color(0xFF1E293B).withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFF334155)),
                   ),

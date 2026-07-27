@@ -169,12 +169,27 @@ class AuthNotifier extends Notifier<AuthState> {
 
       if (user != null) {
         try {
-          final profileData = await _supabase
+          Map<String, dynamic>? profileData = await _supabase
               .from('profiles')
               .select(
                   'default_module, profile_complete, full_name, whatsapp, phone, role')
               .eq('id', user.id)
               .maybeSingle();
+
+          if (profileData == null) {
+            // Fallback strategy: search profile by phone/whatsapp if user registered on Web
+            final cleanDigits = (user.phone ?? rawPhone).replaceAll(RegExp(r'\D'), '');
+            final tenDigit = cleanDigits.length > 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+            if (tenDigit.isNotEmpty) {
+              final phoneRes = await _supabase
+                  .from('profiles')
+                  .select('default_module, profile_complete, full_name, whatsapp, phone, role')
+                  .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
+              if (phoneRes.isNotEmpty) {
+                profileData = phoneRes.first;
+              }
+            }
+          }
 
           if (profileData != null) {
             defaultModule = profileData['default_module'];

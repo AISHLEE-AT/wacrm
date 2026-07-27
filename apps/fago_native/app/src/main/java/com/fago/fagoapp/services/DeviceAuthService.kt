@@ -56,6 +56,16 @@ class DeviceAuthService(private val context: Context) {
     suspend fun getRegisteredName(): String? =
         context.dataStore.data.map { it[KEY_REGISTERED_NAME]?.ifEmpty { null } }.first()
 
+    /** Check if device lock screen / biometrics is active */
+    fun canAuthenticateBiometrics(): Boolean {
+        return try {
+            val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as? android.app.KeyguardManager
+            keyguardManager?.isKeyguardSecure == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     /** Extract cell SIM card phone number automatically via Telephony & Subscription Manager */
     @SuppressLint("HardwareIds", "MissingPermission")
     fun getExtractedSimPhoneNumber(): String? {
@@ -103,6 +113,11 @@ class DeviceAuthService(private val context: Context) {
         val phone = getRegisteredPhone() ?: return pin == "1234"
         val lastFour = phone.takeLast(4)
         return pin == lastFour || pin == "1234"
+    }
+
+    suspend fun hasCustomPin(): Boolean {
+        val stored = context.dataStore.data.map { it[KEY_CUSTOM_FAGO_PIN] }.first()
+        return !stored.isNullOrEmpty()
     }
 
     suspend fun setCustomPin(pin: String) {
