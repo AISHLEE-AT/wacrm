@@ -12,6 +12,11 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
+
 // DataStore extension — replaces Flutter's SharedPreferences
 private val Context.dataStore by preferencesDataStore(name = "fago_device_auth")
 
@@ -27,6 +32,36 @@ class DeviceAuthService(private val context: Context) {
         private val KEY_REGISTERED_NAME  = stringPreferencesKey("registered_name")
         private val KEY_IS_PROFILE_LOCKED = booleanPreferencesKey("is_profile_locked")
         private val KEY_CUSTOM_FAGO_PIN   = stringPreferencesKey("custom_fago_pin")
+    }
+
+    /** Prompt native Android Biometric Fingerprint / Face Unlock / Device PIN Credentials */
+    fun showBiometricPrompt(
+        activity: FragmentActivity,
+        title: String = "FAGO Device Security Unlock",
+        subtitle: String = "Verify fingerprint, face unlock or device PIN to access",
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val executor = ContextCompat.getMainExecutor(activity)
+        val biometricPrompt = BiometricPrompt(activity, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    onSuccess()
+                }
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    onError(errString.toString())
+                }
+            })
+
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setSubtitle(subtitle)
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+            .build()
+
+        biometricPrompt.authenticate(promptInfo)
     }
 
     /** Save device registration after successful WhatsApp OTP login */

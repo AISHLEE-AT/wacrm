@@ -29,6 +29,7 @@ import com.fago.fagoapp.auth.UserRole
 import com.fago.fagoapp.services.DeviceAuthService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.fragment.app.FragmentActivity
 import org.koin.androidx.compose.koinViewModel
 
 data class UserCategoryItem(
@@ -298,19 +299,37 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                         ) {
                             Button(
                                 onClick = {
-                                    if (pinInput.length != 4) {
-                                        pinError = "Please enter 4 digits"
-                                        return@Button
-                                    }
-                                    scope.launch {
-                                        val isValid = deviceAuthService.verifyCustomPin(pinInput)
-                                        if (isValid) {
-                                            isLoading = true
-                                            val resolved = authViewModel.verifyDeviceAndAutoLogin(targetPhone)
-                                            isLoading = false
-                                            onLoginSuccess(resolved)
+                                    val activity = context as? FragmentActivity
+                                    if (activity != null && deviceAuthService.canAuthenticateBiometrics()) {
+                                        deviceAuthService.showBiometricPrompt(
+                                            activity = activity,
+                                            title = "FAGO Device Security Unlock",
+                                            subtitle = "Verify fingerprint, face unlock or device PIN to access +91 $targetPhone",
+                                            onSuccess = {
+                                                scope.launch {
+                                                    isLoading = true
+                                                    val resolved = authViewModel.verifyDeviceAndAutoLogin(targetPhone)
+                                                    isLoading = false
+                                                    onLoginSuccess(resolved)
+                                                }
+                                            },
+                                            onError = { err -> pinError = err }
+                                        )
+                                    } else {
+                                        if (pinInput.length == 4) {
+                                            scope.launch {
+                                                val isValid = deviceAuthService.verifyCustomPin(pinInput)
+                                                if (isValid) {
+                                                    isLoading = true
+                                                    val resolved = authViewModel.verifyDeviceAndAutoLogin(targetPhone)
+                                                    isLoading = false
+                                                    onLoginSuccess(resolved)
+                                                } else {
+                                                    pinError = "Incorrect 4-Digit PIN"
+                                                }
+                                            }
                                         } else {
-                                            pinError = "Incorrect 4-Digit PIN"
+                                            pinError = "Enter 4-digit PIN above to unlock"
                                         }
                                     }
                                 },
@@ -320,7 +339,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             ) {
                                 Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black)
                                 Spacer(Modifier.width(4.dp))
-                                Text("🔐 UNLOCK VIA PIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Text("👆 DEVICE / BIOMETRIC AUTH", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 10.sp)
                             }
 
                             Button(
@@ -344,7 +363,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             ) {
                                 Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black)
                                 Spacer(Modifier.width(4.dp))
-                                Text("💬 GET OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                Text("💬 GET WHATSAPP OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 10.sp)
                             }
                         }
 
