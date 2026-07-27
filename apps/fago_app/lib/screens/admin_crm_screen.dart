@@ -510,12 +510,102 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
     );
   }
 
+  Widget _buildModuleManagementHubTab() {
+    final modules = [
+      {'title': '🚗 DriveO Partners', 'desc': 'Driver approvals, license checks & 0% commission logs', 'color': Colors.orangeAccent, 'icon': Icons.directions_car},
+      {'title': '📲 WhatsApp CRM', 'desc': 'WhatsApp broadcast messages, OTP status & quick decisions', 'color': Colors.greenAccent, 'icon': Icons.chat},
+      {'title': '🚜 RentO Machinery', 'desc': 'Tractor, harvester & agri equipment listings', 'color': Colors.amber, 'icon': Icons.agriculture},
+      {'title': '🛍️ Mandi Prices', 'desc': 'Live vegetable, grain & mandi market pricing updates', 'color': const Color(0xFF00FF88), 'icon': Icons.storefront},
+      {'title': '🎓 TestO / TeachO', 'desc': 'LMS exams, study material & tutor verifications', 'color': Colors.cyanAccent, 'icon': Icons.school},
+      {'title': '🛕 TourO Pilgrimage', 'desc': 'Devotional tour packages, cab packages & guides', 'color': Colors.deepPurpleAccent, 'icon': Icons.temple_hindu},
+      {'title': '💰 MoneyO Financiers', 'desc': 'Local financier verification & micro-loan approvals', 'color': Colors.limeAccent, 'icon': Icons.account_balance},
+    ];
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFF1E293B), Color(0xFF0F172A)]),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.stars, color: Colors.amber, size: 28),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('👑 FAGO Unified Admin Control Center', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+                      SizedBox(height: 2),
+                      Text('Manage all 7 FAGO modules across Web, Flutter & Android Native apps', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('All Active FAGO Modules:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.3,
+            ),
+            itemCount: modules.length,
+            itemBuilder: (ctx, idx) {
+              final m = modules[idx];
+              final Color col = m['color'] as Color;
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: col.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(m['icon'] as IconData, color: col, size: 22),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text(m['title'].toString(), style: TextStyle(color: col, fontWeight: FontWeight.bold, fontSize: 13))),
+                      ],
+                    ),
+                    Text(m['desc'].toString(), style: const TextStyle(color: Colors.grey, fontSize: 10), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: col.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                      child: Text('Active Module', style: TextStyle(color: col, fontSize: 9, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
-        title: const Text('👑 Admin CRM & Machinery Hub', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('👑 Admin CRM & Super App Hub', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF141414),
         actions: [
           IconButton(icon: const Icon(Icons.refresh, color: Color(0xFF00FF00)), onPressed: () { _fetchDrivers(); _fetchCrmContacts(); }),
@@ -527,8 +617,8 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
           unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(icon: Icon(Icons.local_shipping), text: 'Drivers'),
-            Tab(icon: Icon(Icons.contacts), text: 'CRM Contacts'),
-            Tab(icon: Icon(Icons.agriculture), text: 'RentO Machinery'),
+            Tab(icon: Icon(Icons.chat), text: 'WhatsApp CRM'),
+            Tab(icon: Icon(Icons.dashboard_customize), text: 'All Modules'),
           ],
         ),
       ),
@@ -537,7 +627,7 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
         children: [
           _buildDriversTab(),
           _buildCrmContactsTab(),
-          _buildMachineryTab(),
+          _buildModuleManagementHubTab(),
         ],
       ),
     );
