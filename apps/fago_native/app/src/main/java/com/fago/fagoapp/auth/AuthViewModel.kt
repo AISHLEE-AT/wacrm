@@ -519,6 +519,7 @@ class AuthViewModel(
                             eq("phone", "91$cleanPhone")
                             eq("whatsapp", cleanPhone)
                             eq("whatsapp", "91$cleanPhone")
+                            ilike("email", "%$cleanPhone%")
                         }
                     }
                     limit(1)
