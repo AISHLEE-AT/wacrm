@@ -2,9 +2,14 @@ import type { AccountRole } from "@/lib/auth/roles";
 
 export interface Profile {
   id: string;
-  user_id: string;
+  user_id?: string;
   full_name: string;
   email: string;
+  phone?: string;
+  whatsapp?: string;
+  upi_id?: string;
+  location?: string;
+  pincode?: string;
   avatar_url?: string;
   /**
    * Legacy free-form role column from migration 001. Never read

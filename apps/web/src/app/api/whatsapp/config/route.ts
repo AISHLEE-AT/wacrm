@@ -85,15 +85,59 @@ export async function GET() {
       )
     }
 
-    const { data: config, error: configError } = await supabase
+    const envDefaults = {
+      phone_number_id: process.env.META_PHONE_NUMBER_ID || '',
+      waba_id: process.env.META_WABA_ID || '',
+      access_token: process.env.META_ACCESS_TOKEN || '',
+      verify_token: process.env.META_VERIFY_TOKEN || '',
+    }
+
+    let { data: config, error: configError } = await supabase
       .from('whatsapp_config')
       .select('*')
       .eq('account_id', accountId)
       .maybeSingle()
 
-    if (configError || !config) {
+    // Auto-seed from process.env if DB config is missing but env vars exist
+    if ((configError || !config) && envDefaults.phone_number_id && envDefaults.access_token) {
+      try {
+        const encryptedToken = encrypt(envDefaults.access_token)
+        const { data: newConfig } = await supabase
+          .from('whatsapp_config')
+          .upsert(
+            {
+              account_id: accountId,
+              user_id: user.id,
+              phone_number_id: envDefaults.phone_number_id,
+              waba_id: envDefaults.waba_id,
+              verify_token: envDefaults.verify_token || null,
+              access_token: encryptedToken,
+              status: 'connected',
+              registered_at: new Date().toISOString(),
+              connected_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'account_id' }
+          )
+          .select('*')
+          .single()
+
+        if (newConfig) {
+          config = newConfig
+        }
+      } catch (seedErr) {
+        console.error('[whatsapp/config GET] Auto-seed failed:', seedErr)
+      }
+    }
+
+    if (!config) {
       return NextResponse.json(
-        { connected: false, reason: 'no_config', message: 'WhatsApp not configured.' },
+        {
+          connected: false,
+          reason: 'no_config',
+          message: 'WhatsApp not configured.',
+          env_defaults: envDefaults,
+        },
         { status: 200 }
       )
     }
