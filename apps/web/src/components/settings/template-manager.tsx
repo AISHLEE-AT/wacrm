@@ -182,6 +182,7 @@ export function TemplateManager() {
       return;
     }
     fetchTemplates(user.id);
+    handleSyncFromMeta();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
 
@@ -191,7 +192,6 @@ export function TemplateManager() {
       const { data, error } = await supabase
         .from('message_templates')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       setTemplates(data || []);
