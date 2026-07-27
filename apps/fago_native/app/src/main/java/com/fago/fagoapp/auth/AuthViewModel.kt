@@ -372,7 +372,7 @@ class AuthViewModel(
                     // Strategy 2 (FALLBACK): Fetch by phone or synthetic email — handles web-registered users
                     if (profileJson == null && tenDigitPhone.isNotEmpty()) {
                         Log.d("FagoAuth", "Profile by ID not found — trying phone/email fallback $tenDigitPhone")
-                        profileJson = supabase.postgrest["profiles"]
+                        val matches = supabase.postgrest["profiles"]
                             .select {
                                 filter {
                                     or {
@@ -383,10 +383,19 @@ class AuthViewModel(
                                         ilike("email", "%$tenDigitPhone%")
                                     }
                                 }
-                                limit(1)
                             }
                             .decodeList<JsonObject>()
-                            .firstOrNull()
+
+                        // Prioritize rows with a non-empty full_name or non-user role
+                        profileJson = matches.maxByOrNull { row ->
+                            var score = 0
+                            val name = row["full_name"]?.jsonPrimitive?.contentOrNull
+                            val role = row["role"]?.jsonPrimitive?.contentOrNull
+                            if (!name.isNullOrBlank() && !name.matches(Regex("^\\d+$"))) score += 10
+                            if (role == "admin" || role == "ADMIN") score += 5
+                            if (role == "driver" || role == "DRIVER") score += 3
+                            score
+                        }
                     }
 
                     if (profileJson != null) {
@@ -528,12 +537,20 @@ class AuthViewModel(
                             ilike("email", "%$cleanPhone%")
                         }
                     }
-                    limit(1)
                 }
                 .decodeList<JsonObject>()
 
             if (jsonList.isNotEmpty()) {
-                val obj = jsonList.first()
+                val obj = jsonList.maxByOrNull { row ->
+                    var score = 0
+                    val name = row["full_name"]?.jsonPrimitive?.contentOrNull
+                    val role = row["role"]?.jsonPrimitive?.contentOrNull
+                    if (!name.isNullOrBlank() && !name.matches(Regex("^\\d+$"))) score += 10
+                    if (role == "admin" || role == "ADMIN") score += 5
+                    if (role == "driver" || role == "DRIVER") score += 3
+                    score
+                } ?: jsonList.first()
+
                 obj.mapValues { (_, value) ->
                     try {
                         value.jsonPrimitive.contentOrNull

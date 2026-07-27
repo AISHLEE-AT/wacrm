@@ -434,16 +434,26 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                         )
                     },
                     supportingText = {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            if (isCheckingProfile) {
-                                Text("⏳ Checking registered FAGO profile...", color = Color(0xFFFFD700), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            } else if (isDeviceRegistered) {
-                                Text("✓ Registered Profile Loaded for +91 $phone", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            } else if (isSimAutofetched) {
-                                Text("✓ Auto-detected SIM number", color = Color(0xFF00FF00), fontSize = 11.sp)
-                            } else {
-                                Spacer(Modifier.width(1.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val statusMsg = when {
+                                isCheckingProfile -> "⏳ Checking registered profile..."
+                                isDeviceRegistered -> "✓ Profile Loaded: ${fullNameInput.ifBlank { "Registered User" }}"
+                                isSimAutofetched -> "✓ Auto-detected SIM number"
+                                else -> ""
                             }
+                            Text(
+                                statusMsg,
+                                color = if (isCheckingProfile) Color(0xFFFFD700) else Color(0xFF00FF00),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1
+                            )
+                            Spacer(Modifier.width(4.dp))
                             Text("${phone.length}/10", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     },
