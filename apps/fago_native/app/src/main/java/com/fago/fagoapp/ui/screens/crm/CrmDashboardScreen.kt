@@ -1,7 +1,6 @@
 package com.fago.fagoapp.ui.screens.crm
 
 import android.annotation.SuppressLint
-import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -22,7 +21,7 @@ import com.fago.fagoapp.auth.UserRole
 
 /**
  * Native Android CrmDashboardScreen — full WhatsApp CRM WebView integration.
- * Mirrors Flutter's CrmDashboardScreen with custom JS bridge (FlutterBridge equivalent).
+ * Guarded strictly for ADMIN role (9486335870).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
@@ -35,17 +34,29 @@ fun CrmDashboardScreen(
     onNavigateModule: (String, String) -> Unit,
     onSignOut: () -> Unit
 ) {
+    // Non-admin guard: redirect non-admin users attempting to open CRM
+    if (authState.role != UserRole.ADMIN) {
+        LaunchedEffect(Unit) {
+            onNavigateRideo()
+        }
+        return
+    }
+
     val rawPhone = authState.phone ?: ""
     val phoneDigits = rawPhone.filter { it.isDigit() }
     val phoneParam = if (phoneDigits.length >= 10) phoneDigits.takeLast(10) else ""
     val tokenQuery = if (!authState.accessToken.isNullOrEmpty() && !authState.refreshToken.isNullOrEmpty()) {
         "&access_token=${authState.accessToken}&refresh_token=${authState.refreshToken}"
     } else ""
-    val crmUrl = if (phoneParam.isNotEmpty()) "https://watscrm.vercel.app?phone=$phoneParam$tokenQuery" else "https://watscrm.vercel.app"
+
+    // Clean URL construction with query string AFTER route path /crm
+    val crmBaseUrl = "https://watscrm.vercel.app/crm"
+    val crmFullUrl = if (phoneParam.isNotEmpty()) "$crmBaseUrl?phone=$phoneParam$tokenQuery" else crmBaseUrl
+
     var progress by remember { mutableFloatStateOf(0f) }
     var isLoading by remember { mutableStateOf(true) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
-    var selectedTab by remember { me.intValueStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         containerColor = Color(0xFF0F172A),
@@ -55,18 +66,16 @@ fun CrmDashboardScreen(
                     Row {
                         Text("👑 FAGO CRM", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold)
                         Spacer(Modifier.width(8.dp))
-                        if (authState.role == UserRole.ADMIN) {
-                            Surface(
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
-                                color = Color(0xFFFFD700).copy(alpha = 0.2f)
-                            ) {
-                                Text(
-                                    " ADMIN ", color = Color(0xFFFFD700),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
+                        Surface(
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
+                            color = Color(0xFFFFD700).copy(alpha = 0.2f)
+                        ) {
+                            Text(
+                                " ADMIN ", color = Color(0xFFFFD700),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
                     }
                 },
@@ -91,7 +100,7 @@ fun CrmDashboardScreen(
             NavigationBar(containerColor = Color(0xFF1E293B)) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
-                    onClick = { selectedTab = 0; webViewInstance?.loadUrl("$crmUrl/crm") },
+                    onClick = { selectedTab = 0; webViewInstance?.loadUrl(crmFullUrl) },
                     icon = { Icon(Icons.Default.Chat, contentDescription = null) },
                     label = { Text("CRM") },
                     colors = NavigationBarItemDefaults.colors(
@@ -156,75 +165,43 @@ fun CrmDashboardScreen(
                 factory = { ctx ->
                     WebView(ctx).apply {
                         webViewInstance = this
-                        layoutParams = android.view.ViewGroup.LayoutParams(
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-
-                        settings.apply {
-                            javaScriptEnabled = true
-                            domStorageEnabled = true
-                            databaseEnabled = true
-                            useWideViewPort = true
-                            loadWithOverviewMode = true
-                            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            cacheMode = WebSettings.LOAD_DEFAULT
-                            userAgentString = "$userAgentString FagoAndroidNative/1.0"
-                        }
-
-                        // Add JS Bridge interface (equivalent to FlutterChannel)
-                        addJavascriptInterface(object {
-                            @JavascriptInterface
-                            fun postMessage(message: String) {
-                                // Handles actions triggered from the web CRM
-                            }
-                        }, "AndroidBridge")
-
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                super.onPageFinished(view, url)
-                                isLoading = false
-
-                                val accessToken = authState.accessToken
-                                val refreshToken = authState.refreshToken
-                                if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
-                                    val js = """
-                                        (function() {
-                                            try {
-                                                var sessionData = {
-                                                    access_token: '$accessToken',
-                                                    refresh_token: '$refreshToken',
-                                                    expires_in: 3600,
-                                                    token_type: 'bearer'
-                                                };
-                                                localStorage.setItem('sb-gmahjdzqitbomtmdzlfp-auth-token', JSON.stringify(sessionData));
-                                                localStorage.setItem('supabase.auth.token', JSON.stringify(sessionData));
-                                            } catch(e) {}
-                                        })();
-                                    """.trimIndent()
-                                    view?.evaluateJavascript(js, null)
-                                }
-                            }
-                        }
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        settings.databaseEnabled = true
+                        settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                        settings.userAgentString = "${settings.userAgentString} FagoNativeAndroidApp"
 
                         webChromeClient = object : WebChromeClient() {
                             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                                 progress = newProgress / 100f
-                                isLoading = newProgress < 100
+                                if (newProgress == 100) isLoading = false
                             }
                         }
 
-                        loadUrl(crmUrl)
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                isLoading = false
+                                // Inject session tokens into localStorage
+                                if (!authState.accessToken.isNullOrEmpty()) {
+                                    val jsInject = """
+                                        try {
+                                            localStorage.setItem('sb-access-token', '${authState.accessToken}');
+                                            localStorage.setItem('fago_phone', '$phoneParam');
+                                        } catch(e) {}
+                                    """.trimIndent()
+                                    view?.evaluateJavascript(jsInject, null)
+                                }
+                            }
+                        }
+
+                        loadUrl(crmFullUrl)
                     }
                 },
-                update = { webView -> webViewInstance = webView },
+                update = { webView ->
+                    webViewInstance = webView
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
     }
-}
-
-// Utility extension for int state
-private object me {
-    fun intValueStateOf(v: Int) = mutableIntStateOf(v)
 }

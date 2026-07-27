@@ -68,6 +68,7 @@ export default function RideODashboard() {
   const [recentTrips, setRecentTrips] = useState<any[]>([]);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('bike');
+  const [genderFilterWeb, setGenderFilterWeb] = useState<string>('all');
   const [extraTip, setExtraTip] = useState<number>(0);
   const [activeDrivers, setActiveDrivers] = useState<any[]>([]);
 
@@ -359,10 +360,12 @@ export default function RideODashboard() {
           setActiveDrivers(data);
         } else {
           setActiveDrivers([
-            { id: '1', name: 'Muthu Travels', phone: '916381029380', category: 'bus', vehicle_no: 'TN-39-B-8899', rating: 4.9, status: 'online' },
-            { id: '2', name: 'Kumar Lorry Service', phone: '916381029380', category: 'truck', vehicle_no: 'TN-38-AX-5544', rating: 4.8, status: 'online' },
-            { id: '3', name: 'Selvam Auto', phone: '916381029380', category: 'auto', vehicle_no: 'TN-37-Z-1234', rating: 4.7, status: 'busy', committed_to: 'Chennai -> Trichy Trip' },
-            { id: '4', name: 'Vijay Bike Taxi', phone: '916381029380', category: 'bike', vehicle_no: 'TN-39-M-9988', rating: 5.0, status: 'online' },
+            { id: 'DRV_VIRT_001', name: 'Captain Senthil Kumar', phone: '9486335870', category: 'bike', vehicle_no: 'TN 38 BL 9486', vehicle_model: 'Honda Activa 6G', gender: 'male', rating: 4.9, status: 'online' },
+            { id: 'DRV_VIRT_002', name: 'Driver Anitha R', phone: '9123596988', category: 'auto', vehicle_no: 'TN 37 AB 1234', vehicle_model: 'Bajaj RE Auto', gender: 'female', rating: 5.0, status: 'online' },
+            { id: 'DRV_VIRT_003', name: 'Captain Karthik Raja', phone: '9876543210', category: 'car', vehicle_no: 'TN 38 CZ 5678', vehicle_model: 'Swift Dzire AC', gender: 'male', rating: 4.8, status: 'online' },
+            { id: 'DRV_VIRT_004', name: 'Driver Priya Lakshmi', phone: '9443322110', category: 'car', vehicle_no: 'TN 38 EY 9988', vehicle_model: 'Innova Crysta AC', gender: 'female', rating: 4.9, status: 'online' },
+            { id: 'DRV_VIRT_005', name: 'Farmer Murugan', phone: '9789012345', category: 'truck', vehicle_no: 'TN 38 TR 4321', vehicle_model: 'Mahindra 575 DI', gender: 'male', rating: 4.9, status: 'online' },
+            { id: 'DRV_VIRT_006', name: 'Driver Rajesh', phone: '9894012345', category: 'van', vehicle_no: 'TN 38 MV 8899', vehicle_model: 'Tata Ace Gold', gender: 'male', rating: 4.7, status: 'online' },
           ]);
         }
       } catch (err) {
@@ -452,10 +455,11 @@ export default function RideODashboard() {
     return `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(text)}`;
   };
 
-  // Filter Drivers by Selected Category & Dynamic Radius
+  // Filter Drivers by Selected Category, Gender & Dynamic Radius
   const filteredDrivers = activeDrivers.filter(driver => {
     const matchesCategory = (driver.vehicle_type || driver.category || 'bike').toLowerCase() === selectedCategory;
-    if (!currentLocation) return matchesCategory;
+    const matchesGender = genderFilterWeb === 'all' || (driver.gender || 'male').toLowerCase() === genderFilterWeb;
+    if (!currentLocation) return matchesCategory && matchesGender;
 
     const driverLat = driver.pickup_latitude || defaultCenter.lat;
     const driverLng = driver.pickup_longitude || defaultCenter.lng;
@@ -463,7 +467,7 @@ export default function RideODashboard() {
       currentLocation.lat, currentLocation.lng,
       driverLat, driverLng
     );
-    return matchesCategory && distFromUser <= currentCategoryObj.radiusKm;
+    return matchesCategory && matchesGender && distFromUser <= currentCategoryObj.radiusKm;
   });
 
   return (
@@ -767,7 +771,25 @@ export default function RideODashboard() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-primary" /> Active Transport Operators ({filteredDrivers.length})
               </h3>
-              <span className="text-[10px] text-muted-foreground font-mono">Radius: {currentCategoryObj.radiusKm}km</span>
+              <div className="flex items-center gap-1">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'female', label: '👩 Female' },
+                  { id: 'male', label: '👨 Male' },
+                ].map(chip => (
+                  <button
+                    key={chip.id}
+                    onClick={() => setGenderFilterWeb(chip.id)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                      genderFilterWeb === chip.id
+                        ? 'bg-emerald-500 text-black'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2 overflow-y-auto flex-1 pr-1 max-h-[250px]">

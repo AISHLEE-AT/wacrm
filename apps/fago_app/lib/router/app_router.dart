@@ -28,7 +28,6 @@ import '../features/promo/screens/whatsapp_status_promo_screen.dart';
 import '../services/device_auth_service.dart';
 
 /// Tracks whether PIN setup has been completed this session.
-/// Checked from SharedPreferences via DeviceAuthService.
 final pinSetupCompleteProvider = FutureProvider<bool>((ref) async {
   final pin = await DeviceAuthService.getCustomFagoPin();
   return pin != null && pin.isNotEmpty;
@@ -37,7 +36,6 @@ final pinSetupCompleteProvider = FutureProvider<bool>((ref) async {
 final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
 final routerProvider = Provider<GoRouter>((ref) {
-  // Use a ValueNotifier to trigger redirects without rebuilding GoRouter
   final notifier = ValueNotifier<AuthState>(ref.read(authProvider));
   ref.listen<AuthState>(authProvider, (_, next) {
     notifier.value = next;
@@ -50,20 +48,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = notifier.value;
       final currentPath = state.uri.path;
 
-      // While loading, stay on current page
       if (authState.isLoading) return null;
 
-      // If biometric gate failed, force to login
       if (authState.biometricGate == BiometricGateState.failed) {
         return currentPath == '/login' ? null : '/login';
       }
 
-      // Guest users MUST go to login
       if (authState.role == UserRole.guest) {
         return currentPath == '/login' ? null : '/login';
       }
 
-      // Authenticated user on login page — redirect to appropriate role home page
+      // Role-based guards for admin routes
+      if ((currentPath == '/admin' || currentPath == '/admino' || currentPath == '/crm') &&
+          authState.role != UserRole.admin) {
+        return authState.role == UserRole.driver ? '/drivo' : '/rideo';
+      }
+
       if (currentPath == '/login') {
         if (authState.role == UserRole.admin) {
           return '/admin';
@@ -85,7 +85,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/pin-setup',
         builder: (context, state) => const PinSetupScreen(),
       ),
-      // Intermediate route that checks PIN status and redirects
       GoRoute(
         path: '/pin-check',
         builder: (context, state) {
@@ -94,7 +93,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               final pinStatus = ref.watch(pinSetupCompleteProvider);
               return pinStatus.when(
                 data: (hasPinSetup) {
-                  // Use addPostFrameCallback to navigate after build
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!hasPinSetup) {
                       context.go('/pin-setup');
@@ -158,7 +156,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 );
               }
 
-              // Guest goes to login
               if (authState.role == UserRole.guest) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   context.go('/login');
@@ -166,13 +163,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 return const SizedBox();
               }
 
-              // Admin gets the CRM dashboard (full admin access on mobile now!)
+              // Role-based root routing: Admin -> CrmDashboardScreen, Driver -> DriverDashboardScreen, User -> RiderMapScreen
               if (authState.role == UserRole.admin) {
                 return const CrmDashboardScreen();
+              } else if (authState.role == UserRole.driver) {
+                return const DriverDashboardScreen();
+              } else {
+                return const RiderMapScreen();
               }
-
-              // All authenticated users go to CRM dashboard
-              return const CrmDashboardScreen();
             },
           );
         },

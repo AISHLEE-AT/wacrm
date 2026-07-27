@@ -105,3 +105,17 @@ export function validateUpiId(upi: string): ValidationResult {
 
   return { isValid: true };
 }
+
+/**
+ * Validates Tamil Nadu Pincode (6 digits starting with 6, e.g. 606703, 641001)
+ */
+export function validateTamilNaduPincode(pincode: string): ValidationResult {
+  const digits = pincode.replace(/\D/g, '');
+  if (!digits || digits.length !== 6) {
+    return { isValid: false, error: 'Pincode must be exactly 6 digits long.' };
+  }
+  if (!digits.startsWith('6')) {
+    return { isValid: false, error: 'Tamil Nadu pincodes must start with digit 6 (e.g. 606703 or 641001).' };
+  }
+  return { isValid: true };
+}

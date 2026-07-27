@@ -307,6 +307,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     void routePostLogin() {
       final role = ref.read(authProvider).role;
+      if (!_deviceRegistered) {
+        context.go('/pin-setup', extra: {
+          'phone': rawPhone,
+          'name': _nameController.text.trim(),
+        });
+        return;
+      }
       if (role == UserRole.admin) {
         context.go('/admin');
       } else if (role == UserRole.driver) {

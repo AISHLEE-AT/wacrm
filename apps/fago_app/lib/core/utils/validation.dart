@@ -36,4 +36,18 @@ class ValidationUtils {
     }
     return null;
   }
+
+  static String? validateTamilNaduPincode(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Pincode is required';
+    }
+    final clean = value.trim().replaceAll(RegExp(r'\D'), '');
+    if (clean.length != 6) {
+      return 'Pincode must be exactly 6 digits';
+    }
+    if (!clean.startsWith('6')) {
+      return 'Tamil Nadu pincodes must start with digit 6 (e.g. 606703)';
+    }
+    return null;
+  }
 }

@@ -31,6 +31,8 @@ data class AuthUiState(
     val role: UserRole = UserRole.GUEST,
     val userId: String? = null,
     val phone: String? = null,
+    val fullName: String? = null,
+    val mainCategory: String? = null,
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val errorMessage: String? = null,
@@ -39,8 +41,8 @@ data class AuthUiState(
 
 // ── Auth ViewModel ─────────────────────────────────────────────────────────
 /**
- * Mirrors the logic of Flutter's AuthNotifier (auth_provider.dart).
- * Same admin check, same WhatsApp OTP flow, same Supabase project.
+ * Central Auth ViewModel — Enforces role determination, device signatures,
+ * profile database pre-filling, and cross-platform role synchronization.
  */
 class AuthViewModel(
     private val supabase: SupabaseClient,
@@ -52,12 +54,9 @@ class AuthViewModel(
 
     private val http = OkHttpClient()
 
-    // ── Admin identifiers — same as Flutter auth_provider.dart ──────────────
-    private val adminIdentifiers = listOf(
-        BuildConfig.ADMIN_PHONE,          // "9486335870"
-        "91${BuildConfig.ADMIN_PHONE}",   // "919486335870"
-        BuildConfig.ADMIN_EMAIL           // "aishleetechnology@gmail.com"
-    )
+    // ── Admin identifiers — 9486335870, 919486335870, aishleetechnology@gmail.com ──
+    private val adminPhones = listOf("9486335870", "919486335870", BuildConfig.ADMIN_PHONE)
+    private val adminEmails = listOf("aishleetechnology@gmail.com", BuildConfig.ADMIN_EMAIL)
 
     init {
         viewModelScope.launch { checkExistingSession() }
@@ -77,18 +76,17 @@ class AuthViewModel(
             }
         } catch (e: Exception) {
             Log.e("FagoAuth", "Session check error: ${e.message}")
-            _authState.update { it.copy(isLoading = false, role = UserRole.GUEST) }
+            _authState.update { it.copy(isLoading = false, role = UserRole.GUEST, errorMessage = e.message) }
         }
     }
 
-    // ── 2. Send WhatsApp OTP — calls same Vercel API as Flutter ─────────────
+    // ── 2. Send WhatsApp OTP — calls Vercel API with Supabase fallback ──────
     suspend fun sendWhatsAppOtp(phone: String): Result<String> {
         val cleanPhone = phone.filter { it.isDigit() }
         val tenDigit = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
         val generatedOtp = (100000..999999).random().toString()
         val expiresAt = java.time.Instant.now().plusSeconds(600).toString()
 
-        // Save OTP to Supabase whatsapp_otps (same table as Flutter)
         try {
             supabase.postgrest["whatsapp_otps"].upsert(
                 buildJsonObject {
@@ -101,7 +99,6 @@ class AuthViewModel(
             Log.d("FagoAuth", "OTP upsert note: ${e.message}")
         }
 
-        // Call Vercel API — same endpoint as Flutter
         return try {
             val body = """{"phone":"$cleanPhone"}"""
                 .toRequestBody("application/json".toMediaType())
@@ -119,12 +116,11 @@ class AuthViewModel(
         }
     }
 
-    // ── 3. Verify WhatsApp OTP — same logic as Flutter ──────────────────────
+    // ── 3. Verify WhatsApp OTP ──────────────────────────────────────────────
     suspend fun verifyWhatsAppOtp(phone: String, otp: String, fullName: String?): Result<Unit> {
         val cleanPhone = phone.filter { it.isDigit() }
         val tenDigit = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
 
-        // Try Vercel API first
         try {
             val bodyMap = buildString {
                 append("""{"phone":"$cleanPhone","otp":"$otp"""")
@@ -164,7 +160,6 @@ class AuthViewModel(
             Log.d("FagoAuth", "Vercel verify note: ${e.message}")
         }
 
-        // Fallback — direct Supabase OTP check (same table: whatsapp_otps)
         return try {
             val records = supabase.postgrest["whatsapp_otps"]
                 .select {
@@ -182,7 +177,6 @@ class AuthViewModel(
             val expiresAt = record?.get("expires_at") ?: ""
 
             if (storedOtp == otp && java.time.Instant.parse(expiresAt).isAfter(java.time.Instant.now())) {
-                // Delete used OTP
                 supabase.postgrest["whatsapp_otps"].delete {
                     filter {
                         or {
@@ -194,7 +188,6 @@ class AuthViewModel(
                 directSupabasePhoneLogin(cleanPhone, fullName)
                 Result.success(Unit)
             } else if (otp.length == 6 && otp.all { it.isDigit() }) {
-                // Graceful fallback — valid format
                 directSupabasePhoneLogin(cleanPhone, fullName)
                 Result.success(Unit)
             } else {
@@ -205,7 +198,7 @@ class AuthViewModel(
         }
     }
 
-    // ── 4. Direct Supabase phone login (synthetic email, same as Flutter) ───
+    // ── 4. Direct Supabase phone login ──────────────────────────────────────
     private suspend fun directSupabasePhoneLogin(cleanPhone: String, fullName: String?) {
         val syntheticEmail = "$cleanPhone@whatsapp.wacrm.local"
         val defaultPassword = "FagoAppUserPass#2026"
@@ -236,7 +229,7 @@ class AuthViewModel(
         resolveRole(cleanPhone, userId)
     }
 
-    // ── 5. Sync profile to DB (same logic as Flutter _syncProfileAndFinishLogin)
+    // ── 5. Sync profile to database ─────────────────────────────────────────
     private suspend fun syncProfileAndFinishLogin(
         userId: String?, cleanPhone: String, fullName: String?
     ) {
@@ -264,21 +257,23 @@ class AuthViewModel(
                 }
             )
 
-            // Save device signature
             deviceAuthService.saveRegisteredDevice(cleanPhone, finalName)
         } catch (e: Exception) {
             Log.e("FagoAuth", "Profile sync error: ${e.message}")
         }
     }
 
-    // ── 6. Resolve Role — same logic as Flutter _resolveRole ────────────────
+    // ── 6. Resolve Role — Strict Admin (9486335870), Driver, or User ─────────
     private suspend fun resolveRole(phone: String?, userId: String?) {
         try {
             val rawPhone = phone?.filter { it.isDigit() } ?: ""
+            val tenDigitPhone = if (rawPhone.length > 10) rawPhone.takeLast(10) else rawPhone
+
             var profileRole: String? = null
+            var fullName: String? = null
+            var mainCategory: String? = null
             var isProfileComplete = false
 
-            // Fetch profile from DB
             if (userId != null) {
                 try {
                     val profile = supabase.postgrest["profiles"]
@@ -290,33 +285,21 @@ class AuthViewModel(
                         .firstOrNull()
 
                     profileRole = profile?.get("role")
+                    fullName = profile?.get("full_name")
+                    mainCategory = profile?.get("main_category")
                     isProfileComplete = profile?.get("profile_complete") == "true" ||
-                        (!profile?.get("full_name").isNullOrBlank() &&
-                         !profile?.get("phone").isNullOrBlank())
+                        (!fullName.isNullOrBlank() && !profile?.get("phone").isNullOrBlank())
                 } catch (e: Exception) {
                     Log.d("FagoAuth", "Profile fetch note: ${e.message}")
                 }
             }
 
-            // Admin check — normalize phone to 10 digits for reliable matching
-            val tenDigitPhone = rawPhone.let {
-                val d = it.filter { c -> c.isDigit() }
-                if (d.length > 10) d.takeLast(10) else d
-            }
-
-            val adminPhones = listOf(
-                BuildConfig.ADMIN_PHONE,  // "9486335870"
-            )
-            val adminEmails = listOf(
-                BuildConfig.ADMIN_EMAIL,  // "aishleetechnology@gmail.com"
-            )
-
+            // Check if phone matches Admin number 9486335870
             val isAdmin = profileRole == "admin" ||
-                adminPhones.any { tenDigitPhone == it } ||
+                adminPhones.any { tenDigitPhone == it || tenDigitPhone.endsWith(it) } ||
                 adminEmails.any { (phone ?: "").contains(it) }
 
             val effectivePhone = if (tenDigitPhone.length == 10) tenDigitPhone else rawPhone
-
             val session = try { supabase.auth.currentSessionOrNull() } catch (e: Exception) { null }
             val accessToken = session?.accessToken
             val refreshToken = session?.refreshToken
@@ -329,54 +312,72 @@ class AuthViewModel(
                         ) { filter { eq("id", userId) } }
                         Log.d("FagoAuth", "Auto-healed admin role for $userId")
                     } catch (e: Exception) {
-                        Log.w("FagoAuth", "Role auto-heal note (RLS may block): ${e.message}")
-                        // Fallback: try via server-side API
-                        try {
-                            val body = """{"userId":"$userId","role":"admin"}"""
-                                .toRequestBody("application/json".toMediaType())
-                            val request = Request.Builder()
-                                .url("${BuildConfig.WHATSAPP_OTP_VERIFY_URL.replace("verify-otp", "")}../pin-login")
-                                .post(body)
-                                .build()
-                            // Fire and forget — don't block login
-                            http.newCall(request).execute()
-                        } catch (e2: Exception) {
-                            Log.d("FagoAuth", "Server-side role heal note: ${e2.message}")
-                        }
+                        Log.w("FagoAuth", "Role auto-heal note: ${e.message}")
                     }
                 }
                 _authState.update {
                     it.copy(
                         isLoading = false, role = UserRole.ADMIN,
                         userId = userId, phone = effectivePhone,
+                        fullName = fullName ?: "Admin", mainCategory = mainCategory ?: "Admin",
                         accessToken = accessToken, refreshToken = refreshToken,
-                        isProfileComplete = isProfileComplete
+                        isProfileComplete = isProfileComplete, errorMessage = null
                     )
                 }
                 return
             }
 
-            // Driver check
-            val isDriver = profileRole == "driver"
-            if (isDriver) {
+            // Check Driver verification status in drivers table
+            var isVerifiedDriver = profileRole == "driver"
+            if (!isVerifiedDriver && tenDigitPhone.isNotEmpty()) {
+                try {
+                    val driverRecord = supabase.postgrest["drivers"]
+                        .select {
+                            filter {
+                                or {
+                                    eq("mobile_number", tenDigitPhone)
+                                    eq("mobile_number", "91$tenDigitPhone")
+                                }
+                            }
+                        }
+                        .decodeList<Map<String, String?>>()
+                        .firstOrNull()
+
+                    val isVerified = driverRecord?.get("is_verified") == "true"
+                    if (isVerified) {
+                        isVerifiedDriver = true
+                        if (userId != null) {
+                            supabase.postgrest["profiles"].update(
+                                buildJsonObject { put("role", "driver") }
+                            ) { filter { eq("id", userId) } }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.d("FagoAuth", "Driver check note: ${e.message}")
+                }
+            }
+
+            if (isVerifiedDriver) {
                 _authState.update {
                     it.copy(
                         isLoading = false, role = UserRole.DRIVER,
                         userId = userId, phone = effectivePhone,
+                        fullName = fullName, mainCategory = mainCategory ?: "Driver",
                         accessToken = accessToken, refreshToken = refreshToken,
-                        isProfileComplete = isProfileComplete
+                        isProfileComplete = isProfileComplete, errorMessage = null
                     )
                 }
                 return
             }
 
-            // Default — USER
+            // Default — USER (Normal User)
             _authState.update {
                 it.copy(
                     isLoading = false, role = UserRole.USER,
                     userId = userId, phone = effectivePhone,
+                    fullName = fullName, mainCategory = mainCategory ?: "Traveller",
                     accessToken = accessToken, refreshToken = refreshToken,
-                    isProfileComplete = isProfileComplete
+                    isProfileComplete = isProfileComplete, errorMessage = null
                 )
             }
         } catch (e: Exception) {

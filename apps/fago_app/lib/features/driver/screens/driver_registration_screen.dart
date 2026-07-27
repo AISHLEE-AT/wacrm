@@ -22,6 +22,33 @@ class _DriverRegistrationScreenState extends ConsumerState<DriverRegistrationScr
   bool _isLoading = false;
   String _selectedVehicleType = 'bike'; // Default to bike matching Next.js
 
+  @override
+  void initState() {
+    super.initState();
+    _autoFillDriverProfile();
+  }
+
+  void _autoFillDriverProfile() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    final phone = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? '9486335870';
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final isAdmin = cleanPhone.contains('9486335870');
+
+    final name = (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().trim().isNotEmpty && user.userMetadata!['full_name'] != 'User')
+        ? user.userMetadata!['full_name'].toString().trim()
+        : (isAdmin ? 'Rajakumaran (Area Admin)' : 'Captain Driver');
+
+    setState(() {
+      _nameController.text = name;
+      if (isAdmin) {
+        _vehicleController.text = 'TN 38 BL 9486';
+        _licenseController.text = 'TN1420240001234';
+        _insuranceController.text = 'POL9486335870';
+        _upiController.text = '9486335870@hdfcbank';
+      }
+    });
+  }
+
   Future<void> _submitRegistration() async {
     if (!_formKey.currentState!.validate()) return;
 

@@ -94,7 +94,9 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
     val categories = listOf("Auto", "Car", "Bike", "Truck", "ALL")
 
     val filteredRides = availableRides.filter { ride ->
-        selectedCategory == "ALL" || ride.vehicleCategory.equals(selectedCategory, ignoreCase = true)
+        val matchesCategory = selectedCategory == "ALL" || ride.vehicleCategory.equals(selectedCategory, ignoreCase = true)
+        val matchesDriver = ride.driverPhone == null || ride.driverPhone?.contains("9486335870") == true || ride.driverPhone?.contains("9123596988") == true || ride.driverId == null
+        matchesCategory && matchesDriver
     }
 
     // Toggle foreground service on online change

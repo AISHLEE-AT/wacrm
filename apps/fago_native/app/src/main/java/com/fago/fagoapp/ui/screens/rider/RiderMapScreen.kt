@@ -73,6 +73,7 @@ data class HotspotItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RiderMapScreen(
+    authState: com.fago.fagoapp.auth.AuthUiState? = null,
     onOpenDrawer: () -> Unit,
     onNavigateCrm: () -> Unit = {},
     onNavigateDrivo: () -> Unit = {},
@@ -94,8 +95,13 @@ fun RiderMapScreen(
     var dropoffLatLng by remember { mutableStateOf(LatLng(11.0300, 77.0434)) }
     var pickupAddress by remember { mutableStateOf("Detecting GPS location...") }
     var dropoffAddress by remember { mutableStateOf("Coimbatore Airport (CJB), Peelamedu") }
-    var riderName by remember { mutableStateOf("") }
-    var riderPhone by remember { mutableStateOf("") }
+    var riderName by remember { mutableStateOf(authState?.fullName ?: "") }
+    var riderPhone by remember { mutableStateOf(authState?.phone ?: "") }
+
+    LaunchedEffect(authState) {
+        if (!authState?.fullName.isNullOrBlank()) riderName = authState!!.fullName!!
+        if (!authState?.phone.isNullOrBlank()) riderPhone = authState!!.phone!!
+    }
     var selectedCategoryKey by remember { mutableStateOf("Bike") }
     var showConfirmSheet by remember { mutableStateOf(false) }
     var isPostingRide by remember { mutableStateOf(false) }
@@ -222,13 +228,15 @@ fun RiderMapScreen(
         containerColor = Color(0xFF0F172A),
         bottomBar = {
             NavigationBar(containerColor = Color(0xFF1E293B)) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateCrm,
-                    icon = { Icon(Icons.Default.Chat, contentDescription = null) },
-                    label = { Text("CRM", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFFD700))
-                )
+                if (authState?.role == com.fago.fagoapp.auth.UserRole.ADMIN) {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onNavigateCrm,
+                        icon = { Icon(Icons.Default.Chat, contentDescription = null) },
+                        label = { Text("CRM", fontSize = 10.sp) },
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFFD700))
+                    )
+                }
                 NavigationBarItem(
                     selected = true,
                     onClick = { mapPinMode = null },
@@ -861,38 +869,177 @@ fun RiderMapScreen(
         }
     }
 
-    // Confirmation Modal Sheet
+    // Confirmation & Nearby Driver Selection Modal Sheet
     if (showConfirmSheet) {
+        var nearbyDrivers by remember { mutableStateOf<List<com.fago.fagoapp.data.DriverProfileItem>>(emptyList()) }
+        var selectedDriverId by remember { mutableStateOf<String?>(null) }
+        var genderFilter by remember { mutableStateOf("all") } // "all", "female", "male"
+        var sortOrder by remember { mutableStateOf("price") } // "price", "eta", "rating"
+        var isLoadingDrivers by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            if (riderName.isBlank() && !authState?.fullName.isNullOrBlank()) {
+                riderName = authState!!.fullName!!
+            }
+            if (riderPhone.isBlank() && !authState?.phone.isNullOrBlank()) {
+                riderPhone = authState!!.phone!!
+            }
+            isLoadingDrivers = true
+            val fetched = supabaseRepo.getNearbyDrivers(estimatedDistKm)
+            nearbyDrivers = fetched
+            selectedDriverId = fetched.find { it.vehicleType.equals(selectedCat.key, ignoreCase = true) }?.id ?: fetched.firstOrNull()?.id
+            isLoadingDrivers = false
+        }
+
+        val filteredDrivers = nearbyDrivers
+            .filter { drv ->
+                (genderFilter == "all" || drv.gender.equals(genderFilter, ignoreCase = true))
+            }
+            .sortedWith { d1, d2 ->
+                when (sortOrder) {
+                    "eta" -> d1.etaMinutes.compareTo(d2.etaMinutes)
+                    "rating" -> d2.rating.compareTo(d1.rating)
+                    else -> d1.calculatedFare.compareTo(d2.calculatedFare)
+                }
+            }
+
+        val chosenDriver = nearbyDrivers.find { it.id == selectedDriverId } ?: filteredDrivers.firstOrNull()
+
         ModalBottomSheet(
             onDismissRequest = { showConfirmSheet = false },
             containerColor = Color(0xFF1E293B)
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .padding(18.dp)
+                    .fillMaxHeight(0.85f),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Confirm ${selectedCat.label} Booking", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("Pickup: $pickupAddress", color = Color.Gray, fontSize = 12.sp)
-                Text("Dropoff: $dropoffAddress", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text("Fare: ₹${calculatedFare.toInt()}", color = Color(0xFF00FF00), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-
-                OutlinedTextField(
-                    value = riderName,
-                    onValueChange = { riderName = it },
-                    label = { Text("Your Name", color = Color.Gray) },
-                    singleLine = true,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                )
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("🚖 Select Nearby Driver & Book", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        Text("Pickup: $pickupAddress", color = Color.Gray, fontSize = 11.sp, maxLines = 1)
+                    }
+                    IconButton(onClick = { showConfirmSheet = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    }
+                }
 
-                OutlinedTextField(
-                    value = riderPhone,
-                    onValueChange = { riderPhone = it },
-                    label = { Text("WhatsApp Phone Number", color = Color.Gray) },
-                    singleLine = true,
+                // ── Interactive Filters (Gender & Sort Order) ──
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF00FF00), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
-                )
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Gender Filter Chips
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("all" to "All", "female" to "👩 Female", "male" to "👨 Male").forEach { (key, label) ->
+                            val isSel = genderFilter == key
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSel) Color(0xFF00FF00).copy(alpha = 0.2f) else Color(0xFF0F172A),
+                                modifier = Modifier
+                                    .border(1.dp, if (isSel) Color(0xFF00FF00) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                    .clickable { genderFilter = key }
+                            ) {
+                                Text(label, color = if (isSel) Color(0xFF00FF00) else Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp))
+                            }
+                        }
+                    }
+
+                    // Sort Order Filter Chips
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf("price" to "🏷️ Price", "eta" to "⚡ ETA", "rating" to "⭐ Rating").forEach { (key, label) ->
+                            val isSel = sortOrder == key
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSel) Color(0xFFFFD700).copy(alpha = 0.2f) else Color(0xFF0F172A),
+                                modifier = Modifier
+                                    .border(1.dp, if (isSel) Color(0xFFFFD700) else Color(0xFF334155), RoundedCornerShape(8.dp))
+                                    .clickable { sortOrder = key }
+                            ) {
+                                Text(label, color = if (isSel) Color(0xFFFFD700) else Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp))
+                            }
+                        }
+                    }
+                }
+
+                // ── Driver List ──
+                if (isLoadingDrivers) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFF00FF00))
+                    }
+                } else if (filteredDrivers.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                        Text("No drivers found matching your filter.", color = Color.Gray, fontSize = 13.sp)
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(filteredDrivers) { drv ->
+                            val isSel = drv.id == selectedDriverId
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isSel) Color(0xFF00FF00).copy(alpha = 0.15f) else Color(0xFF0F172A),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(
+                                        width = if (isSel) 2.dp else 1.dp,
+                                        color = if (isSel) Color(0xFF00FF00) else Color(0xFF334155),
+                                        shape = RoundedCornerShape(14.dp)
+                                    )
+                                    .clickable { selectedDriverId = drv.id }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(if (drv.gender == "female") "👩" else "👨", fontSize = 28.sp)
+                                    Spacer(Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(drv.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Spacer(Modifier.width(6.dp))
+                                            Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFFFFD700).copy(alpha = 0.2f)) {
+                                                Text(" ⭐ ${drv.rating} ", color = Color(0xFFFFD700), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                        Text("${drv.vehicleType} • ${drv.vehicleModel} (${drv.vehicleNumber})", color = Color.Gray, fontSize = 11.sp)
+                                        Text("📍 ${drv.distanceKm} km away • ${drv.etaMinutes} mins ETA", color = Color(0xFF00F0FF), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Text("₹${drv.calculatedFare.toInt()}", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Rider Inputs ──
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = if (riderName.isBlank() && !authState?.fullName.isNullOrBlank()) authState!!.fullName!! else riderName,
+                        onValueChange = { riderName = it },
+                        label = { Text("Your Name", color = Color.Gray, fontSize = 10.sp) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+
+                    OutlinedTextField(
+                        value = if (riderPhone.isBlank() && !authState?.phone.isNullOrBlank()) authState!!.phone!! else riderPhone,
+                        onValueChange = { riderPhone = it },
+                        label = { Text("WhatsApp Phone", color = Color.Gray, fontSize = 10.sp) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF00FF00), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+                }
 
                 Button(
                     onClick = {
@@ -903,48 +1050,65 @@ fun RiderMapScreen(
                             val generatedPin = (1000 + Random.nextInt(9000)).toString()
                             activeSecurityOtp = generatedPin
 
-                            supabaseRepo.saveCrmContact(null, rName, rPhone, "Rider", pickupAddress, selectedCat.key)
+                            val chosen = chosenDriver ?: nearbyDrivers.firstOrNull()
+                            val dName = chosen?.name ?: "Captain Senthil"
+                            val dPhone = chosen?.whatsappNumber ?: "9486335870"
+                            val dVehicle = chosen?.vehicleNumber ?: "TN 38 BL 9486"
+
+                            supabaseRepo.saveCrmContact(null, rName, rPhone, "Rider", pickupAddress, chosen?.vehicleType ?: selectedCat.key)
 
                             val rideItem = RideRequestItem(
                                 id = "RIDE_${System.currentTimeMillis()}",
                                 riderId = "RIDER_001",
-                                riderPhone = "$rName ($rPhone)",
+                                riderName = rName,
+                                riderPhone = rPhone,
                                 pickupAddress = pickupAddress,
                                 dropoffAddress = dropoffAddress,
                                 pickupLat = pickupLatLng.latitude,
                                 pickupLng = pickupLatLng.longitude,
                                 dropoffLat = dropoffLatLng.latitude,
                                 dropoffLng = dropoffLatLng.longitude,
-                                vehicleCategory = selectedCat.key,
-                                estimatedFare = calculatedFare,
-                                status = "requested"
+                                vehicleCategory = chosen?.vehicleType ?: selectedCat.key,
+                                estimatedFare = chosen?.calculatedFare ?: calculatedFare,
+                                status = "requested",
+                                driverId = chosen?.id,
+                                driverName = dName,
+                                driverPhone = dPhone,
+                                vehicleNumber = dVehicle
                             )
                             supabaseRepo.createRideRequest(rideItem)
 
+                            val pickupGpsUrl = "https://www.google.com/maps/search/?api=1&query=${pickupLatLng.latitude},${pickupLatLng.longitude}"
+                            val dropoffGpsUrl = "https://www.google.com/maps/search/?api=1&query=${dropoffLatLng.latitude},${dropoffLatLng.longitude}"
+                            val navRouteUrl = "https://www.google.com/maps/dir/?api=1&origin=${pickupLatLng.latitude},${pickupLatLng.longitude}&destination=${dropoffLatLng.latitude},${dropoffLatLng.longitude}&travelmode=driving"
+
                             val msgText = Uri.encode(
-                                "🚖 *RIDEO 0% COMMISSION RIDE REQUEST* 🚖\n\n" +
+                                "🚖 *RIDEO EXCLUSIVE DRIVER RIDE CONFIRMATION* 🚖\n\n" +
                                 "🔑 *START TRIP SECURITY PIN*: $generatedPin\n" +
-                                "👤 *Rider Name*: $rName\n" +
-                                "📞 *Contact*: $rPhone\n" +
-                                "🚘 *Vehicle Category*: ${selectedCat.label}\n" +
-                                "📍 *Pickup*: $pickupAddress\n" +
-                                "📍 *Dropoff*: $dropoffAddress\n" +
-                                "💵 *Estimated Fare*: ₹${calculatedFare.toInt()}\n\n" +
-                                "👉 Driver / Support: Please confirm ride assignment!"
+                                "👤 *Rider*: $rName ($rPhone)\n" +
+                                "🚗 *Assigned Captain*: $dName ($dPhone)\n" +
+                                "🚘 *Vehicle*: ${chosen?.vehicleType ?: selectedCat.key} - $dVehicle\n\n" +
+                                "🟢 *PICKUP*: $pickupAddress\n" +
+                                "📍 *PICKUP GPS MAP*: $pickupGpsUrl\n\n" +
+                                "🔴 *DROPOFF*: $dropoffAddress\n" +
+                                "🎯 *DROPOFF GPS MAP*: $dropoffGpsUrl\n\n" +
+                                "🧭 *1-CLICK DEVICE ROUTE NAVIGATION*: $navRouteUrl\n\n" +
+                                "💵 *COMMITTED FARE*: ₹${(chosen?.calculatedFare ?: calculatedFare).toInt()}\n\n" +
+                                "👉 Captain / Rider: Tap navigation link above to begin trip!"
                             )
-                            val waUri = Uri.parse("https://api.whatsapp.com/send?phone=916381029380&text=$msgText")
+                            val waUri = Uri.parse("https://api.whatsapp.com/send?phone=91$dPhone&text=$msgText")
                             context.startActivity(Intent(Intent.ACTION_VIEW, waUri))
 
                             isPostingRide = false
                             showConfirmSheet = false
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                     shape = RoundedCornerShape(12.dp),
                     enabled = !isPostingRide
                 ) {
-                    Text("CONFIRM & NOTIFY DRIVERS VIA WHATSAPP", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("CONFIRM BOOKING WITH ${chosenDriver?.name?.uppercase() ?: "DRIVER"} VIA WHATSAPP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }

@@ -96,33 +96,77 @@ class _RentOScreenState extends State<RentOScreen> {
     return (baseRate * _workingHoursOrAcres) + _extraTip;
   }
 
+  String _selectedMachineId = 'MACH_01';
+
+  final List<Map<String, dynamic>> _virtualMachineryList = [
+    {
+      'id': 'MACH_01',
+      'name': 'Mahindra 575 DI Tractor + Rotavator',
+      'category': 'Tractor',
+      'operator': 'Farmer Murugan',
+      'phone': '9789012345',
+      'rate': 700.0,
+      'specs': '50 HP • 4WD • Rotary Tiller Attachment',
+      'rating': 4.9,
+      'distance': '1.8 km',
+      'eta': '10 mins',
+    },
+    {
+      'id': 'MACH_02',
+      'name': 'Kubota DC68G Paddy Harvester',
+      'category': 'Harvester',
+      'operator': 'Captain Senthil Kumar',
+      'phone': '9486335870',
+      'rate': 1800.0,
+      'specs': '68 HP • Rubber Track Crawler',
+      'rating': 5.0,
+      'distance': '3.2 km',
+      'eta': '15 mins',
+    },
+    {
+      'id': 'MACH_03',
+      'name': 'Tata Ace Gold Agri Mini-Van',
+      'category': 'MiniVan',
+      'operator': 'Driver Rajesh',
+      'phone': '9894012345',
+      'rate': 500.0,
+      'specs': '750 kg Payload • Crop Transport to Mandi',
+      'rating': 4.7,
+      'distance': '2.1 km',
+      'eta': '12 mins',
+    },
+  ];
+
   Future<void> _bookMachineryViaWhatsApp() async {
     _currentLocation ??= await LocationService().getCurrentLocation();
-    final lat = _currentLocation?.latitude ?? 13.0827;
-    final lng = _currentLocation?.longitude ?? 80.2707;
+    final lat = _currentLocation?.latitude ?? 11.0168;
+    final lng = _currentLocation?.longitude ?? 76.9558;
     final pinData = await LocationService().getPincodeAndAddressFromCoordinates(lat, lng);
 
     final cat = _machineryCategories[_selectedCategory]!;
-    final farmerName = _farmerNameController.text.trim().isEmpty ? 'Local Farmer' : _farmerNameController.text.trim();
-    final farmerPhone = _farmerPhoneController.text.trim().isEmpty ? '+919876543210' : _farmerPhoneController.text.trim();
+    final farmerName = _farmerNameController.text.trim().isEmpty ? 'Rajakumaran' : _farmerNameController.text.trim();
+    final farmerPhone = _farmerPhoneController.text.trim().isEmpty ? '+919486335870' : _farmerPhoneController.text.trim();
     final locationText = _villageController.text.trim().isEmpty ? pinData['address']! : _villageController.text.trim();
-    final totalRent = _calculateRent();
+    
+    final selectedMach = _virtualMachineryList.firstWhere((m) => m['id'] == _selectedMachineId, orElse: () => _virtualMachineryList[0]);
+    final totalRent = (selectedMach['rate'] as double) * _workingHoursOrAcres;
 
     final StringBuffer sb = StringBuffer();
     sb.writeln('🌾 *RENTO AGRICULTURAL & HEAVY MACHINERY BOOKING* 🌾\n');
     sb.writeln('👤 *Farmer / Customer*: $farmerName');
-    sb.writeln('📞 *Contact*: $farmerPhone');
-    sb.writeln('🚜 *Machine Category*: ${cat['title']}');
+    sb.writeln('📞 *Cell / WhatsApp*: $farmerPhone');
+    sb.writeln('🚜 *Chosen Machine*: ${selectedMach['name']}');
+    sb.writeln('👨‍🌾 *Assigned Operator*: ${selectedMach['operator']} (+91 ${selectedMach['phone']})');
     sb.writeln('⏱️ *Requirement*: $_workingHoursOrAcres ${cat['unit']}(s)');
     sb.writeln('📍 *Farm Address*: $locationText');
     if (pinData['pincode']!.isNotEmpty) {
       sb.writeln('📮 *Pincode*: ${pinData['pincode']}');
     }
     sb.writeln('🗺️ *Live GPS Maps Pin*: https://maps.google.com/?q=$lat,$lng');
-    sb.writeln('\n💵 *Calculated Rent*: ₹${totalRent.toStringAsFixed(0)} (Base Rate: ₹${cat['baseRate']}/${cat['unit']})');
-    sb.writeln('\n👉 Please confirm machine availability & timing with local operator!');
+    sb.writeln('\n💵 *Committed Total Rent*: ₹${totalRent.toStringAsFixed(0)} (Base Rate: ₹${(selectedMach['rate'] as double).toStringAsFixed(0)}/${cat['unit']})');
+    sb.writeln('\n👉 Operator: Tap to confirm machinery dispatch on WhatsApp!');
 
-    WhatsAppService.openWhatsApp(phone: '916381029380', message: sb.toString());
+    WhatsAppService.openWhatsApp(phone: '91${selectedMach['phone']}', message: sb.toString());
   }
 
   @override

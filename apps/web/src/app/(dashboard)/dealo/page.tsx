@@ -101,12 +101,21 @@ export default function DealOMarketplacePage() {
   useEffect(() => {
     const rawPhone = profile?.phone || currentUser?.phone || currentUser?.email?.split('@')[0] || '';
     const cleanDigits = rawPhone.replace(/\D/g, '').slice(-10);
-    const formattedPhone = cleanDigits.length === 10 ? cleanDigits : rawPhone;
+    const formattedPhone = cleanDigits.length === 10 ? cleanDigits : '9486335870';
+
+    const isAdmin = formattedPhone.includes('9486335870');
+    const resolvedName = (profile?.full_name && profile.full_name !== 'User')
+      ? profile.full_name
+      : (currentUser?.user_metadata?.full_name && currentUser.user_metadata.full_name !== 'User')
+      ? currentUser.user_metadata.full_name
+      : isAdmin ? 'Rajakumaran (Area Admin)' : 'FAGO Member';
 
     setDealForm((prev) => ({
       ...prev,
-      name: profile?.full_name || prev.name,
-      phone: prev.phone || formattedPhone,
+      name: resolvedName,
+      phone: formattedPhone,
+      pincode: prev.pincode || '606703',
+      locationName: prev.locationName === 'Coimbatore, Tamil Nadu' ? 'Naradapattu, Villupuram 606703, Tamil Nadu' : prev.locationName,
     }));
   }, [profile?.full_name, profile?.phone, currentUser?.phone, currentUser?.email]);
 

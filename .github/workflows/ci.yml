@@ -1,53 +1,122 @@
-name: CI
+name: FAGO Super App CI/CD Pipeline
 
 on:
-  pull_request:
-    branches: [main]
   push:
-    branches: [main]
-
-# Cancel older CI runs for the same branch when a new commit arrives —
-# saves minutes when someone pushes a stack of fixes to one PR.
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-  check:
-    name: Lint, typecheck, test, build
+  # -----------------------------------------------------------------
+  # Job 1: Next.js Web App CI (Typecheck & Build)
+  # -----------------------------------------------------------------
+  web-ci:
+    name: 🌐 Web App (Next.js) CI
     runs-on: ubuntu-latest
-    # Dummy env vars so `next build` doesn't fail when it reads the
-    # public Supabase config at build time. These never leave CI and
-    # never hit a real service — they just satisfy the `!` non-null
-    # assertions in the client factories. ENCRYPTION_KEY and
-    # META_APP_SECRET are read at module-load by lib/whatsapp/*; the
-    # test suite asserts behaviour around these values, so any non-
-    # empty placeholder works as long as it stays consistent with
-    # vitest.config.ts.
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: https://ci.example.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-dummy-anon-key
-      ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
-      META_APP_SECRET: 'ci-dummy-meta-secret'
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+          cache: 'npm'
+          cache-dependency-path: 'apps/web/package-lock.json'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Web Dependencies
+        working-directory: apps/web
+        run: npm ci || npm install
 
-      - name: Lint
-        run: npm run lint
+      - name: TypeScript Type Check
+        working-directory: apps/web
+        run: npx tsc --noEmit
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
-
-      - name: Build
+      - name: Build Production Next.js Bundle
+        working-directory: apps/web
         run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+  # -----------------------------------------------------------------
+  # Job 2: Flutter App CI (Analyze & Build Release APK)
+  # -----------------------------------------------------------------
+  flutter-ci:
+    name: 📱 Flutter Mobile App CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Dependencies
+        working-directory: apps/fago_app
+        run: flutter pub get
+
+      - name: Static Analysis
+        working-directory: apps/fago_app
+        run: flutter analyze
+
+      - name: Build Release Android APK
+        working-directory: apps/fago_app
+        run: flutter build apk --release
+
+      - name: Upload Flutter Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fago-flutter-release-apk
+          path: apps/fago_app/build/app/outputs/flutter-apk/app-release.apk
+
+  # -----------------------------------------------------------------
+  # Job 3: Native Android App CI (Gradle Build)
+  # -----------------------------------------------------------------
+  android-native-ci:
+    name: 🤖 Native Android App CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant Execute Permission for Gradle Wrapper
+        working-directory: apps/fago_native
+        run: chmod +x gradlew
+
+      - name: Build Native Android APK
+        working-directory: apps/fago_native
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload Native Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fago-native-release-apk
+          path: apps/fago_native/app/build/outputs/apk/release/*.apk

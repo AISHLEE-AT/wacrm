@@ -6,8 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,10 +16,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fago.fagoapp.auth.AuthViewModel
@@ -31,21 +31,22 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
-data class UserCategoryOption(
+data class UserCategoryItem(
     val key: String,
-    val label: String,
-    val color: Color
+    val label: String
 )
 
 /**
- * Native Android LoginScreen — 100% feature parity with Flutter's login_screen.dart.
+ * Native Android LoginScreen — 100% Matching Screenshot #2 UI Model.
  * Features:
- *   - WhatsApp CRM OTP Auth (Vercel Bridge + Supabase whatsapp_otps table)
- *   - 1-Tap "Open WhatsApp to Get OTP" direct launcher
- *   - Resend OTP 60s cooldown timer
- *   - User Category Selector (Traveller, Farmer, Shopper, Driver, Student, Teacher, Financier, JobSeeker, Employer, Tourist)
+ *   - Glowing Thamizhan FAGO Brand Logo & Tagline (தமிழன் FAGO வாழ்க • வளர்க • வெல்க • WhatsApp Verified)
+ *   - Green-bordered "Mobile WhatsApp Number" with +91 prefix and length counter (0/10)
+ *   - Green-bordered "Your Full Name (பெயர்)"
+ *   - Dropdown menu "Choose Your Primary Goal"
+ *   - Bright Green "Send WhatsApp OTP" Action Button
+ *   - "Switch to SMS OTP Method" Link
  *   - Instant Device Biometric & PIN Login for returning registered devices
- *   - Admin auto-heal routing to CRM
+ *   - Visual Fallback Error Banners
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +60,9 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
     var phone by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("Traveller") }
+    var selectedCategoryKey by remember { mutableStateOf("Traveller") }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    var isSmsMode by remember { mutableStateOf(false) }
 
     var otpSent by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
@@ -70,6 +73,21 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
     var isDeviceRegistered by remember { mutableStateOf(false) }
     var registeredPhone by remember { mutableStateOf<String?>(null) }
     var isSimAutofetched by remember { mutableStateOf(false) }
+
+    val userCategories = listOf(
+        UserCategoryItem("Traveller", "🧳 Traveller (RideO)"),
+        UserCategoryItem("Farmer", "🚜 Farmer (RentO Agri)"),
+        UserCategoryItem("Shopper", "🛍️ Shopper (Mandi)"),
+        UserCategoryItem("Driver", "🚗 Driver (DriveO)"),
+        UserCategoryItem("Student", "🎓 Student (TestO Exam)"),
+        UserCategoryItem("Teacher", "👨‍🏫 Teacher (TeachO)"),
+        UserCategoryItem("Financier", "💰 Financier (MoneyO)"),
+        UserCategoryItem("JobSeeker", "💼 Job Seeker (WorkO)"),
+        UserCategoryItem("Employer", "🏢 Employer (BizHub)"),
+        UserCategoryItem("Tourist", "🛕 Tourist (TourO)")
+    )
+
+    val selectedCategoryLabel = userCategories.find { it.key == selectedCategoryKey }?.label ?: "🧳 Traveller (RideO)"
 
     // Check device signature on start
     LaunchedEffect(Unit) {
@@ -105,19 +123,6 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
         }
     }
 
-    val userCategories = listOf(
-        UserCategoryOption("Traveller",  "🧳 Traveller (RideO)",  Color(0xFFFFD700)),
-        UserCategoryOption("Farmer",     "🚜 Farmer (RentO Agri)", Color(0xFF00FF00)),
-        UserCategoryOption("Shopper",    "🛍️ Shopper (Mandi)",     Color(0xFFF43F5E)),
-        UserCategoryOption("Driver",     "🚗 Driver (DriveO)",    Color(0xFFFF8C00)),
-        UserCategoryOption("Student",    "🎓 Student (TestO Exam)",Color(0xFF7C3AED)),
-        UserCategoryOption("Teacher",    "👨‍🏫 Teacher (TeachO)",    Color(0xFF00F0FF)),
-        UserCategoryOption("Financier",  "💰 Financier (MoneyO)", Color(0xFF10B981)),
-        UserCategoryOption("JobSeeker",  "💼 Job Seeker (WorkO)", Color(0xFF84CC16)),
-        UserCategoryOption("Employer",   "🏢 Employer (BizHub)",  Color(0xFF6366F1)),
-        UserCategoryOption("Tourist",    "🧳 Tourist (TourO)",     Color(0xFFF97316))
-    )
-
     Scaffold(containerColor = Color(0xFF0F172A)) { padding ->
         Column(
             modifier = Modifier
@@ -127,32 +132,70 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // ── Logo Header ──────────────────────────────────────────────────
-            Text("🚗 FAGO", color = Color(0xFFFFD700), fontSize = 44.sp, fontWeight = FontWeight.Bold)
-            Text("Super App for Mobility, Agri & Services", color = Color(0xFF00F0FF), fontSize = 13.sp)
-            Spacer(Modifier.height(30.dp))
+            // ── 1. Glowing Thamizhan FAGO Brand Logo ──────────────────────────
+            Box(
+                modifier = Modifier
+                    .size(130.dp)
+                    .border(2.dp, Color(0xFF00FF00).copy(alpha = 0.8f), RoundedCornerShape(32.dp))
+                    .background(Color(0xFF1E293B), RoundedCornerShape(32.dp))
+                    .clip(RoundedCornerShape(32.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("🧠", fontSize = 48.sp)
+                    Text("🌿", fontSize = 24.sp)
+                }
+            }
 
-            // ── Device Unlock Card (if registered returning device) ───────────
+            Spacer(Modifier.height(12.dp))
+
+            // ── 2. Branding Text Header ─────────────────────────────────────────
+            Text(
+                text = "தமிழன்",
+                color = Color(0xFF00FF00),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp
+            )
+            Text(
+                text = "FAGO",
+                color = Color(0xFFFFD700),
+                fontSize = 46.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 3.sp
+            )
+            Text(
+                text = "வாழ்க • வளர்க • வெல்க • WhatsApp Verified",
+                color = Color(0xFF00FF00),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            // ── 3. Device Unlock Card (If registered device) ───────────────────
             if (isDeviceRegistered && !registeredPhone.isNullOrEmpty()) {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFFFD700).copy(alpha = 0.1f),
+                    color = Color(0xFF1E293B),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                        .border(1.5.dp, Color(0xFF00FF00).copy(alpha = 0.6f), RoundedCornerShape(16.dp))
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(28.dp))
+                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF00FF00), modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(10.dp))
-                            Column {
-                                Text("Registered Device Detected", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text("Phone: +91 $registeredPhone", color = Color.White, fontSize = 12.sp)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Welcome back, ${name.ifBlank { "User" }}! 🙏", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("Cell: +91 $registeredPhone • Device Verified 🔒", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
                         Spacer(Modifier.height(12.dp))
@@ -166,115 +209,73 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().height(46.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.LockOpen, contentDescription = null, tint = Color.Black)
+                            Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black)
                             Spacer(Modifier.width(8.dp))
-                            Text("Instant Biometric / PIN Unlock", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text("🔐 UNLOCK VIA FINGERPRINT / DEVICE PIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
-                Spacer(Modifier.height(24.dp))
-                HorizontalDivider(color = Color(0xFF334155))
                 Spacer(Modifier.height(20.dp))
             }
 
-            // ── User Category Selector Chips ────────────────────────────────
-            Text("Select Your Primary Category:", color = Color.Gray, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
-            Spacer(Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(userCategories) { cat ->
-                    val isSel = cat.key == selectedCategory
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSel) cat.color.copy(alpha = 0.2f) else Color(0xFF1E293B),
-                        modifier = Modifier
-                            .border(
-                                width = if (isSel) 2.dp else 1.dp,
-                                color = if (isSel) cat.color else Color(0xFF334155),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable { selectedCategory = cat.key }
-                    ) {
-                        Text(
-                            cat.label,
-                            color = if (isSel) cat.color else Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                        )
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
-
-            // ── Mobile Number Input (First Input Box - Autofetched Cell / WhatsApp Number) ──
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it.filter { c -> c.isDigit() }.take(10) },
-                label = {
+            // ── 4. Fallback Error / Info Banner ──────────────────────────────
+            if (errorMsg.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFEF4444).copy(alpha = 0.15f),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFEF4444), RoundedCornerShape(8.dp))
+                ) {
                     Text(
-                        if (isSimAutofetched) "⚡ WhatsApp Cell Number (Autofetched SIM)" else "WhatsApp Cell Number",
-                        color = if (isSimAutofetched) Color(0xFF00FF00) else Color.Gray,
-                        fontWeight = FontWeight.Bold
+                        text = errorMsg,
+                        color = Color(0xFFEF4444),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(10.dp)
                     )
-                },
-                supportingText = {
-                    if (isSimAutofetched) {
-                        Text("✓ Auto-detected SIM card number from your device", color = Color(0xFF00FF00), fontSize = 11.sp)
-                    }
-                },
-                leadingIcon = {
-                    Icon(
-                        if (isSimAutofetched) Icons.Default.SimCard else Icons.Default.Phone,
-                        contentDescription = null,
-                        tint = if (isSimAutofetched) Color(0xFF00FF00) else Color(0xFF00F0FF)
-                    )
-                },
-                prefix = { Text("+91 ", color = Color.White, fontWeight = FontWeight.Bold) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isSimAutofetched) Color(0xFF00FF00) else Color(0xFF00F0FF),
-                    unfocusedBorderColor = if (isSimAutofetched) Color(0xFF00FF00).copy(alpha = 0.6f) else Color(0xFF334155),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
-            )
-            Spacer(Modifier.height(12.dp))
+                }
+                Spacer(Modifier.height(14.dp))
+            }
 
-            // ── Full Name Input ─────────────────────────────────────────────
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Full Name", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFFFFD700)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFFFD700),
-                    unfocusedBorderColor = Color(0xFF334155),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                )
-            )
-
-            // ── 6-digit OTP Input (shown after OTP sent) ────────────────────
-            if (otpSent) {
-                Spacer(Modifier.height(12.dp))
+            if (!otpSent) {
+                // ── 5. Mobile WhatsApp Number Input (Green Bordered) ──────────────
                 OutlinedTextField(
-                    value = otp,
-                    onValueChange = { otp = it.filter { c -> c.isDigit() }.take(6) },
-                    label = { Text("6-Digit WhatsApp OTP", color = Color.Gray) },
-                    leadingIcon = { Icon(Icons.Default.Sms, contentDescription = null, tint = Color(0xFF00FF00)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    value = phone,
+                    onValueChange = { phone = it.filter { c -> c.isDigit() }.take(10) },
+                    label = {
+                        Text(
+                            if (isSimAutofetched) "⚡ WhatsApp Cell Number (Autofetched SIM)" else "Mobile WhatsApp Number",
+                            color = Color(0xFF00FF00),
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    supportingText = {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            if (isSimAutofetched) {
+                                Text("✓ Auto-detected SIM number", color = Color(0xFF00FF00), fontSize = 11.sp)
+                            } else {
+                                Spacer(Modifier.width(1.dp))
+                            }
+                            Text("${phone.length}/10", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    leadingIcon = {
+                        Icon(
+                            if (isSimAutofetched) Icons.Default.SimCard else Icons.Default.Phone,
+                            contentDescription = null,
+                            tint = Color(0xFF00FF00)
+                        )
+                    },
+                    prefix = { Text("+91 ", color = Color.White, fontWeight = FontWeight.Bold) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00FF00),
-                        unfocusedBorderColor = Color(0xFF334155),
+                        unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
                     )
@@ -282,7 +283,81 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
                 Spacer(Modifier.height(12.dp))
 
-                // ── Direct "Open WhatsApp to Get OTP" Button ─────────────────
+                // ── 6. Full Name Input (Green Bordered) ───────────────────────────
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Your Full Name (பெயர்)", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold) },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF00F0FF)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00FF00),
+                        unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
+
+                Spacer(Modifier.height(14.dp))
+
+                // ── 7. Primary Goal Category Dropdown ──────────────────────────────
+                ExposedDropdownMenuBox(
+                    expanded = dropdownExpanded,
+                    onExpandedChange = { dropdownExpanded = !dropdownExpanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedCategoryLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Choose Your Primary Goal", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold) },
+                        leadingIcon = { Icon(Icons.Default.Category, contentDescription = null, tint = Color(0xFFFFD700)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00FF00),
+                            unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = dropdownExpanded,
+                        onDismissRequest = { dropdownExpanded = false },
+                        modifier = Modifier.background(Color(0xFF1E293B))
+                    ) {
+                        userCategories.forEach { item ->
+                            DropdownMenuItem(
+                                text = { Text(item.label, color = Color.White, fontWeight = FontWeight.Bold) },
+                                onClick = {
+                                    selectedCategoryKey = item.key
+                                    dropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            } else {
+                // ── OTP Verification Mode ──────────────────────────────────────
+                OutlinedTextField(
+                    value = otp,
+                    onValueChange = { otp = it.filter { c -> c.isDigit() }.take(6) },
+                    label = { Text("6-Digit WhatsApp OTP", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold) },
+                    leadingIcon = { Icon(Icons.Default.Sms, contentDescription = null, tint = Color(0xFF00FF00)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00FF00),
+                        unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
+
+                Spacer(Modifier.height(12.dp))
+
                 Button(
                     onClick = {
                         val waMsg = Uri.encode("Hi FAGO! Send my login OTP for +91 $phone")
@@ -299,17 +374,12 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                 }
             }
 
-            if (errorMsg.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
-                Text(errorMsg, color = Color(0xFFF43F5E), fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
+            Spacer(Modifier.height(20.dp))
 
-            Spacer(Modifier.height(24.dp))
-
-            // ── Send OTP / Verify Login Button ──────────────────────────────
+            // ── 8. Action Button (Bright Green "Send WhatsApp OTP") ───────────────
             Button(
                 onClick = {
-                    if (phone.length != 10) { errorMsg = "Enter valid 10-digit Indian mobile number"; return@Button }
+                    if (phone.length != 10) { errorMsg = "Please enter a valid 10-digit Indian mobile number"; return@Button }
                     errorMsg = ""
                     isLoading = true
 
@@ -326,7 +396,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             result.onSuccess { sentOtp ->
                                 generatedOtp = sentOtp
                                 otpSent = true
-                                errorMsg = "✅ OTP sent via WhatsApp! Check your WhatsApp messages."
+                                errorMsg = "✅ OTP requested! Check your WhatsApp messages or tap Open WhatsApp."
                             }.onFailure {
                                 errorMsg = it.message ?: "Failed to send WhatsApp OTP"
                             }
@@ -344,22 +414,43 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (otpSent) Color(0xFF00FF00) else Color(0xFFFFD700)
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
                 shape = RoundedCornerShape(12.dp),
                 enabled = !isLoading
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Text(
-                        if (otpSent) "✅ Verify OTP & Access FAGO"
-                        else if (cooldownSeconds > 0) "Resend OTP in ${cooldownSeconds}s"
-                        else "📲 Send WhatsApp OTP",
-                        color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 16.sp
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (otpSent) Icons.Default.CheckCircle else Icons.Default.Chat,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (otpSent) "Verify OTP & Access FAGO"
+                            else if (cooldownSeconds > 0) "Resend OTP in ${cooldownSeconds}s"
+                            else "Send WhatsApp OTP",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // ── 9. Method Switcher Link ───────────────────────────────────────────
+            TextButton(onClick = { isSmsMode = !isSmsMode }) {
+                Text(
+                    text = if (isSmsMode) "Switch to WhatsApp OTP Method" else "Switch to SMS OTP Method",
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }

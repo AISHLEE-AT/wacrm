@@ -159,17 +159,21 @@ fun TourOScreen(onBack: () -> Unit) {
             item {
                 Button(
                     onClick = {
+                        val pName = authState?.fullName?.ifBlank { "Pilgrim" } ?: "Pilgrim"
+                        val pPhone = authState?.phone ?: "9486335870"
                         val msg = Uri.encode(
                             "🕉️ *TOURO TAMIL NADU TEMPLE & HILL TOUR BOOKING* 🕉️\n\n" +
+                            "👤 *Pilgrim / Traveller Name*: $pName\n" +
+                            "📱 *Cell / WhatsApp*: +91 $pPhone\n" +
                             "🚩 *Selected Package*: ${selectedPkg.title}\n" +
                             "⏱️ *Duration*: ${selectedPkg.duration}\n" +
                             "🚘 *Vehicle Type*: ${selectedPkg.vehicle}\n" +
                             "👥 *Passengers*: $passengerCount Persons\n" +
                             "💵 *Package Base Fare*: ₹${selectedPkg.baseRate.toInt()}\n" +
-                            "📍 *Live Pickup Address*: Tamil Nadu Pickup Location\n\n" +
-                            "👉 Please confirm pickup date & driver assignment!"
+                            "📍 *Pickup Location*: Gandhipuram, Coimbatore 641012, Tamil Nadu\n\n" +
+                            "👉 TourO Manager: Please confirm tour booking & driver assignment!"
                         )
-                        val waUri = Uri.parse("https://api.whatsapp.com/send?phone=916381029380&text=$msg")
+                        val waUri = Uri.parse("https://api.whatsapp.com/send?phone=919486335870&text=$msg")
                         context.startActivity(Intent(Intent.ACTION_VIEW, waUri))
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),

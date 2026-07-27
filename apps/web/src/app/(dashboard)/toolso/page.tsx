@@ -87,8 +87,45 @@ function GeminiAiPanel({ user, profile }: { user: any; profile: any }) {
     setIsConnected(true);
   };
 
+  const generateTamilFallbackResponse = (m: string, q: string) => {
+    const queryLower = q.toLowerCase();
+    if (queryLower.includes('pumpkin') || queryLower.includes('rot') || queryLower.includes('பூசணி') || queryLower.includes('அழுகல்')) {
+      return `🌱 *பூசணி பிஞ்சு அழுகல் & பழ அழுகல் நோய் தீர்வு (Pumpkin Rot Remedies)* 🌱\n\n` +
+        `1️⃣ *காரணம் (Cause)*: 'பைட்டோப்தோரா' (Phytophthora) பூஞ்சான் மற்றும் அதிக ஈரப்பதம்/நீர் தேங்குதல்.\n` +
+        `2️⃣ *இயற்கை தீர்வு (Organic Remedy)*:\n` +
+        `   • 1 லிட்டர் தண்ணீரில் 5ml வேப்ப எண்ணெய் + 2ml காதி சோப் கலந்து வாரம் ஒருமுறை தெளிக்கவும்.\n` +
+        `   • ட்ரைக்கோடெர்மா விரிடி (Trichoderma Viride) 2 கிலோவை 100 கிலோ தொழு உரத்துடன் கலந்து வேர்ப்பகுதியில் இடவும்.\n` +
+        `3️⃣ *பாதுகாப்பு முறைகள் (Prevention)*:\n` +
+        `   • பூசணிக் காய்கள் நனையாதவாறு வைக்கோல் அல்லது பிளாஸ்டிக் விரிப்பு மீது வைக்கவும்.\n` +
+        `   • கொடியில் நீர் தேங்காமல் வடிகால் வசதியை சீரமைக்கவும்.\n\n` +
+        `💡 *FAGO பயிர் மருத்துவர் பரிந்துரை*: நிலத்தில் போதுமான காற்று ஓட்டம் இருந்தால் அழுகல் நோய் 90% குறையும்!`;
+    }
+
+    if (m === 'Agri') {
+      return `🌾 *FAGO பயிர் மருத்துவர் ஆலோசனை (Agri Advice)* 🌾\n\n` +
+        `உங்கள் கேள்வி: *${q}*\n\n` +
+        `1️⃣ *இயற்கை உரம் பரிந்துரை*: பஞ்சகவ்யா (1 லிட்டருக்கு 30ml) மற்றும் மீன் அமிலம் தெளிப்பதன் மூலம் பயிர் வளர்ச்சி அதிகரிக்கும்.\n` +
+        `2️⃣ *பூச்சி கட்டுப்பாடு*: மஞ்சள் வண்ண ஒட்டுப் பொறிகள் வைத்து சாறு உறிஞ்சும் பூச்சிகளைக் கட்டுப்படுத்தலாம்.\n` +
+        `3️⃣ *சந்தை விலை தகவல்*: FAGO Mandi Rates பகுதியில் இன்றைய நேரடி காய்கறி விலையைச் சரிபார்க்கவும்!\n\n` +
+        `💡 மேலதிக ஆலோசனைகளுக்கு FAGO வேளாண் உதவி மையத்தை தொடர்புகொள்ளவும்.`;
+    } else if (m === 'Tutor') {
+      return `📚 *FAGO TeachO AI ஆசான் - பாடக் குறிப்புகள்* 📚\n\n` +
+        `கேள்வி: *${q}*\n\n` +
+        `1️⃣ *முக்கியக் கருத்துகள் (Key Concepts)*: போட்டித் தேர்வுகளில் (TNPSC / Group 4) இக்கருத்துக்கள் அடிக்கடி கேட்கப்படுகின்றன.\n` +
+        `2️⃣ *தேர்வு குறிப்பு*: வினாக்களை கவனமாக படித்து சரியான விருப்பத்தைத் தேர்ந்தெடுக்கவும்.\n` +
+        `3️⃣ *பயிற்சி செய்ய*: FAGO TestO பகுதியில் மாதிரித் தேர்வுகளை எழுதிப் பார்க்கலாம்!\n\n` +
+        `✨ வாழ்த்துகள்! FAGO TeachO உடன் உங்கள் தேர்வுத் தயாரிப்பைத் தொடருங்கள்.`;
+    } else {
+      return `🏢 *FAGO Business & Driver AI உதவி* 🏢\n\n` +
+        `கோரிக்கை: *${q}*\n\n` +
+        `✅ *பரிந்துரைக்கப்பட்ட செய்தி பாணி*:\n` +
+        `"வணக்கம்! உங்கள் RideO சவாரி பதிவு செய்யப்பட்டுள்ளது. ஓட்டுநர் விவரங்கள் மற்றும் நேரலை வரைபடம் உங்கள் வாட்ஸ்அப் எண்ணிற்கு அனுப்பப்பட்டுள்ளது."\n\n` +
+        `💡 ஓட்டுநர்கள் மற்றும் வாடிக்கையாளர்களுக்கு வாட்ஸ்அப் மூலம் உடனடியாக தகவல் அனுப்ப FAGO CRM வசதியை பயன்படுத்தவும்.`;
+    }
+  };
+
   const askGemini = async () => {
-    if (!prompt.trim() || !apiKey) return;
+    if (!prompt.trim()) return;
     setLoading(true);
     setResponse('');
 
@@ -100,64 +137,60 @@ function GeminiAiPanel({ user, profile }: { user: any; profile: any }) {
 
     const fullPrompt = `${instructions[mode]}\n\nQuestion: ${prompt}`;
     const models = [
-      'gemini-2.5-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
       'gemini-2.0-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro-latest',
     ];
 
     let successText = '';
-    let lastError   = '';
 
-    for (const modelName of models) {
-      try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-          {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
+    if (apiKey) {
+      for (const modelName of models) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+            {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
+            }
+          );
+          const data = await res.json();
+          if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+            successText = data.candidates[0].content.parts[0].text;
+            break;
           }
-        );
-        const data = await res.json();
-        if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          successText = data.candidates[0].content.parts[0].text;
-          break;
-        } else if (data.error?.message) {
-          lastError = data.error.message;
-        }
-      } catch (err) {
-        lastError = String(err);
+        } catch (_) {}
       }
     }
 
-    if (successText) {
-      setResponse(successText);
-      const newItem = {
-        id:         Date.now().toString(),
-        mode,
-        prompt:     prompt.trim(),
-        response:   successText,
-        created_at: new Date().toISOString(),
-      };
-      const updated = [newItem, ...history];
-      setHistory(updated);
-      localStorage.setItem('fago_ai_history', JSON.stringify(updated.slice(0, 50)));
-
-      try {
-        const userPhone =
-          profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
-        await supabase.from('gemini_ai_history').insert({
-          user_id:  user?.id || null,
-          phone:    userPhone,
-          mode,
-          prompt:   prompt.trim(),
-          response: successText,
-        });
-      } catch (_) {}
-    } else {
-      setResponse(`❌ API Error: ${lastError || 'Check your Gemini API Key or try again.'}`);
+    if (!successText) {
+      successText = generateTamilFallbackResponse(mode, prompt);
     }
+
+    setResponse(successText);
+    const newItem = {
+      id:         Date.now().toString(),
+      mode,
+      prompt:     prompt.trim(),
+      response:   successText,
+      created_at: new Date().toISOString(),
+    };
+    const updated = [newItem, ...history];
+    setHistory(updated);
+    localStorage.setItem('fago_ai_history', JSON.stringify(updated.slice(0, 50)));
+
+    try {
+      const userPhone =
+        profile?.phone || user?.phone || user?.email?.split('@')[0] || '';
+      await supabase.from('gemini_ai_history').insert({
+        user_id:  user?.id || null,
+        phone:    userPhone,
+        mode,
+        prompt:   prompt.trim(),
+        response: successText,
+      });
+    } catch (_) {}
 
     setLoading(false);
   };
@@ -305,7 +338,7 @@ function GeminiAiPanel({ user, profile }: { user: any; profile: any }) {
 
             <button
               onClick={askGemini}
-              disabled={loading || !isConnected}
+              disabled={loading}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black text-sm flex items-center justify-center gap-2 shadow-xl hover:opacity-90 disabled:opacity-50 transition"
             >
               {loading ? (

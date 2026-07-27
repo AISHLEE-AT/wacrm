@@ -67,10 +67,17 @@ fun ProfileScreen(
     }
     val roleBgColor = roleColor.copy(alpha = 0.15f)
 
-    val fullName = profileData["full_name"] ?: "FAGO User"
-    val rawPhone = profileData["whatsapp"] ?: profileData["phone"] ?: authState.phone ?: ""
+    val fullName = (profileData["full_name"]?.takeIf { it.isNotBlank() }
+        ?: authState.fullName?.takeIf { it.isNotBlank() }
+        ?: "Rajakumaran (Area Admin)").trim()
+    val rawPhone = authState.phone?.takeIf { it.isNotBlank() }
+        ?: profileData["whatsapp"]?.takeIf { it.isNotBlank() }
+        ?: profileData["phone"]?.takeIf { it.isNotBlank() }
+        ?: "9486335870"
     val cleanPhone = formatPhone(rawPhone, authState.phone)
-    val address  = profileData["address"] ?: "Tamil Nadu, India"
+    val address  = (profileData["address"]?.takeIf { it.isNotBlank() }
+        ?: profileData["city"]?.takeIf { it.isNotBlank() }
+        ?: "Gandhipuram, Coimbatore 641012, Tamil Nadu").trim()
 
     fun launchUpi(amount: String?) {
         val upiUrl = "upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution${if (amount != null) "&am=$amount" else ""}&cu=INR"

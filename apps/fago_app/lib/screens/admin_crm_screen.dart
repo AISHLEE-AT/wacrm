@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../auth/auth_provider.dart';
 import '../services/whatsapp_service.dart';
 
 class AdminCrmScreen extends ConsumerStatefulWidget {
@@ -31,7 +29,7 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _fetchDrivers();
     _fetchCrmContacts();
     _searchController.addListener(_filterContacts);
@@ -448,12 +446,76 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
     );
   }
 
+  Widget _buildMachineryTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.build_circle, color: Colors.amber, size: 22),
+                    SizedBox(width: 8),
+                    Text('Register New RentO Machine (புதிய இயந்திரம்)', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 15)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text('Fill details to register a new real farm equipment / heavy machine:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('⚡ Machinery registration active! Virtual machines ready for cleanup.')),
+                    );
+                  },
+                  icon: const Icon(Icons.add, color: Colors.black),
+                  label: const Text('Add Real Machinery Record', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, minimumSize: const Size(double.infinity, 44)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Registered Machinery & Operators:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+          const SizedBox(height: 10),
+          Card(
+            color: const Color(0xFF1E1E1E),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: ListTile(
+              leading: const Icon(Icons.agriculture, color: Colors.greenAccent, size: 32),
+              title: const Text('Mahindra 575 DI Tractor + Rotavator', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              subtitle: const Text('Operator: Farmer Murugan (+91 9789012345)\nRate: ₹700/Hour • Status: Available', style: TextStyle(color: Colors.grey, fontSize: 11)),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Test machine record removed successfully!')),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
-        title: const Text('👑 Admin CRM & Driver Management', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text('👑 Admin CRM & Machinery Hub', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
         backgroundColor: const Color(0xFF141414),
         actions: [
           IconButton(icon: const Icon(Icons.refresh, color: Color(0xFF00FF00)), onPressed: () { _fetchDrivers(); _fetchCrmContacts(); }),
@@ -464,8 +526,9 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
           labelColor: Colors.amber,
           unselectedLabelColor: Colors.grey,
           tabs: const [
-            Tab(icon: Icon(Icons.local_shipping), text: 'Driver Management'),
-            Tab(icon: Icon(Icons.contacts), text: 'WhatsApp CRM Contacts'),
+            Tab(icon: Icon(Icons.local_shipping), text: 'Drivers'),
+            Tab(icon: Icon(Icons.contacts), text: 'CRM Contacts'),
+            Tab(icon: Icon(Icons.agriculture), text: 'RentO Machinery'),
           ],
         ),
       ),
@@ -474,6 +537,7 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
         children: [
           _buildDriversTab(),
           _buildCrmContactsTab(),
+          _buildMachineryTab(),
         ],
       ),
     );

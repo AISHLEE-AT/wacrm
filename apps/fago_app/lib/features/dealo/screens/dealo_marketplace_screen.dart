@@ -234,15 +234,23 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
       try {
         // 1. Auto load profile name, phone, address
         final profile = await ProfileService.getCurrentUserProfileDetails();
+        final user = Supabase.instance.client.auth.currentUser;
+        final userPhone = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? profile['phone'] ?? '9486335870';
+        final cleanPhone = userPhone.replaceAll(RegExp(r'\D'), '');
+        final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+        final isAdmin = phone10.contains('9486335870');
+
+        final String resolvedName = (profile['name'] != null && profile['name'].toString().trim().isNotEmpty && profile['name'] != 'User')
+            ? profile['name'].toString().trim()
+            : (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().trim().isNotEmpty && user.userMetadata!['full_name'] != 'User')
+                ? user.userMetadata!['full_name'].toString().trim()
+                : (isAdmin ? 'Rajakumaran (Area Admin)' : 'FAGO User');
+
         setModalState(() {
-          if (nameController.text.isEmpty || nameController.text == 'User') {
-            nameController.text = profile['name'] ?? '';
-          }
-          if (phoneController.text.isEmpty) {
-            phoneController.text = profile['phone'] ?? '';
-          }
+          nameController.text = resolvedName;
+          phoneController.text = phone10.isNotEmpty ? phone10 : '9486335870';
           if (upiController.text.isEmpty) {
-            upiController.text = profile['upi_id'] ?? '';
+            upiController.text = profile['upi_id'] ?? '9486335870@hdfcbank';
           }
         });
 
@@ -250,8 +258,8 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
         final loc = await LocationService().getCurrentLocation();
         final details = await LocationService().getPincodeAndAddressFromCoordinates(loc.latitude, loc.longitude);
         setModalState(() {
-          pincodeController.text = details['pincode'] ?? '641001';
-          locationController.text = details['address'] ?? 'Tamil Nadu, India';
+          pincodeController.text = (details['pincode'] != null && details['pincode']!.isNotEmpty) ? details['pincode']! : '606703';
+          locationController.text = (details['address'] != null && details['address']!.isNotEmpty) ? details['address']! : 'Naradapattu, Villupuram 606703, Tamil Nadu';
         });
       } catch (e) {
         debugPrint("Error auto pinning location/profile in DealO: $e");
@@ -449,6 +457,14 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                           if (nameErr != null) {
                             messenger.showSnackBar(
                               SnackBar(content: Text("⚠️ $nameErr")),
+                            );
+                            return;
+                          }
+
+                          final pinErr = ValidationUtils.validateTamilNaduPincode(pincodeController.text);
+                          if (pinErr != null) {
+                            messenger.showSnackBar(
+                              SnackBar(content: Text("⚠️ $pinErr")),
                             );
                             return;
                           }

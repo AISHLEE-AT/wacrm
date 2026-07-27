@@ -27,29 +27,31 @@ import com.fago.fagoapp.ui.screens.admin.AdminCrmScreen
 import com.fago.fagoapp.ui.screens.web.WebModuleScreen
 
 object Routes {
-    const val SPLASH  = "splash"
-    const val LOGIN   = "login"
-    const val CRM     = "crm"
-    const val RIDEO   = "rideo"
-    const val DRIVO   = "drivo"
-    const val RENTO   = "rento"
-    const val MANDI   = "mandi"
-    const val TOURO   = "touro"
-    const val TEACHO = "teacho"
-    const val TESTO   = "testo"
-    const val TVO     = "tvo"
-    const val AI      = "ai"
-    const val PROMO   = "promo"
-    const val ADMIN   = "admin"
-    const val PROFILE = "profile"
-    const val WEB     = "web/{title}/{path}"
+    const val SPLASH    = "splash"
+    const val LOGIN     = "login"
+    const val PIN_SETUP = "pin_setup/{phone}/{name}"
+    const val CRM       = "crm"
+    const val RIDEO     = "rideo"
+    const val DRIVO     = "drivo"
+    const val RENTO     = "rento"
+    const val MANDI     = "mandi"
+    const val TOURO     = "touro"
+    const val TEACHO   = "teacho"
+    const val TESTO     = "testo"
+    const val TVO       = "tvo"
+    const val AI        = "ai"
+    const val PROMO     = "promo"
+    const val ADMIN     = "admin"
+    const val PROFILE   = "profile"
+    const val WEB       = "web/{title}/{path}"
 
     fun buildWebRoute(title: String, path: String) = "web/${java.net.URLEncoder.encode(title, "UTF-8")}/${java.net.URLEncoder.encode(path, "UTF-8")}"
+    fun buildPinRoute(phone: String, name: String) = "pin_setup/${java.net.URLEncoder.encode(phone, "UTF-8")}/${java.net.URLEncoder.encode(name.ifBlank { "User" }, "UTF-8")}"
 }
 
 /**
- * FAGO Central Navigation Host — full feature parity with Flutter's app_router.dart.
- * Routes all 12+ modules natively in Kotlin + Jetpack Compose.
+ * FAGO Central Navigation Host — Enforces strict role-based routing guards.
+ * USER -> RideO (Rider Map); DRIVER -> DriveO; ADMIN -> CRM.
  */
 @Composable
 fun FagoNavHost(
@@ -84,8 +86,26 @@ fun FagoNavHost(
             )
         }
 
+        composable(
+            route = Routes.PIN_SETUP,
+            arguments = listOf(
+                navArgument("phone") { type = NavType.StringType },
+                navArgument("name")  { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val phone = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("phone") ?: "", "UTF-8")
+            val name  = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("name")  ?: "User", "UTF-8")
+            PinSetupScreen(
+                phone = phone,
+                name = name,
+                onPinSetSuccess = {
+                    navController.navigate(Routes.RIDEO) { popUpTo(0) }
+                }
+            )
+        }
+
         composable(Routes.CRM) {
-            // Guard: non-admins attempting to access CRM route get redirected to RIDEO
+            // Strict guard: non-admins redirected to RIDEO
             if (authState.role != UserRole.ADMIN && authState.role != UserRole.GUEST) {
                 LaunchedEffect(Unit) {
                     navController.navigate(Routes.RIDEO) { popUpTo(0) }
@@ -107,6 +127,7 @@ fun FagoNavHost(
 
         composable(Routes.RIDEO) {
             RiderMapScreen(
+                authState = authState,
                 onOpenDrawer = { navController.navigate(Routes.PROFILE) },
                 onNavigateCrm = {
                     if (authState.role == UserRole.ADMIN) {
@@ -134,7 +155,10 @@ fun FagoNavHost(
         }
 
         composable(Routes.RENTO) {
-            RentOScreen(onBack = { navController.popBackStack() })
+            RentOScreen(
+                authState = authState,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.MANDI) {
@@ -166,21 +190,30 @@ fun FagoNavHost(
         }
 
         composable(Routes.ADMIN) {
-            AdminCrmScreen(
-                onBack = { navController.popBackStack() },
-                onSignOut = {
-                    onSignOut()
-                    navController.navigate(Routes.LOGIN) { popUpTo(0) }
+            // Guard: non-admins cannot access admin route
+            if (authState.role != UserRole.ADMIN) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.RIDEO) { popUpTo(0) }
                 }
-            )
+            } else {
+                AdminCrmScreen(
+                    onBack = { navController.popBackStack() },
+                    onSignOut = {
+                        onSignOut()
+                        navController.navigate(Routes.LOGIN) { popUpTo(0) }
+                    }
+                )
+            }
         }
 
         composable(Routes.PROFILE) {
             ProfileScreen(
                 authState = authState,
                 profileData = mapOf(
+                    "full_name" to (authState.fullName ?: "User"),
                     "phone" to (authState.phone ?: "9486335870"),
                     "whatsapp" to (authState.phone ?: "9486335870"),
+                    "main_category" to (authState.mainCategory ?: "Traveller"),
                     "role" to if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user"
                 ),
                 onSignOut = {

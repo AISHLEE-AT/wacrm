@@ -12,6 +12,7 @@ import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
 import '../features/profile/services/profile_service.dart';
+import '../services/permission_service.dart';
 
 class RiderMapScreen extends StatefulWidget {
   const RiderMapScreen({super.key});
@@ -64,6 +65,9 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   }
 
   Future<void> _initCurrentLocation() async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PermissionService.requestAllPermissions(context);
+    });
     final loc = await LocationService().getCurrentLocation();
     final address = await LocationService().getAddressFromCoordinates(loc.latitude, loc.longitude);
     final profile = await ProfileService.getCurrentUserProfileDetails();
@@ -209,102 +213,214 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     );
   }
 
-  void _showBookingConfirmationDialog() {
+  void _showBookingDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF141414),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        String genderFilter = "all";
+        String sortOrder = "price";
+        String selectedDriverId = "DRV_VIRT_001";
+
+        final virtualDrivers = [
+          {'id': 'DRV_VIRT_001', 'name': 'Captain Senthil Kumar', 'phone': '9486335870', 'category': 'Bike', 'vehicle': 'Honda Activa 6G (TN 38 BL 9486)', 'gender': 'male', 'rating': 4.9, 'eta': '2 mins', 'etaMin': 2, 'dist': '0.8 km', 'fare': (30 + (_estimatedFare > 0 ? _estimatedFare * 0.8 : 40)).round()},
+          {'id': 'DRV_VIRT_002', 'name': 'Driver Anitha R', 'phone': '9123596988', 'category': 'Auto', 'vehicle': 'Bajaj RE Auto (TN 37 AB 1234)', 'gender': 'female', 'rating': 5.0, 'eta': '3 mins', 'etaMin': 3, 'dist': '1.2 km', 'fare': (40 + (_estimatedFare > 0 ? _estimatedFare * 1.1 : 60)).round()},
+          {'id': 'DRV_VIRT_003', 'name': 'Captain Karthik Raja', 'phone': '9876543210', 'category': 'Cab', 'vehicle': 'Swift Dzire AC (TN 38 CZ 5678)', 'gender': 'male', 'rating': 4.8, 'eta': '4 mins', 'etaMin': 4, 'dist': '1.5 km', 'fare': (80 + (_estimatedFare > 0 ? _estimatedFare * 1.5 : 120)).round()},
+          {'id': 'DRV_VIRT_004', 'name': 'Driver Priya Lakshmi', 'phone': '9443322110', 'category': 'SUV', 'vehicle': 'Innova Crysta AC (TN 38 EY 9988)', 'gender': 'female', 'rating': 4.9, 'eta': '5 mins', 'etaMin': 5, 'dist': '2.1 km', 'fare': (150 + (_estimatedFare > 0 ? _estimatedFare * 2.2 : 250)).round()},
+          {'id': 'DRV_VIRT_005', 'name': 'Farmer Murugan', 'phone': '9789012345', 'category': 'Tractor', 'vehicle': 'Mahindra 575 DI (TN 38 TR 4321)', 'gender': 'male', 'rating': 4.9, 'eta': '8 mins', 'etaMin': 8, 'dist': '3.0 km', 'fare': 700},
+          {'id': 'DRV_VIRT_006', 'name': 'Driver Rajesh', 'phone': '9894012345', 'category': 'MiniVan', 'vehicle': 'Tata Ace Gold (TN 38 MV 8899)', 'gender': 'male', 'rating': 4.7, 'eta': '6 mins', 'etaMin': 6, 'dist': '2.5 km', 'fare': 500},
+        ];
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final filtered = virtualDrivers.where((d) {
+              if (genderFilter == "female") return d['gender'] == 'female';
+              if (genderFilter == "male") return d['gender'] == 'male';
+              return true;
+            }).toList();
+
+            filtered.sort((a, b) {
+              if (sortOrder == "eta") return (a['etaMin'] as int).compareTo(b['etaMin'] as int);
+              if (sortOrder == "rating") return (b['rating'] as double).compareTo(a['rating'] as double);
+              return (a['fare'] as num).compareTo(b['fare'] as num);
+            });
+
+            final chosen = virtualDrivers.firstWhere((d) => d['id'] == selectedDriverId, orElse: () => filtered.first);
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85,
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Confirm $_selectedCategory Booking',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('🚖 Select Nearby Driver & Book', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text('Pickup: $_currentAddress', style: const TextStyle(fontSize: 11, color: Colors.grey), overflow: TextOverflow.ellipsis),
+                        ],
+                      ),
+                      IconButton(icon: const Icon(Icons.close, color: Colors.white), onPressed: () => Navigator.pop(ctx)),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
+                  const SizedBox(height: 10),
+
+                  // Gender & Sort Filter Chips
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          ChoiceChip(
+                            label: const Text('All', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            selected: genderFilter == 'all',
+                            selectedColor: const Color(0xFF00FF00),
+                            onSelected: (s) => setModalState(() => genderFilter = 'all'),
+                          ),
+                          const SizedBox(width: 4),
+                          ChoiceChip(
+                            label: const Text('👩 Female', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            selected: genderFilter == 'female',
+                            selectedColor: const Color(0xFF00FF00),
+                            onSelected: (s) => setModalState(() => genderFilter = 'female'),
+                          ),
+                          const SizedBox(width: 4),
+                          ChoiceChip(
+                            label: const Text('👨 Male', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            selected: genderFilter == 'male',
+                            selectedColor: const Color(0xFF00FF00),
+                            onSelected: (s) => setModalState(() => genderFilter = 'male'),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          ChoiceChip(
+                            label: const Text('🏷️ Price', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            selected: sortOrder == 'price',
+                            selectedColor: Colors.amber,
+                            onSelected: (s) => setModalState(() => sortOrder = 'price'),
+                          ),
+                          const SizedBox(width: 4),
+                          ChoiceChip(
+                            label: const Text('⚡ ETA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                            selected: sortOrder == 'eta',
+                            selectedColor: Colors.amber,
+                            onSelected: (s) => setModalState(() => sortOrder = 'eta'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Driver List
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (ctx, index) {
+                        final drv = filtered[index];
+                        final isSel = drv['id'] == selectedDriverId;
+                        return InkWell(
+                          onTap: () => setModalState(() => selectedDriverId = drv['id'] as String),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSel ? const Color(0xFF00FF00).withValues(alpha: 0.15) : const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: isSel ? const Color(0xFF00FF00) : Colors.white24, width: isSel ? 2 : 1),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(drv['gender'] == 'female' ? '👩' : '👨', style: const TextStyle(fontSize: 28)),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(drv['name'] as String, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                          const SizedBox(width: 6),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4)),
+                                            child: Text('⭐ ${drv['rating']}', style: const TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+                                          ),
+                                        ],
+                                      ),
+                                      Text('${drv['category']} • ${drv['vehicle']}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                                      Text('📍 ${drv['dist']} away • ${drv['eta']} ETA', style: const TextStyle(color: Color(0xFF00F0FF), fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
+                                ),
+                                Text('₹${drv['fare']}', style: const TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 18)),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Rider inputs
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _nameController,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          decoration: InputDecoration(
+                            labelText: 'Your Name',
+                            labelStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: _phoneController,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          decoration: InputDecoration(
+                            labelText: 'WhatsApp Phone',
+                            labelStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _confirmAndPostRide();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366),
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('CONFIRM BOOKING WITH ${(chosen['name'] as String).toUpperCase()} VIA WHATSAPP', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Pickup: $_currentAddress',
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Dropoff: $_destinationAddress',
-                style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.bold),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Estimated Fare: ₹${_estimatedFare.toStringAsFixed(0)}',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
-              ),
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(
-                  labelText: 'Your Name',
-                  hintText: 'e.g. Rahul Sharma',
-                  prefixIcon: const Icon(Icons.person, color: Colors.blue),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'WhatsApp Phone Number',
-                  hintText: '+919876543210',
-                  prefixIcon: const Icon(Icons.phone_android, color: Colors.green),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _confirmAndPostRide();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('CONFIRM & NOTIFY NEARBY DRIVERS'),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1269,7 +1385,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                           const SizedBox(height: 12),
 
                           ElevatedButton(
-                            onPressed: _isBooking ? null : _showBookingConfirmationDialog,
+                            onPressed: _isBooking ? null : _showBookingDialog,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF00FF00),
                               foregroundColor: Colors.black,

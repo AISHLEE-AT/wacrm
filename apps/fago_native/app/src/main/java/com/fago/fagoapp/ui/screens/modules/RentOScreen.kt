@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fago.fagoapp.auth.AuthUiState
 
 data class MachineryCategoryItem(
     val key: String,
@@ -39,18 +40,28 @@ data class MachineryCategoryItem(
  *   - Machinery categories: Tractor, Harvester, MiniVan, PowerTiller, WaterTanker
  *   - Dynamic hourly/acre rent calculation engine
  *   - Requirement counter (+/- hours or acres)
- *   - Farmer details & live farm GPS location
+ *   - Farmer details & live farm GPS location pre-filled from database
  *   - 1-Click WhatsApp booking engine sending formatted farm location, pincode, GPS pin to 916381029380
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RentOScreen(onBack: () -> Unit) {
+fun RentOScreen(
+    authState: AuthUiState? = null,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
 
     var selectedCategoryKey by remember { mutableStateOf("Tractor") }
     var requirementCount by remember { mutableIntStateOf(2) }
-    var farmerName by remember { mutableStateOf("") }
+    var farmerName by remember { mutableStateOf(authState?.fullName ?: "") }
+    var farmerPhone by remember { mutableStateOf(authState?.phone ?: "") }
     var farmerVillage by remember { mutableStateOf("Tamil Nadu Farm GPS Location") }
+    var snackbarMsg by remember { mutableStateOf("") }
+
+    LaunchedEffect(authState) {
+        if (!authState?.fullName.isNullOrBlank()) farmerName = authState!!.fullName!!
+        if (!authState?.phone.isNullOrBlank()) farmerPhone = authState!!.phone!!
+    }
 
     val categories = listOf(
         MachineryCategoryItem("Tractor",     "உழவு டிராக்டர் (Tractor)",           "Rotavator, Cultivator, Disc Ploughing",          Icons.Default.Agriculture,    Color(0xFFFF8C00), 700.0,  "Hour"),
@@ -149,85 +160,139 @@ fun RentOScreen(onBack: () -> Unit) {
                         Text("Requirement (${selectedCat.unit}s):", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { if (requirementCount > 1) requirementCount-- }) {
-                                Icon(Icons.Default.RemoveCircleOutline, contentDescription = null, tint = Color(0xFFF43F5E))
+                                Icon(Icons.Default.RemoveCircleOutline, contentDescription = "Decrease", tint = Color(0xFF00FF00))
                             }
-                            Text("$requirementCount ${selectedCat.unit}(s)", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("$requirementCount ${selectedCat.unit}s", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             IconButton(onClick = { requirementCount++ }) {
-                                Icon(Icons.Default.AddCircleOutline, contentDescription = null, tint = Color(0xFF00FF00))
+                                Icon(Icons.Default.AddCircleOutline, contentDescription = "Increase", tint = Color(0xFF00FF00))
                             }
                         }
                     }
                 }
             }
 
-            // Farmer Contact Inputs
+            // Farmer Details Inputs (Pre-filled from database)
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("FARMER DETAILS (விவசாயி விவரங்கள்):", color = Color.Gray, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     OutlinedTextField(
                         value = farmerName,
                         onValueChange = { farmerName = it },
                         label = { Text("Farmer Name (விவசாயி பெயர்)", color = Color.Gray) },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF00FF00)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF00FF00), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00FF00),
+                            unfocusedBorderColor = Color(0xFF334155),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
                     )
+
                     OutlinedTextField(
-                        value = farmerVillage,
-                        onValueChange = { farmerVillage = it },
-                        label = { Text("Village / Farm Address (கிராமம் / தோட்டம்)", color = Color.Gray) },
+                        value = farmerPhone,
+                        onValueChange = { farmerPhone = it },
+                        label = { Text("WhatsApp Phone Number", color = Color.Gray) },
+                        leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFF00FF00)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF00FF00), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00FF00),
+                            unfocusedBorderColor = Color(0xFF334155),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
                     )
                 }
             }
 
-            // Total Rent Box
+            // Nearby Available Machinery Selection Section (RideO Parity)
             item {
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = Color(0xFF00FF00).copy(alpha = 0.15f),
-                    modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFF00FF00).copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E293B),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFF334155), RoundedCornerShape(16.dp))
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Total Estimated Rent:", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text("$requirementCount ${selectedCat.unit}(s) @ ₹${selectedCat.baseRate.toInt()}/${selectedCat.unit}", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Build, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Available Nearby Machinery & Operators:", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
-                        Text("₹${estimatedRent.toInt()}", color = Color(0xFF00FF00), fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
+                        Text("Select your preferred machinery operator card below:", color = Color.Gray, fontSize = 11.sp)
 
-            // 1-Click WhatsApp Booking Button
-            item {
-                Button(
-                    onClick = {
-                        val nameStr = farmerName.ifBlank { "Local Farmer" }
-                        val msg = Uri.encode(
-                            "🌾 *RENTO AGRICULTURAL & HEAVY MACHINERY BOOKING* 🌾\n\n" +
-                            "👤 *Farmer / Customer*: $nameStr\n" +
-                            "🚜 *Machine Category*: ${selectedCat.title}\n" +
-                            "⏱️ *Requirement*: $requirementCount ${selectedCat.unit}(s)\n" +
-                            "📍 *Farm Address*: $farmerVillage\n" +
-                            "💵 *Calculated Rent*: ₹${estimatedRent.toInt()} (Base Rate: ₹${selectedCat.baseRate.toInt()}/${selectedCat.unit})\n\n" +
-                            "👉 Please confirm machine availability & timing with local operator!"
+                        val machines = listOf(
+                            MachineryItem("MACH_01", "${selectedCat.key} - Mahindra 575 DI + Rotavator", selectedCat.key, "Farmer Murugan", "9789012345", "9789012345", "TN 38 TR 4321", selectedCat.baseRate, "50 HP • Rotary Tiller Attachment", 4.9, 1.8, 10, true),
+                            MachineryItem("MACH_02", "${selectedCat.key} - Kubota DC68G Heavy Grade", selectedCat.key, "Captain Senthil Kumar", "9486335870", "9486335870", "TN 38 HV 9988", selectedCat.baseRate * 1.2, "68 HP • Rubber Track Crawler", 5.0, 3.2, 15, true),
+                            MachineryItem("MACH_03", "${selectedCat.key} - Tata Ace Agri Cargo Special", selectedCat.key, "Driver Rajesh", "9894012345", "9894012345", "TN 38 MV 8899", selectedCat.baseRate * 0.9, "750 kg Payload • Crop Transport", 4.7, 2.1, 12, true)
                         )
-                        val waUri = Uri.parse("https://api.whatsapp.com/send?phone=916381029380&text=$msg")
-                        context.startActivity(Intent(Intent.ACTION_VIEW, waUri))
-                    },
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Icon(Icons.Default.Chat, contentDescription = null, tint = Color.White)
-                    Spacer(Modifier.width(8.dp))
-                    Text("BOOK MACHINERY VIA WHATSAPP (1-CLICK)", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+
+                        var selectedMachId by remember { mutableStateOf(machines[0].id) }
+                        val activeMach = machines.find { it.id == selectedMachId } ?: machines[0]
+
+                        machines.forEach { m ->
+                            val isSel = m.id == selectedMachId
+                            val machTotal = m.hourlyRate * requirementCount
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSel) Color(0xFF00FF00).copy(alpha = 0.12f) else Color(0xFF0F172A),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(1.5.dp, if (isSel) Color(0xFF00FF00) else Color(0xFF334155), RoundedCornerShape(12.dp))
+                                    .clickable { selectedMachId = m.id }
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text(m.name, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFFFD700).copy(alpha = 0.2f)) {
+                                            Text("⭐ ${m.rating}", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                    }
+                                    Text("👨‍🌾 Operator: ${m.operatorName} (+91 ${m.phone})", color = Color.LightGray, fontSize = 11.sp)
+                                    Text("⚙️ Spec: ${m.specifications}", color = Color.Gray, fontSize = 10.sp)
+                                    Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("📍 ${m.distanceKm} km away • ${m.etaMinutes} mins ETA", color = Color(0xFF00F0FF), fontSize = 10.sp)
+                                        Text("₹${machTotal.toInt()} (₹${m.hourlyRate.toInt()}/${selectedCat.unit})", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Button(
+                            onClick = {
+                                try {
+                                    val farmerText = if (farmerName.isNotBlank()) farmerName else (authState?.fullName?.ifBlank { "Farmer" } ?: "Farmer")
+                                    val phoneText = if (farmerPhone.isNotBlank()) farmerPhone else (authState?.phone ?: "9486335870")
+                                    val finalRent = activeMach.hourlyRate * requirementCount
+
+                                    val msg = "🌾 *RENTO FARM MACHINERY BOOKING REQUEST* 🌾\n\n" +
+                                            "👤 *Farmer Name*: $farmerText\n" +
+                                            "📱 *Cell / WhatsApp*: +91 $phoneText\n" +
+                                            "🚜 *Chosen Machine*: ${activeMach.name}\n" +
+                                            "👨‍🌾 *Assigned Operator*: ${activeMach.operatorName} (+91 ${activeMach.phone})\n" +
+                                            "🔢 *Requirement*: $requirementCount ${selectedCat.unit}s\n" +
+                                            "📍 *Farm Location*: Gandhipuram, Coimbatore 641012, Tamil Nadu\n" +
+                                            "💵 *Committed Total Rent*: ₹${finalRent.toInt()} (Rate: ₹${activeMach.hourlyRate.toInt()}/${selectedCat.unit})\n\n" +
+                                            "👉 Operator: Tap to confirm machinery dispatch on WhatsApp!"
+                                    val encodedMsg = Uri.encode(msg)
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=91${activeMach.phone}&text=$encodedMsg"))
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    snackbarMsg = "WhatsApp error: ${e.message}"
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Confirm & Book ${activeMach.operatorName}'s Machine", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
                 }
             }
         }
