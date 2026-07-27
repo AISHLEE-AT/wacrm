@@ -24,9 +24,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fago.fagoapp.auth.AuthUiState
+import com.fago.fagoapp.auth.AuthViewModel
 import com.fago.fagoapp.auth.UserRole
+import com.fago.fagoapp.services.DeviceAuthService
 import com.fago.fagoapp.services.LocationService
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 // ── Brand Colors ──────────────────────────────────────────────────────────
 private val SlateBackground = Color(0xFF0F172A)
@@ -69,24 +72,26 @@ fun ProfileScreen(
         scope.launch {
             try {
                 val regPhone = deviceAuthService.getRegisteredPhone()
-                val targetPhone = (authState.phone?.takeIf { it.isNotBlank() }
-                    ?: regPhone?.takeIf { it.isNotBlank() }
-                    ?: profileData["phone"]?.takeIf { it.isNotBlank() }
-                    ?: "").filter { it.isDigit() }
+                val rawTarget = authState.phone?.ifBlank { null }
+                    ?: regPhone?.ifBlank { null }
+                    ?: profileData["phone"]?.ifBlank { null }
+                    ?: profileData["whatsapp"]?.ifBlank { null }
+                    ?: ""
+                val targetDigits = rawTarget.filter { c -> c.isDigit() }
 
-                val searchPhone = if (targetPhone.length >= 10) targetPhone.takeLast(10) else targetPhone
+                val searchPhone = if (targetDigits.length >= 10) targetDigits.takeLast(10) else targetDigits
                 if (searchPhone.length == 10) {
                     livePhone = searchPhone
-                    val profileMap = authViewModel.fetchProfileByPhone(searchPhone)
+                    val profileMap: Map<String, String?>? = authViewModel.fetchProfileByPhone(searchPhone)
                     if (profileMap != null) {
-                        val dbName = profileMap["full_name"]?.takeIf { it.isNotBlank() }
+                        val dbName = profileMap["full_name"]?.ifBlank { null }
                             ?: profileMap["email"]?.substringBefore("@")
                         if (!dbName.isNullOrBlank()) liveName = dbName
-                        val dbCat = profileMap["main_category"]?.takeIf { it.isNotBlank() }
+                        val dbCat = profileMap["main_category"]?.ifBlank { null }
                         if (!dbCat.isNullOrBlank()) liveCategory = dbCat
-                        val dbRole = profileMap["role"]?.takeIf { it.isNotBlank() }
+                        val dbRole = profileMap["role"]?.ifBlank { null }
                         if (!dbRole.isNullOrBlank()) liveRole = dbRole
-                        val dbUpi = profileMap["upi_id"]?.takeIf { it.isNotBlank() }
+                        val dbUpi = profileMap["upi_id"]?.ifBlank { null }
                         if (!dbUpi.isNullOrBlank()) liveUpi = dbUpi
                     }
                 }
