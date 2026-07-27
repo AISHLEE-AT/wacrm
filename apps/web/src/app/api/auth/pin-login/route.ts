@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     // 1. Check if user profile exists for this phone number
     const { data: records } = await supabase
       .from('profiles')
-      .select('id, full_name, main_category')
+      .select('id, full_name, main_category, role')
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},phone.eq.+91${cleanPhone},email.eq.${cleanPhone}@whatsapp.wacrm.local`);
 
     const profile = records?.[0]
@@ -80,10 +80,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to generate session' }, { status: 500 })
     }
 
+    const isAdminPhone = cleanPhone === "9486335870" || cleanPhone === "919486335870" || cleanPhone.endsWith("9486335870") || profile.role === "admin" || profile.role === "ADMIN";
+
+    // Check driver verification status in drivers table
+    const { data: driverRecords } = await supabase
+      .from('drivers')
+      .select('id, is_verified')
+      .or(`mobile_number.eq.${cleanPhone},mobile_number.eq.91${cleanPhone},whatsapp_number.eq.${cleanPhone},user_id.eq.${profile.id}`);
+    const isDriver = (driverRecords && driverRecords.length > 0 && driverRecords[0].is_verified) || profile.role === "driver" || profile.role === "DRIVER";
+
+    const resolvedRole = isAdminPhone ? "admin" : (isDriver ? "driver" : (profile.role || "user"));
+    const resolvedCategory = isDriver ? "Driver" : (profile.main_category || "Traveller");
+
     return NextResponse.json({
       success: true,
       session: sessionData.session,
-      category: profile.main_category || 'Traveller'
+      category: resolvedCategory,
+      role: resolvedRole,
+      isDriver: isDriver,
+      isAdmin: isAdminPhone
     })
 
   } catch (error: any) {

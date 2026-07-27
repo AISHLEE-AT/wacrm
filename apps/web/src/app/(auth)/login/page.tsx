@@ -195,8 +195,9 @@ function LoginPageInner() {
         });
 
         const userCat = data.category || selectedCategory;
-        const isAdminPhone = phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
-        const targetRoute = isAdminPhone ? "/crm" : (categories.find(c => c.key === userCat)?.route || "/rideo");
+        const isAdminUser = data.role === "admin" || data.isAdmin || phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
+        const isDriverUser = data.role === "driver" || data.isDriver || userCat === "Driver";
+        const targetRoute = isAdminUser ? "/crm" : (isDriverUser ? "/drivo" : (categories.find(c => c.key === userCat)?.route || "/rideo"));
         const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
         window.location.href = finalUrl;
       } else {
@@ -247,8 +248,9 @@ function LoginPageInner() {
           });
         }
 
-        const isAdminPhone = phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
-        const targetRoute = isAdminPhone ? "/crm" : (categories.find(c => c.key === selectedCategory)?.route || "/rideo");
+        const isAdminUser = data.role === "admin" || data.isAdmin || phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
+        const isDriverUser = data.role === "driver" || data.isDriver || selectedCategory === "Driver";
+        const targetRoute = isAdminUser ? "/crm" : (isDriverUser ? "/drivo" : (categories.find(c => c.key === selectedCategory)?.route || "/rideo"));
         const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
         window.location.href = finalUrl;
       } else {
@@ -330,7 +332,9 @@ function LoginPageInner() {
           refresh_token: data.refresh_token,
         });
         
-        const targetRoute = categories.find(c => c.key === selectedCategory)?.route || "/rideo";
+        const isAdminUser = data.role === "admin" || data.isAdmin || phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
+        const isDriverUser = data.role === "driver" || data.isDriver || selectedCategory === "Driver";
+        const targetRoute = isAdminUser ? "/crm" : (isDriverUser ? "/drivo" : (categories.find(c => c.key === selectedCategory)?.route || "/rideo"));
         const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
         window.location.href = finalUrl;
       } else {

@@ -272,14 +272,15 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       // 2. Check Driver Status (Check drivers and driver_profiles tables)
-      bool isDriver = profileRole == 'driver';
+      bool isDriver = profileRole == 'driver' || profileRole == 'DRIVER';
       if (!isDriver && user != null) {
         try {
+          final cleanPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
           final driverCheck = await _supabase
               .from('drivers')
               .select('id')
               .or(
-                  'user_id.eq.${user.id},mobile_number.cs.${rawPhone.replaceAll(RegExp(r'\D'), '')}')
+                  'user_id.eq.${user.id},mobile_number.eq.$cleanPhone,mobile_number.eq.91$cleanPhone,whatsapp_number.eq.$cleanPhone')
               .maybeSingle();
 
           if (driverCheck != null) {
@@ -288,7 +289,7 @@ class AuthNotifier extends Notifier<AuthState> {
             final profileDriverCheck = await _supabase
                 .from('driver_profiles')
                 .select('id')
-                .or('phone.cs.${rawPhone.replaceAll(RegExp(r'\D'), '')}')
+                .or('phone.eq.$cleanPhone,phone.eq.91$cleanPhone')
                 .maybeSingle();
             if (profileDriverCheck != null) isDriver = true;
           }

@@ -163,10 +163,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to generate session' }, { status: 500 })
     }
 
-    // 4. Return session tokens to the mobile app
+    // Check driver verification status in drivers table and admin role
+    const { data: profileRecord } = await supabase
+      .from('profiles')
+      .select('role, main_category')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const isAdminPhone = cleanPhone === "9486335870" || cleanPhone === "919486335870" || cleanPhone.endsWith("9486335870") || profileRecord?.role === "admin" || profileRecord?.role === "ADMIN";
+
+    const { data: driverRecords } = await supabase
+      .from('drivers')
+      .select('id, is_verified')
+      .or(`mobile_number.eq.${cleanPhone},mobile_number.eq.91${cleanPhone},whatsapp_number.eq.${cleanPhone},user_id.eq.${user.id}`);
+    const isDriver = (driverRecords && driverRecords.length > 0 && driverRecords[0].is_verified) || profileRecord?.role === "driver" || profileRecord?.role === "DRIVER";
+
+    const resolvedRole = isAdminPhone ? "admin" : (isDriver ? "driver" : (profileRecord?.role || "user"));
+    const resolvedCategory = isDriver ? "Driver" : (profileRecord?.main_category || category || "Traveller");
+
+    // 4. Return session tokens and role to the frontend/app
     return NextResponse.json({ 
       success: true, 
-      session: sessionData.session 
+      session: sessionData.session,
+      role: resolvedRole,
+      category: resolvedCategory,
+      isDriver: isDriver,
+      isAdmin: isAdminPhone
     })
     
   } catch (error: any) {

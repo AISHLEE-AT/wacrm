@@ -438,13 +438,19 @@ class AuthViewModel(
                                 or {
                                     eq("mobile_number", tenDigitPhone)
                                     eq("mobile_number", "91$tenDigitPhone")
+                                    eq("whatsapp_number", tenDigitPhone)
                                 }
                             }
                         }
                         .decodeList<Map<String, String?>>()
                         .firstOrNull()
 
-                    val isVerified = driverRecord?.get("is_verified") == "true"
+                    val isVerified = driverRecord != null && (
+                        driverRecord["is_verified"]?.equals("true", ignoreCase = true) == true ||
+                        driverRecord["is_verified"] == "t" ||
+                        driverRecord["is_verified"] == "1" ||
+                        profileRole == "driver" || profileRole == "DRIVER"
+                    )
                     if (isVerified) {
                         isVerifiedDriver = true
                         if (userId != null) {
