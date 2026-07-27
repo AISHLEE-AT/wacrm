@@ -243,7 +243,6 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
             : (user?.phone ?? user?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
         final cleanPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
         final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : (cleanPhone.isNotEmpty ? cleanPhone : rawEmailPhone);
-        final isAdmin = phone10.endsWith('9486335870');
 
         final String resolvedName = (profile['name'] != null && profile['name'].toString().trim().isNotEmpty && profile['name'] != 'User' && profile['name'] != 'FAGO User')
             ? profile['name'].toString().trim()
