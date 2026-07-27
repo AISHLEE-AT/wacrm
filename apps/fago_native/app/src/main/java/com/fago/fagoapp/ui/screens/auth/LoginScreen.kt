@@ -177,10 +177,12 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                     .clip(RoundedCornerShape(32.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🧠", fontSize = 48.sp)
-                    Text("🌿", fontSize = 24.sp)
-                }
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = com.fago.fagoapp.R.drawable.app_logo),
+                    contentDescription = "FAGO Logo",
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Spacer(Modifier.height(12.dp))

@@ -261,8 +261,8 @@ fun FagoNavHost(
                 authState = authState,
                 profileData = mapOf(
                     "full_name" to (authState.fullName ?: "User"),
-                    "phone" to (authState.phone ?: "9486335870"),
-                    "whatsapp" to (authState.phone ?: "9486335870"),
+                    "phone" to (authState.phone ?: ""),
+                    "whatsapp" to (authState.phone ?: ""),
                     "main_category" to (authState.mainCategory ?: "Traveller"),
                     "role" to if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user"
                 ),

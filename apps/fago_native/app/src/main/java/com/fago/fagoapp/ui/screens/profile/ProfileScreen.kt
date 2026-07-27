@@ -89,8 +89,8 @@ fun ProfileScreen(
     }
     val roleBgColor = roleColor.copy(alpha = 0.15f)
 
-    val fullName = (profileData["full_name"]?.takeIf { it.isNotBlank() && !it.startsWith("User ") }
-        ?: authState.fullName?.takeIf { it.isNotBlank() && !it.startsWith("User ") }
+    val fullName = (profileData["full_name"]?.takeIf { it.isNotBlank() }
+        ?: authState.fullName?.takeIf { it.isNotBlank() }
         ?: "FAGO User").trim()
 
     // Real Phone Number Extraction — prioritize authState.phone, then profileData
