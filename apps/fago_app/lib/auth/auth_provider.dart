@@ -156,13 +156,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
       // Extract all potential phone/email identifiers for admin check
       final String rawPhone = phoneNumber ?? '';
-      final String fbPhone = fbUser?.phoneNumber ?? '';
       final String sbEmail = user?.email ?? '';
       final String sbPhone = user?.phone ?? '';
-      final String userMetaPhone = user?.userMetadata?['phone'] ?? '';
       final String userMetaEmail = user?.userMetadata?['email'] ?? '';
-      final String metaJson = jsonEncode(user?.userMetadata ?? {});
-      final String appMetaJson = jsonEncode(user?.appMetadata ?? {});
 
       String? profilePhone;
       String? profileRole;
