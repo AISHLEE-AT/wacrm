@@ -92,7 +92,7 @@ export async function GET() {
       verify_token: process.env.META_VERIFY_TOKEN || '',
     }
 
-    let { data: config, error: configError } = await supabase
+    let { data: config, error: configError } = await supabaseAdmin()
       .from('whatsapp_config')
       .select('*')
       .eq('account_id', accountId)
@@ -102,7 +102,7 @@ export async function GET() {
     if ((configError || !config) && envDefaults.phone_number_id && envDefaults.access_token) {
       try {
         const encryptedToken = encrypt(envDefaults.access_token)
-        const { data: newConfig } = await supabase
+        const { data: newConfig } = await supabaseAdmin()
           .from('whatsapp_config')
           .upsert(
             {
@@ -256,7 +256,7 @@ export async function POST(request: Request) {
     // Save to database
     // We use a transaction/upsert pattern: each account gets exactly one
     // WhatsApp config row. The schema's UNIQUE(account_id) enforces this.
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await supabaseAdmin()
       .from('whatsapp_config')
       .upsert(
         {
@@ -322,7 +322,7 @@ export async function DELETE() {
       )
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin()
       .from('whatsapp_config')
       .delete()
       .eq('account_id', accountId)
