@@ -87,9 +87,9 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         data: (profile) {
           final sbUser = Supabase.instance.client.auth.currentUser;
           final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
-          final userPhone = (profile?.whatsapp.isNotEmpty == true && profile!.whatsapp != 'Not Set')
+          final userPhone = (profile?.whatsapp != null && profile!.whatsapp.isNotEmpty && profile.whatsapp != 'Not Set')
               ? profile.whatsapp
-              : (profile?.phone.isNotEmpty == true && profile!.phone != 'Not Set')
+              : (profile?.phone != null && profile!.phone.isNotEmpty && profile.phone != 'Not Set')
                   ? profile.phone
                   : (sbUser?.phone?.isNotEmpty == true)
                       ? sbUser!.phone!
@@ -105,7 +105,15 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
                   : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : 'FAGO User'));
 
           final effectiveProfile = (profile != null && profile.fullName != 'FAGO User' && profile.fullName != 'User')
-              ? profile.copyWith(whatsapp: phone10.isNotEmpty ? phone10 : profile.whatsapp, phone: phone10.isNotEmpty ? phone10 : profile.phone)
+              ? ProfileModel(
+                  id: profile.id,
+                  fullName: profile.fullName,
+                  avatarUrl: profile.avatarUrl,
+                  role: profile.role,
+                  whatsapp: phone10.isNotEmpty ? phone10 : profile.whatsapp,
+                  phone: phone10.isNotEmpty ? phone10 : profile.phone,
+                  address: profile.address,
+                )
               : ProfileModel(
                   id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
                   fullName: resolvedName,
