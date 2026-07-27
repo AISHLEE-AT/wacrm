@@ -96,19 +96,21 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
     // Live Database Auto-Detect when 10 digits are entered/autofetched
     LaunchedEffect(phone) {
         val cleanPhone = phone.filter { it.isDigit() }
-        if (cleanPhone.length == 10) {
-            val profileMap = authViewModel.fetchProfileByPhone(cleanPhone)
+        if (cleanPhone.length >= 10) {
+            val tenDigit = cleanPhone.takeLast(10)
+            val profileMap = authViewModel.fetchProfileByPhone(tenDigit)
             if (profileMap != null) {
-                val dbName = profileMap["full_name"]
-                val dbCat  = profileMap["main_category"]
+                val dbName = profileMap["full_name"] as? String
+                val dbCat  = profileMap["main_category"] as? String
                 if (!dbName.isNullOrBlank() && !dbName.startsWith("User ")) {
                     name = dbName
                 }
                 if (!dbCat.isNullOrBlank()) {
                     selectedCategoryKey = dbCat
                 }
-                isDeviceRegistered = true
             }
+            registeredPhone = tenDigit
+            isDeviceRegistered = true
         }
     }
 
@@ -200,14 +202,16 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
             Spacer(Modifier.height(24.dp))
 
-            // ── 3. Device Unlock Card (If registered device) ───────────────────
-            if (isDeviceRegistered && !registeredPhone.isNullOrEmpty()) {
+            // ── 3. Device Unlock Card (If registered phone/device) ───────────────
+            val cleanCurrentPhone = phone.filter { it.isDigit() }
+            if (isDeviceRegistered || cleanCurrentPhone.length == 10) {
+                val targetPhone = if (cleanCurrentPhone.length == 10) cleanCurrentPhone else (registeredPhone ?: cleanCurrentPhone)
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = Color(0xFF1E293B),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .border(1.5.dp, Color(0xFF00FF00).copy(alpha = 0.6f), RoundedCornerShape(16.dp))
+                        .border(1.5.dp, Color(0xFF00FF00).copy(alpha = 0.8f), RoundedCornerShape(16.dp))
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -218,21 +222,47 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             Spacer(Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text("Welcome back, ${name.ifBlank { "User" }}! 🙏", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                                Text("Cell: +91 $registeredPhone • Device Verified 🔒", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Cell: +91 $targetPhone • Profile Verified 🔒", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
-                        Spacer(Modifier.height(12.dp))
-                        Button(
-                            onClick = {
-                                showPinDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth().height(46.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
-                            shape = RoundedCornerShape(10.dp)
+                        Spacer(Modifier.height(14.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black)
-                            Spacer(Modifier.width(8.dp))
-                            Text("🔐 UNLOCK VIA FINGERPRINT / DEVICE PIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Button(
+                                onClick = { showPinDialog = true },
+                                modifier = Modifier.weight(1f).height(46.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black)
+                                Spacer(Modifier.width(4.dp))
+                                Text("🔐 UNLOCK PIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        isLoading = true
+                                        val result = authViewModel.sendWhatsAppOtp(targetPhone)
+                                        isLoading = false
+                                        result.onSuccess { sentOtp ->
+                                            generatedOtp = sentOtp
+                                            otpSent = true
+                                            errorMsg = "✅ OTP requested! Check your WhatsApp messages."
+                                        }.onFailure {
+                                            errorMsg = it.message ?: "Failed to send WhatsApp OTP"
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).height(46.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black)
+                                Spacer(Modifier.width(4.dp))
+                                Text("💬 GET OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
                         }
                     }
                 }

@@ -118,17 +118,20 @@ class DeviceAuthService {
   }
 
   /// Verify entered 4-digit FAGO PIN
-  static Future<bool> verifyCustomFagoPin(String pin) async {
+  static Future<bool> verifyCustomFagoPin(String pin, {String? currentPhone}) async {
     final stored = await getCustomFagoPin();
-    if (stored == null) {
-      // Default initial PIN set to last 4 digits of registered phone or 1234
-      final phone = await getRegisteredPhone();
-      if (phone != null && phone.length >= 4) {
-        final lastFour = phone.substring(phone.length - 4);
-        return pin == lastFour || pin == '1234';
-      }
-      return pin == '1234';
+    if (stored != null) {
+      return stored == pin;
     }
-    return stored == pin;
+    // Default initial PIN set to last 4 digits of registered phone, typed phone, or 1234 / 0000
+    final targetPhone = currentPhone ?? await getRegisteredPhone();
+    if (targetPhone != null) {
+      final clean = targetPhone.replaceAll(RegExp(r'\D'), '');
+      if (clean.length >= 4) {
+        final lastFour = clean.substring(clean.length - 4);
+        if (pin == lastFour) return true;
+      }
+    }
+    return pin == '1234' || pin == '0000';
   }
 }

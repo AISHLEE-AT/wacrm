@@ -136,6 +136,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   bool _isAutofetchedSim = false;
+  bool _isCheckingProfile = false;
+  String? _lastCheckedPhone;
 
   Future<void> _checkAndAutoFillRegisteredDevice() async {
     final registeredPhone = await DeviceAuthService.getRegisteredPhone();
@@ -143,79 +145,120 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLocked = await DeviceAuthService.isProfileLocked();
 
     if (registeredPhone != null && registeredPhone.isNotEmpty && isLocked && mounted) {
+      final clean = registeredPhone.replaceAll(RegExp(r'\D'), '');
+      final tenDigit = clean.length >= 10 ? clean.substring(clean.length - 10) : clean;
       setState(() {
-        _phoneController.text = registeredPhone;
+        _phoneController.text = tenDigit;
         if (registeredName != null && registeredName.isNotEmpty) {
           _nameController.text = registeredName;
         }
         _isReturningUser = true;
         _deviceRegistered = true;
       });
+      _lookupProfileInDb(tenDigit);
       return;
     }
 
     // Auto-fill SIM Card Number extracted at setup permissions level
     final extractedSim = await DeviceService.getExtractedSimPhone();
 
-    if (mounted) {
+    if (mounted && extractedSim != null && extractedSim.isNotEmpty) {
+      final clean = extractedSim.replaceAll(RegExp(r'\D'), '');
+      final tenDigit = clean.length >= 10 ? clean.substring(clean.length - 10) : clean;
       setState(() {
-        if (_phoneController.text.isEmpty && extractedSim != null && extractedSim.isNotEmpty) {
-          _phoneController.text = extractedSim;
+        if (_phoneController.text.isEmpty) {
+          _phoneController.text = tenDigit;
           _isAutofetchedSim = true;
         }
       });
+      _lookupProfileInDb(tenDigit);
     }
   }
 
-  void _onPhoneChanged() async {
-    final text = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    final registeredPhone = await DeviceAuthService.getRegisteredPhone();
-    final cleanRegistered = registeredPhone?.replaceAll(RegExp(r'\D'), '') ?? '';
+  void _onPhoneChanged() {
+    final cleanDigits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final tenDigit = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
 
-    // If typed phone is different from registered device signature, reset device lock view
-    if (cleanRegistered.isNotEmpty && text.isNotEmpty && text != cleanRegistered && !cleanRegistered.endsWith(text)) {
+    if (tenDigit.length == 10) {
+      if (_lastCheckedPhone != tenDigit) {
+        _lookupProfileInDb(tenDigit);
+      }
+    } else {
+      _lastCheckedPhone = null;
       if (mounted && _isReturningUser) {
         setState(() {
           _isReturningUser = false;
-          _deviceRegistered = false;
         });
       }
     }
+  }
 
-    if (text.length == 10) {
-      try {
-        final resList = await Supabase.instance.client
-            .from('profiles')
-            .select('full_name, main_category')
-            .or('phone.eq.$text,phone.eq.91$text,phone.eq.+91$text,email.eq.$text@whatsapp.wacrm.local');
-        final res = resList.isNotEmpty ? resList.first : null;
-        if (res != null && res['full_name'] != null && (res['full_name'] as String).isNotEmpty) {
-          final String existingName = res['full_name'];
-          final String? existingCat = res['main_category'];
-          if (mounted) {
-            setState(() {
+  Future<void> _lookupProfileInDb(String tenDigit) async {
+    if (tenDigit.length != 10) return;
+    _lastCheckedPhone = tenDigit;
+
+    if (mounted) {
+      setState(() => _isCheckingProfile = true);
+    }
+
+    try {
+      final resList = await Supabase.instance.client
+          .from('profiles')
+          .select('full_name, main_category, role, phone, whatsapp')
+          .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,phone.eq.+$91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit,email.eq.$tenDigit@whatsapp.wacrm.local');
+
+      Map<String, dynamic>? res = resList.isNotEmpty ? Map<String, dynamic>.from(resList.first) : null;
+
+      if (res == null) {
+        try {
+          final driverList = await Supabase.instance.client
+              .from('drivers')
+              .select('driver_name, mobile_number')
+              .or('mobile_number.eq.$tenDigit,mobile_number.eq.91$tenDigit,whatsapp_number.eq.$tenDigit');
+          if (driverList.isNotEmpty) {
+            res = {
+              'full_name': driverList.first['driver_name'],
+              'main_category': 'Driver',
+              'role': 'driver',
+            };
+          }
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        final registeredPhone = await DeviceAuthService.getRegisteredPhone();
+        final cleanRegistered = registeredPhone?.replaceAll(RegExp(r'\D'), '') ?? '';
+        final isRegisteredLocally = cleanRegistered.isNotEmpty &&
+            (cleanRegistered == tenDigit || cleanRegistered.endsWith(tenDigit));
+
+        if (res != null || isRegisteredLocally) {
+          final String existingName = res != null ? ((res['full_name'] as String?) ?? '') : '';
+          final String? existingCat = res != null ? (res['main_category'] as String?) : null;
+          final String? role = res != null ? (res['role'] as String?) : null;
+
+          setState(() {
+            if (existingName.isNotEmpty) {
               _nameController.text = existingName;
-              if (existingCat != null && existingCat.isNotEmpty) {
-                _selectedCategory = existingCat;
-              }
-              if (cleanRegistered.isEmpty || text == cleanRegistered || cleanRegistered.endsWith(text)) {
-                _isReturningUser = true;
-              }
-            });
-          }
+            }
+            if (existingCat != null && existingCat.isNotEmpty) {
+              _selectedCategory = existingCat;
+            } else if (role == 'driver') {
+              _selectedCategory = 'Driver';
+            }
+            _isReturningUser = true;
+            _isCheckingProfile = false;
+          });
         } else {
-          if (mounted && (cleanRegistered.isEmpty || (text != cleanRegistered && !cleanRegistered.endsWith(text)))) {
-            setState(() => _isReturningUser = false);
-          }
-        }
-      } catch (_) {
-        if (mounted && (cleanRegistered.isEmpty || (text != cleanRegistered && !cleanRegistered.endsWith(text)))) {
-          setState(() => _isReturningUser = false);
+          setState(() {
+            _isReturningUser = false;
+            _isCheckingProfile = false;
+          });
         }
       }
-    } else {
-      if (mounted && (cleanRegistered.isEmpty || (text != cleanRegistered && !cleanRegistered.endsWith(text)))) {
-        setState(() => _isReturningUser = false);
+    } catch (e) {
+      debugPrint('Profile lookup error: $e');
+      if (mounted) {
+        setState(() => _isCheckingProfile = false);
       }
     }
   }
@@ -380,16 +423,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _onPinEntered(String pin) async {
     if (pin.length != 4) return;
-    final isValid = await DeviceAuthService.verifyCustomFagoPin(pin);
+    final cleanDigits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final tenDigit = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+
+    final isValid = await DeviceAuthService.verifyCustomFagoPin(pin, currentPhone: tenDigit);
     if (!mounted) return;
     if (isValid) {
       setState(() => _isLoading = true);
       final registeredPhone = await DeviceAuthService.getRegisteredPhone();
-      final rawTyped = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
 
       String phone = '';
-      if (rawTyped.length >= 7) {
-        phone = rawTyped;
+      if (tenDigit.length >= 7) {
+        phone = tenDigit;
       } else if (registeredPhone != null && registeredPhone.replaceAll(RegExp(r'\D'), '').length >= 7) {
         phone = registeredPhone.replaceAll(RegExp(r'\D'), '');
       }
@@ -541,8 +586,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: _isAutofetchedSim ? const Color(0xFF00FF00) : Colors.greenAccent,
                       fontWeight: FontWeight.bold,
                     ),
-                    helperText: _isAutofetchedSim ? '✓ Auto-detected SIM card number from your device' : null,
-                    helperStyle: const TextStyle(color: Color(0xFF00FF00), fontSize: 12),
+                    helperText: _isCheckingProfile
+                        ? '⏳ Checking registered FAGO profile...'
+                        : (_isReturningUser
+                            ? '✓ Registered Profile Loaded for +91 ${_phoneController.text}'
+                            : (_isAutofetchedSim ? '✓ Auto-detected SIM card number from your device' : null)),
+                    helperStyle: TextStyle(
+                      color: _isReturningUser || _isAutofetchedSim ? const Color(0xFF00FF00) : Colors.amberAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
