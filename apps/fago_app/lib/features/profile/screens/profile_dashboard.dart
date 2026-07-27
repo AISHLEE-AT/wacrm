@@ -87,10 +87,10 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         data: (profile) {
           final sbUser = Supabase.instance.client.auth.currentUser;
           final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
-          final String userPhone = (profile != null && profile.whatsapp.isNotEmpty && profile.whatsapp != 'Not Set')
-              ? profile.whatsapp
-              : (profile != null && profile.phone.isNotEmpty && profile.phone != 'Not Set')
-                  ? profile.phone
+          final String userPhone = (profile?.whatsapp != null && profile!.whatsapp!.isNotEmpty && profile.whatsapp != 'Not Set')
+              ? profile.whatsapp!
+              : (profile?.phone != null && profile!.phone!.isNotEmpty && profile.phone != 'Not Set')
+                  ? profile.phone!
                   : (sbUser?.phone?.isNotEmpty == true)
                       ? sbUser!.phone!
                       : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
