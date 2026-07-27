@@ -340,30 +340,47 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             ),
           ),
           const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () async {
-              final text = Uri.encodeComponent(
-                "🏢 *FAGO AREA ADMIN RECRUITMENT APPLICATION* 🏢\n\n"
-                "👤 *Applicant Name:* ${profile.fullName}\n"
-                "📱 *Cell / WhatsApp:* $cleanWhatsapp\n"
-                "📍 *Primary Pincode / Area:* ${profile.address ?? 'Tamil Nadu'}\n\n"
-                "👉 *I want to become an Area Admin to manage 100-200 local drivers, merchants, farmers & users in my pincode territory. Please approve my Area Admin recruitment!*"
-              );
-              final url = Uri.parse("https://wa.me/919486335870?text=$text");
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              }
-            },
-            icon: const Icon(Icons.admin_panel_settings, color: Colors.black),
-            label: const Text('🏢 Apply to Become Area Admin (Pincode Manager)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber,
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 8,
+          if (cleanWhatsapp.contains('9486335870') || displayRole == 'admin') ...[
+            ElevatedButton.icon(
+              onPressed: () {
+                context.go('/admin');
+              },
+              icon: const Icon(Icons.admin_panel_settings, color: Colors.black),
+              label: const Text('👑 Access Admin CRM Command Center', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 10,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ] else ...[
+            ElevatedButton.icon(
+              onPressed: () async {
+                final text = Uri.encodeComponent(
+                  "🏢 *FAGO AREA ADMIN RECRUITMENT APPLICATION* 🏢\n\n"
+                  "👤 *Applicant Name:* ${profile.fullName}\n"
+                  "📱 *Cell / WhatsApp:* $cleanWhatsapp\n"
+                  "📍 *Primary Pincode / Area:* ${profile.address ?? 'Tamil Nadu'}\n\n"
+                  "👉 *I want to become an Area Admin to manage 100-200 local drivers, merchants, farmers & users in my pincode territory. Please approve my Area Admin recruitment!*"
+                );
+                final url = Uri.parse("https://wa.me/919486335870?text=$text");
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.admin_panel_settings, color: Colors.black),
+              label: const Text('🏢 Apply to Become Area Admin (Pincode Manager)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber,
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 8,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           ElevatedButton.icon(
             onPressed: () {
               context.go('/drivo');

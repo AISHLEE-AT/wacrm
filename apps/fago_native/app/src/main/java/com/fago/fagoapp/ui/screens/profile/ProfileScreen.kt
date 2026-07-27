@@ -241,25 +241,41 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── Apply to Become Area Admin Button ──────────────────────
-            Button(
-                onClick = {
-                    val text = Uri.encode(
-                        "🏢 *FAGO AREA ADMIN RECRUITMENT APPLICATION* 🏢\n\n" +
-                        "👤 *Applicant Name:* $fullName\n" +
-                        "📱 *Cell / WhatsApp:* $cleanPhone\n" +
-                        "📍 *Primary Area:* $address\n\n" +
-                        "👉 *I want to become an Area Admin to manage local drivers, merchants & users in my pincode territory. Please approve my Area Admin application!*"
-                    )
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/916381029380?text=$text")))
-                },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = GoldAdmin),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color.Black)
-                Spacer(Modifier.width(8.dp))
-                Text("🏢 Apply to Become Area Admin (Pincode Manager)", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            // ── Admin Button (Access CRM for 9486335870 / Apply for Users) ──────
+            if (cleanPhone.contains("9486335870") || isDbAdmin) {
+                Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app/admin"))
+                        try { context.startActivity(intent) } catch (e: Exception) {}
+                    },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = GoldAdmin),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color.Black)
+                    Spacer(Modifier.width(8.dp))
+                    Text("👑 Access Admin CRM Command Center", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            } else {
+                Button(
+                    onClick = {
+                        val text = Uri.encode(
+                            "🏢 *FAGO AREA ADMIN RECRUITMENT APPLICATION* 🏢\n\n" +
+                            "👤 *Applicant Name:* $fullName\n" +
+                            "📱 *Cell / WhatsApp:* $cleanPhone\n" +
+                            "📍 *Primary Area:* $address\n\n" +
+                            "👉 *I want to become an Area Admin to manage local drivers, merchants & users in my pincode territory. Please approve my Area Admin application!*"
+                        )
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/919486335870?text=$text")))
+                    },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = GoldAdmin),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = Color.Black)
+                    Spacer(Modifier.width(8.dp))
+                    Text("🏢 Apply to Become Area Admin (Pincode Manager)", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
             }
 
             Spacer(Modifier.height(12.dp))
