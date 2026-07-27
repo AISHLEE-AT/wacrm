@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/whatsapp_service.dart';
+import 'web_module_screen.dart';
 
 class AdminCrmScreen extends ConsumerStatefulWidget {
   const AdminCrmScreen({super.key});
@@ -64,13 +66,43 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
   Future<void> _fetchCrmContacts() async {
     setState(() => _isLoadingContacts = true);
     try {
-      final res = await _supabase
+      final List<dynamic> contactRes = await _supabase
           .from('contacts')
           .select('id, user_id, name, phone, role, city, last_vehicle_category, source, created_at')
           .order('created_at', ascending: false);
 
+      final List<dynamic> profileRes = await _supabase
+          .from('profiles')
+          .select('id, full_name, phone, whatsapp, role, main_category, address, created_at')
+          .order('created_at', ascending: false);
+
+      final List<dynamic> combined = List.from(contactRes);
+
+      for (var p in profileRes) {
+        final phone = (p['whatsapp'] ?? p['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+        final phone10 = phone.length >= 10 ? phone.substring(phone.length - 10) : phone;
+
+        if (phone10.isNotEmpty && !combined.any((c) => (c['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '').endsWith(phone10))) {
+          final pName = (p['full_name'] != null && p['full_name'].toString().isNotEmpty && p['full_name'] != 'User' && p['full_name'] != 'FAGO User')
+              ? p['full_name'].toString()
+              : (phone10 == '9486335870' || phone10 == '9123596988' ? 'aishlee raadee' : 'Registered User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}');
+
+          combined.add({
+            'id': p['id'],
+            'user_id': p['id'],
+            'name': pName,
+            'phone': phone10,
+            'role': p['role'] ?? 'User',
+            'city': p['address'] ?? 'Tamil Nadu',
+            'last_vehicle_category': p['main_category'] ?? 'General',
+            'source': 'Supabase Profile',
+            'created_at': p['created_at'],
+          });
+        }
+      }
+
       setState(() {
-        _contacts = res as List<dynamic>;
+        _contacts = combined;
         _filteredContacts = _contacts;
       });
     } catch (e) {
@@ -512,13 +544,18 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
 
   Widget _buildModuleManagementHubTab() {
     final modules = [
-      {'title': '🚗 DriveO Partners', 'desc': 'Driver approvals, license checks & 0% commission logs', 'color': Colors.orangeAccent, 'icon': Icons.directions_car},
-      {'title': '📲 WhatsApp CRM', 'desc': 'WhatsApp broadcast messages, OTP status & quick decisions', 'color': Colors.greenAccent, 'icon': Icons.chat},
-      {'title': '🚜 RentO Machinery', 'desc': 'Tractor, harvester & agri equipment listings', 'color': Colors.amber, 'icon': Icons.agriculture},
-      {'title': '🛍️ Mandi Prices', 'desc': 'Live vegetable, grain & mandi market pricing updates', 'color': const Color(0xFF00FF88), 'icon': Icons.storefront},
-      {'title': '🎓 TestO / TeachO', 'desc': 'LMS exams, study material & tutor verifications', 'color': Colors.cyanAccent, 'icon': Icons.school},
-      {'title': '🛕 TourO Pilgrimage', 'desc': 'Devotional tour packages, cab packages & guides', 'color': Colors.deepPurpleAccent, 'icon': Icons.temple_hindu},
-      {'title': '💰 MoneyO Financiers', 'desc': 'Local financier verification & micro-loan approvals', 'color': Colors.limeAccent, 'icon': Icons.account_balance},
+      {'title': '🚕 RideO Rider', 'desc': 'Book 0% commission local cabs & autos', 'color': Colors.cyanAccent, 'icon': Icons.local_taxi, 'route': '/rideo'},
+      {'title': '🚗 DriveO Driver', 'desc': 'Driver approvals, earnings & 0% commission logs', 'color': Colors.orangeAccent, 'icon': Icons.directions_car, 'tabIndex': 0},
+      {'title': '📲 WhatsApp CRM', 'desc': 'WhatsApp broadcast messages & lead status', 'color': Colors.greenAccent, 'icon': Icons.chat, 'tabIndex': 1},
+      {'title': '🚜 RentO Machinery', 'desc': 'Tractor, harvester & agri equipment listings', 'color': Colors.amber, 'icon': Icons.agriculture, 'route': '/rento'},
+      {'title': '🛍️ Mandi Prices', 'desc': 'Live vegetable, grain & mandi market rates', 'color': const Color(0xFF00FF88), 'icon': Icons.storefront, 'route': '/mandi'},
+      {'title': '🎓 TeachO LMS', 'desc': 'LMS exams, study material & tutor verifications', 'color': Colors.cyanAccent, 'icon': Icons.school, 'route': '/teacho'},
+      {'title': '📝 TestO Exams', 'desc': 'Mock tests & competitive exam preparation', 'color': Colors.lightBlueAccent, 'icon': Icons.assignment, 'route': '/testo'},
+      {'title': '🛕 TourO Pilgrimage', 'desc': 'Devotional tour packages, cab packages & guides', 'color': Colors.deepPurpleAccent, 'icon': Icons.temple_hindu, 'route': '/touro'},
+      {'title': '🤖 Gemini AI Assistant', 'desc': 'AI multi-lingual assistant for farmers & users', 'color': Colors.pinkAccent, 'icon': Icons.psychology, 'route': '/gemini'},
+      {'title': '💰 MoneyO Financiers', 'desc': 'Local financier verification & micro-loans', 'color': Colors.limeAccent, 'icon': Icons.account_balance, 'webPath': '/moneyo'},
+      {'title': '📋 TaskO Services', 'desc': 'Local handyman, electrician & plumber tasks', 'color': Colors.tealAccent, 'icon': Icons.task, 'webPath': '/tasko'},
+      {'title': '🔧 ToolsO Utilities', 'desc': 'Agri calculators, crop diagnostic tools', 'color': Colors.amberAccent, 'icon': Icons.handyman, 'webPath': '/toolso'},
     ];
 
     return SingleChildScrollView(
@@ -543,7 +580,7 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
                     children: [
                       Text('👑 FAGO Unified Admin Control Center', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
                       SizedBox(height: 2),
-                      Text('Manage all 7 FAGO modules across Web, Flutter & Android Native apps', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text('Manage all FAGO native modules & WhatsApp CRM across Flutter & Android Native apps', style: TextStyle(color: Colors.white70, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -551,7 +588,7 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
             ),
           ),
           const SizedBox(height: 20),
-          const Text('All Active FAGO Modules:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+          const Text('All Active Native FAGO Modules (Tap to Test):', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
           const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
@@ -560,37 +597,56 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.3,
+              childAspectRatio: 1.25,
             ),
             itemCount: modules.length,
             itemBuilder: (ctx, idx) {
               final m = modules[idx];
               final Color col = m['color'] as Color;
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: col.withValues(alpha: 0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(m['icon'] as IconData, color: col, size: 22),
-                        const SizedBox(width: 6),
-                        Expanded(child: Text(m['title'].toString(), style: TextStyle(color: col, fontWeight: FontWeight.bold, fontSize: 13))),
-                      ],
-                    ),
-                    Text(m['desc'].toString(), style: const TextStyle(color: Colors.grey, fontSize: 10), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: col.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
-                      child: Text('Active Module', style: TextStyle(color: col, fontSize: 9, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+              return InkWell(
+                onTap: () {
+                  if (m['tabIndex'] != null) {
+                    _tabController.animateTo(m['tabIndex'] as int);
+                  } else if (m['route'] != null) {
+                    context.push(m['route'].toString());
+                  } else if (m['webPath'] != null) {
+                    WebModuleScreen.launchInBrowser(path: m['webPath'].toString());
+                  }
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: col.withValues(alpha: 0.4)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(m['icon'] as IconData, color: col, size: 22),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text(m['title'].toString(), style: TextStyle(color: col, fontWeight: FontWeight.bold, fontSize: 12))),
+                        ],
+                      ),
+                      Text(m['desc'].toString(), style: const TextStyle(color: Colors.grey, fontSize: 10), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: col.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Launch Native', style: TextStyle(color: col, fontSize: 9, fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 2),
+                            Icon(Icons.arrow_forward_ios, color: col, size: 9),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DeviceAuthService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -120,13 +121,34 @@ class DeviceAuthService {
   /// Verify entered 4-digit FAGO PIN
   static Future<bool> verifyCustomFagoPin(String pin, {String? currentPhone}) async {
     final stored = await getCustomFagoPin();
-    if (stored != null) {
-      return stored == pin;
+    if (stored != null && stored == pin) {
+      return true;
     }
-    // Default initial PIN set to last 4 digits of registered phone, typed phone, or 1234 / 0000
+
+    // Default initial PIN set to last 4 digits of registered phone, typed phone, web set PIN, or 1234 / 0000
     final targetPhone = currentPhone ?? await getRegisteredPhone();
     if (targetPhone != null) {
       final clean = targetPhone.replaceAll(RegExp(r'\D'), '');
+      final tenDigit = clean.length >= 10 ? clean.substring(clean.length - 10) : clean;
+
+      if (tenDigit.isNotEmpty) {
+        try {
+          final List<dynamic> resList = await Supabase.instance.client
+              .from('profiles')
+              .select('pin, custom_pin, app_pin, web_pin')
+              .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
+
+          if (resList.isNotEmpty) {
+            final res = resList.first;
+            final dbPin = (res['pin'] ?? res['custom_pin'] ?? res['app_pin'] ?? res['web_pin'])?.toString();
+            if (dbPin != null && dbPin == pin) {
+              await setCustomFagoPin(pin);
+              return true;
+            }
+          }
+        } catch (_) {}
+      }
+
       if (clean.length >= 4) {
         final lastFour = clean.substring(clean.length - 4);
         if (pin == lastFour) return true;

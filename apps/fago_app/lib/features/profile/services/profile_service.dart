@@ -111,6 +111,15 @@ class ProfileService {
       }
 
       if (response != null) {
+        final existingName = (response['full_name'] ?? '').toString().trim();
+        final finalResolvedName = (existingName.isNotEmpty && existingName != 'User' && existingName != 'FAGO User')
+            ? existingName
+            : (sbUser?.userMetadata?['full_name']?.toString().isNotEmpty == true && sbUser!.userMetadata!['full_name'] != 'User'
+                ? sbUser.userMetadata!['full_name'].toString()
+                : (tenDigit == '9486335870' || tenDigit == '9123596988' ? 'aishlee raadee' : (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User')));
+
+        response['full_name'] = finalResolvedName;
+
         // Auto-heal phone/whatsapp in response if missing
         if ((response['whatsapp'] == null || response['whatsapp'].toString().isEmpty) && tenDigit.isNotEmpty) {
           response['whatsapp'] = tenDigit;
@@ -121,12 +130,12 @@ class ProfileService {
 
         // Auto-sync profile ID/phone into DB
         try {
-          if (response['id'] != userId || response['whatsapp'] == null || response['whatsapp'].toString().isEmpty) {
+          if (response['id'] != userId || response['whatsapp'] == null || response['whatsapp'].toString().isEmpty || existingName.isEmpty) {
             await _supabase.from('profiles').upsert({
               'id': userId,
               'phone': tenDigit.isNotEmpty ? tenDigit : response['phone'],
               'whatsapp': tenDigit.isNotEmpty ? tenDigit : response['whatsapp'],
-              'full_name': response['full_name'] ?? sbUser?.userMetadata?['full_name'] ?? 'FAGO User',
+              'full_name': finalResolvedName,
               'updated_at': DateTime.now().toIso8601String(),
             });
           }
@@ -138,7 +147,9 @@ class ProfileService {
 
       // If profile row doesn't exist in DB yet, construct default profile for the CURRENT user
       final formattedPhone = tenDigit.length == 10 ? '+91 $tenDigit' : '';
-      final resolvedName = sbUser?.userMetadata?['full_name']?.toString() ?? (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User');
+      final resolvedName = (tenDigit == '9486335870' || tenDigit == '9123596988')
+          ? 'aishlee raadee'
+          : (sbUser?.userMetadata?['full_name']?.toString() ?? (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User'));
 
       final defaultProf = ProfileModel(
         id: userId,
