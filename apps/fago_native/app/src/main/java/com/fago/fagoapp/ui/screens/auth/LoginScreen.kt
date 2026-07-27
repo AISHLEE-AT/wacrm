@@ -310,7 +310,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             Button(
                                 onClick = {
                                     val activity = context as? FragmentActivity
-                                    if (activity != null && deviceAuthService.canAuthenticateBiometrics()) {
+                                    if (activity != null) {
                                         deviceAuthService.showBiometricPrompt(
                                             activity = activity,
                                             title = "FAGO Device Security Unlock",
@@ -343,13 +343,14 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                                         }
                                     }
                                 },
-                                modifier = Modifier.weight(1f).height(44.dp),
+                                modifier = Modifier.weight(1f).height(46.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black)
-                                Spacer(Modifier.width(4.dp))
-                                Text("👆 DEVICE / BIOMETRIC AUTH", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(3.dp))
+                                Text("👆 BIOMETRIC UNLOCK", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1)
                             }
 
                             Button(
@@ -367,13 +368,14 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                                         }
                                     }
                                 },
-                                modifier = Modifier.weight(1f).height(44.dp),
+                                modifier = Modifier.weight(1f).height(46.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black)
-                                Spacer(Modifier.width(4.dp))
-                                Text("💬 GET WHATSAPP OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                                Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(3.dp))
+                                Text("💬 WHATSAPP OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1)
                             }
                         }
 

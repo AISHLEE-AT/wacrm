@@ -20,7 +20,9 @@ import org.koin.androidx.compose.koinViewModel
  * Single activity — Jetpack Compose navigation handles all screens.
  * Auto-requests phone & location permissions on single click on startup.
  */
-class MainActivity : ComponentActivity() {
+import androidx.fragment.app.FragmentActivity
+
+class MainActivity : FragmentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()

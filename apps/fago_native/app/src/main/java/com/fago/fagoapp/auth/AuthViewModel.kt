@@ -357,24 +357,22 @@ class AuthViewModel(
             if (userId != null || tenDigitPhone.isNotEmpty()) {
                 try {
                     // Strategy 1: Fetch profile by Supabase user ID
-                    var profile: Map<String, String?>? = null
+                    var profileJson: JsonObject? = null
 
                     if (userId != null) {
-                        profile = supabase.postgrest["profiles"]
+                        profileJson = supabase.postgrest["profiles"]
                             .select {
-                                filter {
-                                    eq("id", userId)
-                                }
+                                filter { eq("id", userId) }
                                 limit(1)
                             }
-                            .decodeList<Map<String, String?>>()
+                            .decodeList<JsonObject>()
                             .firstOrNull()
                     }
 
-                    // Strategy 2 (FALLBACK): Fetch by phone — handles web-registered users
-                    if (profile == null && tenDigitPhone.isNotEmpty()) {
-                        Log.d("FagoAuth", "Profile by ID not found — trying phone fallback $tenDigitPhone")
-                        profile = supabase.postgrest["profiles"]
+                    // Strategy 2 (FALLBACK): Fetch by phone or synthetic email — handles web-registered users
+                    if (profileJson == null && tenDigitPhone.isNotEmpty()) {
+                        Log.d("FagoAuth", "Profile by ID not found — trying phone/email fallback $tenDigitPhone")
+                        profileJson = supabase.postgrest["profiles"]
                             .select {
                                 filter {
                                     or {
@@ -382,25 +380,30 @@ class AuthViewModel(
                                         eq("phone", "91$tenDigitPhone")
                                         eq("whatsapp", tenDigitPhone)
                                         eq("whatsapp", "91$tenDigitPhone")
+                                        ilike("email", "%$tenDigitPhone%")
                                     }
                                 }
                                 limit(1)
                             }
-                            .decodeList<Map<String, String?>>()
+                            .decodeList<JsonObject>()
                             .firstOrNull()
-
-                        if (profile != null) {
-                            Log.d("FagoAuth", "Profile found via phone fallback — name=${profile["full_name"]}")
-                        }
                     }
 
-                    profileRole = profile?.get("role")
-                    fullName = profile?.get("full_name")
-                    mainCategory = profile?.get("main_category")
-                    isProfileComplete = profile?.get("profile_complete") == "true" ||
-                        (!fullName.isNullOrBlank() && !profile?.get("phone").isNullOrBlank())
-
-                    Log.d("FagoAuth", "Resolved profile — name=$fullName, role=$profileRole, phone=$tenDigitPhone")
+                    if (profileJson != null) {
+                        profileRole = profileJson["role"]?.jsonPrimitive?.contentOrNull
+                        fullName = profileJson["full_name"]?.jsonPrimitive?.contentOrNull
+                        if (fullName.isNullOrBlank()) {
+                            fullName = profileJson["email"]?.jsonPrimitive?.contentOrNull?.substringBefore("@")
+                        }
+                        mainCategory = profileJson["main_category"]?.jsonPrimitive?.contentOrNull
+                        val dbPhone = profileJson["phone"]?.jsonPrimitive?.contentOrNull
+                            ?: profileJson["whatsapp"]?.jsonPrimitive?.contentOrNull
+                        if (!dbPhone.isNullOrBlank()) {
+                            val cleanDb = dbPhone.filter { it.isDigit() }
+                            if (cleanDb.length >= 10) tenDigitPhone = cleanDb.takeLast(10)
+                        }
+                        Log.d("FagoAuth", "Profile found via DB — name=$fullName, role=$profileRole, phone=$tenDigitPhone")
+                    }
                 } catch (e: Exception) {
                     Log.d("FagoAuth", "Profile fetch note: ${e.message}")
                 }
