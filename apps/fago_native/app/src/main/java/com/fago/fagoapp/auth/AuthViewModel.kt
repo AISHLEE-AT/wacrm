@@ -347,7 +347,7 @@ class AuthViewModel(
     private suspend fun resolveRole(phone: String?, userId: String?) {
         try {
             val rawPhone = phone?.filter { it.isDigit() } ?: ""
-            val tenDigitPhone = if (rawPhone.length > 10) rawPhone.takeLast(10) else rawPhone
+            var tenDigitPhone = if (rawPhone.length > 10) rawPhone.takeLast(10) else rawPhone
 
             var profileRole: String? = null
             var fullName: String? = null
