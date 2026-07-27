@@ -106,7 +106,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
             if (profileMap != null || isLocalReg) {
                 val dbName = profileMap?.get("full_name") as? String
                 val dbCat  = profileMap?.get("main_category") as? String
-                if (!dbName.isNullOrBlank() && !dbName.startsWith("User ")) {
+                if (!dbName.isNullOrBlank()) {
                     name = dbName
                 }
                 if (!dbCat.isNullOrBlank()) {
@@ -229,25 +229,100 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF00FF00), modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Welcome back, ${name.ifBlank { "User" }}! 🙏", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text("Welcome back, ${name.ifBlank { "User" }}! 👋", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Text("Cell: +91 $targetPhone • Profile Verified 🔒", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
+                        Spacer(Modifier.height(10.dp))
+
+                        // Category Pill Badge
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFF00FF00).copy(alpha = 0.15f),
+                            modifier = Modifier.border(1.dp, Color(0xFF00FF00).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                        ) {
+                            Text(
+                                text = selectedCategoryLabel,
+                                color = Color(0xFF00FF00),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
+
                         Spacer(Modifier.height(14.dp))
+
+                        // In-Card 4-Digit Quick PIN Input
+                        OutlinedTextField(
+                            value = pinInput,
+                            onValueChange = { input ->
+                                val cleanPin = input.filter { c -> c.isDigit() }.take(4)
+                                pinInput = cleanPin
+                                pinError = ""
+                                if (cleanPin.length == 4) {
+                                    scope.launch {
+                                        val isValid = deviceAuthService.verifyCustomPin(cleanPin)
+                                        if (isValid) {
+                                            isLoading = true
+                                            val resolved = authViewModel.verifyDeviceAndAutoLogin(targetPhone)
+                                            isLoading = false
+                                            onLoginSuccess(resolved)
+                                        } else {
+                                            pinError = "Incorrect 4-Digit PIN"
+                                        }
+                                    }
+                                }
+                            },
+                            label = { Text("Enter 4-Digit Quick PIN", color = Color(0xFF00FF00), fontSize = 12.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00FF00),
+                                unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            )
+                        )
+
+                        if (pinError.isNotEmpty()) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(pinError, color = Color(0xFFEF4444), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Button(
-                                onClick = { showPinDialog = true },
-                                modifier = Modifier.weight(1f).height(46.dp),
+                                onClick = {
+                                    if (pinInput.length != 4) {
+                                        pinError = "Please enter 4 digits"
+                                        return@Button
+                                    }
+                                    scope.launch {
+                                        val isValid = deviceAuthService.verifyCustomPin(pinInput)
+                                        if (isValid) {
+                                            isLoading = true
+                                            val resolved = authViewModel.verifyDeviceAndAutoLogin(targetPhone)
+                                            isLoading = false
+                                            onLoginSuccess(resolved)
+                                        } else {
+                                            pinError = "Incorrect 4-Digit PIN"
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).height(44.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Icon(Icons.Default.Fingerprint, contentDescription = null, tint = Color.Black)
                                 Spacer(Modifier.width(4.dp))
-                                Text("🔐 UNLOCK PIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("🔐 UNLOCK VIA PIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                             }
+
                             Button(
                                 onClick = {
                                     scope.launch {
@@ -263,87 +338,37 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                                         }
                                     }
                                 },
-                                modifier = Modifier.weight(1f).height(46.dp),
+                                modifier = Modifier.weight(1f).height(44.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black)
                                 Spacer(Modifier.width(4.dp))
-                                Text("💬 GET OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("💬 GET OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                             }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // Switch User / Register New Profile Button
+                        TextButton(
+                            onClick = {
+                                isDeviceRegistered = false
+                                registeredPhone = null
+                                phone = ""
+                                name = ""
+                            }
+                        ) {
+                            Text(
+                                text = "Not ${name.ifBlank { "this user" }}? Switch user / Register",
+                                color = Color(0xFF00F0FF),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 }
                 Spacer(Modifier.height(20.dp))
-            }
-
-            if (showPinDialog) {
-                AlertDialog(
-                    onDismissRequest = { showPinDialog = false },
-                    containerColor = Color(0xFF1E293B),
-                    title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Shield, contentDescription = null, tint = Color(0xFF00FF00))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Enter 4-Digit Security PIN", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        }
-                    },
-                    text = {
-                        Column {
-                            Text("Enter your 4-digit FAGO PIN to unlock (+91 ${registeredPhone ?: phone})", color = Color.Gray, fontSize = 12.sp)
-                            Spacer(Modifier.height(12.dp))
-                            if (pinError.isNotEmpty()) {
-                                Text(pinError, color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.height(8.dp))
-                            }
-                            OutlinedTextField(
-                                value = pinInput,
-                                onValueChange = { pinInput = it.filter { c -> c.isDigit() }.take(4) },
-                                label = { Text("4-Digit PIN", color = Color(0xFF00FF00)) },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = Color(0xFF00FF00),
-                                    unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White
-                                )
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                if (pinInput.length != 4) {
-                                    pinError = "PIN must be 4 digits"
-                                    return@Button
-                                }
-                                scope.launch {
-                                    val isValid = deviceAuthService.verifyCustomPin(pinInput)
-                                    if (!isValid) {
-                                        pinError = "Incorrect PIN"
-                                        return@launch
-                                    }
-                                    showPinDialog = false
-                                    isLoading = true
-                                    val targetP = registeredPhone ?: phone
-                                    val resolved = authViewModel.verifyDeviceAndAutoLogin(targetP)
-                                    isLoading = false
-                                    onLoginSuccess(resolved)
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00))
-                        ) {
-                            Text("Verify PIN", color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showPinDialog = false }) {
-                            Text("Cancel", color = Color.Gray)
-                        }
-                    }
-                )
             }
 
             // ── 4. Fallback Error / Info Banner ──────────────────────────────
