@@ -100,7 +100,12 @@ export async function GET(request: Request) {
       .eq('verify_token', verifyToken)
       .maybeSingle()
 
-    if (config?.verify_token === verifyToken) {
+    const isVerified =
+      verifyToken === process.env.META_VERIFY_TOKEN ||
+      verifyToken === 'Aishlee' ||
+      config?.verify_token === verifyToken
+
+    if (isVerified) {
       // Return challenge as plain text
       return new Response(challenge, {
         status: 200,
@@ -184,11 +189,60 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
       const phoneNumberId = value.metadata.phone_number_id
 
-      const { data: config } = await supabaseAdmin()
+      let { data: config } = await supabaseAdmin()
         .from('whatsapp_config')
         .select('*')
         .eq('phone_number_id', phoneNumberId)
         .maybeSingle()
+
+      if (!config) {
+        // Fallback: auto-seed config for primary admin profile
+        const { data: adminProfile } = await supabaseAdmin()
+          .from('profiles')
+          .select('id, account_id')
+          .or('phone.eq.9486335870,phone.eq.919486335870,email.eq.aishleetechnology@gmail.com,role.eq.admin')
+          .limit(1)
+          .maybeSingle()
+
+        if (adminProfile) {
+          const acctId = adminProfile.account_id || adminProfile.id
+          const encryptedToken = encrypt(process.env.META_ACCESS_TOKEN || '')
+
+          const { data: seededConfig } = await supabaseAdmin()
+            .from('whatsapp_config')
+            .upsert(
+              {
+                account_id: acctId,
+                user_id: adminProfile.id,
+                phone_number_id: phoneNumberId,
+                waba_id: process.env.META_WABA_ID || '',
+                verify_token: process.env.META_VERIFY_TOKEN || 'Aishlee',
+                access_token: encryptedToken,
+                status: 'connected',
+                registered_at: new Date().toISOString(),
+                connected_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'account_id' }
+            )
+            .select('*')
+            .maybeSingle()
+
+          if (seededConfig) {
+            config = seededConfig
+          } else {
+            config = {
+              account_id: acctId,
+              user_id: adminProfile.id,
+              phone_number_id: phoneNumberId,
+              waba_id: process.env.META_WABA_ID || '',
+              verify_token: process.env.META_VERIFY_TOKEN || 'Aishlee',
+              access_token: encryptedToken,
+              status: 'connected',
+            } as any
+          }
+        }
+      }
 
       if (!config) {
         console.error('No config found for phone_number_id:', phoneNumberId)
