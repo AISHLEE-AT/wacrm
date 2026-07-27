@@ -170,7 +170,8 @@ export async function POST(request: Request) {
       .eq('id', user.id)
       .maybeSingle();
 
-    const isAdminPhone = cleanPhone === "9486335870" || cleanPhone === "919486335870" || cleanPhone.endsWith("9486335870") || profileRecord?.role === "admin" || profileRecord?.role === "ADMIN";
+    const adminPhones = ['9486335870', '919486335870'];
+    const isAdminPhone = adminPhones.some(p => cleanPhone.includes(p) || cleanPhone.endsWith(p)) || profileRecord?.role === "admin" || profileRecord?.role === "ADMIN";
 
     const { data: driverRecords } = await supabase
       .from('drivers')

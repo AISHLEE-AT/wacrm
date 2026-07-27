@@ -12,6 +12,8 @@ import { MessageCircle } from "lucide-react";
 // itself can stay a server component and export metadata (noindex) —
 // client components can't export Next's metadata object.
 
+import { checkIsAdmin } from "@/lib/auth/admin";
+
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
@@ -22,10 +24,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  const ADMINS = ["919486335870", "9486335870", "919123596988", "9123596988", "aishleetechnology@gmail.com"];
-  const isAdmin = ADMINS.some(admin => 
-    profile?.email?.includes(admin) || profile?.phone?.includes(admin) || user?.phone?.includes(admin) || user?.email?.includes(admin)
-  );
+  const isAdmin = checkIsAdmin(user, profile);
 
   useEffect(() => {
     if (!loading && !user) {

@@ -105,11 +105,9 @@ export async function middleware(request: NextRequest) {
       }
       
       // Direct logged-in users straight to Dashboard or RideO
-      const isAdmin = Boolean(
-        user.email?.includes('aishleetechnology@gmail.com') ||
-        user.email?.includes('9486335870') ||
-        user.phone?.includes('9486335870')
-      );
+      const adminIdentifiers = ['9486335870', '919486335870', 'aishleetechnology@gmail.com'];
+      const userText = `${user.email ?? ''} ${user.phone ?? ''}`.toLowerCase();
+      const isAdmin = adminIdentifiers.some(id => userText.includes(id.toLowerCase()));
       url.pathname = isAdmin ? '/dashboard' : '/rideo';
       supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
       url.search = ''

@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { checkIsAdmin } from "@/lib/auth/admin";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, ArrowRight, Loader2, Smartphone, Send, Lock, UserCheck } from "lucide-react";
 import type { ConfirmationResult } from "firebase/auth";
@@ -195,7 +196,7 @@ function LoginPageInner() {
         });
 
         const userCat = data.category || selectedCategory;
-        const isAdminUser = data.role === "admin" || data.isAdmin || phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
+        const isAdminUser = checkIsAdmin(phone, { role: data.role }) || Boolean(data.isAdmin);
         const isDriverUser = data.role === "driver" || data.isDriver || userCat === "Driver";
         const targetRoute = isAdminUser ? "/crm" : (isDriverUser ? "/drivo" : (categories.find(c => c.key === userCat)?.route || "/rideo"));
         const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
@@ -248,7 +249,7 @@ function LoginPageInner() {
           });
         }
 
-        const isAdminUser = data.role === "admin" || data.isAdmin || phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
+        const isAdminUser = checkIsAdmin(phone, { role: data.role }) || Boolean(data.isAdmin);
         const isDriverUser = data.role === "driver" || data.isDriver || selectedCategory === "Driver";
         const targetRoute = isAdminUser ? "/crm" : (isDriverUser ? "/drivo" : (categories.find(c => c.key === selectedCategory)?.route || "/rideo"));
         const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;
@@ -332,7 +333,7 @@ function LoginPageInner() {
           refresh_token: data.refresh_token,
         });
         
-        const isAdminUser = data.role === "admin" || data.isAdmin || phone === "9486335870" || phone === "919486335870" || phone.endsWith("9486335870");
+        const isAdminUser = checkIsAdmin(phone, { role: data.role }) || Boolean(data.isAdmin);
         const isDriverUser = data.role === "driver" || data.isDriver || selectedCategory === "Driver";
         const targetRoute = isAdminUser ? "/crm" : (isDriverUser ? "/drivo" : (categories.find(c => c.key === selectedCategory)?.route || "/rideo"));
         const finalUrl = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : targetRoute;

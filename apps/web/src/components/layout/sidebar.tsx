@@ -106,6 +106,8 @@ const bottomNavItems = [
   { href: "/profile", label: "Profile & Settings", icon: Settings },
 ];
 
+import { checkIsAdmin } from "@/lib/auth/admin";
+
 interface SidebarProps {
   open?: boolean;
   onClose?: () => void;
@@ -117,15 +119,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const totalUnread = useTotalUnread();
   const [isRegisteredDriver, setIsRegisteredDriver] = useState(false);
 
-  // STRICT ADMIN CHECK: Only 9486335870 or aishleetechnology@gmail.com is Administrator
-  const isAdmin = Boolean(
-    profile?.email?.includes("aishleetechnology@gmail.com") ||
-    profile?.email?.includes("9486335870") ||
-    profile?.phone?.includes("9486335870") ||
-    user?.email?.includes("aishleetechnology@gmail.com") ||
-    user?.email?.includes("9486335870") ||
-    user?.phone?.includes("9486335870")
-  );
+  const isAdmin = checkIsAdmin(user, profile);
 
   useEffect(() => {
     if (!user?.id) return;

@@ -45,18 +45,15 @@ import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
 import { TamilVoiceSearch } from '@/components/layout/TamilVoiceSearch'
 
+import { checkIsAdmin } from '@/lib/auth/admin'
+
 type RangeDays = 7 | 30 | 90
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user, profile, defaultCurrency } = useAuth()
 
-  const isAdmin = Boolean(
-    profile?.email === "aishleetechnology@gmail.com" ||
-    profile?.phone?.includes("9486335870") ||
-    user?.email === "aishleetechnology@gmail.com" ||
-    user?.phone?.includes("9486335870")
-  )
+  const isAdmin = checkIsAdmin(user, profile)
 
   useEffect(() => {
     if (user && !isAdmin) {
@@ -267,7 +264,7 @@ export default function DashboardPage() {
             onRangeChange={handleRangeChange}
           />
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <PipelineDonut data={pipeline} loading={pipelineLoading} />
+            <PipelineDonut data={pipeline} loading={pipelineLoading} currency={defaultCurrency} />
             <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
           </div>
         </div>

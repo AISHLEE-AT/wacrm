@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select(
           "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode",
         )
-        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .eq("id", userId)
         .maybeSingle();
 
       if (error) {

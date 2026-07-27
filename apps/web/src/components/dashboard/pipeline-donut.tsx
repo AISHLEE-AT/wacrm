@@ -2,7 +2,7 @@
 
 import { GitBranch } from 'lucide-react'
 import type { PipelineDonutData } from '@/lib/dashboard/types'
-import { formatCurrencyShort } from '@/lib/currency'
+import { DEFAULT_CURRENCY, formatCurrencyShort } from '@/lib/currency'
 import { EmptyState } from './empty-state'
 import { Skeleton } from './skeleton'
 
@@ -10,10 +10,10 @@ interface PipelineDonutProps {
   data: PipelineDonutData | null
   loading: boolean
   /** Account default currency for the totals. */
-  currency: string
+  currency?: string
 }
 
-export function PipelineDonut({ data, loading, currency }: PipelineDonutProps) {
+export function PipelineDonut({ data, loading, currency = DEFAULT_CURRENCY }: PipelineDonutProps) {
   return (
     <section className="flex h-full flex-col rounded-xl border border-border bg-card">
       <header className="border-b border-border px-5 py-4">

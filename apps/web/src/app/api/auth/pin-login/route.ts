@@ -80,7 +80,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to generate session' }, { status: 500 })
     }
 
-    const isAdminPhone = cleanPhone === "9486335870" || cleanPhone === "919486335870" || cleanPhone.endsWith("9486335870") || profile.role === "admin" || profile.role === "ADMIN";
+    const adminPhones = ['9486335870', '919486335870'];
+    const isAdminPhone = adminPhones.some(p => cleanPhone.includes(p) || cleanPhone.endsWith(p)) || profile.role === "admin" || profile.role === "ADMIN";
 
     // Check driver verification status in drivers table
     const { data: driverRecords } = await supabase
