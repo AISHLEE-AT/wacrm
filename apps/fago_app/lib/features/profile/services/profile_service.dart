@@ -116,7 +116,7 @@ class ProfileService {
             ? existingName
             : (sbUser?.userMetadata?['full_name']?.toString().isNotEmpty == true && sbUser!.userMetadata!['full_name'] != 'User'
                 ? sbUser.userMetadata!['full_name'].toString()
-                : (tenDigit == '9486335870' || tenDigit == '9123596988' ? 'aishlee raadee' : (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User')));
+                : (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User'));
 
         response['full_name'] = finalResolvedName;
 
@@ -130,7 +130,7 @@ class ProfileService {
 
         // Auto-sync profile ID/phone into DB
         try {
-          if (response['id'] != userId || response['whatsapp'] == null || response['whatsapp'].toString().isEmpty || existingName.isEmpty) {
+          if (response['id'] != userId || response['whatsapp'] == null || response['whatsapp'].toString().isEmpty) {
             await _supabase.from('profiles').upsert({
               'id': userId,
               'phone': tenDigit.isNotEmpty ? tenDigit : response['phone'],
@@ -147,9 +147,7 @@ class ProfileService {
 
       // If profile row doesn't exist in DB yet, construct default profile for the CURRENT user
       final formattedPhone = tenDigit.length == 10 ? '+91 $tenDigit' : '';
-      final resolvedName = (tenDigit == '9486335870' || tenDigit == '9123596988')
-          ? 'aishlee raadee'
-          : (sbUser?.userMetadata?['full_name']?.toString() ?? (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User'));
+      final resolvedName = sbUser?.userMetadata?['full_name']?.toString() ?? (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length - 4)}' : 'FAGO User');
 
       final defaultProf = ProfileModel(
         id: userId,
