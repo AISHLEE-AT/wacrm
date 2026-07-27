@@ -90,11 +90,11 @@ class _RentOScreenState extends State<RentOScreen> {
         final phone10 = rawPhone.length >= 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
         final resolvedName = (profile['name'] != null && profile['name']!.isNotEmpty && profile['name'] != 'User' && profile['name'] != 'FAGO User')
             ? profile['name']!
-            : (phone10 == '9123596988' ? 'aishlee raadee' : 'Farmer');
+            : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'Farmer');
 
-        if (_farmerNameController.text.isEmpty || _farmerNameController.text == 'Rajakumaran') _farmerNameController.text = resolvedName;
+        if (_farmerNameController.text.isEmpty) _farmerNameController.text = resolvedName;
         if (_farmerPhoneController.text.isEmpty || _farmerPhoneController.text == '+91') {
-          _farmerPhoneController.text = phone10.isNotEmpty ? '+91 $phone10' : '+91 91235 96988';
+          _farmerPhoneController.text = phone10.isNotEmpty ? '+91 $phone10' : '';
         }
       });
     }

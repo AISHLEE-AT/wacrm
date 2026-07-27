@@ -85,11 +85,11 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         final phone10 = rawPhone.length >= 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
         final resolvedName = (profile['name'] != null && profile['name']!.isNotEmpty && profile['name'] != 'User' && profile['name'] != 'FAGO User')
             ? profile['name']!
-            : (phone10 == '9123596988' ? 'aishlee raadee' : 'FAGO User');
+            : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
 
         if (_nameController.text.isEmpty || _nameController.text == 'User') _nameController.text = resolvedName;
         if (_phoneController.text.isEmpty || _phoneController.text == '+91') {
-          _phoneController.text = phone10.isNotEmpty ? '+91 $phone10' : '+91 91235 96988';
+          _phoneController.text = phone10.isNotEmpty ? '+91 $phone10' : '';
         }
       });
       _mapController?.animateCamera(

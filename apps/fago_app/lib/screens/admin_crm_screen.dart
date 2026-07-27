@@ -85,7 +85,7 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
         if (phone10.isNotEmpty && !combined.any((c) => (c['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '').endsWith(phone10))) {
           final pName = (p['full_name'] != null && p['full_name'].toString().isNotEmpty && p['full_name'] != 'User' && p['full_name'] != 'FAGO User')
               ? p['full_name'].toString()
-              : (phone10 == '9486335870' || phone10 == '9123596988' ? 'aishlee raadee' : 'Registered User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}');
+              : 'Registered User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}';
 
           combined.add({
             'id': p['id'],

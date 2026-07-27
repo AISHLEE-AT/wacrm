@@ -249,11 +249,11 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
             ? profile['name'].toString().trim()
             : (user?.userMetadata?['full_name'] != null && user!.userMetadata!['full_name'].toString().trim().isNotEmpty && user.userMetadata!['full_name'] != 'User')
                 ? user.userMetadata!['full_name'].toString().trim()
-                : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Rajakumaran (Area Admin)' : 'FAGO User'));
+                : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
 
         setModalState(() {
           nameController.text = resolvedName;
-          phoneController.text = phone10.isNotEmpty ? phone10 : '9123596988';
+          phoneController.text = phone10;
           if (upiController.text.isEmpty) {
             upiController.text = (profile['upi_id']?.isNotEmpty == true) ? profile['upi_id']! : (phone10.isNotEmpty ? '$phone10@upi' : '');
           }

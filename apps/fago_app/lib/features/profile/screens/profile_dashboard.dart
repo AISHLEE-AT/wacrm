@@ -103,16 +103,16 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               ? profile.fullName
               : (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
                   ? sbUser.userMetadata!['full_name'].toString()
-                  : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length - 4)}' : 'FAGO User')));
+                  : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
 
-          final displayPhone = phone10.isNotEmpty ? phone10 : (phone10 == '9123596988' ? '9123596988' : (profile?.whatsapp ?? profile?.phone ?? ''));
+          final displayPhone = phone10.isNotEmpty ? phone10 : (profile?.whatsapp ?? profile?.phone ?? '');
 
           final effectiveProfile = ProfileModel(
             id: profile?.id ?? sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
-            fullName: (profile?.fullName != null && profile!.fullName.isNotEmpty && profile.fullName != 'FAGO User' && profile.fullName != 'User') ? profile.fullName : resolvedName,
+            fullName: resolvedName,
             role: isAdmin ? 'ADMIN' : (profile?.role.isNotEmpty == true ? profile!.role.toUpperCase() : 'USER'),
-            whatsapp: displayPhone.isNotEmpty ? displayPhone : '9123596988',
-            phone: displayPhone.isNotEmpty ? displayPhone : '9123596988',
+            whatsapp: displayPhone,
+            phone: displayPhone,
             address: (profile?.address?.isNotEmpty == true) ? profile!.address! : 'Live Location Active',
           );
 
@@ -137,7 +137,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
 
           final resolvedName = (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
               ? sbUser.userMetadata!['full_name'].toString()
-              : (phone10 == '9123596988' ? 'aishlee raadee' : (isAdmin ? 'Admin' : 'FAGO User'));
+              : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
 
           final fallbackProfile = ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',

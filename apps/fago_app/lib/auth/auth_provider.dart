@@ -500,7 +500,7 @@ class AuthNotifier extends Notifier<AuthState> {
             ? existingName
             : (fullName != null && fullName.trim().isNotEmpty && fullName.trim() != 'User'
                 ? fullName.trim()
-                : (tenDigit == '9123596988' ? 'aishlee raadee' : 'User ${tenDigit.substring(tenDigit.length > 4 ? tenDigit.length - 4 : 0)}'));
+                : (tenDigit.isNotEmpty ? 'User ${tenDigit.substring(tenDigit.length > 4 ? tenDigit.length - 4 : 0)}' : 'FAGO User'));
 
         await _supabase.from('profiles').upsert({
           'id': userId,
