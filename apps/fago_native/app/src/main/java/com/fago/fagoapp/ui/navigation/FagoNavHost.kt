@@ -61,6 +61,31 @@ fun FagoNavHost(
 ) {
     val navController = rememberNavController()
 
+    // Reactive Role Navigation Guard — seamlessly routes user as soon as role resolves
+    LaunchedEffect(authState.role, authState.isLoading) {
+        if (!authState.isLoading) {
+            val targetRoute = when (authState.role) {
+                UserRole.GUEST -> Routes.LOGIN
+                UserRole.ADMIN -> Routes.ADMIN
+                UserRole.DRIVER -> Routes.DRIVO
+                UserRole.USER, UserRole.PROVIDER -> {
+                    when (authState.mainCategory) {
+                        "Farmer" -> Routes.RENTO
+                        "Shopper", "Financier" -> Routes.MANDI
+                        "Tourist" -> Routes.TOURO
+                        "Teacher", "Student" -> Routes.TEACHO
+                        else -> Routes.RIDEO
+                    }
+                }
+            }
+            if (navController.currentDestination?.route != targetRoute) {
+                navController.navigate(targetRoute) {
+                    popUpTo(0)
+                }
+            }
+        }
+    }
+
     val startDest = when {
         authState.isLoading              -> Routes.SPLASH
         authState.role == UserRole.GUEST -> Routes.LOGIN

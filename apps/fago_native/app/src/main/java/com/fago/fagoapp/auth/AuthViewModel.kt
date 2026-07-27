@@ -400,9 +400,14 @@ class AuthViewModel(
 
                     if (profileJson != null) {
                         profileRole = profileJson["role"]?.jsonPrimitive?.contentOrNull
-                        fullName = profileJson["full_name"]?.jsonPrimitive?.contentOrNull
-                        if (fullName.isNullOrBlank()) {
-                            fullName = profileJson["email"]?.jsonPrimitive?.contentOrNull?.substringBefore("@")
+                        val rawDbName = profileJson["full_name"]?.jsonPrimitive?.contentOrNull
+                        if (!rawDbName.isNullOrBlank() && !rawDbName.matches(Regex("^[0-9+]+$"))) {
+                            fullName = rawDbName
+                        } else {
+                            val emailName = profileJson["email"]?.jsonPrimitive?.contentOrNull?.substringBefore("@")
+                            if (!emailName.isNullOrBlank() && !emailName.matches(Regex("^[0-9+]+$"))) {
+                                fullName = emailName
+                            }
                         }
                         mainCategory = profileJson["main_category"]?.jsonPrimitive?.contentOrNull
                         val dbPhone = profileJson["phone"]?.jsonPrimitive?.contentOrNull
@@ -429,6 +434,7 @@ class AuthViewModel(
             val refreshToken = session?.refreshToken
 
             if (isAdmin) {
+                val adminName = if (!fullName.isNullOrBlank() && !fullName.matches(Regex("^[0-9+]+$"))) fullName else "Aishlee Technology"
                 if (profileRole != "admin" && userId != null) {
                     try {
                         supabase.postgrest["profiles"].update(
@@ -443,7 +449,7 @@ class AuthViewModel(
                     it.copy(
                         isLoading = false, role = UserRole.ADMIN,
                         userId = userId, phone = effectivePhone,
-                        fullName = fullName ?: "Admin", mainCategory = mainCategory ?: "Admin",
+                        fullName = adminName, mainCategory = mainCategory ?: "Admin",
                         accessToken = accessToken, refreshToken = refreshToken,
                         isProfileComplete = isProfileComplete, errorMessage = null
                     )
