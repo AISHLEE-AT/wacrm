@@ -489,7 +489,7 @@ class AuthNotifier extends Notifier<AuthState> {
         final List<dynamic> existingProfList = await _supabase
             .from('profiles')
             .select('full_name, main_category, whatsapp, phone')
-            .or('id.eq.$userId,phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
+            .or('id.eq.$userId,user_id.eq.$userId,phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit');
 
         Map<String, dynamic>? existingProf = existingProfList.isNotEmpty ? Map<String, dynamic>.from(existingProfList.first) : null;
 

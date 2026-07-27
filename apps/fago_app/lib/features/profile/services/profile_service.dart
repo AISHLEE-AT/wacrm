@@ -50,7 +50,7 @@ class ProfileService {
         final List<dynamic> profileList = await Supabase.instance.client
             .from('profiles')
             .select('full_name, whatsapp, phone, address, upi_id')
-            .or('id.eq.${user.id}${cleanDigits.isNotEmpty ? ",phone.eq.$cleanDigits,phone.eq.91$cleanDigits,whatsapp.eq.$cleanDigits,whatsapp.eq.91$cleanDigits" : ""}');
+            .or('id.eq.${user.id},user_id.eq.${user.id}${cleanDigits.isNotEmpty ? ",phone.eq.$cleanDigits,phone.eq.91$cleanDigits,whatsapp.eq.$cleanDigits,whatsapp.eq.91$cleanDigits" : ""}');
 
         if (profileList.isNotEmpty) {
           final profileData = profileList.first;
@@ -103,7 +103,7 @@ class ProfileService {
       final List<dynamic> responseList = await _supabase
           .from('profiles')
           .select()
-          .or('id.eq.$userId${tenDigit.isNotEmpty ? ",phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit" : ""}');
+          .or('id.eq.$userId,user_id.eq.$userId${tenDigit.isNotEmpty ? ",phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit" : ""}');
 
       Map<String, dynamic>? response;
       if (responseList.isNotEmpty) {

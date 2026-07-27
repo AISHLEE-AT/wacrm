@@ -274,9 +274,16 @@ class AuthViewModel(
         try {
             val tenDigit = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
 
-            // Strategy 1: Look up profile by Supabase user ID
+            // Strategy 1: Look up profile by Supabase user ID or user_id
             var existing = supabase.postgrest["profiles"]
-                .select { filter { eq("id", userId) } }
+                .select {
+                    filter {
+                        or {
+                            eq("id", userId)
+                            eq("user_id", userId)
+                        }
+                    }
+                }
                 .decodeList<Map<String, String?>>()
                 .firstOrNull()
 
@@ -353,7 +360,12 @@ class AuthViewModel(
                     if (userId != null) {
                         profile = supabase.postgrest["profiles"]
                             .select {
-                                filter { eq("id", userId) }
+                                filter {
+                                    or {
+                                        eq("id", userId)
+                                        eq("user_id", userId)
+                                    }
+                                }
                                 limit(1)
                             }
                             .decodeList<Map<String, String?>>()
