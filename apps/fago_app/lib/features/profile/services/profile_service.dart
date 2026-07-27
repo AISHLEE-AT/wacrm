@@ -113,7 +113,23 @@ class ProfileService {
         await _cache.setCache(cacheKey, response);
         return ProfileModel.fromJson(response);
       }
-      return null;
+
+      // If profile row doesn't exist in DB yet, return default profile for the CURRENT user
+      final sbUser = _supabase.auth.currentUser;
+      final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
+      final rawPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.userMetadata?['whatsapp']?.toString() ?? rawEmailPhone;
+      final cleanDigits = rawPhone.replaceAll(RegExp(r'\D'), '');
+      final tenDigit = cleanDigits.length >= 10 ? cleanDigits.substring(cleanDigits.length - 10) : cleanDigits;
+      final formattedPhone = tenDigit.length == 10 ? '+91 $tenDigit' : '';
+
+      return ProfileModel(
+        id: userId,
+        fullName: sbUser?.userMetadata?['full_name']?.toString() ?? 'FAGO User',
+        role: 'USER',
+        whatsapp: formattedPhone,
+        phone: formattedPhone,
+        address: 'Live Location Active',
+      );
     } catch (e) {
       debugPrint('Error fetching profile: $e');
       final cached = _cache.getCache(cacheKey);

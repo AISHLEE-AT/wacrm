@@ -79,12 +79,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (didAuthenticate && mounted) {
         setState(() => _isLoading = true);
-        // Prefer stored device phone; fall back to what the user typed
         final registeredPhone = await DeviceAuthService.getRegisteredPhone();
         final rawTyped = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
-        final targetPhone = (registeredPhone != null && registeredPhone.isNotEmpty)
-            ? registeredPhone
-            : (rawTyped.isNotEmpty ? rawTyped : '9486335870');
+
+        String targetPhone = '';
+        if (rawTyped.length >= 7) {
+          targetPhone = rawTyped;
+        } else if (registeredPhone != null && registeredPhone.replaceAll(RegExp(r'\D'), '').length >= 7) {
+          targetPhone = registeredPhone.replaceAll(RegExp(r'\D'), '');
+        }
 
         final cleanLen = targetPhone.replaceAll(RegExp(r'\D'), '').length;
         if (cleanLen >= 7) {
@@ -166,6 +169,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _onPhoneChanged() async {
     final text = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final registeredPhone = await DeviceAuthService.getRegisteredPhone();
+    final cleanRegistered = registeredPhone?.replaceAll(RegExp(r'\D'), '') ?? '';
+
+    // If typed phone is different from registered device signature, reset device lock view
+    if (cleanRegistered.isNotEmpty && text.isNotEmpty && text != cleanRegistered && !cleanRegistered.endsWith(text)) {
+      if (mounted && _isReturningUser) {
+        setState(() {
+          _isReturningUser = false;
+          _deviceRegistered = false;
+        });
+      }
+    }
+
     if (text.length == 10) {
       try {
         final resList = await Supabase.instance.client
@@ -182,23 +198,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               if (existingCat != null && existingCat.isNotEmpty) {
                 _selectedCategory = existingCat;
               }
-              _isReturningUser = true;
+              if (cleanRegistered.isEmpty || text == cleanRegistered || cleanRegistered.endsWith(text)) {
+                _isReturningUser = true;
+              }
             });
           }
         } else {
-          // Only reset if this device has NOT already been registered.
-          // _deviceRegistered stays true even when DB has no profile yet.
-          if (mounted && _isReturningUser && !_deviceRegistered) {
+          if (mounted && (cleanRegistered.isEmpty || (text != cleanRegistered && !cleanRegistered.endsWith(text)))) {
             setState(() => _isReturningUser = false);
           }
         }
       } catch (_) {
-        if (mounted && _isReturningUser && !_deviceRegistered) {
+        if (mounted && (cleanRegistered.isEmpty || (text != cleanRegistered && !cleanRegistered.endsWith(text)))) {
           setState(() => _isReturningUser = false);
         }
       }
     } else {
-      if (mounted && _isReturningUser && !_deviceRegistered) {
+      if (mounted && (cleanRegistered.isEmpty || (text != cleanRegistered && !cleanRegistered.endsWith(text)))) {
         setState(() => _isReturningUser = false);
       }
     }
@@ -369,10 +385,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (isValid) {
       setState(() => _isLoading = true);
       final registeredPhone = await DeviceAuthService.getRegisteredPhone();
-      final typedPhone = _phoneController.text.trim();
-      final phone = (registeredPhone != null && registeredPhone.isNotEmpty)
-          ? registeredPhone
-          : (typedPhone.isNotEmpty ? typedPhone : '9486335870');
+      final rawTyped = _phoneController.text.trim().replaceAll(RegExp(r'\D'), '');
+
+      String phone = '';
+      if (rawTyped.length >= 7) {
+        phone = rawTyped;
+      } else if (registeredPhone != null && registeredPhone.replaceAll(RegExp(r'\D'), '').length >= 7) {
+        phone = registeredPhone.replaceAll(RegExp(r'\D'), '');
+      }
+
+      if (phone.length < 7) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter your 10-digit mobile number first.')),
+          );
+        }
+        return;
+      }
 
       final resolvedRole = await ref.read(authProvider.notifier).verifyDevicePinAndAutoLogin(phone);
       if (!mounted) return;

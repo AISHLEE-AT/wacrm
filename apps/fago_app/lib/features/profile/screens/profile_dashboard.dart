@@ -63,7 +63,8 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
                 ),
               );
               if (confirm == true) {
-                ref.read(fago.authProvider.notifier).signOut();
+                await ref.read(fago.authProvider.notifier).signOut();
+                ref.invalidate(currentProfileProvider);
               }
             },
           ),
@@ -85,8 +86,9 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       body: profileAsync.when(
         data: (profile) {
           final sbUser = Supabase.instance.client.auth.currentUser;
-          final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '';
-          final isAdmin = (profile?.role.toLowerCase() == 'admin') || userPhone.contains('9486335870') || sbUser?.email?.contains('aishleetechnology@gmail.com') == true;
+          final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
+          final userPhone = (sbUser?.phone?.isNotEmpty == true) ? sbUser!.phone! : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
+          final isAdmin = (profile?.role.toLowerCase() == 'admin') || userPhone.replaceAll(RegExp(r'\D'), '').endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
 
           final effectiveProfile = profile ?? ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
@@ -110,8 +112,9 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF00F0FF))),
         error: (err, stack) {
           final sbUser = Supabase.instance.client.auth.currentUser;
-          final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '';
-          final isAdmin = userPhone.contains('9486335870') || sbUser?.email?.contains('aishleetechnology@gmail.com') == true;
+          final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
+          final userPhone = (sbUser?.phone?.isNotEmpty == true) ? sbUser!.phone! : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
+          final isAdmin = userPhone.replaceAll(RegExp(r'\D'), '').endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
 
           final fallbackProfile = ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
@@ -137,32 +140,33 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
   }
 
   /// Returns a formatted '+91 XXXXX XXXXX' string from the profile's DB phone.
-  /// Priority: profile.whatsapp > profile.phone > Supabase userMetadata phone/whatsapp.
-  /// Never extracts from the synthetic email (e.g. 9123456789@whatsapp.wacrm.local).
+  /// Priority: profile.whatsapp > profile.phone > Supabase userMetadata phone/whatsapp > synthetic email digits.
   String _cleanPhone(String? rawWhatsapp, {String? fallbackPhone}) {
     final sbUser = Supabase.instance.client.auth.currentUser;
+    final syntheticEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true
+        ? sbUser!.email!.split('@')[0]
+        : '';
 
-    // Build candidate list in priority order.
-    // Skip any value that looks like an email to prevent extracting digits from it.
     final List<String> candidates = [
       rawWhatsapp ?? '',
       fallbackPhone ?? '',
       sbUser?.userMetadata?['phone']?.toString() ?? '',
       sbUser?.userMetadata?['whatsapp']?.toString() ?? '',
-      // Explicitly skip sbUser.phone and sbUser.email — the Supabase auth phone
-      // field is often empty for WhatsApp-OTP users, and the email is synthetic.
+      syntheticEmailPhone,
+      sbUser?.phone ?? '',
     ];
 
     for (var candidate in candidates) {
       if (candidate.isEmpty) continue;
-      // Skip anything that looks like an email address
-      if (candidate.contains('@')) continue;
+      if (candidate.contains('@') && !candidate.contains('@whatsapp.wacrm.local')) continue;
 
       String clean = candidate.replaceAll(RegExp(r'\D'), '');
 
-      // Strip +91 or 91 country code prefix
+      // Strip +91 or 91 country code prefix or take trailing 10 digits
       if (clean.startsWith('91') && clean.length == 12) {
         clean = clean.substring(2);
+      } else if (clean.length > 10) {
+        clean = clean.substring(clean.length - 10);
       }
 
       // Accept only valid 10-digit Indian mobile numbers starting with 6-9

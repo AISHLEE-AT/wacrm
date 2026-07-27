@@ -224,26 +224,21 @@ class AuthNotifier extends Notifier<AuthState> {
         }
       }
 
-      // 1. Comprehensive Admin Check
+      // 1. Strict Admin Check
       // Only the primary owner number 9486335870 and aishleetechnology@gmail.com
-      // are hardcoded admins. All other admins should have role='admin' in DB.
-      final adminIdentifiers = [
-        '9486335870',
-        '919486335870',
-        'aishleetechnology@gmail.com'
-      ];
-      bool isAdmin = profileRole == 'admin';
+      // are system administrators. All other admins must have role='admin' in DB.
+      bool isAdmin = (profileRole?.toLowerCase() == 'admin');
 
       if (!isAdmin) {
-        final allText =
-            '$rawPhone $fbPhone $sbEmail $sbPhone ${profilePhone ?? ''} $userMetaPhone $userMetaEmail $metaJson $appMetaJson'
-                .toLowerCase();
-        for (final adminId in adminIdentifiers) {
-          if (allText.contains(adminId)) {
-            isAdmin = true;
-            break;
-          }
-        }
+        final cleanRawPhone = rawPhone.replaceAll(RegExp(r'\D'), '');
+        final cleanProfPhone = (profilePhone ?? '').replaceAll(RegExp(r'\D'), '');
+        final cleanSbPhone = sbPhone.replaceAll(RegExp(r'\D'), '');
+
+        isAdmin = cleanRawPhone.endsWith('9486335870') ||
+                  cleanProfPhone.endsWith('9486335870') ||
+                  cleanSbPhone.endsWith('9486335870') ||
+                  sbEmail.toLowerCase() == 'aishleetechnology@gmail.com' ||
+                  userMetaEmail.toLowerCase() == 'aishleetechnology@gmail.com';
       }
 
       // Auto-heal: if resolved as admin but DB role column is wrong, fix it now.
