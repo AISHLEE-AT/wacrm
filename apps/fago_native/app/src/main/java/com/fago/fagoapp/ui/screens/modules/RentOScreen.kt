@@ -34,6 +34,22 @@ data class MachineryCategoryItem(
     val unit: String
 )
 
+data class RentOMachineItem(
+    val id: String,
+    val name: String,
+    val categoryKey: String,
+    val operatorName: String,
+    val phone: String,
+    val whatsapp: String,
+    val regNo: String,
+    val hourlyRate: Double,
+    val specifications: String,
+    val rating: Double,
+    val distanceKm: Double,
+    val etaMinutes: Int,
+    val isVerified: Boolean
+)
+
 /**
  * RentOScreen — 100% parity with Flutter's rento_screen.dart.
  * Features:
@@ -222,9 +238,9 @@ fun RentOScreen(
                         Text("Select your preferred machinery operator card below:", color = Color.Gray, fontSize = 11.sp)
 
                         val machines = listOf(
-                            MachineryItem("MACH_01", "${selectedCat.key} - Mahindra 575 DI + Rotavator", selectedCat.key, "Farmer Murugan", "9789012345", "9789012345", "TN 38 TR 4321", selectedCat.baseRate, "50 HP • Rotary Tiller Attachment", 4.9, 1.8, 10, true),
-                            MachineryItem("MACH_02", "${selectedCat.key} - Kubota DC68G Heavy Grade", selectedCat.key, "Captain Senthil Kumar", "9486335870", "9486335870", "TN 38 HV 9988", selectedCat.baseRate * 1.2, "68 HP • Rubber Track Crawler", 5.0, 3.2, 15, true),
-                            MachineryItem("MACH_03", "${selectedCat.key} - Tata Ace Agri Cargo Special", selectedCat.key, "Driver Rajesh", "9894012345", "9894012345", "TN 38 MV 8899", selectedCat.baseRate * 0.9, "750 kg Payload • Crop Transport", 4.7, 2.1, 12, true)
+                            RentOMachineItem("MACH_01", "${selectedCat.key} - Mahindra 575 DI + Rotavator", selectedCat.key, "Farmer Murugan", "9789012345", "9789012345", "TN 38 TR 4321", selectedCat.baseRate, "50 HP • Rotary Tiller Attachment", 4.9, 1.8, 10, true),
+                            RentOMachineItem("MACH_02", "${selectedCat.key} - Kubota DC68G Heavy Grade", selectedCat.key, "Captain Senthil Kumar", "9486335870", "9486335870", "TN 38 HV 9988", selectedCat.baseRate * 1.2, "68 HP • Rubber Track Crawler", 5.0, 3.2, 15, true),
+                            RentOMachineItem("MACH_03", "${selectedCat.key} - Tata Ace Agri Cargo Special", selectedCat.key, "Driver Rajesh", "9894012345", "9894012345", "TN 38 MV 8899", selectedCat.baseRate * 0.9, "750 kg Payload • Crop Transport", 4.7, 2.1, 12, true)
                         )
 
                         var selectedMachId by remember { mutableStateOf(machines[0].id) }

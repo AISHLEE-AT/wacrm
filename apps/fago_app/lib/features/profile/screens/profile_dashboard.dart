@@ -84,16 +84,16 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       body: profileAsync.when(
         data: (profile) {
           final sbUser = Supabase.instance.client.auth.currentUser;
-          final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '9486335870';
-          final isAdmin = userPhone.contains('9486335870') || sbUser?.email?.contains('9486335870') == true;
+          final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '';
+          final isAdmin = userPhone.contains('9486335870') || sbUser?.email?.contains('aishleetechnology@gmail.com') == true;
 
           final effectiveProfile = profile ?? ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
-            fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Rajakumaran (Area Admin)' : 'FAGO User'),
+            fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Admin' : 'FAGO User'),
             role: isAdmin ? 'ADMIN' : 'USER',
             whatsapp: userPhone,
             phone: userPhone,
-            address: 'Gandhipuram, Coimbatore 641012, Tamil Nadu',
+            address: 'Live Location Active',
           );
 
           return TabBarView(
@@ -109,16 +109,16 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF00F0FF))),
         error: (err, stack) {
           final sbUser = Supabase.instance.client.auth.currentUser;
-          final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '9486335870';
-          final isAdmin = userPhone.contains('9486335870') || sbUser?.email?.contains('9486335870') == true;
+          final userPhone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? '';
+          final isAdmin = userPhone.contains('9486335870') || sbUser?.email?.contains('aishleetechnology@gmail.com') == true;
 
           final fallbackProfile = ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
-            fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Rajakumaran (Area Admin)' : 'FAGO User'),
+            fullName: sbUser?.userMetadata?['full_name']?.toString() ?? (isAdmin ? 'Admin' : 'FAGO User'),
             role: isAdmin ? 'ADMIN' : 'USER',
             whatsapp: userPhone,
             phone: userPhone,
-            address: 'Gandhipuram, Coimbatore 641012, Tamil Nadu',
+            address: 'Live Location Active',
           );
 
           return TabBarView(
@@ -170,12 +170,12 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       }
     }
 
-    return '+91 94863 35870';
+    return 'Not Set';
   }
 
 
   Future<void> _launchUpiApp({String? amount}) async {
-    final upiUrl = "upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution${amount != null ? '&am=$amount' : ''}&cu=INR";
+    final upiUrl = "upi://pay?pa=9486335870@hdfcbank&pn=FAGO%20Good%20Cause&tn=FAGO%20Good%20Cause%20Contribution${amount != null ? '&am=$amount' : ''}&cu=INR";
     final uri = Uri.parse(upiUrl);
 
     try {
@@ -189,7 +189,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Copied 9486335870@hdfcbank! Open GPay, PhonePe or Paytm to pay.'),
+            content: Text('Support UPI ID: 9486335870@hdfcbank. Open GPay or PhonePe to pay.'),
             backgroundColor: Colors.amber,
           ),
         );
@@ -198,7 +198,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Copied 9486335870@hdfcbank! Open GPay, PhonePe or Paytm to pay.'),
+          content: Text('Support UPI ID: 9486335870@hdfcbank. Open GPay or PhonePe to pay.'),
           backgroundColor: Colors.amber,
         ),
       );
@@ -300,9 +300,9 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
           const SizedBox(height: 16),
           _buildInfoRow(Icons.phone, 'Cell / WhatsApp', cleanWhatsapp),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.location_on, 'Address', profile.address ?? 'Tamil Nadu, India'),
+          _buildInfoRow(Icons.location_on, 'Address / Live GPS', (profile.address != null && profile.address!.isNotEmpty) ? profile.address! : 'Live Location Active'),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.account_balance_wallet, 'UPI ID', profile.upiId ?? 'wacrm@upi', isEditable: true, profile: profile),
+          _buildInfoRow(Icons.account_balance_wallet, 'Your UPI ID', (profile.upiId != null && profile.upiId!.isNotEmpty) ? profile.upiId! : 'Not Set', isEditable: true, profile: profile),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () async {

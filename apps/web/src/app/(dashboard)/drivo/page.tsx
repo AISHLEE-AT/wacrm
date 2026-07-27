@@ -330,13 +330,17 @@ export default function DriveODashboard() {
   };
 
   const handleGoActiveWhatsApp = async () => {
+    if (!profile?.phone) {
+      alert('Please add your phone number in Profile settings before going active as a driver');
+      return;
+    }
     setIsOnline(true);
     try {
       if (currentUser) {
         await supabase.from('drivers').upsert({
           user_id: currentUser.id,
           name: profile?.full_name || 'Driver',
-          mobile_number: profile?.phone || '916381029380',
+          mobile_number: profile?.phone || '',
           vehicle_type: operatorCategory,
           vehicle_number: regNumber,
           upi_id: upiId,
@@ -428,6 +432,21 @@ export default function DriveODashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const driverName = profile?.full_name || 'Driver Partner';
+              const driverPhone = profile?.phone || currentUser?.phone || '9486335870';
+              const msg = `💰 *DRIVER ZERO-COMMISSION UPI PAYOUT REQUEST* 💰\n\n` +
+                `👤 *Driver Partner*: ${driverName} (${driverPhone})\n` +
+                `💳 *Today's Earnings*: ₹1,250 (5 Trips Completed)\n` +
+                `🏦 *Settlement UPI ID*: ${upiId || 'driver@upi'}\n\n` +
+                `👉 *Please process instant 0% commission UPI settlement to my UPI ID!*`;
+              window.open(`https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(msg)}`, '_blank');
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500 text-emerald-400 font-bold text-xs hover:bg-emerald-500/30 transition shadow-sm"
+          >
+            ⚡ Instant UPI Settlement
+          </button>
           <button
             onClick={() => setShowRegisterModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition"
@@ -695,12 +714,18 @@ export default function DriveODashboard() {
                 <div className="flex items-center justify-between pt-2 border-t border-emerald-500/20">
                   <span className="text-lg font-bold text-emerald-500">Committed Amount: ₹{activeOrder.fare}</span>
                   <div className="flex items-center gap-2">
-                    <a
-                      href={`tel:${activeOrder.phone || '916381029380'}`}
-                      className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-blue-700 transition"
-                    >
-                      <Phone className="w-3.5 h-3.5" /> Call Customer
-                    </a>
+                    {activeOrder.phone ? (
+                      <a
+                        href={`tel:${activeOrder.phone}`}
+                        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-blue-700 transition"
+                      >
+                        <Phone className="w-3.5 h-3.5" /> Call Customer
+                      </a>
+                    ) : (
+                      <span className="px-3 py-1.5 rounded-lg bg-gray-200 text-gray-500 text-xs font-bold flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5" /> No Phone
+                      </span>
+                    )}
                     <button
                       onClick={() => setShowUpiModal(!showUpiModal)}
                       className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-emerald-700 transition"

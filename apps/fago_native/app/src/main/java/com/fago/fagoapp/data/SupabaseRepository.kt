@@ -11,7 +11,7 @@ import kotlinx.serialization.json.*
 data class RideRequestItem(
     val id: String,
     val riderId: String,
-    val riderName: String? = "Rider",
+    val riderName: String? = null,
     val riderPhone: String,
     val pickupAddress: String,
     val dropoffAddress: String,
@@ -23,10 +23,10 @@ data class RideRequestItem(
     val estimatedFare: Double,
     val status: String, // "requested", "assigned", "arrived", "in_progress", "completed", "cancelled"
     val driverId: String? = null,
-    val driverName: String? = "Captain Senthil",
-    val driverPhone: String? = "+919486335870",
-    val vehicleNumber: String? = "TN 38 BL 9486",
-    val otpCode: String? = "4826"
+    val driverName: String? = null,
+    val driverPhone: String? = null,
+    val vehicleNumber: String? = null,
+    val otpCode: String? = null
 )
 
 data class DriverProfileItem(
@@ -44,6 +44,22 @@ data class DriverProfileItem(
     val distanceKm: Double = 1.2,
     val etaMinutes: Int = 3,
     val calculatedFare: Double = 0.0
+)
+
+data class MachineryItem(
+    val id: String,
+    val name: String,
+    val category: String,
+    val operatorName: String,
+    val phone: String,
+    val whatsappNumber: String,
+    val vehicleNumber: String,
+    val hourlyRate: Double,
+    val specifications: String = "Standard Agri Grade",
+    val rating: Double = 4.9,
+    val distanceKm: Double = 1.8,
+    val etaMinutes: Int = 10,
+    val isVerified: Boolean = true
 )
 
 /**
@@ -67,10 +83,10 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
             DriverProfileItem(
                 id = "DRV_VIRT_001",
                 name = "Captain Senthil Kumar",
-                phone = "9486335870",
-                whatsappNumber = "9486335870",
+                phone = "",
+                whatsappNumber = "",
                 vehicleType = "Bike",
-                vehicleNumber = "TN 38 BL 9486",
+                vehicleNumber = "DEMO",
                 vehicleModel = "Honda Activa 6G",
                 gender = "male",
                 rating = 4.9,
@@ -177,7 +193,7 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
                     val name = json["name"]?.jsonPrimitive?.contentOrNull
                         ?: json["driver_name"]?.jsonPrimitive?.contentOrNull
                         ?: "Driver"
-                    val phone = json["mobile_number"]?.jsonPrimitive?.contentOrNull ?: "9486335870"
+                    val phone = json["mobile_number"]?.jsonPrimitive?.contentOrNull ?: ""
                     val whatsapp = json["whatsapp_number"]?.jsonPrimitive?.contentOrNull ?: phone
                     val type = json["vehicle_type"]?.jsonPrimitive?.contentOrNull ?: "Bike"
                     val vehNum = json["vehicle_number"]?.jsonPrimitive?.contentOrNull
@@ -292,7 +308,7 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
                 buildJsonObject {
                     put("id", ride.id)
                     put("rider_id", ride.riderId)
-                    put("rider_name", ride.riderName ?: "Rider")
+                    put("rider_name", ride.riderName ?: "")
                     put("rider_phone", ride.riderPhone)
                     put("pickup_address", ride.pickupAddress)
                     put("dropoff_address", ride.dropoffAddress)
@@ -302,7 +318,7 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
                     put("dropoff_lng", ride.dropoffLng)
                     put("vehicle_category", ride.vehicleCategory)
                     put("estimated_fare", ride.estimatedFare)
-                    put("otp_code", ride.otpCode ?: "4826")
+                    put("otp_code", ride.otpCode ?: "")
                     put("status", "requested")
                     put("created_at", java.time.Instant.now().toString())
                 }
@@ -401,12 +417,12 @@ class SupabaseRepository(private val supabase: SupabaseClient) {
     fun getVirtualFallbackMachinery(cat: String = "Tractor"): List<MachineryItem> {
         val list = listOf(
             MachineryItem("MACH_VIRT_01", "Mahindra 575 DI Tractor + Rotavator", "Tractor", "Farmer Murugan", "9789012345", "9789012345", "TN 38 TR 4321", 700.0, "50 HP • 4WD • Rotary Tiller Attachment", 4.9, 1.8, 10, true),
-            MachineryItem("MACH_VIRT_02", "Kubota DC68G Paddy Harvester", "Harvester", "Captain Senthil Kumar", "9486335870", "9486335870", "TN 38 HV 9988", 1800.0, "68 HP • Rubber Track Crawler • Paddy & Wheat", 5.0, 3.2, 15, true),
+            MachineryItem("MACH_VIRT_02", "Kubota DC68G Paddy Harvester", "Harvester", "Captain Senthil Kumar", "", "", "TN 38 HV 9988", 1800.0, "68 HP • Rubber Track Crawler • Paddy & Wheat", 5.0, 3.2, 15, true),
             MachineryItem("MACH_VIRT_03", "Tata Ace Gold Agri Mini-Van", "MiniVan", "Driver Rajesh", "9894012345", "9894012345", "TN 38 MV 8899", 500.0, "750 kg Payload • Crop Transport to Mandi", 4.7, 2.1, 12, true),
             MachineryItem("MACH_VIRT_04", "Kirloskar 5HP Diesel Drip Pump", "Pump", "Selvam Agri Tools", "9123596988", "9123596988", "TN 37 PUMP 12", 350.0, "5 HP High Pressure Diesel • Drip Set Included", 4.8, 1.2, 8, true),
-            MachineryItem("MACH_VIRT_05", "JCB 3CX Heavy Excavator & Loader", "JCB", "Operator Velu", "9486335870", "9486335870", "TN 38 JCB 1122", 1500.0, "76 HP Heavy Digging & Farm Leveling", 4.9, 4.5, 20, true)
+            MachineryItem("MACH_VIRT_05", "JCB 3CX Heavy Excavator & Loader", "JCB", "Operator Velu", "", "", "TN 38 JCB 1122", 1500.0, "76 HP Heavy Digging & Farm Leveling", 4.9, 4.5, 20, true)
         )
-        return if (cat.equalsIgnoreCase("ALL")) list else list.filter { it.category.equals(cat, ignoreCase = true) || cat.contains(it.category, ignoreCase = true) }.ifEmpty { list }
+        return if (cat.equalsIgnoreCase("ALL")) list else list.filter { it.category.equalsIgnoreCase(cat) || cat.lowercase().contains(it.category.lowercase()) }.ifEmpty { list }
     }
 
     suspend fun getNearbyMachinery(cat: String = "Tractor"): List<MachineryItem> {

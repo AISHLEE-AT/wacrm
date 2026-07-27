@@ -15,6 +15,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../driver/services/supabase_service.dart';
+import '../../profile/services/profile_service.dart';
+import '../../../../services/location_service.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -53,6 +55,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Use dotenv for Google Maps API Key
   final String _googleApiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
+  Map<String, dynamic>? _userProfile;
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _initApp() async {
+    _userProfile = await ProfileService.getCurrentUserProfileDetails();
     await _determinePosition();
     await _fetchOnlineDrivers();
     await _checkActiveRide();
@@ -125,21 +130,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _getAddressFromLatLng(LatLng position, bool isPickup) async {
     try {
-      final url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$_googleApiKey';
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['results'] != null && data['results'].length > 0) {
-          final address = data['results'][0]['formatted_address'];
-          setState(() {
-            if (isPickup) {
-              _pickupAddress = address;
-            } else {
-              _dropoffAddress = address;
-            }
-          });
+      final address = await LocationService().getAddressFromCoordinates(position.latitude, position.longitude);
+      if (!mounted) return;
+      setState(() {
+        if (isPickup) {
+          _pickupAddress = address;
+        } else {
+          _dropoffAddress = address;
         }
-      }
+      });
     } catch (e) {
       debugPrint("Geocoding error: $e");
     }
@@ -460,10 +459,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       double distanceKm = _exactDistanceKm ?? _calculateDistance(_pickup!, _dropoff!);
       double price = _calculatePrice(distanceKm, vehicleType).toDouble();
 
-      final userId = _supabase.auth.currentUser?.id;
+      final user = _supabase.auth.currentUser;
+      final userId = user?.id;
+      final profile = await ProfileService.getCurrentUserProfileDetails();
+      final passengerName = profile['name'] ?? '';
+      final passengerPhone = profile['phone'] ?? user?.phone ?? '';
 
       final res = await _supabase.from('rides').insert({
         'passenger_id': userId,
+        'passenger_name': passengerName,
+        'passenger_phone': passengerPhone,
         'pickup_lat': _pickup!.latitude,
         'pickup_lng': _pickup!.longitude,
         'dropoff_lat': _dropoff!.latitude,
@@ -846,7 +851,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildDrawer(BuildContext context) {
-    final userPhone = _supabase.auth.currentUser?.phone ?? 'User';
+    final userPhone = _userProfile?['name'] ?? _supabase.auth.currentUser?.phone ?? 'Rider';
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,

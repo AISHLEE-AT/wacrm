@@ -360,7 +360,7 @@ export default function RideODashboard() {
           setActiveDrivers(data);
         } else {
           setActiveDrivers([
-            { id: 'DRV_VIRT_001', name: 'Captain Senthil Kumar', phone: '9486335870', category: 'bike', vehicle_no: 'TN 38 BL 9486', vehicle_model: 'Honda Activa 6G', gender: 'male', rating: 4.9, status: 'online' },
+            { id: 'DRV_VIRT_001', name: 'Captain Senthil Kumar', phone: '', category: 'bike', vehicle_no: 'TN 38 BL 9486', vehicle_model: 'Honda Activa 6G', gender: 'male', rating: 4.9, status: 'online' },
             { id: 'DRV_VIRT_002', name: 'Driver Anitha R', phone: '9123596988', category: 'auto', vehicle_no: 'TN 37 AB 1234', vehicle_model: 'Bajaj RE Auto', gender: 'female', rating: 5.0, status: 'online' },
             { id: 'DRV_VIRT_003', name: 'Captain Karthik Raja', phone: '9876543210', category: 'car', vehicle_no: 'TN 38 CZ 5678', vehicle_model: 'Swift Dzire AC', gender: 'male', rating: 4.8, status: 'online' },
             { id: 'DRV_VIRT_004', name: 'Driver Priya Lakshmi', phone: '9443322110', category: 'car', vehicle_no: 'TN 38 EY 9988', vehicle_model: 'Innova Crysta AC', gender: 'female', rating: 4.9, status: 'online' },
@@ -424,25 +424,27 @@ export default function RideODashboard() {
   // Fully Automated WhatsApp Message Payload (Pickup GPS + Dropoff + 1-Click Device Navigation + Offered Fare)
   const getAutomatedDriverWhatsAppUrl = (driverPhone: string, driverName: string) => {
     const customerName = profile?.full_name || currentUser?.email?.split('@')[0] || 'Customer';
-    const customerPhone = profile?.phone || currentUser?.phone || 'Not provided';
+    const customerPhone = profile?.phone || currentUser?.phone || '';
     const pickupGpsUrl = `https://www.google.com/maps/search/?api=1&query=${currentLocation?.lat || 13.0827},${currentLocation?.lng || 80.2707}`;
     const dropoffAddress = searchQuery || 'Tamil Nadu Destination';
     const navUrl = destinationLocation
       ? `https://www.google.com/maps/dir/?api=1&origin=${currentLocation?.lat},${currentLocation?.lng}&destination=${destinationLocation.lat},${destinationLocation.lng}&travelmode=driving`
       : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dropoffAddress)}`;
 
+    const otpPin = Math.floor(1000 + Math.random() * 9000).toString();
+
     const text = 
-      `🚨 RIDEO TRIP & LOGISTICS BOOKING 🚨\n\n` +
+      `🚨 RIDEO TRIP & LOGISTICS BOOKING (0% COMMISSION) 🚨\n\n` +
       `👋 Hello ${driverName},\n\n` +
-      `👤 Customer: ${customerName}\n` +
-      `📞 Customer Call: tel:${customerPhone}\n\n` +
+      `👤 Customer: ${customerName} (${customerPhone || 'Registered Mobile'})\n` +
+      `🔑 START TRIP SECURITY PIN: ${otpPin}\n\n` +
       `📌 PICKUP PLACE: ${pickupAddress}\n` +
       `📍 LIVE PICKUP GPS: ${pickupGpsUrl}\n` +
       `🎯 DROPOFF LOCATION: ${dropoffAddress}\n` +
       `🧭 1-CLICK DEVICE MAP NAVIGATION: ${navUrl}\n\n` +
       `📏 TRIP DISTANCE: ${distanceKm || 0} km\n` +
       `🚚 VEHICLE NEEDED: ${currentCategoryObj.icon} ${currentCategoryObj.name}\n` +
-      `💵 COMMITTED OFFERED AMOUNT: ₹${totalOfferedFare}\n\n` +
+      `💵 COMMITTED OFFERED AMOUNT: ₹${totalOfferedFare} (0% Commission Guarantee)\n\n` +
       `👉 Please tap the navigation link above or call customer to confirm this trip!`;
 
     const cleanNumber = driverPhone.replace(/\D/g, '');
@@ -827,14 +829,27 @@ export default function RideODashboard() {
                       </div>
 
                       {!isBusy ? (
-                        <a
-                          href={getAutomatedDriverWhatsAppUrl(driver.phone || driver.whatsapp_number || '916381029380', driver.name || 'Driver')}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 rounded-lg bg-[#25D366] text-white text-xs font-bold flex items-center gap-1 hover:bg-[#20bd5a] transition shadow-sm shrink-0"
+                        <button
+                          onClick={() => {
+                            const customerPhone = profile?.phone || currentUser?.phone || '';
+                            if (!customerPhone || customerPhone.trim() === '') {
+                              alert('Please add your phone number in Profile settings before booking a ride');
+                              return;
+                            }
+                            const driverPhone = driver.phone || driver.whatsapp_number || '';
+                            if (driverPhone) {
+                              window.open(getAutomatedDriverWhatsAppUrl(driverPhone, driver.name || 'Driver'), '_blank');
+                            }
+                          }}
+                          disabled={!(driver.phone || driver.whatsapp_number)}
+                          className={`px-3 py-1.5 rounded-lg text-white text-xs font-bold flex items-center gap-1 transition shadow-sm shrink-0 ${
+                            (driver.phone || driver.whatsapp_number)
+                              ? 'bg-[#25D366] hover:bg-[#20bd5a]'
+                              : 'bg-gray-400 cursor-not-allowed'
+                          }`}
                         >
-                          <MessageSquare className="w-3.5 h-3.5" /> Book via WhatsApp
-                        </a>
+                          <MessageSquare className="w-3.5 h-3.5" /> {(driver.phone || driver.whatsapp_number) ? 'Book via WhatsApp' : 'No direct booking'}
+                        </button>
                       ) : (
                         <span className="text-[10px] text-amber-400 font-bold px-2.5 py-1 bg-amber-500/10 rounded-lg shrink-0">
                           {driver.committed_to || 'On Trip'}

@@ -7,6 +7,7 @@ import '../services/location_service.dart';
 import '../services/whatsapp_service.dart';
 import '../services/supabase_backend_service.dart';
 import '../features/driver/screens/driver_registration_screen.dart';
+import '../features/profile/services/profile_service.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key});
@@ -19,9 +20,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   bool _isOnline = true;
   Location? _driverLocation;
   String _driverAddress = 'Detecting high-precision driver location...';
-  final String _driverPhone = '+919486335870';
-  final String _driverId = 'DRIVER_007';
+  String? _driverPhone;
+  String? _driverId;
   String _selectedCategoryFilter = 'ALL';
+
+  final TextEditingController _otpInputController = TextEditingController();
+  String _otpError = '';
 
   bool _isLoadingDriver = true;
   bool _isDriverVerified = false;
@@ -63,8 +67,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _loadDriverIdentity();
     _initDriverLocation();
     _checkDriverVerificationStatus();
+  }
+
+  Future<void> _loadDriverIdentity() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    final profile = await ProfileService.getCurrentUserProfileDetails();
+    if (mounted) {
+      setState(() {
+        _driverPhone = profile['phone'] ?? user?.phone ?? '';
+        _driverId = user?.id ?? '';
+      });
+    }
   }
 
   Future<void> _checkDriverVerificationStatus() async {
@@ -223,11 +239,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   }
 
   Future<void> _acceptRide(RideRequest ride) async {
+    if (_driverId == null || _driverId!.isEmpty || _driverPhone == null || _driverPhone!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Driver identity not loaded yet. Please wait.'))
+      );
+      return;
+    }
     HapticFeedback.vibrate();
     final success = await SupabaseBackendService().acceptRideRequest(
       rideId: ride.id,
-      driverId: _driverId,
-      driverPhone: _driverPhone,
+      driverId: _driverId!,
+      driverPhone: _driverPhone!,
     );
 
     if (success && mounted) {
@@ -388,15 +410,70 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               ),
 
             if (ride.status == RideStatus.arrived)
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00), foregroundColor: Colors.black),
-                  onPressed: () => _updateStatus(ride.id, 'in_progress'),
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text("🚀 START TRIP (Rider Onboard)", style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "🔑 Ask Rider for 4-Digit Start Trip Security PIN:",
+                          style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _otpInputController,
+                          keyboardType: TextInputType.number,
+                          maxLength: 4,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 2),
+                          decoration: InputDecoration(
+                            hintText: "Enter 4-digit PIN (e.g. ${ride.otpCode ?? '4829'})",
+                            hintStyle: const TextStyle(color: Colors.white38, fontSize: 12, letterSpacing: 0),
+                            counterText: "",
+                            filled: true,
+                            fillColor: const Color(0xFF0F172A),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.white24)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF00FF00))),
+                          ),
+                        ),
+                        if (_otpError.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(_otpError, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00), foregroundColor: Colors.black),
+                      onPressed: () {
+                        final entered = _otpInputController.text.trim();
+                        final expected = (ride.otpCode ?? '4829').trim();
+                        if (entered == expected) {
+                          setState(() => _otpError = '');
+                          _otpInputController.clear();
+                          _updateStatus(ride.id, 'in_progress');
+                        } else {
+                          setState(() {
+                            _otpError = "❌ Invalid OTP PIN! Ask Rider for exact 4-Digit Security PIN.";
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.verified_user),
+                      label: const Text("🚀 VERIFY PIN & START TRIP", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
 
             if (ride.status == RideStatus.inProgress)
@@ -468,7 +545,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '⚡ Auto-Approved Trial Active! Physical document verification will be conducted by your local Area Admin (+91 94863 35870) on field. Keep DL & RC ready.',
+                    '⚡ Auto-Approved Trial Active! Physical document verification will be conducted by your local Area Admin (+91 63810 29380) on field. Keep DL & RC ready.',
                     style: TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -509,7 +586,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             ),
           ),
 
-          // Daily Driver Earnings & Trips Bar
+          // Daily Driver Earnings & 1-Tap Zero-Cost UPI Settlement Request Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             color: const Color(0xFF141414),
@@ -524,13 +601,34 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     Text("₹1,250", style: TextStyle(color: Color(0xFF00FF00), fontWeight: FontWeight.bold, fontSize: 14)),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white10,
-                    borderRadius: BorderRadius.circular(10),
+                InkWell(
+                  onTap: () {
+                    final phone = _driverPhone ?? '9486335870';
+                    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+                    final upi = cleanPhone.length >= 10 ? '${cleanPhone.substring(cleanPhone.length - 10)}@upi' : 'driver@upi';
+                    final msg = "💰 *DRIVER ZERO-COMMISSION UPI PAYOUT REQUEST* 💰\n\n"
+                        "👤 *Driver Partner*: ${_driverRecord?['driver_name'] ?? 'Captain Partner'} ($phone)\n"
+                        "💳 *Today's Earnings*: ₹1,250 (5 Trips Completed)\n"
+                        "🏦 *Settlement UPI ID*: $upi\n\n"
+                        "👉 *Please process instant 0% commission UPI settlement to my UPI ID!*";
+                    WhatsAppService.openWhatsApp(phone: '916381029380', message: msg);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00FF00).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF00FF00)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.bolt, color: Color(0xFF00FF00), size: 14),
+                        SizedBox(width: 4),
+                        Text("Instant UPI Settlement", style: TextStyle(color: Color(0xFF00FF00), fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
-                  child: const Text("5 Trips Completed", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -578,7 +676,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                     child: Text('Toggle switch above to start receiving ride requests.', style: TextStyle(color: Colors.grey)),
                   )
                 : StreamBuilder<List<RideRequest>>(
-                    stream: SupabaseBackendService().getDriverActiveRidesStream(_driverId, _driverPhone),
+                    stream: SupabaseBackendService().getDriverActiveRidesStream(_driverId ?? '', _driverPhone ?? ''),
                     builder: (context, activeSnapshot) {
                       final activeRides = activeSnapshot.data ?? [];
                       if (activeRides.isNotEmpty) {

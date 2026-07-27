@@ -213,7 +213,7 @@ function ProfilePageInner() {
   }, [user?.id]);
 
   const formatCleanPhone = (raw?: string) => {
-    if (!raw) return '+91 94863 35870';
+    if (!raw) return '';
     let clean = raw;
     if (clean.includes('@')) clean = clean.split('@')[0];
     clean = clean.replace(/\D/g, '');
@@ -245,7 +245,8 @@ function ProfilePageInner() {
     const name = activeProfile?.full_name || 'Driver Partner';
     const vehicle = driverProfile?.vehicle_number || driverProfile?.vehicle_registration || 'Vehicle';
     const text = `Hello Admin! I have registered as a DriveO Driver Partner (Name: ${name}, Vehicle: ${vehicle}). Please verify my driver account.`;
-    return `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(text)}`;
+    const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '916381029380';
+    return `https://api.whatsapp.com/send?phone=${supportPhone}&text=${encodeURIComponent(text)}`;
   };
 
   const renderAccount = () => (

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.fago.fagoapp.services.DeviceAuthService
 
 /**
@@ -33,6 +34,7 @@ fun PinSetupScreen(
     onPinSetSuccess: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val deviceAuthService = remember { DeviceAuthService(context) }
 
     var pin by remember { mutableStateOf("") }
@@ -136,9 +138,12 @@ fun PinSetupScreen(
                         return@Button
                     }
                     isLoading = true
-                    deviceAuthService.registerDeviceProfile(phone = phone, name = name, pin = pin)
-                    isLoading = false
-                    onPinSetSuccess()
+                    scope.launch {
+                        deviceAuthService.saveRegisteredDevice(phone = phone, name = name)
+                        deviceAuthService.setCustomPin(pin = pin)
+                        isLoading = false
+                        onPinSetSuccess()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),

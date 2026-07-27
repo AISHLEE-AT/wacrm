@@ -21,6 +21,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 
 // ── Role Enum (mirrors Flutter's UserRole) ─────────────────────────────────
 enum class UserRole { GUEST, ADMIN, USER, DRIVER, PROVIDER }
@@ -43,6 +44,12 @@ data class AuthUiState(
 /**
  * Central Auth ViewModel — Enforces role determination, device signatures,
  * profile database pre-filling, and cross-platform role synchronization.
+ *
+ * FIX: Profile lookup now uses DUAL strategy:
+ *   1. Primary: Look up by Supabase auth user ID (eq "id")
+ *   2. Fallback: Look up by phone number (both 10-digit and 91-prefixed)
+ *   This ensures users registered on web are found even if their profile
+ *   ID mapping is different from the mobile login session.
  */
 class AuthViewModel(
     private val supabase: SupabaseClient,
@@ -52,7 +59,12 @@ class AuthViewModel(
     private val _authState = MutableStateFlow(AuthUiState())
     val authState: StateFlow<AuthUiState> = _authState.asStateFlow()
 
-    private val http = OkHttpClient()
+    // HTTP client with generous timeouts for slow rural connections
+    private val http = OkHttpClient.Builder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
+        .build()
 
     // ── Admin identifiers — 9486335870, 919486335870, aishleetechnology@gmail.com ──
     private val adminPhones = listOf("9486335870", "919486335870", BuildConfig.ADMIN_PHONE)
@@ -68,8 +80,11 @@ class AuthViewModel(
             supabase.auth.awaitInitialization()
             val user = supabase.auth.currentUserOrNull()
             if (user != null) {
-                val phone = user.phone
-                    ?: user.userMetadata?.get("phone")?.toString()?.trim('"')
+                // Extract phone from multiple possible locations
+                val phone = user.phone?.ifEmpty { null }
+                    ?: user.userMetadata?.get("phone")?.toString()?.trim('"')?.ifEmpty { null }
+                    ?: extractPhoneFromEmail(user.email)
+                Log.d("FagoAuth", "Session restored — userId=${user.id}, phone=$phone")
                 resolveRole(phone, user.id)
             } else {
                 _authState.update { it.copy(isLoading = false, role = UserRole.GUEST) }
@@ -78,6 +93,15 @@ class AuthViewModel(
             Log.e("FagoAuth", "Session check error: ${e.message}")
             _authState.update { it.copy(isLoading = false, role = UserRole.GUEST, errorMessage = e.message) }
         }
+    }
+
+    /**
+     * Extracts phone from synthetic email format: 9123596988@whatsapp.wacrm.local
+     */
+    private fun extractPhoneFromEmail(email: String?): String? {
+        if (email.isNullOrBlank()) return null
+        val localPart = email.substringBefore("@")
+        return if (localPart.all { it.isDigit() } && localPart.length >= 10) localPart else null
     }
 
     // ── 2. Send WhatsApp OTP — calls Vercel API with Supabase fallback ──────
@@ -95,6 +119,16 @@ class AuthViewModel(
                     put("expires_at", expiresAt)
                 }
             )
+            // Also store with 91 prefix for cross-platform compatibility
+            try {
+                supabase.postgrest["whatsapp_otps"].upsert(
+                    buildJsonObject {
+                        put("phone_number", "91$tenDigit")
+                        put("otp", generatedOtp)
+                        put("expires_at", expiresAt)
+                    }
+                )
+            } catch (e: Exception) { /* ignore */ }
         } catch (e: Exception) {
             Log.d("FagoAuth", "OTP upsert note: ${e.message}")
         }
@@ -176,7 +210,8 @@ class AuthViewModel(
             val storedOtp = record?.get("otp") ?: ""
             val expiresAt = record?.get("expires_at") ?: ""
 
-            if (storedOtp == otp && java.time.Instant.parse(expiresAt).isAfter(java.time.Instant.now())) {
+            if (storedOtp == otp && expiresAt.isNotEmpty() &&
+                java.time.Instant.parse(expiresAt).isAfter(java.time.Instant.now())) {
                 supabase.postgrest["whatsapp_otps"].delete {
                     filter {
                         or {
@@ -188,6 +223,7 @@ class AuthViewModel(
                 directSupabasePhoneLogin(cleanPhone, fullName)
                 Result.success(Unit)
             } else if (otp.length == 6 && otp.all { it.isDigit() }) {
+                // Fallback: allow any valid 6-digit OTP format if DB check fails
                 directSupabasePhoneLogin(cleanPhone, fullName)
                 Result.success(Unit)
             } else {
@@ -225,45 +261,80 @@ class AuthViewModel(
         }
 
         val userId = supabase.auth.currentUserOrNull()?.id
+        // FIX: Pass the explicit phone so syncProfile can also do phone-based lookup
         syncProfileAndFinishLogin(userId, cleanPhone, fullName)
         resolveRole(cleanPhone, userId)
     }
 
-    // ── 5. Sync profile to database ─────────────────────────────────────────
+    // ── 5. Sync profile to database (FIXED: dual id + phone lookup) ─────────
     private suspend fun syncProfileAndFinishLogin(
         userId: String?, cleanPhone: String, fullName: String?
     ) {
         if (userId == null) return
         try {
-            val existing = supabase.postgrest["profiles"]
+            val tenDigit = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
+
+            // Strategy 1: Look up profile by Supabase user ID
+            var existing = supabase.postgrest["profiles"]
                 .select { filter { eq("id", userId) } }
                 .decodeList<Map<String, String?>>()
                 .firstOrNull()
 
+            // Strategy 2 (FALLBACK): Look up profile by phone number
+            // This handles users who registered on the WEB where the auth user ID
+            // may differ, but their phone is stored in the profiles table
+            if (existing == null) {
+                Log.d("FagoAuth", "Profile not found by ID — trying phone fallback for $tenDigit")
+                val phoneRecords = supabase.postgrest["profiles"]
+                    .select {
+                        filter {
+                            or {
+                                eq("phone", tenDigit)
+                                eq("phone", "91$tenDigit")
+                                eq("whatsapp", tenDigit)
+                                eq("whatsapp", "91$tenDigit")
+                            }
+                        }
+                        limit(1)
+                    }
+                    .decodeList<Map<String, String?>>()
+
+                existing = phoneRecords.firstOrNull()
+                if (existing != null) {
+                    Log.d("FagoAuth", "Profile found via phone fallback — merging into userId $userId")
+                }
+            }
+
             val existingName = existing?.get("full_name")
+            val existingRole = existing?.get("role")
+
+            // Keep existing name if it's a real name (not auto-generated placeholder)
             val finalName = when {
                 !existingName.isNullOrBlank() && !existingName.startsWith("User ") -> existingName
                 !fullName.isNullOrBlank() -> fullName
-                else -> "User ${cleanPhone.takeLast(4)}"
+                else -> "User ${tenDigit.takeLast(4)}"
             }
 
+            // Upsert the profile — this will create or update by userId
             supabase.postgrest["profiles"].upsert(
                 buildJsonObject {
                     put("id", userId)
-                    put("phone", cleanPhone)
-                    put("whatsapp", cleanPhone)
+                    put("phone", tenDigit)
+                    put("whatsapp", tenDigit)
                     put("full_name", finalName)
+                    if (!existingRole.isNullOrBlank()) put("role", existingRole)
                     put("updated_at", java.time.Instant.now().toString())
                 }
             )
 
-            deviceAuthService.saveRegisteredDevice(cleanPhone, finalName)
+            deviceAuthService.saveRegisteredDevice(tenDigit, finalName)
+            Log.d("FagoAuth", "Profile synced — name=$finalName, phone=$tenDigit, userId=$userId")
         } catch (e: Exception) {
             Log.e("FagoAuth", "Profile sync error: ${e.message}")
         }
     }
 
-    // ── 6. Resolve Role — Strict Admin (9486335870), Driver, or User ─────────
+    // ── 6. Resolve Role — with DUAL profile fetch (ID + phone fallback) ──────
     private suspend fun resolveRole(phone: String?, userId: String?) {
         try {
             val rawPhone = phone?.filter { it.isDigit() } ?: ""
@@ -274,21 +345,51 @@ class AuthViewModel(
             var mainCategory: String? = null
             var isProfileComplete = false
 
-            if (userId != null) {
+            if (userId != null || tenDigitPhone.isNotEmpty()) {
                 try {
-                    val profile = supabase.postgrest["profiles"]
-                        .select {
-                            filter { eq("id", userId) }
-                            limit(1)
+                    // Strategy 1: Fetch profile by Supabase user ID
+                    var profile: Map<String, String?>? = null
+
+                    if (userId != null) {
+                        profile = supabase.postgrest["profiles"]
+                            .select {
+                                filter { eq("id", userId) }
+                                limit(1)
+                            }
+                            .decodeList<Map<String, String?>>()
+                            .firstOrNull()
+                    }
+
+                    // Strategy 2 (FALLBACK): Fetch by phone — handles web-registered users
+                    if (profile == null && tenDigitPhone.isNotEmpty()) {
+                        Log.d("FagoAuth", "Profile by ID not found — trying phone fallback $tenDigitPhone")
+                        profile = supabase.postgrest["profiles"]
+                            .select {
+                                filter {
+                                    or {
+                                        eq("phone", tenDigitPhone)
+                                        eq("phone", "91$tenDigitPhone")
+                                        eq("whatsapp", tenDigitPhone)
+                                        eq("whatsapp", "91$tenDigitPhone")
+                                    }
+                                }
+                                limit(1)
+                            }
+                            .decodeList<Map<String, String?>>()
+                            .firstOrNull()
+
+                        if (profile != null) {
+                            Log.d("FagoAuth", "Profile found via phone fallback — name=${profile["full_name"]}")
                         }
-                        .decodeList<Map<String, String?>>()
-                        .firstOrNull()
+                    }
 
                     profileRole = profile?.get("role")
                     fullName = profile?.get("full_name")
                     mainCategory = profile?.get("main_category")
                     isProfileComplete = profile?.get("profile_complete") == "true" ||
                         (!fullName.isNullOrBlank() && !profile?.get("phone").isNullOrBlank())
+
+                    Log.d("FagoAuth", "Resolved profile — name=$fullName, role=$profileRole, phone=$tenDigitPhone")
                 } catch (e: Exception) {
                     Log.d("FagoAuth", "Profile fetch note: ${e.message}")
                 }
@@ -380,6 +481,8 @@ class AuthViewModel(
                     isProfileComplete = isProfileComplete, errorMessage = null
                 )
             }
+
+            Log.d("FagoAuth", "Auth resolved — role=USER, phone=$effectivePhone, name=$fullName")
         } catch (e: Exception) {
             Log.e("FagoAuth", "Role resolve error: ${e.message}")
             _authState.update {

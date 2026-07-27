@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionService {
+  static const String _keyPermissionsSetupDone = 'fago_permissions_onetime_setup_done';
+
   /// Single-Tap Permission Request Modal for Location, Camera, Audio (Microphone), and Notifications.
-  static Future<bool> requestAllPermissions(BuildContext context) async {
+  /// Shown ONLY ONCE after login/first setup. Subsequent visits skip the modal dialog entirely.
+  static Future<bool> requestAllPermissions(BuildContext context, {bool forceShow = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool isAlreadySetup = prefs.getBool(_keyPermissionsSetupDone) ?? false;
+
+    if (isAlreadySetup && !forceShow) {
+      // One-time setup already completed! Silently request device permissions if missing without showing custom popup.
+      await [
+        Permission.location,
+        Permission.camera,
+        Permission.microphone,
+        Permission.notification,
+      ].request();
+      return true;
+    }
+
+    if (!context.mounted) return false;
+
     bool granted = false;
     await showDialog(
       context: context,
@@ -57,6 +77,7 @@ class PermissionService {
                   Permission.microphone,
                   Permission.notification,
                 ].request();
+                await prefs.setBool(_keyPermissionsSetupDone, true);
                 granted = statuses.values.any((status) => status.isGranted);
               },
               child: const Text('OK • GRANT ALL PERMISSIONS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -66,6 +87,12 @@ class PermissionService {
       ),
     );
     return granted;
+  }
+
+  /// Reset permission setup status (e.g. on logout)
+  static Future<void> resetPermissionSetup() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyPermissionsSetupDone);
   }
 }
 

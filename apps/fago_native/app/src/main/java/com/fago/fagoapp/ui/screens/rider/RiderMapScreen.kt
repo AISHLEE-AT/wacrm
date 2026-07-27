@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.speech.RecognizerIntent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -94,13 +95,20 @@ fun RiderMapScreen(
     var pickupLatLng by remember { mutableStateOf(LatLng(11.0168, 76.9558)) }
     var dropoffLatLng by remember { mutableStateOf(LatLng(11.0300, 77.0434)) }
     var pickupAddress by remember { mutableStateOf("Detecting GPS location...") }
-    var dropoffAddress by remember { mutableStateOf("Coimbatore Airport (CJB), Peelamedu") }
-    var riderName by remember { mutableStateOf(authState?.fullName ?: "") }
-    var riderPhone by remember { mutableStateOf(authState?.phone ?: "") }
+    var dropoffAddress by remember { mutableStateOf("Select Dropoff Place") }
 
-    LaunchedEffect(authState) {
-        if (!authState?.fullName.isNullOrBlank()) riderName = authState!!.fullName!!
-        if (!authState?.phone.isNullOrBlank()) riderPhone = authState!!.phone!!
+    // FIX: Use derivedStateOf so these reactively update whenever authState changes
+    // This ensures that when profile data arrives asynchronously from Supabase,
+    // the booking form immediately shows the correct name and phone
+    var riderName by remember { mutableStateOf("") }
+    var riderPhone by remember { mutableStateOf("") }
+
+    LaunchedEffect(authState?.fullName, authState?.phone) {
+        // Always sync from authState — authState is the single source of truth
+        val newName = authState?.fullName?.trim() ?: ""
+        val newPhone = authState?.phone?.trim() ?: ""
+        if (newName.isNotBlank() && riderName.isBlank()) riderName = newName
+        if (newPhone.isNotBlank() && riderPhone.isBlank()) riderPhone = newPhone
     }
     var selectedCategoryKey by remember { mutableStateOf("Bike") }
     var showConfirmSheet by remember { mutableStateOf(false) }
@@ -176,20 +184,18 @@ fun RiderMapScreen(
                 pickupAddress = resolvedAddress
             }
         } else {
-            pickupAddress = "Coimbatore Junction Railway Station, Tamil Nadu"
+            pickupAddress = "GPS Location Active"
         }
     }
 
     // Low-Literacy Bilingual Landmarks (Tamil + English + Big Visual Icons)
     val hotspots = listOf(
         HotspotItem("என் இருப்பிடம்", "My Location", pickupAddress, pickupLatLng, "📍"),
-        HotspotItem("ரயில் நிலையம்", "Railway Station", "Coimbatore Junction Railway Station, Gopalapuram", LatLng(11.0017, 76.9629), "🚆"),
-        HotspotItem("விமான நிலையம்", "Airport (CJB)", "Coimbatore International Airport, Peelamedu", LatLng(11.0300, 77.0434), "✈️"),
-        HotspotItem("பேருந்து நிலையம்", "Bus Stand", "Gandhipuram Central Bus Stand, Coimbatore", LatLng(11.0183, 76.9673), "🚌"),
-        HotspotItem("மருத்துவமனை", "KMCH Hospital", "Kovai Medical Center & Hospital, Avinashi Road", LatLng(11.0425, 77.0375), "🏥"),
-        HotspotItem("அக்ரி சந்தை", "Agri Mandi Market", "Oddanchatram Vegetable Market, Dindigul", LatLng(10.4851, 77.7478), "🌾"),
-        HotspotItem("தஞ்சை கோவில்", "Thanjavur Temple", "Brihadeeswarar Temple, Thanjavur", LatLng(10.7828, 79.1318), "🛕"),
-        HotspotItem("ஊட்டி கார்டன்", "Ooty Botanical Garden", "Vannarapettai, Ooty, Nilgiris", LatLng(11.4150, 76.7110), "🏔️")
+        HotspotItem("ரயில் நிலையம்", "Railway Station", "Railway Station", LatLng(11.0017, 76.9629), "🚆"),
+        HotspotItem("விமான நிலையம்", "Airport (CJB)", "Airport", LatLng(11.0300, 77.0434), "✈️"),
+        HotspotItem("பேருந்து நிலையம்", "Bus Stand", "Central Bus Stand", LatLng(11.0183, 76.9673), "🚌"),
+        HotspotItem("மருத்துவமனை", "Hospital", "City Hospital", LatLng(11.0425, 77.0375), "🏥"),
+        HotspotItem("அக்ரி சந்தை", "Agri Mandi", "Agri Mandi Market", LatLng(10.4851, 77.7478), "🌾")
     )
 
     val vehicleCategories = listOf(
@@ -244,13 +250,15 @@ fun RiderMapScreen(
                     label = { Text("RideO", fontSize = 10.sp) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFF00F0FF), indicatorColor = Color(0xFF00F0FF).copy(alpha = 0.2f))
                 )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateDrivo,
-                    icon = { Icon(Icons.Default.LocalShipping, contentDescription = null) },
-                    label = { Text("DriveO", fontSize = 10.sp) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFF8C00))
-                )
+                if (authState?.role == com.fago.fagoapp.auth.UserRole.DRIVER || authState?.role == com.fago.fagoapp.auth.UserRole.ADMIN) {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onNavigateDrivo,
+                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = null) },
+                        label = { Text("DriveO", fontSize = 10.sp) },
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFF8C00))
+                    )
+                }
                 NavigationBarItem(
                     selected = false,
                     onClick = { showAllModulesSheet = true },
@@ -878,12 +886,14 @@ fun RiderMapScreen(
         var isLoadingDrivers by remember { mutableStateOf(true) }
 
         LaunchedEffect(Unit) {
-            if (riderName.isBlank() && !authState?.fullName.isNullOrBlank()) {
-                riderName = authState!!.fullName!!
-            }
-            if (riderPhone.isBlank() && !authState?.phone.isNullOrBlank()) {
-                riderPhone = authState!!.phone!!
-            }
+            // FIX: Explicitly pull from authState as the canonical data source
+            // This runs when the confirm sheet opens — by this point authState
+            // should be fully resolved from Supabase
+            val canonicalName = authState?.fullName?.trim() ?: ""
+            val canonicalPhone = authState?.phone?.trim() ?: ""
+            if (riderName.isBlank() && canonicalName.isNotBlank()) riderName = canonicalName
+            if (riderPhone.isBlank() && canonicalPhone.isNotBlank()) riderPhone = canonicalPhone
+
             isLoadingDrivers = true
             val fetched = supabaseRepo.getNearbyDrivers(estimatedDistKm)
             nearbyDrivers = fetched
@@ -1020,24 +1030,40 @@ fun RiderMapScreen(
                     }
                 }
 
-                // ── Rider Inputs ──
+                // ── Rider Inputs — pre-filled from authState (backend user profile) ──
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // FIX: Compute effective display value: local edit > authState > empty
+                    val displayName = riderName.ifBlank { authState?.fullName?.trim() ?: "" }
+                    val displayPhone = riderPhone.ifBlank { authState?.phone?.trim() ?: "" }
+
                     OutlinedTextField(
-                        value = if (riderName.isBlank() && !authState?.fullName.isNullOrBlank()) authState!!.fullName!! else riderName,
+                        value = displayName,
                         onValueChange = { riderName = it },
                         label = { Text("Your Name", color = Color.Gray, fontSize = 10.sp) },
+                        placeholder = { Text("Your full name", color = Color(0xFF334155), fontSize = 11.sp) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFFFD700),
+                            unfocusedBorderColor = if (displayName.isNotBlank()) Color(0xFFFFD700).copy(alpha = 0.6f) else Color(0xFF334155),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
                     )
 
                     OutlinedTextField(
-                        value = if (riderPhone.isBlank() && !authState?.phone.isNullOrBlank()) authState!!.phone!! else riderPhone,
+                        value = displayPhone,
                         onValueChange = { riderPhone = it },
                         label = { Text("WhatsApp Phone", color = Color.Gray, fontSize = 10.sp) },
+                        placeholder = { Text("10-digit mobile", color = Color(0xFF334155), fontSize = 11.sp) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF00FF00), unfocusedBorderColor = Color(0xFF334155), focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00FF00),
+                            unfocusedBorderColor = if (displayPhone.isNotBlank()) Color(0xFF00FF00).copy(alpha = 0.6f) else Color(0xFF334155),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        )
                     )
                 }
 
@@ -1045,17 +1071,40 @@ fun RiderMapScreen(
                     onClick = {
                         isPostingRide = true
                         scope.launch {
-                            val rName = riderName.ifBlank { "Rider" }
-                            val rPhone = riderPhone.ifBlank { "+919486335870" }
+                            // FIX: Fall through to authState values if local fields are still blank
+                            val rName = riderName.ifBlank { authState?.fullName?.trim() ?: "" }
+                            val rPhone = riderPhone.ifBlank { authState?.phone?.trim() ?: "" }
+                            
+                            // Block booking if identity is missing
+                            if (rName.isBlank() || rPhone.isBlank()) {
+                                Toast.makeText(context, "Please enter your name and phone number to book", Toast.LENGTH_LONG).show()
+                                isPostingRide = false
+                                return@launch
+                            }
+                            
                             val generatedPin = (1000 + Random.nextInt(9000)).toString()
                             activeSecurityOtp = generatedPin
 
                             val chosen = chosenDriver ?: nearbyDrivers.firstOrNull()
-                            val dName = chosen?.name ?: "Captain Senthil"
-                            val dPhone = chosen?.whatsappNumber ?: "9486335870"
-                            val dVehicle = chosen?.vehicleNumber ?: "TN 38 BL 9486"
+                            
+                            // Block booking if no real driver is available
+                            if (chosen == null) {
+                                Toast.makeText(context, "No drivers available right now. Please try again shortly.", Toast.LENGTH_LONG).show()
+                                isPostingRide = false
+                                return@launch
+                            }
+                            val dName = chosen.name.ifBlank { "Driver" }
+                            val dPhone = (chosen.whatsappNumber.ifBlank { chosen.phone }).ifBlank { "" }
+                            val dVehicle = chosen.vehicleNumber.ifBlank { "Vehicle" }
+                            
+                            // Additional guard — driver must have a contact phone
+                            if (dPhone.isBlank()) {
+                                Toast.makeText(context, "Selected driver has no phone number. Please select another driver.", Toast.LENGTH_LONG).show()
+                                isPostingRide = false
+                                return@launch
+                            }
 
-                            supabaseRepo.saveCrmContact(null, rName, rPhone, "Rider", pickupAddress, chosen?.vehicleType ?: selectedCat.key)
+                            supabaseRepo.saveCrmContact(null, rName, rPhone, "Rider", pickupAddress, chosen.vehicleType)
 
                             val rideItem = RideRequestItem(
                                 id = "RIDE_${System.currentTimeMillis()}",
@@ -1068,10 +1117,10 @@ fun RiderMapScreen(
                                 pickupLng = pickupLatLng.longitude,
                                 dropoffLat = dropoffLatLng.latitude,
                                 dropoffLng = dropoffLatLng.longitude,
-                                vehicleCategory = chosen?.vehicleType ?: selectedCat.key,
-                                estimatedFare = chosen?.calculatedFare ?: calculatedFare,
+                                vehicleCategory = chosen.vehicleType,
+                                estimatedFare = chosen.calculatedFare,
                                 status = "requested",
-                                driverId = chosen?.id,
+                                driverId = chosen.id,
                                 driverName = dName,
                                 driverPhone = dPhone,
                                 vehicleNumber = dVehicle
@@ -1087,13 +1136,13 @@ fun RiderMapScreen(
                                 "🔑 *START TRIP SECURITY PIN*: $generatedPin\n" +
                                 "👤 *Rider*: $rName ($rPhone)\n" +
                                 "🚗 *Assigned Captain*: $dName ($dPhone)\n" +
-                                "🚘 *Vehicle*: ${chosen?.vehicleType ?: selectedCat.key} - $dVehicle\n\n" +
+                                "🚘 *Vehicle*: ${chosen.vehicleType} - $dVehicle\n\n" +
                                 "🟢 *PICKUP*: $pickupAddress\n" +
                                 "📍 *PICKUP GPS MAP*: $pickupGpsUrl\n\n" +
                                 "🔴 *DROPOFF*: $dropoffAddress\n" +
                                 "🎯 *DROPOFF GPS MAP*: $dropoffGpsUrl\n\n" +
                                 "🧭 *1-CLICK DEVICE ROUTE NAVIGATION*: $navRouteUrl\n\n" +
-                                "💵 *COMMITTED FARE*: ₹${(chosen?.calculatedFare ?: calculatedFare).toInt()}\n\n" +
+                                "💵 *COMMITTED FARE*: ₹${chosen.calculatedFare.toInt()}\n\n" +
                                 "👉 Captain / Rider: Tap navigation link above to begin trip!"
                             )
                             val waUri = Uri.parse("https://api.whatsapp.com/send?phone=91$dPhone&text=$msgText")
@@ -1142,9 +1191,12 @@ fun RiderMapScreen(
 
                 data class ModuleGridItem(val title: String, val subtitle: String, val icon: String, val color: Color, val onClick: () -> Unit)
 
-                val modulesList = listOf(
+                val isDriverOrAdmin = authState?.role == com.fago.fagoapp.auth.UserRole.DRIVER || authState?.role == com.fago.fagoapp.auth.UserRole.ADMIN
+                val isAdmin = authState?.role == com.fago.fagoapp.auth.UserRole.ADMIN
+
+                val modulesList = listOfNotNull(
                     ModuleGridItem("RideO", "0% Comm Rides", "🚲", Color(0xFF00F0FF)) { showAllModulesSheet = false },
-                    ModuleGridItem("DriveO", "Captain Partner", "🚖", Color(0xFFFF8C00)) { showAllModulesSheet = false; onNavigateDrivo() },
+                    if (isDriverOrAdmin) ModuleGridItem("DriveO", "Captain Partner", "🚖", Color(0xFFFF8C00)) { showAllModulesSheet = false; onNavigateDrivo() } else null,
                     ModuleGridItem("RentO", "Farm Equipment", "🚜", Color(0xFF10B981)) { showAllModulesSheet = false; onNavigateRento() },
                     ModuleGridItem("Mandi Prices", "Agri Rates", "🌾", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateMandi() },
                     ModuleGridItem("TourO", "Tamil Tours", "🛕", Color(0xFFA855F7)) { showAllModulesSheet = false; onNavigateTouro() },
@@ -1152,7 +1204,7 @@ fun RiderMapScreen(
                     ModuleGridItem("TestO", "TNPSC Prep", "📝", Color(0xFFEC4899)) { showAllModulesSheet = false; onNavigateTesto() },
                     ModuleGridItem("TvO", "Live TV & News", "📺", Color(0xFFEF4444)) { showAllModulesSheet = false; onNavigateTvo() },
                     ModuleGridItem("Gemini AI", "Smart Assistant", "🤖", Color(0xFF8B5CF6)) { showAllModulesSheet = false; onNavigateAi() },
-                    ModuleGridItem("WhatsApp CRM", "Customer Portal", "👑", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateCrm() },
+                    if (isAdmin) ModuleGridItem("WhatsApp CRM", "Customer Portal", "👑", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateCrm() } else null,
                     ModuleGridItem("My Profile", "Digital ID & UPI", "👤", Color.White) { showAllModulesSheet = false; onNavigateProfile() },
                 )
 

@@ -11,6 +11,7 @@ import com.fago.fagoapp.auth.AuthUiState
 import com.fago.fagoapp.auth.UserRole
 import com.fago.fagoapp.ui.screens.SplashScreen
 import com.fago.fagoapp.ui.screens.auth.LoginScreen
+import com.fago.fagoapp.ui.screens.auth.PinSetupScreen
 import com.fago.fagoapp.ui.screens.crm.CrmDashboardScreen
 import com.fago.fagoapp.ui.screens.rider.RiderMapScreen
 import com.fago.fagoapp.ui.screens.driver.DriverHomeScreen
@@ -126,32 +127,61 @@ fun FagoNavHost(
         }
 
         composable(Routes.RIDEO) {
-            RiderMapScreen(
-                authState = authState,
-                onOpenDrawer = { navController.navigate(Routes.PROFILE) },
-                onNavigateCrm = {
-                    if (authState.role == UserRole.ADMIN) {
-                        navController.navigate(Routes.CRM)
-                    } else {
-                        navController.navigate(Routes.PROFILE)
-                    }
-                },
-                onNavigateDrivo = { navController.navigate(Routes.DRIVO) },
-                onNavigateRento = { navController.navigate(Routes.RENTO) },
-                onNavigateMandi = { navController.navigate(Routes.MANDI) },
-                onNavigateTouro = { navController.navigate(Routes.TOURO) },
-                onNavigateTeacho = { navController.navigate(Routes.TEACHO) },
-                onNavigateTesto = { navController.navigate(Routes.TESTO) },
-                onNavigateTvo = { navController.navigate(Routes.TVO) },
-                onNavigateAi = { navController.navigate(Routes.AI) },
-                onNavigateProfile = { navController.navigate(Routes.PROFILE) }
-            )
+            // Strict guard: DRIVER logins redirected to DRIVO
+            if (authState.role == UserRole.DRIVER) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.DRIVO) { popUpTo(0) }
+                }
+            } else {
+                RiderMapScreen(
+                    authState = authState,
+                    onOpenDrawer = { navController.navigate(Routes.PROFILE) },
+                    onNavigateCrm = {
+                        if (authState.role == UserRole.ADMIN) {
+                            navController.navigate(Routes.CRM)
+                        } else {
+                            navController.navigate(Routes.PROFILE)
+                        }
+                    },
+                    onNavigateDrivo = {
+                        if (authState.role == UserRole.DRIVER || authState.role == UserRole.ADMIN) {
+                            navController.navigate(Routes.DRIVO)
+                        }
+                    },
+                    onNavigateRento = { navController.navigate(Routes.RENTO) },
+                    onNavigateMandi = { navController.navigate(Routes.MANDI) },
+                    onNavigateTouro = { navController.navigate(Routes.TOURO) },
+                    onNavigateTeacho = { navController.navigate(Routes.TEACHO) },
+                    onNavigateTesto = { navController.navigate(Routes.TESTO) },
+                    onNavigateTvo = { navController.navigate(Routes.TVO) },
+                    onNavigateAi = { navController.navigate(Routes.AI) },
+                    onNavigateProfile = { navController.navigate(Routes.PROFILE) }
+                )
+            }
         }
 
         composable(Routes.DRIVO) {
-            DriverHomeScreen(
-                onOpenDrawer = { navController.navigate(Routes.PROFILE) }
-            )
+            // Strict guard: USER logins redirected to RIDEO
+            if (authState.role == UserRole.USER) {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Routes.RIDEO) { popUpTo(0) }
+                }
+            } else {
+                DriverHomeScreen(
+                    authState = authState,
+                    onOpenDrawer = { navController.navigate(Routes.PROFILE) },
+                    onNavigateCrm = { navController.navigate(Routes.CRM) },
+                    onNavigateRideo = { navController.navigate(Routes.RIDEO) },
+                    onNavigateRento = { navController.navigate(Routes.RENTO) },
+                    onNavigateMandi = { navController.navigate(Routes.MANDI) },
+                    onNavigateTouro = { navController.navigate(Routes.TOURO) },
+                    onNavigateTeacho = { navController.navigate(Routes.TEACHO) },
+                    onNavigateTesto = { navController.navigate(Routes.TESTO) },
+                    onNavigateTvo = { navController.navigate(Routes.TVO) },
+                    onNavigateAi = { navController.navigate(Routes.AI) },
+                    onNavigateProfile = { navController.navigate(Routes.PROFILE) }
+                )
+            }
         }
 
         composable(Routes.RENTO) {
@@ -166,7 +196,10 @@ fun FagoNavHost(
         }
 
         composable(Routes.TOURO) {
-            TourOScreen(onBack = { navController.popBackStack() })
+            TourOScreen(
+                authState = authState,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.TEACHO) {

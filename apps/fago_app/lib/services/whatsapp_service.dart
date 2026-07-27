@@ -104,7 +104,7 @@ class WhatsAppService {
     }
   }
 
-  /// Automated Ride Confirmation Message Template for WhatsApp with Auto Live GPS Pin
+  /// Automated Ride Confirmation Message Template for WhatsApp with Auto Live GPS Pin & Security OTP
   static String getRideConfirmationTemplate({
     required String vehicleCategory,
     required String pickupAddress,
@@ -114,19 +114,29 @@ class WhatsAppService {
     double? lat,
     double? lng,
     String? riderName,
+    String? riderPhone,
+    String? otpCode,
   }) {
+    final cleanName = (riderName != null && riderName.isNotEmpty && riderName.toLowerCase() != 'user')
+        ? riderName
+        : 'FAGO Rider';
+    final cleanPhone = (riderPhone != null && riderPhone.isNotEmpty)
+        ? riderPhone
+        : 'Registered Mobile';
+
     StringBuffer sb = StringBuffer();
     sb.writeln('🚗 *RideO Booking Request*');
-    if (riderName != null && riderName.isNotEmpty) {
-      sb.writeln('👤 *Rider*: $riderName');
-    }
+    sb.writeln('👤 *Rider*: $cleanName ($cleanPhone)');
     sb.writeln('• *Vehicle*: $vehicleCategory');
     sb.writeln('• *Pickup*: $pickupAddress');
     if (pincode != null && pincode.isNotEmpty) {
       sb.writeln('• *Pincode*: $pincode');
     }
     sb.writeln('• *Dropoff*: $dropoffAddress');
-    sb.writeln('• *Estimated Fare*: ₹${fare.toStringAsFixed(0)}');
+    sb.writeln('• *Estimated Fare*: ₹${fare.toStringAsFixed(0)} (0% Commission)');
+    if (otpCode != null && otpCode.isNotEmpty) {
+      sb.writeln('🔑 *START TRIP SECURITY PIN*: $otpCode');
+    }
     
     if (lat != null && lng != null) {
       sb.writeln('\n📍 *Live GPS Location Pin*: https://maps.google.com/?q=$lat,$lng');

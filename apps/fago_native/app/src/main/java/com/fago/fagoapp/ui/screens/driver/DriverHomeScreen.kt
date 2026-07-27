@@ -24,9 +24,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fago.fagoapp.auth.AuthUiState
 import com.fago.fagoapp.data.RideRequestItem
 import com.fago.fagoapp.data.SupabaseRepository
 import com.fago.fagoapp.services.DriverLocationService
+import androidx.compose.foundation.clickable
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -44,7 +46,20 @@ import org.koin.compose.koinInject
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
+fun DriverHomeScreen(
+    authState: AuthUiState? = null,
+    onOpenDrawer: () -> Unit = {},
+    onNavigateCrm: () -> Unit = {},
+    onNavigateRideo: () -> Unit = {},
+    onNavigateRento: () -> Unit = {},
+    onNavigateMandi: () -> Unit = {},
+    onNavigateTouro: () -> Unit = {},
+    onNavigateTeacho: () -> Unit = {},
+    onNavigateTesto: () -> Unit = {},
+    onNavigateTvo: () -> Unit = {},
+    onNavigateAi: () -> Unit = {},
+    onNavigateProfile: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val supabaseRepo: SupabaseRepository = koinInject()
@@ -55,6 +70,7 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
     var enteredOtp by remember { mutableStateOf("") }
     var otpError by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("Auto") }
+    var showAllModulesSheet by remember { mutableStateOf(false) }
 
     var availableRides by remember {
         mutableStateOf(
@@ -131,6 +147,9 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showAllModulesSheet = true }) {
+                        Icon(Icons.Default.GridView, contentDescription = "Modules", tint = Color(0xFF00FF00))
+                    }
                     Text(if (isOnline) "ONLINE" else "OFFLINE", color = if (isOnline) Color(0xFF00FF00) else Color.Gray, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Switch(
                         checked = isOnline,
@@ -139,6 +158,47 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                     )
                 }
             )
+        },
+        bottomBar = {
+            NavigationBar(containerColor = Color(0xFF141414)) {
+                if (authState?.role == com.fago.fagoapp.auth.UserRole.ADMIN) {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onNavigateCrm,
+                        icon = { Icon(Icons.Default.Chat, contentDescription = null) },
+                        label = { Text("CRM", fontSize = 10.sp) },
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFFD700))
+                    )
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = onNavigateRideo,
+                        icon = { Icon(Icons.Default.DirectionsCar, contentDescription = null) },
+                        label = { Text("RideO", fontSize = 10.sp) },
+                        colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFF00F0FF))
+                    )
+                }
+                NavigationBarItem(
+                    selected = true,
+                    onClick = { },
+                    icon = { Icon(Icons.Default.LocalShipping, contentDescription = null) },
+                    label = { Text("DriveO", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFFFF8C00), indicatorColor = Color(0xFFFF8C00).copy(alpha = 0.2f))
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = { showAllModulesSheet = true },
+                    icon = { Icon(Icons.Default.GridView, contentDescription = null) },
+                    label = { Text("Modules", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color(0xFF00FF00), indicatorColor = Color(0xFF00FF00).copy(alpha = 0.2f))
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = onNavigateProfile,
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    label = { Text("Profile", fontSize = 10.sp) },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White)
+                )
+            }
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -149,7 +209,7 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                     Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = Color(0xFFFFD700), modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "⚡ Auto-Approved Trial Active! Physical document verification conducted by Area Admin (+91 94863 35870) on field.",
+                        "⚡ Auto-Approved Trial Active! Physical document verification conducted by Area Admin (+91 63810 29380) on field.",
                         color = Color(0xFFFFD700), fontSize = 11.sp, fontWeight = FontWeight.Bold
                     )
                 }
@@ -189,8 +249,27 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                             Text("Today's Earnings: ", color = Color.Gray, fontSize = 12.sp)
                             Text("₹1,250", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
-                        Surface(shape = RoundedCornerShape(10.dp), color = Color.White.copy(alpha = 0.1f)) {
-                            Text("5 Trips Completed", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFF00FF00).copy(alpha = 0.2f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF00FF00)),
+                            modifier = Modifier.clickable {
+                                val msg = "💰 *DRIVER ZERO-COMMISSION UPI PAYOUT REQUEST* 💰\n\n" +
+                                        "👤 *Driver Partner*: Captain Partner\n" +
+                                        "💳 *Today's Earnings*: ₹1,250 (5 Trips Completed)\n" +
+                                        "🏦 *Settlement UPI ID*: 9486335870@upi\n\n" +
+                                        "👉 *Please process instant 0% commission UPI settlement to my UPI ID!*"
+                                openWhatsAppRider("916381029380", msg)
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, tint = Color(0xFF00FF00), modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Instant UPI Settlement", color = Color(0xFF00FF00), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
 
@@ -341,12 +420,12 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                         }
                                         Button(
                                             onClick = {
-                                                val expectedOtp = currentRide.otpCode ?: "4826"
-                                                if (enteredOtp == expectedOtp || enteredOtp == "1234" || enteredOtp.length == 4) {
+                                                val expectedOtp = currentRide.otpCode?.trim() ?: "4826"
+                                                if (enteredOtp.trim() == expectedOtp) {
                                                     activeRide = currentRide.copy(status = "in_progress")
                                                     scope.launch { supabaseRepo.updateRideStatus(currentRide.id, "in_progress") }
                                                 } else {
-                                                    otpError = "Invalid PIN! Ask Rider for 4-digit start PIN."
+                                                    otpError = "❌ Invalid PIN! Ask Rider for exact 4-digit start PIN."
                                                 }
                                             },
                                             modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -416,6 +495,89 @@ fun DriverHomeScreen(onOpenDrawer: () -> Unit) {
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // All Native Modules GridView Sheet for Driver
+    if (showAllModulesSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAllModulesSheet = false },
+            containerColor = Color(0xFF0F172A)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("🚀 All FAGO Modules", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("Explore 12+ Super App Services", color = Color.Gray, fontSize = 12.sp)
+                    }
+                    IconButton(onClick = { showAllModulesSheet = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    }
+                }
+
+                data class ModuleGridItem(val title: String, val subtitle: String, val icon: String, val color: Color, val onClick: () -> Unit)
+
+                val isAdmin = authState?.role == com.fago.fagoapp.auth.UserRole.ADMIN
+
+                val modulesList = listOfNotNull(
+                    ModuleGridItem("DriveO", "Captain Partner Radar", "🚖", Color(0xFFFF8C00)) { showAllModulesSheet = false },
+                    if (isAdmin) ModuleGridItem("RideO", "0% Comm Rides", "🚲", Color(0xFF00F0FF)) { showAllModulesSheet = false; onNavigateRideo() } else null,
+                    ModuleGridItem("RentO", "Farm Equipment", "🚜", Color(0xFF10B981)) { showAllModulesSheet = false; onNavigateRento() },
+                    ModuleGridItem("Mandi Prices", "Agri Rates", "🌾", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateMandi() },
+                    ModuleGridItem("TourO", "Tamil Tours", "🛕", Color(0xFFA855F7)) { showAllModulesSheet = false; onNavigateTouro() },
+                    ModuleGridItem("TeachO", "Tamil Lessons", "🎓", Color(0xFF3B82F6)) { showAllModulesSheet = false; onNavigateTeacho() },
+                    ModuleGridItem("TestO", "TNPSC Prep", "📝", Color(0xFFEC4899)) { showAllModulesSheet = false; onNavigateTesto() },
+                    ModuleGridItem("TvO", "Live TV & News", "📺", Color(0xFFEF4444)) { showAllModulesSheet = false; onNavigateTvo() },
+                    ModuleGridItem("Gemini AI", "Smart Assistant", "🤖", Color(0xFF8B5CF6)) { showAllModulesSheet = false; onNavigateAi() },
+                    if (isAdmin) ModuleGridItem("WhatsApp CRM", "Customer Portal", "👑", Color(0xFFFFD700)) { showAllModulesSheet = false; onNavigateCrm() } else null,
+                    ModuleGridItem("My Profile", "Digital ID & UPI", "👤", Color.White) { showAllModulesSheet = false; onNavigateProfile() },
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val rows = modulesList.chunked(2)
+                    rows.forEach { rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            rowItems.forEach { mod ->
+                                Surface(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { mod.onClick() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = Color(0xFF1E293B),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, mod.color.copy(alpha = 0.4f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(mod.icon, fontSize = 24.sp)
+                                        Column {
+                                            Text(mod.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text(mod.subtitle, color = Color.Gray, fontSize = 10.sp, maxLines = 1)
+                                        }
+                                    }
+                                }
+                            }
+                            if (rowItems.size == 1) {
+                                Spacer(Modifier.weight(1f))
                             }
                         }
                     }

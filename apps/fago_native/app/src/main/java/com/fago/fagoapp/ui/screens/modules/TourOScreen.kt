@@ -1,5 +1,6 @@
 package com.fago.fagoapp.ui.screens.modules
 
+import com.fago.fagoapp.auth.AuthUiState
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -44,11 +45,21 @@ data class TourPackageItem(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TourOScreen(onBack: () -> Unit) {
+fun TourOScreen(
+    authState: AuthUiState? = null,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
 
     var selectedPackageKey by remember { mutableStateOf("arupadaiveedu") }
     var passengerCount by remember { mutableIntStateOf(4) }
+    var travellerName by remember { mutableStateOf(authState?.fullName ?: "") }
+    var travellerPhone by remember { mutableStateOf(authState?.phone ?: "") }
+
+    LaunchedEffect(authState?.fullName, authState?.phone) {
+        if (!authState?.fullName.isNullOrBlank()) travellerName = authState.fullName!!
+        if (!authState?.phone.isNullOrBlank()) travellerPhone = authState.phone!!
+    }
 
     val tourPackages = listOf(
         TourPackageItem("arupadaiveedu", "அறுபடைவீடு ஆன்மீக பயணம் (Arupadaiveedu)", "Palani, Tiruchendur, Swamimalai, Thiruthani, Madurai", "🕉️", 12500.0, "3 Days / 2 Nights", "Innova / Ertiga / Tempo Traveller"),
@@ -159,8 +170,12 @@ fun TourOScreen(onBack: () -> Unit) {
             item {
                 Button(
                     onClick = {
-                        val pName = authState?.fullName?.ifBlank { "Pilgrim" } ?: "Pilgrim"
-                        val pPhone = authState?.phone ?: "9486335870"
+                        val pName = travellerName.ifBlank { authState?.fullName?.trim() ?: "Pilgrim / Traveller" }
+                        val pPhone = travellerPhone.ifBlank { authState?.phone?.trim() ?: "" }
+                        if (pPhone.isBlank()) {
+                            android.widget.Toast.makeText(context, "Please enter your mobile phone number in profile settings before booking", android.widget.Toast.LENGTH_LONG).show()
+                            return@Button
+                        }
                         val msg = Uri.encode(
                             "🕉️ *TOURO TAMIL NADU TEMPLE & HILL TOUR BOOKING* 🕉️\n\n" +
                             "👤 *Pilgrim / Traveller Name*: $pName\n" +
@@ -173,7 +188,7 @@ fun TourOScreen(onBack: () -> Unit) {
                             "📍 *Pickup Location*: Gandhipuram, Coimbatore 641012, Tamil Nadu\n\n" +
                             "👉 TourO Manager: Please confirm tour booking & driver assignment!"
                         )
-                        val waUri = Uri.parse("https://api.whatsapp.com/send?phone=919486335870&text=$msg")
+                        val waUri = Uri.parse("https://api.whatsapp.com/send?phone=916381029380&text=$msg")
                         context.startActivity(Intent(Intent.ACTION_VIEW, waUri))
                     },
                     modifier = Modifier.fillMaxWidth().height(52.dp),

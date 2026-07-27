@@ -23,6 +23,7 @@ class Location {
 class RideRequest {
   final String id;
   final String riderId;
+  final String riderName;
   final String riderPhone;
   final Location pickupLocation;
   final String pickupAddress;
@@ -33,11 +34,13 @@ class RideRequest {
   final RideStatus status;
   final String? driverId;
   final String? driverPhone;
+  final String? otpCode;
   final DateTime createdAt;
 
   RideRequest({
     required this.id,
     required this.riderId,
+    required this.riderName,
     required this.riderPhone,
     required this.pickupLocation,
     required this.pickupAddress,
@@ -48,12 +51,14 @@ class RideRequest {
     required this.status,
     this.driverId,
     this.driverPhone,
+    this.otpCode,
     required this.createdAt,
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'rider_id': riderId,
+        'rider_name': riderName,
         'rider_phone': riderPhone,
         'pickup_location': pickupLocation.toJson(),
         'pickup_address': pickupAddress,
@@ -64,12 +69,14 @@ class RideRequest {
         'status': status.name,
         'driver_id': driverId,
         'driver_phone': driverPhone,
+        'otp_code': otpCode,
         'created_at': createdAt.toIso8601String(),
       };
 
   factory RideRequest.fromJson(Map<String, dynamic> json) => RideRequest(
         id: json['id'],
         riderId: json['rider_id'],
+        riderName: json['rider_name'] ?? '',
         riderPhone: json['rider_phone'] ?? '',
         pickupLocation: Location.fromJson(json['pickup_location']),
         pickupAddress: json['pickup_address'] ?? 'Pickup Location',
@@ -83,6 +90,7 @@ class RideRequest {
         ),
         driverId: json['driver_id'],
         driverPhone: json['driver_phone'],
+        otpCode: json['otp_code'] ?? json['otp'],
         createdAt: DateTime.parse(json['created_at']),
       );
 }

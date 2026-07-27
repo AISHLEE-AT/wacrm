@@ -563,7 +563,10 @@ class AuthNotifier extends Notifier<AuthState> {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     final tenDigit = cleanPhone.length > 10
         ? cleanPhone.substring(cleanPhone.length - 10)
-        : (cleanPhone.isNotEmpty ? cleanPhone : '9486335870');
+        : (cleanPhone.isNotEmpty ? cleanPhone : '');
+    if (tenDigit.isEmpty) {
+      throw Exception('Phone number is required for device PIN login');
+    }
     await _directSupabasePhoneLogin(tenDigit, null, null);
     state = state.copyWith(isLoading: false, biometricGate: BiometricGateState.passed);
     return state.role;

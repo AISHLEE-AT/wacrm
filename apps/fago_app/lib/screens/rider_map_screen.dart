@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'web_module_screen.dart';
 import '../models/ride_request.dart';
 import '../services/location_service.dart';
@@ -407,7 +408,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        _confirmAndPostRide();
+                        _confirmAndPostRide(chosen['phone'].toString());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF25D366),
@@ -426,13 +427,31 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     );
   }
 
-  Future<void> _confirmAndPostRide() async {
+  Future<void> _confirmAndPostRide(String driverPhone) async {
     if (_currentLocation == null || _destinationLocation == null) return;
 
     setState(() => _isBooking = true);
 
-    final riderName = _nameController.text.trim().isEmpty ? 'Anonymous Rider' : _nameController.text.trim();
-    final riderPhone = _phoneController.text.trim().isEmpty ? '+919876543210' : _phoneController.text.trim();
+    final _freshProfile = await ProfileService.getCurrentUserProfileDetails();
+    final riderName = _nameController.text.trim().isNotEmpty
+        ? _nameController.text.trim()
+        : (_freshProfile['name'] ?? '').toString().trim();
+    final rawPhone = _phoneController.text.trim();
+    final cleanPhoneDigits = rawPhone.replaceAll(RegExp(r'[^\d]'), '');
+    final riderPhone = cleanPhoneDigits.length >= 10
+        ? cleanPhoneDigits
+        : (_freshProfile['phone'] ?? '').toString().trim();
+
+    if (riderName.isEmpty || riderPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your name and phone number to book a ride'),
+          backgroundColor: Colors.red,
+        )
+      );
+      setState(() => _isBooking = false);
+      return;
+    }
 
     await SupabaseBackendService().saveCrmContact(
       name: riderName,
@@ -443,10 +462,13 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     );
 
     final rideId = 'RIDE_${DateTime.now().millisecondsSinceEpoch}';
+    final otpPin = (1000 + Random().nextInt(9000)).toString();
+
     final newRide = RideRequest(
       id: rideId,
       riderId: 'RIDER_001',
-      riderPhone: '$riderName ($riderPhone)',
+      riderName: riderName,
+      riderPhone: riderPhone,
       pickupLocation: _currentLocation!,
       pickupAddress: _currentAddress,
       dropoffLocation: _destinationLocation!,
@@ -454,6 +476,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       vehicleCategory: _selectedCategory,
       estimatedFare: _estimatedFare,
       status: RideStatus.requested,
+      otpCode: otpPin,
       createdAt: DateTime.now(),
     );
 
@@ -470,12 +493,21 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
       lat: _currentLocation!.latitude,
       lng: _currentLocation!.longitude,
       riderName: riderName,
+      riderPhone: riderPhone,
+      otpCode: otpPin,
     );
 
-    // Send WhatsApp notification with auto-pinned live GPS location & maps link
-    await WhatsAppService.openWhatsApp(phone: '919486335870', message: whatsappMessage);
-
-    final otpPin = (1000 + Random().nextInt(9000)).toString();
+    final targetDriverPhone = driverPhone;
+    if (targetDriverPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No driver phone available. Please try another driver.'))
+      );
+      setState(() => _isBooking = false);
+      return;
+    }
+    final cleanTarget = targetDriverPhone.replaceAll(RegExp(r'[^\d]'), '');
+    final waPhone = cleanTarget.startsWith('91') ? cleanTarget : '91$cleanTarget';
+    await WhatsAppService.openWhatsApp(phone: waPhone, message: whatsappMessage);
 
     setState(() {
       _isBooking = false;
@@ -680,6 +712,9 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   }
 
   void _openCategoryGridModal(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final userRole = user?.userMetadata?['role']?.toString().toLowerCase() ?? 'user';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -691,7 +726,8 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         final categories = [
           {'name': '🌐 AISHLEE-WEB Portal', 'desc': 'Open Web Flow in Browser', 'route': '/'},
           {'name': '🚖 RideO (Book Ride)', 'desc': 'On-Demand Rides', 'route': '/rideo'},
-          {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance', 'route': '/drivo'},
+          if (userRole == 'driver' || userRole == 'admin')
+            {'name': '🚚 DriveO (Driver Radar)', 'desc': 'Driver Acceptance', 'route': '/drivo'},
           {'name': '🚜 RentO (Agri Rental)', 'desc': 'Machinery Rentals', 'route': '/rento'},
           {'name': '🏷️ DealO (Marketplace)', 'desc': '5km Radius P2P Deals', 'route': '/dealo'},
           {'name': '🌾 Mandi Rates (சந்தை)', 'desc': 'Agri Crop Prices', 'route': '/mandi'},
@@ -700,7 +736,8 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
           {'name': '📺 TvO (Live Channels)', 'desc': 'Agri & Driver Streaming', 'route': '/tvo'},
           {'name': '🛕 TourO (ஆன்மீகம்)', 'desc': 'Spiritual Temple Tours', 'route': '/touro'},
           {'name': '🤖 Gemini AI Assistant', 'desc': 'Tamil AI Smart Assistant', 'route': '/gemini'},
-          {'name': '👑 WhatsApp CRM Hub', 'desc': 'Customer Management & Admin CRM', 'route': '/admin'},
+          if (userRole == 'admin')
+            {'name': '👑 WhatsApp CRM Hub', 'desc': 'Customer Management & Admin CRM', 'route': '/admin'},
           {'name': '💰 MoneyO (Finance)', 'desc': 'Agri Ledger & Savings', 'route': '/moneyo'},
           {'name': '📋 TaskO (Gig Work)', 'desc': 'Daily Tasks & Opportunities', 'route': '/tasko'},
           {'name': '🛠️ ToolsO (Agri Tools)', 'desc': 'Calculators & Tools Suite', 'route': '/toolso'},
@@ -940,8 +977,15 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
                   child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00), foregroundColor: Colors.black),
                     onPressed: () async {
+                      final driverUpi = ''; // ride.driverUpiId doesn't exist on the model
+                      if (driverUpi.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Driver UPI ID not available. Please pay directly to driver.'))
+                        );
+                        return;
+                      }
                       final upiUri = Uri.parse(
-                          "upi://pay?pa=9486335870@hdfcbank&pn=FAGO%20DriveO&am=${ride.estimatedFare.toStringAsFixed(0)}&cu=INR&tn=RideO%20Trip%20Payment");
+                          "upi://pay?pa=$driverUpi&pn=${Uri.encodeComponent('Driver')}&am=${ride.estimatedFare.toStringAsFixed(0)}&cu=INR&tn=RideO%20Trip%20Payment");
                       if (await canLaunchUrl(upiUri)) {
                         await launchUrl(upiUri, mode: LaunchMode.externalApplication);
                       }
@@ -990,20 +1034,22 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     {'name': '🏔️ Ooty Botanical Garden', 'address': 'Vannarapettai, Ooty, Nilgiris', 'lat': 11.4150, 'lng': 76.7110},
   ];
 
-  void _selectHotspot(Map<String, dynamic> hs, bool isPickup) {
+  void _selectHotspot(Map<String, dynamic> hs, bool isPickup) async {
     final lat = hs['lat'] as double;
     final lng = hs['lng'] as double;
-    final addr = hs['address'] as String;
 
+    final cleanAddr = await LocationService().getAddressFromCoordinates(lat, lng);
+
+    if (!mounted) return;
     setState(() {
       if (isPickup) {
         _currentLocation = Location(latitude: lat, longitude: lng);
-        _currentAddress = addr;
-        _pickupController.text = addr;
+        _currentAddress = cleanAddr;
+        _pickupController.text = cleanAddr;
       } else {
         _destinationLocation = Location(latitude: lat, longitude: lng);
-        _destinationAddress = addr;
-        _dropoffController.text = addr;
+        _destinationAddress = cleanAddr;
+        _dropoffController.text = cleanAddr;
       }
     });
 
@@ -1012,7 +1058,7 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${isPickup ? "📍 Pickup" : "🚩 Dropoff"} set to: ${hs['name']}'),
+        content: Text('${isPickup ? "📍 Pickup" : "🚩 Dropoff"} set to: $cleanAddr'),
         backgroundColor: isPickup ? Colors.green.shade800 : Colors.redAccent,
         duration: const Duration(seconds: 2),
       ),
@@ -1020,19 +1066,19 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
   }
 
   Future<void> _handleMapTap(LatLng point) async {
-    final address = await LocationService().getAddressFromCoordinates(point.latitude, point.longitude);
+    final cleanAddr = await LocationService().getAddressFromCoordinates(point.latitude, point.longitude);
     if (!mounted) return;
 
     if (_pinSelectionStep == 0) {
       setState(() {
         _currentLocation = Location(latitude: point.latitude, longitude: point.longitude);
-        _currentAddress = address;
-        _pickupController.text = address;
+        _currentAddress = cleanAddr;
+        _pickupController.text = cleanAddr;
       });
       _updateFare();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('📍 Pickup set to: $address'),
+          content: Text('📍 Pickup set to: $cleanAddr'),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.green.shade800,
         ),
@@ -1040,13 +1086,13 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
     } else {
       setState(() {
         _destinationLocation = Location(latitude: point.latitude, longitude: point.longitude);
-        _destinationAddress = address;
-        _dropoffController.text = address;
+        _destinationAddress = cleanAddr;
+        _dropoffController.text = cleanAddr;
       });
       _updateFare();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('🚩 Dropoff set to: $address'),
+          content: Text('🚩 Dropoff set to: $cleanAddr'),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.redAccent,
         ),

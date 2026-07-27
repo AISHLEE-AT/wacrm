@@ -14,12 +14,30 @@ class LocationService {
   /// Default fallback location (Chennai)
   static const model.Location defaultLocation = model.Location(latitude: 13.0827, longitude: 80.2707);
 
+  /// Helper to sanitize raw address lines and eliminate generic junk like "Unnamed Road,"
+  static String cleanAddressString(String rawAddress) {
+    if (rawAddress.isEmpty) return 'GPS Location Active';
+    
+    String cleaned = rawAddress;
+    // Strip leading "Unnamed Road," or "Unnamed Road "
+    cleaned = cleaned.replaceAll(RegExp(r'^Unnamed Road,\s*', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r'^Unnamed Road\s*', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r'Unnamed Road,\s*', caseSensitive: false), '');
+    
+    // Strip generic placeholders
+    cleaned = cleaned.trim();
+    if (cleaned.endsWith(',')) {
+      cleaned = cleaned.substring(0, cleaned.length - 1).trim();
+    }
+    
+    return cleaned.isNotEmpty ? cleaned : 'GPS Location Active';
+  }
+
   /// Get current high accuracy GPS location from hardware
   Future<model.Location> getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint('Location services are disabled.');
@@ -41,7 +59,6 @@ class LocationService {
     }
 
     try {
-      // Use high accuracy GPS setting with reasonable 10s timeout
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -50,7 +67,7 @@ class LocationService {
       );
       return model.Location(latitude: position.latitude, longitude: position.longitude);
     } catch (e) {
-      debugPrint('Error getting high-accuracy location: $e. Falling back to last known position.');
+      debugPrint('Error getting high-accuracy location: $e.');
       try {
         Position? lastKnown = await Geolocator.getLastKnownPosition();
         if (lastKnown != null) {
@@ -65,7 +82,7 @@ class LocationService {
   Stream<model.Location> getPositionStream() {
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5, // Update every 5 meters
+      distanceFilter: 5,
     );
 
     return Geolocator.getPositionStream(locationSettings: locationSettings).map(
@@ -73,22 +90,25 @@ class LocationService {
     );
   }
 
-  /// High Precision Native Android/iOS System Address Reverse-Geocoding ($0 API Cost & 100% Google Precision)
+  /// High Precision Native Address Reverse-Geocoding (Clean place names, no Unnamed Road)
   Future<String> getAddressFromCoordinates(double lat, double lng) async {
     try {
-      // 1. Primary: Native OS Geocoder (Uses Android Google Location Services & iOS CoreLocation - $0 Cost & 100% Accurate)
       List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
         List<String> addressParts = [];
-        if (place.name != null && place.name!.isNotEmpty && place.name != place.street) addressParts.add(place.name!);
-        if (place.street != null && place.street!.isNotEmpty) addressParts.add(place.street!);
+        if (place.name != null && place.name!.isNotEmpty && place.name != place.street && !place.name!.toLowerCase().contains('unnamed')) {
+          addressParts.add(place.name!);
+        }
+        if (place.street != null && place.street!.isNotEmpty && !place.street!.toLowerCase().contains('unnamed')) {
+          addressParts.add(place.street!);
+        }
         if (place.subLocality != null && place.subLocality!.isNotEmpty) addressParts.add(place.subLocality!);
         if (place.locality != null && place.locality!.isNotEmpty) addressParts.add(place.locality!);
         if (place.postalCode != null && place.postalCode!.isNotEmpty) addressParts.add(place.postalCode!);
         
         if (addressParts.isNotEmpty) {
-          return addressParts.join(', ');
+          return cleanAddressString(addressParts.join(', '));
         }
       }
     } catch (e) {
@@ -102,12 +122,12 @@ class LocationService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data != null && data['display_name'] != null) {
-          return data['display_name'].toString();
+          return cleanAddressString(data['display_name'].toString());
         }
       }
     } catch (_) {}
 
-    return 'GPS Pin: ${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
+    return 'GPS Location (${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)})';
   }
 
   /// High Precision Native Pincode & Address Reverse-Geocoding
@@ -125,7 +145,7 @@ class LocationService {
         List<String> addressParts = [];
         if (place.subLocality != null && place.subLocality!.isNotEmpty) {
           addressParts.add(place.subLocality!);
-        } else if (place.street != null && place.street!.isNotEmpty && place.street != place.name) {
+        } else if (place.street != null && place.street!.isNotEmpty && place.street != place.name && !place.street!.toLowerCase().contains('unnamed')) {
           addressParts.add(place.street!);
         }
         if (place.locality != null && place.locality!.isNotEmpty) {
@@ -136,110 +156,34 @@ class LocationService {
         }
 
         if (addressParts.isNotEmpty) {
-          address = addressParts.join(', ');
+          address = cleanAddressString(addressParts.join(', '));
         }
       }
     } catch (e) {
-      debugPrint('Native Geocoder pincode error: $e');
+      debugPrint('Pincode Geocoder error: $e');
     }
 
-    if (pincode.isEmpty || address.isEmpty) {
-      try {
-        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=$lat&lon=$lng');
-        final response = await http.get(url, headers: {'User-Agent': 'WacrmRideApp/1.0'});
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          if (data != null) {
-            if (pincode.isEmpty && data['address'] != null && data['address']['postcode'] != null) {
-              pincode = data['address']['postcode'].toString();
-            }
-            if (address.isEmpty && data['display_name'] != null) {
-              address = data['display_name'].toString();
-            }
-          }
-        }
-      } catch (_) {}
+    if (address.isEmpty) {
+      address = await getAddressFromCoordinates(lat, lng);
     }
 
     return {
       'pincode': pincode.isNotEmpty ? pincode : '641001',
-      'address': address.isNotEmpty ? address : 'GPS Pin ($lat, $lng)',
+      'address': address,
     };
   }
 
-  /// Forward Geocoding: Search location coordinates from text input ($0 API Cost & 100% Native Precision)
-  Future<model.Location?> searchAddressCoordinates(String address) async {
+  /// Forward Geocode query string to Location lat/lng
+  Future<model.Location?> searchAddressCoordinates(String query) async {
     try {
-      List<Location> locations = await locationFromAddress(address);
+      List<Location> locations = await locationFromAddress(query);
       if (locations.isNotEmpty) {
         final loc = locations.first;
         return model.Location(latitude: loc.latitude, longitude: loc.longitude);
       }
     } catch (e) {
-      debugPrint('Native forward geocoding search error: $e');
+      debugPrint('Error forward geocoding query: $e');
     }
     return null;
-  }
-
-  /// Generates dynamic local landmark suggestions combining Native Google System Geocoder & OpenStreetMap ($0 API Cost & 100% Accuracy)
-  Future<List<String>> getNearbyLandmarkSuggestions(double lat, double lng) async {
-    List<String> suggestions = [];
-
-    // 1. Primary Source: Native System / Google Geocoder (Google Play Services on Android & CoreLocation on iOS)
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
-      if (placemarks.isNotEmpty) {
-        for (var place in placemarks) {
-          final name = place.name;
-          final street = place.street;
-          final subArea = place.subLocality?.isNotEmpty == true
-              ? place.subLocality!
-              : (place.thoroughfare?.isNotEmpty == true ? place.thoroughfare! : 'Main Road');
-          final city = place.locality?.isNotEmpty == true ? place.locality! : subArea;
-
-          if (name != null && name.isNotEmpty && name != street && !name.contains('+') && name != subArea) {
-            if (!suggestions.contains(name)) suggestions.add(name);
-          }
-          if (street != null && street.isNotEmpty && !street.contains('+') && !street.contains('Unnamed')) {
-            if (!suggestions.contains(street)) suggestions.add(street);
-          }
-          if (!suggestions.contains('$subArea Bus Stand')) suggestions.add('$subArea Bus Stand');
-          if (!suggestions.contains('$subArea Main Junction')) suggestions.add('$subArea Main Junction');
-          if (!suggestions.contains('$city Railway Station')) suggestions.add('$city Railway Station');
-          if (!suggestions.contains('$city Government Hospital')) suggestions.add('$city Government Hospital');
-        }
-      }
-    } catch (e) {
-      debugPrint('Google Native Geocoder landmark error: $e');
-    }
-
-    // 2. Secondary Source: OpenStreetMap POI Search
-    try {
-      final url = Uri.parse('https://nominatim.openstreetmap.org/search?format=json&q=bus+station+hospital+market+junction&lat=$lat&lon=$lng&limit=5');
-      final response = await http.get(url, headers: {'User-Agent': 'WacrmRideApp/1.0'});
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
-        for (var item in data) {
-          if (item['display_name'] != null) {
-            String name = item['display_name'].toString().split(',')[0];
-            if (name.isNotEmpty && !suggestions.contains(name) && !name.contains('+')) {
-              suggestions.add(name);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('OSM landmark fetch error: $e');
-    }
-
-    if (suggestions.isEmpty) {
-      suggestions = [
-        'Nearby Bus Stand',
-        'Railway Station',
-        'Government Hospital',
-        'Town Market Center',
-      ];
-    }
-    return suggestions.take(5).toList();
   }
 }

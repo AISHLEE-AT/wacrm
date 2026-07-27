@@ -44,7 +44,7 @@ class ProfileService {
           if ((profileData['full_name'] ?? '').toString().isNotEmpty) {
             name = profileData['full_name'].toString();
           }
-          final pPhone = (profileData['whatsapp'] ?? profileData['phone'] ?? '').toString();
+          final pPhone = (profileData['phone'] ?? profileData['whatsapp'] ?? '').toString();
           if (pPhone.isNotEmpty) {
             phone = pPhone;
           }
@@ -67,10 +67,10 @@ class ProfileService {
     }
 
     return {
-      'name': name.isNotEmpty ? name : 'User',
+      'name': name.isNotEmpty ? name : '',
       'phone': cleanPhone.isNotEmpty ? cleanPhone : '',
       'address': address.isNotEmpty ? address : 'Tamil Nadu, India',
-      'upi_id': upiId.isNotEmpty ? upiId : (cleanPhone.isNotEmpty ? '$cleanPhone@upi' : 'wacrm@upi'),
+      'upi_id': upiId.isNotEmpty ? upiId : (cleanPhone.isNotEmpty ? '$cleanPhone@upi' : ''),
     };
   }
 
