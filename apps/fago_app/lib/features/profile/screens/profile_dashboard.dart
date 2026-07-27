@@ -112,7 +112,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             role: isAdmin ? 'ADMIN' : (profile?.role.isNotEmpty == true ? profile!.role.toUpperCase() : 'USER'),
             whatsapp: displayPhone.isNotEmpty ? displayPhone : '9123596988',
             phone: displayPhone.isNotEmpty ? displayPhone : '9123596988',
-            address: (profile?.address != null && profile!.address.isNotEmpty) ? profile.address : 'Live Location Active',
+            address: (profile?.address?.isNotEmpty == true) ? profile!.address! : 'Live Location Active',
           );
 
           return TabBarView(

@@ -9,6 +9,8 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -105,7 +107,7 @@ class AuthViewModel(
     }
 
     // ── 2. Send WhatsApp OTP — calls Vercel API with Supabase fallback ──────
-    suspend fun sendWhatsAppOtp(phone: String): Result<String> {
+    suspend fun sendWhatsAppOtp(phone: String): Result<String> = withContext(Dispatchers.IO) {
         val cleanPhone = phone.filter { it.isDigit() }
         val tenDigit = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
         val generatedOtp = (100000..999999).random().toString()
@@ -133,7 +135,7 @@ class AuthViewModel(
             Log.d("FagoAuth", "OTP upsert note: ${e.message}")
         }
 
-        return try {
+        try {
             val body = """{"phone":"$cleanPhone"}"""
                 .toRequestBody("application/json".toMediaType())
             val request = Request.Builder()
@@ -151,7 +153,7 @@ class AuthViewModel(
     }
 
     // ── 3. Verify WhatsApp OTP ──────────────────────────────────────────────
-    suspend fun verifyWhatsAppOtp(phone: String, otp: String, fullName: String?): Result<Unit> {
+    suspend fun verifyWhatsAppOtp(phone: String, otp: String, fullName: String?): Result<Unit> = withContext(Dispatchers.IO) {
         val cleanPhone = phone.filter { it.isDigit() }
         val tenDigit = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
 
@@ -186,7 +188,7 @@ class AuthViewModel(
                         val userId = supabase.auth.currentUserOrNull()?.id
                         syncProfileAndFinishLogin(userId, cleanPhone, fullName)
                         resolveRole(cleanPhone, userId)
-                        return Result.success(Unit)
+                        return@withContext Result.success(Unit)
                     }
                 }
             }
@@ -194,7 +196,7 @@ class AuthViewModel(
             Log.d("FagoAuth", "Vercel verify note: ${e.message}")
         }
 
-        return try {
+        try {
             val records = supabase.postgrest["whatsapp_otps"]
                 .select {
                     filter {
@@ -503,12 +505,12 @@ class AuthViewModel(
         }
     }
 
-    suspend fun fetchProfileByPhone(phone: String): Map<String, String?>? {
+    suspend fun fetchProfileByPhone(phone: String): Map<String, String?>? = withContext(Dispatchers.IO) {
         val cleanPhone = phone.filter { it.isDigit() }.let {
             if (it.length > 10) it.takeLast(10) else it
         }
-        if (cleanPhone.length < 10) return null
-        return try {
+        if (cleanPhone.length < 10) return@withContext null
+        return@withContext try {
             supabase.postgrest["profiles"]
                 .select {
                     filter {
