@@ -441,7 +441,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                         ) {
                             val statusMsg = when {
                                 isCheckingProfile -> "⏳ Checking registered profile..."
-                                isDeviceRegistered -> "✓ Profile Loaded: ${fullNameInput.ifBlank { "Registered User" }}"
+                                isDeviceRegistered -> "✓ Profile Loaded: ${name.ifBlank { "Registered User" }}"
                                 isSimAutofetched -> "✓ Auto-detected SIM number"
                                 else -> ""
                             }
