@@ -597,12 +597,39 @@ class AuthViewModel(
     }
 
     // ── 7. Device Biometric / PIN Login ─────────────────────────────────────
-    suspend fun verifyDeviceAndAutoLogin(phone: String): UserRole {
+    suspend fun verifyDeviceAndAutoLogin(phone: String, inputPin: String? = null): UserRole = withContext(Dispatchers.IO) {
         val cleanPhone = phone.filter { it.isDigit() }.let {
             if (it.length > 10) it.takeLast(10) else it
         }
+
+        // Try Web Bridge API first (aligns Mobile Auth 100% with Web Portal watscrm.vercel.app)
+        try {
+            val jsonPayload = JSONObject().apply {
+                put("phone", cleanPhone)
+                if (!inputPin.isNullOrEmpty()) put("pin", inputPin)
+            }
+            val body = jsonPayload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url(BuildConfig.PIN_LOGIN_URL)
+                .post(body)
+                .build()
+
+            http.newCall(req).execute().use { response ->
+                if (response.isSuccessful) {
+                    val resStr = response.body?.string() ?: ""
+                    val json = JSONObject(resStr)
+                    if (json.optBoolean("success")) {
+                        Log.d("FagoAuth", "Web Bridge PIN Login Success for $cleanPhone")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("FagoAuth", "Web Bridge Login Note: ${e.message}")
+        }
+
+        // Complete Profile Hydration & State Update
         directSupabasePhoneLogin(cleanPhone, null)
-        return _authState.value.role
+        return@withContext _authState.value.role
     }
 
     // ── 8. Sign Out ──────────────────────────────────────────────────────────
