@@ -79,6 +79,20 @@ export function ConversationList({
     let cancelled = false;
 
     (async () => {
+      try {
+        const res = await fetch('/api/conversations', { cache: 'no-store' });
+        const json = await res.json();
+        if (json.conversations && Array.isArray(json.conversations)) {
+          if (!cancelled) {
+            onConversationsLoadedRef.current(json.conversations);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('Failed fetching /api/conversations, falling back to direct query:', err);
+      }
+
       const { data, error } = await supabase
         .from("conversations")
         .select("*, contact:contacts(*)")
