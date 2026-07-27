@@ -610,7 +610,7 @@ class AuthViewModel(
             }
             val body = jsonPayload.toString().toRequestBody("application/json".toMediaType())
             val req = Request.Builder()
-                .url(BuildConfig.PIN_LOGIN_URL)
+                .url("https://watscrm.vercel.app/api/auth/pin-login")
                 .post(body)
                 .build()
 
