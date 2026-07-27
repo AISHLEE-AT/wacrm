@@ -125,11 +125,29 @@ export function SettingsOverview({
         fetch('/api/whatsapp/config', { cache: 'no-store' }).then((r) => r.json()),
       ]);
       if (cancelled) return;
+      const isConnected = health.status === 'fulfilled' && !!health.value?.connected;
+      const hasEnvDefaults = health.status === 'fulfilled' && !!health.value?.env_defaults?.phone_number_id;
+      const isConfigured = (row.status === 'fulfilled' && !!row.value.data?.phone_number_id) || isConnected || hasEnvDefaults;
+
       setWhatsapp({
-        configured: row.status === 'fulfilled' && !!row.value.data?.phone_number_id,
-        connected: health.status === 'fulfilled' && !!health.value?.connected,
+        configured: isConfigured,
+        connected: isConnected || hasEnvDefaults,
       });
       setWhatsappLoading(false);
+
+      // Auto-sync templates from Meta Graph API
+      fetch('/api/whatsapp/templates/sync', { method: 'POST' })
+        .then((r) => r.json())
+        .then(async () => {
+          const { count } = await supabase
+            .from('message_templates')
+            .select('id', { count: 'exact', head: true })
+            .or(`account_id.eq.${acctId},user_id.eq.${userId}`);
+          if (!cancelled && count != null) {
+            setCounts((prev) => prev ? { ...prev, templates: count } : prev);
+          }
+        })
+        .catch(() => {});
     })();
 
     return () => {

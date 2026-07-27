@@ -140,23 +140,30 @@ export async function POST() {
     const { data: profile } = await supabase
       .from('profiles')
       .select('account_id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .maybeSingle()
-    const accountId = profile?.account_id as string | undefined
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'Your profile is not linked to an account.' },
-        { status: 403 },
-      )
-    }
+    const accountId = (profile?.account_id as string | undefined) || user.id
 
-    const { data: config, error: configError } = await supabase
+    const { data: config } = await supabaseAdmin()
       .from('whatsapp_config')
       .select('*')
       .eq('account_id', accountId)
-      .single()
+      .maybeSingle()
 
-    if (configError || !config) {
+    const wabaId = config?.waba_id || process.env.META_WABA_ID || ''
+    let accessToken = ''
+
+    if (config?.access_token) {
+      try {
+        accessToken = decrypt(config.access_token)
+      } catch {
+        accessToken = process.env.META_ACCESS_TOKEN || ''
+      }
+    } else {
+      accessToken = process.env.META_ACCESS_TOKEN || ''
+    }
+
+    if (!wabaId || !accessToken) {
       return NextResponse.json(
         {
           error:
@@ -166,22 +173,10 @@ export async function POST() {
       )
     }
 
-    if (!config.waba_id) {
-      return NextResponse.json(
-        {
-          error:
-            'WABA (WhatsApp Business Account) ID missing. Re-connect your account in Settings.',
-        },
-        { status: 400 },
-      )
-    }
-
-    const accessToken = decrypt(config.access_token)
-
     const metaTemplates: MetaTemplate[] = []
     let nextUrl:
       | string
-      | null = `${META_API_BASE}/${config.waba_id}/message_templates?limit=100&fields=id,name,language,status,category,components,quality_score`
+      | null = `${META_API_BASE}/${wabaId}/message_templates?limit=100&fields=id,name,language,status,category,components,quality_score`
     const PAGE_CAP = 20
     let pageCount = 0
 
