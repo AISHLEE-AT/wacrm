@@ -566,9 +566,13 @@ class _DealoMarketplaceScreenState extends State<DealoMarketplaceScreen> with Si
                   children: [
                     const Icon(Icons.verified, size: 14, color: Color(0xFF00FF00)),
                     const SizedBox(width: 4),
-                    Text(
-                      "📍 ${deal['location_name'] ?? 'Local'} (${deal['pincode'] ?? ''}) • Seller: ${deal['seller_name'] ?? 'User'}",
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    Flexible(
+                      child: Text(
+                        "📍 ${deal['location_name'] ?? 'Local'} (${deal['pincode'] ?? ''}) • Seller: ${deal['seller_name'] ?? 'User'}",
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ],
                 ),

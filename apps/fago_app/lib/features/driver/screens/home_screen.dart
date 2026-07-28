@@ -401,9 +401,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               child: const Text('Back', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 Navigator.pop(context);
-                await _completeRide();
+                _showVerifyOtpDialog();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -417,55 +417,140 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _completeRide() async {
+  void _showVerifyOtpDialog() {
+    if (_activeRide == null) return;
+    final TextEditingController otpController = TextEditingController();
+    String? errorText;
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(Icons.shield_outlined, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Enter Ride OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Ask passenger for the 4-digit OTP shown on their screen to complete the ride:'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: otpController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 8),
+                  decoration: InputDecoration(
+                    hintText: '0000',
+                    counterText: '',
+                    errorText: errorText,
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onChanged: (val) {
+                    if (errorText != null) setDialogState(() => errorText = null);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () {
+                  Navigator.pop(ctx);
+                  _showActiveRideSheet();
+                },
+                child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final otp = otpController.text.trim();
+                        if (otp.length != 4) {
+                          setDialogState(() => errorText = 'Enter 4-digit OTP');
+                          return;
+                        }
+                        setDialogState(() => isSubmitting = true);
+                        try {
+                          await _completeRide(otp);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        } catch (e) {
+                          setDialogState(() {
+                            isSubmitting = false;
+                            errorText = e.toString().replaceAll('Exception:', '').trim();
+                          });
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: isSubmitting
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Verify & Finish', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _completeRide(String enteredOtp) async {
     if (_activeRide == null || _driverId == null) return;
 
     final rideId = _activeRide!['id'].toString();
 
-    try {
-      await _supabaseService.completeRide(
-        rideId,
-        _driverId!,
+    await _supabaseService.completeRide(
+      rideId,
+      _driverId!,
+      enteredOtp,
+    );
+
+    setState(() => _activeRide = null);
+    await _fetchDriverData();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎉 Ride Verified & Completed!'),
+          backgroundColor: Colors.green,
+        ),
       );
-
-      setState(() => _activeRide = null);
-      await _fetchDriverData();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 Ride Completed!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) {
-            return AlertDialog(
-              title: const Text('Rate Passenger'),
-              content: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: const Icon(Icons.star_border, color: Colors.orange, size: 32),
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await _supabaseService.submitRating(rideId, index + 1, 'driver');
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks for rating!')));
-                      }
-                    },
-                  );
-                }),
-              ),
-            );
-          }
-        );
-      }
-    } catch (e) {
-      debugPrint('Error completing ride: $e');
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Rate Passenger'),
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return IconButton(
+                  icon: const Icon(Icons.star_border, color: Colors.orange, size: 32),
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await _supabaseService.submitRating(rideId, index + 1, 'driver');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thanks for rating!')));
+                    }
+                  },
+                );
+              }),
+            ),
+          );
+        }
+      );
     }
   }
 

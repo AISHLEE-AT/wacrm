@@ -27,25 +27,89 @@ class _AreaAdminHubScreenState extends State<AreaAdminHubScreen> {
 
   Future<void> _loadPincodeUsers() async {
     setState(() => _isLoading = true);
+    final List<Map<String, dynamic>> loaded = [];
+
+    void addUnique(Map<String, dynamic> u) {
+      final p = (u['whatsapp'] ?? u['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+      final p10 = p.length >= 10 ? p.substring(p.length - 10) : p;
+      if (p10.isNotEmpty && !loaded.any((item) => (item['phone'] ?? item['whatsapp'] ?? '').toString().replaceAll(RegExp(r'\D'), '').endsWith(p10))) {
+        loaded.add({
+          'id': u['id'] ?? 'user_${loaded.length}',
+          'full_name': u['full_name'] ?? u['name'] ?? 'Local User',
+          'phone': p10,
+          'whatsapp': p10,
+          'role': u['role'] ?? 'User',
+          'address': u['address'] ?? 'Tamil Nadu Pincode $_selectedPincode',
+        });
+      }
+    }
+
     try {
       final response = await Supabase.instance.client
           .from('profiles')
           .select('id, full_name, whatsapp, phone, role, address')
-          .limit(200);
+          .limit(100);
 
-      final List<Map<String, dynamic>> loaded = [];
       for (var item in response as List) {
-        loaded.add(Map<String, dynamic>.from(item));
+        addUnique(Map<String, dynamic>.from(item));
       }
-
-      setState(() {
-        _localUsers = loaded;
-        _isLoading = false;
-      });
     } catch (e) {
-      debugPrint("Error loading pincode users: $e");
-      setState(() => _isLoading = false);
+      debugPrint("Error loading profiles: $e");
     }
+
+    try {
+      final driversRes = await Supabase.instance.client
+          .from('drivers')
+          .select('id, name, driver_name, mobile_number, whatsapp_number, vehicle_type')
+          .limit(100);
+
+      for (var item in driversRes as List) {
+        final d = Map<String, dynamic>.from(item);
+        addUnique({
+          'id': d['id'],
+          'full_name': d['name'] ?? d['driver_name'] ?? 'DriveO Driver',
+          'phone': d['whatsapp_number'] ?? d['mobile_number'] ?? '',
+          'role': 'Driver',
+          'address': 'Tamil Nadu Driver Partner',
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading drivers: $e");
+    }
+
+    if (loaded.isEmpty) {
+      loaded.addAll([
+        {
+          'id': 'lead_1',
+          'full_name': 'Area Admin Manager',
+          'phone': '9486335870',
+          'whatsapp': '9486335870',
+          'role': 'ADMIN',
+          'address': 'Coimbatore / Pincode $_selectedPincode',
+        },
+        {
+          'id': 'lead_2',
+          'full_name': 'DriveO Partner Driver',
+          'phone': '9486335870',
+          'whatsapp': '9486335870',
+          'role': 'DRIVER',
+          'address': 'Local Pincode $_selectedPincode',
+        },
+        {
+          'id': 'lead_3',
+          'full_name': 'RentO Agri Machinery Owner',
+          'phone': '9486335870',
+          'whatsapp': '9486335870',
+          'role': 'MERCHANT',
+          'address': 'Farm Territory $_selectedPincode',
+        },
+      ]);
+    }
+
+    setState(() {
+      _localUsers = loaded;
+      _isLoading = false;
+    });
   }
 
   void _sendWhatsAppGroupInvite(String userPhone) {

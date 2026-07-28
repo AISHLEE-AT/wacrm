@@ -65,51 +65,147 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
 
   Future<void> _fetchCrmContacts() async {
     setState(() => _isLoadingContacts = true);
+    final List<Map<String, dynamic>> combined = [];
+
+    // Helper to add unique contact by phone
+    void addUniqueContact(Map<String, dynamic> c) {
+      final phone = (c['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+      final phone10 = phone.length >= 10 ? phone.substring(phone.length - 10) : phone;      if (phone10.isNotEmpty && !combined.any((existing) => (existing['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '').endsWith(phone10))) {
+        combined.add({
+          'id': c['id'] ?? 'contact_${combined.length}',
+          'user_id': c['user_id'] ?? c['id'],
+          'name': c['name'] ?? 'App User',
+          'phone': phone10,
+          'role': c['role'] ?? 'User',
+          'city': c['city'] ?? c['address'] ?? 'Tamil Nadu',
+          'last_vehicle_category': c['last_vehicle_category'] ?? c['main_category'] ?? 'General',
+          'source': c['source'] ?? 'Database',
+          'created_at': c['created_at'] ?? DateTime.now().toIso8601String(),
+        });
+      }
+    }
+
+    // 1. Fetch from profiles
+    try {
+      final List<dynamic> profileRes = await _supabase
+          .from('profiles')
+          .select('id, full_name, phone, whatsapp, role, main_category, address, created_at')
+          .order('created_at', ascending: false);
+
+      for (var p in profileRes) {
+        final phone = (p['whatsapp'] ?? p['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+        final phone10 = phone.length >= 10 ? phone.substring(phone.length - 10) : phone;
+        final pName = (p['full_name'] != null && p['full_name'].toString().isNotEmpty && p['full_name'] != 'User' && p['full_name'] != 'FAGO User')
+            ? p['full_name'].toString()
+            : 'Registered User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}';
+
+        addUniqueContact({
+          'id': p['id'],
+          'user_id': p['id'],
+          'name': pName,
+          'phone': phone10,
+          'role': p['role'] ?? 'User',
+          'city': p['address'] ?? 'Tamil Nadu',
+          'last_vehicle_category': p['main_category'] ?? 'General',
+          'source': 'User Profile',
+          'created_at': p['created_at'],
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching profiles for CRM: $e");
+    }
+
+    // 2. Fetch from drivers
+    try {
+      final List<dynamic> driverRes = await _supabase
+          .from('drivers')
+          .select('id, name, driver_name, mobile_number, whatsapp_number, vehicle_type, created_at')
+          .order('created_at', ascending: false);
+
+      for (var d in driverRes) {
+        final name = d['name'] ?? d['driver_name'] ?? 'DriveO Driver';
+        final phone = (d['whatsapp_number'] ?? d['mobile_number'] ?? '').toString();
+        addUniqueContact({
+          'id': d['id'],
+          'user_id': d['id'],
+          'name': name,
+          'phone': phone,
+          'role': 'Driver',
+          'city': 'Tamil Nadu (DriveO)',
+          'last_vehicle_category': d['vehicle_type'] ?? 'Cab/Auto',
+          'source': 'DriveO Partner',
+          'created_at': d['created_at'],
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching drivers for CRM: $e");
+    }
+
+    // 3. Fetch from contacts table if present
     try {
       final List<dynamic> contactRes = await _supabase
           .from('contacts')
           .select('id, user_id, name, phone, role, city, last_vehicle_category, source, created_at')
           .order('created_at', ascending: false);
 
-      final List<dynamic> profileRes = await _supabase
-          .from('profiles')
-          .select('id, full_name, phone, whatsapp, role, main_category, address, created_at')
-          .order('created_at', ascending: false);
-
-      final List<dynamic> combined = List.from(contactRes);
-
-      for (var p in profileRes) {
-        final phone = (p['whatsapp'] ?? p['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
-        final phone10 = phone.length >= 10 ? phone.substring(phone.length - 10) : phone;
-
-        if (phone10.isNotEmpty && !combined.any((c) => (c['phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '').endsWith(phone10))) {
-          final pName = (p['full_name'] != null && p['full_name'].toString().isNotEmpty && p['full_name'] != 'User' && p['full_name'] != 'FAGO User')
-              ? p['full_name'].toString()
-              : 'Registered User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}';
-
-          combined.add({
-            'id': p['id'],
-            'user_id': p['id'],
-            'name': pName,
-            'phone': phone10,
-            'role': p['role'] ?? 'User',
-            'city': p['address'] ?? 'Tamil Nadu',
-            'last_vehicle_category': p['main_category'] ?? 'General',
-            'source': 'Supabase Profile',
-            'created_at': p['created_at'],
-          });
-        }
+      for (var c in contactRes) {
+        addUniqueContact(Map<String, dynamic>.from(c));
       }
-
-      setState(() {
-        _contacts = combined;
-        _filteredContacts = _contacts;
-      });
     } catch (e) {
-      debugPrint("Error fetching CRM contacts: $e");
-    } finally {
-      setState(() => _isLoadingContacts = false);
+      debugPrint("Error fetching contacts table: $e");
     }
+
+    // 4. Default System Leads if database is empty
+    if (combined.isEmpty) {
+      final defaultContacts = [
+        {
+          'id': 'def_1',
+          'name': 'FAGO Area Admin Manager',
+          'phone': '9486335870',
+          'role': 'Admin',
+          'city': 'Vellore / Tirupattur, TN',
+          'last_vehicle_category': 'Area Command Center',
+          'source': 'FAGO System Lead',
+        },
+        {
+          'id': 'def_2',
+          'name': 'DriveO Partner Driver Support',
+          'phone': '9486335870',
+          'role': 'Driver Support',
+          'city': 'Coimbatore / Erode, TN',
+          'last_vehicle_category': 'Taxi & Auto',
+          'source': 'DriveO Lead',
+        },
+        {
+          'id': 'def_3',
+          'name': 'RentO Agri Machinery Desk',
+          'phone': '9486335870',
+          'role': 'Merchant',
+          'city': 'Salem / Namakkal, TN',
+          'last_vehicle_category': 'Tractor & Harvester',
+          'source': 'RentO Lead',
+        },
+        {
+          'id': 'def_4',
+          'name': 'DealO Hyperlocal Merchant Desk',
+          'phone': '9486335870',
+          'role': 'Seller',
+          'city': 'Madurai / Trichy, TN',
+          'last_vehicle_category': 'Marketplace',
+          'source': 'DealO Lead',
+        },
+      ];
+
+      for (var dc in defaultContacts) {
+        addUniqueContact(dc);
+      }
+    }
+
+    setState(() {
+      _contacts = combined;
+      _filteredContacts = _contacts;
+      _isLoadingContacts = false;
+    });
   }
 
   void _filterContacts() {
@@ -158,6 +254,195 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error approving driver: $e')),
         );
+      }
+    }
+  }
+
+  void _showAddDriverDialog() {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final vehicleCtrl = TextEditingController();
+    final upiCtrl = TextEditingController();
+    String vehicleType = 'Sedan / Cab';
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.person_add, color: Color(0xFF00FF00)),
+              SizedBox(width: 8),
+              Text('Add DriveO Driver (Admin)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Driver Full Name *',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF00))),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Mobile / WhatsApp Number *',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF00))),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: vehicleCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Vehicle Number & Model (e.g. TN 37 AB 1234)',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF00))),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: vehicleType,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Vehicle Type',
+                    labelStyle: TextStyle(color: Colors.grey),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Sedan / Cab', child: Text('Sedan / Cab')),
+                    DropdownMenuItem(value: 'Auto Rickshaw', child: Text('Auto Rickshaw')),
+                    DropdownMenuItem(value: 'Bike Taxi', child: Text('Bike Taxi')),
+                    DropdownMenuItem(value: 'SUV / Premium', child: Text('SUV / Premium')),
+                    DropdownMenuItem(value: 'Agri Vehicle / Goods', child: Text('Agri Vehicle / Goods')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setDialogState(() => vehicleType = val);
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: upiCtrl,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    labelText: 'Driver UPI ID (Optional)',
+                    labelStyle: TextStyle(color: Colors.grey),
+                    enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00FF00))),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00), foregroundColor: Colors.black),
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final name = nameCtrl.text.trim();
+                      final phone = phoneCtrl.text.trim().replaceAll(RegExp(r'\D'), '');
+                      if (name.isEmpty || phone.length < 10) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('Enter valid name & 10-digit mobile')));
+                        return;
+                      }
+
+                      setDialogState(() => isSaving = true);
+                      try {
+                        final phone10 = phone.substring(phone.length - 10);
+                        await _supabase.from('drivers').insert({
+                          'driver_name': name,
+                          'name': name,
+                          'mobile_number': phone10,
+                          'whatsapp_number': phone10,
+                          'vehicle_number': vehicleCtrl.text.trim().isNotEmpty ? vehicleCtrl.text.trim() : 'TN Partner',
+                          'vehicle_type': vehicleType,
+                          'upi_id': upiCtrl.text.trim(),
+                          'is_verified': true,
+                          'verification_status': 'approved',
+                          'status': 'offline',
+                          'pending_commission': 0,
+                          'wallet_balance': 0,
+                          'created_at': DateTime.now().toIso8601String(),
+                        });
+
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('✅ Driver $name added & verified!'), backgroundColor: Colors.green.shade800),
+                          );
+                        }
+                        _fetchDrivers();
+                      } catch (e) {
+                        setDialogState(() => isSaving = false);
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Failed to add driver: $e')));
+                        }
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  : const Text('Add & Verify Driver', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _removeDriver(String driverId, String driverName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text('Remove Driver', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text('Are you sure you want to remove driver "$driverName" from DriveO partners?', style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove Driver', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _supabase.from('drivers').delete().eq('id', driverId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('🗑️ Driver "$driverName" removed.'), backgroundColor: Colors.red.shade900),
+          );
+        }
+        _fetchDrivers();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error removing driver: $e')));
+        }
       }
     }
   }
@@ -307,35 +592,56 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
 
     return Column(
       children: [
-        // Filter Chips
+        // Admin Add Driver Button
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: ['All', 'Pending', 'Approved'].map((f) {
-              final isSelected = _driverFilter == f;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text('$f Drivers (${_drivers.where((d) => f == 'All' || (f == 'Pending' ? d['is_verified'] != true : d['is_verified'] == true)).length})'),
-                  selected: isSelected,
-                  selectedColor: Colors.amber,
-                  labelStyle: TextStyle(color: isSelected ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
-                  onSelected: (val) {
-                    if (val) setState(() => _driverFilter = f);
-                  },
-                ),
-              );
-            }).toList(),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton.icon(
+              onPressed: _showAddDriverDialog,
+              icon: const Icon(Icons.person_add, color: Colors.black),
+              label: const Text('➕ ADD NEW DRIVER PARTNER (ADMIN)', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00FF00),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ),
+
+        // Filter Chips (Scrollable to prevent overflow)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: ['All', 'Pending', 'Approved'].map((f) {
+                final isSelected = _driverFilter == f;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text('$f Drivers (${_drivers.where((d) => f == 'All' || (f == 'Pending' ? d['is_verified'] != true : d['is_verified'] == true)).length})'),
+                    selected: isSelected,
+                    selectedColor: Colors.amber,
+                    labelStyle: TextStyle(color: isSelected ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                    onSelected: (val) {
+                      if (val) setState(() => _driverFilter = f);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
 
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               final d = filtered[index];
-              final driverName = d['driver_name'] ?? 'Driver Partner';
+              final driverName = d['driver_name'] ?? d['name'] ?? 'Driver Partner';
               final phone = d['mobile_number'] ?? d['phone'] ?? '';
               final vehicle = d['vehicle_number'] ?? d['vehicle_type'] ?? 'Vehicle';
               final isVerified = d['is_verified'] == true;
@@ -353,7 +659,15 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(driverName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                          Expanded(
+                            child: Text(
+                              driverName,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                             decoration: BoxDecoration(
@@ -380,11 +694,11 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
                               child: ElevatedButton.icon(
                                 onPressed: () => _verifyDriver(d['id'].toString(), phone.toString()),
                                 icon: const Icon(Icons.check_circle, size: 14, color: Colors.black),
-                                label: const Text('APPROVE DRIVER', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 11)),
+                                label: const Text('APPROVE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 11)),
                                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00FF00)),
                               ),
                             ),
-                          if (!isVerified) const SizedBox(width: 8),
+                          if (!isVerified) const SizedBox(width: 6),
 
                           Expanded(
                             child: OutlinedButton.icon(
@@ -396,8 +710,16 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
                                 );
                               },
                               icon: const Icon(Icons.chat, size: 14, color: Color(0xFF25D366)),
-                              label: const Text('WHATSAPP CHAT', style: TextStyle(color: Color(0xFF25D366), fontWeight: FontWeight.bold, fontSize: 11)),
+                              label: const Text('WHATSAPP', style: TextStyle(color: Color(0xFF25D366), fontWeight: FontWeight.bold, fontSize: 11)),
                             ),
+                          ),
+                          const SizedBox(width: 6),
+
+                          // Admin Remove Driver Button
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                            tooltip: 'Remove Driver',
+                            onPressed: () => _removeDriver(d['id'].toString(), driverName),
                           ),
                         ],
                       ),

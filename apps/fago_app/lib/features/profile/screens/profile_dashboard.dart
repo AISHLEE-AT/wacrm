@@ -114,6 +114,7 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
             whatsapp: displayPhone,
             phone: displayPhone,
             address: (profile?.address?.isNotEmpty == true) ? profile!.address! : 'Live Location Active',
+            upiId: profile?.upiId,
           );
 
           return TabBarView(
@@ -736,38 +737,95 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
   }
 
   void _editUpiId(ProfileModel profile) {
-    final TextEditingController controller = TextEditingController(text: profile.upiId);
+    final TextEditingController controller = TextEditingController(text: profile.upiId ?? '');
+    String? errorText;
+    bool isSaving = false;
+
+    // Use real Supabase user id for the DB update (never the synthetic/default id)
+    final realUserId = Supabase.instance.client.auth.currentUser?.id ?? profile.id;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Update UPI ID', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          style: const TextStyle(color: Colors.white),
-          decoration: const InputDecoration(
-            hintText: 'e.g. name@bank',
-            hintStyle: TextStyle(color: Colors.grey),
-            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00F0FF))),
+      builder: (context) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('Update Your UPI ID', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                style: const TextStyle(color: Colors.white),
+                keyboardType: TextInputType.emailAddress,
+                onChanged: (val) {
+                  setDialogState(() => errorText = null);
+                },
+                decoration: InputDecoration(
+                  hintText: 'e.g. 9876543210@upi or name@bank',
+                  hintStyle: const TextStyle(color: Colors.grey),
+                  prefixIcon: const Icon(Icons.account_balance_wallet, color: Color(0xFF00F0FF)),
+                  errorText: errorText,
+                  errorStyle: const TextStyle(color: Colors.redAccent),
+                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00F0FF))),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF00F0FF), width: 2)),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Format: number@upi  or  name@bankname',
+                style: TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00F0FF),
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final input = controller.text.trim();
+                      // Basic UPI ID validation: must contain @
+                      if (input.isEmpty || !input.contains('@')) {
+                        setDialogState(() => errorText = 'Enter a valid UPI ID (e.g. 9876543210@upi)');
+                        return;
+                      }
+                      setDialogState(() => isSaving = true);
+                      try {
+                        await ref.read(profileServiceProvider).updateProfile(
+                          realUserId,
+                          {'upi_id': input},
+                        );
+                        ref.invalidate(currentProfileProvider);
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('✅ UPI ID saved: $input'),
+                              backgroundColor: Colors.green.shade800,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setDialogState(() {
+                          isSaving = false;
+                          errorText = 'Save failed: ${e.toString().replaceAll("Exception:", "").trim()}';
+                        });
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  : const Text('Save UPI ID', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                final nav = Navigator.of(context);
-                await ref.read(profileServiceProvider).updateProfile(profile.id, {'upi_id': controller.text.trim()});
-                ref.invalidate(currentProfileProvider);
-                nav.pop();
-              }
-            },
-            child: const Text('Save', style: TextStyle(color: Color(0xFF00F0FF))),
-          ),
-        ],
       ),
     );
   }

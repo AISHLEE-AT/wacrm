@@ -183,9 +183,14 @@ class ProfileService {
   }
 
   Future<void> updateProfile(String userId, Map<String, dynamic> updates) async {
-    await _supabase.from('profiles').update(updates).eq('id', userId);
+    // Use upsert so it creates the row if it doesn't exist yet (common for WhatsApp-auth users)
+    await _supabase.from('profiles').upsert({
+      'id': userId,
+      ...updates,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
     final cacheKey = 'profile_$userId';
-    await _cache.clearCache(cacheKey); // force refetch
+    await _cache.clearCache(cacheKey); // force refetch on next load
   }
 
   Future<List<TransactionModel>> getTransactions(String userId) async {

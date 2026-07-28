@@ -768,7 +768,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                       if (_activeRide!['status'] != 'pending') ...[
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB), // Amber 50
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.amber.shade500, width: 2),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.shield_outlined, color: Colors.amber, size: 22),
+                                  SizedBox(width: 8),
+                                  Text("FAGO Ride OTP:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade500,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  "${_activeRide!['ride_otp'] ?? '----'}",
+                                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, letterSpacing: 4, color: Colors.black),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),

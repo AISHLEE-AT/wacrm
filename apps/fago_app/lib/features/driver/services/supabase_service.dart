@@ -125,24 +125,62 @@ class SupabaseService {
         .subscribe();
   }
 
-  /// Accept a ride and set driver status to busy.
+  /// Accept a ride — atomic check prevents two drivers accepting the same ride.
+  /// Generates a 4-digit OTP stored on the ride for rider-confirms-pickup flow.
   Future<Map<String, dynamic>?> acceptRide(String rideId, String driverId) async {
-    final res = await _client.from('rides').update({
-      'status': 'accepted',
-      'driver_id': driverId,
-    }).eq('id', rideId).select().single();
+    // Generate a 4-digit ride OTP
+    final otp = (1000 + (DateTime.now().millisecondsSinceEpoch % 9000)).toString();
+
+    // Atomic: only update if still 'pending' — prevents double-acceptance race condition
+    final res = await _client
+        .from('rides')
+        .update({
+          'status': 'accepted',
+          'driver_id': driverId,
+          'ride_otp': otp,
+          'accepted_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', rideId)
+        .eq('status', 'pending') // ← atomic guard
+        .select()
+        .maybeSingle();
+
+    if (res == null) {
+      // Race condition: another driver already accepted
+      throw Exception('Ride already taken by another driver. Please pick another.');
+    }
 
     // Set driver to busy
     await _client.from('drivers').update({'status': 'busy'}).eq('id', driverId);
     return res;
   }
 
-  /// Complete a ride and calculate 30% commission.
-  Future<void> completeRide(String rideId, String driverId) async {
-    final rideData = await _client.from('rides').select('estimated_price').eq('id', rideId).single();
+  /// Complete a ride after verifying the OTP the rider shows to the driver.
+  Future<String> completeRide(String rideId, String driverId, String enteredOtp) async {
+    // Verify OTP matches what's stored on the ride
+    final rideData = await _client
+        .from('rides')
+        .select('estimated_price, ride_otp, status')
+        .eq('id', rideId)
+        .single();
+
+    final storedOtp = (rideData['ride_otp'] ?? '').toString().trim();
+    final rideStatus = (rideData['status'] ?? '').toString();
+
+    if (rideStatus == 'completed') {
+      throw Exception('Ride already completed.');
+    }
+
+    if (storedOtp.isNotEmpty && enteredOtp.trim() != storedOtp) {
+      throw Exception('Wrong OTP. Ask the rider to show their FAGO OTP.');
+    }
+
     final estimatedPrice = (rideData['estimated_price'] as num?)?.toDouble() ?? 0;
 
-    await _client.from('rides').update({'status': 'completed'}).eq('id', rideId);
+    await _client.from('rides').update({
+      'status': 'completed',
+      'completed_at': DateTime.now().toIso8601String(),
+    }).eq('id', rideId);
 
     // Calculate 30% commission and deduct from wallet balance
     const commissionRate = 0.30;
@@ -152,13 +190,14 @@ class SupabaseService {
         .select('wallet_balance')
         .eq('id', driverId)
         .single();
-    final currentBalance =
-        (driverData['wallet_balance'] as num?)?.toDouble() ?? 0;
+    final currentBalance = (driverData['wallet_balance'] as num?)?.toDouble() ?? 0;
 
     await _client.from('drivers').update({
       'status': 'online',
       'wallet_balance': currentBalance - commission,
     }).eq('id', driverId);
+
+    return storedOtp; // return for confirmation display
   }
 
   Future<void> submitRating(String rideId, int rating, String type) async {
