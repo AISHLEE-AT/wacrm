@@ -266,9 +266,11 @@ class AuthViewModel(
         }
 
         val userId = supabase.auth.currentUserOrNull()?.id
-        // FIX: Pass the explicit phone so syncProfile can also do phone-based lookup
+        // FIX: Pass explicit phone so syncProfile and resolveRole do phone-validated lookup
         syncProfileAndFinishLogin(userId, cleanPhone, fullName)
         resolveRole(cleanPhone, userId)
+        val resolvedPhone = if (cleanPhone.length > 10) cleanPhone.takeLast(10) else cleanPhone
+        deviceAuthService.saveRegisteredDevice(resolvedPhone, _authState.value.fullName ?: "User")
     }
 
     // ── 5. Sync profile to database (FIXED: dual id + phone lookup) ─────────
@@ -358,17 +360,29 @@ class AuthViewModel(
 
             if (userId != null || tenDigitPhone.isNotEmpty()) {
                 try {
-                    // Strategy 1: Fetch profile by Supabase user ID
+                    // Strategy 1: Fetch profile by Supabase user ID with phone validation
                     var profileJson: JsonObject? = null
 
                     if (userId != null) {
-                        profileJson = supabase.postgrest["profiles"]
+                        val fetchedJson = supabase.postgrest["profiles"]
                             .select {
                                 filter { eq("id", userId) }
                                 limit(1)
                             }
                             .decodeList<JsonObject>()
                             .firstOrNull()
+
+                        if (fetchedJson != null) {
+                            val dbPhone = fetchedJson["phone"]?.jsonPrimitive?.contentOrNull
+                                ?: fetchedJson["whatsapp"]?.jsonPrimitive?.contentOrNull
+                            val cleanDbPhone = dbPhone?.filter { it.isDigit() }?.takeLast(10) ?: ""
+
+                            if (tenDigitPhone.isEmpty() || cleanDbPhone.isEmpty() || cleanDbPhone == tenDigitPhone) {
+                                profileJson = fetchedJson
+                            } else {
+                                Log.d("FagoAuth", "Session userId profile phone ($cleanDbPhone) != requested login phone ($tenDigitPhone). Dropping mismatched session profile.")
+                            }
+                        }
                     }
 
                     // Strategy 2 (FALLBACK): Fetch by phone or synthetic email — handles web-registered users
@@ -415,7 +429,9 @@ class AuthViewModel(
                             ?: profileJson["whatsapp"]?.jsonPrimitive?.contentOrNull
                         if (!dbPhone.isNullOrBlank()) {
                             val cleanDb = dbPhone.filter { it.isDigit() }
-                            if (cleanDb.length >= 10) tenDigitPhone = cleanDb.takeLast(10)
+                            if (cleanDb.length >= 10 && (tenDigitPhone.isEmpty() || cleanDb.takeLast(10) == tenDigitPhone)) {
+                                tenDigitPhone = cleanDb.takeLast(10)
+                            }
                         }
                         Log.d("FagoAuth", "Profile found via DB — name=$fullName, role=$profileRole, phone=$tenDigitPhone")
                     }
