@@ -234,6 +234,38 @@ fun RiderMapScreen(
         }
     }
 
+    val cleanMapStyleOptions = remember {
+        com.google.android.gms.maps.model.MapStyleOptions(
+            """
+            [
+              {
+                "featureType": "poi",
+                "elementType": "labels",
+                "stylers": [{ "visibility": "off" }]
+              },
+              {
+                "featureType": "poi.business",
+                "stylers": [{ "visibility": "off" }]
+              },
+              {
+                "featureType": "transit",
+                "elementType": "labels",
+                "stylers": [{ "visibility": "off" }]
+              },
+              {
+                "featureType": "road",
+                "elementType": "labels.icon",
+                "stylers": [{ "visibility": "off" }]
+              },
+              {
+                "featureType": "transit.station",
+                "stylers": [{ "visibility": "off" }]
+              }
+            ]
+            """.trimIndent()
+        )
+    }
+
     Scaffold(
         containerColor = Color(0xFF0F172A),
         bottomBar = {
@@ -281,7 +313,7 @@ fun RiderMapScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // ── 1. 100% EDGE-TO-EDGE FULL SCREEN MAP CANVAS ─────────────────────────
+            // ── 1. 100% EDGE-TO-EDGE CLEAN UBER / RAPIDO STYLE MAP CANVAS ──────────────
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
@@ -290,22 +322,31 @@ fun RiderMapScreen(
                     myLocationButtonEnabled = false,
                     compassEnabled = true
                 ),
-                properties = MapProperties(isMyLocationEnabled = true)
+                properties = MapProperties(
+                    isMyLocationEnabled = true,
+                    mapStyleOptions = cleanMapStyleOptions
+                )
             ) {
                 // Pickup Marker (Green)
                 if (mapPinMode != "pickup") {
                     Marker(
                         state = MarkerState(position = pickupLatLng),
-                        title = "🟢 Pickup (ஏறும் இடம்)",
-                        snippet = pickupAddress
+                        title = "🟢 Pickup Location",
+                        snippet = pickupAddress,
+                        icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(
+                            com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_GREEN
+                        )
                     )
                 }
                 // Dropoff Marker (Red)
                 if (mapPinMode != "dropoff") {
                     Marker(
                         state = MarkerState(position = dropoffLatLng),
-                        title = "🔴 Dropoff (இறங்கும் இடம்)",
-                        snippet = dropoffAddress
+                        title = "🔴 Dropoff Location",
+                        snippet = dropoffAddress,
+                        icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(
+                            com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
+                        )
                     )
                 }
                 // Route Polyline Connection
@@ -314,6 +355,31 @@ fun RiderMapScreen(
                     color = Color(0xFF00FF00),
                     width = 8f
                 )
+            }
+
+            // Floating My Location Re-Center Button (Uber / Rapido Parity)
+            if (mapPinMode == null) {
+                SmallFloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            val currentLoc = locationService.getCurrentLocation()
+                            if (currentLoc != null) {
+                                pickupLatLng = currentLoc
+                                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLoc, 16f))
+                                val resolved = locationService.getAddressFromLatLng(currentLoc)
+                                if (resolved.isNotEmpty()) pickupAddress = resolved
+                            }
+                        }
+                    },
+                    containerColor = Color(0xFF1E293B),
+                    contentColor = Color(0xFF00FF00),
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 120.dp, end = 16.dp)
+                ) {
+                    Icon(Icons.Default.MyLocation, contentDescription = "Re-center GPS")
+                }
             }
 
             // ── 2. INTERACTIVE CENTER MAP PIN PICKER (UBER / RAPIDO STYLE) ──────────

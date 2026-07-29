@@ -980,33 +980,65 @@ class _AdminCrmScreenState extends ConsumerState<AdminCrmScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
-      appBar: AppBar(
-        title: const Text('👑 Admin CRM & Super App Hub', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: const Color(0xFF141414),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh, color: Color(0xFF00FF00)), onPressed: () { _fetchDrivers(); _fetchCrmContacts(); }),
-        ],
-        bottom: TabBar(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          context.go('/');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0A0A),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            tooltip: 'Back to FAGO Dashboard',
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                context.go('/');
+              }
+            },
+          ),
+          title: const Text('👑 Admin CRM & Super App Hub', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16)),
+          backgroundColor: const Color(0xFF141414),
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.home_rounded, color: Color(0xFF00FF00)),
+              tooltip: 'Home Dashboard',
+              onPressed: () => context.go('/'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Color(0xFF00FF00)),
+              tooltip: 'Refresh Drivers & Contacts',
+              onPressed: () {
+                _fetchDrivers();
+                _fetchCrmContacts();
+              },
+            ),
+          ],
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.amber,
+            labelColor: Colors.amber,
+            unselectedLabelColor: Colors.grey,
+            tabs: const [
+              Tab(icon: Icon(Icons.local_shipping), text: 'Drivers'),
+              Tab(icon: Icon(Icons.chat), text: 'WhatsApp CRM'),
+              Tab(icon: Icon(Icons.dashboard_customize), text: 'All Modules'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           controller: _tabController,
-          indicatorColor: Colors.amber,
-          labelColor: Colors.amber,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(icon: Icon(Icons.local_shipping), text: 'Drivers'),
-            Tab(icon: Icon(Icons.chat), text: 'WhatsApp CRM'),
-            Tab(icon: Icon(Icons.dashboard_customize), text: 'All Modules'),
+          children: [
+            _buildDriversTab(),
+            _buildCrmContactsTab(),
+            _buildModuleManagementHubTab(),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildDriversTab(),
-          _buildCrmContactsTab(),
-          _buildModuleManagementHubTab(),
-        ],
       ),
     );
   }

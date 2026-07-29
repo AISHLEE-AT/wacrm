@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'auth_provider.dart';
 import '../services/device_auth_service.dart';
-import '../router/app_router.dart';
 
 /// Mandatory PIN Setup Screen — shown after first-time OTP login.
 /// User must set a 4-digit FAGO PIN to secure future logins.

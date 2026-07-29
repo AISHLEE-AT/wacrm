@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/device_auth_service.dart';
 
 /// Clean External Web Module Launcher for AISHLEE-WEB Portal
 class WebModuleScreen extends StatefulWidget {
@@ -21,18 +22,30 @@ class WebModuleScreen extends StatefulWidget {
     final cleanPath = path.startsWith('/') ? path : '/$path';
     final user = Supabase.instance.client.auth.currentUser;
     final session = Supabase.instance.client.auth.currentSession;
+    final regPhone = await DeviceAuthService.getRegisteredPhone();
+    final regName = await DeviceAuthService.getRegisteredName();
+
+    final String phone = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? user?.userMetadata?['whatsapp']?.toString() ?? regPhone ?? '';
+    final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final String name = user?.userMetadata?['full_name']?.toString() ?? regName ?? '';
 
     String authQueryParams = '?embed=true';
-    String authHashFragment = '';
+    if (cleanPhone.isNotEmpty) {
+      final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+      authQueryParams += '&phone=$phone10';
+    }
+    if (name.isNotEmpty && name != 'User') {
+      authQueryParams += '&name=${Uri.encodeComponent(name)}';
+    }
     if (user != null) {
-      final String phone = user.phone ?? user.userMetadata?['phone']?.toString() ?? user.userMetadata?['whatsapp']?.toString() ?? '';
-      final String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-      authQueryParams += '&phone=$cleanPhone&user_id=${user.id}';
-      if (session?.accessToken != null && session!.accessToken.isNotEmpty) {
-        authHashFragment = '#access_token=${session.accessToken}';
-        if (session.refreshToken != null && session.refreshToken!.isNotEmpty) {
-          authHashFragment += '&refresh_token=${session.refreshToken}&token_type=bearer';
-        }
+      authQueryParams += '&user_id=${user.id}';
+    }
+
+    String authHashFragment = '';
+    if (session?.accessToken != null && session!.accessToken.isNotEmpty) {
+      authHashFragment = '#access_token=${session.accessToken}';
+      if (session.refreshToken != null && session.refreshToken!.isNotEmpty) {
+        authHashFragment += '&refresh_token=${session.refreshToken}&token_type=bearer';
       }
     }
 

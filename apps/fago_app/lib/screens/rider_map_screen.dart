@@ -1168,7 +1168,36 @@ class _RiderMapScreenState extends State<RiderMapScreen> {
         children: [
           GoogleMap(
             initialCameraPosition: CameraPosition(target: initialPos, zoom: 14),
-            onMapCreated: (controller) => _mapController = controller,
+            onMapCreated: (controller) {
+              _mapController = controller;
+              controller.setMapStyle('''
+[
+  {
+    "featureType": "poi",
+    "elementType": "labels",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "featureType": "poi.business",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.icon",
+    "stylers": [{ "visibility": "off" }]
+  },
+  {
+    "featureType": "transit.station",
+    "stylers": [{ "visibility": "off" }]
+  }
+]
+''');
+            },
             onTap: _handleMapTap,
             markers: markers,
             myLocationEnabled: true,

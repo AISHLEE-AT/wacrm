@@ -92,29 +92,36 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
               ? profile.whatsapp!
               : (profile?.phone != null && profile!.phone!.isNotEmpty && profile.phone != 'Not Set')
                   ? profile.phone!
-                  : (sbUser?.phone?.isNotEmpty == true)
-                      ? sbUser!.phone!
-                      : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
+                  : (authState.phone != null && authState.phone!.isNotEmpty)
+                      ? authState.phone!
+                      : (sbUser?.phone?.isNotEmpty == true)
+                          ? sbUser!.phone!
+                          : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
           final cleanPhone = userPhone.replaceAll(RegExp(r'\D'), '');
           final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-          final isAdmin = (profile?.role.toLowerCase() == 'admin') || phone10.endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
+          final isAdmin = (profile?.role.toLowerCase() == 'admin') || authState.role == fago.UserRole.admin || phone10.endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
 
           final resolvedName = (profile?.fullName != null && profile!.fullName.isNotEmpty && profile.fullName != 'User' && profile.fullName != 'FAGO User')
               ? profile.fullName
-              : (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
-                  ? sbUser.userMetadata!['full_name'].toString()
-                  : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
+              : (authState.fullName != null && authState.fullName!.isNotEmpty && authState.fullName != 'User' && authState.fullName != 'FAGO User')
+                  ? authState.fullName!
+                  : (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
+                      ? sbUser.userMetadata!['full_name'].toString()
+                      : (phone10 == '9486335870' ? 'Aishlee Technology' : phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
 
-          final displayPhone = phone10.isNotEmpty ? phone10 : (profile?.whatsapp ?? profile?.phone ?? '');
+          final displayPhone = phone10.isNotEmpty ? phone10 : (profile?.whatsapp ?? profile?.phone ?? authState.phone ?? '');
 
           final effectiveProfile = ProfileModel(
             id: profile?.id ?? sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
             fullName: resolvedName,
-            role: isAdmin ? 'ADMIN' : (profile?.role.isNotEmpty == true ? profile!.role.toUpperCase() : 'USER'),
+            role: isAdmin ? 'ADMIN' : (profile?.role.isNotEmpty == true ? profile!.role.toUpperCase() : authState.role.name.toUpperCase()),
             whatsapp: displayPhone,
             phone: displayPhone,
             address: (profile?.address?.isNotEmpty == true) ? profile!.address! : 'Live Location Active',
             upiId: profile?.upiId,
+            avatarUrl: profile?.avatarUrl,
+            resumeUrl: profile?.resumeUrl,
+            digitalIdHash: profile?.digitalIdHash,
           );
 
           return TabBarView(
@@ -130,22 +137,25 @@ class _ProfileDashboardState extends ConsumerState<ProfileDashboard> with Single
         loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF00F0FF))),
         error: (err, stack) {
           final sbUser = Supabase.instance.client.auth.currentUser;
-          final rawEmailPhone = sbUser?.email?.contains('@whatsapp.wacrm.local') == true ? sbUser!.email!.split('@')[0] : '';
-          final userPhone = (sbUser?.phone?.isNotEmpty == true) ? sbUser!.phone! : (sbUser?.userMetadata?['phone']?.toString() ?? rawEmailPhone);
+          final userPhone = (authState.phone != null && authState.phone!.isNotEmpty)
+              ? authState.phone!
+              : (sbUser?.phone?.isNotEmpty == true)
+                  ? sbUser!.phone!
+                  : '';
           final cleanPhone = userPhone.replaceAll(RegExp(r'\D'), '');
           final phone10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-          final isAdmin = phone10.endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
+          final isAdmin = authState.role == fago.UserRole.admin || phone10.endsWith('9486335870') || sbUser?.email?.toLowerCase() == 'aishleetechnology@gmail.com';
 
-          final resolvedName = (sbUser?.userMetadata?['full_name'] != null && sbUser!.userMetadata!['full_name'].toString().isNotEmpty && sbUser.userMetadata!['full_name'] != 'User')
-              ? sbUser.userMetadata!['full_name'].toString()
-              : (phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
+          final resolvedName = (authState.fullName != null && authState.fullName!.isNotEmpty && authState.fullName != 'User')
+              ? authState.fullName!
+              : (phone10 == '9486335870' ? 'Aishlee Technology' : phone10.isNotEmpty ? 'User ${phone10.substring(phone10.length > 4 ? phone10.length - 4 : 0)}' : 'FAGO User');
 
           final fallbackProfile = ProfileModel(
             id: sbUser?.id ?? '00000000-0000-0000-0000-000000000000',
             fullName: resolvedName,
-            role: isAdmin ? 'ADMIN' : 'USER',
-            whatsapp: phone10,
-            phone: phone10,
+            role: isAdmin ? 'ADMIN' : authState.role.name.toUpperCase(),
+            whatsapp: phone10.isNotEmpty ? phone10 : '9486335870',
+            phone: phone10.isNotEmpty ? phone10 : '9486335870',
             address: 'Live Location Active',
           );
 

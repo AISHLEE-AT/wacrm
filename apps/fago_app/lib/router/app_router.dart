@@ -8,18 +8,18 @@ import '../screens/crm_dashboard_screen.dart';
 import '../screens/setup_screen.dart';
 import '../features/rider/screens/home_screen.dart' as rider;
 import '../features/driver/screens/home_screen.dart' as driver;
-import '../features/driver/screens/admin_home_screen.dart' as admin;
 import '../features/profile/screens/profile_dashboard.dart';
 
 import '../screens/rider_map_screen.dart';
 import '../screens/driver_dashboard_screen.dart';
+import '../screens/admin_crm_screen.dart';
+import '../screens/web_module_screen.dart';
+import '../features/dealo/screens/dealo_marketplace_screen.dart';
 
 import '../screens/rento_screen.dart';
 import '../screens/mandi_prices_screen.dart';
 import '../screens/touro_screen.dart';
 import '../screens/teacho_screen.dart';
-
-final hasRoutedInitiallyProvider = StateProvider<bool>((ref) => false);
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Use a ValueNotifier to trigger redirects without rebuilding GoRouter
@@ -33,14 +33,19 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     redirect: (context, state) {
       final authState = notifier.value;
-      final hasRoutedInitially = ref.read(hasRoutedInitiallyProvider);
-
       if (authState.isLoading) return null;
 
-      // Direct all mobile entry straight to CrmDashboardScreen (WebView)
-      // Authentication is handled seamlessly ONCE via web session persistence.
-      if (state.uri.path == '/' && !hasRoutedInitially) {
-        ref.read(hasRoutedInitiallyProvider.notifier).state = true;
+      final isLoggingIn = state.uri.path == '/login';
+      final isLoggedIn = authState.role != UserRole.guest;
+
+      // 1. If not logged in and not on /login, redirect to /login
+      if (!isLoggedIn && !isLoggingIn) {
+        return '/login';
+      }
+
+      // 2. If logged in and on /login, redirect to home '/'
+      if (isLoggedIn && isLoggingIn) {
+        return '/';
       }
 
       return null;
@@ -62,13 +67,36 @@ final routerProvider = Provider<GoRouter>((ref) {
               final authState = ref.watch(authProvider);
               if (authState.isLoading) {
                 return const Scaffold(
+                  backgroundColor: Color(0xFF0F172A),
                   body: Center(
-                    child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+                    child: CircularProgressIndicator(color: Color(0xFF00FF00)),
                   ),
                 );
               }
-              // All authenticated users go straight to the WhatsApp CRM
-              return const CrmDashboardScreen();
+              if (authState.role == UserRole.guest) {
+                return const LoginScreen();
+              }
+              if (authState.role == UserRole.admin) {
+                return const CrmDashboardScreen();
+              }
+              if (authState.role == UserRole.driver) {
+                return const DriverDashboardScreen();
+              }
+              // Standard User Category Dynamic Routing
+              switch (authState.mainCategory) {
+                case 'Farmer':
+                  return const RentOScreen();
+                case 'Shopper':
+                case 'Financier':
+                  return const MandiPricesScreen();
+                case 'Tourist':
+                  return const TourOScreen();
+                case 'Teacher':
+                case 'Student':
+                  return const TeachOScreen();
+                default:
+                  return const RiderMapScreen();
+              }
             },
           );
         },
@@ -107,7 +135,35 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin',
-        builder: (context, state) => const admin.AdminHomeScreen(),
+        builder: (context, state) => const AdminCrmScreen(),
+      ),
+      GoRoute(
+        path: '/dealo',
+        builder: (context, state) => const DealoMarketplaceScreen(),
+      ),
+      GoRoute(
+        path: '/testo',
+        builder: (context, state) => const WebModuleScreen(title: 'TestO (Exam Hub)', modulePath: '/testo'),
+      ),
+      GoRoute(
+        path: '/tvo',
+        builder: (context, state) => const WebModuleScreen(title: 'TvO (Video Guides)', modulePath: '/tvo'),
+      ),
+      GoRoute(
+        path: '/gemini',
+        builder: (context, state) => const WebModuleScreen(title: 'Gemini AI Assistant', modulePath: '/gemini'),
+      ),
+      GoRoute(
+        path: '/moneyo',
+        builder: (context, state) => const WebModuleScreen(title: 'MoneyO (Finance)', modulePath: '/moneyo'),
+      ),
+      GoRoute(
+        path: '/tasko',
+        builder: (context, state) => const WebModuleScreen(title: 'TaskO (Gig Work)', modulePath: '/tasko'),
+      ),
+      GoRoute(
+        path: '/toolso',
+        builder: (context, state) => const WebModuleScreen(title: 'AI & ToolsO Suite', modulePath: '/toolso'),
       ),
       GoRoute(
         path: '/profile',

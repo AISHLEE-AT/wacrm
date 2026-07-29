@@ -40,7 +40,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
     final fbUser = authState.firebaseUser;
     final sbUser = authState.supabaseUser;
 
-    String raw = fbUser?.phoneNumber ?? sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.email ?? '';
+    String raw = authState.phone ?? fbUser?.phoneNumber ?? sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.email ?? '';
     if (raw.contains('@')) {
       raw = raw.split('@')[0];
     }
@@ -209,7 +209,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    if (authState.role == UserRole.guest || (authState.firebaseUser == null && authState.supabaseUser == null)) {
+    if (authState.role == UserRole.guest) {
       return const LoginScreen();
     }
 

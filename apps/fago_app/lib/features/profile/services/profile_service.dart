@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/cache_service.dart';
+import '../../../services/device_auth_service.dart';
 import '../models/profile_model.dart';
 
 class ProfileService {
@@ -12,54 +13,42 @@ class ProfileService {
   /// Fetch current user's profile details (Name, WhatsApp Phone, Address, UPI ID)
   static Future<Map<String, String>> getCurrentUserProfileDetails() async {
     final user = Supabase.instance.client.auth.currentUser;
-    String name = '';
-    String phone = '';
+    final regPhone = await DeviceAuthService.getRegisteredPhone();
+    final regName = await DeviceAuthService.getRegisteredName();
+
+    String name = regName ?? '';
+    String phone = regPhone ?? '';
     String address = '';
     String upiId = '';
 
-    if (user != null) {
-      final meta = user.userMetadata ?? {};
-      final rawEmailPhone = (user.email != null && user.email!.contains('@whatsapp.wacrm.local'))
-          ? user.email!.split('@')[0].replaceAll(RegExp(r'\D'), '')
-          : '';
+    final rawPhone = user?.phone ?? user?.userMetadata?['phone']?.toString() ?? user?.userMetadata?['whatsapp']?.toString() ?? regPhone ?? '';
+    String cleanDigits = rawPhone.replaceAll(RegExp(r'\D'), '');
+    if (cleanDigits.startsWith('91') && cleanDigits.length == 12) {
+      cleanDigits = cleanDigits.substring(2);
+    } else if (cleanDigits.length > 10) {
+      cleanDigits = cleanDigits.substring(cleanDigits.length - 10);
+    }
 
-      if (meta['full_name'] != null && meta['full_name'].toString().isNotEmpty && meta['full_name'] != 'User') {
-        name = meta['full_name'].toString();
-      } else if (meta['name'] != null && meta['name'].toString().isNotEmpty && meta['name'] != 'User') {
-        name = meta['name'].toString();
-      }
-
-      if (user.phone != null && user.phone!.isNotEmpty) {
-        phone = user.phone!;
-      } else if (meta['phone'] != null && meta['phone'].toString().isNotEmpty) {
-        phone = meta['phone'].toString();
-      } else if (meta['whatsapp'] != null && meta['whatsapp'].toString().isNotEmpty) {
-        phone = meta['whatsapp'].toString();
-      } else if (rawEmailPhone.isNotEmpty) {
-        phone = rawEmailPhone;
-      }
-
-      String cleanDigits = phone.replaceAll(RegExp(r'\D'), '');
-      if (cleanDigits.startsWith('91') && cleanDigits.length == 12) {
-        cleanDigits = cleanDigits.substring(2);
-      } else if (cleanDigits.length > 10) {
-        cleanDigits = cleanDigits.substring(cleanDigits.length - 10);
-      }
-
+    if (cleanDigits.isNotEmpty) {
+      phone = cleanDigits;
       try {
         final List<dynamic> profileList = await Supabase.instance.client
             .from('profiles')
             .select('full_name, whatsapp, phone, address, upi_id')
-            .or('id.eq.${user.id}${cleanDigits.isNotEmpty ? ",phone.eq.$cleanDigits,phone.eq.91$cleanDigits,whatsapp.eq.$cleanDigits,whatsapp.eq.91$cleanDigits" : ""}');
+            .or('phone.eq.$cleanDigits,phone.eq.91$cleanDigits,whatsapp.eq.$cleanDigits,whatsapp.eq.91$cleanDigits${user != null ? ",id.eq.${user.id}" : ""}');
 
         if (profileList.isNotEmpty) {
           final profileData = profileList.first;
-          if ((profileData['full_name'] ?? '').toString().isNotEmpty && profileData['full_name'] != 'User') {
-            name = profileData['full_name'].toString();
+          final dbName = profileData['full_name']?.toString();
+          if (dbName != null && dbName.isNotEmpty && dbName != 'User' && dbName != 'FAGO User') {
+            name = dbName;
           }
-          final pPhone = (profileData['phone'] ?? profileData['whatsapp'] ?? '').toString();
-          if (pPhone.isNotEmpty) {
-            phone = pPhone;
+          final pPhone = (profileData['whatsapp'] ?? profileData['phone'])?.toString();
+          if (pPhone != null && pPhone.isNotEmpty) {
+            final pClean = pPhone.replaceAll(RegExp(r'\D'), '');
+            if (pClean.length >= 10) {
+              phone = pClean.substring(pClean.length - 10);
+            }
           }
           if ((profileData['address'] ?? '').toString().isNotEmpty) {
             address = profileData['address'].toString();
@@ -69,22 +58,25 @@ class ProfileService {
           }
         }
       } catch (e) {
-        debugPrint('Error fetching user profile details: $e');
+        debugPrint('ProfileService fetch note: $e');
       }
     }
 
-    String cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    if (cleanPhone.startsWith('91') && cleanPhone.length == 12) {
-      cleanPhone = cleanPhone.substring(2);
-    } else if (cleanPhone.length > 10) {
-      cleanPhone = cleanPhone.substring(cleanPhone.length - 10);
+    if (name.isEmpty || name == 'User' || name == 'FAGO User') {
+      if (phone == '9486335870') {
+        name = 'Aishlee Technology';
+      } else if (phone.isNotEmpty) {
+        name = 'User ${phone.substring(phone.length > 4 ? phone.length - 4 : 0)}';
+      } else {
+        name = 'FAGO User';
+      }
     }
 
     return {
-      'name': name.isNotEmpty ? name : 'FAGO User',
-      'phone': cleanPhone.isNotEmpty ? cleanPhone : '',
+      'name': name,
+      'phone': phone,
       'address': address.isNotEmpty ? address : 'Tamil Nadu, India',
-      'upi_id': upiId.isNotEmpty ? upiId : (cleanPhone.isNotEmpty ? '$cleanPhone@upi' : ''),
+      'upi_id': upiId.isNotEmpty ? upiId : (phone.isNotEmpty ? '$phone@upi' : ''),
     };
   }
 
