@@ -72,8 +72,8 @@ class AuthViewModel(
         .build()
 
     // ── Admin identifiers — 9486335870, 919486335870, aishleetechnology@gmail.com ──
-    private val adminPhones = listOf("9486335870", "919486335870", BuildConfig.ADMIN_PHONE)
-    private val adminEmails = listOf("aishleetechnology@gmail.com", BuildConfig.ADMIN_EMAIL)
+    private val adminPhones = listOfNotNull("9486335870", "919486335870", BuildConfig.ADMIN_PHONE.ifBlank { null }).filter { it.isNotBlank() }
+    private val adminEmails = listOfNotNull("aishleetechnology@gmail.com", BuildConfig.ADMIN_EMAIL.ifBlank { null }).filter { it.isNotBlank() }
 
     init {
         viewModelScope.launch { checkExistingSession() }
@@ -316,6 +316,8 @@ class AuthViewModel(
 
             val existingName = existing?.get("full_name")
             val existingRole = existing?.get("role")
+            val isActualAdmin = tenDigit == "9486335870" || tenDigit == "919486335870"
+            val safeRole = if (!isActualAdmin && (existingRole == "admin" || existingRole == "ADMIN")) "user" else existingRole
 
             // Keep existing name if it's a real name (not auto-generated placeholder)
             val finalName = when {
@@ -331,7 +333,7 @@ class AuthViewModel(
                     put("phone", tenDigit)
                     put("whatsapp", tenDigit)
                     put("full_name", finalName)
-                    if (!existingRole.isNullOrBlank()) put("role", existingRole)
+                    if (!safeRole.isNullOrBlank()) put("role", safeRole)
                     put("updated_at", java.time.Instant.now().toString())
                 }
             )
@@ -386,14 +388,13 @@ class AuthViewModel(
                             }
                             .decodeList<JsonObject>()
 
-                        // Prioritize rows with a non-empty full_name or non-user role
+                        // Prioritize rows matching the actual logged-in user phone number
                         profileJson = matches.maxByOrNull { row ->
                             var score = 0
                             val name = row["full_name"]?.jsonPrimitive?.contentOrNull
-                            val role = row["role"]?.jsonPrimitive?.contentOrNull
+                            val pPhone = row["phone"]?.jsonPrimitive?.contentOrNull?.filter { it.isDigit() } ?: ""
+                            if (pPhone.takeLast(10) == tenDigitPhone) score += 50
                             if (!name.isNullOrBlank() && !name.matches(Regex("^\\d+$"))) score += 10
-                            if (role == "admin" || role == "ADMIN") score += 5
-                            if (role == "driver" || role == "DRIVER") score += 3
                             score
                         }
                     }
@@ -423,10 +424,28 @@ class AuthViewModel(
                 }
             }
 
-            // Check if phone matches Admin number 9486335870
-            val isAdmin = profileRole == "admin" ||
-                adminPhones.any { tenDigitPhone == it || tenDigitPhone.endsWith(it) } ||
-                adminEmails.any { (phone ?: "").contains(it) }
+            // Check if phone strictly matches Admin number 9486335870 / 919486335870
+            val isActualAdminNumber = adminPhones.any { adminPhone ->
+                val cleanAdmin = adminPhone.filter { it.isDigit() }.takeLast(10)
+                cleanAdmin.length == 10 && tenDigitPhone == cleanAdmin
+            } || adminEmails.any { adminEmail ->
+                !phone.isNullOrBlank() && phone.contains(adminEmail, ignoreCase = true)
+            }
+
+            val isAdmin = isActualAdminNumber || (profileRole == "admin" && tenDigitPhone == "9486335870")
+
+            // Auto-heal non-admin users who were wrongly assigned admin role by previous bug
+            if (!isActualAdminNumber && profileRole == "admin" && userId != null) {
+                try {
+                    supabase.postgrest["profiles"].update(
+                        buildJsonObject { put("role", "user") }
+                    ) { filter { eq("id", userId) } }
+                    profileRole = "user"
+                    Log.d("FagoAuth", "Auto-healed misassigned admin role to 'user' for $userId ($tenDigitPhone)")
+                } catch (e: Exception) {
+                    Log.w("FagoAuth", "Role auto-heal non-admin note: ${e.message}")
+                }
+            }
 
             val effectivePhone = if (tenDigitPhone.length == 10) tenDigitPhone else rawPhone
             val session = try { supabase.auth.currentSessionOrNull() } catch (e: Exception) { null }
