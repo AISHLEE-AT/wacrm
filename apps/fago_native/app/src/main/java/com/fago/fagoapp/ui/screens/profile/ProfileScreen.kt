@@ -66,6 +66,8 @@ fun ProfileScreen(
     var liveRole by remember { mutableStateOf(profileData["role"] ?: if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user") }
     var liveUpi by remember { mutableStateOf("") }
     var liveAddress by remember { mutableStateOf("Detecting GPS location...") }
+    var homePlace by remember { mutableStateOf("Set Home Location") }
+    var workPlace by remember { mutableStateOf("Set Work Location") }
 
     // Live Supabase DB Profile Hydration on Launch
     LaunchedEffect(Unit) {
@@ -91,24 +93,44 @@ fun ProfileScreen(
                         if (!dbCat.isNullOrBlank()) liveCategory = dbCat
                         val dbRole = profileMap["role"]?.ifBlank { null }
                         if (!dbRole.isNullOrBlank()) liveRole = dbRole
+                        
+                        // UPI ID Hydration
                         val dbUpi = profileMap["upi_id"]?.ifBlank { null }
+                            ?: profileMap["upi"]?.ifBlank { null }
+                            ?: profileMap["upi_vpa"]?.ifBlank { null }
+                            ?: "$searchPhone@upi"
                         if (!dbUpi.isNullOrBlank()) liveUpi = dbUpi
+
+                        // Address Hydration
+                        val dbAddr = profileMap["address"]?.ifBlank { null }
+                            ?: profileMap["city"]?.ifBlank { null }
+                            ?: profileMap["location"]?.ifBlank { null }
+                            ?: profileMap["home_address"]?.ifBlank { null }
+                        if (!dbAddr.isNullOrBlank()) liveAddress = dbAddr
+
+                        // Saved Places Hydration
+                        val hAddr = profileMap["home_address"]?.ifBlank { null }
+                        if (!hAddr.isNullOrBlank()) homePlace = hAddr
+                        val wAddr = profileMap["work_address"]?.ifBlank { null }
+                        if (!wAddr.isNullOrBlank()) workPlace = wAddr
                     }
                 }
             } catch (e: Exception) {
                 android.util.Log.d("ProfileScreen", "Profile auto-fetch note: ${e.message}")
             }
 
-            try {
-                val loc = locationService.getCurrentLocation()
-                if (loc != null) {
-                    val addr = locationService.getAddressFromLatLng(loc)
-                    if (addr.isNotBlank()) liveAddress = addr
-                } else {
+            if (liveAddress == "Detecting GPS location...") {
+                try {
+                    val loc = locationService.getCurrentLocation()
+                    if (loc != null) {
+                        val addr = locationService.getAddressFromLatLng(loc)
+                        if (addr.isNotBlank()) liveAddress = addr
+                    } else {
+                        liveAddress = "GPS location active"
+                    }
+                } catch (e: Exception) {
                     liveAddress = "GPS location active"
                 }
-            } catch (e: Exception) {
-                liveAddress = "GPS location active"
             }
         }
     }

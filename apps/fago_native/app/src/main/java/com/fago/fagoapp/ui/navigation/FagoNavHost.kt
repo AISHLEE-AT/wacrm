@@ -27,28 +27,6 @@ import com.fago.fagoapp.ui.screens.promo.WhatsAppStatusPromoScreen
 import com.fago.fagoapp.ui.screens.admin.AdminCrmScreen
 import com.fago.fagoapp.ui.screens.web.WebModuleScreen
 
-object Routes {
-    const val SPLASH    = "splash"
-    const val LOGIN     = "login"
-    const val PIN_SETUP = "pin_setup/{phone}/{name}"
-    const val CRM       = "crm"
-    const val RIDEO     = "rideo"
-    const val DRIVO     = "drivo"
-    const val RENTO     = "rento"
-    const val MANDI     = "mandi"
-    const val TOURO     = "touro"
-    const val TEACHO   = "teacho"
-    const val TESTO     = "testo"
-    const val TVO       = "tvo"
-    const val AI        = "ai"
-    const val PROMO     = "promo"
-    const val ADMIN     = "admin"
-    const val PROFILE   = "profile"
-    const val WEB       = "web/{title}/{path}"
-
-    fun buildWebRoute(title: String, path: String) = "web/${java.net.URLEncoder.encode(title, "UTF-8")}/${java.net.URLEncoder.encode(path, "UTF-8")}"
-    fun buildPinRoute(phone: String, name: String) = "pin_setup/${java.net.URLEncoder.encode(phone, "UTF-8")}/${java.net.URLEncoder.encode(name.ifBlank { "User" }, "UTF-8")}"
-}
 
 /**
  * FAGO Central Navigation Host — Enforces strict role-based routing guards.
