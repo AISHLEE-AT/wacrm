@@ -77,6 +77,11 @@ fun RentOScreen(
     LaunchedEffect(authState) {
         if (!authState?.fullName.isNullOrBlank()) farmerName = authState!!.fullName!!
         if (!authState?.phone.isNullOrBlank()) farmerPhone = authState!!.phone!!
+        val deviceAuth = com.fago.fagoapp.services.DeviceAuthService(context)
+        val regPhone = deviceAuth.getRegisteredPhone() ?: deviceAuth.getExtractedSimPhoneNumber()
+        val regName  = deviceAuth.getRegisteredName()
+        if (farmerName.isBlank() && !regName.isNullOrBlank()) farmerName = regName
+        if (farmerPhone.isBlank() && !regPhone.isNullOrBlank()) farmerPhone = regPhone
     }
 
     val categories = listOf(

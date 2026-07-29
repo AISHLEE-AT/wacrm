@@ -104,11 +104,15 @@ fun RiderMapScreen(
     var riderPhone by remember { mutableStateOf("") }
 
     LaunchedEffect(authState?.fullName, authState?.phone) {
-        // Always sync from authState — authState is the single source of truth
         val newName = authState?.fullName?.trim() ?: ""
         val newPhone = authState?.phone?.trim() ?: ""
         if (newName.isNotBlank() && riderName.isBlank()) riderName = newName
         if (newPhone.isNotBlank() && riderPhone.isBlank()) riderPhone = newPhone
+        val deviceAuth = com.fago.fagoapp.services.DeviceAuthService(context)
+        val regPhone = deviceAuth.getRegisteredPhone() ?: deviceAuth.getExtractedSimPhoneNumber()
+        val regName  = deviceAuth.getRegisteredName()
+        if (riderName.isBlank() && !regName.isNullOrBlank()) riderName = regName
+        if (riderPhone.isBlank() && !regPhone.isNullOrBlank()) riderPhone = regPhone
     }
     var selectedCategoryKey by remember { mutableStateOf("Bike") }
     var showConfirmSheet by remember { mutableStateOf(false) }

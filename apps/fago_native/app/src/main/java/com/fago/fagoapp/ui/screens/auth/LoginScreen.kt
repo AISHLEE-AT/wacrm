@@ -204,14 +204,14 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                 letterSpacing = 2.sp
             )
             Text(
-                text = "FAGO",
+                text = "AISHO",
                 color = Color(0xFFFFD700),
                 fontSize = 46.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 3.sp
             )
             Text(
-                text = "வாழ்க • வளர்க • வெல்க • WhatsApp Verified",
+                text = "தமிழன் AISHO • வாழ்க • வளர்க • வெல்க • WhatsApp Verified",
                 color = Color(0xFF00FF00),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
