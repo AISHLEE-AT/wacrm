@@ -30,6 +30,16 @@ type DB = SupabaseClient
 // --- 1. Metric cards ---------------------------------------------------
 
 export async function loadMetrics(db: DB): Promise<MetricsBundle> {
+  try {
+    const res = await fetch('/api/dashboard/metrics', { cache: 'no-store' })
+    const json = await res.json()
+    if (json.metrics) {
+      return json.metrics as MetricsBundle
+    }
+  } catch (err) {
+    console.error('Failed fetching /api/dashboard/metrics, falling back to direct query:', err)
+  }
+
   const todayStart = startOfLocalDay().toISOString()
   const yesterdayStart = daysAgoStart(1).toISOString()
 
@@ -65,12 +75,10 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     db
       .from('messages')
       .select('id', { count: 'exact', head: true })
-      .eq('sender_type', 'agent')
       .gte('created_at', todayStart),
     db
       .from('messages')
       .select('id', { count: 'exact', head: true })
-      .eq('sender_type', 'agent')
       .gte('created_at', yesterdayStart)
       .lt('created_at', todayStart),
   ])
@@ -81,9 +89,6 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
   return {
     activeConversations: {
       current: openConvCur.count ?? 0,
-      // "vs yesterday" on a current-state count has no clean answer
-      // without snapshots — we show the delta in NEW open conversations
-      // today vs yesterday. That's the business-meaningful daily signal.
       previous: (newConvToday.count ?? 0) - (newConvYesterday.count ?? 0),
     },
     newContactsToday: {
@@ -266,6 +271,16 @@ export async function loadResponseTime(db: DB): Promise<ResponseTimeSummary> {
 // --- 5. Activity feed --------------------------------------------------
 
 export async function loadActivity(db: DB, limit = 20): Promise<ActivityItem[]> {
+  try {
+    const res = await fetch('/api/dashboard/metrics', { cache: 'no-store' })
+    const json = await res.json()
+    if (json.activity && Array.isArray(json.activity) && json.activity.length > 0) {
+      return json.activity.slice(0, limit) as ActivityItem[]
+    }
+  } catch (err) {
+    console.error('Failed fetching /api/dashboard/metrics for activity, falling back:', err)
+  }
+
   // Pull ~10 from each source (plenty of headroom after merge-sort),
   // then interleave by timestamp. The individual per-table limits
   // keep the payload small; the final limit is enforced after sort.
