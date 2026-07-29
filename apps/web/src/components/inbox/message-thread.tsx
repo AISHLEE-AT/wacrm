@@ -252,6 +252,20 @@ export function MessageThread({
     (async () => {
       setLoading(true);
 
+      try {
+        const res = await fetch(`/api/conversations/${conversationId}/messages`, { cache: 'no-store' });
+        const json = await res.json();
+        if (json.messages && Array.isArray(json.messages)) {
+          if (!cancelled) {
+            onMessagesLoadedRef.current(json.messages);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch (err) {
+        console.error('Failed fetching /api/conversations/[id]/messages, falling back to direct query:', err);
+      }
+
       const { data, error } = await supabase
         .from("messages")
         .select("*")

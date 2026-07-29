@@ -74,46 +74,62 @@ fun ProfileScreen(
         scope.launch {
             try {
                 val regPhone = deviceAuthService.getRegisteredPhone()
+                val simPhone = deviceAuthService.getExtractedSimPhoneNumber()
                 val rawTarget = authState.phone?.ifBlank { null }
                     ?: regPhone?.ifBlank { null }
+                    ?: simPhone?.ifBlank { null }
                     ?: profileData["phone"]?.ifBlank { null }
                     ?: profileData["whatsapp"]?.ifBlank { null }
                     ?: ""
                 val targetDigits = rawTarget.filter { c -> c.isDigit() }
-
                 val searchPhone = if (targetDigits.length >= 10) targetDigits.takeLast(10) else targetDigits
-                if (searchPhone.length == 10) {
-                    livePhone = searchPhone
-                    val profileMap: Map<String, String?>? = authViewModel.fetchProfileByPhone(searchPhone)
-                    if (profileMap != null) {
-                        val dbName = profileMap["full_name"]?.ifBlank { null }
-                            ?: profileMap["email"]?.substringBefore("@")
-                        if (!dbName.isNullOrBlank()) liveName = dbName
-                        val dbCat = profileMap["main_category"]?.ifBlank { null }
-                        if (!dbCat.isNullOrBlank()) liveCategory = dbCat
-                        val dbRole = profileMap["role"]?.ifBlank { null }
-                        if (!dbRole.isNullOrBlank()) liveRole = dbRole
-                        
-                        // UPI ID Hydration
-                        val dbUpi = profileMap["upi_id"]?.ifBlank { null }
-                            ?: profileMap["upi"]?.ifBlank { null }
-                            ?: profileMap["upi_vpa"]?.ifBlank { null }
-                            ?: "$searchPhone@upi"
-                        if (!dbUpi.isNullOrBlank()) liveUpi = dbUpi
 
-                        // Address Hydration
-                        val dbAddr = profileMap["address"]?.ifBlank { null }
-                            ?: profileMap["city"]?.ifBlank { null }
-                            ?: profileMap["location"]?.ifBlank { null }
-                            ?: profileMap["home_address"]?.ifBlank { null }
-                        if (!dbAddr.isNullOrBlank()) liveAddress = dbAddr
-
-                        // Saved Places Hydration
-                        val hAddr = profileMap["home_address"]?.ifBlank { null }
-                        if (!hAddr.isNullOrBlank()) homePlace = hAddr
-                        val wAddr = profileMap["work_address"]?.ifBlank { null }
-                        if (!wAddr.isNullOrBlank()) workPlace = wAddr
+                // Fetch profile using both User ID and phone number fallback
+                val profileMap: Map<String, String?>? = authViewModel.fetchProfileByIdOrPhone(authState.userId, searchPhone.ifEmpty { null })
+                
+                if (profileMap != null) {
+                    val dbPhone = profileMap["phone"]?.ifBlank { null }
+                        ?: profileMap["whatsapp"]?.ifBlank { null }
+                        ?: profileMap["mobile_number"]?.ifBlank { null }
+                        ?: profileMap["email"]?.let { email ->
+                            val digits = email.substringBefore("@").filter { it.isDigit() }
+                            if (digits.length >= 10) digits.takeLast(10) else null
+                        }
+                    val finalDigits = dbPhone?.filter { it.isDigit() }?.takeLast(10) ?: searchPhone
+                    if (finalDigits.length == 10) {
+                        livePhone = finalDigits
                     }
+
+                    val dbName = profileMap["full_name"]?.ifBlank { null }
+                        ?: profileMap["email"]?.substringBefore("@")
+                    if (!dbName.isNullOrBlank() && !dbName.matches(Regex("^\\d+$"))) liveName = dbName
+
+                    val dbCat = profileMap["main_category"]?.ifBlank { null }
+                    if (!dbCat.isNullOrBlank()) liveCategory = dbCat
+
+                    val dbRole = profileMap["role"]?.ifBlank { null }
+                    if (!dbRole.isNullOrBlank()) liveRole = dbRole
+                    
+                    // UPI ID Hydration
+                    val dbUpi = profileMap["upi_id"]?.ifBlank { null }
+                        ?: profileMap["upi"]?.ifBlank { null }
+                        ?: profileMap["upi_vpa"]?.ifBlank { null }
+                        ?: if (livePhone.length == 10) "$livePhone@upi" else null
+                    if (!dbUpi.isNullOrBlank()) liveUpi = dbUpi
+
+                    // Address Hydration
+                    val dbAddr = profileMap["address"]?.ifBlank { null }
+                        ?: profileMap["city"]?.ifBlank { null }
+                        ?: profileMap["location"]?.ifBlank { null }
+                        ?: profileMap["home_address"]?.ifBlank { null }
+                    if (!dbAddr.isNullOrBlank()) liveAddress = dbAddr
+
+                    val hAddr = profileMap["home_address"]?.ifBlank { null }
+                    if (!hAddr.isNullOrBlank()) homePlace = hAddr
+                    val wAddr = profileMap["work_address"]?.ifBlank { null }
+                    if (!wAddr.isNullOrBlank()) workPlace = wAddr
+                } else if (searchPhone.length == 10) {
+                    livePhone = searchPhone
                 }
             } catch (e: Exception) {
                 android.util.Log.d("ProfileScreen", "Profile auto-fetch note: ${e.message}")

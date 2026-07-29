@@ -526,6 +526,32 @@ class AuthViewModel(
         }
     }
 
+    suspend fun fetchProfileByIdOrPhone(userId: String?, phone: String?): Map<String, String?>? = withContext(Dispatchers.IO) {
+        try {
+            if (!userId.isNullOrBlank()) {
+                val list = supabase.postgrest["profiles"]
+                    .select { filter { eq("id", userId) } }
+                    .decodeList<JsonObject>()
+                if (list.isNotEmpty()) {
+                    val obj = list.first()
+                    return@withContext obj.mapValues { (_, value) ->
+                        try { value.jsonPrimitive.contentOrNull } catch (e: Exception) { value.toString().removeSurrounding("\"") }
+                    }
+                }
+            }
+
+            val cleanPhone = phone?.filter { it.isDigit() }?.let { if (it.length > 10) it.takeLast(10) else it }
+            if (!cleanPhone.isNullOrBlank() && cleanPhone.length >= 10) {
+                return@withContext fetchProfileByPhone(cleanPhone)
+            }
+
+            null
+        } catch (e: Exception) {
+            Log.e("FagoAuth", "fetchProfileByIdOrPhone error: ${e.message}", e)
+            null
+        }
+    }
+
     suspend fun fetchProfileByPhone(phone: String): Map<String, String?>? = withContext(Dispatchers.IO) {
         val cleanPhone = phone.filter { it.isDigit() }.let {
             if (it.length > 10) it.takeLast(10) else it
