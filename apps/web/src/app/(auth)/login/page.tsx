@@ -456,7 +456,7 @@ function LoginPageInner() {
           <div className="w-full">
             <AnimatePresence mode="wait">
               {!otpRequested ? (
-                isPinLogin && hasSavedPin ? (
+                isReturningUser ? (
                   <motion.form 
                     key="pin-form"
                     initial={{ opacity: 0, x: -20 }}
