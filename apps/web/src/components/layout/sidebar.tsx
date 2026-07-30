@@ -119,7 +119,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const totalUnread = useTotalUnread();
   const [isRegisteredDriver, setIsRegisteredDriver] = useState(false);
 
-  const isAdmin = checkIsAdmin(user, profile);
+  const isAdmin = checkIsAdmin(user, profile ?? undefined);
 
   useEffect(() => {
     if (!user?.id) return;
