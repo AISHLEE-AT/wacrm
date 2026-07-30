@@ -132,18 +132,14 @@ function LoginPageInner() {
       try {
         let data: any = null;
         
-        // 1. Try server-side bypass endpoint first
-        try {
-          const res = await fetch(`/api/fago/search?phone=${clean}`);
-          if (res.ok) {
-            const json = await res.json();
-            if (json?.profile) {
-              data = json.profile;
-            }
+        const res = await fetch(`/api/fago/search?phone=${clean}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.profile) {
+            data = json.profile;
           }
-        } catch (_) {}
+        }
 
-        // 2. Direct Supabase JS fallback
         if (!data) {
           const { data: records } = await supabase
             .from("profiles")
@@ -152,9 +148,9 @@ function LoginPageInner() {
           data = records?.[0] || null;
         }
 
-        if (data) {
+        if (data && data.full_name) {
           setIsReturningUser(true);
-          setFullName(data.full_name || "Registered User");
+          setFullName(data.full_name);
           if (data.main_category) {
             setSelectedCategory(data.main_category);
           }
