@@ -23,7 +23,7 @@ export const ADMIN_IDENTIFIERS = [...BOOTSTRAP_ADMIN_PHONES, ...BOOTSTRAP_ADMIN_
  */
 export function checkIsAdmin(
   userOrPhoneOrEmail?: any,
-  profile?: { role?: string; phone?: string; email?: string; whatsapp?: string }
+  profile?: { role?: string | null; phone?: string | null; email?: string | null; whatsapp?: string | null }
 ): boolean {
   // 1. DB role is primary source of truth
   const role = profile?.role?.toLowerCase()
