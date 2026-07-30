@@ -71,9 +71,13 @@ class AuthViewModel(
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    // ── Admin identifiers — 9486335870, 919486335870, aishleetechnology@gmail.com ──
-    private val adminPhones = listOfNotNull("9123596988", "919123596988", BuildConfig.ADMIN_PHONE.ifBlank { null }).filter { it.isNotBlank() }
-    private val adminEmails = listOfNotNull("aishleetechnology@gmail.com", BuildConfig.ADMIN_EMAIL.ifBlank { null }).filter { it.isNotBlank() }
+    // ── Admin identifiers — DB role='admin' is primary, these are bootstrap fallbacks ──
+    private val adminPhones = listOf(
+        BuildConfig.ADMIN_PHONE.ifBlank { "9486335870" },
+        BuildConfig.ADMIN_PHONE_2.ifBlank { "9123596988" },
+        "919486335870", "919123596988"
+    ).filter { it.isNotBlank() }.distinct()
+    private val adminEmails = listOf(BuildConfig.ADMIN_EMAIL.ifBlank { "aishleetechnology@gmail.com" })
 
     init {
         viewModelScope.launch { checkExistingSession() }
@@ -723,6 +727,33 @@ class AuthViewModel(
             deviceAuthService.clearDeviceSignature()
             try { supabase.auth.signOut() } catch (e: Exception) { Log.e("FagoAuth", "SignOut: ${e.message}") }
             _authState.update { AuthUiState(isLoading = false, role = UserRole.GUEST) }
+        }
+    }
+
+    // ── Compatibility: verifyDeviceAndAutoLogin ───────────────────────────────
+    // Called by LoginScreen when biometric or device PIN succeeds.
+    // Returns a UserRole so that onLoginSuccess(UserRole) callback is satisfied.
+    suspend fun verifyDeviceAndAutoLogin(phone: String, inputPin: String? = null): UserRole = withContext(Dispatchers.IO) {
+        val cleanPhone = phone.filter { it.isDigit() }.let {
+            if (it.length > 10) it.substring(it.length - 10) else it
+        }
+        try {
+            // If a PIN was passed in, use DB-backed pin login
+            if (!inputPin.isNullOrBlank() && inputPin.length == 4) {
+                val result = pinLogin(cleanPhone, inputPin)
+                return@withContext if (result.isSuccess) _authState.value.role else UserRole.GUEST
+            }
+
+            // Otherwise restore session from device
+            val (storedAccess, storedRefresh) = deviceAuthService.getStoredTokens()
+            if (!storedAccess.isNullOrBlank() && !storedRefresh.isNullOrBlank()) {
+                signInWithTokens(storedAccess, storedRefresh)
+                return@withContext _authState.value.role
+            }
+            UserRole.GUEST
+        } catch (e: Exception) {
+            Log.e("FagoAuth", "verifyDeviceAndAutoLogin error: ${e.message}")
+            UserRole.GUEST
         }
     }
 }

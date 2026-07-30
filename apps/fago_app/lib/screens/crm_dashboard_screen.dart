@@ -37,10 +37,8 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
   }
 
   String _formatDisplayPhone(AuthState authState) {
-    final fbUser = authState.firebaseUser;
     final sbUser = authState.supabaseUser;
-
-    String raw = authState.phone ?? fbUser?.phoneNumber ?? sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.email ?? '';
+    String raw = authState.phone ?? sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString() ?? sbUser?.email ?? '';
     if (raw.contains('@')) {
       raw = raw.split('@')[0];
     }

@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class DeviceAuthService {
   static final LocalAuthentication _auth = LocalAuthentication();
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  static const String _keyAccessToken = 'fago_access_token';
+  static const String _keyRefreshToken = 'fago_refresh_token';
 
   static const String _keyRegisteredPhone = 'registered_phone';
   static const String _keyRegisteredName = 'registered_name';
@@ -160,17 +160,20 @@ class DeviceAuthService {
   }
 
   static Future<void> saveSession(String accessToken, String refreshToken) async {
-    await _secureStorage.write(key: 'access_token', value: accessToken);
-    await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyAccessToken, accessToken);
+    await prefs.setString(_keyRefreshToken, refreshToken);
   }
 
   static Future<String?> getStoredSession() async {
-    return await _secureStorage.read(key: 'refresh_token');
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyRefreshToken);
   }
 
   static Future<void> clearSession() async {
-    await _secureStorage.delete(key: 'access_token');
-    await _secureStorage.delete(key: 'refresh_token');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyAccessToken);
+    await prefs.remove(_keyRefreshToken);
   }
 
   static Future<void> saveRegisteredPhone(String phone) async {

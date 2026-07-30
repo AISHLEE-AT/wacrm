@@ -274,7 +274,7 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      await _supabase.auth.setSession(accessToken, refreshToken);
+      await _supabase.auth.setSession(refreshToken);
       await DeviceAuthService.saveSession(accessToken, refreshToken);
       await DeviceAuthService.saveRegisteredPhone(cleanPhone);
       if (fullName != null) await DeviceAuthService.saveRegisteredName(fullName);
@@ -310,7 +310,7 @@ class AuthNotifier extends Notifier<AuthState> {
         return;
       }
 
-      await _supabase.auth.setSession(accessToken, refreshToken);
+      await _supabase.auth.setSession(refreshToken);
       await DeviceAuthService.saveSession(accessToken, refreshToken);
       await DeviceAuthService.saveRegisteredPhone(cleanPhone);
     } catch (e) {
@@ -356,6 +356,93 @@ class AuthNotifier extends Notifier<AuthState> {
       return results.isNotEmpty ? results.first as Map<String, dynamic> : null;
     } catch (e) {
       return null;
+    }
+  }
+
+  // ── Compatibility Shims (for login_screen.dart) ──────────────────────────
+  // These delegate to the canonical new methods so existing screens compile.
+
+  /// @deprecated Use checkPhoneRegistration()
+  Future<Map<String, dynamic>?> fetchProfileByPhone(String phone) =>
+      checkPhoneRegistration(phone);
+
+  /// @deprecated Use sendWhatsAppOTP()
+  Future<Map<String, dynamic>> sendWhatsAppOtp(String phone) =>
+      sendWhatsAppOTP(phone);
+
+  /// @deprecated Use verifyWhatsAppOTP()
+  Future<void> verifyWhatsAppOtp(
+    String phone,
+    String otp, {
+    String? fullName,
+    String? userCategory,
+    String? pin,
+  }) =>
+      verifyWhatsAppOTP(
+        phone: phone,
+        otp: otp,
+        fullName: fullName,
+        category: userCategory,
+        pin: pin,
+      );
+
+  /// @deprecated Firebase SMS removed — auto-routes to WhatsApp OTP
+  Future<void> verifyPhoneNumber({
+    required String phoneNumber,
+    required Function(String, int?) codeSent,
+    required Function(dynamic) verificationFailed,
+    Function(String)? verificationCompleted,
+  }) async {
+    final clean = phoneNumber.replaceAll(RegExp(r'\D'), '').substring(
+        (phoneNumber.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
+    try {
+      final result = await sendWhatsAppOTP(clean);
+      codeSent(result['message']?.toString() ?? 'whatsapp_otp_sent', null);
+    } catch (e) {
+      verificationFailed(e);
+    }
+  }
+
+  /// @deprecated Firebase SMS removed — no-op for Firebase OTP verify
+  Future<void> verifyOTP({
+    required String verificationId,
+    required String smsCode,
+  }) async {
+    // Firebase SMS is no longer the primary auth method.
+    // Users should verify via WhatsApp OTP (verifyWhatsAppOTP).
+    state = state.copyWith(
+      isLoading: false,
+      errorMessage: 'Please use WhatsApp OTP for login. SMS OTP has been replaced.',
+    );
+  }
+
+  /// Device biometric/PIN auto-login — restores session from device storage.
+  Future<void> verifyDeviceAndAutoLogin(String phone, {String? inputPin}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
+        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
+    try {
+      // If PIN provided, use DB-backed PIN login
+      if (inputPin != null && inputPin.length == 4) {
+        await pinLogin(phone: cleanPhone, pin: inputPin);
+        return;
+      }
+      // Otherwise try to restore session from device
+      final storedRefresh = await DeviceAuthService.getStoredSession();
+      if (storedRefresh != null && storedRefresh.isNotEmpty) {
+        await _supabase.auth.setSession(storedRefresh);
+        // onAuthStateChange will handle role resolution
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'No saved session. Please login via WhatsApp OTP.',
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Auto-login failed: $e',
+      );
     }
   }
 }
