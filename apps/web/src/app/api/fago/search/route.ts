@@ -65,7 +65,24 @@ export async function GET(request: Request) {
       .select('full_name, main_category, role, phone, whatsapp')
       .or(`phone.eq.${clean},phone.eq.91${clean},phone.eq.+91${clean},whatsapp.eq.${clean},whatsapp.eq.91${clean}`)
 
-    const profile = records?.[0] || null
+    if (records && records.length > 0) {
+      records.sort((a, b) => {
+        const nameA = a.full_name?.trim() || ''
+        const nameB = b.full_name?.trim() || ''
+        const isNumA = /^\d+$/.test(nameA)
+        const isNumB = /^\d+$/.test(nameB)
+        
+        let scoreA = 0
+        let scoreB = 0
+        
+        if (nameA.length > 0 && !isNumA) scoreA += 50
+        if (nameB.length > 0 && !isNumB) scoreB += 50
+
+        return scoreB - scoreA
+      })
+    }
+
+    const profile = (records && records.length > 0) ? records[0] : null
     return NextResponse.json({ profile })
   } catch (err: unknown) {
     return NextResponse.json({ profile: null })
