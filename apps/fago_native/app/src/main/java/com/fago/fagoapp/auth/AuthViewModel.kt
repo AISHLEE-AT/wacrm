@@ -72,7 +72,7 @@ class AuthViewModel(
         .build()
 
     // ── Admin identifiers — 9486335870, 919486335870, aishleetechnology@gmail.com ──
-    private val adminPhones = listOfNotNull("9486335870", "919486335870", BuildConfig.ADMIN_PHONE.ifBlank { null }).filter { it.isNotBlank() }
+    private val adminPhones = listOfNotNull("9123596988", "919123596988", BuildConfig.ADMIN_PHONE.ifBlank { null }).filter { it.isNotBlank() }
     private val adminEmails = listOfNotNull("aishleetechnology@gmail.com", BuildConfig.ADMIN_EMAIL.ifBlank { null }).filter { it.isNotBlank() }
 
     init {
@@ -448,7 +448,7 @@ class AuthViewModel(
                 !phone.isNullOrBlank() && phone.contains(adminEmail, ignoreCase = true)
             }
 
-            val isAdmin = isActualAdminNumber || (profileRole == "admin" && tenDigitPhone == "9486335870")
+            val isAdmin = profileRole == "admin" || profileRole == "ADMIN" || isActualAdminNumber
 
             // Auto-heal non-admin users who were wrongly assigned admin role by previous bug
             if (!isActualAdminNumber && profileRole == "admin" && userId != null) {
@@ -657,40 +657,64 @@ class AuthViewModel(
         }
     }
 
-    // ── 7. Device Biometric / PIN Login ─────────────────────────────────────
-    suspend fun verifyDeviceAndAutoLogin(phone: String, inputPin: String? = null): UserRole = withContext(Dispatchers.IO) {
-        val cleanPhone = phone.filter { it.isDigit() }.let {
-            if (it.length > 10) it.takeLast(10) else it
-        }
-
-        // Try Web Bridge API first (aligns Mobile Auth 100% with Web Portal watscrm.vercel.app)
+    // ── PIN LOGIN ────────────────────────────────────────────────────────
+    suspend fun pinLogin(phone: String, pin: String): Result<String?> = withContext(Dispatchers.IO) {
+        val cleanPhone = phone.filter { it.isDigit() }
         try {
-            val jsonPayload = JSONObject().apply {
-                put("phone", cleanPhone)
-                if (!inputPin.isNullOrEmpty()) put("pin", inputPin)
+            val bodyMap = buildString {
+                append("{\"phone\":\"$cleanPhone\",\"pin\":\"$pin\"}")
             }
-            val body = jsonPayload.toString().toRequestBody("application/json".toMediaType())
-            val req = Request.Builder()
-                .url("https://watscrm.vercel.app/api/auth/pin-login")
+            val body = bodyMap.toRequestBody("application/json".toMediaType())
+            val request = Request.Builder()
+                .url("${BuildConfig.API_BASE_URL.trimEnd('/')}/api/auth/pin-login")
                 .post(body)
                 .build()
-
-            http.newCall(req).execute().use { response ->
-                if (response.isSuccessful) {
-                    val resStr = response.body?.string() ?: ""
-                    val json = JSONObject(resStr)
-                    if (json.optBoolean("success")) {
-                        Log.d("FagoAuth", "Web Bridge PIN Login Success for $cleanPhone")
+            val response = http.newCall(request).execute()
+            if (response.isSuccessful) {
+                val json = JSONObject(response.body?.string() ?: "{}")
+                val session = json.optJSONObject("session")
+                val redirectTo = json.optString("redirect_to").ifEmpty { null }
+                if (session != null) {
+                    val accessToken = session.optString("access_token")
+                    val refreshToken = session.optString("refresh_token")
+                    if (accessToken.isNotEmpty() && refreshToken.isNotEmpty()) {
+                        signInWithTokens(accessToken, refreshToken)
+                        return@withContext Result.success(redirectTo)
                     }
                 }
             }
+            Result.failure(Exception("Invalid PIN or server error"))
         } catch (e: Exception) {
-            Log.d("FagoAuth", "Web Bridge Login Note: ${e.message}")
+            Result.failure(Exception("PIN Login failed: ${e.message}"))
         }
+    }
 
-        // Complete Profile Hydration & State Update
-        directSupabasePhoneLogin(cleanPhone, null)
-        return@withContext _authState.value.role
+    private suspend fun signInWithTokens(accessToken: String, refreshToken: String) {
+        supabase.auth.importSession(
+            io.github.jan.supabase.gotrue.user.UserSession(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                expiresIn = 3600,
+                tokenType = "bearer",
+                user = null
+            )
+        )
+        val user = supabase.auth.currentUserOrNull()
+        val userId = user?.id
+        val userPhone = user?.phone ?: user?.userMetadata?.get("phone")?.toString()?.trim('"')
+        if (userId != null) {
+            try {
+                supabase.postgrest["profiles"].update(
+                    buildJsonObject {
+                        put("last_login", java.time.Instant.now().toString())
+                        put("platform", "android")
+                    }
+                ) { filter { eq("id", userId) } }
+            } catch(e: Exception) {
+                Log.d("FagoAuth", "Failed to update last_login: ${e.message}")
+            }
+        }
+        resolveRole(userPhone, userId)
     }
 
     // ── 8. Sign Out ──────────────────────────────────────────────────────────

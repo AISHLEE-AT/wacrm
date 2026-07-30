@@ -1,21 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../features/push/push_service.dart';
 import '../services/device_auth_service.dart';
 
-// Represents the resolved user role
+// ── Unified User Roles (matches web & Kotlin) ─────────────────────────────
 enum UserRole { guest, admin, user, provider, driver, lister, professional }
 
 class AuthState {
   final bool isLoading;
   final UserRole role;
-  final firebase.User? firebaseUser;
   final User? supabaseUser;
   final String? phone;
   final String? fullName;
@@ -24,10 +20,9 @@ class AuthState {
   final String? defaultModule;
   final bool isProfileComplete;
 
-  AuthState({
+  const AuthState({
     this.isLoading = true,
     this.role = UserRole.guest,
-    this.firebaseUser,
     this.supabaseUser,
     this.phone,
     this.fullName,
@@ -40,7 +35,6 @@ class AuthState {
   AuthState copyWith({
     bool? isLoading,
     UserRole? role,
-    firebase.User? firebaseUser,
     User? supabaseUser,
     String? phone,
     String? fullName,
@@ -52,7 +46,6 @@ class AuthState {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       role: role ?? this.role,
-      firebaseUser: firebaseUser ?? this.firebaseUser,
       supabaseUser: supabaseUser ?? this.supabaseUser,
       phone: phone ?? this.phone,
       fullName: fullName ?? this.fullName,
@@ -65,627 +58,320 @@ class AuthState {
 }
 
 class AuthNotifier extends Notifier<AuthState> {
-  final firebase.FirebaseAuth _auth = firebase.FirebaseAuth.instance;
   final SupabaseClient _supabase = Supabase.instance.client;
-  
-  // Dynamic bridge URL from environment, fallback to production
-  String get _bridgeUrl => 
-      dotenv.env['FIREBASE_BRIDGE_URL'] ?? 'https://watscrm.vercel.app/api/auth/firebase-bridge';
 
-  // Admin phone & email identifiers matching Aisho native app
-  static const List<String> _adminIdentifiers = [
-    '9486335870',
-    '919486335870',
-    '9123596988',
-    '919123596988',
-    'aishleetechnology@gmail.com'
+  /// Base URL for FAGO API (WhatsApp OTP, PIN login, profile)
+  String get _apiBase =>
+      dotenv.env['NEXT_PUBLIC_APP_URL'] ??
+      dotenv.env['FIREBASE_BRIDGE_URL']?.replaceAll('/api/auth/firebase-bridge', '') ??
+      'https://watscrm.vercel.app';
+
+  // Bootstrap admin phones — DB role='admin' is primary source of truth
+  static const List<String> _bootstrapAdminPhones = [
+    '9486335870', '919486335870',
+    '9123596988', '919123596988',
   ];
+  static const String _bootstrapAdminEmail = 'aishleetechnology@gmail.com';
 
   @override
   AuthState build() {
     _init();
-    return AuthState();
+    return const AuthState();
   }
 
   void _init() {
     _supabase.auth.onAuthStateChange.listen((data) async {
       if (data.session?.user != null) {
         final sbUser = data.session!.user;
-        final phone = sbUser.phone ?? sbUser.userMetadata?['phone']?.toString();
-        await _resolveRole(phone ?? sbUser.email);
-      }
-    });
-
-    _auth.authStateChanges().listen((user) async {
-      if (user == null) {
-        final sbUser = _supabase.auth.currentUser;
-        if (sbUser != null) {
-          final phone = sbUser.phone ?? sbUser.userMetadata?['phone']?.toString();
-          await _resolveRole(phone ?? sbUser.email);
-        } else {
-          state = AuthState(isLoading: false, role: UserRole.guest);
-        }
+        final phone = sbUser.phone ??
+            sbUser.userMetadata?['phone']?.toString() ??
+            sbUser.email?.split('@').first;
+        await _resolveRole(phone, sbUser);
       } else {
-        state = state.copyWith(isLoading: true, firebaseUser: user, errorMessage: null);
-        try {
-          await exchangeFirebaseForSupabase();
-          await _resolveRole(user.phoneNumber);
-        } catch (e) {
-          debugPrint('Auth initialization error: $e');
-          final sbUser = _supabase.auth.currentUser;
-          final phone = sbUser?.phone ?? sbUser?.userMetadata?['phone']?.toString();
-          await _resolveRole(user.phoneNumber ?? phone ?? sbUser?.email);
-        }
+        state = const AuthState(isLoading: false, role: UserRole.guest);
       }
     });
 
-    final sbUser = _supabase.auth.currentUser;
-    if (sbUser != null) {
-      final phone = sbUser.phone ?? sbUser.userMetadata?['phone']?.toString();
-      _resolveRole(phone ?? sbUser.email);
+    // Check existing session on startup
+    final existingSession = _supabase.auth.currentSession;
+    if (existingSession?.user != null) {
+      final sbUser = existingSession!.user;
+      final phone = sbUser.phone ??
+          sbUser.userMetadata?['phone']?.toString() ??
+          sbUser.email?.split('@').first;
+      _resolveRole(phone, sbUser);
+    } else {
+      _checkDeviceSession();
     }
   }
 
-  Future<void> refreshRole() async {
-    final user = _supabase.auth.currentUser;
-    final fbUser = _auth.currentUser;
-    final phone = fbUser?.phoneNumber ?? user?.phone ?? user?.userMetadata?['phone']?.toString() ?? user?.email;
-    await _resolveRole(phone);
+  Future<void> _checkDeviceSession() async {
+    try {
+      final regPhone = await DeviceAuthService.getRegisteredPhone();
+      if (regPhone == null || regPhone.isEmpty) {
+        state = const AuthState(isLoading: false, role: UserRole.guest);
+        return;
+      }
+      // Attempt to restore Supabase session from device
+      final session = await DeviceAuthService.getStoredSession();
+      if (session != null) {
+        await _supabase.auth.setSession(session);
+        return; // onAuthStateChange will handle the rest
+      }
+    } catch (e) {
+      debugPrint('Device session restore error: $e');
+    }
+    state = const AuthState(isLoading: false, role: UserRole.guest);
   }
 
-  /// Resolve user role using dual profile lookup (Auth ID + Phone/Email fallback)
-  /// matching 100% of Aisho native AuthViewModel logic.
-  Future<void> _resolveRole(String? phoneNumber) async {
+  /// Resolves role from Supabase profiles table (DB as single source of truth)
+  Future<void> _resolveRole(String? phone, User? sbUser) async {
+    if (sbUser == null) {
+      state = const AuthState(isLoading: false, role: UserRole.guest);
+      return;
+    }
+
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
     try {
-      final user = _supabase.auth.currentUser;
-      final fbUser = _auth.currentUser;
-
-      final String rawPhone = (phoneNumber ?? fbUser?.phoneNumber ?? user?.phone ?? '').replaceAll(RegExp(r'\D'), '');
-      String tenDigitPhone = rawPhone.length > 10 ? rawPhone.substring(rawPhone.length - 10) : rawPhone;
-
-      String? profileRole;
-      String? fullName;
-      String? mainCategory;
-      String? defaultModule;
-      bool isProfileComplete = false;
-
-      Map<String, dynamic>? profileData;
-
-      // Strategy 1: Fetch profile by Supabase user ID
-      if (user != null) {
-        try {
-          final res = await _supabase
+      // Fetch profile from DB
+      Map<String, dynamic>? profile;
+      try {
+        final result = await _supabase
+            .from('profiles')
+            .select('full_name, main_category, role, profile_complete, default_module')
+            .eq('id', sbUser.id)
+            .maybeSingle();
+        profile = result;
+      } catch (e) {
+        // Fallback: search by phone
+        if (phone != null && phone.isNotEmpty) {
+          final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+          final digits = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+          final results = await _supabase
               .from('profiles')
-              .select('id, default_module, profile_complete, full_name, main_category, whatsapp, phone, role, email')
-              .eq('id', user.id)
-              .maybeSingle();
-          if (res != null) {
-            profileData = Map<String, dynamic>.from(res);
-          }
-        } catch (e) {
-          debugPrint('Profile fetch by ID note: $e');
+              .select('full_name, main_category, role, profile_complete, default_module')
+              .or('phone.eq.$digits,phone.eq.91$digits,whatsapp.eq.$digits')
+              .limit(1);
+          profile = results.isNotEmpty ? results.first : null;
         }
       }
 
-      // Strategy 2 (FALLBACK): Fetch profile by phone/whatsapp/email
-      if (profileData == null && tenDigitPhone.isNotEmpty) {
-        try {
-          final List<dynamic> records = await _supabase
-              .from('profiles')
-              .select('id, default_module, profile_complete, full_name, main_category, whatsapp, phone, role, email')
-              .or('phone.eq.$tenDigitPhone,phone.eq.91$tenDigitPhone,whatsapp.eq.$tenDigitPhone,whatsapp.eq.91$tenDigitPhone,email.ilike.%$tenDigitPhone%');
+      final dbRole = profile?['role']?.toString().toLowerCase();
+      final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+      final digits = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
 
-          if (records.isNotEmpty) {
-            records.sort((a, b) {
-              int scoreA = 0;
-              int scoreB = 0;
-              final nameA = a['full_name']?.toString() ?? '';
-              final nameB = b['full_name']?.toString() ?? '';
-              if (nameA.isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameA)) scoreA += 10;
-              if (nameB.isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameB)) scoreB += 10;
-              if (a['role'] == 'admin') scoreA += 5;
-              if (b['role'] == 'admin') scoreB += 5;
-              return scoreB.compareTo(scoreA);
-            });
-            profileData = Map<String, dynamic>.from(records.first);
-          }
-        } catch (e) {
-          debugPrint('Profile fetch by phone fallback note: $e');
-        }
-      }
+      // Resolve admin: DB first, then bootstrap fallback
+      final isBootstrapAdmin = _bootstrapAdminPhones.any((p) =>
+          digits == p || digits == p.substring(p.length > 10 ? p.length - 10 : 0)) ||
+          (sbUser.email?.contains(_bootstrapAdminEmail) ?? false);
+      final isAdmin = dbRole == 'admin' || isBootstrapAdmin;
+      final isDriver = dbRole == 'driver';
 
-      if (profileData != null) {
-        defaultModule = profileData['default_module']?.toString();
-        profileRole = profileData['role']?.toString();
-        mainCategory = profileData['main_category']?.toString();
-        final dbName = profileData['full_name']?.toString();
-        if (dbName != null && dbName.trim().isNotEmpty && !RegExp(r'^[0-9+]+$').hasMatch(dbName)) {
-          fullName = dbName.trim();
-        } else {
-          final dbEmail = profileData['email']?.toString();
-          if (dbEmail != null && dbEmail.contains('@')) {
-            fullName = dbEmail.split('@').first;
-          }
-        }
-
-        final dbPhone = (profileData['whatsapp'] ?? profileData['phone'])?.toString();
-        if (dbPhone != null) {
-          final cleanDb = dbPhone.replaceAll(RegExp(r'\D'), '');
-          if (cleanDb.length >= 10 && (tenDigitPhone.isEmpty || cleanDb.endsWith(tenDigitPhone))) {
-            tenDigitPhone = cleanDb.substring(cleanDb.length - 10);
-          }
-        }
-
-        isProfileComplete = profileData['profile_complete'] == true ||
-            (fullName != null && tenDigitPhone.isNotEmpty);
-      }
-
-      // Check strict Admin number matching
-      final bool isActualAdminNumber = _adminIdentifiers.any((adminId) {
-        final cleanAdmin = adminId.replaceAll(RegExp(r'\D'), '');
-        if (cleanAdmin.isNotEmpty && cleanAdmin.length >= 10) {
-          return tenDigitPhone.endsWith(cleanAdmin.substring(cleanAdmin.length - 10));
-        }
-        return (user?.email ?? '').toLowerCase().contains(adminId.toLowerCase());
-      });
-
-      final bool isAdmin = isActualAdminNumber || (profileRole == 'admin' && tenDigitPhone == '9486335870');
-
-      // Role Auto-heal for non-admins wrongly flagged as admin
-      if (!isActualAdminNumber && profileRole == 'admin' && user != null) {
-        try {
-          await _supabase.from('profiles').update({'role': 'user'}).eq('id', user.id);
-          profileRole = 'user';
-        } catch (_) {}
-      }
-
-      final String effectivePhone = tenDigitPhone.length == 10 ? tenDigitPhone : rawPhone;
-
+      UserRole resolvedRole;
       if (isAdmin) {
-        final adminName = (fullName != null && fullName.isNotEmpty) ? fullName : 'Aishlee Technology';
-        if (profileRole != 'admin' && user != null) {
-          try {
-            await _supabase.from('profiles').update({'role': 'admin'}).eq('id', user.id);
-          } catch (_) {}
-        }
-        state = state.copyWith(
-          isLoading: false,
-          role: UserRole.admin,
-          supabaseUser: user,
-          phone: effectivePhone,
-          fullName: adminName,
-          mainCategory: mainCategory ?? 'Admin',
-          defaultModule: defaultModule,
-          isProfileComplete: isProfileComplete,
-          errorMessage: null,
-        );
-        return;
+        resolvedRole = UserRole.admin;
+      } else if (isDriver) {
+        resolvedRole = UserRole.driver;
+      } else {
+        resolvedRole = UserRole.user;
       }
 
-      // Check Driver Status in drivers / driver_profiles table
-      bool isDriver = profileRole == 'driver';
-      if (!isDriver && tenDigitPhone.isNotEmpty) {
-        try {
-          final driverCheck = await _supabase
-              .from('drivers')
-              .select('id, is_verified')
-              .or('mobile_number.eq.$tenDigitPhone,mobile_number.eq.91$tenDigitPhone,whatsapp_number.eq.$tenDigitPhone')
-              .maybeSingle();
+      final defaultModule = profile?['default_module']?.toString() ??
+          _defaultModuleForRole(resolvedRole, profile?['main_category']?.toString());
 
-          if (driverCheck != null) {
-            final isVerified = driverCheck['is_verified'] == true ||
-                driverCheck['is_verified'] == 'true' ||
-                driverCheck['is_verified'] == 't' ||
-                driverCheck['is_verified'] == 1;
-            if (isVerified || profileRole == 'driver') {
-              isDriver = true;
-              if (user != null) {
-                await _supabase.from('profiles').update({'role': 'driver'}).eq('id', user.id);
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('Driver table check error: $e');
-        }
-      }
-
-      if (isDriver) {
-        state = state.copyWith(
-          isLoading: false,
-          role: UserRole.driver,
-          supabaseUser: user,
-          phone: effectivePhone,
-          fullName: fullName ?? 'Driver',
-          mainCategory: mainCategory ?? 'Driver',
-          defaultModule: defaultModule,
-          isProfileComplete: isProfileComplete,
-          errorMessage: null,
-        );
-        return;
-      }
-
-      // Default — Standard User
       state = state.copyWith(
         isLoading: false,
-        role: UserRole.user,
-        supabaseUser: user,
-        phone: effectivePhone,
-        fullName: fullName ?? 'User',
-        mainCategory: mainCategory ?? 'Traveller',
+        role: resolvedRole,
+        supabaseUser: sbUser,
+        phone: digits.isNotEmpty ? digits : phone,
+        fullName: profile?['full_name']?.toString(),
+        mainCategory: profile?['main_category']?.toString() ?? 'Traveller',
         defaultModule: defaultModule,
-        isProfileComplete: isProfileComplete,
+        isProfileComplete: profile?['profile_complete'] == true,
         errorMessage: null,
       );
     } catch (e) {
       debugPrint('Role resolution error: $e');
-      state = state.copyWith(isLoading: false, role: UserRole.guest, errorMessage: e.toString());
-    } finally {
-      if (state.role != UserRole.guest) {
-        PushService.init();
-      }
+      state = state.copyWith(
+        isLoading: false,
+        role: UserRole.user,
+        supabaseUser: sbUser,
+        errorMessage: null,
+      );
     }
   }
 
-  /// Live Supabase Profile Fetch by Phone — used by LoginScreen auto-detect
-  Future<Map<String, dynamic>?> fetchProfileByPhone(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-    if (tenDigit.length < 10) return null;
-
-    try {
-      final List<dynamic> resList = await _supabase
-          .from('profiles')
-          .select('id, full_name, main_category, role, email, phone, whatsapp')
-          .or('phone.eq.$tenDigit,phone.eq.91$tenDigit,whatsapp.eq.$tenDigit,whatsapp.eq.91$tenDigit,email.ilike.%$tenDigit%');
-
-      if (resList.isNotEmpty) {
-        resList.sort((a, b) {
-          int scoreA = 0;
-          int scoreB = 0;
-          final nameA = a['full_name']?.toString() ?? '';
-          final nameB = b['full_name']?.toString() ?? '';
-          final phoneA = a['phone']?.toString() ?? '';
-          final phoneB = b['phone']?.toString() ?? '';
-
-          if (nameA.trim().isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameA)) scoreA += 50;
-          if (nameB.trim().isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameB)) scoreB += 50;
-
-          if (phoneA.endsWith(tenDigit)) scoreA += 20;
-          if (phoneB.endsWith(tenDigit)) scoreB += 20;
-
-          return scoreB.compareTo(scoreA);
-        });
-        return Map<String, dynamic>.from(resList.first);
-      } else {
-        final driverList = await _supabase
-            .from('drivers')
-            .select('driver_name, mobile_number')
-            .or('mobile_number.eq.$tenDigit,mobile_number.eq.91$tenDigit,whatsapp_number.eq.$tenDigit')
-            .limit(1);
-
-        if (driverList.isNotEmpty) {
-          final drv = driverList.first;
-          return {
-            'full_name': drv['driver_name'] ?? 'Driver',
-            'main_category': 'Driver',
-            'role': 'driver',
-          };
-        }
-      }
-    } catch (e) {
-      debugPrint('fetchProfileByPhone error: $e');
-    }
-    return null;
+  String _defaultModuleForRole(UserRole role, String? category) {
+    if (role == UserRole.admin) return 'crm';
+    if (role == UserRole.driver) return 'drivo';
+    const map = {
+      'Traveller': 'rideo', 'Driver': 'drivo', 'Farmer': 'rento',
+      'Shopper': 'dealo', 'Student': 'teacho', 'Teacher': 'teacho',
+      'Financier': 'moneyo', 'Tourist': 'touro',
+    };
+    return map[category] ?? 'rideo';
   }
 
-  Future<void> exchangeFirebaseForSupabase() async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception('Firebase user is null');
-
-    final idToken = await user.getIdToken();
-    if (idToken == null) throw Exception('Firebase idToken is null');
-
-    final response = await http.post(
-      Uri.parse(_bridgeUrl),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'firebaseToken': idToken}),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['access_token'] != null && data['refresh_token'] != null) {
-        final sessionJson = jsonEncode({
-          'access_token': data['access_token'],
-          'refresh_token': data['refresh_token'],
-          'expires_in': 3600,
-          'token_type': 'bearer',
-          'user': data['user']
-        });
-        await _supabase.auth.recoverSession(sessionJson);
-        return;
-      } else {
-        throw Exception('Bridge response missing tokens: ${response.body}');
-      }
-    } else {
-      throw Exception('Bridge API failed (${response.statusCode}): ${response.body}');
-    }
-  }
-
-  /// Send WhatsApp OTP via Vercel API with local Supabase `whatsapp_otps` table fallback
-  Future<Map<String, dynamic>> sendWhatsAppOtp(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-    final generatedOtp = (100000 + Random().nextInt(900000)).toString();
-    final expiresAt = DateTime.now().add(const Duration(minutes: 10)).toIso8601String();
-
-    // Store in local Supabase whatsapp_otps table for cross-platform fallback
+  // ── Send WhatsApp OTP ──────────────────────────────────────────────────────
+  Future<Map<String, dynamic>> sendWhatsAppOTP(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
+        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
     try {
-      await _supabase.from('whatsapp_otps').upsert({
-        'phone_number': tenDigit,
-        'otp': generatedOtp,
-        'expires_at': expiresAt,
-      });
-      await _supabase.from('whatsapp_otps').upsert({
-        'phone_number': '91$tenDigit',
-        'otp': generatedOtp,
-        'expires_at': expiresAt,
-      });
-    } catch (e) {
-      debugPrint('Supabase OTP upsert note: $e');
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/send-otp'),
+      final res = await http.post(
+        Uri.parse('$_apiBase/api/auth/whatsapp/send-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'phone': cleanPhone}),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
+      ).timeout(const Duration(seconds: 20));
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200) return data;
+      throw Exception(data['error'] ?? 'Failed to send OTP');
     } catch (e) {
-      debugPrint('Vercel OTP send note: $e');
+      throw Exception('Could not reach FAGO server: $e');
     }
-
-    return {
-      'success': true,
-      'otp': generatedOtp,
-      'message': 'OTP generated. Check WhatsApp or tap Open WhatsApp Chat.',
-    };
   }
 
-  /// Verify WhatsApp OTP & Sync profile to unified Supabase DB
-  Future<void> verifyWhatsAppOtp(
-    String phone,
-    String otp, {
+  // ── Verify WhatsApp OTP ────────────────────────────────────────────────────
+  Future<void> verifyWhatsAppOTP({
+    required String phone,
+    required String otp,
     String? fullName,
-    String? userCategory,
+    String? category,
+    String? pin,
   }) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-
-    // 1. Try Vercel API verification first
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
+        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
     try {
-      final response = await http.post(
-        Uri.parse('https://watscrm.vercel.app/api/auth/whatsapp/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'phone': cleanPhone, 'otp': otp}),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['session'] != null) {
-          final session = data['session'];
-          final accessToken = session['access_token'];
-          final refreshToken = session['refresh_token'];
-          if (accessToken != null && refreshToken != null) {
-            final sessionJson = jsonEncode({
-              'access_token': accessToken,
-              'refresh_token': refreshToken,
-              'expires_in': 3600,
-              'token_type': 'bearer',
-              'user': session['user']
-            });
-            await _supabase.auth.recoverSession(sessionJson);
-
-            final userId = session['user']?['id'];
-            if (userId != null) {
-              await _syncProfileData(userId, tenDigit, fullName, userCategory);
-            }
-            await DeviceAuthService.saveRegisteredUserDeviceSignature(tenDigit, fullName ?? 'User');
-            await _resolveRole(tenDigit);
-            return;
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Vercel verify note: $e');
-    }
-
-    // 2. Local Supabase whatsapp_otps table fallback verification
-    try {
-      final List<dynamic> records = await _supabase
-          .from('whatsapp_otps')
-          .select('otp, expires_at')
-          .or('phone_number.eq.$tenDigit,phone_number.eq.91$tenDigit');
-
-      if (records.isNotEmpty) {
-        final record = records.first;
-        final storedOtp = record['otp']?.toString() ?? '';
-        final expiresAtStr = record['expires_at']?.toString() ?? '';
-        final isExpired = expiresAtStr.isNotEmpty &&
-            DateTime.parse(expiresAtStr).isBefore(DateTime.now());
-
-        if (storedOtp == otp && !isExpired) {
-          await _supabase
-              .from('whatsapp_otps')
-              .delete()
-              .or('phone_number.eq.$tenDigit,phone_number.eq.91$tenDigit');
-
-          await _directSupabasePhoneLogin(tenDigit, fullName, userCategory);
-          return;
-        }
-      }
-    } catch (e) {
-      debugPrint('Local OTP check note: $e');
-    }
-
-    // 3. Fallback: allow valid 6-digit OTP if DB lookup fails
-    if (otp.length == 6 && RegExp(r'^\d+$').hasMatch(otp)) {
-      await _directSupabasePhoneLogin(tenDigit, fullName, userCategory);
-      return;
-    }
-
-    throw Exception('Invalid OTP. Please check your WhatsApp.');
-  }
-
-  /// Direct Supabase phone login for fallbacks
-  Future<void> _directSupabasePhoneLogin(String tenDigit, String? fullName, String? userCategory) async {
-    final syntheticEmail = '$tenDigit@whatsapp.wacrm.local';
-    const defaultPassword = 'FagoAppUserPass#2026';
-
-    try {
-      await _supabase.auth.signInWithPassword(
-        email: syntheticEmail,
-        password: defaultPassword,
-      );
-    } catch (_) {
-      try {
-        await _supabase.auth.signUp(
-          email: syntheticEmail,
-          password: defaultPassword,
-          data: {
-            'phone': tenDigit,
-            'whatsapp_verified': true,
-            if (fullName != null && fullName.isNotEmpty) 'full_name': fullName,
-          },
-        );
-      } catch (_) {}
-    }
-
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId != null) {
-      await _syncProfileData(userId, tenDigit, fullName, userCategory);
-    }
-
-    await DeviceAuthService.saveRegisteredUserDeviceSignature(tenDigit, fullName ?? 'User');
-    await _resolveRole(tenDigit);
-  }
-
-  /// Sync Profile & Contacts to unified Supabase DB
-  Future<void> _syncProfileData(String userId, String tenDigit, String? fullName, String? userCategory) async {
-    try {
-      final existing = await _supabase
-          .from('profiles')
-          .select('full_name, role')
-          .eq('id', userId)
-          .maybeSingle();
-
-      final existingName = existing?['full_name']?.toString();
-      final existingRole = existing?['role']?.toString();
-      final isActualAdmin = tenDigit == '9486335870' || tenDigit == '919486335870';
-      final safeRole = (!isActualAdmin && existingRole == 'admin') ? 'user' : existingRole;
-
-      final finalName = (existingName != null && existingName.isNotEmpty && !existingName.startsWith('User '))
-          ? existingName
-          : (fullName != null && fullName.isNotEmpty) ? fullName : 'User ${tenDigit.substring(max(0, tenDigit.length - 4))}';
-
-      await _supabase.from('profiles').upsert({
-        'id': userId,
-        'phone': tenDigit,
-        'whatsapp': tenDigit,
-        'full_name': finalName,
-        if (userCategory != null && userCategory.isNotEmpty) 'main_category': userCategory,
-        if (safeRole != null && safeRole.isNotEmpty) 'role': safeRole,
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-
-      await _supabase.from('contacts').upsert({
-        'user_id': userId,
-        'phone': tenDigit,
-        'name': finalName,
-        if (userCategory != null && userCategory.isNotEmpty) 'notes': 'Category: $userCategory',
-      });
-    } catch (e) {
-      debugPrint('Profile sync error: $e');
-    }
-  }
-
-  /// Instant Device Biometric / Quick PIN Login Bridge
-  Future<UserRole> verifyDeviceAndAutoLogin(String phone, {String? inputPin}) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-    final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-
-    // Web Bridge API attempt
-    try {
-      final response = await http.post(
-        Uri.parse('https://watscrm.vercel.app/api/auth/pin-login'),
+      final res = await http.post(
+        Uri.parse('$_apiBase/api/auth/whatsapp/verify-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'phone': tenDigit,
-          if (inputPin != null && inputPin.isNotEmpty) 'pin': inputPin,
+          'phone': cleanPhone,
+          'otp': otp,
+          if (fullName != null) 'fullName': fullName,
+          if (category != null) 'category': category,
+          if (pin != null && pin.length == 4) 'pin': pin,
         }),
-      );
-      if (response.statusCode == 200) {
-        debugPrint('Web Bridge PIN login success for $tenDigit');
+      ).timeout(const Duration(seconds: 20));
+
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode != 200) {
+        state = state.copyWith(isLoading: false, errorMessage: data['error']?.toString() ?? 'OTP verification failed');
+        return;
       }
+
+      final session = data['session'] as Map<String, dynamic>?;
+      if (session == null) {
+        state = state.copyWith(isLoading: false, errorMessage: 'Invalid session received');
+        return;
+      }
+
+      final accessToken = session['access_token']?.toString();
+      final refreshToken = session['refresh_token']?.toString();
+      if (accessToken == null || refreshToken == null) {
+        state = state.copyWith(isLoading: false, errorMessage: 'Missing tokens in session');
+        return;
+      }
+
+      await _supabase.auth.setSession(accessToken, refreshToken);
+      await DeviceAuthService.saveSession(accessToken, refreshToken);
+      await DeviceAuthService.saveRegisteredPhone(cleanPhone);
+      if (fullName != null) await DeviceAuthService.saveRegisteredName(fullName);
+      // Auth state change listener will resolve role
     } catch (e) {
-      debugPrint('Web Bridge PIN login note: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'Network error: $e');
     }
-
-    await _directSupabasePhoneLogin(tenDigit, null, null);
-    return state.role;
   }
 
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required Function(String verificationId, int? resendToken) codeSent,
-    required Function(firebase.FirebaseAuthException e) verificationFailed,
-  }) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (firebase.PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-      },
-      verificationFailed: verificationFailed,
-      codeSent: codeSent,
-      codeAutoRetrievalTimeout: (String verificationId) {},
-    );
-  }
-
-  Future<void> verifyOTP({
-    required String verificationId,
-    required String smsCode,
-  }) async {
-    firebase.PhoneAuthCredential credential = firebase.PhoneAuthProvider.credential(
-      verificationId: verificationId,
-      smsCode: smsCode,
-    );
-    await _auth.signInWithCredential(credential);
-  }
-
-  Future<void> signOut() async {
-    await DeviceAuthService.clearDeviceSignature();
+  // ── PIN Login (DB-backed) ──────────────────────────────────────────────────
+  Future<void> pinLogin({required String phone, required String pin}) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
+        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
     try {
-      await _auth.signOut();
+      final res = await http.post(
+        Uri.parse('$_apiBase/api/auth/pin-login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': cleanPhone, 'pin': pin}),
+      ).timeout(const Duration(seconds: 20));
+
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode != 200) {
+        state = state.copyWith(isLoading: false, errorMessage: data['error']?.toString() ?? 'PIN login failed');
+        return;
+      }
+
+      final session = data['session'] as Map<String, dynamic>?;
+      final accessToken = session?['access_token']?.toString();
+      final refreshToken = session?['refresh_token']?.toString();
+      if (accessToken == null || refreshToken == null) {
+        state = state.copyWith(isLoading: false, errorMessage: 'Invalid session');
+        return;
+      }
+
+      await _supabase.auth.setSession(accessToken, refreshToken);
+      await DeviceAuthService.saveSession(accessToken, refreshToken);
+      await DeviceAuthService.saveRegisteredPhone(cleanPhone);
     } catch (e) {
-      debugPrint('Firebase sign out error: $e');
+      state = state.copyWith(isLoading: false, errorMessage: 'PIN login error: $e');
     }
+  }
+
+  // ── Sign Out ────────────────────────────────────────────────────────────────
+  Future<void> signOut() async {
     try {
       await _supabase.auth.signOut();
+      await DeviceAuthService.clearSession();
+      await DeviceAuthService.clearRegisteredUser();
     } catch (e) {
-      debugPrint('Supabase sign out error: $e');
+      debugPrint('Sign out error: $e');
     }
-    // Force state update so router catches it
-    state = AuthState(isLoading: false, role: UserRole.guest);
+    state = const AuthState(isLoading: false, role: UserRole.guest);
+  }
+
+  // ── Check if phone is registered ────────────────────────────────────────────
+  Future<Map<String, dynamic>?> checkPhoneRegistration(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
+        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
+    try {
+      // Try API first
+      final res = await http.get(
+        Uri.parse('$_apiBase/api/fago/search?phone=$cleanPhone'),
+      ).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        if (data['profile'] != null) return data['profile'] as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('API search failed, trying Supabase direct: $e');
+    }
+    // Fallback: direct Supabase query
+    try {
+      final results = await _supabase
+          .from('profiles')
+          .select('full_name, main_category, pin_hash')
+          .or('phone.eq.$cleanPhone,phone.eq.91$cleanPhone,whatsapp.eq.$cleanPhone')
+          .limit(1);
+      return results.isNotEmpty ? results.first as Map<String, dynamic> : null;
+    } catch (e) {
+      return null;
+    }
   }
 }
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
-  return AuthNotifier();
-});
+// ── Providers ───────────────────────────────────────────────────────────────
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
 
-final pinSetupCompleteProvider = FutureProvider<bool>((ref) async {
-  return true;
-});
+// Convenience selectors
+final isAdminProvider = Provider<bool>((ref) =>
+    ref.watch(authProvider).role == UserRole.admin);
+final isDriverProvider = Provider<bool>((ref) =>
+    ref.watch(authProvider).role == UserRole.driver);
+final isLoggedInProvider = Provider<bool>((ref) =>
+    ref.watch(authProvider).role != UserRole.guest &&
+    ref.watch(authProvider).supabaseUser != null);
+final currentUserPhoneProvider = Provider<String?>((ref) =>
+    ref.watch(authProvider).phone);
+final currentUserNameProvider = Provider<String?>((ref) =>
+    ref.watch(authProvider).fullName);

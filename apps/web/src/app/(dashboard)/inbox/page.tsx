@@ -185,6 +185,13 @@ export default function InboxPage() {
 
       try {
         const res = await fetch('/api/whatsapp/config');
+        if (!res.ok) {
+          if (res.status === 401) {
+            setWhatsappConnected(false);
+            return;
+          }
+          throw new Error('Failed to fetch config');
+        }
         const data = await res.json();
         setWhatsappConnected(data?.connected === true);
       } catch (err) {
@@ -552,7 +559,7 @@ export default function InboxPage() {
         <div className="flex shrink-0 items-center justify-center gap-2 border-b border-amber-500/20 bg-amber-500/10 px-4 py-2">
           <WifiOff className="h-4 w-4 text-amber-400" />
           <p className="text-xs text-amber-400">
-            WhatsApp® is not connected. Go to Settings to connect your account.
+            WhatsApp® is not connected. Go to <a href="/settings" className="underline hover:text-amber-300">Settings</a> to connect your account.
           </p>
         </div>
       )}

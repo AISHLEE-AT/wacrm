@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Bootstrap admin phones (fallback — DB role='admin' is primary)
+const BOOTSTRAP_ADMIN_PHONES = [
+  '9486335870', '919486335870',
+  '9123596988', '919123596988'
+]
+const BOOTSTRAP_ADMIN_EMAILS = ['aishleetechnology@gmail.com']
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -13,7 +20,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -23,6 +30,7 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Handle access_token in URL (deep-link from mobile apps)
   const accessToken = request.nextUrl.searchParams.get('access_token')
   const refreshToken = request.nextUrl.searchParams.get('refresh_token')
 
@@ -34,10 +42,7 @@ export async function middleware(request: NextRequest) {
       if (tokenData?.user) {
         user = tokenData.user
         if (refreshToken) {
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
+          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         }
       }
     } catch (err) {
@@ -50,16 +55,8 @@ export async function middleware(request: NextRequest) {
     user = data?.user
   }
 
-  // getUser() transparently refreshes an expired access token, which
-  // ROTATES the refresh token and writes the new cookies onto
-  // `supabaseResponse` via setAll() above. Any response we return in
-  // place of `supabaseResponse` (every redirect / JSON branch below)
-  // is a fresh object that does NOT carry those Set-Cookie headers, so
-  // the rotated token never reaches the browser. The next request then
-  // replays the old, now-consumed refresh token, the refresh fails, and
-  // the session wedges — the user gets a broken reload after idling and
-  // can only recover by manually clearing cookies (issue #288). Copy the
-  // refreshed cookies onto whatever response we hand back to fix that.
+  // Copy refreshed cookies onto any redirect/JSON response we construct below.
+  // This prevents session wedge after token rotation (issue #288).
   const withRefreshedCookies = <T extends NextResponse>(response: T): T => {
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       response.cookies.set(cookie)
@@ -67,74 +64,94 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  // Auth pages - redirect to dashboard if already logged in.
-  // Exception: when an invite token is in the query string we
-  // send the already-signed-in user to /join/<token> instead so
-  // they can accept the invitation in one click. Without this,
-  // a forwarded invite link to someone who's already signed in
-  // would silently drop them on /dashboard.
-  if (user && (
-    request.nextUrl.pathname === '/' ||
-    request.nextUrl.pathname === '/login' ||
-    request.nextUrl.pathname === '/signup' ||
-    request.nextUrl.pathname === '/forgot-password'
-  )) {
+  // ── Redirect logged-in users away from auth pages ──────────────────────────
+  const isAuthPage = [
+    '/', '/login', '/signup', '/forgot-password'
+  ].includes(request.nextUrl.pathname)
+
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     const inviteToken = request.nextUrl.searchParams.get('invite')
-    if (
-      inviteToken &&
-      (request.nextUrl.pathname === '/login' ||
-        request.nextUrl.pathname === '/signup')
-    ) {
+
+    if (inviteToken && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
       url.pathname = `/join/${encodeURIComponent(inviteToken)}`
       url.search = ''
     } else {
-      // Smart Default Module Routing & Onboarding
-      let defaultModule = null;
-      let profileComplete = false;
+      // Resolve role from profiles DB
+      let defaultModule = '/rideo'
       try {
-        const { data } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('default_module, profile_complete')
+          .select('role, main_category, default_module, profile_complete')
           .eq('id', user.id)
-          .single();
-        defaultModule = data?.default_module;
-        profileComplete = data?.profile_complete;
+          .single()
+
+        const role = profileData?.role?.toLowerCase()
+        const userText = `${user.email ?? ''} ${user.phone ?? ''}`.toLowerCase()
+        const isBootstrapAdmin = [
+          ...BOOTSTRAP_ADMIN_PHONES,
+          ...BOOTSTRAP_ADMIN_EMAILS
+        ].some(id => userText.includes(id.toLowerCase()))
+
+        const isAdmin = role === 'admin' || isBootstrapAdmin
+        const isDriver = role === 'driver'
+
+        if (isAdmin) {
+          defaultModule = '/crm'
+        } else if (isDriver) {
+          defaultModule = '/drivo'
+        } else {
+          const routeMap: Record<string, string> = {
+            Traveller: '/rideo', Driver: '/drivo', Farmer: '/rento',
+            Shopper: '/dealo', Student: '/teacho', Teacher: '/teacho',
+            Financier: '/moneyo', JobSeeker: '/teacho', Tourist: '/touro'
+          }
+          defaultModule = profileData?.default_module
+            || routeMap[profileData?.main_category || '']
+            || '/rideo'
+        }
       } catch (err) {
-        console.error('Failed to fetch profile status in middleware', err);
+        console.error('Middleware profile fetch error:', err)
       }
-      
-      // Direct logged-in users straight to Dashboard or RideO
-      const adminIdentifiers = ['9486335870', '919486335870', 'aishleetechnology@gmail.com'];
-      const userText = `${user.email ?? ''} ${user.phone ?? ''}`.toLowerCase();
-      const isAdmin = adminIdentifiers.some(id => userText.includes(id.toLowerCase()));
-      url.pathname = isAdmin ? '/dashboard' : '/rideo';
-      supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' });
+
+      url.pathname = defaultModule
       url.search = ''
+      supabaseResponse.cookies.set('fago_onboarded', '1', { maxAge: 31536000, path: '/' })
     }
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // Protected pages - redirect to login if not authenticated (/rideo remains public for zero-login riding)
+  // ── Protect pages that require auth ────────────────────────────────────────
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
     '/automations', '/flows', '/settings', '/drivo',
-    '/admin', '/profile', '/wallet',
+    '/admin', '/profile', '/wallet', '/crm'
   ]
-  const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path));
-  
+  const isProtectedPath = protectedPaths.some(path =>
+    request.nextUrl.pathname.startsWith(path)
+  )
+
   if (!user && isProtectedPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    url.search = ''
     return withRefreshedCookies(NextResponse.redirect(url))
   }
 
-  // API routes that need auth (except auth/otp endpoints and webhooks)
-  if (!user && 
-      (request.nextUrl.pathname.startsWith('/api/whatsapp/') || request.nextUrl.pathname.startsWith('/api/admin/')) &&
-      !request.nextUrl.pathname.includes('/webhook') &&
-      !request.nextUrl.pathname.includes('/send-otp') &&
-      !request.nextUrl.pathname.includes('/verify-otp')) {
+  // ── Protect API routes (except public auth endpoints) ──────────────────────
+  const isPublicApiPath = [
+    '/api/auth/whatsapp/send-otp',
+    '/api/auth/whatsapp/verify-otp',
+    '/api/auth/pin-login',
+    '/api/auth/firebase-bridge',
+    '/api/auth/callback',
+  ].some(p => request.nextUrl.pathname.startsWith(p))
+    || request.nextUrl.pathname.includes('/webhook')
+
+  if (!user &&
+    (request.nextUrl.pathname.startsWith('/api/whatsapp/') ||
+      request.nextUrl.pathname.startsWith('/api/admin/')) &&
+    !isPublicApiPath) {
     return withRefreshedCookies(
       NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     )
@@ -145,6 +162,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -3,6 +3,13 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
+// Unified admin phones — DB role='admin' is source of truth
+// These are bootstrap-only fallbacks
+const BOOTSTRAP_ADMIN_PHONES = [
+  '9486335870', '919486335870',
+  '9123596988', '919123596988'
+]
+
 export async function POST(request: Request) {
   try {
     const { phone, otp, fullName, category, pin } = await request.json()
@@ -14,7 +21,7 @@ export async function POST(request: Request) {
     const cleanPhone = phone.replace(/\D/g, '').slice(-10)
     const supabase = supabaseAdmin()
 
-    // 1. Verify OTP in database (support 10-digit & 91-prefixed phone keys)
+    // 1. Verify OTP in database
     const { data: records, error: dbError } = await supabase
       .from('whatsapp_otps')
       .select('*')
@@ -23,38 +30,35 @@ export async function POST(request: Request) {
     const record = records?.[0]
 
     if (dbError || !record) {
-      return NextResponse.json({ error: 'Invalid or expired OTP' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid or expired OTP. Please request a new one.' }, { status: 400 })
     }
 
-    if (record.otp !== otp) {
-      // Anti-Spam Protection: Immediate purge of wrong OTP attempts to block brute-force attacks
-      await supabase.from('whatsapp_otps').delete().or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
-      return NextResponse.json({ error: 'Invalid OTP code. Please request a fresh OTP via WhatsApp.' }, { status: 400 })
-    }
-
+    // Check expiry BEFORE verifying OTP
     const now = new Date()
     const expiresAt = new Date(record.expires_at)
-    
-    // CRITICAL: Check expiry BEFORE deleting — otherwise user cannot retry with a valid OTP
     if (now > expiresAt) {
-      // Clean up the expired record
       await supabase.from('whatsapp_otps').delete()
         .or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
       return NextResponse.json({ error: 'OTP has expired. Please request a new OTP.' }, { status: 400 })
     }
 
-    // Delete OTP (both 10-digit and 91-prefixed entries) to prevent reuse
+    if (record.otp !== otp) {
+      // Purge on wrong attempt to block brute-force
+      await supabase.from('whatsapp_otps').delete()
+        .or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
+      return NextResponse.json({ error: 'Incorrect OTP. Please request a fresh OTP.' }, { status: 400 })
+    }
+
+    // Delete used OTP
     await supabase.from('whatsapp_otps').delete()
       .or(`phone_number.eq.${cleanPhone},phone_number.eq.91${cleanPhone}`)
 
-
-    // 2. Manage the User in Supabase Auth
+    // 2. Manage Supabase Auth user (email-based with synthetic email)
     const syntheticEmail = `${cleanPhone}@whatsapp.wacrm.local`
-    const securePassword = crypto.randomBytes(32).toString('hex') // new random password for this session
+    const securePassword = crypto.randomBytes(32).toString('hex')
     
-    // Check if user exists
-    let { data: { users }, error: listError } = await supabase.auth.admin.listUsers()
-    
+    // Find or create user
+    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 })
     if (listError) {
       console.error('Error listing users:', listError)
       return NextResponse.json({ error: 'Authentication error' }, { status: 500 })
@@ -62,92 +66,106 @@ export async function POST(request: Request) {
     
     let user = users.find(u => u.email === syntheticEmail)
     
-    const userMetadata: any = {
-      phone: cleanPhone,
-      whatsapp_verified: true
-    }
-    if (fullName && fullName.trim()) userMetadata.full_name = fullName.trim()
-    if (category && category.trim()) userMetadata.main_category = category.trim()
-    if (pin && pin.length === 4) userMetadata.quick_pin = pin
-
     if (!user) {
-      // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: syntheticEmail,
         email_confirm: true,
         password: securePassword,
-        user_metadata: userMetadata
+        user_metadata: { phone: cleanPhone, whatsapp_verified: true }
       })
-      
-      if (createError) {
+      if (createError || !newUser.user) {
         console.error('Error creating user:', createError)
         return NextResponse.json({ error: 'Failed to create user account' }, { status: 500 })
       }
       user = newUser.user
     } else {
-      // Update existing user with the new secure password and latest name/category
-      const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
+      // Rotate password for fresh session
+      await supabase.auth.admin.updateUserById(user.id, {
         password: securePassword,
-        user_metadata: {
-          ...user.user_metadata,
-          ...userMetadata
-        }
+        user_metadata: { ...user.user_metadata, whatsapp_verified: true, phone: cleanPhone }
       })
-      
-      if (updateError) {
-        console.error('Error updating user:', updateError)
-        return NextResponse.json({ error: 'Failed to authenticate user' }, { status: 500 })
-      }
     }
 
-    // Check if profile already exists for this user/phone to prevent duplicate registrations or overwriting existing user names
+    // 3. Get/build profile payload
     const { data: existingProfile } = await supabase
       .from('profiles')
-      .select('full_name, main_category')
+      .select('full_name, main_category, role, pin_hash')
       .eq('id', user.id)
       .maybeSingle()
 
-    // Auto-update profiles table with verified phone, full_name and main_category
-    const profilePayload: any = {
+    // Determine role: DB first, then bootstrap fallback
+    const isBootstrapAdmin = BOOTSTRAP_ADMIN_PHONES.some(p =>
+      cleanPhone === p || cleanPhone === p.slice(-10)
+    )
+    const dbRole = existingProfile?.role
+    const isAdmin = dbRole === 'admin' || dbRole === 'ADMIN' || isBootstrapAdmin
+
+    // Check driver status
+    const { data: driverRecords } = await supabase
+      .from('drivers')
+      .select('id, is_verified')
+      .or(`mobile_number.eq.${cleanPhone},mobile_number.eq.91${cleanPhone},user_id.eq.${user.id}`)
+    const isDriver = (driverRecords && driverRecords.length > 0 && driverRecords[0].is_verified)
+      || dbRole === 'driver' || dbRole === 'DRIVER'
+
+    const resolvedRole = isAdmin ? 'admin' : (isDriver ? 'driver' : (dbRole || 'user'))
+    const resolvedCategory = isDriver ? 'Driver' : (existingProfile?.main_category || category || 'Traveller')
+
+    // PIN hash: use bcrypt-compatible SHA-256 for cross-platform compatibility
+    let pinHash: string | undefined
+    if (pin && pin.length === 4) {
+      pinHash = crypto.createHash('sha256').update(`FAGO_PIN_${cleanPhone}_${pin}`).digest('hex')
+    }
+
+    // Build profile upsert
+    const profilePayload: Record<string, any> = {
       id: user.id,
       phone: cleanPhone,
       whatsapp: cleanPhone,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      last_login: new Date().toISOString(),
+      platform: 'web',
     }
 
-    // Only set/update full_name if existing profile doesn't already have a valid custom name
+    // Preserve existing name if it's a real name (not auto-generated)
     if (existingProfile?.full_name && !existingProfile.full_name.startsWith('User ')) {
-      // Retain existing registered name to prevent name hijacking on duplicate login
       profilePayload.full_name = existingProfile.full_name
     } else if (fullName && fullName.trim()) {
       profilePayload.full_name = fullName.trim()
-    } else if (user.user_metadata?.full_name) {
-      profilePayload.full_name = user.user_metadata.full_name
     } else {
       profilePayload.full_name = `User ${cleanPhone.slice(-4)}`
     }
 
-    // Only update category if existing profile doesn't have one or if category was explicitly passed
+    // Only set category if not already set
     if (existingProfile?.main_category) {
       profilePayload.main_category = existingProfile.main_category
     } else if (category && category.trim()) {
       profilePayload.main_category = category.trim()
+    } else {
+      profilePayload.main_category = 'Traveller'
     }
 
-    await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' });
+    // Set role from DB or promote bootstrap admin
+    profilePayload.role = resolvedRole
 
+    // Store PIN hash if provided
+    if (pinHash) {
+      profilePayload.pin_hash = pinHash
+    }
+
+    await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+
+    // Sync contact
     try {
       await supabase.from('contacts').upsert({
         user_id: user.id,
         phone: cleanPhone,
         name: profilePayload.full_name,
-        notes: profilePayload.main_category ? `Category: ${profilePayload.main_category}` : undefined
-      });
-    } catch (contactErr) {
-      console.warn('Contact sync note:', contactErr);
-    }
+        notes: `Category: ${profilePayload.main_category}`
+      })
+    } catch { /* non-critical */ }
 
-    // 3. Sign in to generate a session (using standard client to get session)
+    // 4. Generate Supabase session
     const standardSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -158,38 +176,34 @@ export async function POST(request: Request) {
       password: securePassword
     })
 
-    if (signInError) {
+    if (signInError || !sessionData.session) {
       console.error('Error signing in:', signInError)
-      return NextResponse.json({ error: 'Failed to generate session' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to generate session. Please try again.' }, { status: 500 })
     }
 
-    // Check driver verification status in drivers table and admin role
-    const { data: profileRecord } = await supabase
-      .from('profiles')
-      .select('role, main_category')
-      .eq('id', user.id)
-      .maybeSingle();
+    // 5. Determine post-login redirect hint
+    const redirectTo = isAdmin ? '/crm'
+      : isDriver ? '/drivo'
+      : (() => {
+          const cat = profilePayload.main_category
+          const routeMap: Record<string, string> = {
+            Traveller: '/rideo', Driver: '/drivo', Farmer: '/rento',
+            Shopper: '/dealo', Student: '/teacho', Teacher: '/teacho',
+            Financier: '/moneyo', JobSeeker: '/teacho', Employer: '/',
+            Tourist: '/touro'
+          }
+          return routeMap[cat] || '/rideo'
+        })()
 
-    const adminPhones = ['9486335870', '919486335870'];
-    const isAdminPhone = adminPhones.some(p => cleanPhone.includes(p) || cleanPhone.endsWith(p)) || profileRecord?.role === "admin" || profileRecord?.role === "ADMIN";
-
-    const { data: driverRecords } = await supabase
-      .from('drivers')
-      .select('id, is_verified')
-      .or(`mobile_number.eq.${cleanPhone},mobile_number.eq.91${cleanPhone},whatsapp_number.eq.${cleanPhone},user_id.eq.${user.id}`);
-    const isDriver = (driverRecords && driverRecords.length > 0 && driverRecords[0].is_verified) || profileRecord?.role === "driver" || profileRecord?.role === "DRIVER";
-
-    const resolvedRole = isAdminPhone ? "admin" : (isDriver ? "driver" : (profileRecord?.role || "user"));
-    const resolvedCategory = isDriver ? "Driver" : (profileRecord?.main_category || category || "Traveller");
-
-    // 4. Return session tokens and role to the frontend/app
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       session: sessionData.session,
       role: resolvedRole,
       category: resolvedCategory,
-      isDriver: isDriver,
-      isAdmin: isAdminPhone
+      full_name: profilePayload.full_name,
+      isDriver,
+      isAdmin,
+      redirect_to: redirectTo
     })
     
   } catch (error: any) {
