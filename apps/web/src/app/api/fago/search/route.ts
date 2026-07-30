@@ -45,3 +45,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
+
+// Phone profile search for login auto-prefill (bypasses RLS safely via service role)
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const phone = searchParams.get('phone')
+    if (!phone) {
+      return NextResponse.json({ error: 'Phone parameter required' }, { status: 400 })
+    }
+
+    const clean = phone.replace(/\D/g, '').slice(-10)
+    if (clean.length < 10) {
+      return NextResponse.json({ profile: null })
+    }
+
+    const { data: records } = await supabase()
+      .from('profiles')
+      .select('full_name, main_category, role, phone, whatsapp')
+      .or(`phone.eq.${clean},phone.eq.91${clean},phone.eq.+91${clean},whatsapp.eq.${clean},whatsapp.eq.91${clean}`)
+
+    const profile = records?.[0] || null
+    return NextResponse.json({ profile })
+  } catch (err: unknown) {
+    return NextResponse.json({ profile: null })
+  }
+}

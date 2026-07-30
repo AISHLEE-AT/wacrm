@@ -344,8 +344,15 @@ class AuthNotifier extends Notifier<AuthState> {
           int scoreB = 0;
           final nameA = a['full_name']?.toString() ?? '';
           final nameB = b['full_name']?.toString() ?? '';
-          if (nameA.isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameA)) scoreA += 10;
-          if (nameB.isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameB)) scoreB += 10;
+          final phoneA = a['phone']?.toString() ?? '';
+          final phoneB = b['phone']?.toString() ?? '';
+
+          if (nameA.trim().isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameA)) scoreA += 50;
+          if (nameB.trim().isNotEmpty && !RegExp(r'^\d+$').hasMatch(nameB)) scoreB += 50;
+
+          if (phoneA.endsWith(tenDigit)) scoreA += 20;
+          if (phoneB.endsWith(tenDigit)) scoreB += 20;
+
           return scoreB.compareTo(scoreA);
         });
         return Map<String, dynamic>.from(resList.first);

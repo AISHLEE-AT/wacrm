@@ -130,24 +130,34 @@ function LoginPageInner() {
     setPhone(clean);
     if (clean.length === 10) {
       try {
-        const { data: records } = await supabase
-          .from("profiles")
-          .select("full_name, main_category")
-          .or(`phone.eq.${clean},phone.eq.91${clean},phone.eq.+91${clean},email.eq.${clean}@whatsapp.wacrm.local`);
+        let data: any = null;
         
-        const data = records?.[0];
+        // 1. Try server-side bypass endpoint first
+        try {
+          const res = await fetch(`/api/fago/search?phone=${clean}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.profile) {
+              data = json.profile;
+            }
+          }
+        } catch (_) {}
 
-        const savedPin = typeof window !== "undefined" ? localStorage.getItem("fago_pin_" + clean) : null;
+        // 2. Direct Supabase JS fallback
+        if (!data) {
+          const { data: records } = await supabase
+            .from("profiles")
+            .select("full_name, main_category")
+            .or(`phone.eq.${clean},phone.eq.91${clean},phone.eq.+91${clean},whatsapp.eq.${clean},whatsapp.eq.91${clean}`);
+          data = records?.[0] || null;
+        }
 
         if (data) {
           setIsReturningUser(true);
-          if (data.full_name) {
-            setFullName(data.full_name);
-          }
+          setFullName(data.full_name || "Registered User");
           if (data.main_category) {
             setSelectedCategory(data.main_category);
           }
-          // Enable PIN login mode by default for returning registered accounts across any browser
           setHasSavedPin(true);
           setIsPinLogin(true);
         } else {
