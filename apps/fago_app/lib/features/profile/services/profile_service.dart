@@ -123,12 +123,10 @@ class ProfileService {
         // Auto-sync profile ID/phone into DB
         try {
           if (response['id'] != userId || response['whatsapp'] == null || response['whatsapp'].toString().isEmpty) {
-            await _supabase.from('profiles').upsert({
-              'id': userId,
-              'phone': tenDigit.isNotEmpty ? tenDigit : response['phone'],
-              'whatsapp': tenDigit.isNotEmpty ? tenDigit : response['whatsapp'],
-              'full_name': finalResolvedName,
-              'updated_at': DateTime.now().toIso8601String(),
+            await _supabase.rpc('upsert_profile_by_phone', params: {
+              'p_user_id': userId,
+              'p_phone': tenDigit.isNotEmpty ? tenDigit : response['phone'],
+              'p_full_name': finalResolvedName,
             });
           }
         } catch (_) {}
@@ -153,12 +151,10 @@ class ProfileService {
       // Auto-create default profile row in DB
       try {
         if (tenDigit.isNotEmpty) {
-          await _supabase.from('profiles').upsert({
-            'id': userId,
-            'phone': tenDigit,
-            'whatsapp': tenDigit,
-            'full_name': resolvedName,
-            'updated_at': DateTime.now().toIso8601String(),
+          await _supabase.rpc('upsert_profile_by_phone', params: {
+            'p_user_id': userId,
+            'p_phone': tenDigit,
+            'p_full_name': resolvedName,
           });
         }
       } catch (_) {}

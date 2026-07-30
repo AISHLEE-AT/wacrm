@@ -217,15 +217,19 @@ fun DriverRegistrationScreen(
                                     }
                                 )
 
-                                supabase.postgrest["profiles"].upsert(
-                                    buildJsonObject {
-                                        put("phone", tenDigit)
-                                        put("whatsapp", tenDigit)
-                                        put("full_name", name)
-                                        put("role", "driver")
-                                        put("upi_id", upiId)
-                                    }
-                                )
+                                val userId = supabase.auth.currentUserOrNull()?.id
+                                if (userId != null) {
+                                    supabase.postgrest.rpc(
+                                        "upsert_profile_by_phone",
+                                        buildJsonObject {
+                                            put("p_user_id", userId)
+                                            put("p_phone", tenDigit)
+                                            put("p_full_name", name)
+                                            put("p_role", "driver")
+                                        }
+                                    )
+                                    // Note: upi_id is already saved in drivers. profiles only needs standard fields via RPC
+                                }
                             }
                             onSuccess()
                         } catch (e: Exception) {

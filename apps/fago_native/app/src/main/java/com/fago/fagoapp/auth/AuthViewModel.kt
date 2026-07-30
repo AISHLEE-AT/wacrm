@@ -333,14 +333,13 @@ class AuthViewModel(
             }
 
             // Upsert the profile — this will create or update by userId
-            supabase.postgrest["profiles"].upsert(
+            supabase.postgrest.rpc(
+                "upsert_profile_by_phone",
                 buildJsonObject {
-                    put("id", userId)
-                    put("phone", tenDigit)
-                    put("whatsapp", tenDigit)
-                    put("full_name", finalName)
-                    if (!safeRole.isNullOrBlank()) put("role", safeRole)
-                    put("updated_at", java.time.Instant.now().toString())
+                    put("p_user_id", userId)
+                    put("p_phone", tenDigit)
+                    put("p_full_name", finalName)
+                    if (!safeRole.isNullOrBlank()) put("p_role", safeRole)
                 }
             )
 

@@ -24,7 +24,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  const isAdmin = checkIsAdmin(user, profile);
+  const isAdmin = checkIsAdmin(user, profile ?? undefined);
 
   useEffect(() => {
     if (!loading && !user) {
