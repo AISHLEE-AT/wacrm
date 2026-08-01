@@ -1253,7 +1253,7 @@ async function handleInboundLoginToken(
       await sendTextMessage({
         phoneNumberId: waConfig.phone_number_id,
         accessToken,
-        recipientPhone: rawWhatsAppFrom,
+        to: rawWhatsAppFrom,
         text: `✅ Login verified! Welcome${finalName ? `, ${finalName}` : ''}.\n\nYou can close WhatsApp now — your app is logging you in automatically.\n\n🔒 FAGO • தமிழன் AISHO`,
       }).catch(err => {
         // Non-critical — user still gets logged in even if reply fails
