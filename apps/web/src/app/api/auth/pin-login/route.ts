@@ -83,11 +83,24 @@ export async function POST(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-    const { data: sessionData, error: signInError } = await standardSupabase.auth.signInWithPassword({
+    let sessionData = await standardSupabase.auth.signInWithPassword({
       email: syntheticEmail,
       password: securePassword
     })
-    if (signInError || !sessionData.session) {
+
+    if (sessionData.error || !sessionData.data.session) {
+      await supabase.auth.admin.updateUserById(user.id, {
+        password: securePassword,
+        email_confirm: true
+      }).catch(() => {})
+
+      sessionData = await standardSupabase.auth.signInWithPassword({
+        email: syntheticEmail,
+        password: securePassword
+      })
+    }
+
+    if (sessionData.error || !sessionData.data.session) {
       return NextResponse.json({ error: 'Failed to generate session. Please try WhatsApp OTP.' }, { status: 500 })
     }
 
@@ -120,7 +133,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      session: sessionData.session,
+      session: sessionData.data.session,
       category: resolvedCategory,
       role: resolvedRole,
       full_name: profile.full_name,

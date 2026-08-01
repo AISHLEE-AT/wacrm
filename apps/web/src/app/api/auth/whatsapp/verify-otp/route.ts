@@ -190,19 +190,33 @@ export async function POST(request: Request) {
       })
     } catch { /* non-critical */ }
 
-    // 4. Generate Supabase session
+    // 4. Generate Supabase session with fail-safe retry
     const standardSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
     
-    const { data: sessionData, error: signInError } = await standardSupabase.auth.signInWithPassword({
+    let sessionData = await standardSupabase.auth.signInWithPassword({
       email: syntheticEmail,
       password: securePassword
     })
 
-    if (signInError || !sessionData.session) {
-      console.error('Error signing in:', signInError)
+    if (sessionData.error || !sessionData.data.session) {
+      console.warn('First signInWithPassword attempt failed, syncing user password & retrying:', sessionData.error?.message)
+      await supabase.auth.admin.updateUserById(user.id, {
+        password: securePassword,
+        email_confirm: true,
+        user_metadata: { phone: cleanPhone, whatsapp_verified: true }
+      }).catch(() => {})
+
+      sessionData = await standardSupabase.auth.signInWithPassword({
+        email: syntheticEmail,
+        password: securePassword
+      })
+    }
+
+    if (sessionData.error || !sessionData.data.session) {
+      console.error('Error signing in after retry:', sessionData.error)
       return NextResponse.json({ error: 'Failed to generate session. Please try again.' }, { status: 500 })
     }
 
@@ -222,7 +236,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      session: sessionData.session,
+      session: sessionData.data.session,
       role: resolvedRole,
       category: resolvedCategory,
       full_name: profilePayload.full_name,
