@@ -43,6 +43,7 @@ export function ProfileForm() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fetchingLoc, setFetchingLoc] = useState(false);
   const [emailChangePending, setEmailChangePending] = useState(false);
 
   // Seed form state once the profile loads.
@@ -51,8 +52,40 @@ export function ProfileForm() {
     setFullName(profile.full_name ?? '');
     setEmail(profile.email ?? '');
     setPincode((profile as unknown as Record<string, unknown>).pincode as string ?? '');
-    setPhone((profile as unknown as Record<string, unknown>).phone as string ?? '');
+    setPhone((profile as unknown as Record<string, unknown>).phone as string ?? (profile as unknown as Record<string, unknown>).whatsapp as string ?? '');
   }, [profile]);
+
+  const handleAutoFetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setFetchingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          const detectedPincode = data?.address?.postcode?.replace(/\D/g, '').slice(0, 6);
+          if (detectedPincode) {
+            setPincode(detectedPincode);
+            toast.success(`Location detected! Area pincode set to ${detectedPincode}`);
+          } else {
+            toast.success('Coordinates captured! Please enter your 6-digit pincode.');
+          }
+        } catch {
+          toast.success('Location captured! Please enter your 6-digit pincode.');
+        } finally {
+          setFetchingLoc(false);
+        }
+      },
+      () => {
+        setFetchingLoc(false);
+        toast.error('Location permission denied or unavailable');
+      }
+    );
+  };
 
   // Cleanup object URLs to avoid leaks.
   useEffect(() => {
@@ -108,11 +141,6 @@ export function ProfileForm() {
       toast.error('Display name is required');
       return;
     }
-    const trimmedEmail = email.trim();
-    if (!EMAIL_RE.test(trimmedEmail)) {
-      toast.error('Enter a valid email address');
-      return;
-    }
 
     setSaving(true);
     try {
@@ -141,7 +169,7 @@ export function ProfileForm() {
         nextAvatarUrl = null;
       }
 
-      // Persist name + avatar + pincode + phone to profiles.
+      // Persist name + avatar + pincode + phone to profiles using exact PK 'id'
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
@@ -149,8 +177,9 @@ export function ProfileForm() {
           avatar_url: nextAvatarUrl,
           pincode: pincode.trim() || null,
           phone: phone.trim() || null,
+          whatsapp: phone.trim() || null,
         })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
       if (updateError) {
         throw new Error(`Save failed: ${updateError.message}`);
       }
@@ -316,7 +345,18 @@ export function ProfileForm() {
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="profile-pincode" className="text-foreground">Area Pincode</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="profile-pincode" className="text-foreground">Area Pincode</Label>
+                  <button
+                    type="button"
+                    onClick={handleAutoFetchLocation}
+                    disabled={fetchingLoc || saving}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 cursor-pointer"
+                  >
+                    {fetchingLoc ? <Loader2 className="size-3 animate-spin" /> : <MapPin className="size-3" />}
+                    Auto-Detect
+                  </button>
+                </div>
                 <Input
                   id="profile-pincode"
                   value={pincode}
@@ -375,14 +415,18 @@ export function ProfileForm() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving || !dirty || !profile}>
+          <Button
+            type="submit"
+            disabled={saving}
+            className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-500/20 text-sm cursor-pointer transition-all"
+          >
             {saving ? (
               <>
-                <Loader2 className="size-4 animate-spin" />
-                Saving…
+                <Loader2 className="size-4 animate-spin mr-2" />
+                Saving Profile…
               </>
             ) : (
-              'Save changes'
+              'Save Profile & Settings'
             )}
           </Button>
         </div>
