@@ -21,14 +21,18 @@ import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 async function resolveAccountId(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
-): Promise<string | null> {
-  const { data, error } = await supabase
+): Promise<string> {
+  const { data } = await supabase
     .from('profiles')
     .select('account_id')
     .eq('id', userId)
     .maybeSingle()
-  if (error || !data?.account_id) return null
-  return data.account_id as string
+
+  const acctId = data?.account_id || userId
+  if (!data?.account_id) {
+    await supabase.from('profiles').update({ account_id: userId }).eq('id', userId).catch(() => {})
+  }
+  return acctId
 }
 
 // Lazy-initialised service-role client. We need it to detect a
