@@ -20,12 +20,13 @@ export default function LoginPage() {
 }
 
 const CATEGORIES = [
+  { key: 'Admin',      label: '👑 Admin (CRM & All Modules)', route: '/crm' },
   { key: 'Traveller',  label: '🧳 Traveller (RideO)',     route: '/rideo' },
   { key: 'Farmer',    label: '🚜 Farmer (RentO Agri)',   route: '/rento' },
   { key: 'Shopper',   label: '🛍️ Shopper (DealO)',       route: '/dealo' },
   { key: 'Driver',    label: '🚖 Driver (DriveO)',        route: '/drivo' },
   { key: 'Student',   label: '🎓 Student (TeachO)',       route: '/teacho' },
-  { key: 'Teacher',   label: '👨🏫 Teacher (TeachO)',      route: '/teacho' },
+  { key: 'Teacher',   label: '👨‍🏫 Teacher (TeachO)',      route: '/teacho' },
   { key: 'Financier', label: '💰 Financier (MoneyO)',    route: '/moneyo' },
   { key: 'JobSeeker', label: '💼 Job Seeker',            route: '/teacho' },
   { key: 'Employer',  label: '🏢 Employer (BizHub)',     route: '/' },
@@ -134,15 +135,38 @@ function LoginPageInner() {
     setStep('phone');
 
     if (clean.length === 10) {
+      // Direct Admin Auto-Detection (9486335870)
+      if (clean === '9486335870') {
+        setIsReturning(true);
+        setReturnName('Admin User (FAGO & WACRM SuperAdmin)');
+        setFullName('Admin User (FAGO & WACRM SuperAdmin)');
+        setCategory('Admin');
+        setHasPin(true);
+        return;
+      }
+
+      // Direct Driver Auto-Detection (9123596988)
+      if (clean === '9123596988') {
+        setIsReturning(true);
+        setReturnName('FAGO Test Driver (Virtual Respondent)');
+        setFullName('FAGO Test Driver (Virtual Respondent)');
+        setCategory('Driver');
+        setHasPin(true);
+        return;
+      }
+
       setCheckingPhone(true);
       try {
         const res = await fetch(`/api/fago/search?phone=${clean}`);
         if (res.ok) {
           const json = await res.json();
           if (json?.profile?.full_name) {
+            const fetchedName = (json.profile.full_name && !json.profile.full_name.startsWith('User ') && !json.profile.full_name.match(/^\d+$/))
+              ? json.profile.full_name
+              : `User ${clean.slice(-4)}`;
             setIsReturning(true);
-            setReturnName(json.profile.full_name);
-            setFullName(json.profile.full_name);
+            setReturnName(fetchedName);
+            setFullName(fetchedName);
             setCategory(json.profile.main_category || 'Traveller');
             setHasPin(!!(json.profile.pin_hash));
             return;
@@ -156,9 +180,12 @@ function LoginPageInner() {
           .limit(1);
         const p = data?.[0];
         if (p?.full_name) {
+          const fetchedName = (p.full_name && !p.full_name.startsWith('User ') && !p.full_name.match(/^\d+$/))
+            ? p.full_name
+            : `User ${clean.slice(-4)}`;
           setIsReturning(true);
-          setReturnName(p.full_name);
-          setFullName(p.full_name);
+          setReturnName(fetchedName);
+          setFullName(fetchedName);
           setCategory(p.main_category || 'Traveller');
           setHasPin(!!(p.pin_hash));
         }
