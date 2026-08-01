@@ -208,6 +208,14 @@ function LoginPageInner() {
     e.preventDefault();
     setError(null);
     if (phone.length !== 10) { setError('Enter a valid 10-digit WhatsApp number'); return; }
+
+    const clean = phone.replace(/\D/g, '').slice(-10);
+    // Instant direct bypass for Admin & Test Driver numbers
+    if (clean === '9486335870' || clean === '9123596988') {
+      await handleBypassLogin();
+      return;
+    }
+
     if (!isReturning && !fullName.trim()) { setError('Please enter your Full Name'); return; }
 
     setLoading(true);
