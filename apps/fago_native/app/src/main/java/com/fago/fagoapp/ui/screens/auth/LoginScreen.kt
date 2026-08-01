@@ -126,11 +126,14 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
     fun startWhatsAppInboundLogin() {
         val cleanPhone = phone.filter { it.isDigit() }
-        if (cleanPhone.length != 10) {
+        if (cleanPhone.length < 10) {
             errorMsg = "Please enter a valid 10-digit Indian mobile number"
             return
         }
-        if (name.isBlank()) {
+        val tenDigit = cleanPhone.takeLast(10)
+        val finalFullName = name.ifBlank { "User ${tenDigit.takeLast(4)}" }
+
+        if (!isDeviceRegistered && name.isBlank()) {
             errorMsg = "Please enter your Full Name (பெயர்)"
             return
         }
@@ -139,8 +142,8 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
         isLoading = true
         scope.launch {
             val result = authViewModel.initWhatsAppSession(
-                phone = cleanPhone,
-                fullName = name,
+                phone = tenDigit,
+                fullName = finalFullName,
                 category = selectedCategoryKey
             )
             isLoading = false

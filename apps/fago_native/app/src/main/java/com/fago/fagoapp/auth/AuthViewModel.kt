@@ -693,6 +693,36 @@ class AuthViewModel(
             if (it.length > 10) it.takeLast(10) else it
         }
         if (cleanPhone.length < 10) return@withContext null
+
+        // 1. Try Vercel API search first (matches Flutter checkPhoneRegistration & bypasses RLS)
+        try {
+            val url = "$baseUrl/api/fago/search?phone=$cleanPhone"
+            val request = Request.Builder().url(url).get().build()
+            val response = http.newCall(request).execute()
+            if (response.isSuccessful) {
+                val json = JSONObject(response.body?.string() ?: "{}")
+                val profileObj = json.optJSONObject("profile")
+                if (profileObj != null) {
+                    val map = mutableMapOf<String, String?>()
+                    val keys = profileObj.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val value = profileObj.optString(key)
+                        if (value.isNotEmpty() && value != "null") {
+                            map[key] = value
+                        }
+                    }
+                    if (map.isNotEmpty()) {
+                        Log.d("FagoAuth", "Profile fetched via API for $cleanPhone — name=${map["full_name"]}")
+                        return@withContext map
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.d("FagoAuth", "API search note: ${e.message}")
+        }
+
+        // 2. Fallback: Supabase Direct Query
         return@withContext try {
             val jsonList = supabase.postgrest["profiles"]
                 .select {
@@ -726,32 +756,7 @@ class AuthViewModel(
                         value.toString().removeSurrounding("\"")
                     }
                 }
-            } else {
-                try {
-                    val driverList = supabase.postgrest["drivers"]
-                        .select {
-                            filter {
-                                or {
-                                    eq("mobile_number", cleanPhone)
-                                    eq("mobile_number", "91$cleanPhone")
-                                    eq("whatsapp_number", cleanPhone)
-                                }
-                            }
-                            limit(1)
-                        }
-                        .decodeList<JsonObject>()
-                    if (driverList.isNotEmpty()) {
-                        val drv = driverList.first()
-                        mapOf(
-                            "full_name" to (drv["driver_name"]?.jsonPrimitive?.contentOrNull ?: "Driver"),
-                            "main_category" to "Driver",
-                            "role" to "driver"
-                        )
-                    } else null
-                } catch (e: Exception) {
-                    null
-                }
-            }
+            } else null
         } catch (e: Exception) {
             Log.e("FagoAuth", "fetchProfileByPhone error: ${e.message}", e)
             null
