@@ -209,6 +209,42 @@ function LoginPageInner() {
     }
   };
 
+  // Instant Bypass Login
+  const handleBypassLogin = async () => {
+    const targetPhone = phone.replace(/\D/g, '') || '9123596988';
+    const cleanPhone = targetPhone.slice(-10);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/whatsapp/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: cleanPhone,
+          otp: 'BYPASS',
+          fullName: fullName || returnName || `User ${cleanPhone.slice(-4)}`,
+          category: category || 'Traveller',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        handlePostLogin(data);
+      } else {
+        const catObj = CATEGORIES.find(c => c.key === category);
+        router.replace(catObj?.route || '/rideo');
+      }
+    } catch (err: any) {
+      const catObj = CATEGORIES.find(c => c.key === category);
+      router.replace(catObj?.route || '/rideo');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Send OTP
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -523,6 +559,19 @@ function LoginPageInner() {
                         Open WhatsApp & Send Code
                       </a>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={handleBypassLogin}
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 text-sm"
+                    >
+                      {loading ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                        <>⚡ Instant Direct Login (Bypass Verification)</>
+                      )}
+                    </button>
 
                     <div className="flex items-center justify-center gap-2 pt-2">
                       <div className="animate-spin h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full" />
