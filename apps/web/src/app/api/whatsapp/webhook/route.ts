@@ -1255,21 +1255,36 @@ async function handleInboundLoginToken(
     }
   })
 
-  // 5. Generate Supabase session tokens
+  // 5. Generate Supabase session tokens with fail-safe retry
   const standardSupabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const { data: sessionData, error: signInError } = await standardSupabase.auth.signInWithPassword({
+  let sessionData = await standardSupabase.auth.signInWithPassword({
     email: syntheticEmail,
     password: securePassword
   })
 
-  if (signInError || !sessionData.session) {
-    console.error('[login] Session generation error:', signInError)
+  if (sessionData.error || !sessionData.data.session) {
+    console.warn('[login] First signInWithPassword failed in webhook, syncing password & retrying:', sessionData.error?.message)
+    await admin.auth.admin.updateUserById(user.id, {
+      password: securePassword,
+      email_confirm: true
+    }).catch(() => {})
+
+    sessionData = await standardSupabase.auth.signInWithPassword({
+      email: syntheticEmail,
+      password: securePassword
+    })
+  }
+
+  if (sessionData.error || !sessionData.data.session) {
+    console.error('[login] Session generation error:', sessionData.error)
     return false
   }
+
+  const generatedSession = sessionData.data.session
 
   // 6. Store the session in the login_sessions table & mark as verified
   await admin
@@ -1278,8 +1293,8 @@ async function handleInboundLoginToken(
       status: 'verified',
       verified_at: new Date().toISOString(),
       supabase_session: {
-        access_token: sessionData.session.access_token,
-        refresh_token: sessionData.session.refresh_token,
+        access_token: generatedSession.access_token,
+        refresh_token: generatedSession.refresh_token,
         role: resolvedRole,
         category: resolvedCategory,
         full_name: finalName,
