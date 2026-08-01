@@ -32,7 +32,7 @@ const CATEGORIES = [
   { key: 'Tourist',   label: '🛕 Tourist (TourO)',        route: '/touro' },
 ];
 
-type Step = 'phone' | 'otp' | 'pin' | 'newuser';
+type Step = 'phone' | 'whatsapp-verify' | 'otp' | 'pin' | 'newuser';
 
 function LoginPageInner() {
   const router = useRouter();
@@ -50,6 +50,11 @@ function LoginPageInner() {
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+
+  // Inbound WhatsApp Verification state
+  const [pollId, setPollId] = useState<string | null>(null);
+  const [deepLinkUrl, setDeepLinkUrl] = useState<string | null>(null);
+  const [pollTimer, setPollTimer] = useState<number>(600); // 10 mins
 
   // Returning user state
   const [isReturning, setIsReturning] = useState(false);
@@ -72,6 +77,51 @@ function LoginPageInner() {
     const t = setInterval(() => setCooldown(c => c - 1), 1000);
     return () => clearInterval(t);
   }, [cooldown]);
+
+  // Polling effect for WhatsApp Inbound Verification
+  useEffect(() => {
+    if (step !== 'whatsapp-verify' || !pollId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/auth/whatsapp/poll-session?poll_id=${pollId}`);
+        const data = await res.json();
+        if (res.ok && data.status === 'verified') {
+          clearInterval(interval);
+          setInfo("WhatsApp verification confirmed! Logging in...");
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+          handlePostLogin(data);
+        } else if (data.status === 'expired') {
+          clearInterval(interval);
+          setError("Verification session expired. Please try again or use OTP.");
+          setStep('phone');
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 2500);
+
+    const countdown = setInterval(() => {
+      setPollTimer(t => {
+        if (t <= 1) {
+          clearInterval(countdown);
+          clearInterval(interval);
+          setStep('phone');
+          setError('Verification timed out. Please try again.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(countdown);
+    };
+  }, [step, pollId]);
 
   // Phone change handler — auto-detect returning user
   const handlePhoneChange = useCallback(async (val: string) => {
@@ -125,6 +175,39 @@ function LoginPageInner() {
       : (data.redirect_to || (data.isAdmin ? '/crm' : '/rideo'));
     window.location.href = target;
   }, [inviteToken]);
+
+  // Initiate Inbound WhatsApp Login (OTPLess)
+  const handleInitWhatsAppLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (phone.length !== 10) { setError('Enter a valid 10-digit WhatsApp number'); return; }
+    if (!isReturning && !fullName.trim()) { setError('Please enter your Full Name'); return; }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/whatsapp/init-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, fullName: fullName.trim(), category })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to start WhatsApp login');
+
+      setPollId(data.poll_id);
+      setDeepLinkUrl(data.deep_link_url);
+      setPollTimer(600);
+      setStep('whatsapp-verify');
+
+      // Auto open deep link in window
+      if (data.deep_link_url) {
+        window.open(data.deep_link_url, '_blank');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Send OTP
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -361,26 +444,116 @@ function LoginPageInner() {
                         </button>
                         <button
                           type="submit"
-                          onClick={handleSendOTP}
-                          disabled={loading || phone.length !== 10 || cooldown > 0}
+                          onClick={handleInitWhatsAppLogin}
+                          disabled={loading || phone.length !== 10}
                           className="w-full bg-[#111c35] border border-green-500/30 hover:border-green-500/60 text-green-400 font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                         >
-                          <Send className="h-4 w-4" />
-                          {cooldown > 0 ? `Resend in ${cooldown}s` : 'Get WhatsApp OTP instead'}
+                          <MessageCircle className="h-4 w-4" />
+                          Login via WhatsApp (Instant Verification)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendOTP}
+                          disabled={loading || phone.length !== 10 || cooldown > 0}
+                          className="w-full text-gray-500 hover:text-gray-400 text-xs py-1 text-center"
+                        >
+                          {cooldown > 0 ? `Resend OTP in ${cooldown}s` : 'Or send 6-digit OTP code'}
                         </button>
                       </>
                     ) : (
-                      <button
-                        type="submit"
-                        disabled={loading || phone.length !== 10 || checkingPhone || cooldown > 0}
-                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 disabled:opacity-50"
-                      >
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-4 w-4" />}
-                        {cooldown > 0 ? `Resend in ${cooldown}s` : 'Send WhatsApp OTP'}
-                      </button>
+                      <>
+                        <button
+                          type="submit"
+                          onClick={handleInitWhatsAppLogin}
+                          disabled={loading || phone.length !== 10 || checkingPhone}
+                          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 disabled:opacity-50"
+                        >
+                          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5 text-white" />}
+                          Login with WhatsApp (Instant)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendOTP}
+                          disabled={loading || phone.length !== 10 || cooldown > 0}
+                          className="w-full bg-[#111c35] border border-green-500/30 hover:border-green-500/60 text-gray-300 font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          {cooldown > 0 ? `Resend OTP in ${cooldown}s` : 'Get 6-Digit OTP Code instead'}
+                        </button>
+                      </>
                     )}
                   </div>
                 </motion.form>
+              )}
+
+              {/* ──── STEP: WHATSAPP-VERIFY ──── */}
+              {step === 'whatsapp-verify' && (
+                <motion.div
+                  key="whatsapp-verify"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="space-y-5 text-center"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-green-500/20 border border-green-500/40 flex items-center justify-center mx-auto shadow-lg shadow-green-500/20 animate-pulse">
+                    <MessageCircle className="h-8 w-8 text-green-400" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-white font-bold text-xl">Verify via WhatsApp</h2>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Tap below to open WhatsApp and send the pre-typed verification code.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#111c35] border border-green-500/30 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs text-gray-400 px-1">
+                      <span>Target Phone:</span>
+                      <span className="text-green-400 font-mono font-bold">+91 {phone}</span>
+                    </div>
+                    
+                    {deepLinkUrl && (
+                      <a
+                        href={deepLinkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 text-base"
+                      >
+                        <MessageCircle className="h-5 w-5 fill-black" />
+                        Open WhatsApp & Send Code
+                      </a>
+                    )}
+
+                    <div className="flex items-center justify-center gap-2 pt-2">
+                      <div className="animate-spin h-4 w-4 border-2 border-green-400 border-t-transparent rounded-full" />
+                      <span className="text-xs text-green-300 font-medium">Waiting for message verification...</span>
+                    </div>
+
+                    <p className="text-[11px] text-gray-500">
+                      Session expires in {Math.floor(pollTimer / 60)}m {pollTimer % 60}s
+                    </p>
+                  </div>
+
+                  {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
+                  {info && <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/20 rounded-lg px-3 py-2">{info}</p>}
+
+                  <div className="pt-2 space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleSendOTP}
+                      className="w-full text-green-400 hover:underline text-xs font-medium"
+                    >
+                      Didn't work? Send 6-digit OTP code instead
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setStep('phone'); setError(null); }}
+                      className="w-full text-gray-400 hover:text-white text-xs"
+                    >
+                      ← Change phone number
+                    </button>
+                  </div>
+                </motion.div>
               )}
 
               {/* ──── STEP: PIN ──── */}

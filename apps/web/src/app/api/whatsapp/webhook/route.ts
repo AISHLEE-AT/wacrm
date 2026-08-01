@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
-import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
+import { getMediaUrl, downloadMedia, sendTextMessage } from '@/lib/whatsapp/meta-api'
 import { normalizePhone } from '@/lib/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe'
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-signature'
@@ -12,6 +12,11 @@ import {
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
 import { handleRideHailingBooking } from '@/lib/whatsapp/rides-handler'
+import {
+  extractLoginToken,
+  phonesMatch,
+} from '@/lib/auth/whatsapp-login-security'
+import crypto from 'crypto'
 
 // Lazy-initialized to avoid build-time crash when env vars are missing
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -563,6 +568,30 @@ async function processMessage(
   const senderPhone = normalizePhone(message.from)
   const contactName = contact.profile.name
 
+  // ── WHATSAPP INBOUND LOGIN TOKEN INTERCEPTOR ──────────────────────────
+  // Detect login verification tokens BEFORE any CRM processing.
+  // If the message contains TOKEN_XXXXXXXX, handle it as a login attempt
+  // and short-circuit — do NOT create contacts/conversations for login msgs.
+  if (message.type === 'text' && message.text?.body) {
+    const loginToken = extractLoginToken(message.text.body)
+    if (loginToken) {
+      const handled = await handleInboundLoginToken(
+        loginToken,
+        senderPhone,
+        contactName,
+        accessToken,
+        message.from // raw phone for WhatsApp reply
+      )
+      if (handled) {
+        console.log(`[webhook] Login token ${loginToken} handled for ${senderPhone}`)
+        return // Don't process as CRM message
+      }
+      // Token not found in DB — fall through to normal CRM processing
+      // (user may have typed TOKEN_ randomly or session expired)
+    }
+  }
+  // ── END LOGIN TOKEN INTERCEPTOR ────────────────────────────────────────
+
   // Find or create contact
   const contactOutcome = await findOrCreateContact(
     accountId,
@@ -1037,4 +1066,204 @@ async function findOrCreateConversation(
   }
 
   return newConv
+}
+
+// ============================================================
+// WhatsApp Inbound Login — Token Verification Handler
+// ============================================================
+// SECURITY HARDENING:
+// 1. Token lookup is case-insensitive but stored uppercase
+// 2. Phone number matching: sender's WhatsApp phone MUST match session phone
+// 3. Token expiry: sessions older than 10 minutes are rejected
+// 4. Single-use: token is marked 'verified' and cannot be reused
+// 5. No CRM side-effects: login messages don't create contacts/conversations
+// 6. Confirmation reply via free-form text (inside 24h window = FREE)
+// 7. Anti-replay: re-sending the same token after verification does nothing
+// ============================================================
+
+// Bootstrap admin phones for role resolution
+const LOGIN_BOOTSTRAP_ADMIN_PHONES = [
+  '9486335870', '919486335870',
+  '9123596988', '919123596988'
+]
+
+async function handleInboundLoginToken(
+  token: string,
+  senderPhone: string,
+  senderName: string,
+  accessToken: string,
+  rawWhatsAppFrom: string // un-normalized phone for reply
+): Promise<boolean> {
+  const admin = supabaseAdmin()
+
+  // 1. Look up the token in pending sessions
+  const { data: session, error: lookupError } = await admin
+    .from('whatsapp_login_sessions')
+    .select('*')
+    .eq('session_token', token.toUpperCase())
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+
+  if (lookupError || !session) {
+    // Token not found, expired, or already used — not a login attempt
+    return false
+  }
+
+  // 2. SECURITY: Verify sender phone matches the session phone
+  if (!phonesMatch(session.phone, senderPhone)) {
+    console.warn(
+      `[login] Phone mismatch! Session phone: ${session.phone}, sender: ${senderPhone}, token: ${token}`
+    )
+    // Mark session as expired to prevent further abuse
+    await admin
+      .from('whatsapp_login_sessions')
+      .update({ status: 'expired' })
+      .eq('id', session.id)
+    return true // Handled (don't process as CRM message) but don't verify
+  }
+
+  // 3. Create or find Supabase auth user (same pattern as verify-otp)
+  const cleanPhone = session.phone.replace(/\D/g, '').slice(-10)
+  const syntheticEmail = `${cleanPhone}@whatsapp.wacrm.local`
+  const securePassword = crypto.randomBytes(32).toString('hex')
+
+  let user: any = null
+
+  try {
+    const { data: { users } } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    user = users.find((u: any) => u.email === syntheticEmail)
+
+    if (!user) {
+      const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+        email: syntheticEmail,
+        email_confirm: true,
+        password: securePassword,
+        user_metadata: { phone: cleanPhone, whatsapp_verified: true }
+      })
+      if (createError || !newUser.user) {
+        console.error('[login] Failed to create user:', createError)
+        return false
+      }
+      user = newUser.user
+    } else {
+      // Rotate password for fresh session
+      await admin.auth.admin.updateUserById(user.id, {
+        password: securePassword,
+        user_metadata: { ...user.user_metadata, whatsapp_verified: true, phone: cleanPhone }
+      })
+    }
+  } catch (err) {
+    console.error('[login] Auth user error:', err)
+    return false
+  }
+
+  // 4. Get/build profile payload
+  const { data: existingProfile } = await admin
+    .from('profiles')
+    .select('full_name, main_category, role, pin_hash')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  // Determine role
+  const isBootstrapAdmin = LOGIN_BOOTSTRAP_ADMIN_PHONES.some(p =>
+    cleanPhone === p || cleanPhone === p.slice(-10)
+  )
+  const dbRole = existingProfile?.role
+  const isAdmin = dbRole === 'admin' || dbRole === 'ADMIN' || isBootstrapAdmin
+
+  // Check driver status
+  const { data: driverRecords } = await admin
+    .from('drivers')
+    .select('id, is_verified')
+    .or(`mobile_number.eq.${cleanPhone},mobile_number.eq.91${cleanPhone},user_id.eq.${user.id}`)
+  const isDriver = (driverRecords && driverRecords.length > 0 && driverRecords[0].is_verified)
+    || dbRole === 'driver' || dbRole === 'DRIVER'
+
+  const resolvedRole = isAdmin ? 'admin' : (isDriver ? 'driver' : (dbRole || 'user'))
+  const resolvedCategory = isDriver ? 'Driver' : (existingProfile?.main_category || session.category || 'Traveller')
+
+  // Determine final name
+  let finalName = session.full_name || senderName
+  if (existingProfile?.full_name && !existingProfile.full_name.startsWith('User ')) {
+    finalName = existingProfile.full_name
+  }
+  if (!finalName || finalName.trim() === '') {
+    finalName = `User ${cleanPhone.slice(-4)}`
+  }
+
+  // Upsert profile
+  const profilePayload: Record<string, any> = {
+    id: user.id,
+    phone: cleanPhone,
+    whatsapp: cleanPhone,
+    full_name: finalName,
+    main_category: existingProfile?.main_category || session.category || 'Traveller',
+    role: resolvedRole,
+    updated_at: new Date().toISOString(),
+    last_login: new Date().toISOString(),
+    platform: 'whatsapp_inbound',
+  }
+  await admin.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+
+  // 5. Generate Supabase session tokens
+  const standardSupabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  const { data: sessionData, error: signInError } = await standardSupabase.auth.signInWithPassword({
+    email: syntheticEmail,
+    password: securePassword
+  })
+
+  if (signInError || !sessionData.session) {
+    console.error('[login] Session generation error:', signInError)
+    return false
+  }
+
+  // 6. Store the session in the login_sessions table & mark as verified
+  await admin
+    .from('whatsapp_login_sessions')
+    .update({
+      status: 'verified',
+      verified_at: new Date().toISOString(),
+      supabase_session: {
+        access_token: sessionData.session.access_token,
+        refresh_token: sessionData.session.refresh_token,
+        role: resolvedRole,
+        category: resolvedCategory,
+        full_name: finalName,
+        isAdmin,
+        isDriver,
+      }
+    })
+    .eq('id', session.id)
+
+  // 7. Send free-form confirmation reply (inside 24h window = FREE, no template)
+  // Get the phone_number_id from whatsapp_config for this WABA
+  try {
+    const { data: waConfig } = await admin
+      .from('whatsapp_config')
+      .select('phone_number_id')
+      .limit(1)
+      .maybeSingle()
+
+    if (waConfig?.phone_number_id) {
+      await sendTextMessage({
+        phoneNumberId: waConfig.phone_number_id,
+        accessToken,
+        recipientPhone: rawWhatsAppFrom,
+        text: `✅ Login verified! Welcome${finalName ? `, ${finalName}` : ''}.\n\nYou can close WhatsApp now — your app is logging you in automatically.\n\n🔒 FAGO • தமிழன் AISHO`,
+      }).catch(err => {
+        // Non-critical — user still gets logged in even if reply fails
+        console.warn('[login] Confirmation reply failed:', err)
+      })
+    }
+  } catch (err) {
+    console.warn('[login] Config lookup for reply failed:', err)
+  }
+
+  console.log(`[login] ✅ Verified: phone=${cleanPhone}, role=${resolvedRole}, name=${finalName}`)
+  return true
 }

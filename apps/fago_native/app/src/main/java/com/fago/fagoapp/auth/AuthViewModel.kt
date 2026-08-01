@@ -46,6 +46,23 @@ data class AuthUiState(
     val isProfileComplete: Boolean = false
 )
 
+// ── WhatsApp Session Data Classes ─────────────────────────────────────────
+data class WhatsAppInitResponse(
+    val success: Boolean,
+    val sessionToken: String? = null,
+    val pollId: String? = null,
+    val deepLinkUrl: String? = null
+)
+
+data class WhatsAppPollResponse(
+    val status: String,
+    val role: String? = null,
+    val category: String? = null,
+    val fullName: String? = null,
+    val accessToken: String? = null,
+    val refreshToken: String? = null
+)
+
 // ── Auth ViewModel ─────────────────────────────────────────────────────────
 /**
  * Central Auth ViewModel — Enforces role determination, device signatures,
@@ -65,6 +82,9 @@ class AuthViewModel(
     private val _authState = MutableStateFlow(AuthUiState())
     val authState: StateFlow<AuthUiState> = _authState.asStateFlow()
 
+    private val baseUrl: String
+        get() = BuildConfig.API_BASE_URL.ifBlank { "https://watscrm.vercel.app" }.trimEnd('/')
+
     // HTTP client with generous timeouts for slow rural connections
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -82,6 +102,82 @@ class AuthViewModel(
 
     init {
         viewModelScope.launch { checkExistingSession() }
+    }
+
+    // ── Customer-Initiated WhatsApp Inbound Session (Deep Link + Polling) ──
+    suspend fun initWhatsAppSession(phone: String, fullName: String, category: String): Result<WhatsAppInitResponse> = withContext(Dispatchers.IO) {
+        val cleanPhone = phone.filter { it.isDigit() }.let { if (it.length > 10) it.takeLast(10) else it }
+        try {
+            val bodyMap = buildString {
+                append("""{"phone":"$cleanPhone","fullName":"$fullName","category":"$category"}""")
+            }
+            val body = bodyMap.toRequestBody("application/json".toMediaType())
+            val url = "$baseUrl/api/auth/whatsapp/init-session"
+            val request = Request.Builder()
+                .url(url)
+                .post(body)
+                .build()
+            val response = http.newCall(request).execute()
+            if (response.isSuccessful) {
+                val json = JSONObject(response.body?.string() ?: "{}")
+                if (json.optBoolean("success")) {
+                    val initRes = WhatsAppInitResponse(
+                        success = true,
+                        sessionToken = json.optString("session_token").ifEmpty { null },
+                        pollId = json.optString("poll_id").ifEmpty { null },
+                        deepLinkUrl = json.optString("deep_link_url").ifEmpty { null }
+                    )
+                    return@withContext Result.success(initRes)
+                }
+                return@withContext Result.failure(Exception(json.optString("error", "Init session failed")))
+            }
+            Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+        } catch (e: Exception) {
+            Log.e("FagoAuth", "initWhatsAppSession error: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun pollWhatsAppSession(pollId: String): Result<WhatsAppPollResponse> = withContext(Dispatchers.IO) {
+        try {
+            val url = "$baseUrl/api/auth/whatsapp/poll-session?poll_id=$pollId"
+            val request = Request.Builder()
+                .url(url)
+                .get()
+                .build()
+            val response = http.newCall(request).execute()
+            if (response.isSuccessful) {
+                val json = JSONObject(response.body?.string() ?: "{}")
+                val status = json.optString("status", "pending")
+                if (status == "verified") {
+                    val session = json.optJSONObject("session")
+                    val accessToken = session?.optString("access_token")
+                    val refreshToken = session?.optString("refresh_token")
+                    val roleStr = json.optString("role")
+                    val categoryStr = json.optString("category")
+                    val nameStr = json.optString("full_name")
+
+                    if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
+                        signInWithTokens(accessToken, refreshToken)
+                    }
+
+                    val pollRes = WhatsAppPollResponse(
+                        status = "verified",
+                        role = roleStr,
+                        category = categoryStr,
+                        fullName = nameStr,
+                        accessToken = accessToken,
+                        refreshToken = refreshToken
+                    )
+                    return@withContext Result.success(pollRes)
+                }
+                return@withContext Result.success(WhatsAppPollResponse(status = "pending"))
+            }
+            Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
+        } catch (e: Exception) {
+            Log.e("FagoAuth", "pollWhatsAppSession error: ${e.message}", e)
+            Result.failure(e)
+        }
     }
 
     // ── 1. Check existing Supabase session on app start ─────────────────────

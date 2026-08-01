@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'auth_provider.dart';
 import '../services/device_auth_service.dart';
 import '../services/whatsapp_service.dart';
@@ -41,6 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isOTPSent = false;
   bool _isLoading = false;
   bool _useWhatsAppAuth = true; // Default to WhatsApp Login OTP
+  bool _useOtpFallback = false; // Primary is Instant WhatsApp Deep Link
   String _selectedCategoryKey = 'Traveller';
 
   String _errorMsg = '';
@@ -48,6 +50,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   int _cooldownSeconds = 0;
   Timer? _cooldownTimer;
+
+  // Inbound WhatsApp Verification Polling State
+  bool _isPolling = false;
+  Timer? _pollingTimer;
+  String? _pollId;
+  String? _deepLinkUrl;
 
   bool _isDeviceRegistered = false;
   String? _registeredPhone;
@@ -79,12 +87,107 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void dispose() {
     _cooldownTimer?.cancel();
+    _pollingTimer?.cancel();
     _phoneController.removeListener(_onPhoneChanged);
     _phoneController.dispose();
     _nameController.dispose();
     _otpController.dispose();
     _pinController.dispose();
     super.dispose();
+  }
+
+  // ── WhatsApp Inbound Deep Link & Polling Logic ────────────────────────────
+  Future<void> _startWhatsAppInboundAuth() async {
+    final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length < 10) {
+      setState(() => _errorMsg = 'Please enter a valid 10-digit Indian mobile number');
+      return;
+    }
+
+    if (_nameController.text.trim().isEmpty) {
+      setState(() => _errorMsg = 'Please enter your Full Name (பெயர்)');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMsg = '';
+    });
+
+    try {
+      final response = await ref.read(authProvider.notifier).initWhatsAppSession(
+        phone: cleanPhone,
+        fullName: _nameController.text.trim(),
+        category: _selectedCategoryKey,
+      );
+
+      final deepLink = response['deep_link_url']?.toString();
+      final pollId = response['poll_id']?.toString();
+
+      if (deepLink != null && pollId != null) {
+        _deepLinkUrl = deepLink;
+        _pollId = pollId;
+        _isPolling = true;
+        _isLoading = false;
+
+        final uri = Uri.parse(deepLink);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+        }
+
+        _startPollingLoop(pollId);
+      } else {
+        throw Exception('Invalid response from server');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMsg = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
+  void _startPollingLoop(String pollId) {
+    _pollingTimer?.cancel();
+    int elapsedSeconds = 0;
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      elapsedSeconds += 2;
+      if (elapsedSeconds > 120) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _isPolling = false;
+            _errorMsg = 'WhatsApp verification timed out. Tap to retry or use OTP fallback.';
+          });
+        }
+        return;
+      }
+
+      try {
+        final res = await ref.read(authProvider.notifier).pollWhatsAppSession(pollId);
+        if (res['status'] == 'verified') {
+          timer.cancel();
+          if (mounted) {
+            setState(() {
+              _isPolling = false;
+              _isLoading = false;
+            });
+            context.go('/');
+          }
+        }
+      } catch (e) {
+        debugPrint('Polling error: $e');
+      }
+    });
+  }
+
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    setState(() {
+      _isPolling = false;
+    });
   }
 
   /// Initial device registration check on cold launch
@@ -585,7 +688,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _sendOTP,
+                              onPressed: _isLoading ? null : _startWhatsAppInboundAuth,
+                              icon: const Icon(Icons.flash_on_rounded, color: Colors.black, size: 18),
+                              label: const Text(
+                                '⚡ WHATSAPP LOGIN',
+                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 10),
+                                maxLines: 1,
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00FF00),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading ? null : () {
+                                setState(() => _useOtpFallback = true);
+                                _sendOTP();
+                              },
                               icon: const Icon(Icons.chat_bubble_rounded, color: Colors.black, size: 18),
                               label: const Text(
                                 '💬 WHATSAPP OTP',
@@ -643,8 +766,90 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 14),
               ],
 
-              if (!_isOTPSent) ...[
-                // ── 5. Mobile WhatsApp Number Input Field (Green Bordered) ─────
+              // ── 5. Inbound WhatsApp Polling Card ─────────────────────────────
+              if (_isPolling) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF25D366), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF25D366).withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF25D366),
+                          strokeWidth: 3.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '⏳ Waiting for WhatsApp Verification...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'WhatsApp deep link opened. Send the pre-filled message in WhatsApp and you will be logged in automatically!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            if (_deepLinkUrl != null) {
+                              final uri = Uri.parse(_deepLinkUrl!);
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          icon: const Icon(Icons.chat_rounded, color: Colors.black),
+                          label: const Text(
+                            'Re-open WhatsApp Chat',
+                            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: () {
+                          _stopPolling();
+                          setState(() => _useOtpFallback = true);
+                        },
+                        child: const Text(
+                          'Cancel & Use OTP Fallback',
+                          style: TextStyle(color: Color(0xFF00F0FF), fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ] else if (!_isOTPSent) ...[
+                // ── 6. Mobile WhatsApp Number Input Field (Green Bordered) ─────
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -704,7 +909,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 14),
 
-                // ── 6. Full Name Input Field (Green Bordered) ───────────────────
+                // ── 7. Full Name Input Field (Green Bordered) ───────────────────
                 TextField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
@@ -726,7 +931,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 16),
 
-                // ── 7. Primary Goal Category Dropdown Selector ─────────────────
+                // ── 8. Primary Goal Category Dropdown Selector ─────────────────
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategoryKey,
                   dropdownColor: const Color(0xFF1E293B),
@@ -759,46 +964,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 24),
 
-                // ── 8. Action Button (Bright Green "Send WhatsApp OTP") ─────────
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _sendOTP,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00FF00),
-                      foregroundColor: Colors.black,
-                      elevation: 10,
-                      shadowColor: const Color(0xFF00FF00).withValues(alpha: 0.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                // ── 9. Primary Action Button: WhatsApp Instant Deep Link vs OTP Fallback ──
+                if (!_useOtpFallback) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _startWhatsAppInboundAuth,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF25D366),
+                        foregroundColor: Colors.black,
+                        elevation: 10,
+                        shadowColor: const Color(0xFF25D366).withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.flash_on_rounded, color: Colors.black, size: 22),
+                                SizedBox(width: 8),
+                                Text(
+                                  '⚡ Verify Instant via WhatsApp (1-Tap)',
+                                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
+                                ),
+                              ],
+                            ),
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _useWhatsAppAuth ? Icons.chat_bubble_rounded : Icons.sms_rounded,
-                                color: Colors.black,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _cooldownSeconds > 0
-                                    ? 'Resend OTP in ${_cooldownSeconds}s'
-                                    : _useWhatsAppAuth ? 'Send WhatsApp OTP' : 'Send SMS OTP',
-                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
-                            ],
-                          ),
                   ),
-                ),
+                ] else ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _sendOTP,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00FF00),
+                        foregroundColor: Colors.black,
+                        elevation: 10,
+                        shadowColor: const Color(0xFF00FF00).withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _useWhatsAppAuth ? Icons.chat_bubble_rounded : Icons.sms_rounded,
+                                  color: Colors.black,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _cooldownSeconds > 0
+                                      ? 'Resend OTP in ${_cooldownSeconds}s'
+                                      : _useWhatsAppAuth ? 'Send WhatsApp OTP Code' : 'Send SMS OTP Code',
+                                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ],
               ] else ...[
-                // ── OTP Verification Mode ──────────────────────────────────────
+                // ── 10. OTP Verification Mode ──────────────────────────────────
                 TextField(
                   controller: _otpController,
                   keyboardType: TextInputType.number,
@@ -880,14 +1119,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _useWhatsAppAuth = !_useWhatsAppAuth;
+                    _useOtpFallback = !_useOtpFallback;
                     _isOTPSent = false;
                     _otpController.clear();
                     _errorMsg = '';
                   });
                 },
                 child: Text(
-                  _useWhatsAppAuth ? 'Switch to SMS OTP Method' : 'Switch to WhatsApp Login OTP',
+                  _useOtpFallback ? '⚡ Switch to Instant WhatsApp Verification' : '🔑 Switch to 6-Digit OTP Fallback Method',
                   style: const TextStyle(color: Color(0xFF00F0FF), fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),

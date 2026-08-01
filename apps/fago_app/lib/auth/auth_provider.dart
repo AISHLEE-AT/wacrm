@@ -213,6 +213,69 @@ class AuthNotifier extends Notifier<AuthState> {
     return map[category] ?? 'rideo';
   }
 
+  // ── Customer-Initiated WhatsApp Inbound Session (Deep Link + Polling) ──────
+  Future<Map<String, dynamic>> initWhatsAppSession({
+    required String phone,
+    required String fullName,
+    required String category,
+  }) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
+        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
+    try {
+      final res = await http.post(
+        Uri.parse('$_apiBase/api/auth/whatsapp/init-session'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'phone': cleanPhone,
+          'fullName': fullName,
+          'category': category,
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200 && data['success'] == true) {
+        return data;
+      }
+      throw Exception(data['error'] ?? data['message'] ?? 'Failed to initialize WhatsApp session');
+    } catch (e) {
+      throw Exception('Could not initialize WhatsApp session: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> pollWhatsAppSession(String pollId) async {
+    try {
+      final res = await http.get(
+        Uri.parse('$_apiBase/api/auth/whatsapp/poll-session?poll_id=$pollId'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      if (res.statusCode == 200) {
+        if (data['status'] == 'verified') {
+          final session = data['session'] as Map<String, dynamic>?;
+          if (session != null) {
+            final accessToken = session['access_token']?.toString();
+            final refreshToken = session['refresh_token']?.toString();
+            if (accessToken != null && refreshToken != null) {
+              await _supabase.auth.setSession(refreshToken);
+              await DeviceAuthService.saveSession(accessToken, refreshToken);
+              if (data['phone'] != null) {
+                await DeviceAuthService.saveRegisteredPhone(data['phone'].toString());
+              }
+              if (data['full_name'] != null) {
+                await DeviceAuthService.saveRegisteredName(data['full_name'].toString());
+              }
+            }
+          }
+        }
+        return data;
+      }
+      throw Exception(data['error'] ?? 'Polling failed');
+    } catch (e) {
+      return {'status': 'pending', 'error': e.toString()};
+    }
+  }
+
   // ── Send WhatsApp OTP ──────────────────────────────────────────────────────
   Future<Map<String, dynamic>> sendWhatsAppOTP(String phone) async {
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
