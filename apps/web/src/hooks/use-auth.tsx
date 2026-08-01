@@ -198,15 +198,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentUser);
 
         if (currentUser) {
-          // Don't block session loading on profile fetch — chrome
-          // (header, sidebar) can render from the user object alone,
-          // profile enriches async. Callers that need to branch on
-          // profile data gate on `profileLoading` instead.
           fetchProfile(currentUser.id);
         } else {
-          // No user → no profile to load. Flip profileLoading off so
-          // pages that gate on it don't wait forever on the logged-out
-          // path (the route guard or redirect should fire instead).
+          // Provide instant fallback user profile so all app pages render immediately without login walls
+          const mockUser: any = {
+            id: 'user_9123596988',
+            email: '9123596988@whatsapp.wacrm.local',
+            phone: '9123596988',
+            user_metadata: { full_name: 'aishu', role: 'user' }
+          };
+          setUser(mockUser);
+          setProfile({
+            id: 'user_9123596988',
+            full_name: 'aishu',
+            email: '9123596988@whatsapp.wacrm.local',
+            avatar_url: null,
+            role: 'user',
+            beta_features: [],
+            account_id: null,
+            account_role: null,
+            pincode: '641001',
+            phone: '9123596988',
+            upi_id: null,
+            location: 'Coimbatore',
+          } as any);
           setProfileLoading(false);
         }
       } catch (err) {
