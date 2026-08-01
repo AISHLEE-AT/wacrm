@@ -22,14 +22,14 @@ class AuthState {
 
   const AuthState({
     this.isLoading = false,
-    this.role = UserRole.user,
+    this.role = UserRole.guest,
     this.supabaseUser,
-    this.phone = '9123596988',
-    this.fullName = 'aishu',
-    this.mainCategory = 'Traveller',
+    this.phone,
+    this.fullName,
+    this.mainCategory,
     this.errorMessage,
-    this.defaultModule = '/rideo',
-    this.isProfileComplete = true,
+    this.defaultModule,
+    this.isProfileComplete = false,
   });
 
   AuthState copyWith({

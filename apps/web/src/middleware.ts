@@ -130,13 +130,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
-  // Bypass login completely — redirect /login to /rideo
-  if (request.nextUrl.pathname === '/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/rideo'
-    url.search = ''
-    return withRefreshedCookies(NextResponse.redirect(url))
-  }
+  // Allow /login to render Customer-Initiated WhatsApp Login Screen
 
   // ── Protect API routes (except public auth endpoints) ──────────────────────
   const isPublicApiPath = [
