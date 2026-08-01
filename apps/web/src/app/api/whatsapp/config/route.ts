@@ -30,7 +30,9 @@ async function resolveAccountId(
 
   const acctId = data?.account_id || userId
   if (!data?.account_id) {
-    await supabase.from('profiles').update({ account_id: userId }).eq('id', userId).catch(() => {})
+    try {
+      await supabase.from('profiles').update({ account_id: userId }).eq('id', userId)
+    } catch { /* silent fallback */ }
   }
   return acctId
 }
