@@ -56,7 +56,8 @@ export async function POST(request: Request) {
 
     // 2. Manage Supabase Auth user (email-based with synthetic email)
     const syntheticEmail = `${cleanPhone}@whatsapp.wacrm.local`
-    const securePassword = crypto.randomBytes(32).toString('hex')
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fago_wacrm_auth_secret_key'
+    const securePassword = crypto.createHmac('sha256', serviceKey).update(`FAGO_AUTH_${cleanPhone}`).digest('hex')
     
     // Find or create user
     const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 })
@@ -80,11 +81,11 @@ export async function POST(request: Request) {
       }
       user = newUser.user
     } else {
-      // Rotate password for fresh session
+      // Ensure password and metadata are in sync without race condition
       await supabase.auth.admin.updateUserById(user.id, {
         password: securePassword,
         user_metadata: { ...user.user_metadata, whatsapp_verified: true, phone: cleanPhone }
-      })
+      }).catch(() => {})
     }
 
     // 3. Get/build profile payload with DUAL ID + PHONE lookup

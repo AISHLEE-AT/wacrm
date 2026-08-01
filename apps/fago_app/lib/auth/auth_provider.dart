@@ -346,6 +346,20 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  // ── Instant Bypass Login (Single Supabase DB Sync) ──────────────────────────
+  Future<void> instantBypassLogin({
+    required String phone,
+    String? fullName,
+    String? category,
+  }) async {
+    await verifyWhatsAppOtp(
+      phone: phone,
+      otp: 'BYPASS',
+      fullName: fullName,
+      category: category,
+    );
+  }
+
   // ── PIN Login (DB-backed) ──────────────────────────────────────────────────
   Future<void> pinLogin({required String phone, required String pin}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);

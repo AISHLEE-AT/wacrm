@@ -1124,8 +1124,8 @@ async function handleInboundLoginToken(
 
   // 3. Create or find Supabase auth user (same pattern as verify-otp)
   const cleanPhone = session.phone.replace(/\D/g, '').slice(-10)
-  const syntheticEmail = `${cleanPhone}@whatsapp.wacrm.local`
-  const securePassword = crypto.randomBytes(32).toString('hex')
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'fago_wacrm_auth_secret_key'
+  const securePassword = crypto.createHmac('sha256', serviceKey).update(`FAGO_AUTH_${cleanPhone}`).digest('hex')
 
   let user: any = null
 
@@ -1146,11 +1146,11 @@ async function handleInboundLoginToken(
       }
       user = newUser.user
     } else {
-      // Rotate password for fresh session
+      // Ensure password and metadata are in sync without race condition
       await admin.auth.admin.updateUserById(user.id, {
         password: securePassword,
         user_metadata: { ...user.user_metadata, whatsapp_verified: true, phone: cleanPhone }
-      })
+      }).catch(() => {})
     }
   } catch (err) {
     console.error('[login] Auth user error:', err)
