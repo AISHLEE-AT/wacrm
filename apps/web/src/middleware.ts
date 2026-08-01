@@ -130,9 +130,10 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
-  if (!user && isProtectedPath) {
+  // Bypass login completely — redirect /login to /rideo
+  if (request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/rideo'
     url.search = ''
     return withRefreshedCookies(NextResponse.redirect(url))
   }

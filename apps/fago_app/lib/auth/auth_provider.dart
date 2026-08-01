@@ -21,15 +21,15 @@ class AuthState {
   final bool isProfileComplete;
 
   const AuthState({
-    this.isLoading = true,
-    this.role = UserRole.guest,
+    this.isLoading = false,
+    this.role = UserRole.user,
     this.supabaseUser,
-    this.phone,
-    this.fullName,
-    this.mainCategory,
+    this.phone = '9123596988',
+    this.fullName = 'aishu',
+    this.mainCategory = 'Traveller',
     this.errorMessage,
-    this.defaultModule,
-    this.isProfileComplete = false,
+    this.defaultModule = '/rideo',
+    this.isProfileComplete = true,
   });
 
   AuthState copyWith({

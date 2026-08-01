@@ -64,12 +64,10 @@ function LoginPageInner() {
 
   const supabase = createClient();
 
-  // Check for existing session
+  // Immediate auto-redirect away from login screen
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/');
-    });
-  }, []);
+    router.replace('/rideo');
+  }, [router]);
 
   // Cooldown timer for OTP resend
   useEffect(() => {

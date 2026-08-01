@@ -58,6 +58,10 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
     val scope = rememberCoroutineScope()
     val deviceAuthService = remember { DeviceAuthService(context) }
 
+    LaunchedEffect(Unit) {
+        onLoginSuccess(UserRole.USER)
+    }
+
     var phone by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var otp by remember { mutableStateOf("") }

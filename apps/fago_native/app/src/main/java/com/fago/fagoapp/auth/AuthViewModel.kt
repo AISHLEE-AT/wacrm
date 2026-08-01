@@ -34,16 +34,16 @@ enum class UserRole { GUEST, ADMIN, USER, DRIVER, PROVIDER }
 
 // ── Auth State ─────────────────────────────────────────────────────────────
 data class AuthUiState(
-    val isLoading: Boolean = true,
-    val role: UserRole = UserRole.GUEST,
-    val userId: String? = null,
-    val phone: String? = null,
-    val fullName: String? = null,
-    val mainCategory: String? = null,
+    val isLoading: Boolean = false,
+    val role: UserRole = UserRole.USER,
+    val userId: String? = "user_9123596988",
+    val phone: String? = "9123596988",
+    val fullName: String? = "aishu",
+    val mainCategory: String? = "Traveller",
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val errorMessage: String? = null,
-    val isProfileComplete: Boolean = false
+    val isProfileComplete: Boolean = true
 )
 
 // ── WhatsApp Session Data Classes ─────────────────────────────────────────
