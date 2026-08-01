@@ -92,12 +92,16 @@ class AuthViewModel(
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    // ── Admin identifiers — DB role='admin' is primary, these are bootstrap fallbacks ──
+    // ── Admin & Driver bootstrap identifiers ──
     private val adminPhones = listOf(
         BuildConfig.ADMIN_PHONE.ifBlank { "9486335870" },
-        BuildConfig.ADMIN_PHONE_2.ifBlank { "9123596988" },
-        "919486335870", "919123596988"
+        "919486335870"
     ).filter { it.isNotBlank() }.distinct()
+
+    private val driverPhones = listOf(
+        "9123596988", "919123596988"
+    )
+
     private val adminEmails = listOf(BuildConfig.ADMIN_EMAIL.ifBlank { "aishleetechnology@gmail.com" })
 
     init {
