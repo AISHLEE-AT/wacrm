@@ -105,6 +105,7 @@ export async function GET(request: Request) {
         role,
         category,
         full_name: sessionData.full_name || session.full_name,
+        phone: session.phone,
         isAdmin,
         isDriver,
         redirect_to: redirectTo,

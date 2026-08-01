@@ -1158,18 +1158,63 @@ async function handleInboundLoginToken(
     return false
   }
 
-  // 4. Get/build profile payload
-  const { data: existingProfile } = await admin
+  // 4. Get/build profile payload with DUAL ID + PHONE lookup & auto-merge
+  const { data: matchedProfiles } = await admin
     .from('profiles')
-    .select('full_name, main_category, role, pin_hash')
-    .eq('id', user.id)
-    .maybeSingle()
+    .select('id, full_name, main_category, role, pin_hash')
+    .or(`id.eq.${user.id},phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
+
+  // Find best existing profile data across any matched row
+  let bestName: string | null = null
+  let bestCategory: string | null = null
+  let bestRole: string | null = null
+  let bestPinHash: string | null = null
+
+  if (matchedProfiles && matchedProfiles.length > 0) {
+    for (const p of matchedProfiles) {
+      if (p.full_name && !p.full_name.startsWith('User ') && !p.full_name.match(/^\d+$/)) {
+        bestName = p.full_name
+      }
+      if (p.main_category && p.main_category !== 'Traveller') {
+        bestCategory = p.main_category
+      } else if (p.main_category && !bestCategory) {
+        bestCategory = p.main_category
+      }
+      if (p.role && p.role !== 'user') {
+        bestRole = p.role
+      } else if (p.role && !bestRole) {
+        bestRole = p.role
+      }
+      if (p.pin_hash) {
+        bestPinHash = p.pin_hash
+      }
+    }
+  }
+
+  // Delete any old duplicate profile rows for this phone that have a different ID
+  if (matchedProfiles && matchedProfiles.length > 0) {
+    const oldIds = matchedProfiles.map((p: any) => p.id).filter((id: string) => id !== user.id)
+    if (oldIds.length > 0) {
+      await admin.from('profiles').delete().in('id', oldIds)
+    }
+  }
+
+  // Determine final name
+  let finalName = bestName || session.full_name || senderName
+  if (!finalName || finalName.trim() === '' || finalName.startsWith('User ')) {
+    if (bestName) finalName = bestName
+    else if (session.full_name) finalName = session.full_name
+    else if (senderName && senderName.trim() !== '') finalName = senderName
+    else finalName = `User ${cleanPhone.slice(-4)}`
+  }
+
+  const finalCategory = bestCategory || session.category || 'Traveller'
 
   // Determine role
   const isBootstrapAdmin = LOGIN_BOOTSTRAP_ADMIN_PHONES.some(p =>
     cleanPhone === p || cleanPhone === p.slice(-10)
   )
-  const dbRole = existingProfile?.role
+  const dbRole = bestRole
   const isAdmin = dbRole === 'admin' || dbRole === 'ADMIN' || isBootstrapAdmin
 
   // Check driver status
@@ -1181,30 +1226,34 @@ async function handleInboundLoginToken(
     || dbRole === 'driver' || dbRole === 'DRIVER'
 
   const resolvedRole = isAdmin ? 'admin' : (isDriver ? 'driver' : (dbRole || 'user'))
-  const resolvedCategory = isDriver ? 'Driver' : (existingProfile?.main_category || session.category || 'Traveller')
+  const resolvedCategory = isDriver ? 'Driver' : finalCategory
 
-  // Determine final name
-  let finalName = session.full_name || senderName
-  if (existingProfile?.full_name && !existingProfile.full_name.startsWith('User ')) {
-    finalName = existingProfile.full_name
-  }
-  if (!finalName || finalName.trim() === '') {
-    finalName = `User ${cleanPhone.slice(-4)}`
-  }
-
-  // Upsert profile
+  // Upsert unified profile under user.id
   const profilePayload: Record<string, any> = {
     id: user.id,
     phone: cleanPhone,
     whatsapp: cleanPhone,
     full_name: finalName,
-    main_category: existingProfile?.main_category || session.category || 'Traveller',
+    main_category: resolvedCategory,
     role: resolvedRole,
     updated_at: new Date().toISOString(),
     last_login: new Date().toISOString(),
     platform: 'whatsapp_inbound',
   }
+  if (bestPinHash) profilePayload.pin_hash = bestPinHash
+
   await admin.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+
+  // Sync metadata to Supabase Auth User
+  await admin.auth.admin.updateUserById(user.id, {
+    user_metadata: {
+      phone: cleanPhone,
+      full_name: finalName,
+      main_category: resolvedCategory,
+      role: resolvedRole,
+      whatsapp_verified: true,
+    }
+  })
 
   // 5. Generate Supabase session tokens
   const standardSupabase = createClient(

@@ -156,9 +156,10 @@ class AuthViewModel(
                     val roleStr = json.optString("role")
                     val categoryStr = json.optString("category")
                     val nameStr = json.optString("full_name")
+                    val phoneStr = json.optString("phone")
 
                     if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
-                        signInWithTokens(accessToken, refreshToken)
+                        signInWithTokens(accessToken, refreshToken, phoneHint = phoneStr, nameHint = nameStr)
                     }
 
                     val pollRes = WhatsAppPollResponse(
@@ -789,7 +790,7 @@ class AuthViewModel(
         }
     }
 
-    private suspend fun signInWithTokens(accessToken: String, refreshToken: String) {
+    private suspend fun signInWithTokens(accessToken: String, refreshToken: String, phoneHint: String? = null, nameHint: String? = null) {
         supabase.auth.importSession(
             io.github.jan.supabase.gotrue.user.UserSession(
                 accessToken = accessToken,
@@ -801,17 +802,16 @@ class AuthViewModel(
         )
         val user = supabase.auth.currentUserOrNull()
         val userId = user?.id
-        val userPhone = user?.phone ?: user?.userMetadata?.get("phone")?.toString()?.trim('"')
-        if (userId != null) {
+        val userPhone = phoneHint?.ifEmpty { null }
+            ?: user?.phone?.ifEmpty { null }
+            ?: user?.userMetadata?.get("phone")?.toString()?.trim('"')?.ifEmpty { null }
+            ?: extractPhoneFromEmail(user?.email)
+
+        if (userId != null && !userPhone.isNullOrEmpty()) {
             try {
-                supabase.postgrest["profiles"].update(
-                    buildJsonObject {
-                        put("last_login", java.time.Instant.now().toString())
-                        put("platform", "android")
-                    }
-                ) { filter { eq("id", userId) } }
+                syncProfileAndFinishLogin(userId, userPhone, nameHint)
             } catch(e: Exception) {
-                Log.d("FagoAuth", "Failed to update last_login: ${e.message}")
+                Log.d("FagoAuth", "Failed to sync profile on login: ${e.message}")
             }
         }
         resolveRole(userPhone, userId)

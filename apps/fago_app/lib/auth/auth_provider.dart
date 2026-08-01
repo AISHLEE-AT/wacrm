@@ -134,7 +134,7 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      // Fetch profile from DB
+      // Fetch profile from DB (Dual Strategy: ID first, then Phone)
       Map<String, dynamic>? profile;
       try {
         final result = await _supabase
@@ -143,23 +143,23 @@ class AuthNotifier extends Notifier<AuthState> {
             .eq('id', sbUser.id)
             .maybeSingle();
         profile = result;
-      } catch (e) {
-        // Fallback: search by phone
-        if (phone != null && phone.isNotEmpty) {
-          final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-          final digits = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+      } catch (_) {}
+
+      final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+      final digits = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+
+      if ((profile == null || profile['full_name'] == null || profile['full_name'].toString().startsWith('User ')) && digits.isNotEmpty) {
+        try {
           final results = await _supabase
               .from('profiles')
               .select('full_name, main_category, role, profile_complete, default_module')
-              .or('phone.eq.$digits,phone.eq.91$digits,whatsapp.eq.$digits')
+              .or('phone.eq.$digits,phone.eq.91$digits,whatsapp.eq.$digits,whatsapp.eq.91$digits')
               .limit(1);
-          profile = results.isNotEmpty ? results.first : null;
-        }
+          if (results.isNotEmpty) {
+            profile = results.first;
+          }
+        } catch (_) {}
       }
-
-      final dbRole = profile?['role']?.toString().toLowerCase();
-      final cleanPhone = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
-      final digits = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
 
       // Resolve admin: DB first, then bootstrap fallback
       final isBootstrapAdmin = _bootstrapAdminPhones.any((p) =>

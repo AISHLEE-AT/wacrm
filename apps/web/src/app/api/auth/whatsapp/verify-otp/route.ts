@@ -86,18 +86,48 @@ export async function POST(request: Request) {
       })
     }
 
-    // 3. Get/build profile payload
-    const { data: existingProfile } = await supabase
+    // 3. Get/build profile payload with DUAL ID + PHONE lookup
+    const { data: matchedProfiles } = await supabase
       .from('profiles')
-      .select('full_name, main_category, role, pin_hash')
-      .eq('id', user.id)
-      .maybeSingle()
+      .select('id, full_name, main_category, role, pin_hash')
+      .or(`id.eq.${user.id},phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
+
+    let bestName: string | null = null
+    let bestCategory: string | null = null
+    let bestRole: string | null = null
+    let bestPinHash: string | null = null
+
+    if (matchedProfiles && matchedProfiles.length > 0) {
+      for (const p of matchedProfiles) {
+        if (p.full_name && !p.full_name.startsWith('User ') && !p.full_name.match(/^\d+$/)) {
+          bestName = p.full_name
+        }
+        if (p.main_category && p.main_category !== 'Traveller') {
+          bestCategory = p.main_category
+        } else if (p.main_category && !bestCategory) {
+          bestCategory = p.main_category
+        }
+        if (p.role && p.role !== 'user') {
+          bestRole = p.role
+        } else if (p.role && !bestRole) {
+          bestRole = p.role
+        }
+        if (p.pin_hash) {
+          bestPinHash = p.pin_hash
+        }
+      }
+
+      const oldIds = matchedProfiles.map((p: any) => p.id).filter((id: string) => id !== user.id)
+      if (oldIds.length > 0) {
+        await supabase.from('profiles').delete().in('id', oldIds)
+      }
+    }
 
     // Determine role: DB first, then bootstrap fallback
     const isBootstrapAdmin = BOOTSTRAP_ADMIN_PHONES.some(p =>
       cleanPhone === p || cleanPhone === p.slice(-10)
     )
-    const dbRole = existingProfile?.role
+    const dbRole = bestRole
     const isAdmin = dbRole === 'admin' || dbRole === 'ADMIN' || isBootstrapAdmin
 
     // Check driver status
@@ -109,51 +139,44 @@ export async function POST(request: Request) {
       || dbRole === 'driver' || dbRole === 'DRIVER'
 
     const resolvedRole = isAdmin ? 'admin' : (isDriver ? 'driver' : (dbRole || 'user'))
-    const resolvedCategory = isDriver ? 'Driver' : (existingProfile?.main_category || category || 'Traveller')
+    const resolvedCategory = isDriver ? 'Driver' : (bestCategory || category || 'Traveller')
 
     // PIN hash: use bcrypt-compatible SHA-256 for cross-platform compatibility
-    let pinHash: string | undefined
+    let pinHash: string | undefined = bestPinHash || undefined
     if (pin && pin.length === 4) {
       pinHash = crypto.createHash('sha256').update(`FAGO_PIN_${cleanPhone}_${pin}`).digest('hex')
     }
 
-    // Build profile upsert
+    const finalName = (bestName && !bestName.startsWith('User '))
+      ? bestName
+      : (fullName && fullName.trim()) ? fullName.trim() : `User ${cleanPhone.slice(-4)}`
+
+    // Build profile payload
     const profilePayload: Record<string, any> = {
       id: user.id,
       phone: cleanPhone,
       whatsapp: cleanPhone,
+      full_name: finalName,
+      main_category: resolvedCategory,
+      role: resolvedRole,
       updated_at: new Date().toISOString(),
       last_login: new Date().toISOString(),
       platform: 'web',
     }
-
-    // Preserve existing name if it's a real name (not auto-generated)
-    if (existingProfile?.full_name && !existingProfile.full_name.startsWith('User ')) {
-      profilePayload.full_name = existingProfile.full_name
-    } else if (fullName && fullName.trim()) {
-      profilePayload.full_name = fullName.trim()
-    } else {
-      profilePayload.full_name = `User ${cleanPhone.slice(-4)}`
-    }
-
-    // Only set category if not already set
-    if (existingProfile?.main_category) {
-      profilePayload.main_category = existingProfile.main_category
-    } else if (category && category.trim()) {
-      profilePayload.main_category = category.trim()
-    } else {
-      profilePayload.main_category = 'Traveller'
-    }
-
-    // Set role from DB or promote bootstrap admin
-    profilePayload.role = resolvedRole
-
-    // Store PIN hash if provided
-    if (pinHash) {
-      profilePayload.pin_hash = pinHash
-    }
+    if (pinHash) profilePayload.pin_hash = pinHash
 
     await supabase.from('profiles').upsert(profilePayload, { onConflict: 'id' })
+
+    // Sync Auth Metadata
+    await supabase.auth.admin.updateUserById(user.id, {
+      user_metadata: {
+        phone: cleanPhone,
+        full_name: finalName,
+        main_category: resolvedCategory,
+        role: resolvedRole,
+        whatsapp_verified: true,
+      }
+    })
 
     // Sync contact
     try {
