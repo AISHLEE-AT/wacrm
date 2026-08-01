@@ -130,7 +130,12 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
-  // Allow /login to render Customer-Initiated WhatsApp Login Screen
+  if (!user && isProtectedPath) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('redirect', request.nextUrl.pathname)
+    return withRefreshedCookies(NextResponse.redirect(url))
+  }
 
   // ── Protect API routes (except public auth endpoints) ──────────────────────
   const isPublicApiPath = [

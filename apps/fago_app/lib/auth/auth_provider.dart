@@ -161,6 +161,7 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       // Resolve admin: DB first, then bootstrap fallback
+      final dbRole = profile?['role']?.toString().toLowerCase();
       final isBootstrapAdmin = _bootstrapAdminPhones.any((p) =>
           digits == p || digits == p.substring(p.length > 10 ? p.length - 10 : 0)) ||
           (sbUser.email?.contains(_bootstrapAdminEmail) ?? false);
@@ -352,7 +353,7 @@ class AuthNotifier extends Notifier<AuthState> {
     String? fullName,
     String? category,
   }) async {
-    await verifyWhatsAppOtp(
+    await verifyWhatsAppOTP(
       phone: phone,
       otp: 'BYPASS',
       fullName: fullName,
