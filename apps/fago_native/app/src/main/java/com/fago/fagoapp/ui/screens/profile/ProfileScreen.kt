@@ -166,7 +166,7 @@ fun ProfileScreen(
     }
 
     val dbRole = liveRole.lowercase()
-    val isDbAdmin = dbRole == "admin" || authState.role == UserRole.ADMIN || (authState.phone != null && (authState.phone.contains("9486335870") || authState.phone.contains("9123596988")))
+    val isDbAdmin = dbRole == "admin" || authState.role == UserRole.ADMIN || (authState.phone != null && authState.phone.contains("9486335870"))
     val isDbDriver = dbRole == "driver" || authState.role == UserRole.DRIVER
 
     val displayRole = when {

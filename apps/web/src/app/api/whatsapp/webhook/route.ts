@@ -1083,8 +1083,7 @@ async function findOrCreateConversation(
 
 // Bootstrap admin phones for role resolution
 const LOGIN_BOOTSTRAP_ADMIN_PHONES = [
-  '9486335870', '919486335870',
-  '9123596988', '919123596988'
+  '9486335870', '919486335870'
 ]
 
 async function handleInboundLoginToken(

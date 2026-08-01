@@ -69,7 +69,6 @@ class AuthNotifier extends Notifier<AuthState> {
   // Bootstrap admin phones — DB role='admin' is primary source of truth
   static const List<String> _bootstrapAdminPhones = [
     '9486335870', '919486335870',
-    '9123596988', '919123596988',
   ];
   static const String _bootstrapAdminEmail = 'aishleetechnology@gmail.com';
 

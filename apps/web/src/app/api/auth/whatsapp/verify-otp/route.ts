@@ -6,8 +6,7 @@ import crypto from 'crypto'
 // Unified admin phones — DB role='admin' is source of truth
 // These are bootstrap-only fallbacks
 const BOOTSTRAP_ADMIN_PHONES = [
-  '9486335870', '919486335870',
-  '9123596988', '919123596988'
+  '9486335870', '919486335870'
 ]
 
 export async function POST(request: Request) {
