@@ -595,7 +595,7 @@ export default function InboxPage() {
             on the right. Issue #165. */}
         <div
           className={cn(
-            "flex h-full min-w-0 flex-1 lg:flex",
+            "flex h-full min-w-0 flex-1 overflow-hidden lg:flex",
             hasActiveConv ? "flex" : "hidden lg:flex",
           )}
         >
