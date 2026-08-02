@@ -65,6 +65,30 @@ export async function POST() {
     let updated = 0
     const errors: any[] = []
 
+    const { data: profile } = await supabaseAdmin()
+      .from('profiles')
+      .select('account_id')
+      .eq('id', user.id)
+      .maybeSingle()
+    const accountId = profile?.account_id || 'f21e8cdb-e27d-41fa-9aa4-af06ccdc0feb'
+
+    const normalizeCategory = (c?: string) => {
+      if (!c) return 'Marketing'
+      const u = c.toUpperCase()
+      if (u === 'UTILITY') return 'Utility'
+      if (u === 'AUTHENTICATION') return 'Authentication'
+      return 'Marketing'
+    }
+
+    const normalizeStatus = (s?: string) => {
+      if (!s) return 'Approved'
+      const u = s.toUpperCase()
+      if (u === 'APPROVED') return 'Approved'
+      if (u === 'REJECTED') return 'Rejected'
+      if (u === 'PENDING') return 'Pending'
+      return 'Draft'
+    }
+
     // Try saving to DB if table exists
     for (const t of metaTemplates) {
       try {
@@ -72,22 +96,41 @@ export async function POST() {
         const headerComp = (t.components ?? []).find((c: any) => c.type === 'HEADER')
         const footerComp = (t.components ?? []).find((c: any) => c.type === 'FOOTER')
 
-        await supabaseAdmin().from('message_templates').upsert({
-          account_id: user.id,
-          user_id: user.id,
+        const { data: existing } = await supabaseAdmin()
+          .from('message_templates')
+          .select('id')
+          .eq('name', t.name)
+          .maybeSingle()
+
+        const payload = {
           name: t.name,
-          category: t.category || 'MARKETING',
-          language: t.language || 'en',
+          category: normalizeCategory(t.category),
+          language: t.language || 'en_US',
           body_text: bodyComp?.text || '',
           header_content: headerComp?.text || null,
           footer_text: footerComp?.text || null,
-          status: t.status || 'APPROVED',
-          meta_template_id: t.id,
+          status: normalizeStatus(t.status),
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'name' })
-        inserted++
+        }
+
+        if (existing) {
+          await supabaseAdmin()
+            .from('message_templates')
+            .update(payload)
+            .eq('id', existing.id)
+          updated++
+        } else {
+          await supabaseAdmin()
+            .from('message_templates')
+            .insert({
+              ...payload,
+              account_id: accountId,
+              user_id: user.id,
+            })
+          inserted++
+        }
       } catch (e) {
-        // Table missing or schema error — ignore DB write
+        console.error('Error saving template to DB:', e)
       }
     }
 

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       const { data, error } = await admin
         .from('profiles')
         .update(updates)
-        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .eq('id', userId)
         .select('*')
       
       if (data && data.length > 0) updateResult = data[0]
