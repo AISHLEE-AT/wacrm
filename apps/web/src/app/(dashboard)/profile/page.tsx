@@ -147,7 +147,11 @@ function ProfilePageInner() {
   const [editingUpi, setEditingUpi] = useState(false);
   const [upiValue, setUpiValue] = useState('');
   const [upiIdState, setUpiIdState] = useState('');
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [locationValue, setLocationValue] = useState('');
+  const [locationState, setLocationState] = useState('');
   const [driverProfile, setDriverProfile] = useState<any>(null);
+  const [savingField, setSavingField] = useState<string | null>(null);
 
   const activeProfile = dbProfile || profile;
 
@@ -161,30 +165,60 @@ function ProfilePageInner() {
     user?.phone?.includes("9486335870")
   );
 
+  // Real-Time Profile Data Subscription
   useEffect(() => {
     if (!user?.id) return;
-    const fetchDbProfile = async () => {
+    let channel: any = null;
+
+    const initRealtimeProfile = async () => {
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
+        
+        // Initial fetch
         const { data } = await supabase
           .from('profiles')
           .select('*')
           .or(`id.eq.${user.id},user_id.eq.${user.id}`)
           .maybeSingle();
+
         if (data) {
           setDbProfile(data);
           if (data.upi_id) setUpiIdState(data.upi_id);
+          if (data.location) setLocationState(data.location);
+          if (data.full_name) setNameValue(data.full_name);
         }
+
+        // Realtime Subscription on profiles table
+        channel = supabase
+          .channel(`public:profiles:${user.id}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'profiles' },
+            (payload: any) => {
+              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("9486335870"))) {
+                setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
+                if (payload.new.upi_id) setUpiIdState(payload.new.upi_id);
+                if (payload.new.location) setLocationState(payload.new.location);
+              }
+            }
+          )
+          .subscribe();
       } catch (err) {
         console.error('Error fetching db profile:', err);
       }
     };
-    fetchDbProfile();
+
+    initRealtimeProfile();
+
+    return () => {
+      if (channel) channel.unsubscribe();
+    };
   }, [user?.id]);
 
   const handleSaveName = async () => {
     if (!nameValue.trim() || !user?.id) return;
+    setSavingField('name');
     try {
       const res = await fetch('/api/profile/update', {
         method: 'POST',
@@ -195,14 +229,17 @@ function ProfilePageInner() {
           full_name: nameValue.trim(),
         }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.profile) {
+        setDbProfile(data.profile);
         setEditingName(false);
-        window.location.reload();
       } else {
         alert('Failed to update name. Please try again.');
       }
     } catch (err) {
       console.error('Error saving name:', err);
+    } finally {
+      setSavingField(null);
     }
   };
 
@@ -325,14 +362,68 @@ function ProfilePageInner() {
           </div>
         </div>
         <hr className="border-border" />
-        <div className="flex items-center gap-4 text-foreground">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <MapPin className="text-primary" size={20} />
+        <div className="flex items-center justify-between text-foreground">
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <MapPin className="text-primary" size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Location</p>
+              {editingLocation ? (
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={locationValue}
+                    onChange={e => setLocationValue(e.target.value)}
+                    placeholder="e.g. Chennai, Tamil Nadu"
+                    className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!locationValue.trim() || !user?.id) return;
+                      setSavingField('location');
+                      try {
+                        const cleanLoc = locationValue.trim();
+                        const res = await fetch('/api/profile/update', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            userId: user.id,
+                            phone: user.phone || activeProfile?.phone || activeProfile?.whatsapp,
+                            location: cleanLoc,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.profile) {
+                          setDbProfile(data.profile);
+                          setLocationState(cleanLoc);
+                          setEditingLocation(false);
+                        } else {
+                          alert('Failed to save location.');
+                        }
+                      } catch (err) {
+                        console.error('Error saving location:', err);
+                      } finally {
+                        setSavingField(null);
+                      }
+                    }}
+                    className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:opacity-90 transition"
+                  >Save</button>
+                  <button onClick={() => setEditingLocation(false)} className="text-muted-foreground text-sm hover:text-foreground transition">Cancel</button>
+                </div>
+              ) : (
+                <p className="font-medium">{locationState || activeProfile?.location || 'Tamil Nadu, India'}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Location</p>
-            <p className="font-medium">{profile?.location || 'Tamil Nadu, India'}</p>
-          </div>
+          {!editingLocation && (
+            <button
+              onClick={() => { setLocationValue(locationState || activeProfile?.location || 'Tamil Nadu, India'); setEditingLocation(true); }}
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Edit
+            </button>
+          )}
         </div>
         <hr className="border-border" />
         <div className="flex items-center justify-between text-foreground">
@@ -354,6 +445,7 @@ function ProfilePageInner() {
                   <button
                     onClick={async () => {
                       if (!upiValue.trim() || !user?.id) return;
+                      setSavingField('upi');
                       try {
                         const cleanUpi = upiValue.trim();
                         const res = await fetch('/api/profile/update', {
@@ -365,16 +457,18 @@ function ProfilePageInner() {
                             upi_id: cleanUpi,
                           }),
                         });
-                        if (res.ok) {
+                        const data = await res.json();
+                        if (res.ok && data.profile) {
+                          setDbProfile(data.profile);
                           setUpiIdState(cleanUpi);
                           setEditingUpi(false);
-                          alert('✅ UPI ID saved successfully!');
                         } else {
                           alert('Failed to save UPI ID. Please try again.');
                         }
                       } catch (err) {
                         console.error('Error saving UPI ID:', err);
-                        alert('Failed to save UPI ID. Please try again.');
+                      } finally {
+                        setSavingField(null);
                       }
                     }}
                     className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:opacity-90 transition"

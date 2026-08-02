@@ -52,6 +52,7 @@ private val RoseAccent      = Color(0xFFF43F5E)
 fun ProfileScreen(
     authState: AuthUiState,
     profileData: Map<String, String?>,
+    onNavigateCrm: (() -> Unit)? = null,
     onSignOut: () -> Unit
 ) {
     val context = LocalContext.current
@@ -314,11 +315,16 @@ fun ProfileScreen(
             Spacer(Modifier.height(12.dp))
 
             // ── Admin Button (Access CRM for 9486335870 / Apply for Users) ──────
-            if (cleanPhone.contains("9486335870") || isDbAdmin) {
+            val isAdminUser = isDbAdmin || authState.role == UserRole.ADMIN || rawPhone.contains("9486335870") || cleanPhone.replace(" ", "").contains("9486335870")
+            if (isAdminUser) {
                 Button(
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app/admin"))
-                        try { context.startActivity(intent) } catch (e: Exception) {}
+                        if (onNavigateCrm != null) {
+                            onNavigateCrm()
+                        } else {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app/crm"))
+                            try { context.startActivity(intent) } catch (e: Exception) {}
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GoldAdmin),

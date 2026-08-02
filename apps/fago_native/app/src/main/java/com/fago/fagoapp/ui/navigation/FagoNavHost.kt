@@ -44,7 +44,7 @@ fun FagoNavHost(
         if (!authState.isLoading) {
             val targetRoute = when (authState.role) {
                 UserRole.GUEST -> Routes.LOGIN
-                UserRole.ADMIN -> Routes.ADMIN
+                UserRole.ADMIN -> Routes.CRM
                 UserRole.DRIVER -> Routes.DRIVO
                 UserRole.USER, UserRole.PROVIDER -> {
                     when (authState.mainCategory) {
@@ -67,7 +67,7 @@ fun FagoNavHost(
     val startDest = when {
         authState.isLoading              -> Routes.SPLASH
         authState.role == UserRole.GUEST -> Routes.LOGIN
-        authState.role == UserRole.ADMIN -> Routes.ADMIN
+        authState.role == UserRole.ADMIN -> Routes.CRM
         authState.role == UserRole.DRIVER -> Routes.DRIVO
         else                             -> {
             when (authState.mainCategory) {
@@ -269,6 +269,7 @@ fun FagoNavHost(
                     "main_category" to (authState.mainCategory ?: "Traveller"),
                     "role" to if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user"
                 ),
+                onNavigateCrm = { navController.navigate(Routes.CRM) },
                 onSignOut = {
                     onSignOut()
                     navController.navigate(Routes.LOGIN) { popUpTo(0) }
