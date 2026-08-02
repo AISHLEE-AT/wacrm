@@ -1,128 +1,122 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
-import { Share2, ExternalLink, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Share2, 
+  ShoppingBag, 
+  MapPin, 
+  Tag, 
+  CheckCircle, 
+  Sparkles, 
+  Send,
+  Building2,
+  BadgeCheck
+} from 'lucide-react';
+
+const B2B_TRADE_ITEMS = [
+  {
+    id: 1,
+    title: 'பொன்னி அரிசி மொத்த விற்பனை (Sona Masoori / Ponni Rice Wholesale)',
+    quantity: '10 Tons (10,000 kg)',
+    price: '₹42 / kg',
+    location: 'Thanjavur, Tamil Nadu',
+    seller: 'Kaveri Delta Rice Mill',
+    verified: true,
+    phone: '9486335870'
+  },
+  {
+    id: 2,
+    title: 'முதல் தரம் மஞ்சள் கிழங்கு (High Curcumin Turmeric Finger)',
+    quantity: '5 Tons (5,000 kg)',
+    price: '₹140 / kg',
+    location: 'Erode, Tamil Nadu',
+    seller: 'Erode Turmeric Traders',
+    verified: true,
+    phone: '9123596988'
+  },
+  {
+    id: 3,
+    title: 'தேங்காய் நார் & கொப்பரை (Coir Fibre & Dry Copra Bulk)',
+    quantity: '20 Tons',
+    price: '₹28 / kg',
+    location: 'Pollachi, Coimbatore',
+    seller: 'Pollachi Coir Exports',
+    verified: true,
+    phone: '9876543210'
+  }
+];
 
 export default function TradeOPage() {
-  const { user, profile } = useAuth();
-  // null = not yet resolved (show skeleton), string = ready to render
-  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
-  const [key, setKey] = useState(0);
-
-  const supabase = createClient();
-
-  useEffect(() => {
-    // ⚡ Only build the iframe URL after we have the user object.
-    // Without this guard the iframe loads immediately with phone=''
-    // and aishlee-web falls back to id='guest_user'.
-    if (user === undefined) return; // still loading auth, wait
-
-    async function syncAishleeSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        // Derive a clean phone number from whatever field is available.
-        // WACRM stores phone as the email prefix for WhatsApp users:
-        //   e.g. '9344532738@whatsapp.wacrm.local' → '9344532738'
-        const rawPhone = profile?.phone
-          || user?.phone
-          || (user?.email?.includes('@whatsapp.wacrm.local')
-              ? user.email.split('@')[0]
-              : user?.email?.split('@')[0])
-          || '';
-        // Keep only digits and take last 10 for local format
-        const phone = rawPhone.replace(/\D/g, '').slice(-10);
-        const name = profile?.full_name || user?.user_metadata?.full_name || 'User';
-
-        let params = `?embed=true&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`;
-        if (session) {
-          // Pass tokens in BOTH query string AND hash so aishlee-web
-          // AppProvider can pick them up regardless of parsing method.
-          params += `&access_token=${encodeURIComponent(session.access_token)}`
-            + `&refresh_token=${encodeURIComponent(session.refresh_token)}`
-            + `#access_token=${session.access_token}`
-            + `&refresh_token=${session.refresh_token}`
-            + `&token_type=bearer`;
-        }
-        setIframeUrl(`https://thamizhan.vercel.app/tradeo${params}`);
-      } catch (err) {
-        console.error('SSO sync error:', err);
-        // Fallback: load without SSO so at least the page renders
-        setIframeUrl('https://thamizhan.vercel.app/tradeo');
-      }
-    }
-    syncAishleeSession();
-  }, [user, profile]);
-
-  const handleRefresh = () => {
-    setKey(prev => prev + 1);
-  };
+  const [tradeItems] = useState(B2B_TRADE_ITEMS);
 
   return (
-    <div className="w-full h-[calc(100vh-4rem)] flex flex-col p-2 md:p-4 space-y-2 bg-[#0A0D14]">
-      {/* Window Header Toolbar */}
-      <div className="flex items-center justify-between bg-card/60 border border-white/10 px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400">
-            <Share2 className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-sm md:text-base font-extrabold text-white flex items-center gap-2">
-              TradeO • மொத்த வர்த்தகம் & சந்தை
+    <div className="min-h-screen bg-[#0A0D14] text-white p-4 md:p-8 space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-cyan-950/80 via-slate-900 to-purple-950/80 border border-cyan-500/30 rounded-2xl p-6 shadow-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+              <Share2 className="w-6 h-6" />
+            </span>
+            <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-teal-300 to-purple-300">
+              TradeO • மொத்த வர்த்தகம் &amp; சந்தை (B2B Commodity Hub)
             </h1>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
-              Aishlee Technology B2B & Wholesale Trading Live Connected Module
-            </p>
           </div>
+          <p className="text-xs md:text-sm text-slate-300">
+            தமிழ்நாடு மொத்த விவசாய விளைபொருட்கள், அரிசி ஆலைகள், மளிகை &amp; மூலப்பொருட்கள் B2B சந்தை.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> SSO Connected
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs flex items-center gap-1.5">
+            <BadgeCheck className="w-4 h-4" /> 100% Verified Wholesale Sellers
           </span>
-          <button
-            onClick={handleRefresh}
-            disabled={!iframeUrl}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs flex items-center gap-1 transition disabled:opacity-40"
-            title="Refresh Window"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-          <a
-            href={iframeUrl ?? '#'}
-            target="_blank"
-            rel="noreferrer"
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
-          >
-            Full Screen <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </div>
       </div>
 
-      {/* Embedded Aishlee Web Window Container */}
-      <div className="flex-1 w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
-        {!iframeUrl ? (
-          /* Loading skeleton — shown while we wait for auth to resolve */
-          <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-slate-500">
-            <Loader2 className="w-10 h-10 animate-spin text-cyan-500" />
-            <p className="text-sm font-medium">Connecting to Aishlee TradeO…</p>
-            <p className="text-xs text-slate-600">Authenticating your session</p>
+      {/* Trade Items Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tradeItems.map(item => (
+          <div
+            key={item.id}
+            className="bg-slate-900 border border-slate-800 hover:border-cyan-500/40 rounded-2xl p-6 space-y-4 transition shadow-md flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-cyan-400 flex items-center gap-1 bg-cyan-500/10 px-2.5 py-1 rounded-full border border-cyan-500/30">
+                  <Building2 className="w-3.5 h-3.5" /> {item.seller}
+                </span>
+                <BadgeCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+
+              <h3 className="text-base font-bold text-white leading-snug">{item.title}</h3>
+
+              <div className="space-y-1 text-xs text-slate-300">
+                <p><strong>Quantity Available:</strong> {item.quantity}</p>
+                <p className="flex items-center gap-1.5 text-slate-400"><MapPin className="w-3.5 h-3.5 text-slate-500" /> {item.location}</p>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-400 block">Wholesale Rate:</span>
+                <span className="text-lg font-black text-amber-300">{item.price}</span>
+              </div>
+
+              <button
+                onClick={() => {
+                  const text = `👋 Hello! I am interested in buying wholesale "${item.title}" (${item.quantity}) listed on FAGO TradeO. Please send terms and quotes.`;
+                  window.open(`https://api.whatsapp.com/send?phone=91${item.phone}&text=${encodeURIComponent(text)}`, '_blank');
+                }}
+                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-600 text-black font-bold text-xs flex items-center gap-1 transition shadow"
+              >
+                Connect Supplier →
+              </button>
+            </div>
           </div>
-        ) : (
-          <iframe
-            key={key}
-            src={iframeUrl}
-            title="Aishlee TradeO Module Window"
-            className="w-full h-full border-0"
-            allow="camera; microphone; geolocation; clipboard-write; encrypted-media; autoplay"
-          />
-        )}
+        ))}
       </div>
     </div>
   );
 }
-
-

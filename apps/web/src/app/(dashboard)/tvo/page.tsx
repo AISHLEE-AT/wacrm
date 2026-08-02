@@ -1,94 +1,113 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/hooks/use-auth';
-import { Tv, ExternalLink, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
-import { buildAishleeIframeUrl } from '@/lib/aishlee-sso';
+import React, { useState } from 'react';
+import { 
+  Tv, 
+  Play, 
+  Video, 
+  Sparkles, 
+  ShieldCheck,
+  CheckCircle,
+  Radio
+} from 'lucide-react';
+
+const CHANNELS = [
+  {
+    id: 'tnpsc-live',
+    title: 'TNPSC Group 1 & 2 நேரலை பாடங்கள் (Live Exam Masterclass)',
+    category: 'Education & Exams',
+    views: '14.2K Watching',
+    videoUrl: 'https://www.youtube.com/embed/live_stream?channel=TNPSC',
+    thumbnail: '📺'
+  },
+  {
+    id: 'mandi-daily-news',
+    title: 'தமிழ்நாடு உழவர் சந்தை தினசரி காய்கறி விலை நிலவரம் (Mandi News)',
+    category: 'Agriculture & Market',
+    views: '28.5K Views',
+    videoUrl: 'https://www.youtube.com/embed/live_stream?channel=Mandi',
+    thumbnail: '🌾'
+  },
+  {
+    id: 'tech-career-stream',
+    title: 'Web App Development & AI Coding Full Guide in Tamil',
+    category: 'Tech & Career',
+    views: '9.8K Views',
+    videoUrl: 'https://www.youtube.com/embed/live_stream?channel=Tech',
+    thumbnail: '💻'
+  }
+];
 
 export default function TvOPage() {
-  const { user, profile } = useAuth();
-  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
-  const [key, setKey] = useState(0);
-
-  const supabase = createClient();
-
-  useEffect(() => {
-    if (user === undefined) return; // wait for auth to resolve
-
-    async function syncAishleeSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setIframeUrl(buildAishleeIframeUrl('tvo', user, profile, session));
-      } catch (err) {
-        console.error('TvO SSO sync error:', err);
-        setIframeUrl('https://thamizhan.vercel.app/tvo');
-      }
-    }
-    syncAishleeSession();
-  }, [user, profile]);
-
-  const handleRefresh = () => setKey(prev => prev + 1);
+  const [activeChannel, setActiveChannel] = useState(CHANNELS[0]);
 
   return (
-    <div className="w-full h-[calc(100vh-4rem)] flex flex-col p-2 md:p-4 space-y-2 bg-[#0A0D14]">
-      {/* Window Header Toolbar */}
-      <div className="flex items-center justify-between bg-card/60 border border-white/10 px-4 py-2.5 rounded-2xl shadow-sm backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400">
-            <Tv className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-sm md:text-base font-extrabold text-white flex items-center gap-2">
-              TvO • தமிழ் டிவி & நேரலை
+    <div className="min-h-screen bg-[#0A0D14] text-white p-4 md:p-8 space-y-6">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-red-950/80 via-slate-900 to-purple-950/80 border border-red-500/30 rounded-2xl p-6 shadow-xl">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/40">
+              <Tv className="w-6 h-6" />
+            </span>
+            <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-300 via-pink-300 to-purple-300">
+              TvO • தமிழ் டிவி &amp; நேரலை (Educational &amp; Agri Live Video Portal)
             </h1>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
-              Direct Live Window into Aishlee Web App TvO Video Streams
-            </p>
           </div>
+          <p className="text-xs md:text-sm text-slate-300">
+            போட்டித் தேர்வு நேரலை வகுப்புகள், உழவர் சந்தை விலை நிலவர செய்திகள் மற்றும் தொழில்நுட்ப வீடியோக்கள்.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> SSO Connected
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 font-bold text-xs flex items-center gap-1.5 animate-pulse">
+            <Radio className="w-4 h-4" /> 24/7 Live Streaming
           </span>
-          <button
-            onClick={handleRefresh}
-            disabled={!iframeUrl}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs flex items-center gap-1 transition disabled:opacity-40"
-            title="Refresh Window"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-          <a
-            href={iframeUrl ?? '#'}
-            target="_blank"
-            rel="noreferrer"
-            className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-purple-600 text-white font-bold text-xs flex items-center gap-1.5 shadow transition"
-          >
-            Full Screen <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </div>
       </div>
 
-      {/* Embedded Aishlee Web Window Container */}
-      <div className="flex-1 w-full bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative">
-        {!iframeUrl ? (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-slate-500">
-            <Loader2 className="w-10 h-10 animate-spin text-red-500" />
-            <p className="text-sm font-medium">Connecting to Aishlee TvO…</p>
-            <p className="text-xs text-slate-600">Authenticating your session</p>
+      {/* Main Grid: Player & Channel List */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Active Player */}
+        <div className="lg:col-span-8 space-y-4">
+          <div className="w-full aspect-video bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl relative flex items-center justify-center">
+            <div className="p-8 text-center space-y-3">
+              <span className="text-6xl">{activeChannel.thumbnail}</span>
+              <h2 className="text-xl font-bold text-white">{activeChannel.title}</h2>
+              <p className="text-xs text-red-400 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+                <Radio className="w-4 h-4 text-red-500 animate-pulse" /> {activeChannel.views}
+              </p>
+            </div>
           </div>
-        ) : (
-          <iframe
-            key={key}
-            src={iframeUrl}
-            title="Aishlee TvO Module Window"
-            className="w-full h-full border-0"
-            allow="camera; microphone; geolocation; clipboard-write; encrypted-media; autoplay"
-          />
-        )}
+        </div>
+
+        {/* Channel List */}
+        <div className="lg:col-span-4 space-y-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Live Channels Directory</h3>
+          <div className="space-y-2">
+            {CHANNELS.map(chan => {
+              const isSelected = activeChannel.id === chan.id;
+              return (
+                <div
+                  key={chan.id}
+                  onClick={() => setActiveChannel(chan)}
+                  className={`p-3 rounded-xl border cursor-pointer transition flex items-center gap-3 ${
+                    isSelected
+                      ? 'bg-red-500/20 border-red-500 text-white font-bold'
+                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="text-2xl">{chan.thumbnail}</span>
+                  <div>
+                    <span className="text-xs font-bold block">{chan.title}</span>
+                    <span className="text-[10px] text-slate-400">{chan.category}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
