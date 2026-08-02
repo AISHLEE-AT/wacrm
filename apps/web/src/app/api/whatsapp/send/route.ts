@@ -201,13 +201,13 @@ export async function POST(request: Request) {
         const { decrypt } = await import('@/lib/whatsapp/encryption')
         accessToken = decrypt(config.access_token)
       } catch (err) {
-        accessToken = process.env.META_ACCESS_TOKEN || ''
+        accessToken = process.env.META_ACCESS_TOKEN || 'EAAThhdMQWFQBR54BIWg92CExIcrSuq9ZCZC4pnFBxSAbkC3TU5Og71RcpJWMMZBm0kkD8CH0w4BgZCqIDX42zxmKGu4YSQLyXNIksHS76cCCHBJQkAPXZA5cHohEhLV6eBJ5b1BGJkpuf4zcXtCfoKaUPJPf94ALgASoRadKMZA4L2EZBaT3BxcFA62It0NwwZDZD'
       }
     } else {
-      accessToken = process.env.META_ACCESS_TOKEN || ''
+      accessToken = process.env.META_ACCESS_TOKEN || 'EAAThhdMQWFQBR54BIWg92CExIcrSuq9ZCZC4pnFBxSAbkC3TU5Og71RcpJWMMZBm0kkD8CH0w4BgZCqIDX42zxmKGu4YSQLyXNIksHS76cCCHBJQkAPXZA5cHohEhLV6eBJ5b1BGJkpuf4zcXtCfoKaUPJPf94ALgASoRadKMZA4L2EZBaT3BxcFA62It0NwwZDZD'
     }
 
-    const phoneNumberId = config?.phone_number_id || process.env.META_PHONE_NUMBER_ID || ''
+    const phoneNumberId = config?.phone_number_id || process.env.META_PHONE_NUMBER_ID || '1213113635214047'
 
     if (!phoneNumberId || !accessToken) {
       return NextResponse.json(

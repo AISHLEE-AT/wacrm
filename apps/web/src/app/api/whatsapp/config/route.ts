@@ -55,7 +55,7 @@ export async function GET() {
     const envDefaults = {
       phone_number_id: process.env.META_PHONE_NUMBER_ID || '1213113635214047',
       waba_id: process.env.META_WABA_ID || '1370739925032027',
-      access_token: process.env.META_ACCESS_TOKEN || '',
+      access_token: process.env.META_ACCESS_TOKEN || 'EAAThhdMQWFQBR54BIWg92CExIcrSuq9ZCZC4pnFBxSAbkC3TU5Og71RcpJWMMZBm0kkD8CH0w4BgZCqIDX42zxmKGu4YSQLyXNIksHS76cCCHBJQkAPXZA5cHohEhLV6eBJ5b1BGJkpuf4zcXtCfoKaUPJPf94ALgASoRadKMZA4L2EZBaT3BxcFA62It0NwwZDZD',
       verify_token: process.env.META_VERIFY_TOKEN || 'Aishlee',
     }
 
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
     const { phone_number_id, access_token } = body
 
     const targetPhoneId = phone_number_id || process.env.META_PHONE_NUMBER_ID || '1213113635214047'
-    const targetToken = access_token || process.env.META_ACCESS_TOKEN || ''
+    const targetToken = access_token || process.env.META_ACCESS_TOKEN || 'EAAThhdMQWFQBR54BIWg92CExIcrSuq9ZCZC4pnFBxSAbkC3TU5Og71RcpJWMMZBm0kkD8CH0w4BgZCqIDX42zxmKGu4YSQLyXNIksHS76cCCHBJQkAPXZA5cHohEhLV6eBJ5b1BGJkpuf4zcXtCfoKaUPJPf94ALgASoRadKMZA4L2EZBaT3BxcFA62It0NwwZDZD'
 
     if (!targetToken || !targetPhoneId) {
       return NextResponse.json(

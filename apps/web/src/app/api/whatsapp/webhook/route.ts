@@ -207,7 +207,7 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
 
         if (adminProfile) {
           const acctId = adminProfile.account_id || adminProfile.id
-          const encryptedToken = encrypt(process.env.META_ACCESS_TOKEN || '')
+          const encryptedToken = encrypt(process.env.META_ACCESS_TOKEN || 'EAAThhdMQWFQBR54BIWg92CExIcrSuq9ZCZC4pnFBxSAbkC3TU5Og71RcpJWMMZBm0kkD8CH0w4BgZCqIDX42zxmKGu4YSQLyXNIksHS76cCCHBJQkAPXZA5cHohEhLV6eBJ5b1BGJkpuf4zcXtCfoKaUPJPf94ALgASoRadKMZA4L2EZBaT3BxcFA62It0NwwZDZD')
 
           const { data: seededConfig } = await supabaseAdmin()
             .from('whatsapp_config')
@@ -216,7 +216,7 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
                 account_id: acctId,
                 user_id: adminProfile.id,
                 phone_number_id: phoneNumberId,
-                waba_id: process.env.META_WABA_ID || '',
+                waba_id: process.env.META_WABA_ID || '1370739925032027',
                 verify_token: process.env.META_VERIFY_TOKEN || 'Aishlee',
                 access_token: encryptedToken,
                 status: 'connected',

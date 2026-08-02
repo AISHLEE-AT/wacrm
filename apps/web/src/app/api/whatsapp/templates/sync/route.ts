@@ -27,7 +27,7 @@ export async function POST() {
     }
 
     const wabaId = process.env.META_WABA_ID || '1370739925032027'
-    const accessToken = process.env.META_ACCESS_TOKEN || ''
+    const accessToken = process.env.META_ACCESS_TOKEN || 'EAAThhdMQWFQBR54BIWg92CExIcrSuq9ZCZC4pnFBxSAbkC3TU5Og71RcpJWMMZBm0kkD8CH0w4BgZCqIDX42zxmKGu4YSQLyXNIksHS76cCCHBJQkAPXZA5cHohEhLV6eBJ5b1BGJkpuf4zcXtCfoKaUPJPf94ALgASoRadKMZA4L2EZBaT3BxcFA62It0NwwZDZD'
 
     if (!wabaId || !accessToken) {
       return NextResponse.json(
