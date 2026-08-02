@@ -42,10 +42,7 @@ android {
             "\"${env["WHATSAPP_OTP_SEND_URL"] ?: "https://watscrm.vercel.app/api/auth/whatsapp/send-otp"}\"")
         buildConfigField("String", "WHATSAPP_OTP_VERIFY_URL",
             "\"${env["WHATSAPP_OTP_VERIFY_URL"] ?: "https://watscrm.vercel.app/api/auth/whatsapp/verify-otp"}\"")
-        buildConfigField("String", "API_BASE_URL",
-            "\"${env["NEXT_PUBLIC_APP_URL"] ?: env["APP_URL"] ?: "https://watscrm.vercel.app"}\"")
-        buildConfigField("String", "ADMIN_PHONE", "\"${env["ADMIN_PHONE"] ?: "9486335870"}\"")
-        buildConfigField("String", "ADMIN_PHONE_2", "\"9123596988\"")
+        buildConfigField("String", "ADMIN_PHONE", "\"9486335870\"")
         buildConfigField("String", "ADMIN_EMAIL", "\"aishleetechnology@gmail.com\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

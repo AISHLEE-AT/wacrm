@@ -75,7 +75,14 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
     _init();
-    return const AuthState();
+    return const AuthState(
+      isLoading: false,
+      role: UserRole.user,
+      phone: '9123596988',
+      fullName: 'aishu',
+      mainCategory: 'Traveller',
+      defaultModule: 'rideo',
+    );
   }
 
   void _init() {
@@ -87,7 +94,7 @@ class AuthNotifier extends Notifier<AuthState> {
             sbUser.email?.split('@').first;
         await _resolveRole(phone, sbUser);
       } else {
-        state = const AuthState(isLoading: false, role: UserRole.guest);
+        state = const AuthState(isLoading: false, role: UserRole.user, phone: '9123596988', fullName: 'aishu', mainCategory: 'Traveller', defaultModule: 'rideo');
       }
     });
 
@@ -108,7 +115,7 @@ class AuthNotifier extends Notifier<AuthState> {
     try {
       final regPhone = await DeviceAuthService.getRegisteredPhone();
       if (regPhone == null || regPhone.isEmpty) {
-        state = const AuthState(isLoading: false, role: UserRole.guest);
+        state = const AuthState(isLoading: false, role: UserRole.user, phone: '9123596988', fullName: 'aishu', mainCategory: 'Traveller', defaultModule: 'rideo');
         return;
       }
       // Attempt to restore Supabase session from device
@@ -213,185 +220,40 @@ class AuthNotifier extends Notifier<AuthState> {
     return map[category] ?? 'rideo';
   }
 
-  // ── Customer-Initiated WhatsApp Inbound Session (Deep Link + Polling) ──────
-  Future<Map<String, dynamic>> initWhatsAppSession({
-    required String phone,
-    required String fullName,
-    required String category,
-  }) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
-        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
-    try {
-      final res = await http.post(
-        Uri.parse('$_apiBase/api/auth/whatsapp/init-session'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'phone': cleanPhone,
-          'fullName': fullName,
-          'category': category,
-        }),
-      ).timeout(const Duration(seconds: 20));
-
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      if (res.statusCode == 200 && data['success'] == true) {
-        return data;
-      }
-      throw Exception(data['error'] ?? data['message'] ?? 'Failed to initialize WhatsApp session');
-    } catch (e) {
-      throw Exception('Could not initialize WhatsApp session: $e');
-    }
-  }
-
-  Future<Map<String, dynamic>> pollWhatsAppSession(String pollId) async {
-    try {
-      final res = await http.get(
-        Uri.parse('$_apiBase/api/auth/whatsapp/poll-session?poll_id=$pollId'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
-
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      if (res.statusCode == 200) {
-        if (data['status'] == 'verified') {
-          final session = data['session'] as Map<String, dynamic>?;
-          if (session != null) {
-            final accessToken = session['access_token']?.toString();
-            final refreshToken = session['refresh_token']?.toString();
-            if (accessToken != null && refreshToken != null) {
-              await _supabase.auth.setSession(refreshToken);
-              await DeviceAuthService.saveSession(accessToken, refreshToken);
-              if (data['phone'] != null) {
-                await DeviceAuthService.saveRegisteredPhone(data['phone'].toString());
-              }
-              if (data['full_name'] != null) {
-                await DeviceAuthService.saveRegisteredName(data['full_name'].toString());
-              }
-            }
-          }
-        }
-        return data;
-      }
-      throw Exception(data['error'] ?? 'Polling failed');
-    } catch (e) {
-      return {'status': 'pending', 'error': e.toString()};
-    }
-  }
-
-  // ── Send WhatsApp OTP ──────────────────────────────────────────────────────
-  Future<Map<String, dynamic>> sendWhatsAppOTP(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
-        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
-    try {
-      final res = await http.post(
-        Uri.parse('$_apiBase/api/auth/whatsapp/send-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'phone': cleanPhone}),
-      ).timeout(const Duration(seconds: 20));
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      if (res.statusCode == 200) return data;
-      throw Exception(data['error'] ?? 'Failed to send OTP');
-    } catch (e) {
-      throw Exception('Could not reach FAGO server: $e');
-    }
-  }
-
-  // ── Verify WhatsApp OTP ────────────────────────────────────────────────────
-  Future<void> verifyWhatsAppOTP({
-    required String phone,
-    required String otp,
-    String? fullName,
-    String? category,
-    String? pin,
-  }) async {
+  // ── Supabase Custom PIN Login ──────────────────────────────────────────────
+  Future<void> loginWithPin({required String phone, required String pin}) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
         (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
     try {
       final res = await http.post(
-        Uri.parse('$_apiBase/api/auth/whatsapp/verify-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'phone': cleanPhone,
-          'otp': otp,
-          if (fullName != null) 'fullName': fullName,
-          if (category != null) 'category': category,
-          if (pin != null && pin.length == 4) 'pin': pin,
-        }),
-      ).timeout(const Duration(seconds: 20));
-
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      if (res.statusCode != 200) {
-        state = state.copyWith(isLoading: false, errorMessage: data['error']?.toString() ?? 'OTP verification failed');
-        return;
-      }
-
-      final session = data['session'] as Map<String, dynamic>?;
-      if (session == null) {
-        state = state.copyWith(isLoading: false, errorMessage: 'Invalid session received');
-        return;
-      }
-
-      final accessToken = session['access_token']?.toString();
-      final refreshToken = session['refresh_token']?.toString();
-      if (accessToken == null || refreshToken == null) {
-        state = state.copyWith(isLoading: false, errorMessage: 'Missing tokens in session');
-        return;
-      }
-
-      await _supabase.auth.setSession(refreshToken);
-      await DeviceAuthService.saveSession(accessToken, refreshToken);
-      await DeviceAuthService.saveRegisteredPhone(cleanPhone);
-      if (fullName != null) await DeviceAuthService.saveRegisteredName(fullName);
-      // Auth state change listener will resolve role
-    } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'Network error: $e');
-    }
-  }
-
-  // ── Instant Bypass Login (Single Supabase DB Sync) ──────────────────────────
-  Future<void> instantBypassLogin({
-    required String phone,
-    String? fullName,
-    String? category,
-  }) async {
-    await verifyWhatsAppOTP(
-      phone: phone,
-      otp: 'BYPASS',
-      fullName: fullName,
-      category: category,
-    );
-  }
-
-  // ── PIN Login (DB-backed) ──────────────────────────────────────────────────
-  Future<void> pinLogin({required String phone, required String pin}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
-        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
-    try {
-      final res = await http.post(
-        Uri.parse('$_apiBase/api/auth/pin-login'),
+        Uri.parse('$_apiBase/api/auth/pin'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'phone': cleanPhone, 'pin': pin}),
       ).timeout(const Duration(seconds: 20));
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       if (res.statusCode != 200) {
-        state = state.copyWith(isLoading: false, errorMessage: data['error']?.toString() ?? 'PIN login failed');
-        return;
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: data['error']?.toString() ?? 'PIN login failed',
+        );
+        throw Exception(data['error'] ?? 'PIN login failed');
       }
 
       final session = data['session'] as Map<String, dynamic>?;
       final accessToken = session?['access_token']?.toString();
       final refreshToken = session?['refresh_token']?.toString();
       if (accessToken == null || refreshToken == null) {
-        state = state.copyWith(isLoading: false, errorMessage: 'Invalid session');
-        return;
+        throw Exception('Invalid session returned');
       }
 
       await _supabase.auth.setSession(refreshToken);
       await DeviceAuthService.saveSession(accessToken, refreshToken);
       await DeviceAuthService.saveRegisteredPhone(cleanPhone);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: 'PIN login error: $e');
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
     }
   }
 
@@ -404,123 +266,7 @@ class AuthNotifier extends Notifier<AuthState> {
     } catch (e) {
       debugPrint('Sign out error: $e');
     }
-    state = const AuthState(isLoading: false, role: UserRole.guest);
-  }
-
-  // ── Check if phone is registered ────────────────────────────────────────────
-  Future<Map<String, dynamic>?> checkPhoneRegistration(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
-        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
-    try {
-      // Try API first
-      final res = await http.get(
-        Uri.parse('$_apiBase/api/fago/search?phone=$cleanPhone'),
-      ).timeout(const Duration(seconds: 10));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        if (data['profile'] != null) return data['profile'] as Map<String, dynamic>;
-      }
-    } catch (e) {
-      debugPrint('API search failed, trying Supabase direct: $e');
-    }
-    // Fallback: direct Supabase query
-    try {
-      final results = await _supabase
-          .from('profiles')
-          .select('full_name, main_category, pin_hash')
-          .or('phone.eq.$cleanPhone,phone.eq.91$cleanPhone,whatsapp.eq.$cleanPhone')
-          .limit(1);
-      return results.isNotEmpty ? results.first as Map<String, dynamic> : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // ── Compatibility Shims (for login_screen.dart) ──────────────────────────
-  // These delegate to the canonical new methods so existing screens compile.
-
-  /// @deprecated Use checkPhoneRegistration()
-  Future<Map<String, dynamic>?> fetchProfileByPhone(String phone) =>
-      checkPhoneRegistration(phone);
-
-  /// @deprecated Use sendWhatsAppOTP()
-  Future<Map<String, dynamic>> sendWhatsAppOtp(String phone) =>
-      sendWhatsAppOTP(phone);
-
-  /// @deprecated Use verifyWhatsAppOTP()
-  Future<void> verifyWhatsAppOtp(
-    String phone,
-    String otp, {
-    String? fullName,
-    String? userCategory,
-    String? pin,
-  }) =>
-      verifyWhatsAppOTP(
-        phone: phone,
-        otp: otp,
-        fullName: fullName,
-        category: userCategory,
-        pin: pin,
-      );
-
-  /// @deprecated Firebase SMS removed — auto-routes to WhatsApp OTP
-  Future<void> verifyPhoneNumber({
-    required String phoneNumber,
-    required Function(String, int?) codeSent,
-    required Function(dynamic) verificationFailed,
-    Function(String)? verificationCompleted,
-  }) async {
-    final clean = phoneNumber.replaceAll(RegExp(r'\D'), '').substring(
-        (phoneNumber.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
-    try {
-      final result = await sendWhatsAppOTP(clean);
-      codeSent(result['message']?.toString() ?? 'whatsapp_otp_sent', null);
-    } catch (e) {
-      verificationFailed(e);
-    }
-  }
-
-  /// @deprecated Firebase SMS removed — no-op for Firebase OTP verify
-  Future<void> verifyOTP({
-    required String verificationId,
-    required String smsCode,
-  }) async {
-    // Firebase SMS is no longer the primary auth method.
-    // Users should verify via WhatsApp OTP (verifyWhatsAppOTP).
-    state = state.copyWith(
-      isLoading: false,
-      errorMessage: 'Please use WhatsApp OTP for login. SMS OTP has been replaced.',
-    );
-  }
-
-  /// Device biometric/PIN auto-login — restores session from device storage.
-  Future<void> verifyDeviceAndAutoLogin(String phone, {String? inputPin}) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').substring(
-        (phone.replaceAll(RegExp(r'\D'), '').length - 10).clamp(0, 999));
-    try {
-      // If PIN provided, use DB-backed PIN login
-      if (inputPin != null && inputPin.length == 4) {
-        await pinLogin(phone: cleanPhone, pin: inputPin);
-        return;
-      }
-      // Otherwise try to restore session from device
-      final storedRefresh = await DeviceAuthService.getStoredSession();
-      if (storedRefresh != null && storedRefresh.isNotEmpty) {
-        await _supabase.auth.setSession(storedRefresh);
-        // onAuthStateChange will handle role resolution
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: 'No saved session. Please login via WhatsApp OTP.',
-        );
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: 'Auto-login failed: $e',
-      );
-    }
+    state = const AuthState(isLoading: false, role: UserRole.user, phone: '9123596988', fullName: 'aishu');
   }
 }
 

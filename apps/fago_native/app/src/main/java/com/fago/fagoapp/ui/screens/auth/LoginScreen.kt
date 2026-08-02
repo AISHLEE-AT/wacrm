@@ -96,73 +96,6 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
     var isCheckingProfile by remember { mutableStateOf(false) }
 
-    var isPolling by remember { mutableStateOf(false) }
-    var pollId by remember { mutableStateOf<String?>(null) }
-    var deepLinkUrl by remember { mutableStateOf<String?>(null) }
-    var useOtpFallback by remember { mutableStateOf(false) }
-
-    // Inbound WhatsApp verification polling loop
-    LaunchedEffect(isPolling, pollId) {
-        if (isPolling && !pollId.isNullOrEmpty()) {
-            var elapsed = 0
-            while (isPolling && elapsed < 120) {
-                delay(2000)
-                elapsed += 2
-                val result = authViewModel.pollWhatsAppSession(pollId!!)
-                result.onSuccess { pollRes ->
-                    if (pollRes.status == "verified") {
-                        isPolling = false
-                        val resolvedRole = authViewModel.authState.value.role
-                        onLoginSuccess(resolvedRole)
-                    }
-                }
-            }
-            if (isPolling) {
-                isPolling = false
-                errorMsg = "WhatsApp verification timed out. Please try again or use OTP fallback."
-            }
-        }
-    }
-
-    fun startWhatsAppInboundLogin() {
-        val cleanPhone = phone.filter { it.isDigit() }
-        if (cleanPhone.length < 10) {
-            errorMsg = "Please enter a valid 10-digit Indian mobile number"
-            return
-        }
-        val tenDigit = cleanPhone.takeLast(10)
-        val finalFullName = name.ifBlank { "User ${tenDigit.takeLast(4)}" }
-
-        if (!isDeviceRegistered && name.isBlank()) {
-            errorMsg = "Please enter your Full Name (பெயர்)"
-            return
-        }
-
-        errorMsg = ""
-        isLoading = true
-        scope.launch {
-            val result = authViewModel.initWhatsAppSession(
-                phone = tenDigit,
-                fullName = finalFullName,
-                category = selectedCategoryKey
-            )
-            isLoading = false
-            result.onSuccess { initRes ->
-                if (!initRes.deepLinkUrl.isNullOrEmpty() && !initRes.pollId.isNullOrEmpty()) {
-                    deepLinkUrl = initRes.deepLinkUrl
-                    pollId = initRes.pollId
-                    isPolling = true
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(initRes.deepLinkUrl))
-                    context.startActivity(intent)
-                } else {
-                    errorMsg = "Failed to create WhatsApp session link."
-                }
-            }.onFailure { err ->
-                errorMsg = err.message ?: "Failed to initialize WhatsApp verification"
-            }
-        }
-    }
-
     // Live Database Auto-Detect when 10 digits are entered/autofetched
     LaunchedEffect(phone) {
         val cleanPhone = phone.filter { it.isDigit() }
@@ -421,15 +354,28 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                             }
 
                             Button(
-                                onClick = { startWhatsAppInboundLogin() },
+                                onClick = {
+                                    scope.launch {
+                                        isLoading = true
+                                        val result = authViewModel.sendWhatsAppOtp(targetPhone)
+                                        isLoading = false
+                                        result.onSuccess { sentOtp ->
+                                            generatedOtp = sentOtp
+                                            otpSent = true
+                                            errorMsg = "✅ OTP requested! Check your WhatsApp messages."
+                                        }.onFailure {
+                                            errorMsg = it.message ?: "Failed to send WhatsApp OTP"
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.weight(1f).height(46.dp),
                                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
-                                Icon(Icons.Default.FlashOn, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(3.dp))
-                                Text("⚡ WHATSAPP LOGIN", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1)
+                                Text("💬 WHATSAPP OTP", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 11.sp, maxLines = 1)
                             }
                         }
 
@@ -475,68 +421,8 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                 Spacer(Modifier.height(14.dp))
             }
 
-            // ── 5. Inbound WhatsApp Polling Card UI ─────────────────────────────
-            if (isPolling) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFF1E293B),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(2.dp, Color(0xFF25D366), RoundedCornerShape(16.dp))
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color(0xFF25D366),
-                            strokeWidth = 3.5.dp,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Text(
-                            text = "⏳ Waiting for WhatsApp Verification...",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "WhatsApp deep link opened. Send the pre-filled message in WhatsApp and you will be logged in automatically!",
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(Modifier.height(18.dp))
-                        Button(
-                            onClick = {
-                                if (!deepLinkUrl.isNullOrEmpty()) {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deepLinkUrl))
-                                    context.startActivity(intent)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(44.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Icon(Icons.Default.Chat, contentDescription = null, tint = Color.Black)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Re-open WhatsApp Chat", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        TextButton(
-                            onClick = {
-                                isPolling = false
-                                useOtpFallback = true
-                            }
-                        ) {
-                            Text("Cancel & Use OTP Fallback", color = Color(0xFF00F0FF), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(20.dp))
-            } else if (!otpSent) {
-                // ── 6. Mobile WhatsApp Number Input (Green Bordered) ──────────────
+            if (!otpSent) {
+                // ── 5. Mobile WhatsApp Number Input (Green Bordered) ──────────────
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it.filter { c -> c.isDigit() }.take(10) },
@@ -592,7 +478,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
                 Spacer(Modifier.height(12.dp))
 
-                // ── 7. Full Name Input (Green Bordered) ───────────────────────────
+                // ── 6. Full Name Input (Green Bordered) ───────────────────────────
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -610,7 +496,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
                 Spacer(Modifier.height(14.dp))
 
-                // ── 8. Primary Goal Category Dropdown ──────────────────────────────
+                // ── 7. Primary Goal Category Dropdown ──────────────────────────────
                 ExposedDropdownMenuBox(
                     expanded = dropdownExpanded,
                     onExpandedChange = { dropdownExpanded = !dropdownExpanded },
@@ -685,113 +571,78 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
             Spacer(Modifier.height(20.dp))
 
-            // ── 9. Action Button (Bright Green WhatsApp Instant Deep Link vs OTP) ───
-            if (!useOtpFallback && !otpSent && !isPolling) {
-                Button(
-                    onClick = { startWhatsAppInboundLogin() },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.FlashOn,
-                                contentDescription = null,
-                                tint = Color.Black,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                "⚡ Verify Instant via WhatsApp (1-Tap)",
-                                color = Color.Black,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
-                            )
-                        }
-                    }
-                }
-            } else if (!isPolling) {
-                Button(
-                    onClick = {
-                        if (phone.length != 10) { errorMsg = "Please enter a valid 10-digit Indian mobile number"; return@Button }
-                        errorMsg = ""
-                        isLoading = true
+            // ── 8. Action Button (Bright Green "Send WhatsApp OTP") ───────────────
+            Button(
+                onClick = {
+                    if (phone.length != 10) { errorMsg = "Please enter a valid 10-digit Indian mobile number"; return@Button }
+                    errorMsg = ""
+                    isLoading = true
 
-                        scope.launch {
-                            if (!otpSent) {
-                                if (cooldownSeconds > 0) {
-                                    errorMsg = "Please wait ${cooldownSeconds}s before requesting a new OTP."
-                                    isLoading = false
-                                    return@launch
-                                }
-                                cooldownSeconds = 60
-                                val result = authViewModel.sendWhatsAppOtp(phone)
+                    scope.launch {
+                        if (!otpSent) {
+                            if (cooldownSeconds > 0) {
+                                errorMsg = "Please wait ${cooldownSeconds}s before requesting a new OTP."
                                 isLoading = false
-                                result.onSuccess { sentOtp ->
-                                    generatedOtp = sentOtp
-                                    otpSent = true
-                                    errorMsg = "✅ OTP requested! Check your WhatsApp messages or tap Open WhatsApp."
-                                }.onFailure {
-                                    errorMsg = it.message ?: "Failed to send WhatsApp OTP"
-                                }
-                            } else {
-                                if (otp.length != 6) { errorMsg = "Enter 6-digit OTP code"; isLoading = false; return@launch }
-                                val result = authViewModel.verifyWhatsAppOtp(phone, otp, name.ifBlank { null })
-                                isLoading = false
-                                result.onSuccess {
-                                    val resolvedRole = authViewModel.authState.value.role
-                                    onLoginSuccess(resolvedRole)
-                                }.onFailure {
-                                    errorMsg = it.message ?: "Invalid OTP. Please check your WhatsApp."
-                                }
+                                return@launch
+                            }
+                            cooldownSeconds = 60
+                            val result = authViewModel.sendWhatsAppOtp(phone)
+                            isLoading = false
+                            result.onSuccess { sentOtp ->
+                                generatedOtp = sentOtp
+                                otpSent = true
+                                errorMsg = "✅ OTP requested! Check your WhatsApp messages or tap Open WhatsApp."
+                            }.onFailure {
+                                errorMsg = it.message ?: "Failed to send WhatsApp OTP"
+                            }
+                        } else {
+                            if (otp.length != 6) { errorMsg = "Enter 6-digit OTP code"; isLoading = false; return@launch }
+                            val result = authViewModel.verifyWhatsAppOtp(phone, otp, name.ifBlank { null })
+                            isLoading = false
+                            result.onSuccess {
+                                val resolvedRole = authViewModel.authState.value.role
+                                onLoginSuccess(resolvedRole)
+                            }.onFailure {
+                                errorMsg = it.message ?: "Invalid OTP. Please check your WhatsApp."
                             }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
-                    shape = RoundedCornerShape(12.dp),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                if (otpSent) Icons.Default.CheckCircle else Icons.Default.Chat,
-                                contentDescription = null,
-                                tint = Color.Black,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                if (otpSent) "Verify OTP & Access FAGO"
-                                else if (cooldownSeconds > 0) "Resend OTP in ${cooldownSeconds}s"
-                                else "Send WhatsApp OTP Code",
-                                color = Color.Black,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF00)),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (otpSent) Icons.Default.CheckCircle else Icons.Default.Chat,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            if (otpSent) "Verify OTP & Access FAGO"
+                            else if (cooldownSeconds > 0) "Resend OTP in ${cooldownSeconds}s"
+                            else "Send WhatsApp OTP",
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                     }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
 
-            // ── 10. Method Switcher Link ───────────────────────────────────────────
-            TextButton(onClick = {
-                useOtpFallback = !useOtpFallback
-                otpSent = false
-                otp = ""
-                errorMsg = ""
-            }) {
+            // ── 9. Method Switcher Link ───────────────────────────────────────────
+            TextButton(onClick = { isSmsMode = !isSmsMode }) {
                 Text(
-                    text = if (useOtpFallback) "⚡ Switch to Instant WhatsApp Verification" else "🔑 Switch to 6-Digit OTP Fallback Method",
-                    color = Color(0xFF00F0FF),
+                    text = if (isSmsMode) "Switch to WhatsApp OTP Method" else "Switch to SMS OTP Method",
+                    color = Color.Gray,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )

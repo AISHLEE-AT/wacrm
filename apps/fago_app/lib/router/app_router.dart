@@ -36,15 +36,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authState.isLoading) return null;
 
       final isLoggingIn = state.uri.path == '/login';
-      final isLoggedIn = authState.role != UserRole.guest;
-
-      // 1. If not logged in and not on /login, redirect to /login
-      if (!isLoggedIn && !isLoggingIn) {
-        return '/login';
-      }
-
-      // 2. If logged in and on /login, redirect to home '/'
-      if (isLoggedIn && isLoggingIn) {
+      if (isLoggingIn) {
         return '/';
       }
 
@@ -74,7 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 );
               }
               if (authState.role == UserRole.guest) {
-                return const LoginScreen();
+                return const RiderMapScreen();
               }
               if (authState.role == UserRole.admin) {
                 return const CrmDashboardScreen();

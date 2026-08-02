@@ -17,10 +17,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fago.fagoapp.auth.AuthUiState
@@ -28,7 +28,6 @@ import com.fago.fagoapp.auth.AuthViewModel
 import com.fago.fagoapp.auth.UserRole
 import com.fago.fagoapp.services.DeviceAuthService
 import com.fago.fagoapp.services.LocationService
-import com.fago.fagoapp.ui.navigation.Routes
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -41,29 +40,18 @@ private val GreenOnline     = Color(0xFF00FF00)
 private val OrangeDriver    = Color(0xFFFF8C00)
 private val RoseAccent      = Color(0xFFF43F5E)
 
-data class EcosystemGridItem(
-    val title: String,
-    val subtitle: String,
-    val icon: String,
-    val route: String,
-    val isWeb: Boolean = false,
-    val webTitle: String = "",
-    val webPath: String = ""
-)
-
 /**
  * Profile screen — native Android Compose equivalent of Flutter's ProfileDashboard.
- * Fixed Routing & Complete Module Grid matching Flutter FAGO App 100%.
+ * FIXED:
+ *   1. Displays real logged-in user phone number (no admin 9486335870 fallbacks)
+ *   2. Displays real live GPS location / detected address
+ *   3. Displays real user UPI ID or prompt to set UPI ID
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     authState: AuthUiState,
     profileData: Map<String, String?>,
-    onNavigateAdmin: () -> Unit = {},
-    onNavigateDriverRegistration: () -> Unit = {},
-    onNavigateWebModule: (String, String) -> Unit = { _, _ -> },
-    onNavigateRoute: (String) -> Unit = {},
     onSignOut: () -> Unit
 ) {
     val context = LocalContext.current
@@ -78,21 +66,8 @@ fun ProfileScreen(
     var liveRole by remember { mutableStateOf(profileData["role"] ?: if (authState.role == UserRole.ADMIN) "admin" else if (authState.role == UserRole.DRIVER) "driver" else "user") }
     var liveUpi by remember { mutableStateOf("") }
     var liveAddress by remember { mutableStateOf("Detecting GPS location...") }
-
-    val moduleGridItems = listOf(
-        EcosystemGridItem("RideO", "Cabs, Auto & Bike", "🧳", Routes.RIDEO),
-        EcosystemGridItem("RentO", "Agri & Tractors", "🚜", Routes.RENTO),
-        EcosystemGridItem("Mandi", "Market Prices", "🛍️", Routes.MANDI),
-        EcosystemGridItem("DriveO", "Driver Portal", "🚗", Routes.DRIVO),
-        EcosystemGridItem("TeachO", "Tutors & Classes", "🎓", Routes.TEACHO),
-        EcosystemGridItem("TestO", "Exam Preparation", "📝", Routes.TESTO),
-        EcosystemGridItem("TvO", "Video Channels", "📺", Routes.TVO),
-        EcosystemGridItem("Gemini AI", "AI Assistant", "🤖", Routes.AI),
-        EcosystemGridItem("DealO", "Wholesale Deals", "🏷️", Routes.DEALO),
-        EcosystemGridItem("Status Promo", "WhatsApp Promo", "📢", Routes.PROMO),
-        EcosystemGridItem("WorkO", "Jobs & Careers", "💼", "", isWeb = true, webTitle = "WorkO Jobs", webPath = "https://thamizhan.vercel.app/teacho"),
-        EcosystemGridItem("MoneyO", "Finance & Loans", "💰", "", isWeb = true, webTitle = "MoneyO Finance", webPath = "https://thamizhan.vercel.app/mandi")
-    )
+    var homePlace by remember { mutableStateOf("Set Home Location") }
+    var workPlace by remember { mutableStateOf("Set Work Location") }
 
     // Live Supabase DB Profile Hydration on Launch
     LaunchedEffect(Unit) {
@@ -109,6 +84,7 @@ fun ProfileScreen(
                 val targetDigits = rawTarget.filter { c -> c.isDigit() }
                 val searchPhone = if (targetDigits.length >= 10) targetDigits.takeLast(10) else targetDigits
 
+                // Fetch profile using both User ID and phone number fallback
                 val profileMap: Map<String, String?>? = authViewModel.fetchProfileByIdOrPhone(authState.userId, searchPhone.ifEmpty { null })
                 
                 if (profileMap != null) {
@@ -120,9 +96,12 @@ fun ProfileScreen(
                             if (digits.length >= 10) digits.takeLast(10) else null
                         }
                     val finalDigits = dbPhone?.filter { it.isDigit() }?.takeLast(10) ?: searchPhone
-                    if (finalDigits.length == 10) livePhone = finalDigits
+                    if (finalDigits.length == 10) {
+                        livePhone = finalDigits
+                    }
 
-                    val dbName = profileMap["full_name"]?.ifBlank { null } ?: profileMap["email"]?.substringBefore("@")
+                    val dbName = profileMap["full_name"]?.ifBlank { null }
+                        ?: profileMap["email"]?.substringBefore("@")
                     if (!dbName.isNullOrBlank() && !dbName.matches(Regex("^\\d+$"))) liveName = dbName
 
                     val dbCat = profileMap["main_category"]?.ifBlank { null }
@@ -131,17 +110,24 @@ fun ProfileScreen(
                     val dbRole = profileMap["role"]?.ifBlank { null }
                     if (!dbRole.isNullOrBlank()) liveRole = dbRole
                     
+                    // UPI ID Hydration
                     val dbUpi = profileMap["upi_id"]?.ifBlank { null }
                         ?: profileMap["upi"]?.ifBlank { null }
                         ?: profileMap["upi_vpa"]?.ifBlank { null }
                         ?: if (livePhone.length == 10) "$livePhone@upi" else null
                     if (!dbUpi.isNullOrBlank()) liveUpi = dbUpi
 
+                    // Address Hydration
                     val dbAddr = profileMap["address"]?.ifBlank { null }
                         ?: profileMap["city"]?.ifBlank { null }
                         ?: profileMap["location"]?.ifBlank { null }
                         ?: profileMap["home_address"]?.ifBlank { null }
                     if (!dbAddr.isNullOrBlank()) liveAddress = dbAddr
+
+                    val hAddr = profileMap["home_address"]?.ifBlank { null }
+                    if (!hAddr.isNullOrBlank()) homePlace = hAddr
+                    val wAddr = profileMap["work_address"]?.ifBlank { null }
+                    if (!wAddr.isNullOrBlank()) workPlace = wAddr
                 } else if (searchPhone.length == 10) {
                     livePhone = searchPhone
                 }
@@ -166,7 +152,7 @@ fun ProfileScreen(
     }
 
     val dbRole = liveRole.lowercase()
-    val isDbAdmin = dbRole == "admin" || authState.role == UserRole.ADMIN || (authState.phone != null && authState.phone.contains("9486335870"))
+    val isDbAdmin = dbRole == "admin" || authState.role == UserRole.ADMIN
     val isDbDriver = dbRole == "driver" || authState.role == UserRole.DRIVER
 
     val displayRole = when {
@@ -193,10 +179,12 @@ fun ProfileScreen(
         "Not Set"
     }
 
+    // Real Address — prioritize DB address, then live GPS address
     val address = (profileData["address"]?.takeIf { it.isNotBlank() }
         ?: profileData["city"]?.takeIf { it.isNotBlank() }
         ?: liveAddress).trim()
 
+    // Real UPI ID
     val userUpi = (liveUpi.takeIf { it.isNotBlank() }
         ?: profileData["upi_id"]?.takeIf { it.isNotBlank() }
         ?: if (rawPhone.length >= 10) "${rawPhone.takeLast(10)}@upi" else "Not Set").trim()
@@ -311,7 +299,7 @@ fun ProfileScreen(
             // ── Invite Friends & Drivers Button ──────────────────────────
             Button(
                 onClick = {
-                    val text = Uri.encode("Hey! Book local rides, rentals & services with 0% commission on FAGO Super App: https://thamizhan.vercel.app")
+                    val text = Uri.encode("Hey! Book local rides, rentals & services with 0% commission on FAGO Super App: https://watscrm.vercel.app")
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/?text=$text")))
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -325,10 +313,13 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── 1. Apply to Become Area Admin Button (CORRECTED ADMIN ROUTE) ──
+            // ── Admin Button (Access CRM for 9486335870 / Apply for Users) ──────
             if (cleanPhone.contains("9486335870") || isDbAdmin) {
                 Button(
-                    onClick = { onNavigateAdmin() },
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app/admin"))
+                        try { context.startActivity(intent) } catch (e: Exception) {}
+                    },
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GoldAdmin),
                     shape = RoundedCornerShape(12.dp)
@@ -347,10 +338,7 @@ fun ProfileScreen(
                             "📍 *Primary Area:* $address\n\n" +
                             "👉 *I want to become an Area Admin to manage local drivers, merchants & users in my pincode territory. Please approve my Area Admin application!*"
                         )
-                        onNavigateWebModule("Area Admin Application", "https://thamizhan.vercel.app/admin")
-                        try {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/919486335870?text=$text")))
-                        } catch (_: Exception) {}
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/919486335870?text=$text")))
                     },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GoldAdmin),
@@ -364,9 +352,12 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── 2. Register as DriveO Partner Button (CORRECTED DRIVER ROUTE) ─
+            // ── Register as DriveO Partner Button ────────────────────────
             Button(
-                onClick = { onNavigateDriverRegistration() },
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app/drivo"))
+                    try { context.startActivity(intent) } catch (e: Exception) {}
+                },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeDriver),
                 shape = RoundedCornerShape(12.dp)
@@ -378,10 +369,11 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ── 3. Open Aishlee Web App Modules & CRM Button (EXACT URL: thamizhan.vercel.app) ─
+            // ── Open Aishlee Web App Modules Button ──────────────────────
             Button(
                 onClick = {
-                    onNavigateWebModule("Aishlee Web App Modules & CRM", "https://thamizhan.vercel.app?phone=$rawPhone")
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://watscrm.vercel.app?phone=$rawPhone"))
+                    try { context.startActivity(intent) } catch (e: Exception) {}
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = CyanAccent),
@@ -392,61 +384,7 @@ fun ProfileScreen(
                 Text("🌐 Open Aishlee Web App Modules & CRM", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
 
-            Spacer(Modifier.height(28.dp))
-
-            // ── 4. Ecosystem Grid Items Module (Matching Flutter FAGO App 100%) ──────
-            Text(
-                text = "⚡ FAGO Ecosystem Modules & Services",
-                color = Color.White,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start
-            )
-            Spacer(Modifier.height(12.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                for (chunk in moduleGridItems.chunked(2)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        for (item in chunk) {
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = SlateCard,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .border(1.dp, CyanAccent.copy(alpha = 0.3f), RoundedCornerShape(14.dp))
-                                    .clickable {
-                                        if (item.isWeb) {
-                                            onNavigateWebModule(item.webTitle, item.webPath)
-                                        } else if (item.route.isNotEmpty()) {
-                                            onNavigateRoute(item.route)
-                                        }
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(14.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(item.icon, fontSize = 26.sp)
-                                    Spacer(Modifier.width(10.dp))
-                                    Column {
-                                        Text(item.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                        Text(item.subtitle, color = Color.Gray, fontSize = 11.sp)
-                                    }
-                                }
-                            }
-                        }
-                        if (chunk.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
 
             // ── Support & Contribute to FAGO Card ────────────────────────
             Surface(

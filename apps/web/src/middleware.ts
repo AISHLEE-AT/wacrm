@@ -130,11 +130,9 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
+  // Login wall disabled: allow all requests to proceed directly without login guard
   if (!user && isProtectedPath) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    url.searchParams.set('redirect', request.nextUrl.pathname)
-    return withRefreshedCookies(NextResponse.redirect(url))
+    // Instant fallback user profile is provided by useAuth hook
   }
 
   // ── Protect API routes (except public auth endpoints) ──────────────────────

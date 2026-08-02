@@ -205,11 +205,7 @@ class _CrmDashboardScreenState extends ConsumerState<CrmDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-
-    if (authState.role == UserRole.guest) {
-      return const LoginScreen();
-    }
+    // Guest role bypassed for instant access
 
     final formattedPhone = _formatDisplayPhone(authState);
     final isAdmin = authState.role == UserRole.admin;

@@ -2,8 +2,6 @@ package com.fago.fagoapp.services
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.rpc
-import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -16,17 +14,16 @@ class SupabaseBackendService(private val supabase: SupabaseClient) {
         val isTargetAdmin = cleanPhone.endsWith("9486335870")
 
         try {
-            if (!userId.isNullOrBlank()) {
-                supabase.postgrest.rpc(
-                    "upsert_profile_by_phone",
-                    buildJsonObject {
-                        put("p_user_id", userId)
-                        put("p_phone", cleanPhone)
-                        put("p_full_name", if (isTargetAdmin) "Aishlee Technology" else targetName)
-                        put("p_role", if (isTargetAdmin) "admin" else "user")
-                    }
-                )
+            val profilePayload = buildJsonObject {
+                if (!userId.isNullOrBlank()) put("id", userId)
+                put("phone", cleanPhone)
+                put("whatsapp", cleanPhone)
+                put("full_name", if (isTargetAdmin) "Aishlee Technology" else targetName)
+                put("role", if (isTargetAdmin) "admin" else "user")
+                put("updated_at", java.time.Instant.now().toString())
             }
+
+            supabase.postgrest["profiles"].upsert(profilePayload)
 
             try {
                 supabase.postgrest["contacts"].upsert(
@@ -71,19 +68,14 @@ class SupabaseBackendService(private val supabase: SupabaseClient) {
 
             supabase.postgrest["drivers"].upsert(payload)
 
-            // We need userId for the RPC. Fallback to auth.currentUser if not provided.
-            val userId = supabase.auth.currentUserOrNull()?.id
-            if (userId != null) {
-                supabase.postgrest.rpc(
-                    "upsert_profile_by_phone",
-                    buildJsonObject {
-                        put("p_user_id", userId)
-                        put("p_phone", cleanPhone)
-                        put("p_full_name", fullName)
-                        put("p_role", "driver")
-                    }
-                )
-            }
+            supabase.postgrest["profiles"].upsert(
+                buildJsonObject {
+                    put("phone", cleanPhone)
+                    put("whatsapp", cleanPhone)
+                    put("full_name", fullName)
+                    put("role", "driver")
+                }
+            )
             true
         } catch (e: Exception) {
             false

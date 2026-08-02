@@ -27,8 +27,6 @@ import androidx.compose.ui.unit.sp
 import com.fago.fagoapp.ui.theme.*
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.rpc
-import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -219,19 +217,15 @@ fun DriverRegistrationScreen(
                                     }
                                 )
 
-                                val userId = supabase.auth.currentUserOrNull()?.id
-                                if (userId != null) {
-                                    supabase.postgrest.rpc(
-                                        "upsert_profile_by_phone",
-                                        buildJsonObject {
-                                            put("p_user_id", userId)
-                                            put("p_phone", tenDigit)
-                                            put("p_full_name", name)
-                                            put("p_role", "driver")
-                                        }
-                                    )
-                                    // Note: upi_id is already saved in drivers. profiles only needs standard fields via RPC
-                                }
+                                supabase.postgrest["profiles"].upsert(
+                                    buildJsonObject {
+                                        put("phone", tenDigit)
+                                        put("whatsapp", tenDigit)
+                                        put("full_name", name)
+                                        put("role", "driver")
+                                        put("upi_id", upiId)
+                                    }
+                                )
                             }
                             onSuccess()
                         } catch (e: Exception) {

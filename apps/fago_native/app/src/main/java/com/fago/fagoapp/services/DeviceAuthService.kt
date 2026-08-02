@@ -28,12 +28,10 @@ private val Context.dataStore by preferencesDataStore(name = "fago_device_auth")
 class DeviceAuthService(private val context: Context) {
 
     companion object {
-        private val KEY_REGISTERED_PHONE  = stringPreferencesKey("registered_phone")
-        private val KEY_REGISTERED_NAME   = stringPreferencesKey("registered_name")
+        private val KEY_REGISTERED_PHONE = stringPreferencesKey("registered_phone")
+        private val KEY_REGISTERED_NAME  = stringPreferencesKey("registered_name")
         private val KEY_IS_PROFILE_LOCKED = booleanPreferencesKey("is_profile_locked")
         private val KEY_CUSTOM_FAGO_PIN   = stringPreferencesKey("custom_fago_pin")
-        private val KEY_ACCESS_TOKEN      = stringPreferencesKey("fago_access_token")
-        private val KEY_REFRESH_TOKEN     = stringPreferencesKey("fago_refresh_token")
     }
 
     /** Prompt native Android Biometric Fingerprint / Face Unlock / Device PIN Credentials */
@@ -75,15 +73,12 @@ class DeviceAuthService(private val context: Context) {
         }
     }
 
-    /** Clear on sign-out — wipes device signature AND stored session tokens */
+    /** Clear on sign-out */
     suspend fun clearDeviceSignature() {
         context.dataStore.edit { prefs ->
             prefs[KEY_REGISTERED_PHONE] = ""
             prefs[KEY_REGISTERED_NAME]  = ""
             prefs[KEY_IS_PROFILE_LOCKED] = false
-            prefs.remove(KEY_CUSTOM_FAGO_PIN)
-            prefs.remove(KEY_ACCESS_TOKEN)
-            prefs.remove(KEY_REFRESH_TOKEN)
         }
     }
 
@@ -162,27 +157,5 @@ class DeviceAuthService(private val context: Context) {
 
     suspend fun setCustomPin(pin: String) {
         context.dataStore.edit { it[KEY_CUSTOM_FAGO_PIN] = pin }
-    }
-
-    /** Save Supabase session tokens to device storage */
-    suspend fun saveTokens(accessToken: String, refreshToken: String) {
-        context.dataStore.edit {
-            it[KEY_ACCESS_TOKEN] = accessToken
-            it[KEY_REFRESH_TOKEN] = refreshToken
-        }
-    }
-
-    /** Retrieve stored Supabase session tokens (Pair<accessToken, refreshToken>) */
-    suspend fun getStoredTokens(): Pair<String?, String?> {
-        val prefs = context.dataStore.data.first()
-        return Pair(prefs[KEY_ACCESS_TOKEN], prefs[KEY_REFRESH_TOKEN])
-    }
-
-    /** Clear stored session tokens on sign-out */
-    suspend fun clearTokens() {
-        context.dataStore.edit {
-            it.remove(KEY_ACCESS_TOKEN)
-            it.remove(KEY_REFRESH_TOKEN)
-        }
     }
 }

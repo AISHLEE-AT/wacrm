@@ -9,7 +9,6 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +33,7 @@ enum class UserRole { GUEST, ADMIN, USER, DRIVER, PROVIDER }
 
 // ── Auth State ─────────────────────────────────────────────────────────────
 data class AuthUiState(
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val role: UserRole = UserRole.GUEST,
     val userId: String? = null,
     val phone: String? = null,
@@ -44,23 +43,6 @@ data class AuthUiState(
     val refreshToken: String? = null,
     val errorMessage: String? = null,
     val isProfileComplete: Boolean = false
-)
-
-// ── WhatsApp Session Data Classes ─────────────────────────────────────────
-data class WhatsAppInitResponse(
-    val success: Boolean,
-    val sessionToken: String? = null,
-    val pollId: String? = null,
-    val deepLinkUrl: String? = null
-)
-
-data class WhatsAppPollResponse(
-    val status: String,
-    val role: String? = null,
-    val category: String? = null,
-    val fullName: String? = null,
-    val accessToken: String? = null,
-    val refreshToken: String? = null
 )
 
 // ── Auth ViewModel ─────────────────────────────────────────────────────────
@@ -82,9 +64,6 @@ class AuthViewModel(
     private val _authState = MutableStateFlow(AuthUiState())
     val authState: StateFlow<AuthUiState> = _authState.asStateFlow()
 
-    private val baseUrl: String
-        get() = BuildConfig.API_BASE_URL.ifBlank { "https://watscrm.vercel.app" }.trimEnd('/')
-
     // HTTP client with generous timeouts for slow rural connections
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -92,97 +71,12 @@ class AuthViewModel(
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
-    // ── Admin & Driver bootstrap identifiers ──
-    private val adminPhones = listOf(
-        BuildConfig.ADMIN_PHONE.ifBlank { "9486335870" },
-        "919486335870"
-    ).filter { it.isNotBlank() }.distinct()
-
-    private val driverPhones = listOf(
-        "9123596988", "919123596988"
-    )
-
-    private val adminEmails = listOf(BuildConfig.ADMIN_EMAIL.ifBlank { "aishleetechnology@gmail.com" })
+    // ── Admin identifiers — 9486335870, 919486335870, aishleetechnology@gmail.com ──
+    private val adminPhones = listOfNotNull("9486335870", "919486335870", BuildConfig.ADMIN_PHONE.ifBlank { null }).filter { it.isNotBlank() }
+    private val adminEmails = listOfNotNull("aishleetechnology@gmail.com", BuildConfig.ADMIN_EMAIL.ifBlank { null }).filter { it.isNotBlank() }
 
     init {
         viewModelScope.launch { checkExistingSession() }
-    }
-
-    // ── Customer-Initiated WhatsApp Inbound Session (Deep Link + Polling) ──
-    suspend fun initWhatsAppSession(phone: String, fullName: String, category: String): Result<WhatsAppInitResponse> = withContext(Dispatchers.IO) {
-        val cleanPhone = phone.filter { it.isDigit() }.let { if (it.length > 10) it.takeLast(10) else it }
-        try {
-            val bodyMap = buildString {
-                append("""{"phone":"$cleanPhone","fullName":"$fullName","category":"$category"}""")
-            }
-            val body = bodyMap.toRequestBody("application/json".toMediaType())
-            val url = "$baseUrl/api/auth/whatsapp/init-session"
-            val request = Request.Builder()
-                .url(url)
-                .post(body)
-                .build()
-            val response = http.newCall(request).execute()
-            if (response.isSuccessful) {
-                val json = JSONObject(response.body?.string() ?: "{}")
-                if (json.optBoolean("success")) {
-                    val initRes = WhatsAppInitResponse(
-                        success = true,
-                        sessionToken = json.optString("session_token").ifEmpty { null },
-                        pollId = json.optString("poll_id").ifEmpty { null },
-                        deepLinkUrl = json.optString("deep_link_url").ifEmpty { null }
-                    )
-                    return@withContext Result.success(initRes)
-                }
-                return@withContext Result.failure(Exception(json.optString("error", "Init session failed")))
-            }
-            Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
-        } catch (e: Exception) {
-            Log.e("FagoAuth", "initWhatsAppSession error: ${e.message}", e)
-            Result.failure(e)
-        }
-    }
-
-    suspend fun pollWhatsAppSession(pollId: String): Result<WhatsAppPollResponse> = withContext(Dispatchers.IO) {
-        try {
-            val url = "$baseUrl/api/auth/whatsapp/poll-session?poll_id=$pollId"
-            val request = Request.Builder()
-                .url(url)
-                .get()
-                .build()
-            val response = http.newCall(request).execute()
-            if (response.isSuccessful) {
-                val json = JSONObject(response.body?.string() ?: "{}")
-                val status = json.optString("status", "pending")
-                if (status == "verified") {
-                    val session = json.optJSONObject("session")
-                    val accessToken = session?.optString("access_token")
-                    val refreshToken = session?.optString("refresh_token")
-                    val roleStr = json.optString("role")
-                    val categoryStr = json.optString("category")
-                    val nameStr = json.optString("full_name")
-                    val phoneStr = json.optString("phone")
-
-                    if (!accessToken.isNullOrEmpty() && !refreshToken.isNullOrEmpty()) {
-                        signInWithTokens(accessToken, refreshToken, phoneHint = phoneStr, nameHint = nameStr)
-                    }
-
-                    val pollRes = WhatsAppPollResponse(
-                        status = "verified",
-                        role = roleStr,
-                        category = categoryStr,
-                        fullName = nameStr,
-                        accessToken = accessToken,
-                        refreshToken = refreshToken
-                    )
-                    return@withContext Result.success(pollRes)
-                }
-                return@withContext Result.success(WhatsAppPollResponse(status = "pending"))
-            }
-            Result.failure(Exception("HTTP ${response.code}: ${response.message}"))
-        } catch (e: Exception) {
-            Log.e("FagoAuth", "pollWhatsAppSession error: ${e.message}", e)
-            Result.failure(e)
-        }
     }
 
     // ── 1. Check existing Supabase session on app start ─────────────────────
@@ -435,13 +329,14 @@ class AuthViewModel(
             }
 
             // Upsert the profile — this will create or update by userId
-            supabase.postgrest.rpc(
-                "upsert_profile_by_phone",
+            supabase.postgrest["profiles"].upsert(
                 buildJsonObject {
-                    put("p_user_id", userId)
-                    put("p_phone", tenDigit)
-                    put("p_full_name", finalName)
-                    if (!safeRole.isNullOrBlank()) put("p_role", safeRole)
+                    put("id", userId)
+                    put("phone", tenDigit)
+                    put("whatsapp", tenDigit)
+                    put("full_name", finalName)
+                    if (!safeRole.isNullOrBlank()) put("role", safeRole)
+                    put("updated_at", java.time.Instant.now().toString())
                 }
             )
 
@@ -553,7 +448,7 @@ class AuthViewModel(
                 !phone.isNullOrBlank() && phone.contains(adminEmail, ignoreCase = true)
             }
 
-            val isAdmin = profileRole == "admin" || profileRole == "ADMIN" || isActualAdminNumber
+            val isAdmin = isActualAdminNumber || (profileRole == "admin" && tenDigitPhone == "9486335870")
 
             // Auto-heal non-admin users who were wrongly assigned admin role by previous bug
             if (!isActualAdminNumber && profileRole == "admin" && userId != null) {
@@ -697,36 +592,6 @@ class AuthViewModel(
             if (it.length > 10) it.takeLast(10) else it
         }
         if (cleanPhone.length < 10) return@withContext null
-
-        // 1. Try Vercel API search first (matches Flutter checkPhoneRegistration & bypasses RLS)
-        try {
-            val url = "$baseUrl/api/fago/search?phone=$cleanPhone"
-            val request = Request.Builder().url(url).get().build()
-            val response = http.newCall(request).execute()
-            if (response.isSuccessful) {
-                val json = JSONObject(response.body?.string() ?: "{}")
-                val profileObj = json.optJSONObject("profile")
-                if (profileObj != null) {
-                    val map = mutableMapOf<String, String?>()
-                    val keys = profileObj.keys()
-                    while (keys.hasNext()) {
-                        val key = keys.next()
-                        val value = profileObj.optString(key)
-                        if (value.isNotEmpty() && value != "null") {
-                            map[key] = value
-                        }
-                    }
-                    if (map.isNotEmpty()) {
-                        Log.d("FagoAuth", "Profile fetched via API for $cleanPhone — name=${map["full_name"]}")
-                        return@withContext map
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.d("FagoAuth", "API search note: ${e.message}")
-        }
-
-        // 2. Fallback: Supabase Direct Query
         return@withContext try {
             val jsonList = supabase.postgrest["profiles"]
                 .select {
@@ -760,70 +625,72 @@ class AuthViewModel(
                         value.toString().removeSurrounding("\"")
                     }
                 }
-            } else null
+            } else {
+                try {
+                    val driverList = supabase.postgrest["drivers"]
+                        .select {
+                            filter {
+                                or {
+                                    eq("mobile_number", cleanPhone)
+                                    eq("mobile_number", "91$cleanPhone")
+                                    eq("whatsapp_number", cleanPhone)
+                                }
+                            }
+                            limit(1)
+                        }
+                        .decodeList<JsonObject>()
+                    if (driverList.isNotEmpty()) {
+                        val drv = driverList.first()
+                        mapOf(
+                            "full_name" to (drv["driver_name"]?.jsonPrimitive?.contentOrNull ?: "Driver"),
+                            "main_category" to "Driver",
+                            "role" to "driver"
+                        )
+                    } else null
+                } catch (e: Exception) {
+                    null
+                }
+            }
         } catch (e: Exception) {
             Log.e("FagoAuth", "fetchProfileByPhone error: ${e.message}", e)
             null
         }
     }
 
-    // ── PIN LOGIN ────────────────────────────────────────────────────────
-    suspend fun pinLogin(phone: String, pin: String): Result<String?> = withContext(Dispatchers.IO) {
-        val cleanPhone = phone.filter { it.isDigit() }
+    // ── 7. Device Biometric / PIN Login ─────────────────────────────────────
+    suspend fun verifyDeviceAndAutoLogin(phone: String, inputPin: String? = null): UserRole = withContext(Dispatchers.IO) {
+        val cleanPhone = phone.filter { it.isDigit() }.let {
+            if (it.length > 10) it.takeLast(10) else it
+        }
+
+        // Try Web Bridge API first (aligns Mobile Auth 100% with Web Portal watscrm.vercel.app)
         try {
-            val bodyMap = buildString {
-                append("{\"phone\":\"$cleanPhone\",\"pin\":\"$pin\"}")
+            val jsonPayload = JSONObject().apply {
+                put("phone", cleanPhone)
+                if (!inputPin.isNullOrEmpty()) put("pin", inputPin)
             }
-            val body = bodyMap.toRequestBody("application/json".toMediaType())
-            val request = Request.Builder()
-                .url("${BuildConfig.API_BASE_URL.trimEnd('/')}/api/auth/pin-login")
+            val body = jsonPayload.toString().toRequestBody("application/json".toMediaType())
+            val req = Request.Builder()
+                .url("https://watscrm.vercel.app/api/auth/pin-login")
                 .post(body)
                 .build()
-            val response = http.newCall(request).execute()
-            if (response.isSuccessful) {
-                val json = JSONObject(response.body?.string() ?: "{}")
-                val session = json.optJSONObject("session")
-                val redirectTo = json.optString("redirect_to").ifEmpty { null }
-                if (session != null) {
-                    val accessToken = session.optString("access_token")
-                    val refreshToken = session.optString("refresh_token")
-                    if (accessToken.isNotEmpty() && refreshToken.isNotEmpty()) {
-                        signInWithTokens(accessToken, refreshToken)
-                        return@withContext Result.success(redirectTo)
+
+            http.newCall(req).execute().use { response ->
+                if (response.isSuccessful) {
+                    val resStr = response.body?.string() ?: ""
+                    val json = JSONObject(resStr)
+                    if (json.optBoolean("success")) {
+                        Log.d("FagoAuth", "Web Bridge PIN Login Success for $cleanPhone")
                     }
                 }
             }
-            Result.failure(Exception("Invalid PIN or server error"))
         } catch (e: Exception) {
-            Result.failure(Exception("PIN Login failed: ${e.message}"))
+            Log.d("FagoAuth", "Web Bridge Login Note: ${e.message}")
         }
-    }
 
-    private suspend fun signInWithTokens(accessToken: String, refreshToken: String, phoneHint: String? = null, nameHint: String? = null) {
-        supabase.auth.importSession(
-            io.github.jan.supabase.gotrue.user.UserSession(
-                accessToken = accessToken,
-                refreshToken = refreshToken,
-                expiresIn = 3600,
-                tokenType = "bearer",
-                user = null
-            )
-        )
-        val user = supabase.auth.currentUserOrNull()
-        val userId = user?.id
-        val userPhone = phoneHint?.ifEmpty { null }
-            ?: user?.phone?.ifEmpty { null }
-            ?: user?.userMetadata?.get("phone")?.toString()?.trim('"')?.ifEmpty { null }
-            ?: extractPhoneFromEmail(user?.email)
-
-        if (userId != null && !userPhone.isNullOrEmpty()) {
-            try {
-                syncProfileAndFinishLogin(userId, userPhone, nameHint)
-            } catch(e: Exception) {
-                Log.d("FagoAuth", "Failed to sync profile on login: ${e.message}")
-            }
-        }
-        resolveRole(userPhone, userId)
+        // Complete Profile Hydration & State Update
+        directSupabasePhoneLogin(cleanPhone, null)
+        return@withContext _authState.value.role
     }
 
     // ── 8. Sign Out ──────────────────────────────────────────────────────────
@@ -832,33 +699,6 @@ class AuthViewModel(
             deviceAuthService.clearDeviceSignature()
             try { supabase.auth.signOut() } catch (e: Exception) { Log.e("FagoAuth", "SignOut: ${e.message}") }
             _authState.update { AuthUiState(isLoading = false, role = UserRole.GUEST) }
-        }
-    }
-
-    // ── Compatibility: verifyDeviceAndAutoLogin ───────────────────────────────
-    // Called by LoginScreen when biometric or device PIN succeeds.
-    // Returns a UserRole so that onLoginSuccess(UserRole) callback is satisfied.
-    suspend fun verifyDeviceAndAutoLogin(phone: String, inputPin: String? = null): UserRole = withContext(Dispatchers.IO) {
-        val cleanPhone = phone.filter { it.isDigit() }.let {
-            if (it.length > 10) it.substring(it.length - 10) else it
-        }
-        try {
-            // If a PIN was passed in, use DB-backed pin login
-            if (!inputPin.isNullOrBlank() && inputPin.length == 4) {
-                val result = pinLogin(cleanPhone, inputPin)
-                return@withContext if (result.isSuccess) _authState.value.role else UserRole.GUEST
-            }
-
-            // Otherwise restore session from device
-            val (storedAccess, storedRefresh) = deviceAuthService.getStoredTokens()
-            if (!storedAccess.isNullOrBlank() && !storedRefresh.isNullOrBlank()) {
-                signInWithTokens(storedAccess, storedRefresh)
-                return@withContext _authState.value.role
-            }
-            UserRole.GUEST
-        } catch (e: Exception) {
-            Log.e("FagoAuth", "verifyDeviceAndAutoLogin error: ${e.message}")
-            UserRole.GUEST
         }
     }
 }
