@@ -186,12 +186,21 @@ function ProfilePageInner() {
   const handleSaveName = async () => {
     if (!nameValue.trim() || !user?.id) return;
     try {
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      await supabase.from('profiles').update({ full_name: nameValue.trim() }).eq('id', user.id);
-      await supabase.auth.updateUser({ data: { full_name: nameValue.trim() } });
-      setEditingName(false);
-      window.location.reload();
+      const res = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          phone: user.phone || activeProfile?.phone || activeProfile?.whatsapp,
+          full_name: nameValue.trim(),
+        }),
+      });
+      if (res.ok) {
+        setEditingName(false);
+        window.location.reload();
+      } else {
+        alert('Failed to update name. Please try again.');
+      }
     } catch (err) {
       console.error('Error saving name:', err);
     }
@@ -346,16 +355,23 @@ function ProfilePageInner() {
                     onClick={async () => {
                       if (!upiValue.trim() || !user?.id) return;
                       try {
-                        const { createClient } = await import('@/lib/supabase/client');
-                        const supabase = createClient();
                         const cleanUpi = upiValue.trim();
-                        await supabase
-                          .from('profiles')
-                          .update({ upi_id: cleanUpi })
-                          .or(`id.eq.${user.id},user_id.eq.${user.id}`);
-                        setUpiIdState(cleanUpi);
-                        setEditingUpi(false);
-                        alert('✅ UPI ID saved successfully!');
+                        const res = await fetch('/api/profile/update', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            userId: user.id,
+                            phone: user.phone || activeProfile?.phone || activeProfile?.whatsapp,
+                            upi_id: cleanUpi,
+                          }),
+                        });
+                        if (res.ok) {
+                          setUpiIdState(cleanUpi);
+                          setEditingUpi(false);
+                          alert('✅ UPI ID saved successfully!');
+                        } else {
+                          alert('Failed to save UPI ID. Please try again.');
+                        }
                       } catch (err) {
                         console.error('Error saving UPI ID:', err);
                         alert('Failed to save UPI ID. Please try again.');

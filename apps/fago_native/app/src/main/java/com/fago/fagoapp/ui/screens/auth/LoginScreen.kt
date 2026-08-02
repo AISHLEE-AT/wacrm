@@ -60,6 +60,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
     var phone by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
+    var loginPin by remember { mutableStateOf("1234") }
     var otp by remember { mutableStateOf("") }
     var selectedCategoryKey by remember { mutableStateOf("Traveller") }
     var dropdownExpanded by remember { mutableStateOf(false) }
@@ -536,8 +537,6 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                 Spacer(Modifier.height(14.dp))
 
                 // ── 7.5 4-Digit Secure PIN Input ──────────────────────────────
-                var loginPin by remember { mutableStateOf("1234") }
-
                 OutlinedTextField(
                     value = loginPin,
                     onValueChange = { loginPin = it.filter { c -> c.isDigit() }.take(4) },
@@ -599,7 +598,8 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                     isLoading = true
 
                     scope.launch {
-                        val result = authViewModel.loginWithPin(phone, "1234", name.ifBlank { null }, selectedCategoryKey)
+                        val targetPin = if (loginPin.length == 4) loginPin else "1234"
+                        val result = authViewModel.loginWithPin(phone, targetPin, name.ifBlank { null }, selectedCategoryKey)
                         isLoading = false
                         result.onSuccess { role ->
                             onLoginSuccess(role)
