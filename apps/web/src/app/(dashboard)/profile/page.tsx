@@ -179,7 +179,7 @@ function ProfilePageInner() {
         const { data } = await supabase
           .from('profiles')
           .select('*')
-          .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+          .eq('id', user.id)
           .maybeSingle();
 
         if (data) {
