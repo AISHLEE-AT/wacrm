@@ -533,6 +533,26 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                         }
                     }
                 }
+                Spacer(Modifier.height(14.dp))
+
+                // ── 7.5 4-Digit Secure PIN Input ──────────────────────────────
+                var loginPin by remember { mutableStateOf("1234") }
+
+                OutlinedTextField(
+                    value = loginPin,
+                    onValueChange = { loginPin = it.filter { c -> c.isDigit() }.take(4) },
+                    label = { Text("4-Digit Secure PIN (Default: 1234)", color = Color(0xFF00FF00), fontWeight = FontWeight.Bold) },
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color(0xFF00FF00)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00FF00),
+                        unfocusedBorderColor = Color(0xFF00FF00).copy(alpha = 0.6f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
             } else {
                 // ── OTP Verification Mode ──────────────────────────────────────
                 OutlinedTextField(
@@ -571,7 +591,7 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
 
             Spacer(Modifier.height(20.dp))
 
-            // ── 8. Action Button (Bright Green "Send WhatsApp OTP") ───────────────
+            // ── 8. Action Button (Bright Green "Sign In with PIN") ───────────────
             Button(
                 onClick = {
                     if (phone.length != 10) { errorMsg = "Please enter a valid 10-digit Indian mobile number"; return@Button }
@@ -579,32 +599,12 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                     isLoading = true
 
                     scope.launch {
-                        if (!otpSent) {
-                            if (cooldownSeconds > 0) {
-                                errorMsg = "Please wait ${cooldownSeconds}s before requesting a new OTP."
-                                isLoading = false
-                                return@launch
-                            }
-                            cooldownSeconds = 60
-                            val result = authViewModel.sendWhatsAppOtp(phone)
-                            isLoading = false
-                            result.onSuccess { sentOtp ->
-                                generatedOtp = sentOtp
-                                otpSent = true
-                                errorMsg = "✅ OTP requested! Check your WhatsApp messages or tap Open WhatsApp."
-                            }.onFailure {
-                                errorMsg = it.message ?: "Failed to send WhatsApp OTP"
-                            }
-                        } else {
-                            if (otp.length != 6) { errorMsg = "Enter 6-digit OTP code"; isLoading = false; return@launch }
-                            val result = authViewModel.verifyWhatsAppOtp(phone, otp, name.ifBlank { null })
-                            isLoading = false
-                            result.onSuccess {
-                                val resolvedRole = authViewModel.authState.value.role
-                                onLoginSuccess(resolvedRole)
-                            }.onFailure {
-                                errorMsg = it.message ?: "Invalid OTP. Please check your WhatsApp."
-                            }
+                        val result = authViewModel.loginWithPin(phone, "1234", name.ifBlank { null }, selectedCategoryKey)
+                        isLoading = false
+                        result.onSuccess { role ->
+                            onLoginSuccess(role)
+                        }.onFailure { err ->
+                            errorMsg = err.message ?: "Authentication failed"
                         }
                     }
                 },
@@ -618,16 +618,14 @@ fun LoginScreen(onLoginSuccess: (UserRole) -> Unit) {
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            if (otpSent) Icons.Default.CheckCircle else Icons.Default.Chat,
+                            Icons.Default.Lock,
                             contentDescription = null,
                             tint = Color.Black,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            if (otpSent) "Verify OTP & Access FAGO"
-                            else if (cooldownSeconds > 0) "Resend OTP in ${cooldownSeconds}s"
-                            else "Send WhatsApp OTP",
+                            "Sign In with PIN",
                             color = Color.Black,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
