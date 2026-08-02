@@ -31,81 +31,80 @@ export async function POST(request: Request) {
     }
 
     const admin = getAdminClient()
-    const syntheticEmail = `user_${cleanPhone}@wacrm.local`
-    const syntheticPassword = `PinAuth_${cleanPhone}_${pin}`
     const hashedPin = hashPin(pin)
 
-    // 1. Check if profile exists in Supabase DB
+    // 1. Fetch profile to check PIN hash or existing profile
     const { data: existingProfile } = await admin
       .from('profiles')
       .select('id, full_name, role, main_category, pin_hash')
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
       .maybeSingle()
 
-    // 2. Attempt Supabase Auth Sign In
+    // PIN Hash Verification (if user previously set a PIN)
+    if (existingProfile?.pin_hash && existingProfile.pin_hash !== hashedPin) {
+      return NextResponse.json({ error: 'Invalid PIN entered. Please check your 4-digit PIN.' }, { status: 401 })
+    }
+
+    // 2. Flexible Supabase Auth User Lookup (matches any legacy email pattern)
+    const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    const allUsers = usersData?.users || []
+    const existingUser = allUsers.find(u => 
+      (u.email && u.email.includes(cleanPhone)) ||
+      (u.phone && u.phone.includes(cleanPhone)) ||
+      (u.user_metadata && (u.user_metadata.phone === cleanPhone || u.user_metadata.phone === `+91${cleanPhone}`))
+    )
+
+    const targetEmail = existingUser?.email || `user_${cleanPhone}@wacrm.local`
+    const syntheticPassword = `PinAuth_${cleanPhone}_${pin}`
+
+    if (existingUser) {
+      // Sync password & confirm email
+      await admin.auth.admin.updateUserById(existingUser.id, {
+        password: syntheticPassword,
+        email_confirm: true,
+      })
+    } else {
+      // Create new Supabase Auth user
+      const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
+        email: targetEmail,
+        password: syntheticPassword,
+        phone: `+91${cleanPhone}`,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`,
+          role: cleanPhone === '9486335870' ? 'admin' : (existingProfile?.role || 'user'),
+          phone: cleanPhone,
+        },
+      })
+
+      if (createErr || !newUser?.user) {
+        console.error('Failed to create Supabase Auth user:', createErr)
+        return NextResponse.json({ error: createErr?.message || 'Failed to create user' }, { status: 500 })
+      }
+    }
+
+    // 3. Sign in via anon client
     const anonClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    let authResult = await anonClient.auth.signInWithPassword({
-      email: syntheticEmail,
+    const authResult = await anonClient.auth.signInWithPassword({
+      email: targetEmail,
       password: syntheticPassword,
     })
 
-    // If first sign-in failed, attempt password update/sync or user creation
-    if (authResult.error) {
-      const { data: usersList } = await admin.auth.admin.listUsers()
-      const existingUser = usersList?.users?.find(
-        u => u.email === syntheticEmail || u.phone === cleanPhone || u.phone === `+91${cleanPhone}`
-      )
-
-      if (existingUser) {
-        // Update user password to match current PIN
-        await admin.auth.admin.updateUserById(existingUser.id, {
-          password: syntheticPassword,
-          email_confirm: true,
-        })
-        // Retry sign in
-        authResult = await anonClient.auth.signInWithPassword({
-          email: syntheticEmail,
-          password: syntheticPassword,
-        })
-      } else {
-        // Create new user in Supabase Auth
-        const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
-          email: syntheticEmail,
-          password: syntheticPassword,
-          phone: `+91${cleanPhone}`,
-          email_confirm: true,
-          user_metadata: {
-            full_name: fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`,
-            role: cleanPhone === '9486335870' ? 'admin' : (existingProfile?.role || 'user'),
-          },
-        })
-
-        if (createErr || !newUser?.user) {
-          return NextResponse.json({ error: createErr?.message || 'Failed to create user' }, { status: 500 })
-        }
-
-        // Retry sign in
-        authResult = await anonClient.auth.signInWithPassword({
-          email: syntheticEmail,
-          password: syntheticPassword,
-        })
-      }
-    }
-
     if (authResult.error || !authResult.data.session) {
+      console.error('SignInWithPassword error:', authResult.error)
       return NextResponse.json({ error: authResult.error?.message || 'Authentication failed' }, { status: 401 })
     }
 
     const userId = authResult.data.user.id
     const resolvedRole = cleanPhone === '9486335870' ? 'admin' : (existingProfile?.role || 'user')
-    const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
+    const finalName = fullName || existingProfile?.full_name || (cleanPhone === '9486335870' ? 'Admin User' : `User ${cleanPhone.slice(-4)}`)
     const finalCategory = category || existingProfile?.main_category || 'Traveller'
 
-    // 3. Upsert profile in Supabase DB
+    // 4. Upsert profile in Supabase DB with clean PIN hash
     await admin.from('profiles').upsert({
       id: userId,
       phone: cleanPhone,
@@ -132,7 +131,7 @@ export async function POST(request: Request) {
         role: resolvedRole,
         category: finalCategory,
       },
-      redirect_to: resolvedRole === 'admin' ? '/crm' : '/rideo',
+      redirect_to: resolvedRole === 'admin' ? '/admin' : '/rideo',
     })
 
     // Set session cookie
