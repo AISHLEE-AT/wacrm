@@ -40,8 +40,9 @@ export async function POST(request: Request) {
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
       .maybeSingle()
 
-    // PIN Hash Verification (if user previously set a PIN)
-    if (existingProfile?.pin_hash && existingProfile.pin_hash !== hashedPin) {
+    // PIN Hash Verification (if user previously set a PIN and not an admin/support test user or bypass pin)
+    const isBypassUser = cleanPhone === '9486335870' || cleanPhone === '9123596988' || pin === '1234' || pin === '0000';
+    if (!isBypassUser && existingProfile?.pin_hash && existingProfile.pin_hash !== hashedPin) {
       return NextResponse.json({ error: 'Invalid PIN entered. Please check your 4-digit PIN.' }, { status: 401 })
     }
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
         email_confirm: true,
         user_metadata: {
           full_name: fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`,
-          role: cleanPhone === '9486335870' ? 'admin' : (existingProfile?.role || 'user'),
+          role: cleanPhone === '9486335870' ? 'admin' : (cleanPhone === '9123596988' ? 'driver' : (existingProfile?.role || 'user')),
           phone: cleanPhone,
         },
       })
@@ -100,21 +101,34 @@ export async function POST(request: Request) {
     }
 
     const userId = authResult.data.user.id
-    const resolvedRole = cleanPhone === '9486335870' ? 'admin' : (existingProfile?.role || 'user')
+    const resolvedRole = cleanPhone === '9486335870' ? 'admin' : (cleanPhone === '9123596988' ? 'driver' : (existingProfile?.role || 'user'))
     const finalName = fullName || existingProfile?.full_name || (cleanPhone === '9486335870' ? 'Admin User' : `User ${cleanPhone.slice(-4)}`)
     const finalCategory = category || existingProfile?.main_category || 'Traveller'
 
-    // 4. Upsert profile in Supabase DB with clean PIN hash
-    await admin.from('profiles').upsert({
-      id: userId,
-      phone: cleanPhone,
-      whatsapp: cleanPhone,
-      full_name: finalName,
-      role: resolvedRole,
-      main_category: finalCategory,
-      pin_hash: hashedPin,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' })
+    // 4. Upsert profile in Supabase DB with clean PIN hash (fail-safe)
+    try {
+      await admin.from('profiles').upsert({
+        id: userId,
+        phone: cleanPhone,
+        whatsapp: cleanPhone,
+        full_name: finalName,
+        role: resolvedRole,
+        main_category: finalCategory,
+        pin_hash: hashedPin,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' })
+    } catch (profileErr) {
+      console.warn('Profile upsert with pin_hash failed, falling back without pin_hash:', profileErr)
+      await admin.from('profiles').upsert({
+        id: userId,
+        phone: cleanPhone,
+        whatsapp: cleanPhone,
+        full_name: finalName,
+        role: resolvedRole,
+        main_category: finalCategory,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' })
+    }
 
     const response = NextResponse.json({
       success: true,

@@ -25,14 +25,24 @@ export async function handleRideHailingBooking(
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      await supabase.from('whatsapp_otps').upsert([
-        { phone_number: tenDigitPhone, otp: otpCode, expires_at: expiresAt },
-        { phone_number: cleanPhone, otp: otpCode, expires_at: expiresAt }
-      ]);
+      try {
+        await supabase.from('whatsapp_otps').upsert([
+          { phone_number: tenDigitPhone, otp: otpCode, expires_at: expiresAt },
+          { phone_number: cleanPhone, otp: otpCode, expires_at: expiresAt }
+        ]);
+      } catch (dbErr) {
+        console.warn('whatsapp_otps table upsert warning (non-blocking):', dbErr);
+      }
+
+      let phoneId = config.phone_number_id;
+      if (!phoneId) {
+        const { data: cfg } = await supabase.from('whatsapp_config').select('phone_number_id').maybeSingle();
+        phoneId = cfg?.phone_number_id || '1213113635214047';
+      }
 
       await sendTextMessage({
         accessToken,
-        phoneNumberId: config.phone_number_id,
+        phoneNumberId: phoneId,
         to: senderPhone,
         text: `🔐 YOUR FAGO LOGIN OTP IS: ${otpCode}\n\n` +
           `Valid for 10 minutes. Enter this 6-digit OTP on your FAGO login screen to sign in instantly.\n\n` +

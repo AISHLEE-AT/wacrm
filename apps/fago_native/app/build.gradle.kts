@@ -14,8 +14,8 @@ android {
         applicationId = "com.fago.native"
         minSdk = 24
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.0.3v"
+        versionCode = 9
+        versionName = "1.0.6-unified"
 
         // Inject env vars into BuildConfig at compile time
         val envFile = when {
