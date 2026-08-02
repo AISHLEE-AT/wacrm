@@ -90,7 +90,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         'F',
                         style: TextStyle(
                           fontSize: 32,
-                          fontWeight: FontWeight.black,
+                          fontWeight: FontWeight.w900,
                           color: Colors.white,
                         ),
                       ),
@@ -119,7 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: 'Mobile Number',
-                      labelStyle: const TextStyle(color: Colors.gray),
+                      labelStyle: const TextStyle(color: Colors.grey),
                       prefixIcon: const Icon(Icons.phone_android, color: Color(0xFF10B981)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -142,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: const TextStyle(color: Colors.white, letterSpacing: 8, fontSize: 20),
                     decoration: InputDecoration(
                       labelText: '4-Digit PIN',
-                      labelStyle: const TextStyle(color: Colors.gray, letterSpacing: 0, fontSize: 14),
+                      labelStyle: const TextStyle(color: Colors.grey, letterSpacing: 0, fontSize: 14),
                       prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF10B981)),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
