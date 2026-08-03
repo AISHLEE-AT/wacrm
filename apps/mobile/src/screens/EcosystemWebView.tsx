@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { API_URL } from '@wacrm/shared/config';
+const API_URL = 'https://watscrm.vercel.app';
 
 interface Props {
   route: {

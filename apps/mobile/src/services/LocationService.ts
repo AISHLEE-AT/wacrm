@@ -1,32 +1,15 @@
 import * as Location from 'expo-location';
-import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
-import { API_URL } from '@wacrm/shared/config';
 
-const LOCATION_TASK_NAME = 'background-location-task';
+const API_URL = 'https://watscrm.vercel.app';
 
-// Define the background task
-TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
-  if (error) {
-    console.error('Location Tracking Error:', error);
-    return;
-  }
-  if (data) {
-    const { locations } = data as { locations: Location.LocationObject[] };
-    const latestLocation = locations[0];
-    
-    if (latestLocation) {
-      await sendLocationToServer(latestLocation.coords.latitude, latestLocation.coords.longitude);
-    }
-  }
-});
+let _trackingInterval: ReturnType<typeof setInterval> | null = null;
 
 const sendLocationToServer = async (lat: number, lng: number) => {
   try {
     const phone = await SecureStore.getItemAsync('user-phone');
     if (!phone) return;
 
-    // Send the background GPS ping to your Next.js API
     await fetch(`${API_URL}/api/driver/location`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -40,41 +23,31 @@ const sendLocationToServer = async (lat: number, lng: number) => {
 
 export const LocationService = {
   requestPermissionsAndStart: async () => {
-    // 1. Request Foreground Permissions
     const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
     if (foregroundStatus !== 'granted') {
       console.log('Permission to access location was denied');
       return false;
     }
 
-    // 2. Request Background Permissions (crucial for drivers)
-    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-    if (backgroundStatus !== 'granted') {
-      console.log('Permission to access background location was denied');
-      // We can still do foreground tracking if we want, but background is preferred
-    }
-
-    // 3. Start Background Tracking
-    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-      accuracy: Location.Accuracy.Balanced,
-      timeInterval: 15000, // Ping every 15 seconds
-      distanceInterval: 10, // Or every 10 meters
-      deferredUpdatesInterval: 15000,
-      showsBackgroundLocationIndicator: true,
-      foregroundService: {
-        notificationTitle: 'SuprO is active',
-        notificationBody: 'Your location is being tracked for rides.',
-        notificationColor: '#10b981',
-      },
-    });
+    // Foreground polling every 15 seconds
+    _trackingInterval = setInterval(async () => {
+      try {
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        await sendLocationToServer(loc.coords.latitude, loc.coords.longitude);
+      } catch (e) {
+        console.error('Location poll error:', e);
+      }
+    }, 15000);
 
     return true;
   },
 
   stopTracking: async () => {
-    const hasTask = await TaskManager.isTaskRegisteredAsync(LOCATION_TASK_NAME);
-    if (hasTask) {
-      await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+    if (_trackingInterval) {
+      clearInterval(_trackingInterval);
+      _trackingInterval = null;
     }
-  }
+  },
 };

@@ -370,7 +370,7 @@ export function ProfileForm() {
                   id="profile-phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="9486335870"
+                  placeholder="6381029380"
                   maxLength={15}
                   disabled={saving}
                 />

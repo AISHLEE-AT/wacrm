@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -18,6 +18,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isEmbed = searchParams.get("embed") === "true";
 
   // Sidebar drawer state — only used on mobile. On lg+ the sidebar is
   // always visible and this stays at `false` (ignored by the component).
@@ -27,11 +29,11 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const isAdmin = checkIsAdmin(user, profile ?? undefined);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isEmbed) {
       router.push("/login");
       return;
     }
-  }, [user, loading, isAdmin, pathname, router]);
+  }, [user, loading, isAdmin, pathname, router, isEmbed]);
 
   if (loading) {
     return (
@@ -44,7 +46,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  if (!user && !isEmbed) return null;
+
+  if (isEmbed) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-background">
+        <main className="flex-1 overflow-y-auto w-full h-full">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -61,10 +71,18 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { Suspense } from "react";
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <DashboardShellInner>{children}</DashboardShellInner>
+      <Suspense fallback={
+        <div className="flex h-screen items-center justify-center bg-background">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }>
+        <DashboardShellInner>{children}</DashboardShellInner>
+      </Suspense>
     </AuthProvider>
   );
 }

@@ -16,7 +16,13 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.poovisri.mobile",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDdAePjhtVNhbCPhvsdEGrMUGA2kn5WDds"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -53,7 +53,7 @@ function LoginPageInner() {
   // Steps: 'phone' → 'otp' → 'set-pin' (if no PIN set) → done
   //        'phone' → 'pin' (fallback)
   const [step, setStep] = useState<'phone' | 'otp' | 'set-pin' | 'pin'>('phone');
-  const [wabaPhone, setWabaPhone] = useState("919486335870");
+  const [wabaPhone, setWabaPhone] = useState("916381029380");
 
   const supabase = createClient();
 

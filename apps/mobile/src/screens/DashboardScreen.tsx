@@ -4,7 +4,13 @@ import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
 import { MapPin, Bell } from 'lucide-react-native';
-import { endpoints } from '@wacrm/shared/config';
+const endpoints = {
+  authCheck: 'https://watscrm.vercel.app/api/auth/check',
+  authVerify: 'https://watscrm.vercel.app/api/auth/otp/verify',
+  authPinSet: 'https://watscrm.vercel.app/api/auth/pin/set',
+  authPinLogin: 'https://watscrm.vercel.app/api/auth/pin',
+  updateProfile: 'https://watscrm.vercel.app/api/profile/update',
+};
 
 export default function DashboardScreen({ navigation }: any) {
   const [phone, setPhone] = useState<string | null>('');

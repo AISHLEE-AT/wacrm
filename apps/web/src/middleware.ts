@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // Bootstrap admin phones (fallback — DB role='admin' is primary)
 const BOOTSTRAP_ADMIN_PHONES = [
-  '9486335870', '919486335870'
+  '6381029380', '916381029380'
 ]
 const BOOTSTRAP_ADMIN_EMAILS = ['aishleetechnology@gmail.com']
 
@@ -147,15 +147,26 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
     '/automations', '/flows', '/settings', '/drivo',
-    '/admin', '/profile', '/wallet', '/crm'
+    '/admin', '/profile', '/wallet', '/crm',
+    '/testo', '/teacho', '/tvo', '/moneyo', '/rideo', '/rento', '/dealo', '/touro'
   ]
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
 
-  // Login wall disabled: allow all requests to proceed directly without login guard
+  const isEmbed = request.nextUrl.searchParams.get('embed') === 'true';
+  const isPublicModule = ['/testo', '/teacho', '/tvo', '/moneyo'].some(path =>
+    request.nextUrl.pathname.startsWith(path)
+  );
+
+  // Enforce login wall unless it's a whitelisted module requested in embed mode
   if (!user && isProtectedPath) {
-    // Instant fallback user profile is provided by useAuth hook
+    if (!(isEmbed && isPublicModule)) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.search = ''
+      return withRefreshedCookies(NextResponse.redirect(loginUrl))
+    }
   }
 
   // ── Protect API routes (except public auth endpoints) ──────────────────────

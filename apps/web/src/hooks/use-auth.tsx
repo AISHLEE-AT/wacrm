@@ -200,28 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentUser) {
           fetchProfile(currentUser.id);
         } else {
-          // Provide instant fallback user profile so all app pages render immediately without login walls
-          const mockUser: any = {
-            id: 'user_9123596988',
-            email: '9123596988@whatsapp.wacrm.local',
-            phone: '9123596988',
-            user_metadata: { full_name: 'aishu', role: 'user' }
-          };
-          setUser(mockUser);
-          setProfile({
-            id: 'user_9123596988',
-            full_name: 'aishu',
-            email: '9123596988@whatsapp.wacrm.local',
-            avatar_url: null,
-            role: 'user',
-            beta_features: [],
-            account_id: 'f21e8cdb-e27d-41fa-9aa4-af06ccdc0feb',
-            account_role: 'owner',
-            pincode: '641001',
-            phone: '9123596988',
-            upi_id: null,
-            location: 'Coimbatore',
-          } as any);
+          setProfile(null);
+          setAccount(null);
           setProfileLoading(false);
         }
       } catch (err) {

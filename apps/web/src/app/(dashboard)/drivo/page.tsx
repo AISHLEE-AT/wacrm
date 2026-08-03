@@ -44,9 +44,9 @@ export default function DriveODashboard() {
   // Strict Admin Determination
   const isAdmin = Boolean(
     profile?.email === "aishleetechnology@gmail.com" ||
-    profile?.phone?.includes("9486335870") ||
+    profile?.phone?.includes("6381029380") ||
     currentUser?.email === "aishleetechnology@gmail.com" ||
-    currentUser?.phone?.includes("9486335870")
+    currentUser?.phone?.includes("6381029380")
   );
 
   // Fetch current user's driver partner record from Supabase
@@ -436,7 +436,7 @@ export default function DriveODashboard() {
           <button
             onClick={() => {
               const driverName = profile?.full_name || 'Driver Partner';
-              const driverPhone = profile?.phone || currentUser?.phone || '9486335870';
+              const driverPhone = profile?.phone || currentUser?.phone || '6381029380';
               const msg = `💰 *DRIVER ZERO-COMMISSION UPI PAYOUT REQUEST* 💰\n\n` +
                 `👤 *Driver Partner*: ${driverName} (${driverPhone})\n` +
                 `💳 *Today's Earnings*: ₹1,250 (5 Trips Completed)\n` +

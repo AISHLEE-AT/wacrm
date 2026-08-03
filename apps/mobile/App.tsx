@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { BookOpen, MonitorPlay, Wallet, Home, Map, MessageCircle } from 'lucide-react-native';
 
 import LoginScreen from './src/screens/LoginScreen';
+import CategoryScreen from './src/screens/CategoryScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import MapScreen from './src/screens/MapScreen';
@@ -33,7 +34,7 @@ function AppTabs() {
       <Tab.Screen 
         name="Map" 
         component={MapScreen} 
-        options={{ title: 'Live Map', tabBarIcon: ({ color, size }) => <Map color={color} size={size} /> }}
+        options={{ title: 'RideO', tabBarIcon: ({ color, size }) => <Map color={color} size={size} /> }}
       />
       <Tab.Screen 
         name="CRM" 
@@ -74,7 +75,9 @@ export default function App() {
       <StatusBar style="light" />
       <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0f1e' } }}>
         <Stack.Screen name="Login" component={LoginScreen} />
-        {/* Once logged in, switch to the Tabs */}
+        {/* Ask for category after login */}
+        <Stack.Screen name="Category" component={CategoryScreen} />
+        {/* Once logged in and category selected, switch to the Tabs */}
         <Stack.Screen name="Dashboard" component={AppTabs} />
       </Stack.Navigator>
     </NavigationContainer>

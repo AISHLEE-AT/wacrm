@@ -136,14 +136,21 @@ function Certificate({ name, topic, subject, score, total, percentage, rank, dat
   );
 }
 
-// ─── Main Page ──────────────────────────────────────────────────────
-export default function TestoPage() {
-  const { user, profile } = useAuth();
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
-  const phone = (profile as any)?.phone || (profile as any)?.whatsapp ||
+// ─── Main Page ──────────────────────────────────────────────────────
+function TestoPageContent() {
+  const { user, profile } = useAuth();
+  const searchParams = useSearchParams();
+
+  const embedPhone = searchParams.get('phone');
+  const embedName = searchParams.get('name');
+
+  const phone = embedPhone || (profile as any)?.phone || (profile as any)?.whatsapp ||
     user?.phone?.replace(/^\+91/, '') ||
     user?.email?.replace('user_', '').replace('@wacrm.local', '') || '';
-  const userName = profile?.full_name || `User ${phone.slice(-4)}`;
+  const userName = embedName || profile?.full_name || `User ${phone.slice(-4)}`;
 
   const [screen, setScreen] = useState<ScreenMode>('browse');
   const [papers, setPapers] = useState<TestPaper[]>([]);
@@ -867,4 +874,16 @@ export default function TestoPage() {
   );
 
   return null;
+}
+
+export default function TestoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    }>
+      <TestoPageContent />
+    </Suspense>
+  );
 }

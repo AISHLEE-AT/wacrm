@@ -201,7 +201,7 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
         const { data: adminProfile } = await supabaseAdmin()
           .from('profiles')
           .select('id, account_id')
-          .or('phone.eq.9486335870,phone.eq.919486335870,email.eq.aishleetechnology@gmail.com,role.eq.admin')
+          .or('phone.eq.6381029380,phone.eq.916381029380,email.eq.aishleetechnology@gmail.com,role.eq.admin')
           .limit(1)
           .maybeSingle()
 
