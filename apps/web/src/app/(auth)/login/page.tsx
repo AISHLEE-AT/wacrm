@@ -177,8 +177,13 @@ function LoginPageInner() {
               <div className="w-14 h-14 rounded-2xl bg-black flex items-center justify-center shadow-lg shadow-emerald-500/30 overflow-hidden border border-emerald-500/20">
                 <img src="/supro-logo-ai.jpg" alt="SuprO Logo" className="w-full h-full object-contain" />
               </div>
-              <div className="text-left flex items-center">
-                <img src="/supro-text-logo.jpg" alt="SuprO for Local Needs" className="h-14 object-contain mix-blend-lighten" />
+              <div className="text-left">
+                <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-amber-300 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+                  SuprO
+                </h1>
+                <p className="text-emerald-400/90 text-[11px] font-bold tracking-widest uppercase flex items-center gap-1 mt-0.5">
+                  <Sparkles className="w-3 h-3 text-amber-400" /> for Local Needs
+                </p>
               </div>
             </div>
             <p className="text-gray-400 text-sm">Secure Authentication via WhatsApp</p>

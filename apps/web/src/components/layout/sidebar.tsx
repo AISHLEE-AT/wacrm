@@ -217,8 +217,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               alt="SuprO Logo" 
               className="h-10 w-10 rounded-xl object-contain bg-black border border-amber-400/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]" 
             />
-            <div className="flex flex-col items-start justify-center ml-1">
-              <img src="/supro-text-logo.jpg" alt="SuprO for Local Needs" className="h-10 object-contain mix-blend-lighten" />
+            <div className="flex flex-col ml-1 justify-center">
+              <span className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-amber-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)] leading-none mb-1">
+                SuprO
+              </span>
+              <span className="text-[9px] font-bold tracking-[0.2em] text-amber-400/90 leading-none uppercase">
+                for Local Needs
+              </span>
             </div>
           </Link>
           <button
