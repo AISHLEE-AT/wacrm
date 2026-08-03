@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import crypto from 'crypto'
+
+function hashPin(pin: string): string {
+  return crypto.createHash('sha256').update(`FAGO_PIN_${pin}`).digest('hex')
+}
 
 function getAdminClient() {
   return createClient(
@@ -10,7 +15,7 @@ function getAdminClient() {
 
 export async function POST(request: Request) {
   try {
-    const { phone, otp, fullName, category } = await request.json()
+    const { phone, otp, fullName, category, pin } = await request.json()
 
     if (!phone || typeof phone !== 'string') {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
@@ -127,8 +132,7 @@ export async function POST(request: Request) {
     const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
     const finalCategory = category || existingProfile?.main_category || 'Traveller'
 
-    // 5. Upsert profile in Supabase DB
-    await admin.from('profiles').upsert({
+    const profileData: any = {
       id: userId,
       phone: cleanPhone,
       whatsapp: cleanPhone,
@@ -136,7 +140,14 @@ export async function POST(request: Request) {
       role: resolvedRole,
       main_category: finalCategory,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' })
+    };
+
+    if (pin && typeof pin === 'string' && pin.length === 4) {
+      profileData.pin_hash = hashPin(pin);
+    }
+
+    // 5. Upsert profile in Supabase DB
+    await admin.from('profiles').upsert(profileData, { onConflict: 'id' })
 
     const response = NextResponse.json({
       success: true,

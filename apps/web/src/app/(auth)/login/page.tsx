@@ -117,14 +117,24 @@ function LoginPageInner() {
 
     setLoading(true);
     try {
-      const payload = endpoint === '/api/auth/pin' 
-        ? { phone, pin, fullName, category }
-        : { phone, otp, fullName, category };
+      let payload: any = {};
+      if (endpoint === '/api/auth/pin') {
+        // PIN login mode
+        payload = { phone, pin };
+      } else {
+        // OTP verify mode
+        payload = { phone, otp };
+        if (!isExistingUser) {
+          payload.fullName = fullName;
+          payload.category = category;
+          if (pin) payload.pin = pin; // Setup PIN for new users
+        }
+      }
 
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -224,6 +234,22 @@ function LoginPageInner() {
                   >
                     {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Setup 4-Digit PIN (Emergency Login)</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={pin}
+                      onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
+                      placeholder="****"
+                      className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white pl-12 pr-4 py-3 focus:outline-none focus:border-emerald-500 placeholder:text-gray-600 tracking-[0.5em] text-lg font-bold"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-2">Used if WhatsApp OTP is unavailable. Must be exactly 4 digits.</p>
                 </div>
               </motion.div>
             )}

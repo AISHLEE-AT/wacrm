@@ -33,11 +33,13 @@ export async function POST(request: Request) {
     const admin = getAdminClient()
     const hashedPin = hashPin(pin)
 
-    // 1. Fetch profile to check PIN hash or existing profile
+    // 1. Fetch profile to check PIN hash or existing profile (limit 1 to avoid duplicates)
     const { data: existingProfile } = await admin
       .from('profiles')
       .select('id, full_name, role, main_category, pin_hash')
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     // PIN Hash Verification (if user previously set a PIN)
@@ -45,14 +47,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid PIN entered. Please check your 4-digit PIN.' }, { status: 401 })
     }
 
-    // 2. Flexible Supabase Auth User Lookup (matches any legacy email pattern)
-    const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
-    const allUsers = usersData?.users || []
-    const existingUser = allUsers.find(u => 
-      (u.email && u.email.includes(cleanPhone)) ||
-      (u.phone && u.phone.includes(cleanPhone)) ||
-      (u.user_metadata && (u.user_metadata.phone === cleanPhone || u.user_metadata.phone === `+91${cleanPhone}`))
-    )
+    // 2. Flexible Supabase Auth User Lookup
+    let existingUser = null;
+    
+    // Always prioritize the ID from the existing profile so we don't accidentally create a duplicate
+    if (existingProfile?.id) {
+      const { data: uData } = await admin.auth.admin.getUserById(existingProfile.id)
+      existingUser = uData?.user || null
+    }
+
+    // Fallback: search by phone if profile lookup didn't find the auth user
+    if (!existingUser) {
+      const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
+      const allUsers = usersData?.users || []
+      existingUser = allUsers.find(u => 
+        (u.email && u.email.includes(cleanPhone)) ||
+        (u.phone && u.phone.includes(cleanPhone)) ||
+        (u.user_metadata && (u.user_metadata.phone === cleanPhone || u.user_metadata.phone === `+91${cleanPhone}`))
+      )
+    }
 
     const targetEmail = existingUser?.email || `user_${cleanPhone}@wacrm.local`
     const syntheticPassword = `PinAuth_${cleanPhone}_${pin}`
