@@ -42,9 +42,22 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    // PIN Hash Verification (if user previously set a PIN)
-    if (existingProfile?.pin_hash && existingProfile.pin_hash !== hashedPin) {
-      return NextResponse.json({ error: 'Invalid PIN entered. Please check your 4-digit PIN.' }, { status: 401 })
+    // --- SECURITY: Strict PIN verification ---
+    // If user profile EXISTS:
+    //   - They MUST have a pin_hash set
+    //   - The submitted PIN MUST match that hash
+    // Only brand-new users (no profile at all) can set a PIN for the first time
+    if (existingProfile) {
+      if (!existingProfile.pin_hash) {
+        // User exists but never set a PIN — block login, force them to use WhatsApp OTP
+        return NextResponse.json({
+          error: 'No PIN set for this account. Please login via WhatsApp OTP to set your PIN first.',
+          code: 'NO_PIN_SET',
+        }, { status: 401 })
+      }
+      if (existingProfile.pin_hash !== hashedPin) {
+        return NextResponse.json({ error: 'Invalid PIN entered. Please check your 4-digit PIN.' }, { status: 401 })
+      }
     }
 
     // 2. Flexible Supabase Auth User Lookup
