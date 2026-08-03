@@ -2,32 +2,39 @@
 
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { createClient } from '@/lib/supabase/client';
 
 interface IframeWrapperProps {
   modulePath: string; // e.g. "/teacho"
 }
 
 export default function IframeWrapper({ modulePath }: IframeWrapperProps) {
-  const { session } = useAuth();
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Determine target URL
-    const baseUrl = 'https://thamizhan.vercel.app';
-    const targetUrl = new URL(modulePath, baseUrl);
-    
-    // Add referral to distinguish embedded mode if needed
-    targetUrl.searchParams.set('ref', 'wacrm_embed');
+    async function init() {
+      // Determine target URL
+      const baseUrl = 'https://thamizhan.vercel.app';
+      const targetUrl = new URL(modulePath, baseUrl);
+      
+      // Add referral to distinguish embedded mode if needed
+      targetUrl.searchParams.set('ref', 'wacrm_embed');
 
-    // Add session tokens to URL if they exist
-    if (session?.access_token && session?.refresh_token) {
-      targetUrl.searchParams.set('sb_access_token', session.access_token);
-      targetUrl.searchParams.set('sb_refresh_token', session.refresh_token);
+      // Get Supabase session manually
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Add session tokens to URL if they exist
+      if (session?.access_token && session?.refresh_token) {
+        targetUrl.searchParams.set('sb_access_token', session.access_token);
+        targetUrl.searchParams.set('sb_refresh_token', session.refresh_token);
+      }
+
+      setIframeUrl(targetUrl.toString());
     }
 
-    setIframeUrl(targetUrl.toString());
-  }, [modulePath, session]);
+    init();
+  }, [modulePath]);
 
   if (!iframeUrl) {
     return (

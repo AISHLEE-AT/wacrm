@@ -10,6 +10,29 @@ const BOOTSTRAP_ADMIN_EMAILS = ['aishleetechnology@gmail.com']
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
+  // Handle CORS for /api/auth/
+  if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+    const origin = request.headers.get('origin') ?? ''
+    const isAllowedOrigin = origin === 'https://thamizhan.vercel.app' || origin.startsWith('http://localhost')
+    
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Credentials': 'true',
+        }
+      })
+    }
+    
+    supabaseResponse.headers.set('Access-Control-Allow-Origin', isAllowedOrigin ? origin : '*')
+    supabaseResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    supabaseResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    supabaseResponse.headers.set('Access-Control-Allow-Credentials', 'true')
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
