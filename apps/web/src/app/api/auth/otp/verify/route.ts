@@ -48,21 +48,34 @@ export async function POST(request: Request) {
     // OTP is valid! Delete it so it can't be reused.
     await admin.from('whatsapp_otps').delete().eq('phone_number', dbPhone)
 
-    // 2. Fetch profile to get existing user info
+    // 2. Fetch profile to get existing user info (limit 1 to avoid duplicate row errors)
     const { data: existingProfile } = await admin
       .from('profiles')
       .select('id, full_name, role, main_category')
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle()
 
     // 3. Flexible Supabase Auth User Lookup
-    const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
-    const allUsers = usersData?.users || []
-    const existingUser = allUsers.find(u => 
-      (u.email && u.email.includes(cleanPhone)) ||
-      (u.phone && u.phone.includes(cleanPhone)) ||
-      (u.user_metadata && (u.user_metadata.phone === cleanPhone || u.user_metadata.phone === `+91${cleanPhone}`))
-    )
+    let existingUser = null;
+    
+    // Always prioritize the ID from the existing profile so we don't accidentally create a duplicate
+    if (existingProfile?.id) {
+      const { data: uData } = await admin.auth.admin.getUserById(existingProfile.id)
+      existingUser = uData?.user || null
+    }
+
+    // Fallback: search by phone if profile lookup didn't find the auth user
+    if (!existingUser) {
+      const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
+      const allUsers = usersData?.users || []
+      existingUser = allUsers.find(u => 
+        (u.email && u.email.includes(cleanPhone)) ||
+        (u.phone && u.phone.includes(cleanPhone)) ||
+        (u.user_metadata && (u.user_metadata.phone === cleanPhone || u.user_metadata.phone === `+91${cleanPhone}`))
+      )
+    }
 
     const targetEmail = existingUser?.email || `user_${cleanPhone}@wacrm.local`
     const syntheticPassword = `OtpAuth_${cleanPhone}_${otp}` // New password every time for security
