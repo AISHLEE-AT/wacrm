@@ -213,17 +213,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4">
           <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2.5">
             <img 
-              src="/brand-leaf-logo.png?v=4" 
+              src="/supro-logo-ai.jpg" 
               alt="SuprO Logo" 
               className="h-10 w-10 rounded-xl object-contain bg-black border border-amber-400/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]" 
             />
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-wider text-emerald-400 leading-none">
-                SuprO
-              </span>
-              <span className="text-[10px] font-bold tracking-widest text-amber-400 leading-none mt-1 uppercase">
-                for Local Needs
-              </span>
+            <div className="flex flex-col items-start justify-center ml-1">
+              <img src="/supro-text-logo.jpg" alt="SuprO for Local Needs" className="h-10 object-contain mix-blend-lighten" />
             </div>
           </Link>
           <button

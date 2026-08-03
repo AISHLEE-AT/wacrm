@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     follow: false,
   },
   icons: {
-    icon: [{ url: "/brand-leaf-logo.png?v=3" }],
+    icon: [{ url: "/supro-logo-ai.jpg" }],
   },
   formatDetection: {
     email: false,

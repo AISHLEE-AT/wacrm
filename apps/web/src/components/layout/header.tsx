@@ -92,7 +92,7 @@ export function Header({ onOpenSidebar }: HeaderProps) {
               />
             ) : null}
             <AvatarFallback className="bg-black border border-emerald-500/20">
-              <img src="/brand-leaf-logo.png?v=4" alt="User" className="w-full h-full object-contain p-0.5" />
+              <img src="/supro-logo-ai.jpg" alt="User" className="w-full h-full object-contain p-0.5" />
             </AvatarFallback>
           </Avatar>
           <span className="hidden text-sm font-medium text-foreground sm:inline">
