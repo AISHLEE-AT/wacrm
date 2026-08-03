@@ -12,28 +12,14 @@ export default function IframeWrapper({ modulePath }: IframeWrapperProps) {
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    async function init() {
-      // Determine target URL
-      const baseUrl = 'https://thamizhan.vercel.app';
-      const targetUrl = new URL(modulePath, baseUrl);
-      
-      // Add referral to distinguish embedded mode if needed
-      targetUrl.searchParams.set('ref', 'wacrm_embed');
+    // Determine target URL
+    const baseUrl = 'https://thamizhan.vercel.app';
+    const targetUrl = new URL(modulePath, baseUrl);
+    
+    // Add referral to distinguish embedded mode if needed
+    targetUrl.searchParams.set('ref', 'wacrm_embed');
 
-      // Get Supabase session manually
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-
-      // Add session tokens to URL if they exist
-      if (session?.access_token && session?.refresh_token) {
-        targetUrl.searchParams.set('sb_access_token', session.access_token);
-        targetUrl.searchParams.set('sb_refresh_token', session.refresh_token);
-      }
-
-      setIframeUrl(targetUrl.toString());
-    }
-
-    init();
+    setIframeUrl(targetUrl.toString());
   }, [modulePath]);
 
   if (!iframeUrl) {
