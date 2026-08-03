@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
 
 function getAdminClient() {
   return createClient(
@@ -9,20 +8,16 @@ function getAdminClient() {
   )
 }
 
-function hashPin(pin: string): string {
-  return crypto.createHash('sha256').update(`FAGO_PIN_${pin}`).digest('hex')
-}
-
 export async function POST(request: Request) {
   try {
-    const { phone, pin, fullName, category } = await request.json()
+    const { phone, otp, fullName, category } = await request.json()
 
     if (!phone || typeof phone !== 'string') {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 })
     }
 
-    if (!pin || typeof pin !== 'string' || pin.length < 4) {
-      return NextResponse.json({ error: 'Valid 4-digit PIN is required' }, { status: 400 })
+    if (!otp || typeof otp !== 'string' || otp.length !== 6) {
+      return NextResponse.json({ error: 'Valid 6-digit OTP is required' }, { status: 400 })
     }
 
     const cleanPhone = phone.replace(/\D/g, '').slice(-10)
@@ -31,21 +26,33 @@ export async function POST(request: Request) {
     }
 
     const admin = getAdminClient()
-    const hashedPin = hashPin(pin)
 
-    // 1. Fetch profile to check PIN hash or existing profile
+    // 1. Verify OTP in whatsapp_otps
+    const { data: otpRecord, error: otpErr } = await admin
+      .from('whatsapp_otps')
+      .select('*')
+      .eq('phone', cleanPhone)
+      .maybeSingle()
+
+    if (otpErr || !otpRecord || otpRecord.otp !== otp) {
+      return NextResponse.json({ error: 'Invalid or expired OTP. Please request a new one.' }, { status: 401 })
+    }
+
+    if (new Date(otpRecord.expires_at).getTime() < Date.now()) {
+      return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 401 })
+    }
+
+    // OTP is valid! Delete it so it can't be reused.
+    await admin.from('whatsapp_otps').delete().eq('phone', cleanPhone)
+
+    // 2. Fetch profile to get existing user info
     const { data: existingProfile } = await admin
       .from('profiles')
-      .select('id, full_name, role, main_category, pin_hash')
+      .select('id, full_name, role, main_category')
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
       .maybeSingle()
 
-    // PIN Hash Verification (if user previously set a PIN)
-    if (existingProfile?.pin_hash && existingProfile.pin_hash !== hashedPin) {
-      return NextResponse.json({ error: 'Invalid PIN entered. Please check your 4-digit PIN.' }, { status: 401 })
-    }
-
-    // 2. Flexible Supabase Auth User Lookup (matches any legacy email pattern)
+    // 3. Flexible Supabase Auth User Lookup
     const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
     const allUsers = usersData?.users || []
     const existingUser = allUsers.find(u => 
@@ -55,7 +62,7 @@ export async function POST(request: Request) {
     )
 
     const targetEmail = existingUser?.email || `user_${cleanPhone}@wacrm.local`
-    const syntheticPassword = `PinAuth_${cleanPhone}_${pin}`
+    const syntheticPassword = `OtpAuth_${cleanPhone}_${otp}` // New password every time for security
 
     if (existingUser) {
       // Sync password & confirm email
@@ -83,7 +90,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Sign in via anon client
+    // 4. Sign in via anon client
     const anonClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -104,34 +111,20 @@ export async function POST(request: Request) {
     const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
     const finalCategory = category || existingProfile?.main_category || 'Traveller'
 
-    // 4. Upsert profile in Supabase DB with clean PIN hash (fail-safe)
-    try {
-      await admin.from('profiles').upsert({
-        id: userId,
-        phone: cleanPhone,
-        whatsapp: cleanPhone,
-        full_name: finalName,
-        role: resolvedRole,
-        main_category: finalCategory,
-        pin_hash: hashedPin,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' })
-    } catch (profileErr) {
-      console.warn('Profile upsert with pin_hash failed, falling back without pin_hash:', profileErr)
-      await admin.from('profiles').upsert({
-        id: userId,
-        phone: cleanPhone,
-        whatsapp: cleanPhone,
-        full_name: finalName,
-        role: resolvedRole,
-        main_category: finalCategory,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' })
-    }
+    // 5. Upsert profile in Supabase DB
+    await admin.from('profiles').upsert({
+      id: userId,
+      phone: cleanPhone,
+      whatsapp: cleanPhone,
+      full_name: finalName,
+      role: resolvedRole,
+      main_category: finalCategory,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' })
 
     const response = NextResponse.json({
       success: true,
-      message: 'PIN authentication successful',
+      message: 'OTP authentication successful',
       session: {
         access_token: authResult.data.session.access_token,
         refresh_token: authResult.data.session.refresh_token,
@@ -157,7 +150,7 @@ export async function POST(request: Request) {
 
     return response
   } catch (err: any) {
-    console.error('PIN Auth Route Error:', err)
+    console.error('OTP Auth Route Error:', err)
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
   }
 }

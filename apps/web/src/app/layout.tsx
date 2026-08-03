@@ -21,10 +21,10 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: {
-    default: "FAGO",
-    template: "%s — FAGO",
+    default: "SuprO",
+    template: "%s — SuprO",
   },
-  description: "Marketplace for buyers and sellers.",
+  description: "for Local Needs",
   robots: {
     index: false,
     follow: false,

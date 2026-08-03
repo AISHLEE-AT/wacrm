@@ -268,11 +268,9 @@ async function processWebhook(body: { entry?: WhatsAppWebhookEntry[] }) {
           // Tenancy — drives every contact / conversation lookup
           // and the engines' active-row dispatch.
           config.account_id,
-          // Audit / sender-of-record — used as the user_id on row
-          // inserts that need it for NOT NULL FK compliance. Always
-          // the admin who saved the WhatsApp config.
           config.user_id,
-          decryptedAccessToken
+          decryptedAccessToken,
+          phoneNumberId
         )
       }
     }
@@ -559,7 +557,8 @@ async function processMessage(
   // (contacts, conversations). Always the admin who saved the
   // WhatsApp config; the choice is arbitrary post-017 but stable.
   configOwnerUserId: string,
-  accessToken: string
+  accessToken: string,
+  phoneNumberId: string
 ) {
   const senderPhone = normalizePhone(message.from)
   const contactName = contact.profile.name
@@ -593,6 +592,38 @@ async function processMessage(
   // Parse message content based on type
   const { contentText, mediaUrl, mediaType, interactiveReplyId } =
     await parseMessageContent(message, accessToken)
+
+  // -- OTP AUTHENTICATION HOOK --
+  if (contentText && contentText.trim() === 'Requesting OTP for Login') {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    
+    await supabaseAdmin().from('whatsapp_otps').upsert({
+      phone: senderPhone,
+      otp: otp,
+      expires_at: expiresAt
+    });
+
+    await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: senderPhone,
+        type: 'text',
+        text: {
+          body: `Your SuprO login OTP is ${otp}. Valid for 5 minutes.`
+        }
+      })
+    }).catch(err => console.error('Failed to send OTP:', err));
+    
+    return; // Stop processing so we don't pollute the CRM inbox
+  }
+  // ------------------------------------
 
   // -- STANDALONE BIDDING SYSTEM HOOK --
   // We fire this asynchronously so it never slows down or breaks the main CRM flow
