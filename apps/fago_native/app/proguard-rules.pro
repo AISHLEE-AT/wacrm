@@ -1,5 +1,0 @@
--keep class com.fago.fagoapp.** { *; }
--keep class io.github.jan.supabase.** { *; }
--keep class com.google.firebase.** { *; }
--dontwarn io.ktor.**
--keep class io.ktor.** { *; }

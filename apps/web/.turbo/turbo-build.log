@@ -1,5 +1,5 @@
 
-> @wacrm/web@0.2.2 build
+> @wacrm/web@0.0.1v beta build
 > next build
 
 ▲ Next.js 16.2.9 (Turbopack)
@@ -7,24 +7,28 @@
 
 ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
   Creating an optimized production build ...
-✓ Compiled successfully in 17.8s
+✓ Compiled successfully in 21.7s
   Running TypeScript ...
-  Finished TypeScript in 18.7s ...
+  Finished TypeScript in 24.1s ...
   Collecting page data using 7 workers ...
 ⚠ Using edge runtime on a page currently disables static generation for that page
-  Generating static pages using 7 workers (0/66) ...
-  Generating static pages using 7 workers (16/66) 
-  Generating static pages using 7 workers (32/66) 
-  Generating static pages using 7 workers (49/66) 
-✓ Generating static pages using 7 workers (66/66) in 1012ms
+Firebase Admin initialized via Base64 ENV
+  Generating static pages using 7 workers (0/94) ...
+  Generating static pages using 7 workers (23/94) 
+  Generating static pages using 7 workers (46/94) 
+  Generating static pages using 7 workers (70/94) 
+✓ Generating static pages using 7 workers (94/94) in 1602ms
   Finalizing page optimization ...
 
 Route (app)
 ┌ ○ /
 ├ ○ /_not-found
+├ ○ /admin
 ├ ○ /admin/drivers
 ├ ○ /admin/drivers/applications
 ├ ○ /admin/providers
+├ ○ /agro
+├ ○ /ai-assistant
 ├ ƒ /api/account
 ├ ƒ /api/account/api-keys
 ├ ƒ /api/account/api-keys/[id]
@@ -35,16 +39,33 @@ Route (app)
 ├ ƒ /api/account/transfer-ownership
 ├ ƒ /api/admin/driver-applications
 ├ ƒ /api/admin/drivers
+├ ƒ /api/admin/drivers/add-funds
 ├ ƒ /api/admin/drivers/clear-commission
+├ ƒ /api/admin/testo/import
 ├ ƒ /api/auth/callback
+├ ƒ /api/auth/check
 ├ ƒ /api/auth/firebase-bridge
-├ ƒ /api/auth/whatsapp/send-otp
-├ ƒ /api/auth/whatsapp/verify-otp
+├ ƒ /api/auth/otp/verify
+├ ƒ /api/auth/otp/waba
+├ ƒ /api/auth/pin
+├ ƒ /api/auth/pin/reset
+├ ƒ /api/auth/pin/set
 ├ ƒ /api/automations
 ├ ƒ /api/automations/[id]
 ├ ƒ /api/automations/[id]/duplicate
 ├ ƒ /api/automations/cron
 ├ ƒ /api/automations/engine
+├ ƒ /api/conversations
+├ ƒ /api/conversations/[id]/messages
+├ ƒ /api/dashboard/metrics
+├ ƒ /api/fago/broadcast
+├ ƒ /api/fago/drivers
+├ ƒ /api/fago/providers
+├ ƒ /api/fago/quotes
+├ ƒ /api/fago/requests
+├ ƒ /api/fago/requests/[id]
+├ ƒ /api/fago/search
+├ ƒ /api/fago/select-winner
 ├ ƒ /api/flows
 ├ ƒ /api/flows/[id]
 ├ ƒ /api/flows/[id]/activate
@@ -54,13 +75,17 @@ Route (app)
 ├ ƒ /api/invitations/[token]/peek
 ├ ƒ /api/invitations/[token]/redeem
 ├ ƒ /api/notifications/send
-├ ƒ /api/tradeo/broadcast
-├ ƒ /api/tradeo/providers
-├ ƒ /api/tradeo/quotes
-├ ƒ /api/tradeo/requests
-├ ƒ /api/tradeo/requests/[id]
-├ ƒ /api/tradeo/search
-├ ƒ /api/tradeo/select-winner
+├ ƒ /api/notify
+├ ƒ /api/notify/request-ride
+├ ƒ /api/payments/submit
+├ ƒ /api/payments/verify-upi
+├ ƒ /api/profile/update
+├ ƒ /api/testo/leaderboard
+├ ƒ /api/testo/papers
+├ ƒ /api/testo/purchase
+├ ƒ /api/testo/questions
+├ ƒ /api/testo/status
+├ ƒ /api/testo/submit
 ├ ƒ /api/transcribe
 ├ ƒ /api/v1/me
 ├ ƒ /api/whatsapp/broadcast
@@ -81,30 +106,35 @@ Route (app)
 ├ ƒ /broadcasts/[id]
 ├ ○ /broadcasts/new
 ├ ○ /contacts
+├ ○ /crm
 ├ ○ /dashboard
-├ ƒ /dispatch
+├ ○ /dealo
 ├ ○ /drivo
 ├ ○ /flows
 ├ ƒ /flows/[id]
 ├ ƒ /flows/[id]/runs
-├ ○ /forgot-password
-├ ○ /home
 ├ ƒ /icon
 ├ ○ /inbox
 ├ ƒ /join/[token]
-├ ○ /local-connect
 ├ ○ /login
+├ ○ /mandi
+├ ○ /manifest.webmanifest
+├ ○ /moneyo
 ├ ○ /onboarding
 ├ ○ /pipelines
 ├ ○ /privacy
+├ ○ /profile
+├ ○ /rento
+├ ○ /rideo
 ├ ○ /settings
-├ ○ /signup
+├ ○ /tasko
+├ ○ /teacho
 ├ ○ /terms
+├ ○ /testo
+├ ○ /toolso
+├ ○ /touro
 ├ ○ /tradeo
-├ ○ /tradeo/providers
-├ ○ /tradeo/requests
-├ ƒ /tradeo/requests/[id]
-├ ○ /transo
+├ ○ /tvo
 └ ○ /wallet
 
 
@@ -113,3 +143,8 @@ Route (app)
 ○  (Static)   prerendered as static content
 ƒ  (Dynamic)  server-rendered on demand
 
+npm notice
+npm notice New major version of npm available! 11.17.0 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice

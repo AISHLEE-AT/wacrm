@@ -1,12 +1,10 @@
 {
   "name": "@wacrm/shared",
-  "version": "1.0.3-beta",
+  "version": "0.0.1",
   "private": true,
   "main": "index.ts",
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
-  },
+  "types": "index.ts",
+  "dependencies": {},
   "devDependencies": {
     "typescript": "^5.0.0"
   }
