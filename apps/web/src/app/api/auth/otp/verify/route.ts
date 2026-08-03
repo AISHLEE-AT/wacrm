@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     //    ⚠️ STRICT RULE: We NEVER create a second profile for an existing phone number.
     const { data: existingProfile } = await admin
       .from('profiles')
-      .select('id, full_name, role, main_category')
+      .select('id, full_name, role, main_category, pin_hash')
       .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -161,9 +161,15 @@ export async function POST(request: Request) {
 
     await admin.from('profiles').upsert(profileData, { onConflict: 'id' })
 
+    // Determine if user still needs to set a PIN (no pin_hash in DB and none provided now)
+    const hasPinNow = !!(pin && pin.length === 4)
+    const hadPinBefore = !!(existingProfile?.pin_hash)
+    const needsPinSetup = !hasPinNow && !hadPinBefore
+
     const response = NextResponse.json({
       success: true,
       message: 'OTP authentication successful',
+      needs_pin_setup: needsPinSetup,
       session: {
         access_token: authResult.data.session.access_token,
         refresh_token: authResult.data.session.refresh_token,
