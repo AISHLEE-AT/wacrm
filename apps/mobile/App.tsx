@@ -3,12 +3,13 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { BookOpen, MonitorPlay, Wallet, Home, Map } from 'lucide-react-native';
+import { BookOpen, MonitorPlay, Wallet, Home, Map, MessageCircle } from 'lucide-react-native';
 
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import MapScreen from './src/screens/MapScreen';
+import ChatScreen from './src/screens/ChatScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -33,6 +34,11 @@ function AppTabs() {
         name="Map" 
         component={MapScreen} 
         options={{ title: 'Live Map', tabBarIcon: ({ color, size }) => <Map color={color} size={size} /> }}
+      />
+      <Tab.Screen 
+        name="CRM" 
+        component={ChatScreen} 
+        options={{ title: 'Inbox', tabBarIcon: ({ color, size }) => <MessageCircle color={color} size={size} /> }}
       />
       <Tab.Screen 
         name="TestO" 
