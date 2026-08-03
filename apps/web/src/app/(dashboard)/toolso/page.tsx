@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { createClient } from '@/lib/supabase/client';
-import { buildAishleeIframeUrl } from '@/lib/aishlee-sso';
+
 
 /* ─────────────────────────────────────────────
    TAB IDs

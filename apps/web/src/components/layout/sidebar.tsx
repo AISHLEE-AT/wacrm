@@ -82,7 +82,6 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   beta?: boolean;
-  isExternal?: boolean;
 }
 
 const crmItems: NavItem[] = [
@@ -295,38 +294,27 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobility & Logistics</h3>
           </div>
           <ul className="flex flex-col gap-1">
-            {mobilityItems.map((item: any) => {
-              const isActive = !item.isExternal && pathname.startsWith(item.href);
+            {mobilityItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
-                  {item.isExternal ? (
-                    <a
-                      href={`${item.href}?phone=${displayEmail}&name=${encodeURIComponent(profile?.full_name || 'User')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-cyan-400 hover:bg-cyan-500/10 transition-all lg:py-2"
-                    >
-                      <item.icon className="h-4 w-4 text-cyan-400" />
-                      <span className="flex-1">{item.label}</span>
-                    </a>
-                  ) : (
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
-                        isActive
-                          ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                          : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1">{item.label}</span>
-                    </Link>
-                  )}
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
+                      isActive
+                        ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
+                        : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
                 </li>
               );
             })}
           </ul>
+
 
           {/* Administration Section — STRICTLY Only Visible to 9486335870 / aishleetechnology@gmail.com */}
           {isAdmin && (
