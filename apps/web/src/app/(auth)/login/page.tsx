@@ -132,13 +132,13 @@ function LoginPageInner() {
           {/* Header Branding */}
           <div className="bg-gradient-to-r from-emerald-600/20 to-green-600/10 border-b border-emerald-500/20 px-8 py-7 text-center">
             <div className="flex items-center justify-center gap-3 mb-3">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                <span className="text-2xl font-black text-white">F</span>
+              <div className="w-14 h-14 rounded-2xl bg-black flex items-center justify-center shadow-lg shadow-emerald-500/30 overflow-hidden border border-emerald-500/20">
+                <img src="/brand-leaf-logo.png?v=4" alt="WACRM Logo" className="w-full h-full object-contain" />
               </div>
               <div className="text-left">
-                <h1 className="text-2xl font-black text-white tracking-tight">FAGO</h1>
+                <h1 className="text-2xl font-black text-white tracking-tight">UNIFIED WACRM</h1>
                 <p className="text-emerald-400 text-xs font-medium flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> தமிழன் AISHO
+                  <Sparkles className="w-3 h-3" /> Unified CRM Platform
                 </p>
               </div>
             </div>
