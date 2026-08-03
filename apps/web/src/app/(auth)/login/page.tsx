@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smartphone, Lock, ShieldCheck, Loader2, Sparkles, MessageCircle, KeyRound } from "lucide-react";
+import { Smartphone, Lock, ShieldCheck, Loader2, Sparkles, MessageCircle, KeyRound, UserCheck } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -76,8 +76,9 @@ function LoginPageInner() {
         .then(res => res.json())
         .then(data => {
           setIsExistingUser(data.exists);
-          if (data.exists && data.name) {
-            setFullName(data.name);
+          if (data.exists) {
+            if (data.name) setFullName(data.name);
+            if (data.category) setCategory(data.category);
           }
         })
         .catch(() => setIsExistingUser(false))
@@ -223,6 +224,22 @@ function LoginPageInner() {
                   >
                     {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                   </select>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Recognized User Display (Shown for existing users) */}
+            {step === 'phone' && phone.length === 10 && isExistingUser === true && !isChecking && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3 pt-1 overflow-hidden">
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <UserCheck className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Welcome Back</p>
+                    <p className="text-white font-medium">{fullName}</p>
+                    <p className="text-gray-400 text-xs">{CATEGORIES.find(c => c.key === category)?.label || category}</p>
+                  </div>
                 </div>
               </motion.div>
             )}

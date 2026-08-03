@@ -20,13 +20,13 @@ export async function GET(request: Request) {
     // We can use an OR query just in case.
     const { data: profile } = await admin
       .from('profiles')
-      .select('id, full_name')
+      .select('id, full_name, main_category')
       .or(`phone.eq.${phone},phone.eq.91${phone}`)
       .limit(1)
       .maybeSingle()
 
     if (profile) {
-      return NextResponse.json({ exists: true, name: profile.full_name })
+      return NextResponse.json({ exists: true, name: profile.full_name, category: profile.main_category })
     }
     
     return NextResponse.json({ exists: false })
