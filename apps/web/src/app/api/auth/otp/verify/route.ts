@@ -28,10 +28,13 @@ export async function POST(request: Request) {
     const admin = getAdminClient()
 
     // 1. Verify OTP in whatsapp_otps
+    // Webhook receives phone from Meta in international format (e.g., 919123596988)
+    const dbPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    
     const { data: otpRecord, error: otpErr } = await admin
       .from('whatsapp_otps')
       .select('*')
-      .eq('phone_number', cleanPhone)
+      .eq('phone_number', dbPhone)
       .maybeSingle()
 
     if (otpErr || !otpRecord || otpRecord.otp !== otp) {
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     // OTP is valid! Delete it so it can't be reused.
-    await admin.from('whatsapp_otps').delete().eq('phone_number', cleanPhone)
+    await admin.from('whatsapp_otps').delete().eq('phone_number', dbPhone)
 
     // 2. Fetch profile to get existing user info
     const { data: existingProfile } = await admin

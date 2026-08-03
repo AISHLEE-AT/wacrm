@@ -42,6 +42,8 @@ function LoginPageInner() {
   const [category, setCategory] = useState("Traveller");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
   
   // 'phone' = enter number, 'otp' = enter otp, 'pin' = fallback pin
   const [step, setStep] = useState<'phone' | 'otp' | 'pin'>('phone');
@@ -66,6 +68,21 @@ function LoginPageInner() {
     const clean = val.replace(/\D/g, '').slice(0, 10);
     setPhone(clean);
     setError(null);
+    setIsExistingUser(null);
+
+    if (clean.length === 10) {
+      setIsChecking(true);
+      fetch(`/api/auth/check?phone=${clean}`)
+        .then(res => res.json())
+        .then(data => {
+          setIsExistingUser(data.exists);
+          if (data.exists && data.name) {
+            setFullName(data.name);
+          }
+        })
+        .catch(() => setIsExistingUser(false))
+        .finally(() => setIsChecking(false));
+    }
   };
 
   const requestOtp = () => {
@@ -185,7 +202,7 @@ function LoginPageInner() {
             </div>
 
             {/* Name + Category for New Registration (Shown only in initial step) */}
-            {step === 'phone' && phone.length === 10 && (
+            {step === 'phone' && phone.length === 10 && isExistingUser === false && !isChecking && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3 pt-1 overflow-hidden">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Name (If new user)</label>
@@ -210,16 +227,23 @@ function LoginPageInner() {
               </motion.div>
             )}
 
+            {/* Loading Indicator for User Check */}
+            {step === 'phone' && phone.length === 10 && isChecking && (
+              <div className="flex items-center justify-center gap-2 text-emerald-500 text-sm py-2">
+                <Loader2 className="w-4 h-4 animate-spin" /> Checking profile...
+              </div>
+            )}
+
             {/* Step: Phone -> Request OTP button */}
             {step === 'phone' && (
               <div className="space-y-3">
                 <button
                   type="button"
                   onClick={requestOtp}
-                  disabled={phone.length !== 10}
+                  disabled={phone.length !== 10 || isChecking}
                   className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 text-base"
                 >
-                  <MessageCircle className="h-5 w-5" />
+                  {isChecking ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
                   Send OTP via WhatsApp
                 </button>
 
