@@ -598,11 +598,15 @@ async function processMessage(
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
     
-    await supabaseAdmin().from('whatsapp_otps').upsert({
-      phone: senderPhone,
+    const { error: upsertErr } = await supabaseAdmin().from('whatsapp_otps').upsert({
+      phone_number: senderPhone,
       otp: otp,
       expires_at: expiresAt
     });
+
+    if (upsertErr) {
+      console.error('Failed to upsert OTP:', upsertErr);
+    }
 
     await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
       method: 'POST',

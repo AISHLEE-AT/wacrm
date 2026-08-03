@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const { data: otpRecord, error: otpErr } = await admin
       .from('whatsapp_otps')
       .select('*')
-      .eq('phone', cleanPhone)
+      .eq('phone_number', cleanPhone)
       .maybeSingle()
 
     if (otpErr || !otpRecord || otpRecord.otp !== otp) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     }
 
     // OTP is valid! Delete it so it can't be reused.
-    await admin.from('whatsapp_otps').delete().eq('phone', cleanPhone)
+    await admin.from('whatsapp_otps').delete().eq('phone_number', cleanPhone)
 
     // 2. Fetch profile to get existing user info
     const { data: existingProfile } = await admin
