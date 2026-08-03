@@ -9,4 +9,5 @@ export const endpoints = {
   authVerify: `${API_URL}/api/auth/otp/verify`,
   authPinSet: `${API_URL}/api/auth/pin/set`,
   authPinLogin: `${API_URL}/api/auth/pin`,
+  updateProfile: `${API_URL}/api/profile/update`,
 };
