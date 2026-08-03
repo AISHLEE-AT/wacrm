@@ -1,2 +1,5 @@
-// @ts-nocheck
-export { default } from '../mandi/page';
+import IframeWrapper from '@/components/layout/iframe-wrapper';
+
+export default function AgroPage() {
+  return <IframeWrapper modulePath="/agro" />;
+}
