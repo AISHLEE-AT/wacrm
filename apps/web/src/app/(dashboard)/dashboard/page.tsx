@@ -40,7 +40,7 @@ type RangeDays = 7 | 30 | 90
 export default function DashboardPage() {
   const router = useRouter()
   const { user, profile, defaultCurrency } = useAuth()
-  const isAdmin = checkIsAdmin(user, profile)
+  const isAdmin = checkIsAdmin(user, profile ?? undefined)
 
   // Non-admin users do not belong on the CRM dashboard
   useEffect(() => {
