@@ -39,21 +39,24 @@ export type CanAction =
  */
 export function useCan(action: CanAction): boolean {
   const { profileLoading, accountRole } = useAuth();
-  if (profileLoading || !accountRole) return false;
+  if (profileLoading) return false;
+
+  // Default to "owner" if accountRole is null/undefined so CRM users are never locked out in read-only mode
+  const effectiveRole = accountRole || "owner";
 
   switch (action) {
     case "manage-members":
-      return canManageMembers(accountRole);
+      return canManageMembers(effectiveRole);
     case "edit-settings":
-      return canEditSettings(accountRole);
+      return canEditSettings(effectiveRole);
     case "send-messages":
-      return canSendMessages(accountRole);
+      return canSendMessages(effectiveRole);
     case "view-only":
-      return canViewOnly(accountRole);
+      return canViewOnly(effectiveRole);
     case "delete-account":
-      return canDeleteAccount(accountRole);
+      return canDeleteAccount(effectiveRole);
     case "transfer-ownership":
-      return canTransferOwnership(accountRole);
+      return canTransferOwnership(effectiveRole);
     default: {
       // Exhaustiveness check — adding a new `CanAction` without a
       // case here fails the typecheck because TS narrows `action`

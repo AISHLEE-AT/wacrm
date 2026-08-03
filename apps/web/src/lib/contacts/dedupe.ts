@@ -42,11 +42,20 @@ export async function findExistingContact(
 
   const suffix = normalized.length >= 8 ? normalized.slice(-8) : normalized;
 
-  const { data, error } = await db
+  let { data, error } = await db
     .from("contacts")
     .select("*")
     .eq("account_id", accountId)
     .like("phone", `%${suffix}`);
+
+  if (!data || data.length === 0) {
+    const fallback = await db
+      .from("contacts")
+      .select("*")
+      .like("phone", `%${suffix}`);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !data) return null;
 

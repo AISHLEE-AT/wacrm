@@ -1008,15 +1008,23 @@ async function findOrCreateConversation(
   configOwnerUserId: string,
   contactId: string,
 ) {
-  // Look for existing conversation in this account
-  const { data: existing, error: findError } = await supabaseAdmin()
+  // Look for existing conversation for this contact across accounts to prevent duplicates
+  const { data: existing } = await supabaseAdmin()
     .from('conversations')
     .select('*')
-    .eq('account_id', accountId)
     .eq('contact_id', contactId)
-    .single()
+    .order('last_message_at', { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle()
 
-  if (!findError && existing) {
+  if (existing) {
+    // Re-align account_id if it differs from current active account
+    if (existing.account_id !== accountId) {
+      await supabaseAdmin()
+        .from('conversations')
+        .update({ account_id: accountId })
+        .eq('id', existing.id)
+    }
     return existing
   }
 
