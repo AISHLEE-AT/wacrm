@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Car, GraduationCap, MonitorPlay, Wallet, MapPin } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AppContext } from '../context/AppContext';
 
 const { width } = Dimensions.get('window');
 
 const CATEGORIES = [
-  { id: 'admin', title: 'Admin', desc: 'CRM & All Modules', icon: Wallet, color: '#f87171', bg: '#f8717120', route: 'Dashboard', tab: 'Admin' },
+  { id: 'admin', title: 'Admin CRM', desc: 'Manage Everything', icon: Wallet, color: '#f87171', bg: '#f8717120', route: 'Dashboard', tab: 'CRM', adminOnly: true },
   { id: 'rideo', title: 'RideO', desc: 'Book Cabs & Autos', icon: Car, color: '#10b981', bg: '#10b98120', route: 'Dashboard', tab: 'Map' },
   { id: 'driveo', title: 'DriveO', desc: 'Accept Rides', icon: MapPin, color: '#3b82f6', bg: '#3b82f620', route: 'Dashboard', tab: 'Map' },
   { id: 'testo', title: 'TestO', desc: 'Mock Exams', icon: GraduationCap, color: '#8b5cf6', bg: '#8b5cf620', route: 'Dashboard', tab: 'TestO' },
@@ -17,15 +18,23 @@ const CATEGORIES = [
 
 export default function CategoryScreen() {
   const navigation = useNavigation<any>();
+  const { addRecentModule, userRole } = useContext(AppContext);
 
   const handleSelect = (cat: any) => {
-    // Navigate to Dashboard tabs, optionally with a specific tab focus
+    // Navigate to the tab and add it to recent modules
+    if (cat.tab && cat.tab !== 'CRM') {
+      addRecentModule(cat.tab); // Don't add CRM to recent modules since it's admin only
+    }
+    
+    // the tab is rendered as a normal bottom tab in AppTabs
     if (cat.tab) {
-      navigation.replace(cat.route, { screen: cat.tab });
+      navigation.navigate(cat.tab);
     } else {
-      navigation.replace(cat.route);
+      navigation.navigate(cat.route);
     }
   };
+
+  const filteredCategories = CATEGORIES.filter(c => !c.adminOnly || userRole === 'admin');
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -35,7 +44,7 @@ export default function CategoryScreen() {
       </View>
 
       <View style={styles.grid}>
-        {CATEGORIES.map((cat) => {
+        {filteredCategories.map((cat) => {
           const Icon = cat.icon;
           return (
             <TouchableOpacity 

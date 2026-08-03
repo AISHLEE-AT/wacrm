@@ -62,7 +62,7 @@ export default function LoginScreen({ navigation }: any) {
         });
         
         if (result.success) {
-          navigation.replace('Category');
+          navigation.replace('Dashboard');
         }
       }
     }
@@ -82,6 +82,14 @@ export default function LoginScreen({ navigation }: any) {
         if (data.exists) {
           if (data.name) setFullName(data.name);
           if (data.category) setCategory(data.category);
+          if (data.role) await SecureStore.setItemAsync('user-role', data.role);
+          if (data.gemini_api_key) await SecureStore.setItemAsync('gemini-api-key', data.gemini_api_key);
+        }
+        
+        if (clean === '9486335870') {
+          // Hardcode admin role for 9486335870
+          setCategory('Admin');
+          await SecureStore.setItemAsync('user-role', 'admin');
         }
       } catch (err) {
         setIsExistingUser(false);
