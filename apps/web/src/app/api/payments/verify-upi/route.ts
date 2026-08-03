@@ -60,6 +60,13 @@ export async function POST(request: Request) {
       .update({ status: 'verified', verified_at: new Date().toISOString() })
       .eq('id', payment.id)
 
+    // Unlock testo purchase if applicable
+    if (payment.service.startsWith('testo:')) {
+      await admin.from('test_purchases')
+        .update({ status: 'verified', verified_at: new Date().toISOString() })
+        .eq('utr', utr)
+    }
+
     // Send WhatsApp CRM confirmation to user
     const serviceLabel: Record<string, string> = {
       rento: '🚜 RentO Equipment Booking',

@@ -2,447 +2,869 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  BookOpen, Timer, Trophy, CheckCircle2, XCircle,
-  RefreshCw, Loader2, BarChart3, Star, Zap, Globe, Database
+  BookOpen, Timer, Trophy, CheckCircle2, XCircle, Lock, Loader2,
+  BarChart3, Star, Zap, ArrowRight, Upload, RefreshCw, Award,
+  Crown, Medal, Clock, FileText, Users, ChevronRight, ShieldCheck,
+  AlertCircle, X, Download, QrCode
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Types ─────────────────────────────────────────────────────────
-interface Question {
-  id?: string;
-  question: string;
-  options: string[];
-  answer_idx: number;
-  explanation?: string;
-  subject: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  source?: 'db' | 'api';
-}
-
-interface ScoreRow {
+interface TestPaper {
   id: string;
-  user_id: string;
+  title: string;
   subject: string;
-  score: number;
-  total: number;
-  taken_at: string;
-  profiles?: { full_name: string; phone: string };
+  topic: string;
+  description?: string;
+  price: number;
+  duration_minutes: number;
+  total_questions: number;
+  thumbnail_emoji: string;
+  form_id?: string;
 }
 
-// ─── Tamil subject seed questions ──────────────────────────────────
-const SEED_QUESTIONS: Omit<Question, 'id'>[] = [
-  { question: 'தமிழ்நாட்டின் தலைநகரம் எது?', options: ['மதுரை', 'சென்னை', 'கோயம்புத்தூர்', 'திருச்சி'], answer_idx: 1, explanation: 'சென்னை தமிழ்நாட்டின் தலைநகரமும் மிகப்பெரிய நகரமும் ஆகும்.', subject: 'General Knowledge', difficulty: 'easy' },
-  { question: 'இந்தியாவின் தேசிய பறவை எது?', options: ['கழுகு', 'மயில்', 'குயில்', 'கருடன்'], answer_idx: 1, explanation: 'மயில் இந்தியாவின் தேசிய பறவையாகும்.', subject: 'General Knowledge', difficulty: 'easy' },
-  { question: 'நீர் எந்த வெப்பநிலையில் கொதிக்கும்?', options: ['80°C', '90°C', '100°C', '110°C'], answer_idx: 2, explanation: 'தரைமட்ட அழுத்தத்தில் நீர் 100°C வெப்பநிலையில் கொதிக்கும்.', subject: 'Science', difficulty: 'easy' },
-  { question: 'ஒளியின் வேகம் எவ்வளவு?', options: ['2×10⁸ m/s', '3×10⁸ m/s', '4×10⁸ m/s', '1×10⁸ m/s'], answer_idx: 1, explanation: 'ஒளியின் வேகம் வெற்றிடத்தில் சுமார் 3×10⁸ m/s ஆகும்.', subject: 'Science', difficulty: 'medium' },
-  { question: 'இந்தியாவில் எத்தனை மாநிலங்கள் உள்ளன?', options: ['25', '26', '28', '29'], answer_idx: 2, explanation: 'இந்தியாவில் 28 மாநிலங்களும் 8 யூனியன் பிரதேசங்களும் உள்ளன.', subject: 'General Knowledge', difficulty: 'medium' },
-  { question: 'தமிழ் இலக்கியத்தின் முதல் காவியம் எது?', options: ['சிலப்பதிகாரம்', 'மணிமேகலை', 'கம்பராமாயணம்', 'திருக்குறள்'], answer_idx: 0, explanation: 'சிலப்பதிகாரம் தமிழ் இலக்கியத்தின் ஐம்பெருங்காப்பியங்களில் முதலாவது.', subject: 'Tamil', difficulty: 'medium' },
-  { question: 'TNPSC Group 2 தேர்வை யார் நடத்துகிறார்கள்?', options: ['UPSC', 'TNPSC', 'SSC', 'IBPS'], answer_idx: 1, explanation: 'Tamil Nadu Public Service Commission (TNPSC) Group 2 தேர்வை நடத்துகிறது.', subject: 'TNPSC', difficulty: 'easy' },
-  { question: 'பூமியின் மொத்த பரப்பளவு எவ்வளவு?', options: ['400 மில்லியன் km²', '510 மில்லியன் km²', '610 மில்லியன் km²', '300 மில்லியன் km²'], answer_idx: 1, explanation: 'பூமியின் மொத்த பரப்பளவு சுமார் 510 மில்லியன் km² ஆகும்.', subject: 'Science', difficulty: 'hard' },
-  { question: 'இந்திய அரசியலமைப்பின் தந்தை யார்?', options: ['மகாத்மா காந்தி', 'ஜவஹர்லால் நேரு', 'B.R. அம்பேத்கர்', 'சர்தார் படேல்'], answer_idx: 2, explanation: 'Dr. B.R. அம்பேத்கர் இந்திய அரசியலமைப்பின் தந்தை என அழைக்கப்படுகிறார்.', subject: 'TNPSC', difficulty: 'easy' },
-  { question: 'ஒரு ஏக்கர் என்பது எத்தனை சதுர அடி?', options: ['23,560', '43,560', '53,560', '33,560'], answer_idx: 1, explanation: 'ஒரு ஏக்கர் = 43,560 சதுர அடி அல்லது 4047 சதுர மீட்டர்.', subject: 'Agriculture', difficulty: 'medium' },
-];
-
-const SUBJECTS = ['All', 'General Knowledge', 'Science', 'Tamil', 'TNPSC', 'Agriculture'];
-const DIFFICULTIES = ['All', 'easy', 'medium', 'hard'];
-const DIFF_COLORS = { easy: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30', medium: 'text-amber-400 bg-amber-500/10 border-amber-500/30', hard: 'text-rose-400 bg-rose-500/10 border-rose-500/30' };
-const TIMER_SEC = 15; // seconds per question
-
-// ─── Fetch from OpenTDB (free, no key) ─────────────────────────────
-async function fetchOpenTDB(amount = 5, category = 9): Promise<Question[]> {
-  try {
-    const res = await fetch(`https://opentdb.com/api.php?amount=${amount}&type=multiple&category=${category}`);
-    const json = await res.json();
-    if (json.response_code !== 0) return [];
-    return json.results.map((q: any) => {
-      const wrong = q.incorrect_answers;
-      const answerIdx = Math.floor(Math.random() * 4);
-      const options = [...wrong];
-      options.splice(answerIdx, 0, q.correct_answer);
-      return {
-        question: q.question.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&'),
-        options: options.map((o: string) => o.replace(/&quot;/g, '"').replace(/&#039;/g, "'").replace(/&amp;/g, '&')),
-        answer_idx: answerIdx,
-        explanation: `Correct answer: ${q.correct_answer}`,
-        subject: 'English GK (OpenTDB)',
-        difficulty: q.difficulty as 'easy' | 'medium' | 'hard',
-        source: 'api' as const,
-      };
-    });
-  } catch { return []; }
+interface Question {
+  id: string;
+  question_no: number;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  explanation?: string;
+  marks: number;
 }
 
-export default function TestOPage() {
-  const { user, profile } = useAuth();
-  const supabase = createClient();
+interface ResultItem {
+  question_no: number;
+  question_text: string;
+  option_a: string; option_b: string; option_c: string; option_d: string;
+  correct_answer: string;
+  user_answer: string | null;
+  is_correct: boolean;
+  explanation?: string;
+  marks: number;
+  marks_obtained: number;
+}
 
-  // ── State ───────────────────────────────────────────────────────
-  const [tab, setTab] = useState<'browse' | 'test' | 'scores'>('browse');
-  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
-  const [apiQuestions, setApiQuestions] = useState<Question[]>([]);
-  const [scores, setScores] = useState<ScoreRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [scoresLoading, setScoresLoading] = useState(false);
-  const [subject, setSubject] = useState('All');
-  const [difficulty, setDifficulty] = useState('All');
+type ScreenMode = 'browse' | 'payment' | 'pending' | 'test' | 'results' | 'leaderboard';
 
-  // Test mode state
-  const [testQuestions, setTestQuestions] = useState<Question[]>([]);
-  const [testStarted, setTestStarted] = useState(false);
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answered, setAnswered] = useState(false);
-  const [results, setResults] = useState<{ q: Question; chosen: number; correct: boolean }[]>([]);
-  const [testDone, setTestDone] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(TIMER_SEC);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [apiLoading, setApiLoading] = useState(false);
+const UPI_ID = '9486335870@hdfcbank';
+const UPI_NAME = 'Aishlee Technology';
+const TEST_PRICE = 22;
 
-  // ── Load DB questions ───────────────────────────────────────────
-  const loadQuestions = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase.from('question_bank').select('*').order('created_at', { ascending: false });
-    if (data && data.length > 0) {
-      setAllQuestions(data as Question[]);
-    } else {
-      const { data: seeded } = await supabase.from('question_bank').insert(SEED_QUESTIONS).select();
-      setAllQuestions((seeded || []) as Question[]);
-    }
-    setLoading(false);
-  }, []);
+// ─── Certificate Component ─────────────────────────────────────────
+function Certificate({ name, topic, subject, score, total, percentage, rank, date }: any) {
+  const passed = percentage >= 60;
+  const certRef = useRef<HTMLDivElement>(null);
 
-  // ── Load leaderboard ────────────────────────────────────────────
-  const loadScores = useCallback(async () => {
-    setScoresLoading(true);
-    const { data } = await supabase
-      .from('test_scores')
-      .select('*, profiles(full_name, phone)')
-      .order('score', { ascending: false })
-      .limit(20);
-    setScores((data || []) as ScoreRow[]);
-    setScoresLoading(false);
-  }, []);
-
-  useEffect(() => { loadQuestions(); }, [loadQuestions]);
-  useEffect(() => { if (tab === 'scores') loadScores(); }, [tab, loadScores]);
-
-  // ── Filtered questions ──────────────────────────────────────────
-  const filtered = allQuestions.filter(q => {
-    const matchSub = subject === 'All' || q.subject === subject;
-    const matchDiff = difficulty === 'All' || q.difficulty === difficulty;
-    return matchSub && matchDiff;
-  });
-
-  // ── Start test ──────────────────────────────────────────────────
-  const startTest = async (useApi = false) => {
-    let questions: Question[] = [];
-    if (useApi) {
-      setApiLoading(true);
-      const api = await fetchOpenTDB(10);
-      setApiQuestions(api);
-      questions = api;
-      setApiLoading(false);
-    } else {
-      const pool = filtered.length >= 10 ? filtered : allQuestions;
-      questions = [...pool].sort(() => Math.random() - 0.5).slice(0, Math.min(10, pool.length));
-    }
-    if (!questions.length) return;
-    setTestQuestions(questions);
-    setCurrentIdx(0);
-    setSelectedAnswer(null);
-    setAnswered(false);
-    setResults([]);
-    setTestDone(false);
-    setTestStarted(true);
-    setTimeLeft(TIMER_SEC);
-  };
-
-  // ── Timer ───────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!testStarted || answered || testDone) return;
-    timerRef.current = setTimeout(() => {
-      if (!answered) handleAnswer(-1); // auto-skip on timeout
-    }, TIMER_SEC * 1000);
-    const interval = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 1000);
-    return () => { clearTimeout(timerRef.current!); clearInterval(interval); };
-  }, [testStarted, currentIdx, answered, testDone]);
-
-  const handleAnswer = (idx: number) => {
-    if (answered) return;
-    clearTimeout(timerRef.current!);
-    setSelectedAnswer(idx);
-    setAnswered(true);
-    const q = testQuestions[currentIdx];
-    setResults(prev => [...prev, { q, chosen: idx, correct: idx === q.answer_idx }]);
-  };
-
-  const handleNext = () => {
-    if (currentIdx + 1 >= testQuestions.length) {
-      finishTest();
-    } else {
-      setCurrentIdx(i => i + 1);
-      setSelectedAnswer(null);
-      setAnswered(false);
-      setTimeLeft(TIMER_SEC);
-    }
-  };
-
-  const finishTest = async () => {
-    setTestDone(true);
-    setTestStarted(false);
-    const score = results.filter(r => r.correct).length + (results.length < testQuestions.length && results[results.length - 1]?.correct ? 0 : 0);
-    const finalScore = results.filter(r => r.correct).length;
-    // Save score to DB
-    if (user?.id) {
-      await supabase.from('test_scores').insert({
-        user_id: user.id,
-        subject: subject === 'All' ? 'Mixed' : subject,
-        score: finalScore,
-        total: testQuestions.length,
+  const handleDownload = () => {
+    if (!certRef.current) return;
+    import('html2canvas').then(({ default: html2canvas }) => {
+      html2canvas(certRef.current!, { scale: 2, backgroundColor: '#0a0f1e' }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `SuprO_TestO_Certificate_${name?.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
       });
-    }
+    }).catch(() => alert('Download ready! Take a screenshot of the certificate.'));
   };
 
-  const resetTest = () => {
-    setTestStarted(false);
-    setTestDone(false);
-    setResults([]);
-    setCurrentIdx(0);
-    setSelectedAnswer(null);
-    setAnswered(false);
-  };
-
-  // ── Score pct ───────────────────────────────────────────────────
-  const scoreCount = results.filter(r => r.correct).length;
-  const scorePct = testQuestions.length ? Math.round((scoreCount / testQuestions.length) * 100) : 0;
-  const currentQ = testQuestions[currentIdx];
-  const timerPct = (timeLeft / TIMER_SEC) * 100;
+  if (!passed) return (
+    <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-center space-y-2">
+      <XCircle className="w-12 h-12 text-red-400 mx-auto" />
+      <p className="text-red-400 font-bold">Score ≥ 60% required for certificate</p>
+      <p className="text-gray-400 text-sm">You scored {percentage}%. Keep practicing!</p>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-white p-4 md:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-purple-950/80 via-slate-900 to-pink-950/80 border border-purple-500/30 rounded-2xl p-5">
-        <div className="flex items-center gap-3">
-          <span className="p-2.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded-xl"><BookOpen className="w-6 h-6" /></span>
-          <div>
-            <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-rose-300">TestO • போட்டித் தேர்வு பயிற்சி</h1>
-            <p className="text-xs text-slate-400">Tamil DB questions + OpenTDB live API + Supabase leaderboard</p>
+    <div className="space-y-4">
+      <div ref={certRef} className="relative bg-gradient-to-br from-[#0d1a2e] via-[#0a1525] to-[#071020] border-4 border-double border-amber-400/60 rounded-3xl p-8 text-center overflow-hidden">
+        {/* Corner decorations */}
+        <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-amber-400/60 rounded-tl-lg" />
+        <div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-amber-400/60 rounded-tr-lg" />
+        <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-amber-400/60 rounded-bl-lg" />
+        <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-amber-400/60 rounded-br-lg" />
+        {/* Glow */}
+        <div className="absolute inset-0 bg-amber-400/3 pointer-events-none" />
+
+        <div className="flex justify-center mb-4">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/40">
+            <Award className="w-10 h-10 text-white" />
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <Database className="h-3.5 w-3.5 text-purple-400" />{allQuestions.length} Questions
-          <Globe className="h-3.5 w-3.5 text-cyan-400 ml-2" />OpenTDB API
+
+        <p className="text-amber-400/80 text-xs font-bold tracking-[0.3em] uppercase mb-1">SuprO TestO — Official Certificate</p>
+        <p className="text-gray-400 text-xs mb-6">This certifies that</p>
+
+        <h2 className="text-3xl font-black text-white tracking-wider mb-2">{name}</h2>
+        <p className="text-gray-400 text-sm mb-6">has successfully completed</p>
+
+        <div className="bg-amber-400/10 border border-amber-400/30 rounded-xl px-6 py-3 inline-block mb-4">
+          <p className="text-amber-300 font-bold text-base">{subject}</p>
+          <p className="text-amber-400/70 text-xs">{topic}</p>
+        </div>
+
+        <div className="flex justify-center gap-6 mb-6">
+          <div className="text-center">
+            <p className="text-3xl font-black text-emerald-400">{score}/{total}</p>
+            <p className="text-gray-500 text-xs uppercase tracking-wider">Score</p>
+          </div>
+          <div className="w-px bg-amber-400/20" />
+          <div className="text-center">
+            <p className="text-3xl font-black text-amber-400">{percentage}%</p>
+            <p className="text-gray-500 text-xs uppercase tracking-wider">Accuracy</p>
+          </div>
+          <div className="w-px bg-amber-400/20" />
+          <div className="text-center">
+            <p className="text-3xl font-black text-purple-400">#{rank}</p>
+            <p className="text-gray-500 text-xs uppercase tracking-wider">Rank</p>
+          </div>
+        </div>
+
+        <p className="text-gray-500 text-xs">{new Date(date || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <p className="text-amber-400/50 text-xs mt-1 font-mono">Powered by SuprO • aishlee.tech</p>
+      </div>
+      <button onClick={handleDownload}
+        className="w-full py-3 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-400 font-bold rounded-xl flex items-center justify-center gap-2 transition">
+        <Download className="w-4 h-4" /> Download Certificate
+      </button>
+    </div>
+  );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────
+export default function TestoPage() {
+  const { user, profile } = useAuth();
+
+  const phone = (profile as any)?.phone || (profile as any)?.whatsapp ||
+    user?.phone?.replace(/^\+91/, '') ||
+    user?.email?.replace('user_', '').replace('@wacrm.local', '') || '';
+  const userName = profile?.full_name || `User ${phone.slice(-4)}`;
+
+  const [screen, setScreen] = useState<ScreenMode>('browse');
+  const [papers, setPapers] = useState<TestPaper[]>([]);
+  const [grouped, setGrouped] = useState<Record<string, TestPaper[]>>({});
+  const [activeSubject, setActiveSubject] = useState<string>('All');
+  const [loadingPapers, setLoadingPapers] = useState(true);
+
+  // Payment flow
+  const [selectedPaper, setSelectedPaper] = useState<TestPaper | null>(null);
+  const [utr, setUtr] = useState('');
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [purchaseId, setPurchaseId] = useState<string | null>(null);
+  const [pollInterval, setPollIntervalRef] = useState<any>(null);
+
+  // Per-paper status cache: paper_id -> 'none' | 'pending' | 'verified' | 'completed'
+  const [paperStatus, setPaperStatus] = useState<Record<string, string>>({});
+
+  // Test state
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [testStartTime, setTestStartTime] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [submittingTest, setSubmittingTest] = useState(false);
+  const timerRef = useRef<any>(null);
+
+  // Results
+  const [results, setResults] = useState<ResultItem[]>([]);
+  const [resultSummary, setResultSummary] = useState<any>(null);
+
+  // Leaderboard
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loadingLB, setLoadingLB] = useState(false);
+
+  // ── Load papers + statuses ─────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/testo/papers')
+      .then(r => r.json())
+      .then(data => {
+        setPapers(data.papers || []);
+        setGrouped(data.grouped || {});
+        setLoadingPapers(false);
+      })
+      .catch(() => setLoadingPapers(false));
+  }, []);
+
+  useEffect(() => {
+    if (!phone || !papers.length) return;
+    // Check status for each paper
+    papers.forEach(p => {
+      fetch(`/api/testo/status?phone=${phone}&paper_id=${p.id}`)
+        .then(r => r.json())
+        .then(data => {
+          const st = data.completed_attempt ? 'completed' : (data.status || 'none');
+          setPaperStatus(prev => ({ ...prev, [p.id]: st }));
+        })
+        .catch(() => {});
+    });
+  }, [phone, papers]);
+
+  // ── Subject tabs ───────────────────────────────────────────────
+  const subjects = ['All', ...Object.keys(grouped)];
+  const filteredPapers = activeSubject === 'All' ? papers : (grouped[activeSubject] || []);
+
+  // ── Buy test ───────────────────────────────────────────────────
+  const openPayment = (paper: TestPaper) => {
+    setSelectedPaper(paper);
+    setUtr('');
+    setScreenshotFile(null);
+    setScreenshotPreview(null);
+    setPurchaseId(null);
+    setScreen('payment');
+  };
+
+  const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScreenshotFile(file);
+    const reader = new FileReader();
+    reader.onload = ev => setScreenshotPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const submitPayment = async () => {
+    if (!utr.trim() || !selectedPaper || !phone) return;
+    setSubmittingPayment(true);
+    try {
+      const res = await fetch('/api/testo/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paper_id: selectedPaper.id,
+          phone,
+          utr: utr.trim(),
+          screenshot_url: screenshotPreview || null,
+          user_id: user?.id,
+          user_name: userName,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok && !data.purchase_id) throw new Error(data.error);
+      setPurchaseId(data.purchase_id || null);
+      setScreen('pending');
+      startPolling(selectedPaper.id);
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit payment');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  };
+
+  const startPolling = (paperId: string) => {
+    const iv = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/testo/status?phone=${phone}&paper_id=${paperId}`);
+        const data = await res.json();
+        if (data.status === 'verified') {
+          clearInterval(iv);
+          setPaperStatus(prev => ({ ...prev, [paperId]: 'verified' }));
+          setScreen('browse');
+          alert('✅ Payment verified! Click "Start Test" to begin.');
+        }
+      } catch {}
+    }, 10000); // poll every 10s
+    setPollIntervalRef(iv);
+  };
+
+  useEffect(() => () => { if (pollInterval) clearInterval(pollInterval); }, [pollInterval]);
+
+  // ── Start test ─────────────────────────────────────────────────
+  const startTest = async (paper: TestPaper) => {
+    setSelectedPaper(paper);
+    setAnswers({});
+    setCurrentQ(0);
+
+    // Load questions (via admin route or direct Supabase)
+    // We fetch questions without answers for security; answers are on server
+    const res = await fetch(`/api/testo/questions?paper_id=${paper.id}`);
+    const data = await res.json();
+    if (data.questions?.length) {
+      setQuestions(data.questions);
+      setTestStartTime(Date.now());
+      setTimeLeft(paper.duration_minutes * 60);
+      setScreen('test');
+    } else {
+      alert('Could not load test questions. Please try again.');
+    }
+  };
+
+  // ── Timer ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (screen !== 'test') { if (timerRef.current) clearInterval(timerRef.current); return; }
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) { clearInterval(timerRef.current); submitTest(); return 0; }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [screen]);
+
+  const fmtTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+  // ── Submit test ───────────────────────────────────────────────
+  const submitTest = useCallback(async () => {
+    if (submittingTest || !selectedPaper) return;
+    setSubmittingTest(true);
+    clearInterval(timerRef.current);
+    try {
+      const timeTaken = Math.floor((Date.now() - testStartTime) / 1000);
+      const res = await fetch('/api/testo/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paper_id: selectedPaper.id,
+          phone,
+          user_id: user?.id,
+          user_name: userName,
+          answers,
+          time_taken_seconds: timeTaken,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setResults(data.results || []);
+      setResultSummary(data);
+      setPaperStatus(prev => ({ ...prev, [selectedPaper.id]: 'completed' }));
+      setScreen('results');
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit test');
+    } finally {
+      setSubmittingTest(false);
+    }
+  }, [answers, selectedPaper, phone, user, userName, testStartTime, submittingTest]);
+
+  // ── Load leaderboard ──────────────────────────────────────────
+  const loadLeaderboard = async (paper: TestPaper) => {
+    setSelectedPaper(paper);
+    setLoadingLB(true);
+    setScreen('leaderboard');
+    const res = await fetch(`/api/testo/leaderboard?paper_id=${paper.id}`);
+    const data = await res.json();
+    setLeaderboard(data.leaderboard || []);
+    setLoadingLB(false);
+  };
+
+  const statusBadge = (paperId: string) => {
+    const st = paperStatus[paperId] || 'none';
+    if (st === 'completed') return { label: '✅ Completed', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' };
+    if (st === 'verified') return { label: '🟢 Unlocked', color: 'text-green-400 bg-green-500/10 border-green-500/30' };
+    if (st === 'pending') return { label: '⏳ Pending', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' };
+    return { label: '🔒 ₹22', color: 'text-gray-400 bg-gray-500/10 border-gray-500/30' };
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // ── RENDER ───────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════
+
+  // ── BROWSE ────────────────────────────────────────────────────
+  if (screen === 'browse') return (
+    <div className="space-y-6">
+      {/* Hero */}
+      <div className="relative bg-gradient-to-br from-violet-900/40 via-purple-900/20 to-indigo-900/30 border border-violet-500/30 rounded-3xl p-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-xl bg-violet-500/20 border border-violet-500/30">
+                <BookOpen className="w-5 h-5 text-violet-400" />
+              </div>
+              <span className="text-violet-400 text-xs font-bold uppercase tracking-widest">SuprO TestO</span>
+            </div>
+            <h1 className="text-2xl font-black text-white mb-1">Exam Ready Platform</h1>
+            <p className="text-gray-400 text-sm">Topic-wise tests • ₹22/test • Instant certificate</p>
+          </div>
+          <div className="text-right hidden sm:block">
+            <p className="text-4xl font-black text-violet-400">₹22</p>
+            <p className="text-gray-500 text-xs">per test</p>
+          </div>
+        </div>
+        <div className="relative z-10 flex gap-3 mt-4 flex-wrap">
+          {['9th Maths', 'SSC CGL', 'TNPSC', '10th Science'].map(tag => (
+            <span key={tag} className="px-3 py-1 rounded-full text-xs font-bold text-violet-300 bg-violet-500/10 border border-violet-500/20">{tag}</span>
+          ))}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-        {[
-          { id: 'browse', label: '📚 Questions', icon: BookOpen },
-          { id: 'test',   label: '⚡ Start Test', icon: Zap },
-          { id: 'scores', label: '🏆 Leaderboard', icon: Trophy },
-        ].map(t => (
-          <button key={t.id} onClick={() => { setTab(t.id as any); resetTest(); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${tab === t.id ? 'bg-purple-500 text-white shadow-lg' : 'bg-slate-900 text-slate-400 hover:text-white'}`}>
-            {t.label}
+      {/* Subject Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {subjects.map(subj => (
+          <button key={subj} onClick={() => setActiveSubject(subj)}
+            className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold transition-all border ${
+              activeSubject === subj
+                ? 'bg-violet-500 text-white border-violet-500 shadow-lg shadow-violet-500/30'
+                : 'bg-[#111c35] text-gray-400 border-violet-500/20 hover:border-violet-500/40 hover:text-violet-300'
+            }`}>
+            {subj}
           </button>
         ))}
       </div>
 
-      {/* ── Browse Tab ── */}
-      {tab === 'browse' && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {SUBJECTS.map(s => (
-              <button key={s} onClick={() => setSubject(s)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${subject === s ? 'bg-purple-500 text-white' : 'bg-slate-900 text-slate-400 hover:text-white'}`}>{s}</button>
-            ))}
-            <span className="text-slate-600 mx-1">|</span>
-            {DIFFICULTIES.map(d => (
-              <button key={d} onClick={() => setDifficulty(d)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition capitalize ${difficulty === d ? 'bg-pink-500 text-white' : 'bg-slate-900 text-slate-400 hover:text-white'}`}>{d}</button>
-            ))}
-          </div>
-          {loading ? <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-400" /></div> : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filtered.map((q, i) => (
-                <div key={q.id || i} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{q.subject}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLORS[q.difficulty]}`}>{q.difficulty}</span>
-                  </div>
-                  <p className="text-sm font-bold text-white" dangerouslySetInnerHTML={{ __html: q.question }} />
-                  <div className="grid grid-cols-2 gap-2">
-                    {q.options.map((opt, idx) => (
-                      <div key={idx} className={`p-2 rounded-lg text-xs border ${idx === q.answer_idx ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
-                        {String.fromCharCode(65 + idx)}. <span dangerouslySetInnerHTML={{ __html: opt }} />
-                      </div>
-                    ))}
-                  </div>
-                  {q.explanation && <p className="text-[10px] text-slate-400 italic border-t border-slate-800 pt-2">💡 {q.explanation}</p>}
-                </div>
-              ))}
-              {filtered.length === 0 && <p className="text-slate-500 text-sm col-span-2 text-center py-10">No questions in this category.</p>}
-            </div>
-          )}
+      {/* Test Cards */}
+      {loadingPapers ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
         </div>
-      )}
-
-      {/* ── Test Tab ── */}
-      {tab === 'test' && (
-        <div className="max-w-2xl mx-auto space-y-5">
-          {!testStarted && !testDone && (
-            <div className="space-y-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-                <h2 className="text-lg font-bold text-white">தேர்வு தொடங்கு (Start Test)</h2>
-                <p className="text-xs text-slate-400">10 questions • {TIMER_SEC} seconds each • Score saved to leaderboard</p>
-                <div className="flex flex-col gap-3">
-                  <div className="flex gap-2 flex-wrap">
-                    {SUBJECTS.map(s => (
-                      <button key={s} onClick={() => setSubject(s)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${subject === s ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>{s}</button>
-                    ))}
+      ) : filteredPapers.length === 0 ? (
+        <div className="text-center py-16 text-gray-500">
+          <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">No tests available yet.</p>
+          <p className="text-xs mt-1">Admin is uploading tests. Check back soon!</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {filteredPapers.map(paper => {
+            const badge = statusBadge(paper.id);
+            const st = paperStatus[paper.id] || 'none';
+            return (
+              <motion.div key={paper.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="bg-[#0d1526]/80 border border-violet-500/20 rounded-2xl p-5 space-y-4 hover:border-violet-500/40 transition-all group">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-2xl">
+                      {paper.thumbnail_emoji || '📝'}
+                    </div>
+                    <div>
+                      <p className="text-violet-400 text-xs font-bold uppercase tracking-wider">{paper.subject}</p>
+                      <h3 className="text-white font-bold text-sm leading-tight">{paper.topic}</h3>
+                    </div>
                   </div>
-                  <button onClick={() => startTest(false)}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition">
-                    <Zap className="h-5 w-5" /> தமிழ் கேள்விகளுடன் தேர்வு (Tamil Questions)
-                  </button>
-                  <button onClick={() => startTest(true)} disabled={apiLoading}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-700 to-blue-700 text-white font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition disabled:opacity-60">
-                    {apiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Globe className="h-5 w-5" />}
-                    OpenTDB Live English GK Test
-                  </button>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${badge.color}`}>{badge.label}</span>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Active question */}
-          {testStarted && currentQ && (
-            <div className="space-y-4">
-              {/* Progress & Timer */}
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>கேள்வி {currentIdx + 1} / {testQuestions.length}</span>
-                <div className="flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-amber-400" />
-                  <span className={`font-black text-base ${timeLeft <= 5 ? 'text-rose-400 animate-pulse' : 'text-amber-400'}`}>{timeLeft}s</span>
+                <div className="flex gap-3 text-xs text-gray-400">
+                  <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" />{paper.total_questions}Q</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{paper.duration_minutes}min</span>
+                  <span className="flex items-center gap-1"><Award className="w-3.5 h-3.5 text-amber-400" />Certificate</span>
                 </div>
-              </div>
-              {/* Timer bar */}
-              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full transition-all duration-1000 ${timeLeft > 10 ? 'bg-emerald-400' : timeLeft > 5 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${timerPct}%` }} />
-              </div>
-              {/* Score so far */}
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                {Array.from({ length: testQuestions.length }).map((_, i) => (
-                  <div key={i} className={`h-1.5 flex-1 rounded-full ${i < results.length ? (results[i].correct ? 'bg-emerald-400' : 'bg-rose-400') : 'bg-slate-800'}`} />
-                ))}
-              </div>
-              {/* Question card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{currentQ.subject}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${DIFF_COLORS[currentQ.difficulty]}`}>{currentQ.difficulty}</span>
-                </div>
-                <p className="text-base font-bold text-white leading-relaxed" dangerouslySetInnerHTML={{ __html: currentQ.question }} />
-                <div className="grid grid-cols-1 gap-3">
-                  {currentQ.options.map((opt, idx) => {
-                    let cls = 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700 cursor-pointer';
-                    if (answered) {
-                      if (idx === currentQ.answer_idx) cls = 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold';
-                      else if (idx === selectedAnswer) cls = 'bg-rose-500/20 border-rose-500 text-rose-300';
-                      else cls = 'bg-slate-800 border-slate-700 text-slate-500';
-                    } else if (selectedAnswer === idx) {
-                      cls = 'bg-purple-500/20 border-purple-500 text-purple-300';
-                    }
-                    return (
-                      <button key={idx} onClick={() => handleAnswer(idx)} disabled={answered}
-                        className={`w-full p-3.5 rounded-xl border text-left text-sm transition flex items-center gap-3 ${cls}`}>
-                        <span className="font-black text-lg">{String.fromCharCode(65 + idx)}</span>
-                        <span dangerouslySetInnerHTML={{ __html: opt }} />
-                        {answered && idx === currentQ.answer_idx && <CheckCircle2 className="h-4 w-4 ml-auto shrink-0 text-emerald-400" />}
-                        {answered && idx === selectedAnswer && idx !== currentQ.answer_idx && <XCircle className="h-4 w-4 ml-auto shrink-0 text-rose-400" />}
+
+                {paper.description && <p className="text-gray-500 text-xs">{paper.description}</p>}
+
+                <div className="flex gap-2">
+                  {st === 'completed' ? (
+                    <>
+                      <button onClick={() => loadLeaderboard(paper)}
+                        className="flex-1 py-2.5 text-sm font-bold rounded-xl border border-violet-500/30 text-violet-400 hover:bg-violet-500/10 transition flex items-center justify-center gap-1.5">
+                        <Trophy className="w-4 h-4" /> Leaderboard
                       </button>
-                    );
-                  })}
+                    </>
+                  ) : st === 'verified' ? (
+                    <>
+                      <button onClick={() => startTest(paper)}
+                        className="flex-1 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20">
+                        <Zap className="w-4 h-4" /> Start Test
+                      </button>
+                      <button onClick={() => loadLeaderboard(paper)}
+                        className="py-2.5 px-3 text-sm font-bold rounded-xl border border-violet-500/30 text-violet-400 hover:bg-violet-500/10 transition">
+                        <Trophy className="w-4 h-4" />
+                      </button>
+                    </>
+                  ) : st === 'pending' ? (
+                    <div className="flex-1 py-2.5 text-sm font-bold rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center gap-1.5">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying Payment...
+                    </div>
+                  ) : (
+                    <>
+                      <button onClick={() => openPayment(paper)}
+                        className="flex-1 py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white transition flex items-center justify-center gap-1.5 shadow-lg shadow-violet-500/20">
+                        <Lock className="w-4 h-4" /> Buy Test — ₹{paper.price || TEST_PRICE}
+                      </button>
+                      <button onClick={() => loadLeaderboard(paper)}
+                        className="py-2.5 px-3 text-sm font-bold rounded-xl border border-violet-500/30 text-violet-400 hover:bg-violet-500/10 transition">
+                        <Trophy className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
-                {answered && currentQ.explanation && (
-                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-xs text-blue-300">
-                    💡 {currentQ.explanation}
-                  </div>
-                )}
-                {answered && (
-                  <button onClick={handleNext} className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-sm transition">
-                    {currentIdx + 1 < testQuestions.length ? 'அடுத்த கேள்வி →' : '🏁 முடிவுகள் காண'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Results screen */}
-          {testDone && (
-            <div className="space-y-5">
-              <div className={`p-8 rounded-3xl text-center space-y-3 border ${scorePct >= 70 ? 'bg-emerald-950/60 border-emerald-500/40' : scorePct >= 40 ? 'bg-amber-950/60 border-amber-500/40' : 'bg-rose-950/60 border-rose-500/40'}`}>
-                <p className="text-6xl font-black">{scorePct >= 70 ? '🏆' : scorePct >= 40 ? '👍' : '📖'}</p>
-                <h2 className="text-3xl font-black text-white">{scoreCount} / {results.length}</h2>
-                <p className={`text-lg font-bold ${scorePct >= 70 ? 'text-emerald-400' : scorePct >= 40 ? 'text-amber-400' : 'text-rose-400'}`}>{scorePct}%</p>
-                <p className="text-sm text-slate-400">{scorePct >= 70 ? 'Excellent! மிகவும் நன்று!' : scorePct >= 40 ? 'Good effort! மேலும் பயிற்சி செய்!' : 'Keep practicing! முயற்சி செய்!'}</p>
-                {user?.id && <p className="text-xs text-emerald-400">✓ Score saved to leaderboard</p>}
-              </div>
-              {/* Answer review */}
-              <div className="space-y-3">
-                {results.map((r, i) => (
-                  <div key={i} className={`p-4 rounded-xl border text-xs space-y-2 ${r.correct ? 'bg-emerald-950/40 border-emerald-500/30' : 'bg-rose-950/40 border-rose-500/30'}`}>
-                    <div className="flex items-center gap-2">
-                      {r.correct ? <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /> : <XCircle className="h-4 w-4 text-rose-400 shrink-0" />}
-                      <p className="font-bold text-white" dangerouslySetInnerHTML={{ __html: r.q.question }} />
-                    </div>
-                    {!r.correct && <p className="text-emerald-400">✓ சரியான விடை: <span dangerouslySetInnerHTML={{ __html: r.q.options[r.q.answer_idx] }} /></p>}
-                    {r.q.explanation && <p className="text-slate-400 italic">💡 {r.q.explanation}</p>}
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={resetTest} className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-sm transition">மீண்டும் தேர்வு (Retry)</button>
-                <button onClick={() => { setTab('scores'); resetTest(); }} className="flex-1 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-sm transition">🏆 Leaderboard</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Leaderboard Tab ── */}
-      {tab === 'scores' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-400" /> Top Scorers</h2>
-            <button onClick={loadScores} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white"><RefreshCw className="h-4 w-4" /></button>
-          </div>
-          {scoresLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-amber-400" /></div> : (
-            <div className="space-y-2">
-              {scores.length === 0 && <p className="text-slate-500 text-sm text-center py-10">No scores yet. Be the first to play!</p>}
-              {scores.map((s, i) => {
-                const pct = Math.round((s.score / s.total) * 100);
-                return (
-                  <div key={s.id} className={`flex items-center gap-4 p-4 rounded-xl border ${i === 0 ? 'bg-amber-500/10 border-amber-500/30' : i === 1 ? 'bg-slate-500/10 border-slate-500/30' : i === 2 ? 'bg-orange-800/10 border-orange-700/30' : 'bg-slate-900 border-slate-800'}`}>
-                    <span className="text-xl font-black text-slate-400 w-6 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-white truncate">{(s.profiles as any)?.full_name || 'Anonymous'}</p>
-                      <p className="text-xs text-slate-400">{s.subject} • {new Date(s.taken_at).toLocaleDateString('en-IN')}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-base font-black text-white">{s.score}/{s.total}</p>
-                      <p className={`text-xs font-bold ${pct >= 70 ? 'text-emerald-400' : pct >= 40 ? 'text-amber-400' : 'text-rose-400'}`}>{pct}%</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>
   );
+
+  // ── PAYMENT ────────────────────────────────────────────────────
+  if (screen === 'payment' && selectedPaper) return (
+    <div className="max-w-md mx-auto space-y-5">
+      <div className="flex items-center gap-3">
+        <button onClick={() => setScreen('browse')} className="p-2 rounded-xl bg-[#111c35] text-gray-400 hover:text-white transition">
+          <X className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-lg font-bold text-white">Buy Test Access</h2>
+          <p className="text-gray-400 text-xs">{selectedPaper.topic}</p>
+        </div>
+      </div>
+
+      {/* Amount */}
+      <div className="bg-violet-500/10 border border-violet-500/30 rounded-2xl p-5 text-center">
+        <p className="text-gray-400 text-sm mb-1">Pay via UPI</p>
+        <p className="text-5xl font-black text-white mb-1">₹{selectedPaper.price || TEST_PRICE}</p>
+        <p className="text-violet-400 font-mono font-bold text-sm">{UPI_ID}</p>
+        <p className="text-gray-500 text-xs mt-1">{UPI_NAME}</p>
+      </div>
+
+      {/* QR Code */}
+      <div className="bg-[#0d1526] border border-violet-500/20 rounded-2xl p-5 flex flex-col items-center gap-3">
+        <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">Scan & Pay with PhonePe / GPay / Paytm</p>
+        <div className="bg-white p-4 rounded-2xl shadow-lg">
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPaper.price || TEST_PRICE}&tn=${encodeURIComponent('SuprO TestO - ' + selectedPaper.topic)}&cu=INR`}
+            alt="UPI QR"
+            className="w-44 h-44 object-contain"
+          />
+        </div>
+        <a href={`upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${selectedPaper.price || TEST_PRICE}&tn=${encodeURIComponent('SuprO TestO')}&cu=INR`}
+          className="w-full py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl text-center text-sm transition">
+          📲 Open UPI App Directly
+        </a>
+      </div>
+
+      {/* Steps */}
+      <div className="bg-[#0d1526] border border-violet-500/20 rounded-2xl p-5 space-y-3">
+        <p className="text-white font-bold text-sm">After Payment:</p>
+        {['Pay ₹22 to the UPI ID above', 'Note the Transaction ID / UTR', 'Enter UTR below and upload screenshot', 'Auto-verified in ~15 minutes'].map((step, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <div className="w-6 h-6 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-violet-400 text-xs font-bold shrink-0">{i + 1}</div>
+            <p className="text-gray-400 text-sm">{step}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* UTR Input */}
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Transaction ID / UTR Number *</label>
+          <input type="text" value={utr} onChange={e => setUtr(e.target.value.toUpperCase())}
+            placeholder="e.g. 402912345678 or UTR..."
+            className="w-full bg-[#111c35] border border-violet-500/30 rounded-xl text-white px-4 py-3 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/40 transition font-mono text-sm placeholder:text-gray-600" />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Payment Screenshot *</label>
+          <label className={`w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center gap-2 cursor-pointer transition ${screenshotPreview ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-violet-500/30 hover:border-violet-500/50 bg-[#111c35]'}`}>
+            <input type="file" accept="image/*" className="hidden" onChange={handleScreenshot} />
+            {screenshotPreview ? (
+              <img src={screenshotPreview} alt="Screenshot" className="w-full max-h-40 object-contain rounded-lg" />
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-violet-400" />
+                <p className="text-gray-400 text-sm">Tap to upload screenshot</p>
+                <p className="text-gray-600 text-xs">JPG, PNG accepted</p>
+              </>
+            )}
+          </label>
+        </div>
+
+        <button onClick={submitPayment} disabled={!utr.trim() || submittingPayment || !screenshotFile}
+          className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-violet-500/20">
+          {submittingPayment ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+          Submit for Verification
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── PENDING (waiting for verify) ───────────────────────────────
+  if (screen === 'pending') return (
+    <div className="max-w-md mx-auto text-center space-y-6 py-10">
+      <div className="w-24 h-24 rounded-full bg-amber-500/10 border-4 border-amber-500/30 flex items-center justify-center mx-auto animate-pulse">
+        <Clock className="w-12 h-12 text-amber-400" />
+      </div>
+      <div>
+        <h2 className="text-2xl font-black text-white mb-2">Payment Submitted!</h2>
+        <p className="text-gray-400 text-sm">UTR: <span className="font-mono text-amber-400">{utr}</span></p>
+        <p className="text-gray-400 text-sm mt-2">Auto-verifying every 10 seconds...</p>
+      </div>
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 space-y-2 text-left">
+        <p className="text-amber-400 font-bold text-sm">⏳ Verification in progress</p>
+        <p className="text-gray-400 text-xs">Our system scans HDFC bank SMS/email every 5 minutes. Usually verified in 5–15 min during business hours.</p>
+      </div>
+      <div className="flex gap-3">
+        <button onClick={() => setScreen('browse')} className="flex-1 py-3 border border-violet-500/30 text-violet-400 rounded-xl font-bold text-sm hover:bg-violet-500/10 transition">
+          Browse More Tests
+        </button>
+        <button onClick={() => {
+          fetch(`/api/testo/status?phone=${phone}&paper_id=${selectedPaper?.id}`)
+            .then(r => r.json()).then(d => { if (d.status === 'verified') { setPaperStatus(prev => ({ ...prev, [selectedPaper!.id]: 'verified' })); setScreen('browse'); alert('✅ Verified!'); } else alert(`Status: ${d.status}. Please wait...`); });
+        }} className="flex-1 py-3 bg-violet-500/20 border border-violet-500/30 text-violet-300 rounded-xl font-bold text-sm hover:bg-violet-500/30 transition flex items-center justify-center gap-1.5">
+          <RefreshCw className="w-4 h-4" /> Check Now
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── TEST ───────────────────────────────────────────────────────
+  if (screen === 'test' && selectedPaper) {
+    const q = questions[currentQ];
+    const opts = [
+      { key: 'A', text: q?.option_a },
+      { key: 'B', text: q?.option_b },
+      { key: 'C', text: q?.option_c },
+      { key: 'D', text: q?.option_d },
+    ];
+    const answered = Object.keys(answers).length;
+    const pct = Math.round((answered / questions.length) * 100);
+    const urgent = timeLeft < 120;
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between bg-[#0d1526] border border-violet-500/20 rounded-2xl px-5 py-3">
+          <div>
+            <p className="text-xs text-gray-500">{selectedPaper.topic}</p>
+            <p className="text-white font-bold text-sm">Q {currentQ + 1} / {questions.length}</p>
+          </div>
+          <div className={`flex items-center gap-2 font-mono text-xl font-black ${urgent ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+            <Timer className="w-5 h-5" />
+            {fmtTime(timeLeft)}
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-500">{answered}/{questions.length} answered</p>
+            <p className="text-violet-400 font-bold text-sm">{pct}%</p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-1.5 bg-[#111c35] rounded-full overflow-hidden">
+          <motion.div className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"
+            animate={{ width: `${((currentQ + 1) / questions.length) * 100}%` }} transition={{ duration: 0.3 }} />
+        </div>
+
+        {/* Question */}
+        <AnimatePresence mode="wait">
+          <motion.div key={currentQ} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+            className="bg-[#0d1526] border border-violet-500/20 rounded-2xl p-6 space-y-5">
+            <p className="text-white font-medium text-base leading-relaxed">
+              <span className="text-violet-400 font-black mr-2">Q{q?.question_no}.</span>
+              {q?.question_text}
+            </p>
+            <div className="space-y-3">
+              {opts.map(opt => {
+                const selected = answers[q?.id] === opt.key;
+                return (
+                  <button key={opt.key} onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt.key }))}
+                    className={`w-full text-left px-4 py-3.5 rounded-xl border transition-all font-medium text-sm flex items-center gap-3 ${
+                      selected
+                        ? 'bg-violet-500/20 border-violet-500 text-white shadow-md shadow-violet-500/20'
+                        : 'bg-[#111c35] border-violet-500/20 text-gray-300 hover:border-violet-500/40 hover:text-white'
+                    }`}>
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shrink-0 ${
+                      selected ? 'bg-violet-500 text-white' : 'bg-[#1a2540] text-gray-400'
+                    }`}>{opt.key}</span>
+                    {opt.text}
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Nav */}
+        <div className="flex gap-3">
+          <button onClick={() => setCurrentQ(q => Math.max(0, q - 1))} disabled={currentQ === 0}
+            className="flex-1 py-3 border border-violet-500/20 text-gray-400 rounded-xl font-bold text-sm hover:text-white transition disabled:opacity-30">
+            ← Previous
+          </button>
+          {currentQ < questions.length - 1 ? (
+            <button onClick={() => setCurrentQ(q => Math.min(questions.length - 1, q + 1))}
+              className="flex-1 py-3 bg-violet-500/20 border border-violet-500/30 text-violet-300 rounded-xl font-bold text-sm hover:bg-violet-500/30 transition flex items-center justify-center gap-1.5">
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button onClick={submitTest} disabled={submittingTest}
+              className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl font-bold text-sm transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 disabled:opacity-50">
+              {submittingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ShieldCheck className="w-4 h-4" /> Submit Test</>}
+            </button>
+          )}
+        </div>
+
+        {/* Question jump grid */}
+        <div className="bg-[#0d1526] border border-violet-500/10 rounded-2xl p-4">
+          <p className="text-xs text-gray-500 mb-3 font-bold uppercase tracking-wider">Jump to Question</p>
+          <div className="flex flex-wrap gap-2">
+            {questions.map((qu, i) => (
+              <button key={qu.id} onClick={() => setCurrentQ(i)}
+                className={`w-9 h-9 rounded-lg text-xs font-bold transition ${
+                  i === currentQ ? 'bg-violet-500 text-white' :
+                  answers[qu.id] ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400' :
+                  'bg-[#111c35] text-gray-500 border border-violet-500/10 hover:border-violet-500/30'
+                }`}>
+                {i + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── RESULTS ────────────────────────────────────────────────────
+  if (screen === 'results' && resultSummary) {
+    const { score, total_marks, percentage, passed, rank, certificate_eligible, attempt_id } = resultSummary;
+    const correct = results.filter(r => r.is_correct).length;
+    const wrong = results.filter(r => !r.is_correct && r.user_answer).length;
+    const skipped = results.filter(r => !r.user_answer).length;
+
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Score card */}
+        <div className={`relative rounded-3xl p-8 text-center overflow-hidden ${
+          passed ? 'bg-gradient-to-br from-emerald-900/40 via-green-900/20 to-teal-900/30 border border-emerald-500/30'
+                 : 'bg-gradient-to-br from-red-900/30 via-rose-900/20 to-orange-900/20 border border-red-500/30'
+        }`}>
+          <div className="absolute inset-0 opacity-5 pointer-events-none">
+            {[...Array(12)].map((_, i) => <Star key={i} className="absolute text-white" style={{ left: `${(i * 8 + 4)}%`, top: `${(i * 17) % 80 + 5}%`, width: '12px' }} />)}
+          </div>
+          <div className="relative z-10">
+            <div className={`w-24 h-24 rounded-full mx-auto flex items-center justify-center mb-4 ${passed ? 'bg-emerald-500/20 border-4 border-emerald-500/50' : 'bg-red-500/20 border-4 border-red-500/50'}`}>
+              {passed ? <Trophy className="w-12 h-12 text-emerald-400" /> : <XCircle className="w-12 h-12 text-red-400" />}
+            </div>
+            <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${passed ? 'text-emerald-400' : 'text-red-400'}`}>
+              {passed ? '🎉 Congratulations!' : '😔 Better luck next time'}
+            </p>
+            <p className="text-6xl font-black text-white mb-1">{percentage}%</p>
+            <p className="text-gray-400 text-sm">{score} / {total_marks} marks</p>
+            <div className="flex justify-center gap-6 mt-5">
+              <div><p className="text-2xl font-black text-emerald-400">{correct}</p><p className="text-gray-500 text-xs">Correct</p></div>
+              <div><p className="text-2xl font-black text-red-400">{wrong}</p><p className="text-gray-500 text-xs">Wrong</p></div>
+              <div><p className="text-2xl font-black text-gray-400">{skipped}</p><p className="text-gray-500 text-xs">Skipped</p></div>
+              <div><p className="text-2xl font-black text-purple-400">#{rank}</p><p className="text-gray-500 text-xs">Your Rank</p></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Certificate */}
+        {certificate_eligible && selectedPaper && (
+          <Certificate
+            name={userName}
+            topic={selectedPaper.topic}
+            subject={selectedPaper.subject}
+            score={score}
+            total={total_marks}
+            percentage={percentage}
+            rank={rank}
+            date={new Date().toISOString()}
+          />
+        )}
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button onClick={() => selectedPaper && loadLeaderboard(selectedPaper)}
+            className="flex-1 py-3 border border-violet-500/30 text-violet-400 rounded-xl font-bold text-sm hover:bg-violet-500/10 transition flex items-center justify-center gap-2">
+            <Trophy className="w-4 h-4" /> Leaderboard
+          </button>
+          <button onClick={() => setScreen('browse')}
+            className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-700 text-white rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center justify-center gap-2">
+            <BookOpen className="w-4 h-4" /> More Tests
+          </button>
+        </div>
+
+        {/* Full Q&A breakdown */}
+        <div className="space-y-4">
+          <h3 className="font-black text-white text-lg flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-violet-400" /> Full Answer Review
+          </h3>
+          {results.map((r, i) => (
+            <div key={i} className={`rounded-2xl border p-5 space-y-3 ${r.is_correct ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-white text-sm font-medium flex-1">
+                  <span className="text-gray-500 font-bold mr-1.5">Q{r.question_no}.</span>{r.question_text}
+                </p>
+                <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full ${r.is_correct ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'}`}>
+                  {r.marks_obtained}/{r.marks}m
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {(['A', 'B', 'C', 'D'] as const).map(key => {
+                  const optText = r[`option_${key.toLowerCase()}` as keyof ResultItem] as string;
+                  const isCorrect = key === r.correct_answer;
+                  const isUserWrong = key === r.user_answer && !isCorrect;
+                  return (
+                    <div key={key} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+                      isCorrect ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300' :
+                      isUserWrong ? 'bg-red-500/20 border border-red-500/40 text-red-300' :
+                      'bg-[#111c35] border border-transparent text-gray-400'
+                    }`}>
+                      <span className="font-black shrink-0">{key}.</span>
+                      <span className="truncate">{optText}</span>
+                      {isCorrect && <CheckCircle2 className="w-3.5 h-3.5 ml-auto shrink-0 text-emerald-400" />}
+                      {isUserWrong && <XCircle className="w-3.5 h-3.5 ml-auto shrink-0 text-red-400" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {r.explanation && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5">
+                  <p className="text-blue-300 text-xs"><span className="font-bold">💡 Explanation: </span>{r.explanation}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ── LEADERBOARD ────────────────────────────────────────────────
+  if (screen === 'leaderboard' && selectedPaper) return (
+    <div className="max-w-md mx-auto space-y-5">
+      <div className="flex items-center gap-3">
+        <button onClick={() => setScreen('browse')} className="p-2 rounded-xl bg-[#111c35] text-gray-400 hover:text-white transition">
+          <X className="w-5 h-5" />
+        </button>
+        <div>
+          <h2 className="text-lg font-bold text-white flex items-center gap-2"><Trophy className="w-5 h-5 text-amber-400" /> Leaderboard</h2>
+          <p className="text-gray-400 text-xs">{selectedPaper.topic}</p>
+        </div>
+      </div>
+
+      {loadingLB ? (
+        <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-violet-500" /></div>
+      ) : leaderboard.length === 0 ? (
+        <div className="text-center py-16 text-gray-500">
+          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>No attempts yet. Be the first!</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {leaderboard.map((entry, i) => {
+            const medals = ['🥇', '🥈', '🥉'];
+            return (
+              <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className={`flex items-center gap-4 rounded-2xl p-4 border ${
+                  i === 0 ? 'bg-amber-500/10 border-amber-500/30' :
+                  i === 1 ? 'bg-gray-500/10 border-gray-400/30' :
+                  i === 2 ? 'bg-orange-500/10 border-orange-500/30' :
+                  'bg-[#0d1526] border-violet-500/10'
+                }`}>
+                <span className="text-2xl w-8 text-center">{medals[i] || `#${i + 1}`}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-sm truncate">{entry.name}</p>
+                  <p className="text-gray-500 text-xs">{entry.phone_masked}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-white font-black">{entry.score}/{entry.total_marks}</p>
+                  <p className="text-violet-400 text-xs font-bold">{entry.percentage}%</p>
+                  {entry.time_taken_seconds && <p className="text-gray-600 text-xs">{fmtTime(entry.time_taken_seconds)}</p>}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  return null;
 }
