@@ -81,12 +81,12 @@ export async function POST(request: Request) {
 
     // Resolve the caller's account_id. whatsapp_config + templates
     // + broadcasts are all account-scoped post-multi-user, so the
-    // old `.eq('user_id', user.id)` filters miss every row created
+    // old `.eq('id', user.id)` filters miss every row created
     // by a teammate.
     const { data: profile } = await supabase
       .from('profiles')
       .select('account_id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .maybeSingle()
     const accountId = profile?.account_id as string | undefined
     if (!accountId) {

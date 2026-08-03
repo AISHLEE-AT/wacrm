@@ -38,7 +38,7 @@ export async function GET(
     const { data: profile } = await supabase
       .from('profiles')
       .select('account_id')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .maybeSingle()
     const accountId = profile?.account_id as string | undefined
     if (!accountId) {

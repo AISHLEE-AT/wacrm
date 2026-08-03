@@ -40,8 +40,8 @@ export async function GET() {
     if (userIds.length > 0) {
       const { data: pData } = await supabase
         .from('profiles')
-        .select('user_id, full_name, email, account_id')
-        .in('user_id', userIds)
+        .select('id, full_name, email, account_id')
+        .in('id', userIds)
       profiles = pData || []
     }
 

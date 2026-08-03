@@ -430,10 +430,10 @@ async function runStep(step: AutomationStep, args: ExecuteArgs): Promise<string>
         // shape until a real round-robin algorithm replaces it.
         const { data: profiles } = await db
           .from('profiles')
-          .select('user_id')
+          .select('id')
           .eq('account_id', args.automation.account_id)
           .limit(1)
-        agentId = profiles?.[0]?.user_id
+        agentId = profiles?.[0]?.id
       }
       if (!agentId) return 'no agent resolved'
       await db
