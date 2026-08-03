@@ -32,10 +32,9 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient()
 
-    // 1. Verify OTP in whatsapp_otps
-    // Webhook receives phone from Meta in international format (e.g., 919123596988)
-    const dbPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-    
+    // 1. Verify OTP — WhatsApp webhook stores phone with country code (919123596988)
+    const dbPhone = `91${cleanPhone}`
+
     const { data: otpRecord, error: otpErr } = await admin
       .from('whatsapp_otps')
       .select('*')
@@ -50,10 +49,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 401 })
     }
 
-    // OTP is valid! Delete it so it can't be reused.
+    // OTP valid — delete it so it cannot be reused
     await admin.from('whatsapp_otps').delete().eq('phone_number', dbPhone)
 
-    // 2. Fetch profile to get existing user info (limit 1 to avoid duplicate row errors)
+    // 2. Find the ONE canonical profile for this phone (most recently updated)
+    //    ⚠️ STRICT RULE: We NEVER create a second profile for an existing phone number.
     const { data: existingProfile } = await admin
       .from('profiles')
       .select('id, full_name, role, main_category')
@@ -62,45 +62,46 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    // 3. Flexible Supabase Auth User Lookup
-    let existingUser = null;
-    
-    // Always prioritize the ID from the existing profile so we don't accidentally create a duplicate
+    const isExistingUser = !!existingProfile
+
+    // 3. Find existing Supabase Auth user — always prefer the one tied to the existing profile
+    let existingUser = null
+
     if (existingProfile?.id) {
       const { data: uData } = await admin.auth.admin.getUserById(existingProfile.id)
       existingUser = uData?.user || null
     }
 
-    // Fallback: search by phone if profile lookup didn't find the auth user
+    // Fallback: scan auth users by phone/email patterns
     if (!existingUser) {
       const { data: usersData } = await admin.auth.admin.listUsers({ perPage: 1000 })
       const allUsers = usersData?.users || []
-      existingUser = allUsers.find(u => 
+      existingUser = allUsers.find(u =>
         (u.email && u.email.includes(cleanPhone)) ||
         (u.phone && u.phone.includes(cleanPhone)) ||
         (u.user_metadata && (u.user_metadata.phone === cleanPhone || u.user_metadata.phone === `+91${cleanPhone}`))
-      )
+      ) || null
     }
 
     const targetEmail = existingUser?.email || `user_${cleanPhone}@wacrm.local`
-    const syntheticPassword = `OtpAuth_${cleanPhone}_${otp}` // New password every time for security
+    const syntheticPassword = `OtpAuth_${cleanPhone}_${otp}`
 
     if (existingUser) {
-      // Sync password & confirm email
+      // ✅ Existing user: just update the password — NO new auth user created
       await admin.auth.admin.updateUserById(existingUser.id, {
         password: syntheticPassword,
         email_confirm: true,
       })
     } else {
-      // Create new Supabase Auth user
+      // 🆕 Truly new user: create auth account
       const { data: newUser, error: createErr } = await admin.auth.admin.createUser({
         email: targetEmail,
         password: syntheticPassword,
         phone: `+91${cleanPhone}`,
         email_confirm: true,
         user_metadata: {
-          full_name: fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`,
-          role: existingProfile?.role || 'user',
+          full_name: fullName || `User ${cleanPhone.slice(-4)}`,
+          role: 'user',
           phone: cleanPhone,
         },
       })
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Sign in via anon client
+    // 4. Sign in via anon client to get the session
     const anonClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -129,24 +130,35 @@ export async function POST(request: Request) {
 
     const userId = authResult.data.user.id
     const resolvedRole = existingProfile?.role || 'user'
-    const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
-    const finalCategory = category || existingProfile?.main_category || 'Traveller'
+
+    // ⚠️ For existing users: NEVER overwrite their name or category from login fields
+    const finalName = isExistingUser
+      ? (existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`)
+      : (fullName || `User ${cleanPhone.slice(-4)}`)
+
+    const finalCategory = isExistingUser
+      ? (existingProfile?.main_category || 'Traveller')
+      : (category || 'Traveller')
+
+    // 5. SAFE UPSERT — always targets the canonical existing profile ID
+    //    This guarantees one and only one profile row per phone number.
+    const canonicalProfileId = existingProfile?.id || userId
 
     const profileData: any = {
-      id: userId,
+      id: canonicalProfileId,
       phone: cleanPhone,
       whatsapp: cleanPhone,
       full_name: finalName,
       role: resolvedRole,
       main_category: finalCategory,
       updated_at: new Date().toISOString(),
-    };
-
-    if (pin && typeof pin === 'string' && pin.length === 4) {
-      profileData.pin_hash = hashPin(pin);
     }
 
-    // 5. Upsert profile in Supabase DB
+    // Save PIN hash only if provided (new user setup or PIN change)
+    if (pin && typeof pin === 'string' && pin.length === 4) {
+      profileData.pin_hash = hashPin(pin)
+    }
+
     await admin.from('profiles').upsert(profileData, { onConflict: 'id' })
 
     const response = NextResponse.json({
@@ -158,7 +170,7 @@ export async function POST(request: Request) {
         expires_at: authResult.data.session.expires_at,
       },
       user: {
-        id: userId,
+        id: canonicalProfileId,
         phone: cleanPhone,
         fullName: finalName,
         role: resolvedRole,
