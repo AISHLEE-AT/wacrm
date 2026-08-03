@@ -219,10 +219,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             />
             <div className="flex flex-col">
               <span className="text-[10px] font-bold tracking-widest text-emerald-400 leading-none uppercase">
-                தமிழன்
+                UNIFIED
               </span>
               <span className="text-lg font-black tracking-wider text-amber-400 leading-none mt-0.5">
-                FAGO
+                WACRM
               </span>
             </div>
           </Link>
