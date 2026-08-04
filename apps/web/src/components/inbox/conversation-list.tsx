@@ -80,7 +80,7 @@ export function ConversationList({
 
     (async () => {
       try {
-        const res = await fetch('/api/conversations', { cache: 'no-store' });
+        const res = await fetch('/api/conversations', { cache: 'no-store', credentials: 'include' });
         const json = await res.json();
         if (json.conversations && Array.isArray(json.conversations)) {
           if (!cancelled) {
