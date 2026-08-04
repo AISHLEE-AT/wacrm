@@ -38,6 +38,7 @@ export function ProfileForm() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [pincode, setPincode] = useState('');
+  const [location, setLocation] = useState('');
   const [phone, setPhone] = useState('');
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export function ProfileForm() {
     setFullName(profile.full_name ?? '');
     setEmail(profile.email ?? '');
     setPincode((profile as unknown as Record<string, unknown>).pincode as string ?? '');
+    setLocation((profile as unknown as Record<string, unknown>).location as string ?? '');
     setPhone((profile as unknown as Record<string, unknown>).phone as string ?? (profile as unknown as Record<string, unknown>).whatsapp as string ?? '');
   }, [profile]);
 
@@ -86,6 +88,27 @@ export function ProfileForm() {
       }
     );
   };
+
+  // Auto-fetch location when pincode is 6 digits
+  useEffect(() => {
+    if (pincode && pincode.length === 6) {
+      const fetchLocationFromPincode = async () => {
+        try {
+          const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+          const data = await res.json();
+          if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+            const po = data[0].PostOffice[0];
+            const locString = `${po.District || po.Name}, ${po.State}`;
+            setLocation(locString);
+            toast.success(`Location auto-loaded: ${locString}`);
+          }
+        } catch (err) {
+          console.error("Failed to fetch location from pincode", err);
+        }
+      };
+      fetchLocationFromPincode();
+    }
+  }, [pincode]);
 
   // Cleanup object URLs to avoid leaks.
   useEffect(() => {
@@ -176,6 +199,7 @@ export function ProfileForm() {
           full_name: trimmedName,
           avatar_url: nextAvatarUrl,
           pincode: pincode.trim() || null,
+          location: location.trim() || null,
           phone: phone.trim() || null,
           whatsapp: phone.trim() || null,
         })
@@ -339,9 +363,9 @@ export function ProfileForm() {
               ⚡ FAGO — Location &amp; Contact
             </p>
             <p className="text-xs text-muted-foreground -mt-2">
-              Set once. FAGO uses your pincode to auto-match buyers &amp; providers without asking every time.
+              Set once. FAGO uses your location details to auto-match buyers &amp; providers without asking every time.
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="profile-pincode" className="text-foreground">Area Pincode</Label>
@@ -361,6 +385,16 @@ export function ProfileForm() {
                   onChange={(e) => setPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder="606703"
                   maxLength={6}
+                  disabled={saving}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-location" className="text-foreground">Location (City, State)</Label>
+                <Input
+                  id="profile-location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Chennai, Tamil Nadu"
                   disabled={saving}
                 />
               </div>

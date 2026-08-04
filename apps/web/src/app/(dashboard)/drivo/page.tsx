@@ -93,11 +93,13 @@ export default function DriveODashboard() {
     const cleanDigits = rawPhone.replace(/\D/g, '').slice(-10);
     const autoPhone = cleanDigits.length === 10 ? `+91 ${cleanDigits}` : rawPhone;
     const resolvedName = (profile?.full_name && profile.full_name !== 'User') ? profile.full_name : (currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || '');
+    const resolvedUpi = (profile as any)?.upi_id || '';
 
     setRegForm((prev) => ({
       ...prev,
       name: (prev.name && prev.name !== 'Your Full Name') ? prev.name : resolvedName,
       mobile: prev.mobile || autoPhone,
+      upi: prev.upi || resolvedUpi,
     }));
   }, [profile, currentUser]);
 
