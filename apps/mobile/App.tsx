@@ -1,86 +1,203 @@
 import React, { useContext } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { BookOpen, MonitorPlay, Wallet, Home, Map, MessageCircle, LayoutGrid, User, Bot } from 'lucide-react-native';
+import {
+  BookOpen, MonitorPlay, Wallet, Map,
+  MessageSquare, LayoutGrid, User, Bot,
+  Shield, Tv, GraduationCap, ShoppingBag,
+  Compass, Zap, Wrench
+} from 'lucide-react-native';
 
-import LoginScreen from './src/screens/LoginScreen';
-import CategoryScreen from './src/screens/CategoryScreen';
-import DashboardScreen from './src/screens/DashboardScreen'; // Will be refactored to ProfileScreen
+import LoginScreen      from './src/screens/LoginScreen';
+import CategoryScreen   from './src/screens/CategoryScreen';
+import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
-import MapScreen from './src/screens/MapScreen';
-import ChatScreen from './src/screens/ChatScreen'; // AI Bot / CRM fallback
+import MapScreen        from './src/screens/MapScreen';
+import ChatScreen       from './src/screens/ChatScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab   = createBottomTabNavigator();
 
-function AppTabs() {
-  const { recentModules } = useContext(AppContext);
+// ─── Shared tab options helper ─────────────────────────────────────────────
+const tabOpts = (title: string, Icon: any) => ({
+  title,
+  tabBarIcon: ({ color, size }: any) => <Icon color={color} size={size} />,
+});
 
-  // Helper to dynamically hide/show tabs based on recent usage
-  const getTabOptions = (tabName: string, title: string, IconComponent: any) => {
-    const isRecent = recentModules.includes(tabName);
-    return {
-      title,
-      tabBarIcon: ({ color, size }: any) => <IconComponent color={color} size={size} />,
-      // If not in recent modules, hide it from the bottom bar
-      tabBarButton: isRecent ? undefined : () => null,
-    };
-  };
-
+// ─── Admin Bottom Tabs ─────────────────────────────────────────────────────
+// Admin sees: Grid | WhatsApp CRM Inbox | Admin Dashboard | AI Assistant | Profile
+function AdminTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#1e293b', borderTopColor: '#334155' },
-        tabBarActiveTintColor: '#10b981',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarStyle: {
+          backgroundColor: '#0d1526',
+          borderTopColor: '#ef444430',
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: '#ef4444',
+        tabBarInactiveTintColor: '#64748b',
       }}
     >
-      {/* 1. Grid Tab: Always visible */}
-      <Tab.Screen 
-        name="Category" 
-        component={CategoryScreen} 
-        options={{ title: 'Grid', tabBarIcon: ({ color, size }) => <LayoutGrid color={color} size={size} /> }}
+      {/* 1. Grid — all modules */}
+      <Tab.Screen
+        name="Category"
+        component={CategoryScreen}
+        options={tabOpts('Grid', LayoutGrid)}
       />
 
-      {/* Dynamic Module Tabs */}
-      <Tab.Screen name="Map" component={MapScreen} options={getTabOptions('Map', 'RideO', Map)} />
-      <Tab.Screen name="TestO" component={EcosystemWebView} initialParams={{ path: '/testo', moduleName: 'TestO' }} options={getTabOptions('TestO', 'TestO', BookOpen)} />
-      <Tab.Screen name="TeachO" component={EcosystemWebView} initialParams={{ path: '/teacho', moduleName: 'TeachO' }} options={getTabOptions('TeachO', 'TeachO', BookOpen)} />
-      <Tab.Screen name="TvO" component={EcosystemWebView} initialParams={{ path: '/tvo', moduleName: 'TvO' }} options={getTabOptions('TvO', 'TvO', MonitorPlay)} />
-      <Tab.Screen name="MoneyO" component={EcosystemWebView} initialParams={{ path: '/moneyo', moduleName: 'MoneyO' }} options={getTabOptions('MoneyO', 'MoneyO', Wallet)} />
-
-      {/* 4. AI Inbox Tab: Always visible */}
-      <Tab.Screen 
-        name="CRM" 
-        component={ChatScreen} 
-        options={{ title: 'Inbox', tabBarIcon: ({ color, size }) => <Bot color={color} size={size} /> }}
+      {/* 2. WhatsApp CRM Inbox — admin only */}
+      <Tab.Screen
+        name="WhatsApp"
+        component={EcosystemWebView}
+        initialParams={{ path: '/inbox', moduleName: 'WhatsApp CRM' }}
+        options={tabOpts('CRM Inbox', MessageSquare)}
       />
 
-      {/* 5. Profile Tab: Always visible */}
-      <Tab.Screen 
-        name="DashboardTab" 
-        component={DashboardScreen} 
-        options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <User color={color} size={size} /> }}
+      {/* 3. Admin Overview Panel */}
+      <Tab.Screen
+        name="AdminPanel"
+        component={EcosystemWebView}
+        initialParams={{ path: '/admin', moduleName: 'Admin Panel' }}
+        options={tabOpts('Admin', Shield)}
+      />
+
+      {/* 4. AI Assistant */}
+      <Tab.Screen
+        name="AIBot"
+        component={ChatScreen}
+        options={tabOpts('AI Assistant', Bot)}
+      />
+
+      {/* 5. Profile */}
+      <Tab.Screen
+        name="DashboardTab"
+        component={DashboardScreen}
+        options={tabOpts('Profile', User)}
       />
     </Tab.Navigator>
   );
 }
 
+// ─── User Bottom Tabs ──────────────────────────────────────────────────────
+// Tailors Tab 2 dynamically based on user category (Driver -> DriveO, Student -> TeachO, Farmer -> AgrO, Shopper -> DealO, etc.)
+function UserTabs() {
+  const { user } = useContext(AppContext);
+  const category = (user?.category || user?.role || '').toLowerCase();
+
+  let primaryModule = {
+    name: 'PrimaryModule',
+    path: '/rideo',
+    label: 'RideO',
+    icon: Map,
+  };
+
+  if (category.includes('driver')) {
+    primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
+  } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
+    primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
+  } else if (category.includes('farmer') || category.includes('agri')) {
+    primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
+  } else if (category.includes('shopper') || category.includes('merchant')) {
+    primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+  } else if (category.includes('tourist')) {
+    primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
+  } else if (category.includes('financier')) {
+    primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+  }
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#0d1526',
+          borderTopColor: '#10b98130',
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: '#10b981',
+        tabBarInactiveTintColor: '#64748b',
+      }}
+    >
+      {/* 1. Grid — always first */}
+      <Tab.Screen
+        name="Category"
+        component={CategoryScreen}
+        options={tabOpts('Grid', LayoutGrid)}
+      />
+
+      {/* 2. User's Tailored Primary Module */}
+      <Tab.Screen
+        name={primaryModule.name}
+        component={EcosystemWebView}
+        initialParams={{ path: primaryModule.path, moduleName: primaryModule.label }}
+        options={tabOpts(primaryModule.label, primaryModule.icon)}
+      />
+
+      {/* 3. AI Assistant */}
+      <Tab.Screen
+        name="AIBot"
+        component={ChatScreen}
+        options={tabOpts('AI Assistant', Bot)}
+      />
+
+      {/* 4. Profile */}
+      <Tab.Screen
+        name="DashboardTab"
+        component={DashboardScreen}
+        options={tabOpts('Profile', User)}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// ─── Root navigator — decides Admin vs User tabs & dedicated ModuleView ─────
+function RootNavigator() {
+  const { isAdmin, isLoading } = useContext(AppContext);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0a0f1e', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#34d399" size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#0a0f1e' },
+        animation: 'slide_from_right',
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen
+        name="Dashboard"
+        component={isAdmin ? AdminTabs : UserTabs}
+      />
+      {/* Standalone module view screen for all grid items */}
+      <Stack.Screen
+        name="ModuleView"
+        component={EcosystemWebView}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// ─── App root ──────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <AppProvider>
       <NavigationContainer>
         <StatusBar style="light" />
-        <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0a0f1e' } }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          {/* Once logged in, go straight to Tabs (which defaults to Category) */}
-          <Stack.Screen name="Dashboard" component={AppTabs} />
-        </Stack.Navigator>
+        <RootNavigator />
       </NavigationContainer>
     </AppProvider>
   );

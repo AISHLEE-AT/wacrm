@@ -209,19 +209,25 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         )}
         aria-label="Primary"
       >
-        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4 bg-gradient-to-r from-emerald-950/50 to-transparent">
           <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2.5">
-            <img 
-              src="/supro-logo-ai.jpg" 
-              alt="SuprO Logo" 
-              className="h-10 w-10 rounded-xl object-contain bg-black border border-amber-400/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]" 
-            />
-            <div className="flex flex-col ml-1 justify-center">
-              <span className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-amber-300 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)] leading-none mb-1">
+            <div className="relative flex-shrink-0">
+              {/* Outer glow */}
+              <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-md scale-125" />
+              <img
+                src="/supro-logo-ai.jpg"
+                alt="SuprO Logo"
+                className="relative h-11 w-11 rounded-xl object-cover border-2 border-amber-400/60 shadow-[0_0_16px_rgba(250,204,21,0.4),0_0_32px_rgba(52,211,153,0.2)]"
+              />
+              {/* Live dot */}
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] border border-[#0a0f1e]" />
+            </div>
+            <div className="flex flex-col ml-0.5 justify-center leading-none">
+              <span className="text-[22px] font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-green-300 to-amber-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.4)] leading-none">
                 SuprO
               </span>
-              <span className="text-[9px] font-bold tracking-[0.2em] text-amber-400/90 leading-none uppercase">
-                for Local Needs
+              <span className="text-[8px] font-bold tracking-[0.2em] text-amber-400/80 leading-none mt-0.5 uppercase">
+                ✦ for Local Needs ✦
               </span>
             </div>
           </Link>

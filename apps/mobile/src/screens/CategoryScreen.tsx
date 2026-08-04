@@ -1,19 +1,23 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Car, GraduationCap, MonitorPlay, Wallet, MapPin } from 'lucide-react-native';
+import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../context/AppContext';
 
 const { width } = Dimensions.get('window');
 
 const CATEGORIES = [
-  { id: 'admin', title: 'Admin CRM', desc: 'Manage Everything', icon: Wallet, color: '#f87171', bg: '#f8717120', route: 'Dashboard', tab: 'CRM', adminOnly: true },
-  { id: 'rideo', title: 'RideO', desc: 'Book Cabs & Autos', icon: Car, color: '#10b981', bg: '#10b98120', route: 'Dashboard', tab: 'Map' },
-  { id: 'driveo', title: 'DriveO', desc: 'Accept Rides', icon: MapPin, color: '#3b82f6', bg: '#3b82f620', route: 'Dashboard', tab: 'Map' },
-  { id: 'testo', title: 'TestO', desc: 'Mock Exams', icon: GraduationCap, color: '#8b5cf6', bg: '#8b5cf620', route: 'Dashboard', tab: 'TestO' },
-  { id: 'teacho', title: 'TeachO', desc: 'Learn & Teach', icon: GraduationCap, color: '#f59e0b', bg: '#f59e0b20', route: 'Dashboard', tab: 'TeachO' },
-  { id: 'tvo', title: 'TvO', desc: 'Watch & Earn', icon: MonitorPlay, color: '#ec4899', bg: '#ec489920', route: 'Dashboard', tab: 'TvO' },
-  { id: 'moneyo', title: 'MoneyO', desc: 'Digital Wallet', icon: Wallet, color: '#14b8a6', bg: '#14b8a620', route: 'Dashboard', tab: 'MoneyO' },
+  { id: 'admin', title: 'Admin CRM', desc: 'Manage Everything', icon: Shield, color: '#ef4444', bg: '#ef444420', path: '/admin', adminOnly: true },
+  { id: 'rideo', title: 'RideO', desc: 'Book Cabs & Autos', icon: Car, color: '#10b981', bg: '#10b98120', path: '/rideo' },
+  { id: 'driveo', title: 'DriveO', desc: 'Driver Partner Hub', icon: MapPin, color: '#3b82f6', bg: '#3b82f620', path: '/drivo' },
+  { id: 'dealo', title: 'DealO', desc: 'Local Deals & Offers', icon: ShoppingBag, color: '#f97316', bg: '#f9731620', path: '/dealo' },
+  { id: 'teacho', title: 'TeachO', desc: 'Courses & Tuitions', icon: GraduationCap, color: '#f59e0b', bg: '#f59e0b20', path: '/teacho' },
+  { id: 'rento', title: 'RentO', desc: 'Agri Equipment Rental', icon: Wrench, color: '#84cc16', bg: '#84cc1620', path: '/rento' },
+  { id: 'agro', title: 'AgrO & Mandi', desc: 'Crop Rates & Seeds', icon: Wrench, color: '#10b981', bg: '#10b98120', path: '/agro' },
+  { id: 'touro', title: 'TourO', desc: 'Temple & Local Tours', icon: Compass, color: '#06b6d4', bg: '#06b6d420', path: '/touro' },
+  { id: 'testo', title: 'TestO', desc: 'Mock Exams & Quiz', icon: Award, color: '#8b5cf6', bg: '#8b5cf620', path: '/testo' },
+  { id: 'tvo', title: 'TvO', desc: 'Tamil Live TV & Streams', icon: MonitorPlay, color: '#ec4899', bg: '#ec489920', path: '/tvo' },
+  { id: 'moneyo', title: 'MoneyO', desc: 'Micro Loans & Savings', icon: Wallet, color: '#14b8a6', bg: '#14b8a620', path: '/moneyo' },
 ];
 
 export default function CategoryScreen() {
@@ -21,17 +25,11 @@ export default function CategoryScreen() {
   const { addRecentModule, userRole } = useContext(AppContext);
 
   const handleSelect = (cat: any) => {
-    // Navigate to the tab and add it to recent modules
-    if (cat.tab && cat.tab !== 'CRM') {
-      addRecentModule(cat.tab); // Don't add CRM to recent modules since it's admin only
-    }
-    
-    // the tab is rendered as a normal bottom tab in AppTabs
-    if (cat.tab) {
-      navigation.navigate(cat.tab);
-    } else {
-      navigation.navigate(cat.route);
-    }
+    addRecentModule(cat.id);
+    navigation.navigate('ModuleView', {
+      path: cat.path,
+      moduleName: cat.title,
+    });
   };
 
   const filteredCategories = CATEGORIES.filter(c => !c.adminOnly || userRole === 'admin');
@@ -39,8 +37,8 @@ export default function CategoryScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>What do you need?</Text>
-        <Text style={styles.subtitle}>Select a service to get started</Text>
+        <Text style={styles.title}>SuprO Ecosystem</Text>
+        <Text style={styles.subtitle}>Select a module to get started</Text>
       </View>
 
       <View style={styles.grid}>
@@ -73,71 +71,66 @@ export default function CategoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0f1e', // Dark theme matching LoginScreen
+    backgroundColor: '#0a0f1e',
   },
   content: {
-    padding: 24,
-    paddingTop: 80,
+    padding: 20,
+    paddingTop: 60,
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
     color: '#ffffff',
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#94a3b8',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 14,
   },
   card: {
-    width: (width - 48 - 16) / 2, // 2 columns, considering padding and gap
-    backgroundColor: '#111827',
-    borderRadius: 20,
-    padding: 20,
+    width: (width - 54) / 2,
+    backgroundColor: '#0d1526',
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
   },
   iconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: 'center',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 4,
   },
   cardDesc: {
     fontSize: 12,
-    color: '#94a3b8',
-    textAlign: 'center',
+    color: '#64748b',
+    lineHeight: 16,
   },
   footer: {
     marginTop: 40,
     alignItems: 'center',
   },
   footerText: {
-    color: '#475569',
     fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  }
+    color: '#475569',
+  },
 });

@@ -58,7 +58,14 @@ export async function middleware(request: NextRequest) {
 
   let user = null
 
-  if (accessToken && refreshToken) {
+  // First, check if we already have a valid session via cookies
+  const { data: sessionData } = await supabase.auth.getUser()
+  if (sessionData?.user) {
+    user = sessionData.user
+  }
+
+  // If no user from cookies, but we have URL tokens (mobile app inject), try to set session
+  if (!user && accessToken && refreshToken) {
     try {
       const { data } = await supabase.auth.setSession({
         access_token: accessToken,
@@ -68,7 +75,7 @@ export async function middleware(request: NextRequest) {
     } catch (err) {
       console.error('Middleware setSession error:', err)
     }
-  } else if (accessToken) {
+  } else if (!user && accessToken) {
     try {
       const { data: tokenData } = await supabase.auth.getUser(accessToken)
       if (tokenData?.user) {
@@ -77,11 +84,6 @@ export async function middleware(request: NextRequest) {
     } catch (err) {
       console.error('Middleware token auth error:', err)
     }
-  }
-
-  if (!user) {
-    const { data } = await supabase.auth.getUser()
-    user = data?.user
   }
 
   // Copy refreshed cookies onto any redirect/JSON response we construct below.

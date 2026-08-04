@@ -83,6 +83,9 @@ function LoginPageInner() {
           if (data.exists) {
             if (data.name) setFullName(data.name);
             if (data.category) setCategory(data.category);
+            if (data.has_pin) {
+              setStep('pin');
+            }
           }
         })
         .catch(() => setIsExistingUser(false))
@@ -213,22 +216,38 @@ function LoginPageInner() {
       >
         <div className="bg-[#0d1526]/90 backdrop-blur-xl border border-emerald-500/20 rounded-3xl shadow-2xl shadow-emerald-500/10 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600/20 to-green-600/10 border-b border-emerald-500/20 px-8 py-7 text-center">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <div className="w-14 h-14 rounded-2xl bg-black flex items-center justify-center shadow-lg shadow-emerald-500/30 overflow-hidden border border-emerald-500/20">
-                <img src="/supro-logo-ai.jpg" alt="SuprO Logo" className="w-full h-full object-contain" />
+          <div className="bg-gradient-to-b from-emerald-900/30 via-[#0d1526] to-[#0d1526] border-b border-emerald-500/20 px-8 py-8 text-center relative overflow-hidden">
+            {/* Background glow rings */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-48 h-48 rounded-full border border-emerald-500/10 animate-ping" style={{ animationDuration: '3s' }} />
+            </div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+
+            {/* Deepam Logo with golden glow ring */}
+            <div className="flex flex-col items-center gap-3 mb-4 relative z-10">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-2xl bg-emerald-400/20 blur-xl scale-110" />
+                <div className="relative w-20 h-20 rounded-2xl bg-[#0a0f1e] flex items-center justify-center shadow-[0_0_30px_rgba(52,211,153,0.4),0_0_60px_rgba(52,211,153,0.15)] border-2 border-emerald-500/40 overflow-hidden">
+                  <img src="/supro-logo-ai.jpg" alt="SuprO Deepam Logo" className="w-full h-full object-cover" />
+                </div>
+                {/* Golden shimmer dot */}
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center">
+                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                </div>
               </div>
-              <div className="text-left">
-                <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-amber-300 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+
+              <div>
+                <h1 className="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-green-300 to-amber-300 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)] leading-tight">
                   SuprO
                 </h1>
-                <p className="text-emerald-400/90 text-[11px] font-bold tracking-widest uppercase flex items-center gap-1 mt-0.5">
-                  <Sparkles className="w-3 h-3 text-amber-400" /> for Local Needs
+                <p className="text-amber-400/90 text-[10px] font-bold tracking-[0.3em] uppercase mt-0.5">
+                  ✦ for Local Needs ✦
                 </p>
               </div>
             </div>
-            <p className="text-gray-400 text-sm">
-              {step === 'set-pin' ? '🔐 Set Your 4-Digit Secret PIN' : 'Secure Authentication via WhatsApp'}
+
+            <p className="text-gray-400 text-sm relative z-10">
+              {step === 'set-pin' ? '🔐 Set Your 4-Digit Secret PIN' : '🔒 Secure Authentication via WhatsApp'}
             </p>
           </div>
 
@@ -401,6 +420,18 @@ function LoginPageInner() {
               {/* ── Step: PIN (fallback login) ── */}
               {step === 'pin' && (
                 <motion.form key="pin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={handlePinLogin} className="space-y-5">
+                  {isExistingUser === true && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                        <UserCheck className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Welcome Back</p>
+                        <p className="text-white font-medium">{fullName}</p>
+                        <p className="text-gray-400 text-xs">{CATEGORIES.find(c => c.key === category)?.label || category}</p>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">4-Digit Secure PIN</label>
                     <div className="relative flex items-center">

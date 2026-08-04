@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
@@ -45,14 +45,15 @@ export default function DashboardScreen({ navigation }: any) {
     if (!phone) return;
     setIsSaving(true);
     try {
+      const cleanKey = tempApiKey.trim();
       // 1. Save locally via context
-      await updateGeminiKey(tempApiKey);
+      await updateGeminiKey(cleanKey);
       
       // 2. Sync to Supabase Backend
       const res = await fetch(endpoints.updateProfile, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, gemini_api_key: tempApiKey })
+        body: JSON.stringify({ phone, gemini_api_key: cleanKey })
       });
       
       if (!res.ok) throw new Error('Failed to sync to web');
@@ -163,6 +164,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: '#94a3b8', marginBottom: 32, fontWeight: 'bold' },
   sectionTitle: { fontSize: 16, color: '#fff', fontWeight: 'bold', marginBottom: 12 },
   card: { backgroundColor: '#111827', padding: 20, borderRadius: 16, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(52, 211, 153, 0.2)' },
+  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  linkText: { color: '#3b82f6', fontSize: 13, fontWeight: 'bold' },
   cardDesc: { color: '#94a3b8', fontSize: 13, marginBottom: 16, lineHeight: 20 },
   inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderRadius: 12, borderWidth: 1, borderColor: '#334155', marginBottom: 16 },
   input: { flex: 1, color: '#fff', padding: 12, fontSize: 14 },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Linking, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Linking, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image, Animated } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Smartphone, Lock, ShieldCheck, MessageCircle, KeyRound, UserCheck, Eye, EyeOff, Sparkles } from 'lucide-react-native';
@@ -38,33 +38,42 @@ export default function LoginScreen({ navigation }: any) {
   const [wabaPhone, setWabaPhone] = useState('916381029380');
 
   useEffect(() => {
-    checkBiometrics();
-    fetchWaba();
+    // Wrap in try/catch so any startup failure doesn't crash the screen
+    checkBiometrics().catch(() => {});
+    fetchWaba().catch(() => {});
   }, []);
 
   const fetchWaba = async () => {
-    const waba = await API.getWabaPhone();
-    setWabaPhone(waba);
+    try {
+      const waba = await API.getWabaPhone();
+      if (waba) setWabaPhone(waba);
+    } catch {
+      // Keep the default fallback WABA number — safe to ignore
+    }
   };
 
   const checkBiometrics = async () => {
-    const savedToken = await SecureStore.getItemAsync('sb-access-token');
-    const savedPhone = await SecureStore.getItemAsync('user-phone');
-    
-    if (savedToken && savedPhone) {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      
-      if (hasHardware && isEnrolled) {
-        const result = await LocalAuthentication.authenticateAsync({
-          promptMessage: 'Login to SuprO',
-          fallbackLabel: 'Use PIN',
-        });
-        
-        if (result.success) {
-          navigation.replace('Dashboard');
+    try {
+      const savedToken = await SecureStore.getItemAsync('sb-access-token');
+      const savedPhone = await SecureStore.getItemAsync('user-phone');
+
+      if (savedToken && savedPhone) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (hasHardware && isEnrolled) {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Login to SuprO',
+            fallbackLabel: 'Use PIN',
+          });
+
+          if (result.success) {
+            navigation.replace('Dashboard');
+          }
         }
       }
+    } catch {
+      // SecureStore not available on first cold launch — safe to ignore
     }
   };
 
@@ -84,6 +93,9 @@ export default function LoginScreen({ navigation }: any) {
           if (data.category) setCategory(data.category);
           if (data.role) await SecureStore.setItemAsync('user-role', data.role);
           if (data.gemini_api_key) await SecureStore.setItemAsync('gemini-api-key', data.gemini_api_key);
+          if (data.has_pin) {
+            setStep('pin');
+          }
         }
         
         if (clean === '9486335870') {
@@ -127,12 +139,15 @@ export default function LoginScreen({ navigation }: any) {
       );
       
       await SecureStore.setItemAsync('sb-access-token', data.session.access_token);
+      if (data.session.refresh_token) {
+        await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
+      }
       await SecureStore.setItemAsync('user-phone', phone);
-      
+
       if (data.needs_pin_setup) {
         setStep('set-pin');
       } else {
-        navigation.replace('Category');
+        navigation.replace('Dashboard'); // 'Category' screen doesn't exist in stack — fixed
       }
     } catch (err: any) {
       setError(err.message || 'Login failed');
@@ -149,7 +164,7 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await API.setPin(phone, newPin, confirmPin);
-      navigation.replace('Category');
+      navigation.replace('Dashboard'); // 'Category' screen doesn't exist in stack — fixed
     } catch (err: any) {
       setError(err.message || 'Failed to save PIN');
     } finally {
@@ -166,6 +181,9 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const data = await API.loginWithPin(phone, pin);
       await SecureStore.setItemAsync('sb-access-token', data.session.access_token);
+      if (data.session.refresh_token) {
+        await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
+      }
       await SecureStore.setItemAsync('user-phone', phone);
       navigation.replace('Category');
     } catch (err: any) {
@@ -182,15 +200,31 @@ export default function LoginScreen({ navigation }: any) {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         
-        {/* Header */}
+        {/* Header — Deepam Brand */}
         <View style={styles.header}>
+          {/* Glow ring behind logo */}
+          <View style={styles.logoGlowRing}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/icon.png')}
+                style={styles.logoImage}
+                resizeMode="cover"
+              />
+            </View>
+            {/* Golden badge */}
+            <View style={styles.goldBadge}>
+              <Sparkles color="#fff" size={8} />
+            </View>
+          </View>
+
           <Text style={styles.title}>SuprO</Text>
           <View style={styles.subtitleRow}>
-            <Sparkles color="#fbbf24" size={14} />
-            <Text style={styles.subtitle}>for Local Needs</Text>
+            <Text style={styles.subtitleDiamond}>✦</Text>
+            <Text style={styles.subtitle}>FOR LOCAL NEEDS</Text>
+            <Text style={styles.subtitleDiamond}>✦</Text>
           </View>
           <Text style={styles.stepText}>
-            {step === 'set-pin' ? '🔐 Set Your 4-Digit Secret PIN' : 'Secure Authentication via WhatsApp'}
+            {step === 'set-pin' ? '🔐 Set Your 4-Digit Secret PIN' : '🔒 Secure Auth via WhatsApp'}
           </Text>
         </View>
 
@@ -380,6 +414,16 @@ export default function LoginScreen({ navigation }: any) {
           {/* STEP: PIN FALLBACK */}
           {step === 'pin' && (
             <View style={styles.stepContainer}>
+              {isExistingUser === true && (
+                <View style={styles.welcomeBackCard}>
+                  <UserCheck color="#34d399" size={24} />
+                  <View style={{ marginLeft: 12 }}>
+                    <Text style={styles.welcomeText}>WELCOME BACK</Text>
+                    <Text style={styles.welcomeName}>{fullName}</Text>
+                    <Text style={styles.welcomeRole}>{CATEGORIES.find(c => c.key === category)?.label || category}</Text>
+                  </View>
+                </View>
+              )}
               <Text style={styles.label}>4-DIGIT SECURE PIN</Text>
               <View style={styles.inputContainer}>
                 <View style={[styles.inputLeftIcon, { width: 50 }]}>
@@ -420,6 +464,7 @@ export default function LoginScreen({ navigation }: any) {
           )}
 
           <View style={styles.footer}>
+            <Text style={styles.footerBrand}>✦ SUPRO DEEPAM ENGINE ✦</Text>
             <Text style={styles.footerText}>Authentication verified by SuprO Engine</Text>
             <Text style={styles.footerTamil}>வாழ்க • வளர்க • வெல்க 🌿</Text>
           </View>
@@ -432,12 +477,72 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0f1e' },
   scrollContainer: { flexGrow: 1, justifyContent: 'center', padding: 20 },
-  header: { alignItems: 'center', marginBottom: 24 },
-  title: { fontSize: 36, fontWeight: '900', color: '#34d399', letterSpacing: 1 },
-  subtitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginBottom: 12 },
-  subtitle: { color: '#34d399', fontSize: 12, fontWeight: 'bold', letterSpacing: 2, textTransform: 'uppercase' },
-  stepText: { color: '#94a3b8', fontSize: 14 },
-  card: { backgroundColor: '#111827', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(52, 211, 153, 0.2)' },
+
+  // ── HEADER ────────────────────────────────────────────────
+  header: { alignItems: 'center', marginBottom: 28 },
+
+  // Logo glow ring
+  logoGlowRing: {
+    position: 'relative',
+    width: 88,
+    height: 88,
+    borderRadius: 24,
+    marginBottom: 16,
+    // Outer glow via shadow
+    shadowColor: '#34d399',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  logoContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: 'rgba(251,191,36,0.6)',
+    overflow: 'hidden',
+    backgroundColor: '#0a0f1e',
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  goldBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#f59e0b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#fbbf24',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1.5,
+    borderColor: '#0a0f1e',
+  },
+
+  title: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: '#34d399',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(52,211,153,0.5)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
+  },
+  subtitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, marginBottom: 10 },
+  subtitleDiamond: { color: '#fbbf24', fontSize: 10 },
+  subtitle: { color: '#fbbf24', fontSize: 10, fontWeight: 'bold', letterSpacing: 3, textTransform: 'uppercase' },
+  stepText: { color: '#94a3b8', fontSize: 13, textAlign: 'center' },
+
+  // ── CARD ──────────────────────────────────────────────────
+  card: { backgroundColor: '#111827', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(52, 211, 153, 0.2)', shadowColor: '#34d399', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 10 },
   stepContainer: { gap: 16 },
   label: { color: '#94a3b8', fontSize: 12, fontWeight: 'bold', letterSpacing: 1 },
   inputContainer: { position: 'relative', justifyContent: 'center' },
@@ -471,7 +576,8 @@ const styles = StyleSheet.create({
   warningText: { color: '#94a3b8', fontSize: 12, textAlign: 'center' },
   errorBox: { backgroundColor: 'rgba(239,68,68,0.1)', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(239,68,68,0.2)', marginTop: 16 },
   errorText: { color: '#f87171', fontSize: 12, textAlign: 'center' },
-  footer: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(52,211,153,0.1)', alignItems: 'center' },
-  footerText: { color: '#64748b', fontSize: 12 },
-  footerTamil: { color: '#475569', fontSize: 12, marginTop: 4 }
+  footer: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(52,211,153,0.1)', alignItems: 'center', gap: 4 },
+  footerText: { color: '#64748b', fontSize: 11 },
+  footerTamil: { color: '#475569', fontSize: 11 },
+  footerBrand: { color: 'rgba(251,191,36,0.5)', fontSize: 10, letterSpacing: 1, fontWeight: 'bold', textTransform: 'uppercase' },
 });
