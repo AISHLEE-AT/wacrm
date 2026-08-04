@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
+import '../features/ride/screens/ride_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -33,6 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: '/ride',
+        builder: (context, state) => const RideScreen(),
       ),
     ],
   );
