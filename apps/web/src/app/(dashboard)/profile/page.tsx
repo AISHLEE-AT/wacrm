@@ -150,6 +150,9 @@ function ProfilePageInner() {
   const [editingLocation, setEditingLocation] = useState(false);
   const [locationValue, setLocationValue] = useState('');
   const [locationState, setLocationState] = useState('');
+  const [editingGemini, setEditingGemini] = useState(false);
+  const [geminiValue, setGeminiValue] = useState('');
+  const [geminiState, setGeminiState] = useState('');
   const [driverProfile, setDriverProfile] = useState<any>(null);
   const [savingField, setSavingField] = useState<string | null>(null);
 
@@ -186,6 +189,7 @@ function ProfilePageInner() {
           setDbProfile(data);
           if (data.upi_id) setUpiIdState(data.upi_id);
           if (data.location) setLocationState(data.location);
+          if (data.gemini_api_key) setGeminiState(data.gemini_api_key);
           if (data.full_name) setNameValue(data.full_name);
         }
 
@@ -200,6 +204,7 @@ function ProfilePageInner() {
                 setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
                 if (payload.new.upi_id) setUpiIdState(payload.new.upi_id);
                 if (payload.new.location) setLocationState(payload.new.location);
+                if (payload.new.gemini_api_key) setGeminiState(payload.new.gemini_api_key);
               }
             }
           )
@@ -483,6 +488,71 @@ function ProfilePageInner() {
           {!editingUpi && (
             <button
               onClick={() => { setUpiValue(upiIdState || (profile as any)?.upi_id || ''); setEditingUpi(true); }}
+              className="text-xs text-primary hover:underline font-medium"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+        
+        <hr className="border-border" />
+        <div className="flex items-center justify-between text-foreground">
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Sparkles className="text-primary" size={20} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">GEMINI API KEY (AI FEATURES)</p>
+              {editingGemini ? (
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="password"
+                    value={geminiValue}
+                    onChange={e => setGeminiValue(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition md:w-64"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!geminiValue.trim() || !user?.id) return;
+                      setSavingField('gemini');
+                      try {
+                        const cleanKey = geminiValue.trim();
+                        const res = await fetch('/api/profile/update', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            userId: user.id,
+                            phone: user.phone || activeProfile?.phone || activeProfile?.whatsapp,
+                            gemini_api_key: cleanKey,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.profile) {
+                          setDbProfile(data.profile);
+                          setGeminiState(cleanKey);
+                          setEditingGemini(false);
+                        } else {
+                          alert('Failed to save Gemini API Key. Please try again.');
+                        }
+                      } catch (err) {
+                        console.error('Error saving API Key:', err);
+                      } finally {
+                        setSavingField(null);
+                      }
+                    }}
+                    className="px-3 py-1 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:opacity-90 transition"
+                  >Save</button>
+                  <button onClick={() => setEditingGemini(false)} className="text-muted-foreground text-sm hover:text-foreground transition">Cancel</button>
+                </div>
+              ) : (
+                <p className="font-medium font-mono text-sm">{(geminiState || (profile as any)?.gemini_api_key) ? '••••••••••••••••••••••••••••••••••••••••' : 'Not provided'}</p>
+              )}
+            </div>
+          </div>
+          {!editingGemini && (
+            <button
+              onClick={() => { setGeminiValue(geminiState || (profile as any)?.gemini_api_key || ''); setEditingGemini(true); }}
               className="text-xs text-primary hover:underline font-medium"
             >
               Edit
