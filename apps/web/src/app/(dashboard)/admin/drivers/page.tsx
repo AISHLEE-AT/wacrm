@@ -35,16 +35,34 @@ export default function AdminDriversPage() {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        const mapped = data.map((d: any) => ({
-          id: d.id,
-          full_name: d.driver_name || d.full_name || 'Driver Partner',
-          phone: d.phone || 'N/A',
-          license_number: d.license_number || d.vehicle_registration || 'Submitted',
-          rc_number: d.vehicle_number || d.vehicle_registration || 'Submitted',
-          vehicle_category: d.vehicle_type || 'Vehicle',
-          status: d.is_verified ? 'active' : 'pending',
-          created_at: d.created_at || new Date().toISOString()
-        }));
+        const userIds = data.map((d: any) => d.user_id).filter(Boolean);
+        let profiles: any[] = [];
+        
+        if (userIds.length > 0) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, phone, whatsapp, full_name')
+            .in('id', userIds);
+          
+          if (profileData) profiles = profileData;
+        }
+
+        const mapped = data.map((d: any) => {
+          const profile = profiles.find(p => p.id === d.user_id);
+          const name = profile?.full_name || d.driver_name || d.full_name || d.name || 'Driver Partner';
+          const phone = profile?.whatsapp || profile?.phone || d.phone || d.whatsapp || d.mobile_number || 'N/A';
+          
+          return {
+            id: d.id,
+            full_name: name,
+            phone: phone,
+            license_number: d.license_number || d.driving_license || d.vehicle_registration || 'Submitted',
+            rc_number: d.rc_number || d.vehicle_number || d.vehicle_registration || 'Submitted',
+            vehicle_category: d.vehicle_category || d.vehicle_type || 'Vehicle',
+            status: d.is_verified ? 'active' : 'pending',
+            created_at: d.created_at || new Date().toISOString()
+          };
+        });
         setDrivers(mapped);
       }
     } catch (e) {
