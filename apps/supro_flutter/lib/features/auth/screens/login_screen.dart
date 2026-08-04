@@ -14,7 +14,7 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
   AuthStep _step = AuthStep.phone;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
@@ -31,12 +31,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _hasPin = false;
   String _fullName = '';
 
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
   final List<Map<String, String>> categories = [
     {'key': 'Admin', 'label': '👑 Admin (CRM)'},
     {'key': 'Traveller', 'label': '🧳 Traveller'},
     {'key': 'Farmer', 'label': '🚜 Farmer'},
     {'key': 'Shopper', 'label': '🛍️ Shopper'},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _phoneController.dispose();
+    _otpController.dispose();
+    _pinController.dispose();
+    _newPinController.dispose();
+    _confirmPinController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
 
   void _onPhoneChange(String val) async {
     if (val.length == 10) {
@@ -94,7 +121,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         if (mounted) context.go('/dashboard');
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
     }
   }
 
@@ -107,7 +134,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
       if (mounted) context.go('/dashboard');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
     }
   }
 
@@ -121,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
       if (mounted) context.go('/dashboard');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
     }
   }
 
@@ -131,27 +158,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState.isLoading;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0F1E),
       body: SafeArea(
         child: KeyboardAvoidingView(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 40),
                 _buildHeader(),
-                const SizedBox(height: 40),
+                const SizedBox(height: 48),
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2)),
-                    boxShadow: [
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(32),
+                    border: Border.all(color: const Color(0x3334D399), width: 1.5),
+                    boxShadow: const [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withOpacity(0.15),
-                        blurRadius: 20,
-                        offset: const Offset(0, 4),
+                        color: Color(0x1A34D399),
+                        blurRadius: 30,
+                        offset: Offset(0, 8),
                       )
                     ],
                   ),
@@ -180,38 +207,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.amber.withOpacity(0.6), width: 2),
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).primaryColor.withOpacity(0.5),
-                blurRadius: 20,
-              )
-            ],
-          ),
-          child: const Icon(LucideIcons.flame, size: 40, color: Colors.amber),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0x1AF59E0B),
+                ),
+              ),
+            ),
+            ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0x33F59E0B),
+                ),
+              ),
+            ),
+            Container(
+              width: 88,
+              height: 88,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0x99F59E0B), width: 2),
+                color: const Color(0xFF1E293B),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x80F59E0B),
+                    blurRadius: 20,
+                  )
+                ],
+              ),
+              child: const Icon(LucideIcons.flame, size: 44, color: Color(0xFFF59E0B)),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Text(
           'SuprO',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            color: Theme.of(context).primaryColor,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 36,
             fontWeight: FontWeight.w900,
-            letterSpacing: 1,
+            letterSpacing: 2,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
+        const SizedBox(height: 12),
+        const Text(
           '✦ FOR LOCAL NEEDS ✦',
           style: TextStyle(
-            color: Colors.amber,
-            fontSize: 10,
-            letterSpacing: 3,
+            color: Color(0xFFF59E0B),
+            fontSize: 11,
+            letterSpacing: 4,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -222,27 +277,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildWelcomeBack() {
     if (_isExistingUser != true) return const SizedBox.shrink();
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 28),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2)),
+        color: const Color(0x1A10B981),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0x3310B981)),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-            child: Icon(LucideIcons.userCheck, color: Theme.of(context).primaryColor),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0x3310B981),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(LucideIcons.userCheck, color: Color(0xFF10B981), size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('WELCOME BACK', style: TextStyle(color: Theme.of(context).primaryColor, fontSize: 10, fontWeight: FontWeight.bold)),
-                Text(_fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(_category, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                const Text('WELCOME BACK', style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                const SizedBox(height: 4),
+                Text(_fullName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(_category, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500)),
               ],
             ),
           )
@@ -251,55 +311,129 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
+  Widget _buildInputLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF94A3B8),
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String hint, {Widget? prefixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF475569)),
+      filled: true,
+      fillColor: const Color(0xFF0F172A),
+      prefixIcon: prefixIcon,
+      counterText: '',
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF34D399), width: 2),
+      ),
+    );
+  }
+
+  Widget _buildPrimaryButton(String text, IconData icon, VoidCallback? onPressed, bool isLoading) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF10B981),
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: const Color(0xFF1E293B),
+        disabledForegroundColor: const Color(0xFF64748B),
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+      ),
+      child: isLoading
+          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 22),
+                const SizedBox(width: 12),
+                Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              ],
+            ),
+    );
+  }
+
   Widget _buildPhoneStep(bool isLoading) {
     return Column(
       key: const ValueKey('phone'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('MOBILE NUMBER', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.bold)),
+        if (_isExistingUser == true) _buildWelcomeBack(),
+        _buildInputLabel('MOBILE NUMBER'),
         const SizedBox(height: 12),
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
           onChanged: _onPhoneChange,
-          style: const TextStyle(fontSize: 18, letterSpacing: 2),
-          decoration: const InputDecoration(counterText: '', prefixIcon: Icon(LucideIcons.smartphone, color: Colors.greenAccent), hintText: '10-digit number'),
+          style: const TextStyle(fontSize: 20, letterSpacing: 2, color: Colors.white, fontWeight: FontWeight.w600),
+          decoration: _buildInputDecoration('10-digit number', prefixIcon: const Icon(LucideIcons.smartphone, color: Color(0xFF34D399))),
         ),
-        if (_isChecking) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Center(child: CircularProgressIndicator())),
+        if (_isChecking) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: CircularProgressIndicator(color: Color(0xFF34D399)))),
         
         if (_isExistingUser == false) ...[
-          const SizedBox(height: 16),
-          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Full Name')),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          _buildInputLabel('FULL NAME'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nameController, 
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            decoration: _buildInputDecoration('Enter your name', prefixIcon: const Icon(LucideIcons.user, color: Color(0xFF94A3B8)))
+          ),
+          const SizedBox(height: 20),
+          _buildInputLabel('ROLE'),
+          const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _category,
-            decoration: const InputDecoration(labelText: 'Role'),
+            dropdownColor: const Color(0xFF1E293B),
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            decoration: _buildInputDecoration('Select role', prefixIcon: const Icon(LucideIcons.briefcase, color: Color(0xFF94A3B8))),
             items: categories.map((c) => DropdownMenuItem(value: c['key'], child: Text(c['label']!))).toList(),
             onChanged: (v) => setState(() => _category = v!),
           ),
         ],
 
-        if (_isExistingUser == true) ...[
-          const SizedBox(height: 16),
-          _buildWelcomeBack(),
-        ],
-
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: _phoneController.text.length == 10 && !_isChecking ? _requestOtp : null,
-          child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.messageCircle, size: 20), SizedBox(width: 8), Text('Send OTP via WhatsApp')]),
+        const SizedBox(height: 32),
+        _buildPrimaryButton(
+          'Send OTP via WhatsApp',
+          LucideIcons.messageCircle,
+          _phoneController.text.length == 10 && !_isChecking ? _requestOtp : null,
+          false,
         ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: _phoneController.text.length == 10 ? () => setState(() => _step = AuthStep.pinFallback) : null,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.3)),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        const SizedBox(height: 16),
+        if (_phoneController.text.length == 10 && _isExistingUser != false)
+          OutlinedButton(
+            onPressed: () => setState(() => _step = AuthStep.pinFallback),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              side: const BorderSide(color: Color(0xFF34D399), width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: const Color(0x0D34D399),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(LucideIcons.key, color: Color(0xFF34D399), size: 20),
+                SizedBox(width: 8),
+                Text('Use Fallback PIN Instead', style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
           ),
-          child: Text('Use Fallback PIN Instead', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)),
-        ),
       ],
     );
   }
@@ -309,24 +443,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       key: const ValueKey('otp'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('6-DIGIT WHATSAPP OTP', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.bold)),
+        _buildInputLabel('6-DIGIT WHATSAPP OTP'),
         const SizedBox(height: 12),
         TextField(
           controller: _otpController,
           keyboardType: TextInputType.number,
           maxLength: 6,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 32, letterSpacing: 12, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(counterText: '', hintText: '••••••'),
+          decoration: _buildInputDecoration('••••••'),
         ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: isLoading ? null : _verifyOtp,
-          child: isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.shieldCheck, size: 20), SizedBox(width: 8), Text('Verify OTP & Continue')]),
-        ),
-        TextButton(onPressed: () => setState(() => _step = AuthStep.phone), child: const Center(child: Text('← Go back')))
+        const SizedBox(height: 32),
+        _buildPrimaryButton('Verify OTP & Continue', LucideIcons.shieldCheck, isLoading ? null : _verifyOtp, isLoading),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () => setState(() => _step = AuthStep.phone), 
+          child: const Center(child: Text('← Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
+        )
       ],
     );
   }
@@ -337,25 +470,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_isExistingUser == true) _buildWelcomeBack(),
-        Text('4-DIGIT SECURE PIN', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.bold)),
+        _buildInputLabel('4-DIGIT SECURE PIN'),
         const SizedBox(height: 12),
         TextField(
           controller: _pinController,
           keyboardType: TextInputType.number,
           obscureText: true,
           maxLength: 4,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(counterText: '', hintText: '••••'),
+          decoration: _buildInputDecoration('••••'),
         ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: isLoading ? null : _loginWithPin,
-          child: isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.shieldCheck, size: 20), SizedBox(width: 8), Text('Sign In with PIN')]),
-        ),
-        TextButton(onPressed: () => setState(() => _step = AuthStep.phone), child: const Center(child: Text('← Go back')))
+        const SizedBox(height: 32),
+        _buildPrimaryButton('Sign In with PIN', LucideIcons.unlock, isLoading ? null : _loginWithPin, isLoading),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () => setState(() => _step = AuthStep.phone), 
+          child: const Center(child: Text('← Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
+        )
       ],
     );
   }
@@ -365,34 +497,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       key: const ValueKey('setPin'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('SET 4-DIGIT SECURE PIN', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.bold)),
+        _buildInputLabel('SET 4-DIGIT SECURE PIN'),
         const SizedBox(height: 12),
         TextField(
           controller: _newPinController,
           keyboardType: TextInputType.number,
           obscureText: true,
           maxLength: 4,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(counterText: '', hintText: '••••'),
+          decoration: _buildInputDecoration('••••'),
         ),
+        const SizedBox(height: 20),
+        _buildInputLabel('CONFIRM PIN'),
         const SizedBox(height: 12),
         TextField(
           controller: _confirmPinController,
           keyboardType: TextInputType.number,
           obscureText: true,
           maxLength: 4,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: const InputDecoration(counterText: '', hintText: 'Confirm PIN'),
+          decoration: _buildInputDecoration('••••'),
         ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: isLoading ? null : _setPin,
-          child: isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(LucideIcons.shieldCheck, size: 20), SizedBox(width: 8), Text('Save PIN & Continue')]),
-        ),
+        const SizedBox(height: 32),
+        _buildPrimaryButton('Save PIN & Continue', LucideIcons.save, isLoading ? null : _setPin, isLoading),
       ],
     );
   }
