@@ -103,11 +103,17 @@ export async function uploadAccountMedia(
   }
 
   const path = buildMediaPath(profile.account_id as string, file.name);
-  const { error: upErr } = await supabase.storage.from(bucket).upload(path, file, {
+
+  // Generate a signed upload URL using the Server Action
+  const { createUploadUrl } = await import("@/actions/storage");
+  const { token } = await createUploadUrl(bucket, path);
+
+  // Upload the file directly using the signed URL token
+  const { error: upErr } = await supabase.storage.from(bucket).uploadToSignedUrl(path, token, file, {
     cacheControl: "3600",
     upsert: false,
-    contentType: file.type,
   });
+
   if (upErr) throw new Error(upErr.message);
 
   const {
