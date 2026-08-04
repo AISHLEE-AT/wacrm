@@ -58,14 +58,21 @@ export async function middleware(request: NextRequest) {
 
   let user = null
 
-  if (accessToken) {
+  if (accessToken && refreshToken) {
+    try {
+      const { data } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      })
+      user = data?.user
+    } catch (err) {
+      console.error('Middleware setSession error:', err)
+    }
+  } else if (accessToken) {
     try {
       const { data: tokenData } = await supabase.auth.getUser(accessToken)
       if (tokenData?.user) {
         user = tokenData.user
-        if (refreshToken) {
-          await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        }
       }
     } catch (err) {
       console.error('Middleware token auth error:', err)
