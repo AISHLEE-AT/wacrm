@@ -108,8 +108,18 @@ export async function uploadAccountMedia(
   const { createUploadUrl } = await import("@/actions/storage");
   const { token } = await createUploadUrl(bucket, path);
 
-  // Upload the file directly using the signed URL token
-  const { error: upErr } = await supabase.storage.from(bucket).uploadToSignedUrl(path, token, file, {
+  // Upload the file directly using the signed URL token.
+  // We use a fresh unauthenticated client for this step. If we use the
+  // authenticated `supabase` client, the SDK attaches the user's Auth header,
+  // which causes Supabase Storage to evaluate RLS policies. Using a fresh
+  // client ensures we strictly rely on the signed URL token to bypass RLS.
+  const { createClient: createBaseClient } = await import("@supabase/supabase-js");
+  const anonSupabase = createBaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  const { error: upErr } = await anonSupabase.storage.from(bucket).uploadToSignedUrl(path, token, file, {
     cacheControl: "3600",
     upsert: false,
   });
