@@ -1,8 +1,9 @@
 import React, { useRef, useContext, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator,
-  TouchableOpacity, SafeAreaView, StatusBar
+  TouchableOpacity, SafeAreaView, StatusBar, Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { AppContext } from '../context/AppContext';
 import { RefreshCw, ArrowLeft, Home } from 'lucide-react-native';
@@ -146,13 +147,17 @@ export default function EcosystemWebView({ route, navigation }: Props) {
     RideO:  '#10b981',
   };
   const accentColor = MODULE_COLORS[moduleName] ?? '#34d399';
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView style={[styles.safe, { borderTopColor: accentColor }]}>
+    <View style={[styles.safe, { borderTopColor: accentColor }]}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
       {/* Slim native top bar */}
-      <View style={[styles.topBar, { borderBottomColor: accentColor + '30' }]}>
+      <View style={[styles.topBar, { 
+        borderBottomColor: accentColor + '30',
+        paddingTop: Platform.OS === 'android' ? insets.top + 10 : insets.top || 10
+      }]}>
         <TouchableOpacity style={styles.topBtn} onPress={handleBack}>
           <ArrowLeft color="#94a3b8" size={18} />
         </TouchableOpacity>
@@ -198,7 +203,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           }
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -213,7 +218,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingBottom: 10,
     backgroundColor: '#0d1526',
     borderBottomWidth: 1,
   },
