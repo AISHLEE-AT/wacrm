@@ -154,26 +154,20 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
     '/automations', '/flows', '/settings', '/drivo',
-    '/admin', '/profile', '/wallet', '/crm',
-    '/testo', '/teacho', '/tvo', '/moneyo', '/rideo', '/rento', '/dealo', '/touro'
+    '/admin', '/profile', '/wallet', '/crm'
   ]
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
 
   const isEmbed = request.nextUrl.searchParams.get('embed') === 'true';
-  const isPublicModule = ['/testo', '/teacho', '/tvo', '/moneyo'].some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  );
 
-  // Enforce login wall unless it's a whitelisted module requested in embed mode
-  if (!user && isProtectedPath) {
-    if (!(isEmbed && isPublicModule)) {
-      const loginUrl = request.nextUrl.clone()
-      loginUrl.pathname = '/login'
-      loginUrl.search = ''
-      return withRefreshedCookies(NextResponse.redirect(loginUrl))
-    }
+  // Enforce login wall only for protected paths when not requested in embed/mobile mode
+  if (!user && isProtectedPath && !isEmbed) {
+    const loginUrl = request.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.search = ''
+    return withRefreshedCookies(NextResponse.redirect(loginUrl))
   }
 
   // ── Protect API routes (except public auth endpoints) ──────────────────────
