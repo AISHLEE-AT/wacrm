@@ -253,7 +253,8 @@ export function MessageThread({
       setLoading(true);
 
       try {
-        const res = await fetch(`/api/conversations/${conversationId}/messages`, { cache: 'no-store', credentials: 'include' });
+        const query = typeof window !== 'undefined' ? window.location.search : '';
+        const res = await fetch(`/api/conversations/${conversationId}/messages${query}`, { cache: 'no-store', credentials: 'include' });
         const json = await res.json();
         if (json.messages && Array.isArray(json.messages)) {
           if (!cancelled) {

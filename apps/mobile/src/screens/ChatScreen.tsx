@@ -51,15 +51,31 @@ export default function ChatScreen({ navigation }: any) {
     const userText = newMessages[0].text;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: userText }] }]
         })
       });
+
+      if (!response.ok) {
+        // Fallback to gemini-2.0-flash if 2.5 is not available on key tier
+        response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: userText }] }]
+          })
+        });
+      }
       
       const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || `HTTP ${response.status}`);
+      }
+
       const aiResponseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response.";
       
       setMessages((prev) => GiftedChat.append(prev, [{
@@ -69,10 +85,10 @@ export default function ChatScreen({ navigation }: any) {
         user: { _id: 2, name: 'AI Assistant', avatar: 'https://ui-avatars.com/api/?name=AI&background=10b981&color=fff' },
       }]));
       
-    } catch (err) {
+    } catch (err: any) {
       setMessages((prev) => GiftedChat.append(prev, [{
         _id: Math.random().toString(),
-        text: "Error communicating with Gemini. Please check your API key.",
+        text: `Error from Gemini: ${err.message}. Please check your API key in Profile.`,
         createdAt: new Date(),
         user: { _id: 2, name: 'System' },
       }]));
@@ -82,13 +98,19 @@ export default function ChatScreen({ navigation }: any) {
   }, [geminiApiKey]);
 
   const contactAdmin = () => {
-    const url = `whatsapp://send?phone=91${ADMIN_CRM_NUMBER}&text=Hi, I need help with SuprO!`;
-    Linking.canOpenURL(url).then(supported => {
+    const text = encodeURIComponent('Hi, I need help with SuprO!');
+    const appUrl = `whatsapp://send?phone=91${ADMIN_CRM_NUMBER}&text=${text}`;
+    const webUrl = `https://wa.me/91${ADMIN_CRM_NUMBER}?text=${text}`;
+    
+    Linking.canOpenURL(appUrl).then(supported => {
       if (supported) {
-        Linking.openURL(url);
+        Linking.openURL(appUrl);
       } else {
-        Alert.alert('Error', 'WhatsApp is not installed on your device.');
+        // Fallback to web URL which handles routing to the app automatically
+        Linking.openURL(webUrl);
       }
+    }).catch(() => {
+      Linking.openURL(webUrl);
     });
   };
 

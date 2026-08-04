@@ -80,7 +80,8 @@ export function ConversationList({
 
     (async () => {
       try {
-        const res = await fetch('/api/conversations', { cache: 'no-store', credentials: 'include' });
+        const query = typeof window !== 'undefined' ? window.location.search : '';
+        const res = await fetch(`/api/conversations${query}`, { cache: 'no-store', credentials: 'include' });
         const json = await res.json();
         if (json.conversations && Array.isArray(json.conversations)) {
           if (!cancelled) {
