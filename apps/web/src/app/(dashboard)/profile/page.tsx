@@ -158,14 +158,15 @@ function ProfilePageInner() {
 
   const activeProfile = dbProfile || profile;
 
-  // STRICT ADMIN CHECK: Only 6381029380 or aishleetechnology@gmail.com is Administrator
   const isAdmin = Boolean(
     activeProfile?.email?.includes("aishleetechnology@gmail.com") ||
     activeProfile?.email?.includes("6381029380") ||
     activeProfile?.phone?.includes("6381029380") ||
+    activeProfile?.phone?.includes("9486335870") ||
     user?.email?.includes("aishleetechnology@gmail.com") ||
     user?.email?.includes("6381029380") ||
-    user?.phone?.includes("6381029380")
+    user?.phone?.includes("6381029380") ||
+    user?.phone?.includes("9486335870")
   );
 
   // Real-Time Profile Data Subscription
@@ -200,7 +201,7 @@ function ProfilePageInner() {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'profiles' },
             (payload: any) => {
-              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("6381029380"))) {
+              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("6381029380") || payload.new.phone?.includes("9486335870"))) {
                 setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
                 if (payload.new.upi_id) setUpiIdState(payload.new.upi_id);
                 if (payload.new.location) setLocationState(payload.new.location);
@@ -551,12 +552,17 @@ function ProfilePageInner() {
             </div>
           </div>
           {!editingGemini && (
-            <button
-              onClick={() => { setGeminiValue(geminiState || (profile as any)?.gemini_api_key || ''); setEditingGemini(true); }}
-              className="text-xs text-primary hover:underline font-medium"
-            >
-              Edit
-            </button>
+            <div className="flex flex-col md:flex-row md:items-center gap-3 items-end">
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline font-bold whitespace-nowrap">
+                Get API Key
+              </a>
+              <button
+                onClick={() => { setGeminiValue(geminiState || (profile as any)?.gemini_api_key || ''); setEditingGemini(true); }}
+                className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
+              >
+                Edit
+              </button>
+            </div>
           )}
         </div>
 

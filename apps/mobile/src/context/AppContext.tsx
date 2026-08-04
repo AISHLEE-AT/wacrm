@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 // Admin phone numbers (same as web app)
-const ADMIN_PHONES = ['6381029380', '9876543210'];
+const ADMIN_PHONES = ['6381029380', '9876543210', '9486335870'];
 
 export interface AppUser {
   phone: string;

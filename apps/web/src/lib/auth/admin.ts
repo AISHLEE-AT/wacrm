@@ -4,6 +4,7 @@
 export const BOOTSTRAP_ADMIN_PHONES = [
   '6381029380',
   '916381029380',
+  '9486335870',
 ]
 
 export const BOOTSTRAP_ADMIN_EMAILS = [

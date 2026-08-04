@@ -45,8 +45,10 @@ export default function DriveODashboard() {
   const isAdmin = Boolean(
     profile?.email === "aishleetechnology@gmail.com" ||
     profile?.phone?.includes("6381029380") ||
+    profile?.phone?.includes("9486335870") ||
     currentUser?.email === "aishleetechnology@gmail.com" ||
-    currentUser?.phone?.includes("6381029380")
+    currentUser?.phone?.includes("6381029380") ||
+    currentUser?.phone?.includes("9486335870")
   );
 
   // Fetch current user's driver partner record from Supabase
