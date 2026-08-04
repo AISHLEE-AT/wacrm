@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React from 'react';
 import { Wrench, MapPin, Phone, Star, CheckCircle2 } from 'lucide-react';
 

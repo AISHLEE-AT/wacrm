@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React from 'react';
 import { Compass, MapPin, Calendar, Phone, Star } from 'lucide-react';
 
