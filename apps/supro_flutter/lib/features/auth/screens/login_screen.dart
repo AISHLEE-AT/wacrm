@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 
 enum AuthStep { phone, otp, pinFallback, setPin }
@@ -82,6 +83,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
             }
           }
         });
+        if (_isExistingUser == true && data['gemini_api_key'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('gemini_api_key', data['gemini_api_key']);
+        }
       } catch (e) {
         setState(() => _isExistingUser = false);
       } finally {

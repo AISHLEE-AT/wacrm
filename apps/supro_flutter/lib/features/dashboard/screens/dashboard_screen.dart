@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -33,8 +35,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Future<void> _saveApiKey() async {
     setState(() => _isSaving = true);
+    final apiKey = _apiKeyController.text.trim();
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('gemini_api_key', _apiKeyController.text.trim());
+    await prefs.setString('gemini_api_key', apiKey);
+    
+    // Sync to Vercel backend
+    try {
+      final user = ref.read(authControllerProvider).user;
+      final phone = user?.phone;
+      if (phone != null) {
+        await http.post(
+          Uri.parse('https://watscrm.vercel.app/api/profile/update'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'phone': phone, 'gemini_api_key': apiKey}),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed to sync API key to backend: $e');
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('API Key saved successfully!')),
