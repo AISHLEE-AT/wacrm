@@ -280,6 +280,15 @@ function LoginPageInner() {
                   {/* New user: name + category */}
                   {phone.length === 10 && isExistingUser === false && !isChecking && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3 pt-1 overflow-hidden">
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                          <UserCheck className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-blue-400 text-xs font-bold uppercase tracking-wider">Create New Account</p>
+                          <p className="text-white text-sm mt-0.5">Looks like you're new! Let's set up your profile.</p>
+                        </div>
+                      </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Name</label>
                         <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your Full Name"

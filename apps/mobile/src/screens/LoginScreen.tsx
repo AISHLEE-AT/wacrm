@@ -253,6 +253,15 @@ export default function LoginScreen({ navigation }: any) {
               {/* Dynamic New User Form */}
               {phone.length === 10 && isExistingUser === false && !isChecking && (
                 <View style={styles.dynamicForm}>
+                  <View style={styles.newAccountCard}>
+                    <View style={styles.newAccountIconContainer}>
+                      <UserCheck color="#60A5FA" size={24} />
+                    </View>
+                    <View style={{ marginLeft: 12, flex: 1 }}>
+                      <Text style={styles.newAccountTitle}>CREATE NEW ACCOUNT</Text>
+                      <Text style={styles.newAccountText}>Looks like you're new! Let's set up your profile.</Text>
+                    </View>
+                  </View>
                   <Text style={styles.label}>FULL NAME</Text>
                   <TextInput
                     style={styles.input}
@@ -556,6 +565,10 @@ const styles = StyleSheet.create({
   categoryBtnActive: { backgroundColor: 'rgba(52,211,153,0.2)', borderColor: '#34d399' },
   categoryBtnText: { color: '#94a3b8', fontSize: 13, fontWeight: 'bold' },
   categoryBtnTextActive: { color: '#34d399' },
+  newAccountCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(59,130,246,0.1)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)', marginBottom: 8 },
+  newAccountIconContainer: { backgroundColor: 'rgba(59,130,246,0.2)', padding: 10, borderRadius: 12 },
+  newAccountTitle: { color: '#60A5FA', fontSize: 10, fontWeight: 'bold', letterSpacing: 1.5 },
+  newAccountText: { color: '#fff', fontSize: 13, fontWeight: '500', marginTop: 4 },
   welcomeBackCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(52,211,153,0.1)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(52,211,153,0.2)' },
   welcomeText: { color: '#34d399', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
   welcomeName: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginVertical: 2 },

@@ -388,6 +388,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         
         if (_isExistingUser == false) ...[
           const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0x1A3B82F6),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0x333B82F6)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0x333B82F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(LucideIcons.userPlus, color: Color(0xFF60A5FA), size: 20),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('CREATE NEW ACCOUNT', style: TextStyle(color: Color(0xFF60A5FA), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                      SizedBox(height: 4),
+                      Text("Looks like you're new! Let's set up your profile.", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           _buildInputLabel('FULL NAME'),
           const SizedBox(height: 8),
           TextField(
