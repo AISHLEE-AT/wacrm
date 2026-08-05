@@ -19,7 +19,7 @@ export default function AdminDailyNewsPage() {
   const [items, setItems] = useState<DailyNewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingNow, setLoadingNow] = useState(false);
-  const [loadResult, setLoadResult] = useState<{ saved: number; total: number; log: string[] } | null>(null);
+  const [loadResult, setLoadResult] = useState<{ saved: number; total: number; log: string[]; message?: string } | null>(null);
   const [selectedModule, setSelectedModule] = useState('all');
 
   const today = new Date();

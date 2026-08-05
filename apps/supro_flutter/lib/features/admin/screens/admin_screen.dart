@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'admin_daily_news_tab.dart';
+import 'admin_inbox_webview.dart';
+
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -101,32 +103,6 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildInbox() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return Card(
-          color: const Color(0xFF1E293B),
-          margin: const EdgeInsets.only(bottom: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: const Color(0x33ef4444),
-              child: const Icon(LucideIcons.user,
-                  color: Color(0xFFef4444)),
-            ),
-            title: Text('Customer ${index + 1}',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
-            subtitle: const Text('New inquiry about services...',
-                style: TextStyle(color: Color(0xFF94a3b8))),
-            trailing: const Text('10:00 AM',
-                style:
-                    TextStyle(color: Color(0xFF64748b), fontSize: 12)),
-          ),
-        );
-      },
-    );
+    return const AdminInboxWebview();
   }
 }
