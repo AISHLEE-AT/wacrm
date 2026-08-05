@@ -35,9 +35,9 @@ import {
   FileCheck,
   Tv,
   Wrench,
-  Bot,
   Gamepad2,
   Newspaper,
+  Smartphone,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -218,11 +218,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <div className="relative flex-shrink-0">
               {/* Outer glow */}
               <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-md scale-125" />
-              <img
-                src="/supro-logo-ai.jpg"
-                alt="SuprO Logo"
-                className="relative h-11 w-11 rounded-xl object-cover border-2 border-amber-400/60 shadow-[0_0_16px_rgba(250,204,21,0.4),0_0_32px_rgba(52,211,153,0.2)]"
-              />
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-[#0a0f1e] border-2 border-amber-400/60 shadow-[0_0_16px_rgba(250,204,21,0.4),0_0_32px_rgba(52,211,153,0.2)]">
+                <Smartphone className="h-6 w-6 text-emerald-400" />
+              </div>
               {/* Live dot */}
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] border border-[#0a0f1e]" />
             </div>
