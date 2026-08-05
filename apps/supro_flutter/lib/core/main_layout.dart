@@ -29,9 +29,7 @@ class _MainLayoutState extends State<MainLayout> {
       case 1:
         final location = GoRouterState.of(context).uri.path;
         if (location == '/home' || location == '/dashboard') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Select a module from the Grid first!')),
-          );
+          context.go('/driveo'); // Default module to avoid confusion
         }
         break;
       case 2:

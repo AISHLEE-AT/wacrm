@@ -41,6 +41,24 @@ class DailyNewsFetchService {
 
   // ─── RSS FEED CONFIG ───────────────────────────────────────────────────────
   static const List<Map<String, String>> _rssFeeds = [
+    // General — PIB India
+    {
+      'module': 'general',
+      'name': 'PIB India',
+      'url': 'https://pib.gov.in/newsite/rssenglish.aspx',
+    },
+    // General — The Hindu National
+    {
+      'module': 'general',
+      'name': 'The Hindu National',
+      'url': 'https://www.thehindu.com/news/national/feeder/default.rss',
+    },
+    // General — The Hindu Tamil Nadu
+    {
+      'module': 'general',
+      'name': 'The Hindu TN',
+      'url': 'https://www.thehindu.com/news/national/tamil-nadu/feeder/default.rss',
+    },
     // AgrO — Agriculture
     {
       'module': 'agro',
@@ -71,23 +89,7 @@ class DailyNewsFetchService {
       'name': 'Dinamalar Health',
       'url': 'https://www.dinamalar.com/rss_health.asp',
     },
-    // General — Main Tamil news
-    {
-      'module': 'general',
-      'name': 'Dinamalar Main',
-      'url': 'https://www.dinamalar.com/rss.asp',
-    },
-    {
-      'module': 'general',
-      'name': 'BBC Tamil',
-      'url': 'https://feeds.bbci.co.uk/tamil/rss.xml',
-    },
-    {
-      'module': 'general',
-      'name': 'OneIndia Tamil',
-      'url': 'https://tamil.oneindia.com/rss/tamil-news-fb.xml',
-    },
-    // DriveO — Transport (general feed, transport-tagged manually)
+    // DriveO — Transport
     {
       'module': 'driveo',
       'name': 'OneIndia Transport',

@@ -17,6 +17,17 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
   @override
   void initState() {
     super.initState();
+    
+    final session = Supabase.instance.client.auth.currentSession;
+    String authQueryParams = '?embed=true';
+    if (session != null) {
+      final token = session.accessToken;
+      final refresh = session.refreshToken ?? '';
+      authQueryParams += '&access_token=$token&refresh_token=$refresh';
+    }
+
+    final targetUrl = 'https://watscrm.vercel.app/inbox$authQueryParams';
+
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF0a0f1e))
@@ -27,38 +38,19 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
               _isLoading = false;
             });
             
-            final session = Supabase.instance.client.auth.currentSession;
-            if (session != null) {
-              final token = session.accessToken;
-              final supabaseUrl = Supabase.instance.client.supabaseUrl;
-              final projectRef = Uri.parse(supabaseUrl).host.split('.')[0];
-              // Inject token into localStorage for Next.js app
-              final js = '''
-                (function() {
-                  var tokenKey = 'sb-' + '$projectRef' + '-auth-token';
-                  var existing = localStorage.getItem(tokenKey);
-                  if (!existing) {
-                    localStorage.setItem(tokenKey, JSON.stringify({
-                      access_token: "$token",
-                      user: ${jsonEncode(session.user.toJson())}
-                    }));
-                    if (window.location.pathname !== '/inbox') {
-                      window.location.href = '/inbox';
-                    }
-                  }
-                  
-                  // Hide web app nav sidebar to make it feel native
-                  var style = document.createElement('style');
-                  style.innerHTML = 'nav.w-64 { display: none !important; } .lg\\\\:pl-64 { padding-left: 0 !important; }';
-                  document.head.appendChild(style);
-                })();
-              ''';
-              await _controller.runJavaScript(js);
-            }
+            // Hide web app nav sidebar to make it feel native
+            final js = '''
+              (function() {
+                var style = document.createElement('style');
+                style.innerHTML = 'nav.w-64 { display: none !important; } .lg\\\\:pl-64 { padding-left: 0 !important; }';
+                document.head.appendChild(style);
+              })();
+            ''';
+            await _controller.runJavaScript(js);
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://watscrm.vercel.app/inbox'));
+      ..loadRequest(Uri.parse(targetUrl));
   }
 
   @override
