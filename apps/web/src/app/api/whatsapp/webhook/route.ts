@@ -742,6 +742,48 @@ async function processMessage(
   // trigger installed in migration 003).
   await flagBroadcastReplyIfAny(accountId, contactRecord.id)
 
+  // -- WELCOME MESSAGE HOOK --
+  if (isFirstInboundMessage && contentText && /\bhi\b/i.test(contentText)) {
+    const welcomeText = `Hi there! 👋 A sweet and hearty welcome to our platform! 💖 \n\nWe're thrilled to connect with you. You can explore our services and stay up to date by visiting our web app:\n🔗 https://watscrm.vercel.app\n\nHow can we help you today? ✨`;
+    
+    fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: senderPhone,
+        type: 'text',
+        text: { body: welcomeText }
+      })
+    })
+    .then(async (res) => {
+      if (!res.ok) throw new Error('Meta API returned ' + res.status);
+      const data = await res.json();
+      const waMessageId = data.messages?.[0]?.id;
+      if (waMessageId) {
+        await supabaseAdmin().from('messages').insert({
+          conversation_id: conversation.id,
+          sender_type: 'bot',
+          content_type: 'text',
+          content_text: welcomeText,
+          message_id: waMessageId,
+          status: 'sent',
+        });
+        await supabaseAdmin().from('conversations').update({
+          last_message_text: welcomeText,
+          last_message_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq('id', conversation.id);
+      }
+    })
+    .catch(err => console.error('Failed to send welcome message:', err));
+  }
+  // ------------------------------------
+
   // ============================================================
   // Flow runner dispatch.
   //
