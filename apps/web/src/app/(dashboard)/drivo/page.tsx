@@ -99,9 +99,9 @@ export default function DriveODashboard() {
 
     setRegForm((prev) => ({
       ...prev,
-      name: (prev.name && prev.name !== 'Your Full Name') ? prev.name : resolvedName,
+      name: resolvedName || prev.name,
       mobile: prev.mobile || autoPhone,
-      upi: prev.upi || resolvedUpi,
+      upi: resolvedUpi || prev.upi,
     }));
   }, [profile, currentUser]);
 
