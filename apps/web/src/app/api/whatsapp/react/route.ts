@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { sendReactionMessage } from '@/lib/whatsapp/meta-api';
 import { decrypt } from '@/lib/whatsapp/encryption';
 import { sanitizePhoneForMeta } from '@/lib/whatsapp/phone-utils';
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
 
     // Resolve the caller's account_id so conversation + whatsapp_config
     // lookups work for teammates who didn't author the rows directly.
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin()
       .from('profiles')
       .select('account_id')
       .eq('id', user.id)
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     }
 
     // Resolve target message + its conversation; verify ownership.
-    const { data: targetMessage, error: msgError } = await supabase
+    const { data: targetMessage, error: msgError } = await supabaseAdmin()
       .from('messages')
       .select('id, message_id, conversation_id')
       .eq('id', message_id)
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: conversation, error: convError } = await supabase
+    const { data: conversation, error: convError } = await supabaseAdmin()
       .from('conversations')
       .select('id, account_id, contact:contacts(phone)')
       .eq('id', targetMessage.conversation_id)
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
     }
 
     // WhatsApp config + access token. Account-scoped post-multi-user.
-    const { data: config, error: configError } = await supabase
+    const { data: config, error: configError } = await supabaseAdmin()
       .from('whatsapp_config')
       .select('phone_number_id, access_token')
       .eq('account_id', accountId)
@@ -145,7 +146,7 @@ export async function POST(request: Request) {
 
     // Mirror into DB. Empty emoji = removal.
     if (emoji === '') {
-      const { error: delError } = await supabase
+      const { error: delError } = await supabaseAdmin()
         .from('message_reactions')
         .delete()
         .eq('message_id', targetMessage.id)
@@ -162,7 +163,7 @@ export async function POST(request: Request) {
     } else {
       // Upsert. The unique constraint (message_id, actor_type, actor_id)
       // lets us swap emoji in a single statement.
-      const { error: upsertError } = await supabase.from('message_reactions').upsert(
+      const { error: upsertError } = await supabaseAdmin().from('message_reactions').upsert(
         {
           message_id: targetMessage.id,
           conversation_id: targetMessage.conversation_id,
