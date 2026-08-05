@@ -18,7 +18,7 @@ export default function TeachOScreen() {
       const { data, error } = await aishleeSupabase
         .from('unified_master_data')
         .select('*')
-        .eq('item_type', 'teacho')
+        .eq('item_type', 'COURSE')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -52,11 +52,7 @@ export default function TeachOScreen() {
             <TouchableOpacity 
               style={styles.watchBtn}
               onPress={() => {
-                if (item.links_data) {
-                  Linking.openURL(item.links_data).catch(() => {});
-                } else {
-                  alert("No link available for this course.");
-                }
+                navigation.navigate('TeachOCourseScreen', { course: item });
               }}
             >
               <PlayCircle size={16} color="#fff" style={{ marginRight: 6 }} />

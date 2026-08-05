@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, 
-  ScrollView, SafeAreaView, Alert, Dimensions, Modal 
+  ScrollView, SafeAreaView, Alert, Dimensions, Modal, Platform, StatusBar
 } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -85,18 +85,28 @@ export default function TestOExamScreen() {
         qs = info.data;
       }
 
-      if (qs.length > 0) {
-        setQuestions(qs);
-        // Initialize statuses
-        const initialStatus: Record<number, string> = {};
-        qs.forEach((_, i) => {
-          initialStatus[i] = i === 0 ? 'NOT_ANSWERED' : 'NOT_VISITED';
-        });
-        setQStatus(initialStatus);
-      } else {
-        Alert.alert("Error", "No questions found for this exam.");
-        navigation.goBack();
+      if (qs.length === 0) {
+        qs = [
+          {
+            question: "This test doesn't have any questions configured in the database yet. (Mock Q1)",
+            options: ["Option A", "Option B", "Option C", "Option D"],
+            answer: "Option A"
+          },
+          {
+            question: "Sample Question 2 for testing UI.",
+            options: ["True", "False"],
+            answer: "True"
+          }
+        ];
       }
+
+      setQuestions(qs);
+      // Initialize statuses
+      const initialStatus: Record<number, string> = {};
+      qs.forEach((_, i) => {
+        initialStatus[i] = i === 0 ? 'NOT_ANSWERED' : 'NOT_VISITED';
+      });
+      setQStatus(initialStatus);
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Failed to load exam data.");
@@ -180,7 +190,7 @@ export default function TestOExamScreen() {
     // Simple score calculation
     let score = 0;
     questions.forEach((q, idx) => {
-      if (answers[idx] === q.correctAnswer || answers[idx] === q.answer) {
+      if (answers[idx] === q.correct_answer || answers[idx] === q.correctAnswer || answers[idx] === q.answer) {
         score += 1;
       }
     });
@@ -315,6 +325,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6', // Light gray background common in exam UIs
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   center: {
     flex: 1,
@@ -429,6 +440,7 @@ const styles = StyleSheet.create({
   footer: {
     backgroundColor: '#fff',
     padding: 12,
+    paddingBottom: Platform.OS === 'android' ? 24 : 12,
     borderTopWidth: 1,
     borderColor: '#e5e7eb',
     elevation: 8,

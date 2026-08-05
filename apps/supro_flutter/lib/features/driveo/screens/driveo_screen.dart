@@ -367,8 +367,12 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     );
   }
 
+  int _currentIndex = 0;
+
   @override
   Widget build(BuildContext context) {
+    final isVerified = _driverRecord?['is_verified'] == true;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0a0f1e),
       appBar: AppBar(
@@ -382,11 +386,52 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
             : SingleChildScrollView(
                 child: _driverRecord == null
                     ? _buildRegistrationForm()
-                    : (_driverRecord?['is_verified'] == true
-                        ? _buildDashboard()
+                    : (isVerified
+                        ? _buildVerifiedBody()
                         : _buildPendingApproval()),
               ),
       ),
+      bottomNavigationBar: (isVerified && !_isLoading) ? BottomNavigationBar(
+        backgroundColor: const Color(0xFF0d1526),
+        selectedItemColor: const Color(0xFF10b981),
+        unselectedItemColor: const Color(0xFF64748b),
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.map),
+            label: 'Trips',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.wallet),
+            label: 'Earnings',
+          ),
+        ],
+      ) : null,
     );
+  }
+
+  Widget _buildVerifiedBody() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildDashboard();
+      case 1:
+        return const Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Center(child: Text('No recent trips.', style: TextStyle(color: Colors.white))),
+        );
+      case 2:
+        return const Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Center(child: Text('Wallet balance: â‚¹0.00', style: TextStyle(color: Colors.white))),
+        );
+      default:
+        return Container();
+    }
   }
 }

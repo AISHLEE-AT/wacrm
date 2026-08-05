@@ -22,8 +22,10 @@ import GamingHubScreen  from './src/screens/GamingHubScreen';
 import RewardsScreen    from './src/screens/RewardsScreen';
 import MapRacer3DScreen from './src/screens/MapRacer3DScreen';
 import TeachOScreen     from './src/screens/TeachOScreen';
+import TeachOCourseScreen from './src/screens/TeachOCourseScreen';
 import TestOHubScreen   from './src/screens/TestOHubScreen';
 import TestOExamScreen  from './src/screens/TestOExamScreen';
+import AgrOScreen       from './src/screens/AgrOScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
 
@@ -199,8 +201,10 @@ function RootNavigator() {
       <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />
       <Stack.Screen name="RewardsScreen" component={RewardsScreen} />
       <Stack.Screen name="TeachOScreen" component={TeachOScreen} />
+      <Stack.Screen name="TeachOCourseScreen" component={TeachOCourseScreen} />
       <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />
       <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
     </Stack.Navigator>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
 
 export default function TestOHubScreen() {
-  const [tests, setTests] = useState<any[]>([]);
+  const [sections, setSections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation<any>();
 
@@ -14,14 +14,51 @@ export default function TestOHubScreen() {
 
   const fetchTests = async () => {
     try {
+      // Fetch up to 2000 tests to ensure we get all of them
       const { data, error } = await aishleeSupabase
         .from('unified_master_data')
         .select('*')
         .eq('item_type', 'o_test')
-        .order('created_at', { ascending: false });
+        .limit(2000);
 
       if (error) throw error;
-      setTests(data || []);
+      
+      const groups: Record<string, any[]> = {};
+      
+      (data || []).forEach(item => {
+        let ai = item.additional_info;
+        if (typeof ai === 'string') {
+          try { ai = JSON.parse(ai); } catch(e) {}
+        }
+        
+        // Only include tests that actually have questions
+        if (ai && ai.questions && ai.questions.length > 0) {
+          const title = item.title_name || '';
+          let courseName = 'General Tests';
+          let testName = title;
+          
+          if (title.includes(':')) {
+            const parts = title.split(':');
+            courseName = parts[0].trim();
+            testName = parts.slice(1).join(':').trim();
+          }
+          
+          item.displayTitle = testName;
+          item.questionCount = ai.questions.length;
+          
+          if (!groups[courseName]) {
+            groups[courseName] = [];
+          }
+          groups[courseName].push(item);
+        }
+      });
+      
+      const formattedSections = Object.keys(groups).map(key => ({
+        title: key,
+        data: groups[key]
+      }));
+
+      setSections(formattedSections);
     } catch (err) {
       console.error('Error fetching tests:', err);
     } finally {
@@ -33,12 +70,12 @@ export default function TestOHubScreen() {
     return (
       <TouchableOpacity 
         style={styles.card}
-        onPress={() => navigation.navigate('TestOExamScreen', { testId: item.id, title: item.title_name })}
+        onPress={() => navigation.navigate('TestOExamScreen', { testId: item.id, title: item.displayTitle || item.title_name })}
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{item.title_name}</Text>
+          <Text style={styles.cardTitle}>{item.displayTitle || item.title_name}</Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.category || 'General'}</Text>
+            <Text style={styles.badgeText}>{item.questionCount || 0} Qs</Text>
           </View>
         </View>
         <Text style={styles.cardDescription} numberOfLines={2}>
@@ -47,7 +84,7 @@ export default function TestOHubScreen() {
         <View style={styles.cardFooter}>
           <TouchableOpacity 
             style={styles.startBtn}
-            onPress={() => navigation.navigate('TestOExamScreen', { testId: item.id, title: item.title_name })}
+            onPress={() => navigation.navigate('TestOExamScreen', { testId: item.id, title: item.displayTitle || item.title_name })}
           >
             <Text style={styles.startBtnText}>Start Test</Text>
           </TouchableOpacity>
@@ -55,6 +92,13 @@ export default function TestOHubScreen() {
       </TouchableOpacity>
     );
   };
+
+  const renderSectionHeader = ({ section: { title, data } }: any) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionCount}>{data.length} Tests</Text>
+    </View>
+  );
 
   if (loading) {
     return (
@@ -69,10 +113,11 @@ export default function TestOHubScreen() {
       <Text style={styles.headerTitle}>TestO Hub</Text>
       <Text style={styles.headerSubtitle}>Explore Mock Exams & Quizzes</Text>
       
-      <FlatList
-        data={tests}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderTestCard}
+        renderSectionHeader={renderSectionHeader}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No tests available right now.</Text>
@@ -109,6 +154,28 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+  },
+  sectionHeader: {
+    backgroundColor: '#121212',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  sectionCount: {
+    color: '#a1a1aa',
+    fontSize: 14,
   },
   card: {
     backgroundColor: '#1e1e24',

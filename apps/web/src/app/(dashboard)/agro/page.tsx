@@ -2,8 +2,9 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
-import { Store, TrendingUp, Sprout, ShoppingCart, MapPin, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Store, TrendingUp, Sprout, Landmark, Newspaper, ExternalLink } from 'lucide-react';
+import { fetchDailyNewsForModule, DailyNewsItem } from '@/lib/daily-news';
 
 const MANDI_RATES = [
   { crop: 'Paddy (Ponni)', price: '₹2,150 / Quintal', change: '+₹40', trend: 'up' },
@@ -20,7 +21,15 @@ const SEEDS_PRODUCE = [
 ];
 
 export default function AgroPage() {
-  const [search, setSearch] = useState('');
+  const [newsItems, setNewsItems] = useState<DailyNewsItem[]>([]);
+  const [loadingNews, setLoadingNews] = useState(true);
+
+  useEffect(() => {
+    fetchDailyNewsForModule('agro').then(items => {
+      setNewsItems(items);
+      setLoadingNews(false);
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 space-y-6">
@@ -66,7 +75,6 @@ export default function AgroPage() {
                   <p className="text-xs text-slate-400">{prod.seller}</p>
                 </div>
               </div>
-
               <div className="border-t border-slate-800 pt-3 flex items-center justify-between">
                 <span className="text-sm font-bold text-emerald-400">{prod.price}</span>
                 <button onClick={() => alert(`Inquiring about ${prod.name}`)} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-semibold px-3 py-1.5 rounded-lg text-xs border border-emerald-500/30">
@@ -76,6 +84,67 @@ export default function AgroPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── TODAY'S NEWS (Admin-curated, 6 AM daily) ── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <Newspaper className="w-4 h-4" /> Today's Agriculture News
+          </h3>
+          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">Updated 6 AM daily</span>
+        </div>
+
+        {loadingNews ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
+          </div>
+        ) : newsItems.length === 0 ? (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 text-center">
+            <Newspaper className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm">No news loaded for today yet.</p>
+            <p className="text-slate-600 text-xs mt-1">Admin loads fresh news every morning at 6 AM.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {newsItems.map((item) => {
+              const isGovt = item.data_type !== 'rss';
+              return (
+                <a
+                  key={item.id}
+                  href={item.link || '#'}
+                  target={item.link ? '_blank' : '_self'}
+                  rel="noopener noreferrer"
+                  className={`bg-slate-900/90 border rounded-2xl overflow-hidden flex flex-col hover:border-emerald-500/40 transition-colors group ${isGovt ? 'border-emerald-500/30' : 'border-slate-800'}`}
+                >
+                  {item.image_url && item.data_type === 'rss' && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.image_url} alt={item.title} className="w-full h-36 object-cover" />
+                  )}
+                  {isGovt && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20">
+                      <Landmark className="w-3 h-3 text-emerald-400" />
+                      <span className="text-xs text-emerald-400 font-bold">🏛️ data.gov.in — Government Data</span>
+                    </div>
+                  )}
+                  <div className="p-4 flex flex-col gap-2 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        {isGovt ? '🏛️ Govt' : item.source_name}
+                      </span>
+                      {item.link && <ExternalLink className="w-3 h-3 text-slate-600 group-hover:text-emerald-400 transition-colors" />}
+                    </div>
+                    <h4 className="font-bold text-white text-sm leading-snug line-clamp-2">{item.title}</h4>
+                    {item.description && (
+                      <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{item.description}</p>
+                    )}
+                    <p className="text-[10px] text-slate-600 mt-auto">{item.source_name}</p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

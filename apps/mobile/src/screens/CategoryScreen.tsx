@@ -33,6 +33,8 @@ export default function CategoryScreen() {
       navigation.navigate('TeachOScreen');
     } else if (cat.path === '/testo') {
       navigation.navigate('TestOHubScreen');
+    } else if (cat.path === '/agro') {
+      navigation.navigate('AgrOScreen');
     } else {
       navigation.navigate('ModuleView', {
         path: cat.path,

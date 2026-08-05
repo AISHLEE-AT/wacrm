@@ -75,7 +75,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           }
           if (!tokenKey) {
             // Fallback key pattern used by Supabase JS client v2
-            tokenKey = 'sb-watscrm-auth-token';
+            tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
           }
           var existing = localStorage.getItem(tokenKey);
           if (!existing) {
