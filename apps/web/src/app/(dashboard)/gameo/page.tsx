@@ -183,13 +183,13 @@ export default function GameOPage() {
         <div className="flex p-1 bg-slate-900 border border-slate-800 rounded-lg">
           <button 
             onClick={() => setActiveTab('game')}
-            className={px-4 py-2 text-sm font-medium rounded-md transition-all \}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'game' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
             Play Game
           </button>
           <button 
             onClick={() => setActiveTab('hub')}
-            className={lex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all \}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'hub' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
           >
             <Wallet className="w-4 h-4" /> Rewards Hub
           </button>
