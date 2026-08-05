@@ -208,7 +208,7 @@ export default function GameOPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div
                   onClick={() => setActiveMode('bike')}
-                  className={cursor-pointer transition-all rounded-xl p-4 border flex flex-col items-center justify-center text-center gap-3 \}
+                  className={`cursor-pointer transition-all rounded-xl p-4 border flex flex-col items-center justify-center text-center gap-3 ${activeMode === 'bike' ? 'bg-indigo-600/20 border-indigo-500 ring-2 ring-indigo-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
                 >
                   <div className="p-3 bg-red-500/20 text-red-400 rounded-full">
                     <Bike className="w-8 h-8" />
@@ -221,7 +221,7 @@ export default function GameOPage() {
 
                 <div
                   onClick={() => setActiveMode('run')}
-                  className={cursor-pointer transition-all rounded-xl p-4 border flex flex-col items-center justify-center text-center gap-3 \}
+                  className={`cursor-pointer transition-all rounded-xl p-4 border flex flex-col items-center justify-center text-center gap-3 ${activeMode === 'run' ? 'bg-indigo-600/20 border-indigo-500 ring-2 ring-indigo-500/50' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
                 >
                   <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-full">
                     <Activity className="w-8 h-8" />
@@ -323,7 +323,7 @@ export default function GameOPage() {
                   disabled={isSyncing}
                   className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-sm font-medium border border-blue-500/20 flex items-center gap-2 transition-all disabled:opacity-50"
                 >
-                  <RefreshCw className={\w-4 h-4 \\} /> 
+                  <RefreshCw className="w-4 h-4" /> 
                   Sync Points
                 </button>
               </div>
@@ -419,7 +419,7 @@ export default function GameOPage() {
                       <button
                         onClick={() => handleRedeem(reward)}
                         disabled={!canAfford || redeeming || loading}
-                        className={\px-4 py-2 rounded-lg text-sm font-bold transition-all \\}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${canAfford && !redeeming && !loading ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
                       >
                         {redeeming ? 'Redeeming...' : 'Redeem'}
                       </button>
@@ -432,11 +432,11 @@ export default function GameOPage() {
         </div>
       )}
       
-      <style dangerouslySetInnerHTML={{__html: \
+      <style dangerouslySetInnerHTML={{__html: `
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-      \}} />
+      `}} />
     </div>
   );
 }
