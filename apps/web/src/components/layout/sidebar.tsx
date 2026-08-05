@@ -38,6 +38,7 @@ import {
   Gamepad2,
   Newspaper,
   Smartphone,
+  Bot,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
