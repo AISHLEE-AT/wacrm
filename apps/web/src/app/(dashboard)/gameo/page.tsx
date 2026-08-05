@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,7 +104,7 @@ export default function GameOPage() {
     setIsRedeeming(null);
 
     if (code) {
-      toast?.success?.(Successfully redeemed! Code: \);
+      toast?.success?.(`Successfully redeemed! Code: ${code}`);
       await loadData();
     } else {
       toast?.error?.('Failed to redeem reward');
