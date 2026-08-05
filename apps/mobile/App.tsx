@@ -8,7 +8,7 @@ import {
   BookOpen, MonitorPlay, Wallet, Map,
   MessageSquare, LayoutGrid, User, Bot,
   Shield, Tv, GraduationCap, ShoppingBag,
-  Compass, Zap, Wrench
+  Compass, Zap, Wrench, MapPin
 } from 'lucide-react-native';
 
 import LoginScreen      from './src/screens/LoginScreen';

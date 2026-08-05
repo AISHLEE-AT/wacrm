@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class AdminInboxWebview extends StatefulWidget {
-  const AdminInboxWebview({super.key});
+class ModuleWebView extends StatefulWidget {
+  final String path;
+
+  const ModuleWebView({super.key, required this.path});
 
   @override
-  State<AdminInboxWebview> createState() => _AdminInboxWebviewState();
+  State<ModuleWebView> createState() => _ModuleWebViewState();
 }
 
-class _AdminInboxWebviewState extends State<AdminInboxWebview> {
+class _ModuleWebViewState extends State<ModuleWebView> {
   late final WebViewController _controller;
   bool _isLoading = true;
 
@@ -23,9 +25,11 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (String url) async {
-            setState(() {
-              _isLoading = false;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
             
             final session = Supabase.instance.client.auth.currentSession;
             if (session != null) {
@@ -42,12 +46,12 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
                       access_token: "$token",
                       user: ${jsonEncode(session.user.toJson())}
                     }));
-                    if (window.location.pathname !== '/inbox') {
-                      window.location.href = '/inbox';
+                    if (window.location.pathname !== '${widget.path}') {
+                      window.location.href = '${widget.path}';
                     }
                   }
                   
-                  // Hide web app nav sidebar to make it feel native
+                  // Hide web app desktop nav sidebar to make it feel native
                   var style = document.createElement('style');
                   style.innerHTML = 'nav.w-64 { display: none !important; } .lg\\\\:pl-64 { padding-left: 0 !important; }';
                   document.head.appendChild(style);
@@ -58,19 +62,24 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
           },
         ),
       )
-      ..loadRequest(Uri.parse('https://watscrm.vercel.app/inbox'));
+      ..loadRequest(Uri.parse('https://watscrm.vercel.app${widget.path}'));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        WebViewWidget(controller: _controller),
-        if (_isLoading)
-          const Center(
-            child: CircularProgressIndicator(color: Color(0xFFef4444)),
-          ),
-      ],
+    return Scaffold(
+      backgroundColor: const Color(0xFF0a0f1e),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            WebViewWidget(controller: _controller),
+            if (_isLoading)
+              const Center(
+                child: CircularProgressIndicator(color: Color(0xFF10b981)),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
