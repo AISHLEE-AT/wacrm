@@ -22,20 +22,27 @@ export interface DailyNewsItem {
 }
 
 function todayString(): string {
-  const now = new Date();
-  return now.toISOString().split('T')[0];
+  return new Date().toISOString().split('T')[0];
 }
 
-/** Fetch today's curated news for a module from Supabase */
+function yesterdayString(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split('T')[0];
+}
+
+/** Fetch latest news for a module — last 1 day tolerance */
 export async function fetchDailyNewsForModule(module: string): Promise<DailyNewsItem[]> {
   try {
-    const today = todayString();
+    const yesterday = yesterdayString();
     const { data, error } = await aishleeSupabase
       .from('daily_news')
       .select('*')
       .eq('module', module)
-      .eq('loaded_date', today)
-      .order('created_at', { ascending: true });
+      .gte('loaded_date', yesterday)    // ← last 1 day
+      .order('loaded_date', { ascending: false })
+      .order('created_at', { ascending: true })
+      .limit(30);
     if (error) throw error;
     return (data as DailyNewsItem[]) ?? [];
   } catch (e) {
@@ -44,14 +51,15 @@ export async function fetchDailyNewsForModule(module: string): Promise<DailyNews
   }
 }
 
-/** Fetch ALL today's news (admin use) */
+/** Fetch ALL latest news across all modules (admin) */
 export async function fetchAllTodayNews(): Promise<DailyNewsItem[]> {
   try {
-    const today = todayString();
+    const yesterday = yesterdayString();
     const { data, error } = await aishleeSupabase
       .from('daily_news')
       .select('*')
-      .eq('loaded_date', today)
+      .gte('loaded_date', yesterday)
+      .order('loaded_date', { ascending: false })
       .order('module', { ascending: true });
     if (error) throw error;
     return (data as DailyNewsItem[]) ?? [];

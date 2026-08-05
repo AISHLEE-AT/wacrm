@@ -8,16 +8,18 @@ class DailyNewsSupabaseService {
 
   // ─── READ ───────────────────────────────────────────────────────────────────
 
-  /// Fetch today's news for a specific module (used by user-facing screens)
+  /// Fetch latest news for a specific module — last 1 day (not today-only)
   static Future<List<DailyNewsItem>> fetchNewsForModule(String module) async {
     try {
-      final today = _todayString();
+      final yesterday = _yesterdayString();
       final data = await _client
           .from('daily_news')
           .select()
           .eq('module', module)
-          .eq('loaded_date', today)
-          .order('created_at', ascending: true);
+          .gte('loaded_date', yesterday)       // ← last 1 day tolerance
+          .order('loaded_date', ascending: false)
+          .order('created_at', ascending: true)
+          .limit(30);
 
       return (data as List).map((e) => DailyNewsItem.fromJson(e)).toList();
     } catch (e) {
@@ -26,14 +28,15 @@ class DailyNewsSupabaseService {
     }
   }
 
-  /// Fetch ALL of today's news (used by admin preview)
+  /// Fetch ALL latest news (last 1 day) — admin preview
   static Future<List<DailyNewsItem>> fetchAllTodayNews() async {
     try {
-      final today = _todayString();
+      final yesterday = _yesterdayString();
       final data = await _client
           .from('daily_news')
           .select()
-          .eq('loaded_date', today)
+          .gte('loaded_date', yesterday)
+          .order('loaded_date', ascending: false)
           .order('module', ascending: true);
 
       return (data as List).map((e) => DailyNewsItem.fromJson(e)).toList();
@@ -90,5 +93,10 @@ class DailyNewsSupabaseService {
   static String _todayString() {
     final now = DateTime.now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
+  static String _yesterdayString() {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
   }
 }
