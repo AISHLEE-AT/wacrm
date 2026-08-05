@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
     // Profiles table might store phone as 10 digits or with 91. 
     // Query profiles to see if the user exists
-    const { data: profile } = await admin
+    const { data: profile, error } = await admin
       .from('profiles')
       .select('id, full_name, main_category, role, pin_hash')
       .or(`phone.eq.${phone},phone.eq.91${phone},whatsapp.eq.${phone},whatsapp.eq.91${phone}`)
@@ -40,10 +40,17 @@ export async function GET(request: Request) {
       })
     }
     
-    return NextResponse.json({ exists: false, reason: 'Profile not found' })
+    return NextResponse.json({ 
+      exists: false, 
+      reason: 'Profile not found', 
+      debug_phone: phone, 
+      debug_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      debug_error: error 
+    })
   } catch (err: any) {
     return NextResponse.json({ exists: false, error: err.message })
   }
 }
+
 
 
