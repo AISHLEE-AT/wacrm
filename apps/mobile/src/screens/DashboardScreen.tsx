@@ -17,15 +17,27 @@ export default function DashboardScreen({ navigation }: any) {
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [tempApiKey, setTempApiKey] = useState(geminiApiKey || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingKey, setIsEditingKey] = useState(!geminiApiKey);
 
   useEffect(() => {
     setTempApiKey(geminiApiKey || '');
+    if (geminiApiKey) setIsEditingKey(false);
   }, [geminiApiKey]);
 
   useEffect(() => {
     SecureStore.getItemAsync('user-phone').then(async (p) => {
       setPhone(p);
       if (p) {
+        // Fetch API key just in case it was updated on web or AppContext hasn't reloaded
+        fetch(`https://watscrm.vercel.app/api/auth/check?phone=${p}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.gemini_api_key && data.gemini_api_key !== geminiApiKey) {
+              updateGeminiKey(data.gemini_api_key);
+            }
+          })
+          .catch(() => {});
+
         // Initialize notifications and get token on load
         const token = await NotificationService.registerForPushNotificationsAsync();
         if (token) {
@@ -112,22 +124,44 @@ export default function DashboardScreen({ navigation }: any) {
         </View>
         <Text style={styles.cardDesc}>Enter your Gemini API key to power the AI Assistant in the Inbox tab. It will sync securely across your devices.</Text>
         
-        <View style={styles.inputContainer}>
-          <KeyRound color="#94a3b8" size={20} style={{ marginLeft: 12 }} />
-          <TextInput 
-            style={styles.input}
-            placeholder="AIzaSy..."
-            placeholderTextColor="#475569"
-            secureTextEntry={true}
-            value={tempApiKey}
-            onChangeText={setTempApiKey}
-          />
-        </View>
-        
-        <TouchableOpacity style={styles.saveButton} onPress={handleSaveApiKey} disabled={isSaving}>
-          {isSaving ? <ActivityIndicator color="#fff" size="small" /> : <Save color="#fff" size={18} style={{ marginRight: 8 }} />}
-          <Text style={styles.buttonText}>{isSaving ? 'Saving...' : 'Save API Key'}</Text>
-        </TouchableOpacity>
+        {!isEditingKey && geminiApiKey ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: 16, borderRadius: 12, marginTop: 12, borderWidth: 1, borderColor: '#334155' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <KeyRound color="#10b981" size={20} />
+              <Text style={{ color: '#f8fafc', marginLeft: 12, fontSize: 16, fontWeight: '500' }}>
+                Configured (â€¢â€¢â€¢â€¢{geminiApiKey.slice(-4)})
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setIsEditingKey(true)}>
+              <Text style={{ color: '#38bdf8', fontSize: 14, fontWeight: '600' }}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <View style={styles.inputContainer}>
+              <KeyRound color="#94a3b8" size={20} style={{ marginLeft: 12 }} />
+              <TextInput 
+                style={styles.input}
+                placeholder="AIzaSy..."
+                placeholderTextColor="#475569"
+                secureTextEntry={true}
+                value={tempApiKey}
+                onChangeText={setTempApiKey}
+              />
+            </View>
+            
+            <TouchableOpacity style={styles.saveButton} onPress={handleSaveApiKey} disabled={isSaving}>
+              {isSaving ? <ActivityIndicator color="#fff" size="small" /> : <Save color="#fff" size={18} style={{ marginRight: 8 }} />}
+              <Text style={styles.buttonText}>{isSaving ? 'Saving...' : 'Save API Key'}</Text>
+            </TouchableOpacity>
+            
+            {geminiApiKey && (
+              <TouchableOpacity onPress={() => setIsEditingKey(false)} style={{ alignItems: 'center', marginTop: 12 }}>
+                <Text style={{ color: '#94a3b8' }}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
       </View>
 
       <Text style={styles.sectionTitle}>Device Settings</Text>

@@ -17,6 +17,13 @@ import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import MapScreen        from './src/screens/MapScreen';
 import ChatScreen       from './src/screens/ChatScreen';
+import GameOScreen      from './src/screens/GameOScreen';
+import GamingHubScreen  from './src/screens/GamingHubScreen';
+import RewardsScreen    from './src/screens/RewardsScreen';
+import MapRacer3DScreen from './src/screens/MapRacer3DScreen';
+import TeachOScreen     from './src/screens/TeachOScreen';
+import TestOHubScreen   from './src/screens/TestOHubScreen';
+import TestOExamScreen  from './src/screens/TestOExamScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
 
@@ -187,6 +194,13 @@ function RootNavigator() {
         name="ModuleView"
         component={EcosystemWebView}
       />
+      <Stack.Screen name="GameOScreen" component={GameOScreen} />
+      <Stack.Screen name="MapRacer3DScreen" component={MapRacer3DScreen} />
+      <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />
+      <Stack.Screen name="RewardsScreen" component={RewardsScreen} />
+      <Stack.Screen name="TeachOScreen" component={TeachOScreen} />
+      <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />
+      <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

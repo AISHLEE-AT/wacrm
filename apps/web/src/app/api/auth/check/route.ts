@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     // Query profiles to see if the user exists
     const { data: profile, error } = await admin
       .from('profiles')
-      .select('id, full_name, main_category, role, pin_hash')
+      .select('id, full_name, main_category, role, pin_hash, gemini_api_key')
       .or(`phone.eq.${phone},phone.eq.91${phone},whatsapp.eq.${phone},whatsapp.eq.91${phone}`)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -36,7 +36,8 @@ export async function GET(request: Request) {
         name: profile.full_name, 
         category: profile.main_category, 
         role: profile.role, 
-        has_pin: !!profile.pin_hash 
+        has_pin: !!profile.pin_hash,
+        gemini_api_key: profile.gemini_api_key
       })
     }
     

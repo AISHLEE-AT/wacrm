@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -251,7 +251,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                   )
                 ],
               ),
-              child: const Icon(LucideIcons.flame, size: 44, color: Color(0xFFF59E0B)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Image.asset(
+                  'assets/logo.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
           ],
         ),
@@ -436,7 +442,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           _buildInputLabel('ROLE'),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _category,
+            initialValue: _category,
             dropdownColor: const Color(0xFF1E293B),
             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
             decoration: _buildInputDecoration('Select role', prefixIcon: const Icon(LucideIcons.briefcase, color: Color(0xFF94A3B8))),

@@ -147,7 +147,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
             ),
             const SizedBox(height: 32),
             DropdownButtonFormField<String>(
-              value: _operatorCategory,
+              initialValue: _operatorCategory,
               decoration: InputDecoration(
                 labelText: 'Vehicle Category',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

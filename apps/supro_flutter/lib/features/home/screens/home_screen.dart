@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -135,6 +135,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bgColor: const Color(0x3314b8a6),
       path: '/moneyo',
     ),
+    CategoryItem(
+      id: 'gameo',
+      title: 'GameO',
+      desc: 'MapRacer & Fitness',
+      icon: LucideIcons.gamepad2,
+      color: const Color(0xFF8b5cf6),
+      bgColor: const Color(0x338b5cf6),
+      path: '/gameo',
+    ),
+    CategoryItem(
+      id: 'gaming_hub',
+      title: 'Rural Game Hub',
+      desc: 'Edu & Farm Games',
+      icon: LucideIcons.library,
+      color: const Color(0xFFf59e0b),
+      bgColor: const Color(0x33f59e0b),
+      path: '/gaming_hub',
+    ),
   ];
 
   @override
@@ -214,10 +232,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF111827),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: cat.color.withOpacity(0.3)),
+                        border: Border.all(color: cat.color.withValues(alpha: 0.3)),
                         boxShadow: [
                           BoxShadow(
-                            color: cat.color.withOpacity(0.05),
+                            color: cat.color.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           )

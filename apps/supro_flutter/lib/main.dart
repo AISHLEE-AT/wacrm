@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
 import 'core/router.dart';
+import 'core/gameo_supabase.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -11,11 +12,14 @@ void main() async {
   
   await dotenv.load(fileName: ".env");
 
-  // Initialize Supabase
+  // Initialize main SuprO Supabase (Login, Auth, all core modules)
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
+  // Initialize separate GameO Supabase (Gaming Hub, rewards, leaderboards)
+  await GameOSupabase.initialize();
 
   runApp(const ProviderScope(child: SuproApp()));
 }

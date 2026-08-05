@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Smartphone, Lock, ShieldCheck, MessageCircle, KeyRound, UserCheck, Eye, EyeOff, Sparkles } from 'lucide-react-native';
 import { API } from '../utils/api';
+import { AppContext } from '../context/AppContext';
 
 const CATEGORIES = [
   { key: 'Admin',      label: '👑 Admin (CRM & All Modules)' },
@@ -18,6 +19,7 @@ const CATEGORIES = [
 ];
 
 export default function LoginScreen({ navigation }: any) {
+  const { signIn } = React.useContext(AppContext);
   const [step, setStep] = useState<'phone' | 'otp' | 'set-pin' | 'pin'>('phone');
   
   const [phone, setPhone] = useState('');
@@ -144,10 +146,26 @@ export default function LoginScreen({ navigation }: any) {
       }
       await SecureStore.setItemAsync('user-phone', phone);
 
+      if (data.user) {
+        await SecureStore.setItemAsync('user-name', data.user.fullName);
+        await SecureStore.setItemAsync('user-role', data.user.role);
+        await SecureStore.setItemAsync('user-category', data.user.category);
+        signIn({
+          phone: data.user.phone,
+          name: data.user.fullName,
+          role: data.user.role,
+          category: data.user.category,
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+        });
+      }
+
       if (data.needs_pin_setup) {
         setStep('set-pin');
       } else {
-        navigation.replace('Dashboard'); // 'Category' screen doesn't exist in stack — fixed
+        setTimeout(() => {
+          navigation.replace('Dashboard');
+        }, 100);
       }
     } catch (err: any) {
       setError(err.message || 'Login failed');
@@ -164,7 +182,9 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await API.setPin(phone, newPin, confirmPin);
-      navigation.replace('Dashboard'); // 'Category' screen doesn't exist in stack — fixed
+      setTimeout(() => {
+        navigation.replace('Dashboard');
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'Failed to save PIN');
     } finally {
@@ -185,7 +205,25 @@ export default function LoginScreen({ navigation }: any) {
         await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
       }
       await SecureStore.setItemAsync('user-phone', phone);
-      navigation.replace('Category');
+
+      if (data.user) {
+        await SecureStore.setItemAsync('user-name', data.user.fullName);
+        await SecureStore.setItemAsync('user-role', data.user.role);
+        await SecureStore.setItemAsync('user-category', data.user.category);
+        signIn({
+          phone: data.user.phone,
+          name: data.user.fullName,
+          role: data.user.role,
+          category: data.user.category,
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+        });
+      }
+
+      // Delay navigation to ensure AppContext is updated and EcosystemWebView gets the token
+      setTimeout(() => {
+        navigation.replace('Dashboard');
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

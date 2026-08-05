@@ -10,8 +10,23 @@ const endpoints = {
 
 export const API = {
   checkUser: async (phone: string) => {
+    // 1. Check vercel API
     const res = await fetch(`${endpoints.authCheck}?phone=${phone}`);
-    return res.json();
+    const data = await res.json();
+    
+    // 2. Fetch API key directly from Supabase to bypass outdated Vercel endpoints
+    try {
+      const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE";
+      const spRes = await fetch(`https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/profiles?phone=eq.${phone}&select=gemini_api_key`, {
+        headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
+      });
+      const spData = await spRes.json();
+      if (spData && spData.length > 0 && spData[0].gemini_api_key) {
+        data.gemini_api_key = spData[0].gemini_api_key;
+      }
+    } catch (e) {}
+    
+    return data;
   },
   
   verifyOtp: async (phone: string, otp: string, fullName?: string, category?: string) => {

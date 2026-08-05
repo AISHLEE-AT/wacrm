@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -62,8 +62,8 @@ class AuthController extends AsyncNotifier<void> {
         body: json.encode({
           'phone': phone,
           'otp': otp,
-          if (fullName != null) 'fullName': fullName,
-          if (category != null) 'category': category,
+          'fullName': ?fullName,
+          'category': ?category,
         }),
       );
       

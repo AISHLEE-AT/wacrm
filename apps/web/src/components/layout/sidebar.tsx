@@ -36,6 +36,7 @@ import {
   Tv,
   Wrench,
   Bot,
+  Gamepad2,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -183,6 +184,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/moneyo", label: "MoneyO (பணம் & பரிசுகள்)", icon: Zap },
     { href: "/tasko", label: "TaskO (பணிகள் & படிவம்)", icon: Globe },
     { href: "/tradeo", label: "TradeO (மொத்த வர்த்தகம்)", icon: Share2 },
+    { href: "/gameo", label: "GameO (விளையாட்டு & ஓட்டம்)", icon: Gamepad2 },
     ...(isAdmin || isRegisteredDriver
       ? [{ href: "/drivo", label: "DriveO (ஓட்டுநர் சேவை)", icon: Gauge }]
       : []),

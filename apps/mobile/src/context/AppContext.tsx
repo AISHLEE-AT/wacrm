@@ -52,6 +52,17 @@ export const AppProvider = ({ children }: any) => {
             accessToken,
             refreshToken,
           });
+
+          // Background sync API key from server across all devices
+          fetch(`https://watscrm.vercel.app/api/auth/check?phone=${phone}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.gemini_api_key && data.gemini_api_key !== apiKey) {
+                setGeminiApiKey(data.gemini_api_key);
+                SecureStore.setItemAsync('gemini-api-key', data.gemini_api_key);
+              }
+            })
+            .catch(() => {});
         }
         if (apiKey) setGeminiApiKey(apiKey);
       } finally {
@@ -61,7 +72,7 @@ export const AppProvider = ({ children }: any) => {
     loadState();
   }, []);
 
-  const signIn = useCallback(async (userData: Partial<AppUser>) => {
+  const signIn = useCallback(async (userData: Partial<AppUser> & { geminiApiKey?: string }) => {
     const phone = userData.phone ?? '';
     const adminStatus =
       ADMIN_PHONES.includes(phone) ||
@@ -90,6 +101,10 @@ export const AppProvider = ({ children }: any) => {
     }
     if (fullUser.refreshToken) {
       await SecureStore.setItemAsync('sb-refresh-token', fullUser.refreshToken);
+    }
+    if (userData.geminiApiKey) {
+      setGeminiApiKey(userData.geminiApiKey);
+      await SecureStore.setItemAsync('gemini-api-key', userData.geminiApiKey);
     }
   }, []);
 

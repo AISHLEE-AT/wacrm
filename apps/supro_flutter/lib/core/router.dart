@@ -15,6 +15,8 @@ import '../features/touro/screens/touro_screen.dart';
 import '../features/testo/screens/testo_screen.dart';
 import '../features/tvo/screens/tvo_screen.dart';
 import '../features/moneyo/screens/moneyo_screen.dart';
+import '../features/gameo/screens/gameo_screen.dart';
+import '../features/gaming_hub/screens/gaming_hub_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -45,6 +47,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/testo', builder: (context, state) => const TestoScreen()),
       GoRoute(path: '/tvo', builder: (context, state) => const TvoScreen()),
       GoRoute(path: '/moneyo', builder: (context, state) => const MoneyoScreen()),
+      GoRoute(path: '/gameo', builder: (context, state) => const GameoScreen()),
+      GoRoute(path: '/gaming_hub', builder: (context, state) => const GamingHubScreen()),
     ],
   );
 });

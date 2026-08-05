@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award } from 'lucide-react-native';
+import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award, Gamepad2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../context/AppContext';
 
@@ -18,6 +18,7 @@ const CATEGORIES = [
   { id: 'testo', title: 'TestO', desc: 'Mock Exams & Quiz', icon: Award, color: '#8b5cf6', bg: '#8b5cf620', path: '/testo' },
   { id: 'tvo', title: 'TvO', desc: 'Tamil Live TV & Streams', icon: MonitorPlay, color: '#ec4899', bg: '#ec489920', path: '/tvo' },
   { id: 'moneyo', title: 'MoneyO', desc: 'Micro Loans & Savings', icon: Wallet, color: '#14b8a6', bg: '#14b8a620', path: '/moneyo' },
+  { id: 'gameo', title: 'GameO', desc: 'MapRacer & Fitness', icon: Gamepad2, color: '#8b5cf6', bg: '#8b5cf620', path: '/gameo' },
 ];
 
 export default function CategoryScreen() {
@@ -26,10 +27,18 @@ export default function CategoryScreen() {
 
   const handleSelect = (cat: any) => {
     addRecentModule(cat.id);
-    navigation.navigate('ModuleView', {
-      path: cat.path,
-      moduleName: cat.title,
-    });
+    if (cat.path === '/gameo') {
+      navigation.navigate('GameOScreen');
+    } else if (cat.path === '/teacho') {
+      navigation.navigate('TeachOScreen');
+    } else if (cat.path === '/testo') {
+      navigation.navigate('TestOHubScreen');
+    } else {
+      navigation.navigate('ModuleView', {
+        path: cat.path,
+        moduleName: cat.title,
+      });
+    }
   };
 
   const filteredCategories = CATEGORIES.filter(c => !c.adminOnly || userRole === 'admin');
