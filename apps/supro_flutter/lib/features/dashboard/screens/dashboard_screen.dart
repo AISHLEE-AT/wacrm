@@ -41,7 +41,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     
     // Sync to Vercel backend
     try {
-      final user = ref.read(authControllerProvider).user;
+      final user = ref.read(currentUserProvider);
       final phone = user?.phone;
       if (phone != null) {
         await http.post(
