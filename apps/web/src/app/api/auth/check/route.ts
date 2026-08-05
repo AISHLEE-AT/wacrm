@@ -41,8 +41,9 @@ export async function GET(request: Request) {
       })
     }
     
-    return NextResponse.json({ exists: false })
-  } catch (err) {
-    return NextResponse.json({ exists: false })
+    return NextResponse.json({ exists: false, reason: 'Profile not found' })
+  } catch (err: any) {
+    return NextResponse.json({ exists: false, error: err.message })
   }
 }
+
