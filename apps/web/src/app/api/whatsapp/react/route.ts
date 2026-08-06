@@ -184,18 +184,41 @@ export async function POST(request: Request) {
         );
       }
     } else {
-      // Upsert. The unique constraint (message_id, actor_type, actor_id)
-      // lets us swap emoji in a single statement.
-      const { error: upsertError } = await supabaseAdmin().from('message_reactions').upsert(
-        {
-          message_id: targetMessage.id,
-          conversation_id: targetMessage.conversation_id,
-          actor_type: 'agent',
-          actor_id: user.id,
-          emoji,
-        },
-        { onConflict: 'message_id,actor_type,actor_id' },
-      );
+      // Upsert via SELECT + UPDATE/INSERT rather than PostgREST's .upsert()
+      // because the unique constraint on (message_id, actor_type, actor_id)
+      // treats two NULL actor_id rows as distinct in PostgreSQL (NULL != NULL),
+      // so PostgREST can't detect the conflict on a null-actor_id row and
+      // throws a unique-violation instead of updating the emoji in-place.
+      const { data: existing } = await supabaseAdmin()
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', targetMessage.id)
+        .eq('actor_type', 'agent')
+        .eq('actor_id', user.id)
+        .maybeSingle();
+
+      let upsertError;
+
+      if (existing) {
+        // Row exists — update emoji in-place.
+        const { error } = await supabaseAdmin()
+          .from('message_reactions')
+          .update({ emoji })
+          .eq('id', existing.id);
+        upsertError = error;
+      } else {
+        // No row yet — insert fresh.
+        const { error } = await supabaseAdmin()
+          .from('message_reactions')
+          .insert({
+            message_id: targetMessage.id,
+            conversation_id: targetMessage.conversation_id,
+            actor_type: 'agent',
+            actor_id: user.id,
+            emoji,
+          });
+        upsertError = error;
+      }
 
       if (upsertError) {
         console.error('[whatsapp/react] DB upsert failed:', upsertError.message);
