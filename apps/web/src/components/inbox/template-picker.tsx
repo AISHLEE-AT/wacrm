@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { MessageTemplate } from "@/types";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,16 +105,36 @@ export function TemplatePicker({
         return;
       }
 
+      // Templates are account-scoped (not user-scoped) — resolve the
+      // caller's account_id so teammates see the shared template library
+      // instead of an empty list (the old `.eq('user_id', user.id)` only
+      // returned rows the current user personally created).
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      const accountId = profile?.account_id as string | undefined;
+
+      if (!accountId) {
+        if (!cancelled) {
+          setTemplates([]);
+          setLoading(false);
+        }
+        return;
+      }
+
       const { data, error } = await supabase
         .from("message_templates")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("account_id", accountId)
         .eq("status", "APPROVED")
         .order("created_at", { ascending: false });
 
       if (cancelled) return;
       if (error) {
         console.error("Failed to fetch templates:", error);
+        toast.error("Failed to load templates. Please try again.");
         setTemplates([]);
       } else {
         setTemplates((data as MessageTemplate[]) ?? []);

@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface ContactSidebarProps {
   contact: Contact | null;
@@ -33,7 +34,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
 
-  const fetchContactData = useCallback(async () => {
+  const fetchContactData = useCallback(async (isCancelled: () => boolean) => {
     if (!contact) return;
 
     const supabase = createClient();
@@ -56,9 +57,23 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
         .eq("contact_id", contact.id),
     ]);
 
-    if (dealsRes.data) setDeals(dealsRes.data);
-    if (notesRes.data) setNotes(notesRes.data);
-    if (tagsRes.data) {
+    if (isCancelled()) return;
+
+    if (dealsRes.error) {
+      console.error("Failed to fetch deals:", dealsRes.error);
+    } else if (dealsRes.data) {
+      setDeals(dealsRes.data);
+    }
+
+    if (notesRes.error) {
+      console.error("Failed to fetch notes:", notesRes.error);
+    } else if (notesRes.data) {
+      setNotes(notesRes.data);
+    }
+
+    if (tagsRes.error) {
+      console.error("Failed to fetch tags:", tagsRes.error);
+    } else if (tagsRes.data) {
       const mapped = tagsRes.data
         .filter((ct: Record<string, unknown>) => ct.tags)
         .map((ct: Record<string, unknown>) => ({
@@ -69,11 +84,21 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
     }
   }, [contact]);
 
-  // Load on contact change. setContactData/setTags run inside async
-  // Supabase callbacks, not synchronously in the effect body.
+  // Load on contact change. Use a cancellation flag to avoid a race
+  // condition where rapidly switching contacts causes a slower fetch for
+  // contact-A to resolve after contact-B's fetch, overwriting B's data.
   useEffect(() => {
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+    // Reset state immediately when switching contacts
+    setDeals([]);
+    setNotes([]);
+    setTags([]);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchContactData();
+    void fetchContactData(isCancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [fetchContactData]);
 
   const handleCopyPhone = useCallback(async () => {
@@ -108,7 +133,10 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) {
+      console.error("Failed to add note:", error);
+      toast.error("Failed to save note. Please try again.");
+    } else if (data) {
       setNotes((prev) => [data, ...prev]);
       setNewNote("");
     }

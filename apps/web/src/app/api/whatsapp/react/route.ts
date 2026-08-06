@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { sendReactionMessage } from '@/lib/whatsapp/meta-api';
 import { decrypt } from '@/lib/whatsapp/encryption';
@@ -21,7 +22,29 @@ import {
  */
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    const authHeader = request.headers.get('authorization');
+    const cookieStore = await cookies();
+
+    // Support both Bearer token (mobile) and cookie-based (web) auth
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {
+            // Ignored in route handler
+          },
+        },
+        global: {
+          headers: {
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+        },
+      }
+    );
 
     const {
       data: { user },

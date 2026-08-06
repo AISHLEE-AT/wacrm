@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 interface ConversationListProps {
   activeConversationId: string | null;
@@ -80,8 +81,13 @@ export function ConversationList({
 
     (async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: HeadersInit = {};
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
         const query = typeof window !== 'undefined' ? window.location.search : '';
-        const res = await fetch(`/api/conversations${query}`, { cache: 'no-store', credentials: 'include' });
+        const res = await fetch(`/api/conversations${query}`, { cache: 'no-store', credentials: 'include', headers });
         const json = await res.json();
         if (json.conversations && Array.isArray(json.conversations)) {
           if (!cancelled) {
@@ -109,6 +115,7 @@ export function ConversationList({
           hint: error.hint,
           code: error.code,
         });
+        toast.error("Failed to load conversations. Please refresh.");
         setLoading(false);
         return;
       }

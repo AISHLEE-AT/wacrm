@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(
   request: Request,
@@ -18,7 +20,28 @@ export async function GET(
       )
     }
 
-    const supabase = await createClient()
+    const authHeader = request.headers.get('authorization')
+    const cookieStore = await cookies()
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            // Ignored in route handler
+          },
+        },
+        global: {
+          headers: {
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+        },
+      }
+    )
 
     const {
       data: { user },

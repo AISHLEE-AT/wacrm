@@ -219,10 +219,31 @@ export function MessageThread({
     };
   }, []);
 
-  // Session timer — always active for CRM workspace
+  // Session timer — computes whether the 24-hour WhatsApp messaging window
+  // is still open. Meta only allows free-form messages within 24h of the
+  // last inbound message from the customer; after that only templates work.
+  // Previously this was hardcoded to never-expired, which hid the template
+  // prompt from agents even when the window had genuinely closed.
   const sessionInfo = useMemo(() => {
-    return { expired: false, remaining: "Active Session" };
-  }, []);
+    const lastInbound = messages
+      .filter((m) => m.sender_type === "customer")
+      .at(-1);
+    if (!lastInbound) {
+      // No inbound message yet — window not open, force template.
+      return { expired: true, remaining: "No session" };
+    }
+    const elapsed = Date.now() - new Date(lastInbound.created_at).getTime();
+    const remaining = 24 * 60 * 60 * 1000 - elapsed; // ms left
+    if (remaining <= 0) {
+      return { expired: true, remaining: "Session expired" };
+    }
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const mins = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    return {
+      expired: false,
+      remaining: hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`,
+    };
+  }, [messages]);
 
   // Store latest callback in a ref so fetchMessages doesn't need to
   // depend on `onMessagesLoaded` — otherwise parent re-renders cause
@@ -253,8 +274,13 @@ export function MessageThread({
       setLoading(true);
 
       try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: HeadersInit = { 'Content-Type': 'application/json' };
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
         const query = typeof window !== 'undefined' ? window.location.search : '';
-        const res = await fetch(`/api/conversations/${conversationId}/messages${query}`, { cache: 'no-store', credentials: 'include' });
+        const res = await fetch(`/api/conversations/${conversationId}/messages${query}`, { cache: 'no-store', credentials: 'include', headers });
         const json = await res.json();
         if (json.messages && Array.isArray(json.messages)) {
           if (!cancelled) {
@@ -277,6 +303,7 @@ export function MessageThread({
 
       if (error) {
         console.error("Failed to fetch messages:", error);
+        toast.error("Failed to load messages. Please refresh.");
       } else {
         onMessagesLoadedRef.current(data ?? []);
       }
@@ -452,9 +479,16 @@ export function MessageThread({
       setReplyTo(null);
 
       try {
+        const supabaseClient = createClient();
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const headers: HeadersInit = { "Content-Type": "application/json" };
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+
         const res = await fetch("/api/whatsapp/send", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({
             conversation_id: conversation.id,
             message_type: "text",
@@ -516,9 +550,16 @@ export function MessageThread({
       setReplyTo(null);
 
       try {
+        const supabaseClient = createClient();
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const mediaHeaders: HeadersInit = { "Content-Type": "application/json" };
+        if (session?.access_token) {
+          mediaHeaders.Authorization = `Bearer ${session.access_token}`;
+        }
+
         const res = await fetch("/api/whatsapp/send", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: mediaHeaders,
           body: JSON.stringify({
             conversation_id: conversation.id,
             message_type: payload.kind,
@@ -600,9 +641,16 @@ export function MessageThread({
       onNewMessage(optimisticMsg);
 
       try {
+        const supabaseClient = createClient();
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const templateHeaders: HeadersInit = { "Content-Type": "application/json" };
+        if (session?.access_token) {
+          templateHeaders.Authorization = `Bearer ${session.access_token}`;
+        }
+
         const res = await fetch("/api/whatsapp/send", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: templateHeaders,
           body: JSON.stringify({
             conversation_id: conversation.id,
             message_type: "template",
@@ -732,9 +780,16 @@ export function MessageThread({
       });
 
       try {
+        const supabaseClient = createClient();
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const headers: HeadersInit = { "Content-Type": "application/json" };
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+
         const res = await fetch("/api/whatsapp/react", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ message_id: messageId, emoji }),
         });
         if (!res.ok) {

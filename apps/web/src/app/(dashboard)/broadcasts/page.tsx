@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Broadcast } from '@/types';
@@ -19,11 +19,9 @@ import { GatedButton } from '@/components/ui/gated-button';
 import { getBroadcastStatus } from '@/lib/broadcast-status';
 
 /**
- * Poll cadence while any broadcast is sending. Kept modest so we don't
- * beat on Supabase — the aggregate trigger in migration 003 keeps
- * counts consistent; we just need to surface the freshest snapshot.
+ * Poll cadence comment kept for reference — the page now uses Supabase
+ * Realtime instead of polling for instant status updates.
  */
-const POLL_INTERVAL_MS = 5_000;
 
 function percent(numerator: number, denominator: number): number {
   if (!denominator) return 0;
@@ -63,70 +61,70 @@ export default function BroadcastsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Used to kick off polling only while something is actively sending.
-  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  async function fetchBroadcasts() {
-    try {
-      const supabase = createClient();
-      const { data, error: fetchError } = await supabase
-        .from('broadcasts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      setBroadcasts(data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load broadcasts');
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  // Initial load
   useEffect(() => {
-    fetchBroadcasts();
+    let cancelled = false;
+    async function fetchBroadcasts() {
+      try {
+        const supabase = createClient();
+        const { data, error: fetchError } = await supabase
+          .from('broadcasts')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (cancelled) return;
+        if (fetchError) throw fetchError;
+        setBroadcasts(data ?? []);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load broadcasts');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void fetchBroadcasts();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Realtime subscription — replaces the old 5-second setInterval polling.
+  // Delivers instant updates when broadcast status / sent / failed counts
+  // change without hammering Supabase with periodic refetches.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('broadcasts-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'broadcasts' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newRow = payload.new as Broadcast;
+            setBroadcasts((prev) => {
+              if (prev.some((b) => b.id === newRow.id)) return prev;
+              return [newRow, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Broadcast;
+            setBroadcasts((prev) =>
+              prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const old = payload.old as Partial<Broadcast>;
+            if (old?.id) {
+              setBroadcasts((prev) => prev.filter((b) => b.id !== old.id));
+            }
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, []);
 
   const anySending = useMemo(
     () => broadcasts.some((b) => b.status === 'sending'),
     [broadcasts],
   );
-
-  useEffect(() => {
-    function startPolling() {
-      if (pollTimer.current) return;
-      pollTimer.current = setInterval(fetchBroadcasts, POLL_INTERVAL_MS);
-    }
-    function stopPolling() {
-      if (!pollTimer.current) return;
-      clearInterval(pollTimer.current);
-      pollTimer.current = null;
-    }
-
-    // Pause polling while the tab is hidden — keeps Supabase cold when
-    // the user is away, and ensures a fresh fetch the moment they
-    // refocus so they don't see stale data on return.
-    function handleVisibilityChange() {
-      if (!anySending) return;
-      if (document.visibilityState === 'hidden') {
-        stopPolling();
-      } else {
-        fetchBroadcasts();
-        startPolling();
-      }
-    }
-
-    if (anySending && document.visibilityState === 'visible') {
-      startPolling();
-    } else {
-      stopPolling();
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      stopPolling();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [anySending]);
 
   if (loading) {
     return (

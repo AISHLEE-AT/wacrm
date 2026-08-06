@@ -157,6 +157,8 @@ export default function InboxPage() {
 
   // Check WhatsApp connection status on mount
   useEffect(() => {
+    const controller = new AbortController();
+
     const checkConnection = async () => {
       const supabase = createClient();
       const {
@@ -184,7 +186,14 @@ export default function InboxPage() {
       }
 
       try {
-        const res = await fetch('/api/whatsapp/config');
+        const headers: HeadersInit = {};
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+        const res = await fetch('/api/whatsapp/config', {
+          headers,
+          signal: controller.signal,
+        });
         if (!res.ok) {
           if (res.status === 401) {
             setWhatsappConnected(false);
@@ -195,11 +204,15 @@ export default function InboxPage() {
         const data = await res.json();
         setWhatsappConnected(data?.connected === true);
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         setWhatsappConnected(false);
       }
     };
 
-    checkConnection();
+    void checkConnection();
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   // Handle realtime message events
