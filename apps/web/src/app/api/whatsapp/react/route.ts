@@ -221,9 +221,9 @@ export async function POST(request: Request) {
       }
 
       if (upsertError) {
-        console.error('[whatsapp/react] DB upsert failed:', upsertError.message);
+        console.error('[whatsapp/react] DB upsert failed:', upsertError.message, upsertError.details, upsertError.hint);
         return NextResponse.json(
-          { error: 'Reaction sent to Meta but DB upsert failed' },
+          { error: `DB failed: ${upsertError.message}` },
           { status: 500 },
         );
       }

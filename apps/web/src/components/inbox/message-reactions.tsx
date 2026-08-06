@@ -57,7 +57,7 @@ export function MessageReactions({
         <button
           key={g.emoji}
           type="button"
-          onClick={() => onToggle(g.emoji)}
+          onClick={() => onToggle(g.byCurrentUser ? "" : g.emoji)}
           aria-pressed={g.byCurrentUser}
           className={cn(
             "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11px] leading-none transition-colors",
