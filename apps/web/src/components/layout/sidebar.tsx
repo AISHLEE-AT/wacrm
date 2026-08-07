@@ -180,6 +180,8 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
     { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
     { href: "/touro", label: "TourO (ஆன்மீகம் & சுற்றுலா)", icon: Compass },
+    { href: "/teacho", label: "TeachO (கல்வி & திறன்)", icon: GraduationCap },
+    { href: "/testo", label: "TestO (பயிற்சி & தேர்வு)", icon: FileCheck },
     { href: "/tvo", label: "TvO (தமிழ் டிவி & நேரலை)", icon: Tv },
     { href: "/moneyo", label: "MoneyO (பணம் & பரிசுகள்)", icon: Zap },
     { href: "/tasko", label: "TaskO (பணிகள் & படிவம்)", icon: Globe },

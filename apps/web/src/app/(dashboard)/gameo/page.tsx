@@ -378,8 +378,11 @@ export default function GameOPage() {
                 
                 let embedUrl = item.url;
                 if (isYouTube) {
-                  // Extract video ID for YouTube
-                  const videoId = item.url.split('v=')[1]?.split('&')[0] || item.url.split('youtu.be/')[1]?.split('?')[0];
+                  // Extract video ID for YouTube (watch, youtu.be, shorts)
+                  const videoId = item.url.split('v=')[1]?.split('&')[0] 
+                    || item.url.split('youtu.be/')[1]?.split('?')[0]
+                    || item.url.split('/shorts/')[1]?.split('?')[0];
+                    
                   if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
                 } else if (isFacebook) {
                    // Basic iframe approach for Facebook video/post if it's a shareable link
