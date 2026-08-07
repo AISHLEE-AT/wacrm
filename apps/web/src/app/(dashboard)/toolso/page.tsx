@@ -10,13 +10,42 @@ export default function ToolsoPage() {
   const [aiResult, setAiResult] = useState('');
   const [copied, setCopied] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(false);
+
+  const callAI = async (prompt: string, type: string) => {
+    if (!prompt) return;
+    setIsLoading(true);
+    setAiResult('Thinking...');
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, type }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAiResult(data.result);
+      } else {
+        setAiResult(`[Error]\n${data.error || 'Failed to generate response. Please ensure GEMINI_API_KEY is configured on Vercel.'}`);
+      }
+    } catch (err: any) {
+      setAiResult(`[Error]\n${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleGenerate = (type: string) => {
+    let prompt = '';
     if (type === 'translate') {
-      setAiResult(`[AI Translated Tamil to English]\n"Welcome to SuprO Local Ecosystem. How can we assist your business today?"`);
+      prompt = window.prompt("Enter text to translate (Tamil/English):") || '';
     } else if (type === 'whatsapp') {
-      setAiResult(`[WhatsApp Auto-Reply Template]\n"Hello! Thanks for reaching out to us. We have received your inquiry and our team will get back to you within 15 minutes."`);
+      prompt = window.prompt("Describe the customer inquiry or scenario for the auto-reply:") || '';
     } else if (type === 'summarize') {
-      setAiResult(`[AI Document Summary]\n• Key Point 1: 25% Increase in local trade volume.\n• Key Point 2: Delivery schedules optimized for Madurai & surrounding districts.\n• Key Point 3: Customer feedback score: 4.9/5.`);
+      prompt = window.prompt("Paste the text you want to summarize:") || '';
+    }
+    if (prompt) {
+      callAI(prompt, type);
     }
   };
 
@@ -45,7 +74,7 @@ export default function ToolsoPage() {
 
           <div
             onClick={() => handleGenerate('translate')}
-            className="cursor-pointer bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition-all rounded-2xl p-4 flex items-center gap-3"
+            className={`cursor-pointer bg-slate-900/90 border ${isLoading ? 'border-amber-500/40 opacity-50' : 'border-slate-800 hover:border-amber-500/40'} transition-all rounded-2xl p-4 flex items-center gap-3`}
           >
             <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
               <Languages className="w-5 h-5" />
@@ -58,7 +87,7 @@ export default function ToolsoPage() {
 
           <div
             onClick={() => handleGenerate('whatsapp')}
-            className="cursor-pointer bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition-all rounded-2xl p-4 flex items-center gap-3"
+            className={`cursor-pointer bg-slate-900/90 border ${isLoading ? 'border-amber-500/40 opacity-50' : 'border-slate-800 hover:border-amber-500/40'} transition-all rounded-2xl p-4 flex items-center gap-3`}
           >
             <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
               <MessageSquare className="w-5 h-5" />
@@ -71,7 +100,7 @@ export default function ToolsoPage() {
 
           <div
             onClick={() => handleGenerate('summarize')}
-            className="cursor-pointer bg-slate-900/90 border border-slate-800 hover:border-amber-500/40 transition-all rounded-2xl p-4 flex items-center gap-3"
+            className={`cursor-pointer bg-slate-900/90 border ${isLoading ? 'border-amber-500/40 opacity-50' : 'border-slate-800 hover:border-amber-500/40'} transition-all rounded-2xl p-4 flex items-center gap-3`}
           >
             <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20">
               <FileText className="w-5 h-5" />
@@ -88,9 +117,9 @@ export default function ToolsoPage() {
           <div>
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" /> AI Result Output
+                <Sparkles className={`w-4 h-4 text-amber-400 ${isLoading ? 'animate-pulse' : ''}`} /> AI Result Output
               </h3>
-              {aiResult && (
+              {aiResult && !isLoading && (
                 <button
                   onClick={handleCopy}
                   className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all"
@@ -112,18 +141,16 @@ export default function ToolsoPage() {
               placeholder="Ask AI anything or paste text to convert..."
               value={promptInput}
               onChange={(e) => setPromptInput(e.target.value)}
-              className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+              onKeyDown={(e) => e.key === 'Enter' && !isLoading && promptInput && callAI(promptInput, 'chat')}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-amber-500 disabled:opacity-50"
             />
             <button
-              onClick={() => {
-                if (promptInput) {
-                  setAiResult(`[Gemini AI Response]\n${promptInput} is analyzed. SuprO AI recommends contacting local providers directly via WhatsApp CRM.`);
-                  setPromptInput('');
-                }
-              }}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20"
+              disabled={isLoading || !promptInput}
+              onClick={() => callAI(promptInput, 'chat')}
+              className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:hover:bg-amber-500 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20"
             >
-              Generate
+              {isLoading ? 'Thinking...' : 'Generate'}
             </button>
           </div>
         </div>

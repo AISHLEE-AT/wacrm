@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+export async function POST(req: NextRequest) {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: 'GEMINI_API_KEY is not configured on the server.' }, { status: 500 });
+    }
+
+    const { prompt, type } = await req.json();
+
+    if (!prompt) {
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    let systemPrompt = '';
+    if (type === 'translate') {
+      systemPrompt = 'You are an expert English to Tamil and Tamil to English translator. Translate the following text naturally and accurately:\n\n';
+    } else if (type === 'whatsapp') {
+      systemPrompt = 'You are a professional WhatsApp business auto-reply generator. Write a concise, polite, and helpful auto-reply for the following scenario/message:\n\n';
+    } else if (type === 'summarize') {
+      systemPrompt = 'You are an expert document summarizer. Extract the most important key points from the following text and present them as a bulleted list:\n\n';
+    } else {
+      systemPrompt = 'You are Gemini AI, a helpful and knowledgeable assistant built into the SuprO Local Ecosystem platform. Answer the following query clearly and concisely:\n\n';
+    }
+
+    const fullPrompt = systemPrompt + prompt;
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const text = response.text();
+
+    return NextResponse.json({ result: text });
+  } catch (error: any) {
+    console.error('Gemini API Error:', error);
+    return NextResponse.json({ error: error.message || 'Failed to generate AI response' }, { status: 500 });
+  }
+}
