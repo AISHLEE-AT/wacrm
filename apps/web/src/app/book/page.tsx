@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 // Dynamically import Map so it only renders on client
 const RideMap = dynamic(() => import('@/components/RideMap'), { ssr: false })
 
-export default function BookRidePage() {
+function BookRideContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const phone = searchParams.get('phone') || ''
@@ -194,5 +194,17 @@ export default function BookRidePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BookRidePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-gray-500 text-lg">Loading map...</div>
+      </div>
+    }>
+      <BookRideContent />
+    </Suspense>
   )
 }
