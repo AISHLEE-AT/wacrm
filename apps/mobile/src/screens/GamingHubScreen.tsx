@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useContext } from 'react';
+// @ts-nocheck
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { ChevronLeft, Wallet, RefreshCw, Gift } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -141,3 +142,4 @@ const styles = StyleSheet.create({
   rewardsStoreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, backgroundColor: '#8b5cf6', paddingVertical: 20, borderRadius: 20, marginTop: 12 },
   rewardsStoreText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
 });
+

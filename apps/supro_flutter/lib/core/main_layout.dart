@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -12,6 +13,23 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
+  String? _lastTrackedLocation;
+
+  void _trackLocation(String location) async {
+    // Only track actual core modules
+    const modules = ['/ride', '/admin', '/driveo', '/dealo', '/teacho', '/rento', '/agro', '/touro', '/testo', '/tvo', '/moneyo', '/gameo'];
+    if (modules.contains(location)) {
+      try {
+        final supabase = Supabase.instance.client;
+        final user = supabase.auth.currentUser;
+        if (user != null) {
+          await supabase.from('profiles').update({'default_module': location}).eq('id', user.id);
+        }
+      } catch (e) {
+        // ignore errors silently
+      }
+    }
+  }
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
@@ -47,6 +65,13 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     final int currentIndex = _calculateSelectedIndex(context);
     final String location = GoRouterState.of(context).uri.path;
+    
+    // Track location changes
+    if (location != _lastTrackedLocation) {
+      _lastTrackedLocation = location;
+      // Use microtask to avoid side effects during build phase
+      Future.microtask(() => _trackLocation(location));
+    }
     
     // Dynamic label for the Module tab
     String moduleLabel = 'Module';

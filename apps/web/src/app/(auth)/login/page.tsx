@@ -228,7 +228,7 @@ function LoginPageInner() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-2xl bg-emerald-400/20 blur-xl scale-110" />
                 <div className="relative w-20 h-20 rounded-2xl bg-[#0a0f1e] flex items-center justify-center shadow-[0_0_30px_rgba(52,211,153,0.4),0_0_60px_rgba(52,211,153,0.15)] border-2 border-emerald-500/40 overflow-hidden">
-                  <img src="/supro-logo-ai.jpg" alt="SuprO Deepam Logo" className="w-full h-full object-cover" />
+                  <img src="/logo.png" alt="SuprO Deepam Logo" className="w-full h-full object-cover" />
                 </div>
                 {/* Golden shimmer dot */}
                 <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center">

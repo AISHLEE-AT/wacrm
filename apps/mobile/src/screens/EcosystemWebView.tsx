@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useContext, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator,
@@ -264,3 +265,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

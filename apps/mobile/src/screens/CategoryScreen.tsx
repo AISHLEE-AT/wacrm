@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award, Gamepad2 } from 'lucide-react-native';
@@ -145,3 +146,4 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
 });
+

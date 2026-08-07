@@ -9,21 +9,25 @@ import '../features/ride/screens/ride_screen.dart';
 import 'module_webview.dart';
 import '../features/gaming_hub/screens/gaming_hub_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
+import 'startup_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/startup',
     redirect: (context, state) {
       final bool loggedIn = authState.value?.session != null;
       final bool loggingIn = state.matchedLocation == '/login';
+      final bool isStartup = state.matchedLocation == '/startup';
 
       if (!loggedIn) return '/login';
-      if (loggingIn) return '/home';
+      // Do not redirect to /home if they are just opening the app and are already logged in
+      if (loggingIn) return '/startup';
       return null;
     },
     routes: [
+      GoRoute(path: '/startup', builder: (context, state) => const StartupScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       ShellRoute(
         builder: (context, state, child) => MainLayout(child: child),

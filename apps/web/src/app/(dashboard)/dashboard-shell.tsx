@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -13,6 +13,8 @@ import { MessageCircle } from "lucide-react";
 // client components can't export Next's metadata object.
 
 import { checkIsAdmin } from "@/lib/auth/admin";
+
+import { createClient } from "@/lib/supabase/client";
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
@@ -34,6 +36,32 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
       return;
     }
   }, [user, loading, isAdmin, pathname, router, isEmbed]);
+
+  const supabase = createClient();
+  const lastTrackedModuleRef = useRef<string | null>(null);
+
+  // Track module visits to update "last visited module" in Supabase
+  useEffect(() => {
+    if (!user || !profile || !pathname) return;
+
+    const topLevelModules = ['/crm', '/rideo', '/drivo', '/gameo', '/teacho', '/agro', '/dealo', '/touro', '/moneyo'];
+    
+    // Check if the current route belongs to a top-level module
+    const currentModule = topLevelModules.find(m => pathname === m || pathname.startsWith(`${m}/`));
+    
+    if (currentModule && lastTrackedModuleRef.current !== currentModule) {
+      lastTrackedModuleRef.current = currentModule;
+      
+      // Fire and forget
+      supabase
+        .from('profiles')
+        .update({ default_module: currentModule })
+        .eq('id', user.id)
+        .then(({ error }) => {
+          if (error) console.error("Failed to update last visited module:", error);
+        });
+    }
+  }, [pathname, user, profile, supabase]);
 
   if (loading) {
     return (

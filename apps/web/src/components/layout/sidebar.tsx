@@ -102,6 +102,7 @@ const adminItems: NavItem[] = [
   { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
   { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
   { href: "/admin/daily-news", label: "Daily News Manager", icon: Newspaper },
+  { href: "/admin/lms", label: "LMS Admin (TeachO/TestO)", icon: GraduationCap },
 ];
 
 const bottomNavItems = [

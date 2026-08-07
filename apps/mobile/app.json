@@ -27,6 +27,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9e170d44-f478-4348-8592-9047beea498f"
+      }
+    },
+    "owner": "poovisri"
   }
 }

@@ -7,8 +7,8 @@ import nextDynamic from 'next/dynamic';
 import { Navigation, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-// Dynamically import Map so it only renders on client (Leaflet requires window)
-const RideMap = nextDynamic(() => import('@/components/RideMap'), { ssr: false });
+// Dynamically import Map so it only renders on client
+const RideMap = nextDynamic(() => import('@/components/GoogleRideMap'), { ssr: false });
 
 const supabase = createClient();
 
@@ -64,42 +64,14 @@ function RideOBookingContent() {
   };
 
   const handleBookDriver = async (driver: any) => {
-    setSearchingDrivers(true);
-    try {
-      const otp = (1000 + (Date.now() % 9000)).toString();
-      const { data: userAuth } = await supabase.auth.getUser();
-
-      const { data: rideResponse, error } = await supabase.from('rides').insert({
-        customer_id: userAuth?.user?.id || null,
-        driver_id: driver.id,
-        pickup_latitude: pickup![0],
-        pickup_longitude: pickup![1],
-        pickup_address: 'Map Location',
-        dropoff_latitude: dropoff![0],
-        dropoff_longitude: dropoff![1],
-        dropoff_address: 'Map Location',
-        vehicle_type: driver.vehicle_type,
-        price: 50.0,
-        status: 'pending',
-        otp: otp
-      }).select().single();
-
-      if (error) throw error;
-      setActiveRide(rideResponse);
-      setDrivers([]);
-
-      // Realtime listener for driver acceptance
-      supabase
-        .channel(`public:rides:id=${rideResponse.id}`)
-        .on('postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
-          (payload) => setActiveRide(payload.new)
-        )
-        .subscribe();
-    } catch (e: any) {
-      alert('Error booking ride: ' + e.message);
-    }
-    setSearchingDrivers(false);
+    if (!pickup || !dropoff) return;
+    
+    // Fallback to CRM number if driver phone is missing (though driver should have one)
+    const driverPhone = driver.phone || '916381029380'; 
+    const message = `🚕 *New Ride Request (RideO)* 🚕\n\n*Pickup Coordinates:* ${pickup[0].toFixed(4)}, ${pickup[1].toFixed(4)}\n*Drop-off Coordinates:* ${dropoff[0].toFixed(4)}, ${dropoff[1].toFixed(4)}\n*Vehicle Requested:* ${driver.vehicle_type}\n*Distance:* ${driver.distance_km?.toFixed(1)} km\n\nPlease confirm my booking!`;
+    
+    const whatsappUrl = `https://wa.me/${driverPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const cancelRide = () => {

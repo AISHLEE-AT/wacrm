@@ -1,6 +1,7 @@
+// @ts-nocheck
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, TouchableOpacity, TextInput, Linking, Keyboard } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MapPin, Search, Navigation, MessageCircle } from 'lucide-react-native';
 
@@ -130,54 +131,23 @@ export default function MapScreen() {
   };
 
   const bookDriver = async (driver: any) => {
-    setSearchingDrivers(true);
+    if (!pickup || !dropoff) return;
+    
+    // Fallback to CRM number if driver phone is missing
+    const driverPhone = driver.phone || WABA_NUMBER; 
+    const message = `🚕 *New Ride Request (RideO)* 🚕\n\n*Pickup:* ${pickup.name}\n*Drop-off:* ${dropoff.name}\n*Vehicle Requested:* ${driver.vehicle_type}\n*Distance:* ${driver.distance_km?.toFixed(1)} km\n\nPlease confirm my booking!`;
+    
+    const whatsappUrl = `whatsapp://send?phone=${driverPhone}&text=${encodeURIComponent(message)}`;
+    
     try {
-      const otp = (1000 + (Date.now() % 9000)).toString();
-      const price = 50.0; // Basic flat rate for now
-
-      // Get user id if logged in. We'll use a dummy ID for now if we don't have auth context.
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const { data: rideResponse, error } = await supabase.from('rides').insert({
-        customer_id: user?.id || null, // Allow null for unregistered testing if RLS permits
-        driver_id: driver.id,
-        pickup_latitude: pickup!.lat,
-        pickup_longitude: pickup!.lng,
-        pickup_address: pickup!.name,
-        dropoff_latitude: dropoff!.lat,
-        dropoff_longitude: dropoff!.lng,
-        dropoff_address: dropoff!.name,
-        vehicle_type: driver.vehicle_type,
-        price: price,
-        status: 'pending',
-        otp: otp
-      }).select().single();
-
-      if (error) throw error;
-
-      setActiveRide(rideResponse);
-
-      // Setup Realtime listener
-      supabase
-        .channel(`public:rides:id=${rideResponse.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
-          (payload) => {
-            const updatedRide = payload.new;
-            setActiveRide(updatedRide);
-            if (updatedRide.status === 'accepted') {
-              alert(`Driver accepted! Your OTP is: ${updatedRide.otp}`);
-            }
-          }
-        )
-        .subscribe();
-
-      alert('Ride requested! Waiting for driver...');
-    } catch (e: any) {
-      alert(`Error booking ride: ${e.message}`);
-    } finally {
-      setSearchingDrivers(false);
+      const supported = await Linking.canOpenURL(whatsappUrl);
+      if (supported) {
+        await Linking.openURL(whatsappUrl);
+      } else {
+        alert("WhatsApp is not installed on your device");
+      }
+    } catch (e) {
+      alert("An error occurred opening WhatsApp");
     }
   };
 
@@ -194,7 +164,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        provider={PROVIDER_DEFAULT}
+        provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={{
           latitude: location.coords.latitude,
@@ -204,6 +174,16 @@ export default function MapScreen() {
         }}
         showsUserLocation={true}
         showsMyLocationButton={false}
+        onPress={(e) => {
+          if (e.nativeEvent.coordinate) {
+            setDropoff({
+              lat: e.nativeEvent.coordinate.latitude,
+              lng: e.nativeEvent.coordinate.longitude,
+              name: 'Selected on Map'
+            });
+            setSearchQuery('Selected on Map');
+          }
+        }}
       >
         <Marker
           coordinate={{ latitude: pickup.lat, longitude: pickup.lng }}

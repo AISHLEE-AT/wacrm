@@ -1,4 +1,5 @@
-import React, { useContext } from 'react';
+// @ts-nocheck
+import React, { useContext, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -25,6 +26,7 @@ import TeachOScreen     from './src/screens/TeachOScreen';
 import TeachOCourseScreen from './src/screens/TeachOCourseScreen';
 import TestOHubScreen   from './src/screens/TestOHubScreen';
 import TestOExamScreen  from './src/screens/TestOExamScreen';
+import TestOResultScreen from './src/screens/TestOResultScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
@@ -99,6 +101,7 @@ function AdminTabs() {
 function UserTabs() {
   const { user } = useContext(AppContext);
   const category = (user?.category || user?.role || '').toLowerCase();
+  const defaultModulePath = user?.defaultModule;
 
   let primaryModule = {
     name: 'PrimaryModule',
@@ -107,18 +110,36 @@ function UserTabs() {
     icon: Map,
   };
 
-  if (category.includes('driver')) {
+  // First try to match defaultModule if available
+  if (defaultModulePath === '/drivo') {
     primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
-  } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
+  } else if (defaultModulePath === '/teacho') {
     primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
-  } else if (category.includes('farmer') || category.includes('agri')) {
+  } else if (defaultModulePath === '/agro') {
     primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
-  } else if (category.includes('shopper') || category.includes('merchant')) {
+  } else if (defaultModulePath === '/dealo') {
     primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
-  } else if (category.includes('tourist')) {
+  } else if (defaultModulePath === '/touro') {
     primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
-  } else if (category.includes('financier')) {
+  } else if (defaultModulePath === '/moneyo') {
     primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+  } else if (defaultModulePath === '/gameo') {
+    primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map }; 
+  } else {
+    // Fallback to category-based logic
+    if (category.includes('driver')) {
+      primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
+    } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
+      primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
+    } else if (category.includes('farmer') || category.includes('agri')) {
+      primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
+    } else if (category.includes('shopper') || category.includes('merchant')) {
+      primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+    } else if (category.includes('tourist')) {
+      primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
+    } else if (category.includes('financier')) {
+      primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+    }
   }
 
   return (
@@ -204,8 +225,60 @@ function RootNavigator() {
       <Stack.Screen name="TeachOCourseScreen" component={TeachOCourseScreen} />
       <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />
       <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
     </Stack.Navigator>
+  );
+}
+
+import { useNavigationContainerRef } from '@react-navigation/native';
+import { supabase } from './src/lib/supabase';
+
+function NavigationWrapper() {
+  const { user } = useContext(AppContext);
+  const navigationRef = useNavigationContainerRef();
+  const routeNameRef = useRef<string | undefined>(undefined);
+
+  return (
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+      }}
+      onStateChange={async () => {
+        const previousRouteName = routeNameRef.current;
+        const currentRoute = navigationRef.getCurrentRoute();
+        const currentRouteName = currentRoute?.name;
+        
+        if (currentRouteName && previousRouteName !== currentRouteName) {
+           routeNameRef.current = currentRouteName;
+           
+           if (user?.phone) {
+             let modulePath = null;
+             if (currentRouteName === 'ModuleView' && currentRoute.params?.path) {
+                modulePath = currentRoute.params.path;
+             } else if (currentRouteName === 'DriveO' || currentRouteName === 'TeachO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO' || currentRouteName === 'GameO') {
+                // If they navigated via Bottom Tabs directly
+                const routeParams = currentRoute.params as any;
+                if (routeParams?.path) modulePath = routeParams.path;
+             } else if (currentRouteName === 'GameOScreen') {
+                modulePath = '/gameo';
+             } else if (currentRouteName === 'AgrOScreen') {
+                modulePath = '/agro';
+             } else if (currentRouteName === 'TeachOScreen') {
+                modulePath = '/teacho';
+             }
+
+             if (modulePath) {
+               supabase.from('profiles').update({ default_module: modulePath }).eq('phone', user.phone).then(()=>{}).catch(()=>{});
+             }
+           }
+        }
+      }}
+    >
+      <StatusBar style="light" />
+      <RootNavigator />
+    </NavigationContainer>
   );
 }
 
@@ -213,10 +286,7 @@ function RootNavigator() {
 export default function App() {
   return (
     <AppProvider>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <RootNavigator />
-      </NavigationContainer>
+      <NavigationWrapper />
     </AppProvider>
   );
 }

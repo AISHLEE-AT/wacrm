@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 // Dynamically import Map so it only renders on client
-const RideMap = dynamic(() => import('@/components/RideMap'), { ssr: false })
+const RideMap = dynamic(() => import('@/components/GoogleRideMap'), { ssr: false })
 
 function BookRideContent() {
   const router = useRouter()

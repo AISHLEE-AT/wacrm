@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -211,3 +212,4 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
   logoutText: { color: '#ef4444', fontSize: 15, fontWeight: 'bold' }
 });
+

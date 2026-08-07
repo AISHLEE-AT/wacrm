@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SectionList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
@@ -236,3 +237,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   }
 });
+

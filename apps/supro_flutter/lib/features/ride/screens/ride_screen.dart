@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -6,7 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
 
 class LocationPoint {
   final double lat;
@@ -244,80 +244,27 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   }
 
   Future<void> _bookDriver(Map<String, dynamic> driver) async {
-    setState(() => _searchingDrivers = true); // Use this to show a loading state on the button
+    if (_pickup == null || _dropoff == null) return;
+    
+    final driverPhone = driver['phone'] ?? _wabaNumber;
+    final message = '🚕 *New Ride Request (RideO)* 🚕\n\n*Pickup:* ${_pickup!.name}\n*Drop-off:* ${_dropoff!.name}\n*Vehicle Requested:* ${driver['vehicle_type']}\n*Distance:* ${driver['distance_km']?.toStringAsFixed(1)} km\n\nPlease confirm my booking!';
+    
+    final url = Uri.parse('whatsapp://send?phone=$driverPhone&text=${Uri.encodeComponent(message)}');
     
     try {
-      final supabase = Supabase.instance.client;
-      // Generate a 4 digit OTP
-      final otp = (1000 + (DateTime.now().millisecondsSinceEpoch % 9000)).toString();
-      
-      // Calculate basic price based on vehicle and distance. For now, flat rate test
-      final price = 50.0;
-      
-      final rideResponse = await supabase.from('rides').insert({
-        'customer_id': supabase.auth.currentUser?.id, 
-        'driver_id': driver['id'],
-        'pickup_latitude': _pickup!.lat,
-        'pickup_longitude': _pickup!.lng,
-        'pickup_address': _pickup!.name,
-        'dropoff_latitude': _dropoff!.lat,
-        'dropoff_longitude': _dropoff!.lng,
-        'dropoff_address': _dropoff!.name,
-        'vehicle_type': driver['vehicle_type'],
-        'price': price,
-        'status': 'pending',
-        'otp': otp
-      }).select().single();
-      
-      setState(() {
-        _activeRide = rideResponse;
-        _searchingDrivers = false;
-      });
-      
-      // Setup Realtime Listener for driver acceptance
-      supabase
-        .channel('public:rides:id=${rideResponse['id']}')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'rides',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'id',
-            value: rideResponse['id'],
-          ),
-          callback: (payload) {
-            final updatedRide = payload.newRecord;
-            setState(() {
-              _activeRide = updatedRide;
-            });
-            if (updatedRide['status'] == 'accepted') {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Driver accepted! Your OTP is: ${updatedRide['otp']}'),
-                    backgroundColor: Colors.green,
-                    duration: const Duration(seconds: 10),
-                  ),
-                );
-              }
-            } else if (updatedRide['status'] == 'completed') {
-              // Trigger payment flow
-            }
-          }
-        )
-        .subscribe();
-        
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ride requested! Waiting for driver...')),
-        );
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('WhatsApp is not installed on your device')),
+          );
+        }
       }
     } catch (e) {
-      setState(() => _searchingDrivers = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error booking ride: $e')),
+          const SnackBar(content: Text('An error occurred opening WhatsApp')),
         );
       }
     }
@@ -412,6 +359,16 @@ class _RideScreenState extends ConsumerState<RideScreen> {
             markers: markers,
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
+            },
+            onTap: (LatLng position) {
+              setState(() {
+                _dropoff = LocationPoint(
+                  lat: position.latitude,
+                  lng: position.longitude,
+                  name: 'Selected on Map',
+                );
+                _searchController.text = 'Selected on Map';
+              });
             },
           ),
           
