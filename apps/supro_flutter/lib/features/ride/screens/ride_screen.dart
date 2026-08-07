@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LocationPoint {
   final double lat;
@@ -32,6 +33,12 @@ class _RideScreenState extends ConsumerState<RideScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   String? _errorMsg;
+
+  // Driver Peer-to-Peer state
+  List<dynamic> _drivers = [];
+  bool _searchingDrivers = false;
+  Map<String, dynamic>? _selectedDriver;
+  Map<String, dynamic>? _activeRide;
 
   static const String _wabaNumber = '916381029380';
 
@@ -196,7 +203,7 @@ class _RideScreenState extends ConsumerState<RideScreen> {
     }
   }
 
-  void _requestRide() async {
+  Future<void> _searchDrivers() async {
     if (_pickup == null || _dropoff == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a drop-off location first.')),
@@ -204,25 +211,115 @@ class _RideScreenState extends ConsumerState<RideScreen> {
       return;
     }
     
-    final message = '''🚖 *Ride Request (RideO)*
-
-🟢 *Pickup:* ${_pickup!.name}
-📍 https://maps.google.com/?q=${_pickup!.lat},${_pickup!.lng}
-
-🔴 *Drop-off:* ${_dropoff!.name}
-📍 https://maps.google.com/?q=${_dropoff!.lat},${_dropoff!.lng}''';
+    setState(() => _searchingDrivers = true);
     
-    final encodedMessage = Uri.encodeComponent(message);
-    final whatsappUrl = Uri.parse('whatsapp://send?phone=$_wabaNumber&text=$encodedMessage');
-    final webUrl = Uri.parse('https://wa.me/$_wabaNumber?text=$encodedMessage');
-
     try {
-      bool launched = await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-      if (!launched) {
-        await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      // Call our new RPC function
+      final response = await Supabase.instance.client.rpc('get_nearby_drivers', params: {
+        'pickup_lat': _pickup!.lat,
+        'pickup_lon': _pickup!.lng,
+        'radius_km': 2, // 2km radius
+      });
+      
+      setState(() {
+        _drivers = List<dynamic>.from(response);
+        _searchingDrivers = false;
+      });
+      
+      if (_drivers.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No drivers found within 2km. Trying virtual drivers...')),
+          );
+        }
       }
     } catch (e) {
-      await launchUrl(webUrl, mode: LaunchMode.externalApplication);
+      setState(() => _searchingDrivers = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error searching drivers: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _bookDriver(Map<String, dynamic> driver) async {
+    setState(() => _searchingDrivers = true); // Use this to show a loading state on the button
+    
+    try {
+      final supabase = Supabase.instance.client;
+      // Generate a 4 digit OTP
+      final otp = (1000 + (DateTime.now().millisecondsSinceEpoch % 9000)).toString();
+      
+      // Calculate basic price based on vehicle and distance. For now, flat rate test
+      final price = 50.0;
+      
+      final rideResponse = await supabase.from('rides').insert({
+        'customer_id': supabase.auth.currentUser?.id, 
+        'driver_id': driver['id'],
+        'pickup_latitude': _pickup!.lat,
+        'pickup_longitude': _pickup!.lng,
+        'pickup_address': _pickup!.name,
+        'dropoff_latitude': _dropoff!.lat,
+        'dropoff_longitude': _dropoff!.lng,
+        'dropoff_address': _dropoff!.name,
+        'vehicle_type': driver['vehicle_type'],
+        'price': price,
+        'status': 'pending',
+        'otp': otp
+      }).select().single();
+      
+      setState(() {
+        _activeRide = rideResponse;
+        _searchingDrivers = false;
+      });
+      
+      // Setup Realtime Listener for driver acceptance
+      supabase
+        .channel('public:rides:id=${rideResponse['id']}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'rides',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: rideResponse['id'],
+          ),
+          callback: (payload) {
+            final updatedRide = payload.newRecord;
+            setState(() {
+              _activeRide = updatedRide;
+            });
+            if (updatedRide['status'] == 'accepted') {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Driver accepted! Your OTP is: ${updatedRide['otp']}'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 10),
+                  ),
+                );
+              }
+            } else if (updatedRide['status'] == 'completed') {
+              // Trigger payment flow
+            }
+          }
+        )
+        .subscribe();
+        
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ride requested! Waiting for driver...')),
+        );
+      }
+    } catch (e) {
+      setState(() => _searchingDrivers = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error booking ride: $e')),
+        );
+      }
     }
   }
 
@@ -510,27 +607,109 @@ class _RideScreenState extends ConsumerState<RideScreen> {
                   
                   const SizedBox(height: 24),
                   
-                  ElevatedButton.icon(
-                    onPressed: _dropoff != null ? _requestRide : null,
-                    icon: const Icon(LucideIcons.messageCircle, color: Colors.white),
-                    label: const Text(
-                      'Request Ride via WhatsApp',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF10B981),
-                      disabledBackgroundColor: const Color(0xFF0F172A),
-                      foregroundColor: Colors.white,
-                      disabledForegroundColor: Colors.white54,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
+                  if (_activeRide != null) ...[
+                    // Active Ride UI
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
                         borderRadius: BorderRadius.circular(12),
-                        side: _dropoff == null 
-                            ? const BorderSide(color: Color(0xFF334155)) 
-                            : BorderSide.none,
+                        border: Border.all(color: const Color(0xFF10B981)),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            _activeRide!['status'] == 'pending' 
+                                ? 'Waiting for Driver to Accept...' 
+                                : 'Driver Accepted!',
+                            style: TextStyle(
+                              color: _activeRide!['status'] == 'pending' ? Colors.orange : Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_activeRide!['status'] == 'accepted')
+                            Text(
+                              'OTP: ${_activeRide!['otp']}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 4,
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                  ),
+                  ] else if (_drivers.isNotEmpty) ...[
+                    // Drivers List UI
+                    const Text(
+                      'Nearby Drivers',
+                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 180,
+                      child: ListView.builder(
+                        itemCount: _drivers.length,
+                        itemBuilder: (context, index) {
+                          final driver = _drivers[index];
+                          return Card(
+                            color: const Color(0xFF1E293B),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListTile(
+                              leading: Text(
+                                driver['vehicle_type'] == 'bike' ? '🏍️' : 
+                                driver['vehicle_type'] == 'auto' ? '🛺' : '🚕',
+                                style: const TextStyle(fontSize: 24),
+                              ),
+                              title: Text(driver['name'], style: const TextStyle(color: Colors.white)),
+                              subtitle: Text(
+                                '${driver['vehicle_model']} • ${driver['distance_km'].toStringAsFixed(1)}km away',
+                                style: const TextStyle(color: Color(0xFF94A3B8)),
+                              ),
+                              trailing: ElevatedButton(
+                                onPressed: _searchingDrivers ? null : () => _bookDriver(driver),
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+                                child: const Text('Book', style: TextStyle(color: Colors.white)),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => setState(() => _drivers = []),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent),
+                      child: const Text('Cancel', style: TextStyle(color: Colors.redAccent)),
+                    ),
+                  ] else ...[
+                    // Initial State UI
+                    ElevatedButton.icon(
+                      onPressed: (_dropoff != null && !_searchingDrivers) ? _searchDrivers : null,
+                      icon: _searchingDrivers 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
+                          : const Icon(LucideIcons.search, color: Colors.white),
+                      label: Text(
+                        _searchingDrivers ? 'Searching...' : 'Find Nearby Drivers',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        disabledBackgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        disabledForegroundColor: Colors.white54,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: _dropoff == null 
+                              ? const BorderSide(color: Color(0xFF334155)) 
+                              : BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
                   
                   const SizedBox(height: 16),
                   

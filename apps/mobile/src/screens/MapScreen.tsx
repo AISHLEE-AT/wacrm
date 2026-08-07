@@ -4,6 +4,8 @@ import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MapPin, Search, Navigation, MessageCircle } from 'lucide-react-native';
 
+import { supabase } from '../lib/supabase';
+
 export default function MapScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [pickup, setPickup] = useState<{ lat: number, lng: number, name: string } | null>(null);
@@ -12,6 +14,11 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Peer-to-Peer State
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [searchingDrivers, setSearchingDrivers] = useState(false);
+  const [activeRide, setActiveRide] = useState<any>(null);
   
   const mapRef = useRef<MapView>(null);
   const WABA_NUMBER = '916381029380'; // Default central CRM bot number
@@ -95,18 +102,83 @@ export default function MapScreen() {
     }
   };
 
-  const requestRide = () => {
+  const searchDrivers = async () => {
     if (!pickup || !dropoff) {
       alert("Please select a drop-off location first.");
       return;
     }
     
-    const message = `🚖 *Ride Request (RideO)*\n\n🟢 *Pickup:* ${pickup.name}\n📍 https://maps.google.com/?q=${pickup.lat},${pickup.lng}\n\n🔴 *Drop-off:* ${dropoff.name}\n📍 https://maps.google.com/?q=${dropoff.lat},${dropoff.lng}`;
-    
-    const url = `whatsapp://send?phone=${WABA_NUMBER}&text=${encodeURIComponent(message)}`;
-    Linking.openURL(url).catch(() => {
-      Linking.openURL(`https://wa.me/${WABA_NUMBER}?text=${encodeURIComponent(message)}`);
-    });
+    setSearchingDrivers(true);
+    try {
+      const { data, error } = await supabase.rpc('get_nearby_drivers', {
+        pickup_lat: pickup.lat,
+        pickup_lon: pickup.lng,
+        radius_km: 2
+      });
+
+      if (error) throw error;
+      
+      setDrivers(data || []);
+      if (!data || data.length === 0) {
+        alert('No drivers found within 2km. Trying virtual drivers...');
+      }
+    } catch (e: any) {
+      alert(`Error searching drivers: ${e.message}`);
+    } finally {
+      setSearchingDrivers(false);
+    }
+  };
+
+  const bookDriver = async (driver: any) => {
+    setSearchingDrivers(true);
+    try {
+      const otp = (1000 + (Date.now() % 9000)).toString();
+      const price = 50.0; // Basic flat rate for now
+
+      // Get user id if logged in. We'll use a dummy ID for now if we don't have auth context.
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: rideResponse, error } = await supabase.from('rides').insert({
+        customer_id: user?.id || null, // Allow null for unregistered testing if RLS permits
+        driver_id: driver.id,
+        pickup_latitude: pickup!.lat,
+        pickup_longitude: pickup!.lng,
+        pickup_address: pickup!.name,
+        dropoff_latitude: dropoff!.lat,
+        dropoff_longitude: dropoff!.lng,
+        dropoff_address: dropoff!.name,
+        vehicle_type: driver.vehicle_type,
+        price: price,
+        status: 'pending',
+        otp: otp
+      }).select().single();
+
+      if (error) throw error;
+
+      setActiveRide(rideResponse);
+
+      // Setup Realtime listener
+      supabase
+        .channel(`public:rides:id=${rideResponse.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
+          (payload) => {
+            const updatedRide = payload.new;
+            setActiveRide(updatedRide);
+            if (updatedRide.status === 'accepted') {
+              alert(`Driver accepted! Your OTP is: ${updatedRide.otp}`);
+            }
+          }
+        )
+        .subscribe();
+
+      alert('Ride requested! Waiting for driver...');
+    } catch (e: any) {
+      alert(`Error booking ride: ${e.message}`);
+    } finally {
+      setSearchingDrivers(false);
+    }
   };
 
   if (!location || !pickup) {
@@ -207,15 +279,69 @@ export default function MapScreen() {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.requestBtn, !dropoff && styles.disabledBtn]} 
-          onPress={requestRide}
-          disabled={!dropoff}
-        >
-          <MessageCircle color="#fff" size={24} />
-          <Text style={styles.requestBtnText}>Request Ride via WhatsApp</Text>
-        </TouchableOpacity>
-        <Text style={styles.disclaimer}>Connected to Aishlee CRM network</Text>
+        {/* Dynamic State UI */}
+        {activeRide ? (
+          <View style={{ marginTop: 24, padding: 16, backgroundColor: '#1e293b', borderRadius: 12, borderWidth: 1, borderColor: '#10b981' }}>
+            <Text style={{ color: activeRide.status === 'pending' ? 'orange' : '#10b981', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+              {activeRide.status === 'pending' ? 'Waiting for Driver to Accept...' : 'Driver Accepted!'}
+            </Text>
+            {activeRide.status === 'accepted' && (
+              <Text style={{ color: '#fff', fontSize: 32, fontWeight: 'bold', letterSpacing: 4, textAlign: 'center', marginTop: 12 }}>
+                OTP: {activeRide.otp}
+              </Text>
+            )}
+          </View>
+        ) : drivers.length > 0 ? (
+          <View style={{ marginTop: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={{ color: '#94a3b8', fontSize: 14, fontWeight: 'bold' }}>Nearby Drivers</Text>
+              <TouchableOpacity onPress={() => setDrivers([])}>
+                <Text style={{ color: '#ef4444' }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ maxHeight: 180 }}>
+              {drivers.map((driver) => (
+                <View key={driver.id} style={{ backgroundColor: '#1e293b', padding: 12, borderRadius: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 24, marginRight: 12 }}>
+                      {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : '🚕'}
+                    </Text>
+                    <View>
+                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>{driver.name}</Text>
+                      <Text style={{ color: '#94a3b8', fontSize: 12 }}>{driver.vehicle_model} • {driver.distance_km.toFixed(1)}km away</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity 
+                    style={{ backgroundColor: '#10b981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
+                    onPress={() => bookDriver(driver)}
+                    disabled={searchingDrivers}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Book</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.requestBtn, (!dropoff || searchingDrivers) && styles.disabledBtn]} 
+            onPress={searchDrivers}
+            disabled={!dropoff || searchingDrivers}
+          >
+            {searchingDrivers ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Search color="#fff" size={24} />
+            )}
+            <Text style={styles.requestBtnText}>
+              {searchingDrivers ? 'Searching...' : 'Find Nearby Drivers'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
+        {!activeRide && drivers.length === 0 && (
+          <Text style={styles.disclaimer}>Connected to Aishlee CRM network</Text>
+        )}
       </View>
     </View>
   );

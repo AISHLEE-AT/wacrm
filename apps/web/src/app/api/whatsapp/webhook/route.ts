@@ -27,6 +27,17 @@ function supabaseAdmin() {
   return _adminClient
 }
 
+let _gameoClient: any = null
+function gameoAdmin() {
+  if (!_gameoClient && process.env.GAMEO_SUPABASE_URL && process.env.GAMEO_SERVICE_ROLE_KEY) {
+    _gameoClient = createClient(
+      process.env.GAMEO_SUPABASE_URL,
+      process.env.GAMEO_SERVICE_ROLE_KEY
+    )
+  }
+  return _gameoClient
+}
+
 interface WhatsAppMessage {
   id: string
   from: string
@@ -700,6 +711,87 @@ async function processMessage(
     .eq('conversation_id', conversation.id)
     .eq('sender_type', 'customer')
   const isFirstInboundMessage = (priorCustomerMsgCount ?? 0) === 0
+
+  // -- RIDEO BOOKING HOOK --
+  if (contentText && (contentText.toLowerCase().includes('ride') || contentText.toLowerCase().includes('book'))) {
+    const rideMsg = `🚕 Ready to book a ride?\n\n📍 *Option 1 (Native Map):*\nSimply tap the Attachment icon (📎) in WhatsApp, select *Location*, and send your current location as your Pickup point.\n\n🌐 *Option 2 (Web Map):*\nIf you prefer, tap this link to select your destination on a map:\nhttps://watcrm.vercel.app/book?phone=${encodeURIComponent(senderPhone)}`
+    
+    // Fire and forget
+    sendTextMessage({
+      phoneNumberId,
+      accessToken,
+      to: senderPhone,
+      text: rideMsg,
+    }).then(async (sendRes) => {
+      await supabaseAdmin().from('messages').insert({
+        conversation_id: conversation.id,
+        sender_type: 'agent',
+        content_type: 'text',
+        content_text: rideMsg,
+        message_id: sendRes.messageId,
+        status: 'sent',
+        created_at: new Date().toISOString(),
+      })
+    }).catch(console.error)
+  }
+  // ------------------------------------
+
+  // -- WELCOME AUTO-REPLY HOOK --
+  if (isFirstInboundMessage && contentText?.trim().toLowerCase() === 'hi') {
+    let flutterUrl = ''
+    let reactUrl = 'https://watcrm.vercel.app'
+    
+    // Fire and forget to not block webhook response
+    ;(async () => {
+      try {
+        const gameo = gameoAdmin()
+        if (gameo) {
+          const { data: builds } = await gameo
+            .from('app_builds')
+            .select('platform, download_url')
+            .in('platform', ['flutter', 'react'])
+            .order('created_at', { ascending: false })
+            .limit(10)
+            
+          if (builds) {
+            const latestFlutter = builds.find((b: any) => b.platform === 'flutter')
+            const latestReact = builds.find((b: any) => b.platform === 'react')
+            if (latestFlutter?.download_url) flutterUrl = latestFlutter.download_url
+            if (latestReact?.download_url) reactUrl = latestReact.download_url
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch from Gameo DB:', e)
+      }
+
+      let welcomeMsg = `Welcome to SuprO! 🚀\n\n🌐 Access our web app here:\n${reactUrl}`
+      
+      if (flutterUrl) {
+         welcomeMsg += `\n\n📱 Download the latest Android app:\n${flutterUrl}\n\n*Installation Methods:*\n1. Tap the Android app link above to download the APK file.\n2. Once downloaded, tap to open the file.\n3. If prompted, select "Allow from this source" in your settings to install the app.\n4. Enjoy SuprO!`
+      }
+      
+      sendTextMessage({
+        phoneNumberId,
+        accessToken,
+        to: senderPhone,
+        text: welcomeMsg,
+      })
+        .then(async (sendRes) => {
+          // Record outbound message in CRM
+          await supabaseAdmin().from('messages').insert({
+            conversation_id: conversation.id,
+            sender_type: 'agent',
+            content_type: 'text',
+            content_text: welcomeMsg,
+            message_id: sendRes.messageId,
+            status: 'sent',
+            created_at: new Date().toISOString(),
+          })
+        })
+        .catch((err) => console.error('Welcome auto-reply failed:', err))
+    })();
+  }
+  // ------------------------------------
 
   const { error: msgError } = await supabaseAdmin().from('messages').insert({
     conversation_id: conversation.id,
