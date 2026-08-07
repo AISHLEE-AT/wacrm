@@ -103,7 +103,6 @@ const adminItems: NavItem[] = [
   { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
   { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
   { href: "/admin/daily-news", label: "Daily News Manager", icon: Newspaper },
-  { href: "/admin/lms", label: "LMS Admin (TeachO/TestO)", icon: GraduationCap },
 ];
 
 const bottomNavItems = [
@@ -181,7 +180,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
     { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
     { href: "/touro", label: "TourO (ஆன்மீகம் & சுற்றுலா)", icon: Compass },
-    { href: "/testo", label: "LMS TestO (பயிற்சி & தேர்வுகள்)", icon: GraduationCap },
     { href: "/tvo", label: "TvO (தமிழ் டிவி & நேரலை)", icon: Tv },
     { href: "/moneyo", label: "MoneyO (பணம் & பரிசுகள்)", icon: Zap },
     { href: "/tasko", label: "TaskO (பணிகள் & படிவம்)", icon: Globe },

@@ -183,7 +183,7 @@ export default function AdminOverviewPage() {
               </div>
               <CardTitle className="text-xl text-blue-100">📰 Daily News Manager</CardTitle>
               <CardDescription>
-                Curate and publish daily news for all SuprO modules — AgrO, TeachO, DealO, JobO, DriveO, TestO. Sources: data.gov.in Mandi Prices, Consumer Affairs, and 7 Tamil RSS feeds. Auto-loads at 6 AM IST.
+                Curate and publish daily news for all SuprO modules — AgrO, DealO, JobO, DriveO. Sources: data.gov.in Mandi Prices, Consumer Affairs, and 7 Tamil RSS feeds. Auto-loads at 6 AM IST.
               </CardDescription>
             </CardHeader>
           </Card>
