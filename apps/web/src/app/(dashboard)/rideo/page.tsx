@@ -3,12 +3,12 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { Navigation, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 // Dynamically import Map so it only renders on client (Leaflet requires window)
-const RideMap = dynamic(() => import('@/components/RideMap'), { ssr: false });
+const RideMap = nextDynamic(() => import('@/components/RideMap'), { ssr: false });
 
 const supabase = createClient();
 
