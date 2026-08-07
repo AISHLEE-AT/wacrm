@@ -2,127 +2,301 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
-import { Car, Navigation, MapPin, Phone, ShieldCheck, Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
+import { Navigation, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-const RIDE_TYPES = [
-  { id: 'auto', name: 'Auto Rickshaw', fare: '₹40 base + ₹15/km', eta: '3 mins away', icon: '🛺' },
-  { id: 'mini', name: 'Mini Cab / Hatchback', fare: '₹80 base + ₹18/km', eta: '5 mins away', icon: '🚗' },
-  { id: 'sedan', name: 'Prime Sedan', fare: '₹120 base + ₹22/km', eta: '7 mins away', icon: '🚘' },
-  { id: 'outstation', name: 'Outstation Travels', fare: '₹14/km (Roundtrip)', eta: 'On Demand', icon: '🚐' },
-];
+// Dynamically import Map so it only renders on client (Leaflet requires window)
+const RideMap = dynamic(() => import('@/components/RideMap'), { ssr: false });
 
-export default function RideOPage() {
-  const [pickup, setPickup] = useState('');
-  const [drop, setDrop] = useState('');
-  const [selectedRide, setSelectedRide] = useState('auto');
-  const [booked, setBooked] = useState(false);
+const supabase = createClient();
+
+function RideOBookingContent() {
+  const [pickup, setPickup] = useState<[number, number] | null>(null);
+  const [dropoff, setDropoff] = useState<[number, number] | null>(null);
+  const [locating, setLocating] = useState(true);
+
+  // Peer-to-Peer State
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [searchingDrivers, setSearchingDrivers] = useState(false);
+  const [activeRide, setActiveRide] = useState<any>(null);
+
+  const locateUser = () => {
+    setLocating(true);
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPickup([pos.coords.latitude, pos.coords.longitude]);
+          setLocating(false);
+        },
+        () => {
+          setPickup([11.0168, 76.9558]); // Default Coimbatore
+          setLocating(false);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      setPickup([11.0168, 76.9558]);
+      setLocating(false);
+    }
+  };
+
+  useEffect(() => { locateUser(); }, []);
+
+  const searchDrivers = async () => {
+    if (!pickup || !dropoff) return;
+    setSearchingDrivers(true);
+    try {
+      const { data, error } = await supabase.rpc('get_nearby_drivers', {
+        pickup_lat: pickup[0],
+        pickup_lon: pickup[1],
+        radius_km: 2
+      });
+      if (error) throw error;
+      setDrivers(data || []);
+      if (!data || data.length === 0) alert('No drivers found within 2km. Virtual drivers may appear shortly.');
+    } catch (e: any) {
+      alert(`Error searching drivers: ${e.message}`);
+    } finally {
+      setSearchingDrivers(false);
+    }
+  };
+
+  const handleBookDriver = async (driver: any) => {
+    setSearchingDrivers(true);
+    try {
+      const otp = (1000 + (Date.now() % 9000)).toString();
+      const { data: userAuth } = await supabase.auth.getUser();
+
+      const { data: rideResponse, error } = await supabase.from('rides').insert({
+        customer_id: userAuth?.user?.id || null,
+        driver_id: driver.id,
+        pickup_latitude: pickup![0],
+        pickup_longitude: pickup![1],
+        pickup_address: 'Map Location',
+        dropoff_latitude: dropoff![0],
+        dropoff_longitude: dropoff![1],
+        dropoff_address: 'Map Location',
+        vehicle_type: driver.vehicle_type,
+        price: 50.0,
+        status: 'pending',
+        otp: otp
+      }).select().single();
+
+      if (error) throw error;
+      setActiveRide(rideResponse);
+      setDrivers([]);
+
+      // Realtime listener for driver acceptance
+      supabase
+        .channel(`public:rides:id=${rideResponse.id}`)
+        .on('postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
+          (payload) => setActiveRide(payload.new)
+        )
+        .subscribe();
+    } catch (e: any) {
+      alert('Error booking ride: ' + e.message);
+    }
+    setSearchingDrivers(false);
+  };
+
+  const cancelRide = () => {
+    setActiveRide(null);
+    setDrivers([]);
+    setDropoff(null);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 space-y-6">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-6">
-        <span className="text-2xl p-2.5 bg-yellow-500/10 text-yellow-400 rounded-xl border border-yellow-500/20">🛺</span>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            RideO <span className="text-xs bg-yellow-500/20 text-yellow-300 font-normal px-2.5 py-0.5 rounded-full border border-yellow-500/30">பயணி & டாக்ஸி சவாரி</span>
-          </h1>
-          <p className="text-sm text-slate-400">Instant Local Auto, Cab & Outstation Rides with Direct Driver Connection</p>
+      <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 sm:px-6 py-4">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl p-2.5 bg-yellow-500/10 text-yellow-400 rounded-xl border border-yellow-500/20">🛺</span>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              RideO <span className="text-xs bg-yellow-500/20 text-yellow-300 font-normal px-2.5 py-0.5 rounded-full border border-yellow-500/30">பயணி & டாக்ஸி சவாரி</span>
+            </h1>
+            <p className="text-xs text-slate-400">Pin your Drop-off on the map → Find real nearby drivers → Book instantly</p>
+          </div>
         </div>
+        <button
+          onClick={locateUser}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition border border-slate-700"
+        >
+          <Navigation className="w-4 h-4 text-emerald-400" /> Re-center
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Ride Search Form */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-yellow-400" /> Book a Ride
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6 p-0 lg:p-6" style={{ minHeight: 'calc(100vh - 80px)' }}>
 
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Pickup Location</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-emerald-400" />
-                <input
-                  type="text"
-                  placeholder="Enter Pickup Location"
-                  value={pickup}
-                  onChange={(e) => setPickup(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-yellow-500"
-                />
-              </div>
+        {/* Map — full height on mobile, left 2 cols on desktop */}
+        <div className="lg:col-span-2 relative" style={{ height: '55vh', minHeight: 320 }}>
+          {locating ? (
+            <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center gap-3 rounded-xl border border-slate-800">
+              <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-slate-400 text-sm">Finding your location...</p>
             </div>
-
-            <div>
-              <label className="text-xs text-slate-400 mb-1 block">Drop Location</label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-rose-400" />
-                <input
-                  type="text"
-                  placeholder="Enter Destination / Drop Location"
-                  value={drop}
-                  onChange={(e) => setDrop(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-yellow-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              if (!pickup || !drop) {
-                alert('Please enter both Pickup and Drop location');
-                return;
-              }
-              setBooked(true);
-            }}
-            className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-sm transition-all shadow-lg shadow-yellow-500/20 mt-2"
-          >
-            {booked ? 'Finding Nearby Driver...' : 'Search Available Drivers'}
-          </button>
-
-          {booked && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                <CheckCircle className="w-4 h-4" /> Driver Dispatched!
-              </div>
-              <p className="text-xs text-slate-300">
-                Driver: <span className="font-semibold text-white">M. Selvam (Auto TN 59 AX 2049)</span>
-              </p>
-              <p className="text-xs text-slate-400">Estimated Arrival: 3 Minutes</p>
+          ) : (
+            <div className="w-full h-full rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+              <RideMap pickup={pickup} dropoff={dropoff} setDropoff={setDropoff} />
+              {/* Map hint overlay */}
+              {!dropoff && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-sm border border-white/10 z-[999] whitespace-nowrap">
+                  📍 Tap on the map to set your drop-off location
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Vehicle Options */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Available Ride Options</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {RIDE_TYPES.map((ride) => (
-              <div
-                key={ride.id}
-                onClick={() => setSelectedRide(ride.id)}
-                className={`cursor-pointer bg-slate-900/90 border transition-all rounded-2xl p-5 flex flex-col justify-between space-y-3 ${
-                  selectedRide === ride.id
-                    ? 'border-yellow-500 ring-1 ring-yellow-500/50 bg-slate-900'
-                    : 'border-slate-800 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl">{ride.icon}</span>
-                  <span className="text-xs font-semibold bg-yellow-500/10 text-yellow-400 px-2.5 py-1 rounded-lg border border-yellow-500/20">
-                    {ride.eta}
-                  </span>
+        {/* Right Panel */}
+        <div className="lg:col-span-1 flex flex-col gap-4 p-4 lg:p-0">
+
+          {/* Location Status */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+            <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
+              <Navigation className="w-4 h-4 text-yellow-400" /> Your Journey
+            </h3>
+            <div className="flex items-start gap-3">
+              <div className="flex flex-col items-center mt-1 shrink-0">
+                <div className="w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-emerald-400/30" />
+                <div className="w-0.5 h-6 bg-slate-700 my-1" />
+                <div className={`w-3 h-3 rounded-full ${dropoff ? 'bg-red-400 ring-2 ring-red-400/30' : 'bg-slate-600'}`} />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="bg-slate-800 rounded-lg px-3 py-2">
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Pickup</p>
+                  <p className="text-xs text-emerald-300 font-medium mt-0.5">
+                    {pickup ? `📍 ${pickup[0].toFixed(4)}, ${pickup[1].toFixed(4)}` : 'Locating...'}
+                  </p>
                 </div>
-                <div>
-                  <h4 className="font-bold text-white text-base">{ride.name}</h4>
-                  <p className="text-xs text-slate-400 mt-1">{ride.fare}</p>
+                <div className={`rounded-lg px-3 py-2 border ${dropoff ? 'bg-slate-800 border-slate-700' : 'bg-slate-900 border-dashed border-slate-700'}`}>
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Drop-off</p>
+                  <p className={`text-xs font-medium mt-0.5 ${dropoff ? 'text-red-300' : 'text-slate-600'}`}>
+                    {dropoff ? `📍 ${dropoff[0].toFixed(4)}, ${dropoff[1].toFixed(4)}` : 'Tap map to set destination'}
+                  </p>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
+
+          {/* Active Ride Status */}
+          {activeRide ? (
+            <div className={`rounded-xl border-2 p-5 text-center space-y-3 ${
+              activeRide.status === 'pending' 
+                ? 'border-orange-500 bg-orange-500/10' 
+                : activeRide.status === 'accepted'
+                ? 'border-emerald-500 bg-emerald-500/10'
+                : 'border-slate-600 bg-slate-800'
+            }`}>
+              <div className="text-2xl">
+                {activeRide.status === 'pending' ? '⏳' : activeRide.status === 'accepted' ? '✅' : '🏁'}
+              </div>
+              <h2 className={`text-base font-bold ${
+                activeRide.status === 'pending' ? 'text-orange-400' : 'text-emerald-400'
+              }`}>
+                {activeRide.status === 'pending' 
+                  ? 'Waiting for Driver to Accept...' 
+                  : activeRide.status === 'accepted'
+                  ? 'Driver Accepted! Show OTP'
+                  : 'Ride Complete!'}
+              </h2>
+              {activeRide.status === 'accepted' && (
+                <div className="mt-2 bg-black/40 rounded-xl p-4 border border-emerald-500/30">
+                  <p className="text-xs text-slate-400 mb-1">Share this OTP with your driver to start ride</p>
+                  <div className="text-5xl font-black text-white tracking-[0.3em]">
+                    {activeRide.otp}
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={cancelRide}
+                className="text-xs text-slate-500 hover:text-red-400 transition underline underline-offset-2 mt-2"
+              >
+                Cancel / Book Another Ride
+              </button>
+            </div>
+
+          ) : drivers.length > 0 ? (
+            /* Driver List */
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-bold text-slate-300">🚗 Nearby Drivers ({drivers.length})</h3>
+                <button onClick={() => setDrivers([])} className="text-xs text-red-400 hover:text-red-300 font-semibold">✕ Cancel</button>
+              </div>
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {drivers.map(driver => (
+                  <div key={driver.id} className="bg-slate-800 border border-slate-700 p-3 rounded-xl flex items-center justify-between hover:border-yellow-500/50 transition">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : '🚕'}
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-white">{driver.name}</p>
+                        <p className="text-xs text-slate-400">{driver.vehicle_model} • {driver.distance_km?.toFixed(1)}km away</p>
+                      </div>
+                    </div>
+                    <button
+                      disabled={searchingDrivers}
+                      onClick={() => handleBookDriver(driver)}
+                      className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-50"
+                    >
+                      {searchingDrivers ? '...' : 'Book'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          ) : (
+            /* Find Drivers Button */
+            <div className="space-y-3">
+              {!dropoff && (
+                <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  First tap on the map above to set your drop-off location
+                </div>
+              )}
+              <button
+                disabled={!dropoff || searchingDrivers}
+                onClick={searchDrivers}
+                className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-950 font-bold text-base rounded-xl shadow-lg shadow-yellow-500/20 transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                {searchingDrivers ? (
+                  <><div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" /> Searching...</>
+                ) : (
+                  <><MapPin className="w-5 h-5" /> Find Nearby Drivers</>
+                )}
+              </button>
+              {dropoff && (
+                <p className="text-center text-xs text-slate-500">Searches for active drivers within 2km of your pickup</p>
+              )}
+            </div>
+          )}
+
+          {/* Tip */}
+          {!activeRide && drivers.length === 0 && (
+            <div className="text-xs text-slate-600 text-center mt-2 space-y-1">
+              <p>Connected to Aishlee SuprO network</p>
+              <p>Zero commission • UPI direct payment to driver</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RideOPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen bg-slate-950">
+        <div className="text-slate-400 text-sm animate-pulse">Loading RideO...</div>
+      </div>
+    }>
+      <RideOBookingContent />
+    </Suspense>
   );
 }
