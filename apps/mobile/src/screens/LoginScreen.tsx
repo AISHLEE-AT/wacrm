@@ -244,7 +244,7 @@ export default function LoginScreen({ navigation }: any) {
           <View style={styles.logoGlowRing}>
             <View style={styles.logoContainer}>
               <Image
-                source={require('../../assets/supro-logo-ai.jpg')}
+                source={require('../../assets/icon.png')}
                 style={styles.logoImage}
                 resizeMode="cover"
               />
