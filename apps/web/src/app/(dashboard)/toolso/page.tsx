@@ -2,15 +2,30 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
-import { Bot, Sparkles, Languages, FileText, MessageSquare, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bot, Sparkles, Languages, FileText, MessageSquare, Copy, Check, KeyRound } from 'lucide-react';
 
 export default function ToolsoPage() {
   const [promptInput, setPromptInput] = useState('');
   const [aiResult, setAiResult] = useState('');
   const [copied, setCopied] = useState(false);
-
+  const [userApiKey, setUserApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('gemini_api_key');
+    if (saved) setUserApiKey(saved);
+  }, []);
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setUserApiKey(val);
+    if (val) {
+      localStorage.setItem('gemini_api_key', val);
+    } else {
+      localStorage.removeItem('gemini_api_key');
+    }
+  };
 
   const callAI = async (prompt: string, type: string) => {
     if (!prompt) return;
@@ -20,13 +35,13 @@ export default function ToolsoPage() {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, type }),
+        body: JSON.stringify({ prompt, type, apiKey: userApiKey }),
       });
       const data = await res.json();
       if (res.ok) {
         setAiResult(data.result);
       } else {
-        setAiResult(`[Error]\n${data.error || 'Failed to generate response. Please ensure GEMINI_API_KEY is configured on Vercel.'}`);
+        setAiResult(`[Error]\n${data.error || 'Failed to generate response.'}`);
       }
     } catch (err: any) {
       setAiResult(`[Error]\n${err.message}`);
@@ -57,13 +72,26 @@ export default function ToolsoPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 space-y-6">
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-6">
-        <span className="text-2xl p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">🤖</span>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            ToolsO <span className="text-xs bg-amber-500/20 text-amber-300 font-normal px-2.5 py-0.5 rounded-full border border-amber-500/30">Gemini AI & கருவிகள்</span>
-          </h1>
-          <p className="text-sm text-slate-400">AI Assistants, Tamil Translator, WhatsApp Templates & Smart Productivity Tools</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">🤖</span>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+              ToolsO <span className="text-xs bg-amber-500/20 text-amber-300 font-normal px-2.5 py-0.5 rounded-full border border-amber-500/30">Gemini AI & கருவிகள்</span>
+            </h1>
+            <p className="text-sm text-slate-400">AI Assistants, Tamil Translator, WhatsApp Templates & Smart Productivity Tools</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto bg-slate-900 border border-slate-800 rounded-xl p-2">
+          <KeyRound className="w-4 h-4 text-slate-400 ml-2" />
+          <input
+            type="password"
+            placeholder="Your Gemini API Key (Optional)"
+            value={userApiKey}
+            onChange={handleApiKeyChange}
+            className="bg-transparent border-none focus:outline-none text-xs text-slate-200 w-full sm:w-48 placeholder:text-slate-500"
+          />
         </div>
       </div>
 

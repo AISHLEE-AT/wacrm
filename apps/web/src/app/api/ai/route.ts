@@ -3,12 +3,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const { prompt, type, apiKey: clientApiKey } = await req.json();
+    
+    const apiKey = clientApiKey || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY is not configured on the server.' }, { status: 500 });
+      return NextResponse.json({ error: 'Please provide a Gemini API Key to use this feature.' }, { status: 400 });
     }
-
-    const { prompt, type } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
