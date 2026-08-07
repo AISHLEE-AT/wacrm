@@ -142,6 +142,9 @@ function UserTabs() {
     }
   }
 
+  const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(primaryModule.path);
+  const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${primaryModule.path}` : undefined;
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -166,7 +169,11 @@ function UserTabs() {
       <Tab.Screen
         name={primaryModule.name}
         component={EcosystemWebView}
-        initialParams={{ path: primaryModule.path, moduleName: primaryModule.label }}
+        initialParams={{ 
+          path: primaryModule.path, 
+          moduleName: primaryModule.label,
+          ...(aishleeUrl ? { url: aishleeUrl } : {})
+        }}
         options={tabOpts(primaryModule.label, primaryModule.icon)}
       />
 

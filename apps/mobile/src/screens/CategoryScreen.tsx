@@ -1,4 +1,6 @@
 // @ts-nocheck
+// Aishlee platform URL — TeachO, TestO, TvO, MoneyO are served from here
+const AISHLEE_BASE = 'https://thamizhan.vercel.app';
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award, Gamepad2 } from 'lucide-react-native';
@@ -30,12 +32,20 @@ export default function CategoryScreen() {
     addRecentModule(cat.id);
     if (cat.path === '/gameo') {
       navigation.navigate('GameOScreen');
-    } else if (cat.path === '/teacho') {
-      navigation.navigate('TeachOScreen');
-    } else if (cat.path === '/testo') {
-      navigation.navigate('TestOHubScreen');
     } else if (cat.path === '/agro') {
       navigation.navigate('AgrOScreen');
+    } else if (
+      cat.path === '/teacho' ||
+      cat.path === '/testo' ||
+      cat.path === '/tvo' ||
+      cat.path === '/moneyo'
+    ) {
+      // These 4 modules are powered by the Aishlee platform directly
+      navigation.navigate('ModuleView', {
+        url: `${AISHLEE_BASE}${cat.path}`,
+        moduleName: cat.title,
+        path: cat.path,
+      });
     } else {
       navigation.navigate('ModuleView', {
         path: cat.path,
@@ -146,4 +156,3 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
 });
-

@@ -3,10 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Gamepad2, Map as MapIcon, Trophy, Bike, Activity, Play, Settings, Wallet, RefreshCw, ShoppingBag, Gift, CheckCircle2 } from 'lucide-react';
+import { Gamepad2, Map as MapIcon, Trophy, Bike, Activity, Play, Settings, Wallet, RefreshCw, ShoppingBag, Gift, CheckCircle2, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { RewardsService, OfflineSyncService, UserBalance, Coupon } from '@/lib/gameo-supabase/services';
-import { toast } from 'sonner'; // Assuming sonner is used for toasts based on typical Next.js setups
+import { RewardsService, OfflineSyncService, UserBalance, Coupon, FeedService, FeedItem } from '@/lib/gameo-supabase/services';
+import { getGameOClient } from '@/lib/gameo-supabase/client';
+import { toast } from 'sonner';
 
 // Rewards Catalog
 const REWARDS_CATALOG = [
@@ -30,8 +31,8 @@ const REWARDS_CATALOG = [
   },
   {
     id: 'reward_3',
-    name: 'Free Teacho Course',
-    description: 'Unlock one premium Teacho course',
+    name: 'Free ToolsO AI Access',
+    description: 'Unlock premium ToolsO AI tools for 30 days',
     points_cost: 1500,
     value: 100,
     currency: 'PERCENT',
@@ -41,7 +42,7 @@ const REWARDS_CATALOG = [
 
 export default function GameOPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'game' | 'hub'>('game');
+  const [activeTab, setActiveTab] = useState<'game' | 'hub' | 'feed'>('game');
   
   // Game State
   const [activeMode, setActiveMode] = useState<'bike' | 'run'>('bike');
@@ -54,6 +55,9 @@ export default function GameOPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRedeeming, setIsRedeeming] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Feed State
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
 
   // Data Loading
   const loadData = async () => {
@@ -76,7 +80,39 @@ export default function GameOPage() {
     if (activeTab === 'hub' && user) {
       loadData();
     }
+    if (activeTab === 'feed') {
+      loadFeed();
+      // Subscribe to real-time updates
+      const gameoClient = getGameOClient();
+      const channel = gameoClient
+        .channel('public:admin_public_feed')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'admin_public_feed' },
+          (payload) => {
+            setFeedItems((prev) => [payload.new as FeedItem, ...prev]);
+            toast.success('New update received!');
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        gameoClient.removeChannel(channel);
+      };
+    }
   }, [activeTab, user]);
+
+  const loadFeed = async () => {
+    setLoading(true);
+    try {
+      const items = await FeedService.getLatestFeed();
+      setFeedItems(items);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSync = async () => {
     if (!user) return;
@@ -193,6 +229,12 @@ export default function GameOPage() {
           >
             <Wallet className="w-4 h-4" /> Rewards Hub
           </button>
+          <button 
+            onClick={() => setActiveTab('feed')}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'feed' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+          >
+            <MessageCircle className="w-4 h-4" /> Social Updates
+          </button>
         </div>
       </div>
 
@@ -307,6 +349,86 @@ export default function GameOPage() {
             </div>
           </div>
         )
+      ) : activeTab === 'feed' ? (
+        <div className="max-w-3xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <MessageCircle className="w-6 h-6 text-indigo-400" /> Admin Updates
+            </h2>
+            <button onClick={loadFeed} className="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-full transition-colors">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+          
+          {loading && feedItems.length === 0 ? (
+            <div className="flex justify-center p-12">
+              <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+          ) : feedItems.length === 0 ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
+              <MessageCircle className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-white">No updates yet</h3>
+              <p className="text-slate-400 mt-1">Check back later for news and announcements.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {feedItems.map((item) => {
+                const isYouTube = item.url.includes('youtube.com') || item.url.includes('youtu.be');
+                const isFacebook = item.url.includes('facebook.com');
+                
+                let embedUrl = item.url;
+                if (isYouTube) {
+                  // Extract video ID for YouTube
+                  const videoId = item.url.split('v=')[1]?.split('&')[0] || item.url.split('youtu.be/')[1]?.split('?')[0];
+                  if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+                } else if (isFacebook) {
+                   // Basic iframe approach for Facebook video/post if it's a shareable link
+                   embedUrl = `https://www.facebook.com/plugins/post.php?href=${encodeURIComponent(item.url)}&show_text=true&width=500`;
+                }
+                
+                return (
+                  <div key={item.id} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                          <span className="text-indigo-400 font-bold">Admin</span>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-sm">SuprO Admin</h4>
+                          <p className="text-xs text-slate-500">
+                            {new Date(item.published_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <a href={item.url} target="_blank" rel="noreferrer" className="text-xs text-indigo-400 hover:text-indigo-300">
+                        View Original ↗
+                      </a>
+                    </div>
+                    
+                    <div className="rounded-xl overflow-hidden bg-slate-950/50 border border-slate-800 aspect-video relative flex items-center justify-center">
+                       {isYouTube || isFacebook ? (
+                          <iframe 
+                            src={embedUrl} 
+                            className="absolute inset-0 w-full h-full"
+                            style={{ border: 'none', overflow: 'hidden' }}
+                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" 
+                            allowFullScreen
+                          />
+                       ) : (
+                          <div className="p-8 text-center w-full">
+                            <a href={item.url} target="_blank" rel="noreferrer" className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white font-bold transition-all shadow-lg shadow-indigo-600/20">
+                              Open Link
+                            </a>
+                            <p className="text-slate-400 text-sm mt-3 truncate">{item.url}</p>
+                          </div>
+                       )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       ) : (
         /* Rewards Hub */
         <div className="space-y-6">

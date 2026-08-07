@@ -2,12 +2,12 @@
 
 import AishleeEmbed from '@/components/aishlee-embed';
 
-export default function MoneyoPage() {
+export default function TestoPage() {
   return (
     <AishleeEmbed
-      path="/moneyo"
-      moduleName="MoneyO"
-      accentColor="#14b8a6"
+      path="/testo"
+      moduleName="TestO"
+      accentColor="#8b5cf6"
       icon="??"
     />
   );

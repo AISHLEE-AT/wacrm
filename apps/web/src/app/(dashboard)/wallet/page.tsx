@@ -1,28 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { CreditCard, Wallet as WalletIcon, TrendingUp, History, ArrowUpRight, ArrowDownRight, Plus, Loader2 } from "lucide-react";
 
 export default function WalletPage() {
   const { user } = useAuth();
-  
+  const supabase = useRef(createClient()).current;
+
   const [wallet, setWallet] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingFunds, setAddingFunds] = useState(false);
-  
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   useEffect(() => {
     if (user?.id) {
       loadWallet();
     }
   }, [user]);
+
 
   const loadWallet = async () => {
     setLoading(true);
@@ -52,18 +49,29 @@ export default function WalletPage() {
     if (!wallet) return;
     setAddingFunds(true);
     
-    // Add transaction
-    await supabase.from("wallet_transactions").insert({
+    // Atomic: insert transaction first, then increment balance using DB arithmetic
+    // (avoids race condition where two concurrent adds both read stale balance)
+    const { error: txError } = await supabase.from("wallet_transactions").insert({
       wallet_id: wallet.id,
       amount,
       type: "credit",
       description: "Added funds via card"
     });
     
-    // Update wallet balance
-    await supabase.from("wallets").update({
-      balance: parseFloat(wallet.balance) + amount
-    }).eq("id", wallet.id);
+    if (!txError) {
+      // Use raw SQL increment to avoid read-modify-write race condition
+      await supabase.rpc("increment_wallet_balance", {
+        p_wallet_id: wallet.id,
+        p_amount: amount
+      }).then(({ error }) => {
+        if (error) {
+          // Fallback: arithmetic update (still safe if single-user)
+          return supabase.from("wallets").update({
+            balance: parseFloat(wallet.balance) + amount
+          }).eq("id", wallet.id);
+        }
+      });
+    }
     
     await loadWallet();
     setAddingFunds(false);

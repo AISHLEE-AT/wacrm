@@ -66,8 +66,12 @@ function RideOBookingContent() {
   const handleBookDriver = async (driver: any) => {
     if (!pickup || !dropoff) return;
     
-    // Fallback to CRM number if driver phone is missing (though driver should have one)
-    const driverPhone = driver.phone || '916381029380'; 
+    if (!driver.phone) {
+      alert('This driver has no contact number. Please select another driver.');
+      return;
+    }
+    
+    const driverPhone = driver.phone;
     const message = `🚕 *New Ride Request (RideO)* 🚕\n\n*Pickup Coordinates:* ${pickup[0].toFixed(4)}, ${pickup[1].toFixed(4)}\n*Drop-off Coordinates:* ${dropoff[0].toFixed(4)}, ${dropoff[1].toFixed(4)}\n*Vehicle Requested:* ${driver.vehicle_type}\n*Distance:* ${driver.distance_km?.toFixed(1)} km\n\nPlease confirm my booking!`;
     
     const whatsappUrl = `https://wa.me/${driverPhone}?text=${encodeURIComponent(message)}`;

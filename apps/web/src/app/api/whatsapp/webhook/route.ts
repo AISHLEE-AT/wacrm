@@ -661,6 +661,48 @@ async function processMessage(
   });
   // ------------------------------------
 
+  // -- GAMEO PUBLIC FEED HOOK --
+  if (contentText) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = contentText.match(urlRegex);
+    
+    if (urls && urls.length > 0) {
+      // Fire-and-forget hook to insert into GameO DB
+      ;(async () => {
+        try {
+          // Verify sender is admin (check against CRM DB profiles or fallback to predefined admins if necessary, but we'll use profiles since phone numbers match)
+          // Wait, admin profile might not have the exact senderPhone, but we can check if it ends with the senderPhone
+          const { data: adminProfile } = await supabaseAdmin()
+            .from('profiles')
+            .select('role')
+            .eq('role', 'admin')
+            .or(`phone.eq.${senderPhone},phone.eq.+${senderPhone},phone.eq.${senderPhone.replace('91', '')}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (adminProfile) {
+            const gameo = gameoAdmin();
+            if (gameo) {
+              for (const url of urls) {
+                const { error } = await gameo.from('admin_public_feed').insert({
+                  url: url,
+                  author_phone: senderPhone
+                });
+                if (error) console.error('Error inserting GameO feed:', error);
+                else console.log('Successfully published link to GameO feed');
+              }
+            } else {
+               console.warn('gameoAdmin client not configured, skipping feed insert');
+            }
+          }
+        } catch (err) {
+          console.error('GameO feed hook failed:', err);
+        }
+      })();
+    }
+  }
+  // ------------------------------------
+
   // Resolve swipe-reply context if present. A missing parent is fine —
   // we just store NULL and the UI renders the message without a quote.
   let replyToInternalId: string | null = null

@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // Bootstrap admin phones (fallback — DB role='admin' is primary)
 const BOOTSTRAP_ADMIN_PHONES = [
-  '6381029380', '916381029380'
+  '6381029380', '916381029380', '9486335870', '919486335870'
 ]
 const BOOTSTRAP_ADMIN_EMAILS = ['aishleetechnology@gmail.com']
 
@@ -156,7 +156,10 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
     '/automations', '/flows', '/settings', '/drivo',
-    '/admin', '/profile', '/wallet', '/crm'
+    '/admin', '/profile', '/wallet', '/crm',
+    '/rideo', '/moneyo', '/mandi', '/agro', '/rento', '/dealo',
+    '/touro', '/tasko', '/gameo', '/tvo', '/tradeo', '/toolso',
+    '/ai-assistant', '/teacho', '/testo',
   ]
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)

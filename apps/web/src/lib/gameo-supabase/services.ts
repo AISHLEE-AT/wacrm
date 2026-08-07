@@ -92,3 +92,27 @@ export const OfflineSyncService = {
     return true
   }
 }
+
+export type FeedItem = {
+  id: string
+  url: string
+  author_phone: string
+  published_at: string
+}
+
+export const FeedService = {
+  async getLatestFeed(): Promise<FeedItem[]> {
+    const { data, error } = await getGameOClient()
+      .from('admin_public_feed')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(50)
+    
+    if (error) {
+      console.error('Error fetching feed:', error)
+      return []
+    }
+    
+    return data || []
+  }
+}
