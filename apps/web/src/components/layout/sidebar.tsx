@@ -220,11 +220,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             <div className="relative flex-shrink-0">
               {/* Outer glow */}
               <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-md scale-125" />
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-[#0a0f1e] border-2 border-amber-400/60 shadow-[0_0_16px_rgba(250,204,21,0.4),0_0_32px_rgba(52,211,153,0.2)]">
-                <Smartphone className="h-6 w-6 text-emerald-400" />
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-[#0a0f1e] border-2 border-emerald-500/40 overflow-hidden shadow-[0_0_16px_rgba(52,211,153,0.4),0_0_32px_rgba(52,211,153,0.2)]">
+                <img src="/logo.png" alt="SuprO Logo" className="w-full h-full object-cover" />
               </div>
-              {/* Live dot */}
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)] border border-[#0a0f1e]" />
+              {/* Golden shimmer dot */}
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 shadow-[0_0_6px_rgba(251,191,36,0.9)] border border-[#0a0f1e] flex items-center justify-center">
+                 <Sparkles className="w-2 h-2 text-white" />
+              </span>
             </div>
             <div className="flex flex-col ml-0.5 justify-center leading-none">
               <span className="text-[22px] font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-green-300 to-amber-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.4)] leading-none">
