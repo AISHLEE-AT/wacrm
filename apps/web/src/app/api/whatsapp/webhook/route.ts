@@ -739,7 +739,7 @@ async function processMessage(
   // -- WELCOME AUTO-REPLY HOOK --
   if (isFirstInboundMessage && contentText?.trim().toLowerCase() === 'hi') {
     let flutterUrl = ''
-    let reactUrl = 'https://watcrm.vercel.app'
+    let reactUrl = 'https://watscrm.vercel.app'
     
     // Fire and forget to not block webhook response
     ;(async () => {
@@ -789,6 +789,63 @@ async function processMessage(
           })
         })
         .catch((err) => console.error('Welcome auto-reply failed:', err))
+    })();
+  }
+  // ------------------------------------
+
+  // -- APP LINK AUTO-REPLY HOOK --
+  if (contentText?.trim().toLowerCase() === 'app') {
+    let flutterUrl = ''
+    let reactUrl = 'https://watscrm.vercel.app'
+    
+    // Fire and forget to not block webhook response
+    ;(async () => {
+      try {
+        const gameo = gameoAdmin()
+        if (gameo) {
+          const { data: builds } = await gameo
+            .from('app_builds')
+            .select('platform, download_url')
+            .in('platform', ['flutter', 'react'])
+            .order('created_at', { ascending: false })
+            .limit(10)
+            
+          if (builds) {
+            const latestFlutter = builds.find((b: any) => b.platform === 'flutter')
+            const latestReact = builds.find((b: any) => b.platform === 'react')
+            if (latestFlutter?.download_url) flutterUrl = latestFlutter.download_url
+            if (latestReact?.download_url) reactUrl = latestReact.download_url
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch from Gameo DB:', e)
+      }
+
+      let appMsg = `Here is the SuprO App! 🚀\n\n🌐 *Web App Link:*\n${reactUrl}\n\n*Guide to use the Web App:*\n1. Tap the link above to open SuprO on any browser.\n2. Log in using your phone number.\n3. Explore services directly from the menu.`
+      
+      if (flutterUrl) {
+         appMsg += `\n\n📱 *Android App Download:*\n${flutterUrl}\n\n*Installation Guide:*\n1. Tap the Android app link above to download the APK file.\n2. Once downloaded, tap to open the file.\n3. If prompted, select "Allow from this source" in your settings to install the app.\n4. Open the app and enjoy SuprO!`
+      }
+      
+      sendTextMessage({
+        phoneNumberId,
+        accessToken,
+        to: senderPhone,
+        text: appMsg,
+      })
+        .then(async (sendRes) => {
+          // Record outbound message in CRM
+          await supabaseAdmin().from('messages').insert({
+            conversation_id: conversation.id,
+            sender_type: 'agent',
+            content_type: 'text',
+            content_text: appMsg,
+            message_id: sendRes.messageId,
+            status: 'sent',
+            created_at: new Date().toISOString(),
+          })
+        })
+        .catch((err) => console.error('App link auto-reply failed:', err))
     })();
   }
   // ------------------------------------
