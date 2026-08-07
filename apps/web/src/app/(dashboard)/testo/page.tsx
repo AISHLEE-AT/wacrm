@@ -18,20 +18,27 @@ type Test = {
 export default function TestoPage() {
   const [tests, setTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     async function fetchTests() {
-      const supabase = createLMSClient();
-      // OPTIMIZATION: Only fetch lightweight metadata (exclude additional_info which contains massive question banks)
-      const { data, error } = await supabase
-        .from('unified_master_data')
-        .select('id, category, title_name, description_purpose')
-        .eq('item_type', 'o_test')
-        .order('created_at', { ascending: false });
+      try {
+        const supabase = createLMSClient();
+        // OPTIMIZATION: Only fetch lightweight metadata (exclude additional_info which contains massive question banks)
+        const { data, error } = await supabase
+          .from('unified_master_data')
+          .select('id, category, title_name, description_purpose')
+          .eq('item_type', 'o_test')
+          .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setTests(data as Test[]);
+        if (error) {
+          setErrorMsg(error.message);
+        } else if (data) {
+          setTests(data as Test[]);
+        }
+      } catch (err: any) {
+        setErrorMsg(err.message || 'An unexpected error occurred while fetching tests.');
       }
       setLoading(false);
     }
@@ -61,23 +68,31 @@ export default function TestoPage() {
         <div className="flex items-center justify-center h-64">
           <div className="w-8 h-8 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
         </div>
-      ) : Object.keys(testsByCategory).length === 0 ? (
-        <div className="text-center p-8 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400">
-          No tests available right now. Check back later!
-        </div>
       ) : (
         <div className="space-y-8">
-          {Object.entries(testsByCategory).map(([category, catTests]) => (
-            <div key={category} className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-200 border-l-4 border-rose-500 pl-3">{category}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {catTests.map((t) => {
-                  return (
-                    <div key={t.id} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
-                      <div>
-                        <span className="text-xs font-semibold bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30">
-                          {t.category || 'Test'}
-                        </span>
+          {errorMsg && (
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+              <strong>Error loading tests:</strong> {errorMsg}
+              <p className="mt-2 text-xs opacity-80">Make sure NEXT_PUBLIC_LMS_SUPABASE_URL and NEXT_PUBLIC_LMS_SUPABASE_ANON_KEY are set in Vercel.</p>
+            </div>
+          )}
+
+          {Object.keys(testsByCategory).length === 0 && !errorMsg ? (
+            <div className="text-center p-8 bg-slate-900 border border-slate-800 rounded-2xl text-slate-400">
+              No tests available right now. Check back later!
+            </div>
+          ) : (
+            Object.entries(testsByCategory).map(([category, catTests]) => (
+              <div key={category} className="space-y-4">
+                <h2 className="text-xl font-bold text-slate-200 border-l-4 border-rose-500 pl-3">{category}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {catTests.map((t) => {
+                    return (
+                      <div key={t.id} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+                        <div>
+                          <span className="text-xs font-semibold bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30">
+                            {t.category || 'Test'}
+                          </span>
                         <h3 className="font-bold text-white text-base mt-2">{t.title_name}</h3>
                         <p className="text-sm text-slate-400 mt-1 line-clamp-2">{t.description_purpose}</p>
                       </div>
@@ -90,10 +105,11 @@ export default function TestoPage() {
                       </button>
                     </div>
                   );
-                })}
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       )}
     </div>

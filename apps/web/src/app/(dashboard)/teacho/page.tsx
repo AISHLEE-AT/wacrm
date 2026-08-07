@@ -29,6 +29,7 @@ type Module = {
 export default function TeachOPage() {
   const [courses, setCourses] = useState<CourseMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<CourseMeta | null>(null);
   
   // Lazy-loaded data for the selected course
@@ -39,25 +40,31 @@ export default function TeachOPage() {
 
   useEffect(() => {
     async function fetchCourses() {
-      const supabase = createLMSClient();
-      // OPTIMIZATION: Only fetch lightweight metadata on initial load
-      const { data, error } = await supabase
-        .from('unified_master_data')
-        .select('id, title_name, category, description_purpose')
-        .eq('item_type', 'COURSE')
-        .order('created_at', { ascending: false });
+      try {
+        const supabase = createLMSClient();
+        // OPTIMIZATION: Only fetch lightweight metadata on initial load
+        const { data, error } = await supabase
+          .from('unified_master_data')
+          .select('id, title_name, category, description_purpose')
+          .eq('item_type', 'COURSE')
+          .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        const adaptedCourses = data.map((item: any) => ({
-          id: item.id,
-          title: item.title_name || 'Untitled Course',
-          subtitle: item.category || 'General',
-          description: item.description_purpose || 'No description provided.',
-          category: item.category || 'General',
-          level: 'All Levels',
-          icon: '📚'
-        }));
-        setCourses(adaptedCourses);
+        if (error) {
+          setErrorMsg(error.message);
+        } else if (data) {
+          const adaptedCourses = data.map((item: any) => ({
+            id: item.id,
+            title: item.title_name || 'Untitled Course',
+            subtitle: item.category || 'General',
+            description: item.description_purpose || 'No description provided.',
+            category: item.category || 'General',
+            level: 'All Levels',
+            icon: '📚'
+          }));
+          setCourses(adaptedCourses);
+        }
+      } catch (err: any) {
+        setErrorMsg(err.message || 'An unexpected error occurred while fetching courses.');
       }
       setLoading(false);
     }
@@ -160,7 +167,14 @@ export default function TeachOPage() {
           
           {/* Courses List - Categorized */}
           <div className="w-full lg:w-1/2 space-y-8">
-            {Object.keys(coursesByCategory).length === 0 ? (
+            {errorMsg && (
+              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                <strong>Error loading courses:</strong> {errorMsg}
+                <p className="mt-2 text-xs opacity-80">Make sure NEXT_PUBLIC_LMS_SUPABASE_URL and NEXT_PUBLIC_LMS_SUPABASE_ANON_KEY are set in Vercel.</p>
+              </div>
+            )}
+            
+            {Object.keys(coursesByCategory).length === 0 && !errorMsg ? (
               <div className="p-8 text-center bg-slate-900/50 border border-slate-800 rounded-2xl">
                 <BookOpen className="w-8 h-8 text-slate-600 mx-auto mb-3" />
                 <p className="text-slate-400">No courses available yet.</p>
