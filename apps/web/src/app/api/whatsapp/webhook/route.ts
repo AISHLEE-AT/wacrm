@@ -681,18 +681,13 @@ async function processMessage(
             .maybeSingle();
 
           if (adminProfile) {
-            const gameo = gameoAdmin();
-            if (gameo) {
-              for (const url of urls) {
-                const { error } = await gameo.from('admin_public_feed').insert({
-                  url: url,
-                  author_phone: senderPhone
-                });
-                if (error) console.error('Error inserting GameO feed:', error);
-                else console.log('Successfully published link to GameO feed');
-              }
-            } else {
-               console.warn('gameoAdmin client not configured, skipping feed insert');
+            for (const url of urls) {
+              const { error } = await supabaseAdmin().from('admin_public_feed').insert({
+                url: url,
+                author_phone: senderPhone
+              });
+              if (error) console.error('Error inserting GameO feed:', error);
+              else console.log('Successfully published link to GameO feed');
             }
           }
         } catch (err) {

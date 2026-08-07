@@ -82,3 +82,5 @@ yarn-error.log*
 next-env.d.ts
 *.apk
 .kotlin/
+apps/supro_flutter/build
+apps/supro_flutter/.dart_tool
