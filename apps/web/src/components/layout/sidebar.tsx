@@ -39,6 +39,7 @@ import {
   Newspaper,
   Smartphone,
   Bot,
+  Sparkles,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
