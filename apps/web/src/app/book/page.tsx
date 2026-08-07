@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 // Dynamically import Map so it only renders on client
 const RideMap = dynamic(() => import('@/components/RideMap'), { ssr: false })

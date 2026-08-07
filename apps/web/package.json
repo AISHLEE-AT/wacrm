@@ -91,6 +91,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "lightningcss-linux-x64-gnu": "^1.33.0",
+    "lightningcss-linux-x64-musl": "^1.33.0",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
