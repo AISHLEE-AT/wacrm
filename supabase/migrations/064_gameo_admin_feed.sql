@@ -18,10 +18,10 @@ CREATE POLICY "Enable read access for all users" ON public.admin_public_feed
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_public_feed;
 
--- Create pg_cron job to auto-delete records older than 7 days
--- Runs every day at midnight
+-- Create pg_cron job to auto-delete records older than 24 hours
+-- Runs every day at 4:00 AM
 SELECT cron.schedule(
     'delete_old_admin_feed',
-    '0 0 * * *',
-    'DELETE FROM public.admin_public_feed WHERE published_at < NOW() - INTERVAL ''7 days'''
+    '0 4 * * *',
+    $$DELETE FROM public.admin_public_feed WHERE published_at < NOW() - INTERVAL '24 hours'$$
 );
