@@ -18,6 +18,8 @@ import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import MapScreen        from './src/screens/MapScreen';
 import ChatScreen       from './src/screens/ChatScreen';
+import RideOScreen      from './src/screens/RideOScreen';
+import DriveOScreen     from './src/screens/DriveOScreen';
 import GameOScreen      from './src/screens/GameOScreen';
 import GamingHubScreen  from './src/screens/GamingHubScreen';
 import RewardsScreen    from './src/screens/RewardsScreen';
@@ -224,6 +226,8 @@ function RootNavigator() {
         name="ModuleView"
         component={EcosystemWebView}
       />
+      <Stack.Screen name="RideOScreen" component={RideOScreen} />
+      <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
       <Stack.Screen name="GameOScreen" component={GameOScreen} />
       <Stack.Screen name="MapRacer3DScreen" component={MapRacer3DScreen} />
       <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />

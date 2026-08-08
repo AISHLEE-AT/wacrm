@@ -25,6 +25,10 @@ export const AppProvider = ({ children }: any) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  
+  // RideO & DriveO specific state
+  const [activeRide, setActiveRide] = useState<any>(null);
+  const [driverMode, setDriverMode] = useState<boolean>(false);
 
   // Derived shorthand for components still using userRole
   const userRole = user?.isAdmin ? 'admin' : (user?.role ?? 'user');
@@ -159,6 +163,10 @@ export const AppProvider = ({ children }: any) => {
       addRecentModule,
       geminiApiKey,
       updateGeminiKey,
+      activeRide,
+      setActiveRide,
+      driverMode,
+      setDriverMode,
       // Legacy compat
       setUserRole: (role: string) => setUser(prev => prev ? { ...prev, role } : null),
     }}>

@@ -217,42 +217,46 @@ export async function handleRideHailingBooking(
           text: `Pickup set to: ${address}\nNow, please share your DROPOFF location.`
         })
         return true
-      } else if (activeRide && activeRide.pickup_lat && !activeRide.distance_km) {
+      } else if (activeRide && activeRide.pickup_lat && !activeRide.dropoff_lat) {
         const dropoffAddress = await reverseGeocode(loc)
-        const pickupLoc = { lat: activeRide.pickup_lat, lng: activeRide.pickup_lng }
-        const estimate = await getRideEstimate(pickupLoc, loc)
         
-        if (!estimate) {
-          await sendTextMessage({
-            accessToken,
-            phoneNumberId: config.phone_number_id,
-            to: senderPhone,
-            text: 'Could not calculate route. Please try again.'
-          })
-          return true
-        }
-
-        const vehicle = { baseFare: 50, perKmRate: 15, perMinuteRate: 2 }
-        const price = calculatePrice(estimate, vehicle)
-
         await supabase.from('rides')
           .update({
             dropoff_lat: loc.lat,
             dropoff_lng: loc.lng,
             dropoff_address: dropoffAddress,
-            distance_km: estimate.distanceMeters / 1000,
-            estimated_duration_mins: estimate.durationSeconds / 60,
-            estimated_price: price
           })
           .eq('id', activeRide.id)
+
+        // Fetch estimates for all vehicle categories
+        const res = await fetch(`http://localhost:3000/api/rides/estimate?pickup_lat=${activeRide.pickup_lat}&pickup_lng=${activeRide.pickup_lng}&dropoff_lat=${loc.lat}&dropoff_lng=${loc.lng}`)
+        if (!res.ok) {
+           await sendTextMessage({
+             accessToken,
+             phoneNumberId: config.phone_number_id,
+             to: senderPhone,
+             text: 'Could not calculate route. Please try again.'
+           })
+           return true
+        }
+        const data = await res.json()
+        
+        const auto = data.estimates?.find((e: any) => e.category === 'autoo')
+        const mini = data.estimates?.find((e: any) => e.category === 'mini')
+
+        let textBody = `Trip Details:\nFrom: ${activeRide.pickup_address}\nTo: ${dropoffAddress}\nDistance: ${data.estimates[0]?.distance_km}km\nETA: ${data.estimates[0]?.duration_mins} mins\n`
+        if (auto) textBody += `\n🛺 AutoO: ₹${auto.fare_breakdown?.total}`
+        if (mini) textBody += `\n🚗 Mini: ₹${mini.fare_breakdown?.total}`
+        textBody += `\n\nPlease select your preferred ride option:`
 
         await sendInteractiveButtons({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          bodyText: `Trip Details:\nFrom: ${activeRide.pickup_address}\nTo: ${dropoffAddress}\nDistance: ${estimate.distanceText}\nETA: ${estimate.durationText}\n\nEstimated Fare: ₹${price}\n\n⚠️ Strict Policy: You only pay exactly ₹${price}. No extra charges.`,
+          bodyText: textBody,
           buttons: [
-            { id: `confirm_ride_${activeRide.id}`, title: 'Confirm Ride' },
+            { id: `req_autoo_${activeRide.id}`, title: `Auto (₹${auto?.fare_breakdown?.total})` },
+            { id: `req_mini_${activeRide.id}`, title: `Mini (₹${mini?.fare_breakdown?.total})` },
             { id: `cancel_ride_${activeRide.id}`, title: 'Cancel' }
           ]
         })
@@ -263,19 +267,62 @@ export async function handleRideHailingBooking(
     // ───── 3. HANDLE INTERACTIVE REPLIES ─────
     if (message.type === 'interactive' && message.interactive) {
       const replyId = message.interactive.button_reply?.id || message.interactive.list_reply?.id
-      if (replyId && replyId.startsWith('confirm_ride_')) {
-        const rideId = replyId.replace('confirm_ride_', '')
-        await supabase.from('rides').update({ status: 'pending' }).eq('id', rideId)
+      
+      if (replyId && replyId.startsWith('req_')) {
+        const parts = replyId.split('_')
+        const vehicleCategory = parts[1]
+        const rideId = parts.slice(2).join('_')
         
-        await sendInteractiveButtons({
-          accessToken,
-          phoneNumberId: config.phone_number_id,
-          to: senderPhone,
-          bodyText: 'Your ride is confirmed! We are finding a driver for you. If a driver demands extra fare, please report immediately.',
-          buttons: [
-            { id: `report_ride_${rideId}`, title: 'Report Extortion' }
-          ]
-        })
+        const { data: ride } = await supabase.from('rides').select('*').eq('id', rideId).single()
+        if (ride) {
+          await fetch('http://localhost:3000/api/rides/request', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({
+                passenger_phone: senderPhone,
+                passenger_name: 'Customer',
+                pickup_lat: ride.pickup_lat,
+                pickup_lng: ride.pickup_lng,
+                pickup_address: ride.pickup_address,
+                dropoff_lat: ride.dropoff_lat,
+                dropoff_lng: ride.dropoff_lng,
+                dropoff_address: ride.dropoff_address,
+                vehicle_category: vehicleCategory,
+                service_type: 'daily',
+                payment_mode: 'upi',
+                is_pink_ride: false
+             })
+          })
+          
+          await supabase.from('rides').update({ status: 'cancelled' }).eq('id', rideId)
+
+          await sendInteractiveButtons({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            bodyText: '✅ Your ride is confirmed! We are broadcasting to nearby drivers. You will receive OTP shortly.',
+            buttons: [
+              { id: `report_ride_${rideId}`, title: 'Report Issue' }
+            ]
+          })
+        }
+        return true
+      }
+
+      if (replyId && replyId.startsWith('accept_ride_')) {
+        const rideId = replyId.replace('accept_ride_', '')
+        const { data: driver } = await supabase.from('drivers').select('*').or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%`).maybeSingle()
+        
+        if (driver) {
+           await fetch('http://localhost:3000/api/rides/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                 ride_id: rideId,
+                 driver_id: driver.id
+              })
+           })
+        }
         return true
       }
       
@@ -295,14 +342,14 @@ export async function handleRideHailingBooking(
       if (replyId && replyId.startsWith('report_ride_')) {
         const rideId = replyId.replace('report_ride_', '')
         await supabase.from('rides')
-          .update({ is_flagged: true, flag_reason: 'Driver demanding extra fare' })
+          .update({ is_flagged: true, flag_reason: 'Issue reported' })
           .eq('id', rideId)
         
         await sendTextMessage({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          text: 'Thank you for reporting. Our dispatch team has been alerted and is reviewing the driver right now.'
+          text: 'Thank you for reporting. Our dispatch team has been alerted.'
         })
         return true
       }

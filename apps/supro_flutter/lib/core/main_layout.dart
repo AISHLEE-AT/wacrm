@@ -33,6 +33,7 @@ class _MainLayoutState extends State<MainLayout> {
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
+    if (location.startsWith('/ai-bot')) return 2;
     if (location.startsWith('/dashboard')) return 3; // Profile
     
     // Everything else (admin, teacho, testo, etc.) falls into the "Module" tab
@@ -51,9 +52,7 @@ class _MainLayoutState extends State<MainLayout> {
         }
         break;
       case 2:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('AI Assistant coming soon to Flutter!')),
-        );
+        context.go('/ai-bot');
         break;
       case 3:
         context.go('/dashboard');

@@ -1,5 +1,9 @@
 // @ts-nocheck
-// Aishlee platform URL � TeachO, TestO, TvO, MoneyO are served from here
+<<<<<<< HEAD
+// Aishlee platform URL — TeachO, TestO, TvO, MoneyO are served from here
+=======
+// Aishlee platform URL â€” TeachO, TestO, TvO, MoneyO are served from here
+>>>>>>> 97db0e7d (feat: complete rideo and driveo implementation with whatsapp deep integration)
 const AISHLEE_BASE = 'https://thamizhan.vercel.app';
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';

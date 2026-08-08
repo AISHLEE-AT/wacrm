@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -160,7 +160,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final userRole = ref.watch(currentUserProvider)?.role;
 
     final filteredCategories = categories.where((cat) {
-      if (cat.adminOnly && userRole != 'admin') return false;
       return true;
     }).toList();
 

@@ -46,6 +46,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/tvo', builder: (context, state) => const ModuleWebView(path: '/tvo')),
           GoRoute(path: '/moneyo', builder: (context, state) => const ModuleWebView(path: '/moneyo')),
           GoRoute(path: '/gameo', builder: (context, state) => const ModuleWebView(path: '/gameo')),
+          GoRoute(path: '/ai-bot', builder: (context, state) => const ModuleWebView(path: '/toolso?tab=gemini')),
           GoRoute(path: '/gaming_hub', builder: (context, state) => const GamingHubScreen()),
         ],
       ),
