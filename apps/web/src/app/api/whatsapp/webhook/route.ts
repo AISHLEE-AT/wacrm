@@ -751,7 +751,7 @@ async function processMessage(
 
   // -- RIDEO BOOKING HOOK --
   if (contentText && (contentText.toLowerCase().includes('ride') || contentText.toLowerCase().includes('book'))) {
-    const rideMsg = `🚕 Ready to book a ride?\n\n📍 *Option 1 (Native Map):*\nSimply tap the Attachment icon (📎) in WhatsApp, select *Location*, and send your current location as your Pickup point.\n\n🌐 *Option 2 (Web Map):*\nIf you prefer, tap this link to select your destination on a map:\nhttps://watcrm.vercel.app/book?phone=${encodeURIComponent(senderPhone)}`
+    const rideMsg = `🚕 Ready to book a ride?\n\n📍 *Option 1 (Native Map):*\nSimply tap the Attachment icon (📎) in WhatsApp, select *Location*, and send your current location as your Pickup point.\n\n🌐 *Option 2 (Web Map):*\nIf you prefer, tap this link to select your destination on a map:\nhttps://watscrm.vercel.app/book?phone=${encodeURIComponent(senderPhone)}`
     
     // Fire and forget
     sendTextMessage({

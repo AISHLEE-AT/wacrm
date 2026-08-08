@@ -1,4 +1,5 @@
 // @ts-nocheck
+import 'react-native-gesture-handler';
 import React, { useContext, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
