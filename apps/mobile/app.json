@@ -3,7 +3,7 @@
     "name": "SuprO 1.0.0 Beta AT",
     "slug": "supro",
     "scheme": "supro",
-    "version": "1.0.0",
+    "version": "1.0.2B",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
