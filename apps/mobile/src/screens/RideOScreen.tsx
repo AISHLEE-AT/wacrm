@@ -149,10 +149,10 @@ export default function RideOScreen({ navigation }) {
   // Fetch Nearby Drivers via Supabase RPC
   const fetchNearbyDrivers = async (lat, lng) => {
     try {
-      const { data, error } = await supabase.rpc('get_nearby_drivers_v2', {
-        lat: lat,
-        lon: lng,
-        max_dist_meters: 5000,
+      const { data, error } = await supabase.rpc('get_nearby_drivers', {
+        pickup_lat: lat,
+        pickup_lon: lng,
+        radius_km: 5,
       });
       if (!error && data) {
         setNearbyDrivers(data);
