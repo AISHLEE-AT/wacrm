@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Linking, SafeAreaView, Modal } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { PlayCircle, ChevronDown, ChevronUp, X } from 'lucide-react-native';
+import { PlayCircle, ChevronDown, ChevronUp, X, ArrowLeft } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 
 export default function TeachOCourseScreen() {
@@ -76,8 +76,13 @@ export default function TeachOCourseScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.courseTitle}>{course.title_name}</Text>
-          <Text style={styles.courseSubtitle}>{curriculum.length} Modules</Text>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <ArrowLeft size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.courseTitle} numberOfLines={1}>{course.title_name}</Text>
+            <Text style={styles.courseSubtitle}>{curriculum.length} Modules</Text>
+          </View>
         </View>
 
         <FlatList
@@ -118,9 +123,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
+  },
+  backBtn: {
+    padding: 8,
+    marginRight: 12,
   },
   courseTitle: {
     color: '#fff',
