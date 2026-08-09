@@ -192,6 +192,42 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       : []),
   ];
 
+  const [recentPaths, setRecentPaths] = useState<string[]>([]);
+  const [showAllModules, setShowAllModules] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("recent-web-modules");
+    if (saved) {
+      try {
+        setRecentPaths(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
+
+  useEffect(() => {
+    const rootPath = `/${pathname.split("/")[1]}`;
+    const isMobility = mobilityItems.some((item) => item.href === rootPath);
+    if (isMobility) {
+      setRecentPaths((prev) => {
+        const existing = prev.filter((p) => p !== rootPath);
+        const next = [rootPath, ...existing].slice(0, 4); // Keep top 4
+        localStorage.setItem("recent-web-modules", JSON.stringify(next));
+        return next;
+      });
+    }
+  }, [pathname]);
+
+  const recentItems = recentPaths
+    .map((path) => mobilityItems.find((item) => item.href === path))
+    .filter(Boolean) as NavItem[];
+
+  const defaultItems = mobilityItems.slice(0, 4);
+  const itemsToDisplay = showAllModules
+    ? mobilityItems
+    : recentItems.length > 0
+    ? recentItems
+    : defaultItems;
+
   return (
     <>
       <button
@@ -299,12 +335,20 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             </>
           )}
 
-          {/* Mobility & Logistics Section — Always Visible */}
-          <div className="px-3 mb-2 mt-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobility & Logistics</h3>
+          {/* Mobility & Logistics Section — Dynamic Recent Modules */}
+          <div className="px-3 mb-2 mt-4 flex items-center justify-between">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {showAllModules ? "All Ecosystem" : "Recent Modules"}
+            </h3>
+            <button
+              onClick={() => setShowAllModules(!showAllModules)}
+              className="text-[10px] uppercase font-bold text-primary hover:text-primary/80 tracking-wider"
+            >
+              {showAllModules ? "Show Less" : "Explore All"}
+            </button>
           </div>
           <ul className="flex flex-col gap-1">
-            {mobilityItems.map((item) => {
+            {itemsToDisplay.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
@@ -324,6 +368,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               );
             })}
           </ul>
+
 
 
           {/* Administration Section — STRICTLY Only Visible to 6381029380 / aishleetechnology@gmail.com */}
