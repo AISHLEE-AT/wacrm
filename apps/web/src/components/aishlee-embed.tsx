@@ -36,37 +36,23 @@ export default function AishleeEmbed({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [tokenInjected, setTokenInjected] = useState(false);
-  const [sessionResolved, setSessionResolved] = useState(false);
-  const [sessionData, setSessionData] = useState<{ accessToken: string, refreshToken: string } | null>(null);
-
-  useEffect(() => {
-    const fetchSession = async () => {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        setSessionData({ accessToken: data.session.access_token, refreshToken: data.session.refresh_token });
-      }
-      setSessionResolved(true);
-    };
-    fetchSession();
-  }, []);
 
   // Build the iframe URL - add embed=true so Aishlee hides its own nav
-  let iframeUrl = `${AISHLEE_URL}${path}?embed=true&source=supro`;
-  if (sessionData) {
-    iframeUrl += `&access_token=${sessionData.accessToken}&refresh_token=${sessionData.refreshToken}`;
-  }
+  const iframeUrl = `${AISHLEE_URL}${path}?embed=true&source=supro`;
 
-  // Inject Supabase session tokens into the iframe via postMessage (as a fallback/backup)
+  // Inject Supabase session tokens into the iframe via postMessage
   const injectAuth = useCallback(async () => {
-    if (!user || tokenInjected || !sessionData) return;
+    if (!user || tokenInjected) return;
     try {
-      if (iframeRef.current?.contentWindow) {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
+      if (session && iframeRef.current?.contentWindow) {
         iframeRef.current.contentWindow.postMessage(
           {
             type: 'SUPRO_AUTH_INJECT',
-            access_token: sessionData.accessToken,
-            refresh_token: sessionData.refreshToken,
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
             supabaseKey: 'sb-jjgdatjthyeesmgunnlp-auth-token',
             user: { id: user.id, phone: user.phone ?? '', email: user.email ?? '' },
           },
@@ -77,7 +63,7 @@ export default function AishleeEmbed({
     } catch (err) {
       console.error('[AishleeEmbed] auth inject failed:', err);
     }
-  }, [user, tokenInjected, sessionData]);
+  }, [user, tokenInjected]);
 
   const handleLoad = useCallback(() => {
     setLoading(false);
@@ -111,7 +97,7 @@ export default function AishleeEmbed({
   return (
     <div className="relative w-full rounded-xl overflow-hidden bg-slate-950" style={{ height: 'calc(100vh - 8rem)', minHeight: '600px' }}>
       {/* Loading skeleton */}
-      {(loading || !sessionResolved) && !error && (
+      {loading && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 z-10">
           <div className="flex flex-col items-center gap-2">
             <div className="h-1.5 w-48 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
@@ -155,20 +141,18 @@ export default function AishleeEmbed({
       )}
 
       {/* The actual iframe */}
-      {sessionResolved && (
-        <iframe
-          ref={iframeRef}
-          src={iframeUrl}
-          title={moduleName}
-          onLoad={handleLoad}
-          onError={handleError}
-          className="w-full h-full border-0"
-          style={{ opacity: loading || error ? 0 : 1, transition: 'opacity 0.3s ease' }}
-          allow="microphone; camera; geolocation; autoplay; clipboard-write"
-          allowFullScreen
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
-        />
-      )}
+      <iframe
+        ref={iframeRef}
+        src={iframeUrl}
+        title={moduleName}
+        onLoad={handleLoad}
+        onError={handleError}
+        className="w-full h-full border-0"
+        style={{ opacity: loading || error ? 0 : 1, transition: 'opacity 0.3s ease' }}
+        allow="microphone; camera; geolocation; autoplay; clipboard-write"
+        allowFullScreen
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+      />
     </div>
   );
 }
