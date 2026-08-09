@@ -164,8 +164,20 @@ export default function LoginScreen({ navigation }: any) {
       if (data.needs_pin_setup) {
         setStep('set-pin');
       } else {
-        setTimeout(() => {
-          navigation.replace('Dashboard');
+        setTimeout(async () => {
+          const savedModules = await SecureStore.getItemAsync('recent-modules');
+          let lastModule = null;
+          if (savedModules) {
+            try {
+              const parsed = JSON.parse(savedModules);
+              if (parsed.length > 0) lastModule = parsed[0];
+            } catch(e) {}
+          }
+          if (lastModule) {
+            navigation.replace('Dashboard', { screen: lastModule.name });
+          } else {
+            navigation.replace('Dashboard');
+          }
         }, 100);
       }
     } catch (err: any) {
@@ -183,8 +195,20 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await API.setPin(phone, newPin, confirmPin);
-      setTimeout(() => {
-        navigation.replace('Dashboard');
+      setTimeout(async () => {
+        const savedModules = await SecureStore.getItemAsync('recent-modules');
+        let lastModule = null;
+        if (savedModules) {
+          try {
+            const parsed = JSON.parse(savedModules);
+            if (parsed.length > 0) lastModule = parsed[0];
+          } catch(e) {}
+        }
+        if (lastModule) {
+          navigation.replace('Dashboard', { screen: lastModule.name });
+        } else {
+          navigation.replace('Dashboard');
+        }
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Failed to save PIN');
@@ -222,8 +246,20 @@ export default function LoginScreen({ navigation }: any) {
       }
 
       // Delay navigation to ensure AppContext is updated and EcosystemWebView gets the token
-      setTimeout(() => {
-        navigation.replace('Dashboard');
+      setTimeout(async () => {
+        const savedModules = await SecureStore.getItemAsync('recent-modules');
+        let lastModule = null;
+        if (savedModules) {
+          try {
+            const parsed = JSON.parse(savedModules);
+            if (parsed.length > 0) lastModule = parsed[0];
+          } catch(e) {}
+        }
+        if (lastModule) {
+          navigation.replace('Dashboard', { screen: lastModule.name });
+        } else {
+          navigation.replace('Dashboard');
+        }
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Login failed');

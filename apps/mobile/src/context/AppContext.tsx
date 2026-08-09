@@ -16,12 +16,19 @@ export interface AppUser {
   defaultModule?: string | null;
 }
 
+export interface RecentModule {
+  name: string;
+  path: string;
+  label: string;
+  iconName: string;
+}
+
 export const AppContext = createContext<any>(null);
 
 import { supabase } from '../lib/supabase';
 
 export const AppProvider = ({ children }: any) => {
-  const [recentModules, setRecentModules] = useState<string[]>(['Map']);
+  const [recentModules, setRecentModules] = useState<RecentModule[]>([]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -37,9 +44,15 @@ export const AppProvider = ({ children }: any) => {
   useEffect(() => {
     const loadState = async () => {
       try {
-        // Load all persisted user state
         const savedModules = await SecureStore.getItemAsync('recent-modules');
-        if (savedModules) setRecentModules(JSON.parse(savedModules));
+        if (savedModules) {
+          try {
+            const parsed = JSON.parse(savedModules);
+            // Filter out old string format, keep only objects
+            const validModules = parsed.filter((m: any) => typeof m === 'object' && m !== null && m.name);
+            setRecentModules(validModules);
+          } catch(e) {}
+        }
 
         const phone = await SecureStore.getItemAsync('user-phone');
         const name = await SecureStore.getItemAsync('user-name');
@@ -139,8 +152,8 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.deleteItemAsync('gemini-api-key');
   }, []);
 
-  const addRecentModule = useCallback(async (moduleName: string) => {
-    let updated = [moduleName, ...recentModules.filter(m => m !== moduleName)];
+  const addRecentModule = useCallback(async (module: RecentModule) => {
+    let updated = [module, ...recentModules.filter(m => m.path !== module.path)];
     if (updated.length > 3) updated = updated.slice(0, 3);
     setRecentModules(updated);
     await SecureStore.setItemAsync('recent-modules', JSON.stringify(updated));

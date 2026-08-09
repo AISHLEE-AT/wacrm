@@ -10,8 +10,14 @@ import {
   BookOpen, MonitorPlay, Wallet, Map,
   MessageSquare, LayoutGrid, User, Bot,
   Shield, Tv, GraduationCap, ShoppingBag,
-  Compass, Zap, Wrench, MapPin
+  Compass, Zap, Wrench, MapPin, Award, Gamepad2, Car
 } from 'lucide-react-native';
+
+const iconMap: Record<string, any> = {
+  Map, MapPin, GraduationCap, Wrench, ShoppingBag, 
+  Compass, Wallet, Tv, BookOpen, MonitorPlay, 
+  Award, Shield, Bot, User, LayoutGrid, MessageSquare, Gamepad2, Car
+};
 
 import LoginScreen      from './src/screens/LoginScreen';
 import CategoryScreen   from './src/screens/CategoryScreen';
@@ -102,51 +108,7 @@ function AdminTabs() {
 // ─── User Bottom Tabs ──────────────────────────────────────────────────────
 // Tailors Tab 2 dynamically based on user category (Driver -> DriveO, Student -> TeachO, Farmer -> AgrO, Shopper -> DealO, etc.)
 function UserTabs() {
-  const { user } = useContext(AppContext);
-  const category = (user?.category || user?.role || '').toLowerCase();
-  const defaultModulePath = user?.defaultModule;
-
-  let primaryModule = {
-    name: 'PrimaryModule',
-    path: '/rideo',
-    label: 'RideO',
-    icon: Map,
-  };
-
-  // First try to match defaultModule if available
-  if (defaultModulePath === '/drivo') {
-    primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
-  } else if (defaultModulePath === '/teacho') {
-    primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
-  } else if (defaultModulePath === '/agro') {
-    primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
-  } else if (defaultModulePath === '/dealo') {
-    primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
-  } else if (defaultModulePath === '/touro') {
-    primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
-  } else if (defaultModulePath === '/moneyo') {
-    primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
-  } else if (defaultModulePath === '/gameo') {
-    primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map }; 
-  } else {
-    // Fallback to category-based logic
-    if (category.includes('driver')) {
-      primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
-    } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
-      primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
-    } else if (category.includes('farmer') || category.includes('agri')) {
-      primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
-    } else if (category.includes('shopper') || category.includes('merchant')) {
-      primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
-    } else if (category.includes('tourist')) {
-      primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
-    } else if (category.includes('financier')) {
-      primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
-    }
-  }
-
-  const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(primaryModule.path);
-  const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${primaryModule.path}` : undefined;
+  const { recentModules } = useContext(AppContext);
 
   return (
     <Tab.Navigator
@@ -168,26 +130,32 @@ function UserTabs() {
         options={tabOpts('Grid', LayoutGrid)}
       />
 
-      {/* 2. User's Tailored Primary Module */}
-      <Tab.Screen
-        name={primaryModule.name}
-        component={EcosystemWebView}
-        initialParams={{ 
-          path: primaryModule.path, 
-          moduleName: primaryModule.label,
-          ...(aishleeUrl ? { url: aishleeUrl } : {})
-        }}
-        options={tabOpts(primaryModule.label, primaryModule.icon)}
-      />
+      {/* Dynamic Recent Modules */}
+      {recentModules.map((mod: any, index: number) => {
+        const IconComponent = iconMap[mod.iconName] || Map;
+        const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(mod.path);
+        const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${mod.path}` : undefined;
 
-      {/* 3. AI Assistant */}
-      <Tab.Screen
-        name="AIBot"
-        component={ChatScreen}
-        options={tabOpts('AI Assistant', Bot)}
-      />
+        // Custom direct-screen mapping for some modules if needed, or fallback to EcosystemWebView
+        // Actually for RideO, GameO, AgrO, TeachO we have dedicated screens, but the Tab Navigator handles the WebViews mainly, 
+        // and screens are rendered by the stack navigator. Wait, the previous primaryModule just mapped to EcosystemWebView always.
+        
+        return (
+          <Tab.Screen
+            key={`tab-${mod.name}-${index}`}
+            name={mod.name}
+            component={EcosystemWebView}
+            initialParams={{ 
+              path: mod.path, 
+              moduleName: mod.label,
+              ...(aishleeUrl ? { url: aishleeUrl } : {})
+            }}
+            options={tabOpts(mod.label, IconComponent)}
+          />
+        );
+      })}
 
-      {/* 4. Profile */}
+      {/* Profile */}
       <Tab.Screen
         name="DashboardTab"
         component={DashboardScreen}
