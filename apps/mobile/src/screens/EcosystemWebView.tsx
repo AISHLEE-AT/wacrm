@@ -38,14 +38,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
 
   let targetUrl = overrideUrl ?? `${BASE_URL}${path}`;
   const separator = targetUrl.includes('?') ? '&' : '?';
-  targetUrl = `${targetUrl}${separator}embed=true`;
-
-  if (accessToken) {
-    targetUrl = `${targetUrl}&access_token=${accessToken}`;
-    if (refreshToken) {
-      targetUrl = `${targetUrl}&refresh_token=${refreshToken}`;
-    }
-  }
+  targetUrl = `${targetUrl}${separator}embed=true&source=supro`;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Injected JS that:
@@ -75,8 +68,12 @@ export default function EcosystemWebView({ route, navigation }: Props) {
             }
           }
           if (!tokenKey) {
-            // Fallback key pattern used by Supabase JS client v2
-            tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
+            // Fallback key pattern based on domain
+            if (window.location.hostname.includes('thamizhan')) {
+              tokenKey = 'sb-jjgdatjthyeesmgunnlp-auth-token'; // Aishlee App
+            } else {
+              tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token'; // SuprO App
+            }
           }
           var existing = localStorage.getItem(tokenKey);
           if (!existing) {
@@ -111,7 +108,10 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           }
           return _push.apply(history, arguments);
         };
-
+        
+        // Let the web app know auth is injected (especially for Aishlee apps)
+        window.postMessage({ type: 'AISHLEE_READY' }, '*');
+        
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY', module: '${moduleName}' }));
       } catch(e) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', error: e.message }));
@@ -200,7 +200,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
         applicationNameForUserAgent="SuprO-Native/1.0"
         onNavigationStateChange={(navState) => {
           // If webview navigates to the web login page, intercept
-          if (navState.url?.includes('/login') && navState.url?.includes(BASE_URL)) {
+          if (navState.url?.includes('/login') && (navState.url?.includes(BASE_URL) || navState.url?.includes('thamizhan.vercel.app'))) {
             navigation.replace('Login');
           }
         }}
