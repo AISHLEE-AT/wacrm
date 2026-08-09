@@ -109,8 +109,47 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           return _push.apply(history, arguments);
         };
         
-        // Let the web app know auth is injected (especially for Aishlee apps)
-        window.postMessage({ type: 'AISHLEE_READY' }, '*');
+        // Inject Supabase session so user doesn't get redirected to login
+        if ("${accessToken}") {
+          var tokenKey = null;
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.includes('supabase') && k.includes('auth-token')) {
+              tokenKey = k; break;
+            }
+          }
+          if (!tokenKey) {
+            // Fallback key pattern based on domain
+            if (window.location.hostname.includes('thamizhan')) {
+              tokenKey = 'sb-jjgdatjthyeesmgunnlp-auth-token'; // Aishlee App
+            } else {
+              tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token'; // SuprO App
+            }
+          }
+          var existing = localStorage.getItem(tokenKey);
+          if (!existing) {
+            var sessionData = {
+              access_token: "${accessToken}",
+              refresh_token: "${refreshToken}",
+              user: {
+                id: "${user?.id ?? ''}",
+                phone: "${userPhone}",
+                name: "${userName}",
+                user_metadata: { role: "${userRole}", is_admin: ${isAdmin} }
+              }
+            };
+            localStorage.setItem(tokenKey, JSON.stringify(sessionData));
+            
+            // Set cookie for Next.js SSR (Supabase auth-helpers/ssr format is usually base64 JSON array)
+            var cookieValue = encodeURIComponent(JSON.stringify(["${accessToken}", "${refreshToken}"]));
+            document.cookie = tokenKey + '=' + cookieValue + '; path=/; max-age=31536000';
+            
+            // Reload so SSR can see the cookie
+            if (window.location.pathname.includes('/teacho')) {
+              window.location.reload();
+            }
+          }
+        }
         
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY', module: '${moduleName}' }));
       } catch(e) {
