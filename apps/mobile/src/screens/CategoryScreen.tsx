@@ -39,13 +39,14 @@ export default function CategoryScreen() {
       navigation.navigate('GameOScreen');
     } else if (cat.path === '/agro') {
       navigation.navigate('AgrOScreen');
+    } else if (cat.path === '/teacho') {
+      navigation.navigate('TeachOScreen');
     } else if (
-      cat.path === '/teacho' ||
       cat.path === '/testo' ||
       cat.path === '/tvo' ||
       cat.path === '/moneyo'
     ) {
-      // These 4 modules are powered by the Aishlee platform directly
+      // These modules are powered by the Aishlee platform directly
       navigation.navigate('ModuleView', {
         url: `${AISHLEE_BASE}${cat.path}`,
         moduleName: cat.title,
