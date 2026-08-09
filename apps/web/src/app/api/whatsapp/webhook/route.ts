@@ -794,7 +794,6 @@ async function processMessage(
             const latestFlutter = builds.find((b: any) => b.platform === 'flutter')
             const latestReact = builds.find((b: any) => b.platform === 'react')
             if (latestFlutter?.download_url) flutterUrl = latestFlutter.download_url
-            if (latestReact?.download_url) reactUrl = latestReact.download_url
           }
         }
       } catch (e) {
@@ -851,7 +850,6 @@ async function processMessage(
             const latestFlutter = builds.find((b: any) => b.platform === 'flutter')
             const latestReact = builds.find((b: any) => b.platform === 'react')
             if (latestFlutter?.download_url) flutterUrl = latestFlutter.download_url
-            if (latestReact?.download_url) reactUrl = latestReact.download_url
           }
         }
       } catch (e) {
