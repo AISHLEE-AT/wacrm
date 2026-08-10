@@ -161,7 +161,6 @@ function RideOBookingContent() {
       const passengerPhone = userAuth?.user?.phone || localStorage.getItem('user_phone') || 'Unknown';
       
       const { data: rideRecord, error: rideError } = await supabase.from('rides').insert({
-        customer_id: userAuth?.user?.id || null, // Allow null if not signed in (RLS permitting)
         passenger_phone: passengerPhone,
         driver_id: driver.id,
         pickup_latitude: pickup[0],
