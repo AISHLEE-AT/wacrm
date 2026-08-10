@@ -246,10 +246,12 @@ export default function DriveOScreen() {
           event: 'INSERT',
           schema: 'public',
           table: 'rides',
-          filter: `status=eq.requested`
+          filter: `driver_id=eq.${driver.id}`
         },
         (payload) => {
-          handleNewRide(payload.new);
+          if (payload.new.status === 'pending' || payload.new.status === 'requested') {
+            handleNewRide(payload.new);
+          }
         }
       )
       .on(
@@ -322,17 +324,17 @@ export default function DriveOScreen() {
     setIncomingRide(null);
     
     try {
-      const res = await fetch('https://watscrm.vercel.app/api/rides/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ride_id: rideId,
-          driver_id: driver.id
-        })
-      });
+      const tripOtp = String(1000 + Math.floor(Math.random() * 9000));
       
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to accept ride');
+      const { error } = await supabase
+        .from('rides')
+        .update({
+          status: 'accepted',
+          otp: tripOtp
+        })
+        .eq('id', rideId);
+        
+      if (error) throw error;
       
       Alert.alert('Success', 'Ride accepted!');
       fetchActiveRide(); // Fallback in case realtime misses it

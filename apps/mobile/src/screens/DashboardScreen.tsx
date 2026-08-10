@@ -40,8 +40,7 @@ export default function DashboardScreen({ navigation }: any) {
             if (driverData && driverData.length > 0) {
               setIsDriver(true);
             }
-          })
-          .catch(() => {});
+          }, () => {});
 
         // Fetch API key just in case it was updated on web or AppContext hasn't reloaded
         fetch(`https://watscrm.vercel.app/api/auth/check?phone=${p}`)

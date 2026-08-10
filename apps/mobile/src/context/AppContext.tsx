@@ -73,8 +73,7 @@ export const AppProvider = ({ children }: any) => {
                 SecureStore.setItemAsync('user-role', 'driver');
                 SecureStore.setItemAsync('user-category', 'Driver');
               }
-            })
-            .catch(() => {});
+            }, () => {});
 
           // Background sync API key from server across all devices
           fetch(`https://watscrm.vercel.app/api/auth/check?phone=${phone}`)
@@ -132,8 +131,7 @@ export const AppProvider = ({ children }: any) => {
           SecureStore.setItemAsync('user-role', 'driver');
           SecureStore.setItemAsync('user-category', 'Driver');
         }
-      })
-      .catch(() => {});
+      }, () => {});
 
     // Persist
     await SecureStore.setItemAsync('user-phone', phone);

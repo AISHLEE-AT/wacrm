@@ -113,46 +113,44 @@ function BookRideContent() {
 
       const { data: userAuth } = await supabase.auth.getUser()
 
+      const passengerPhone = userAuth?.user?.phone || phone || 'Unknown';
       const { data: rideResponse, error } = await supabase.from('rides').insert({
-        customer_id: userAuth?.user?.id || null,
+        passenger_phone: passengerPhone,
         driver_id: driver.id,
-        pickup_latitude: pickup![0],
-        pickup_longitude: pickup![1],
-        pickup_address: `GPS: ${pickup![0].toFixed(4)}, ${pickup![1].toFixed(4)}`,
-        dropoff_latitude: dropoff![0],
-        dropoff_longitude: dropoff![1],
-        dropoff_address: `GPS: ${dropoff![0].toFixed(4)}, ${dropoff![1].toFixed(4)}`,
         vehicle_type: driver.vehicle_type,
-        distance_km: parseFloat(tripKm.toFixed(2)),
-        price: price,
+        fare: price,
         status: 'pending',
-        otp: otp
+        otp: otp,
+        payment_mode: 'upi'
       }).select().single()
 
       if (error) throw error
 
       setActiveRide(rideResponse)
 
-      // Build WhatsApp booking message
-      const vehicleEmoji = driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : driver.vehicle_type === 'sedan' ? '🚙' : driver.vehicle_type === 'suv' ? '🚐' : driver.vehicle_type === 'mini' ? '🚗' : '🚕';
-      const driverPhone = driver.phone.replace(/\D/g, '');
-      const whatsappPhone = driverPhone.startsWith('91') ? driverPhone : `91${driverPhone}`;
+      // Dispatch booking request via backend Meta API
+      const res = await fetch('/api/ride/request-driver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ride_id: rideResponse.id,
+          driver_phone: driver.phone,
+          pickup_address: `GPS: ${pickup![0].toFixed(4)}, ${pickup![1].toFixed(4)}`,
+          dropoff_address: `GPS: ${dropoff![0].toFixed(4)}, ${dropoff![1].toFixed(4)}`,
+          distance_km: tripKm.toFixed(1),
+          estimated_fare: price,
+          driver_name: driver.name,
+          driver_rating: driver.rating || '4.5',
+          vehicle_info: `${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}`
+        })
+      });
       
-      const message = `${vehicleEmoji} *New Ride Request (RideO)* ${vehicleEmoji}\n\n` +
-        `📍 *Pickup:* GPS: ${pickup![0].toFixed(4)}, ${pickup![1].toFixed(4)}\n` +
-        `🏁 *Drop-off:* GPS: ${dropoff![0].toFixed(4)}, ${dropoff![1].toFixed(4)}\n` +
-        `${vehicleEmoji} *Vehicle:* ${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}\n` +
-        `📏 *Trip Distance:* ${tripKm.toFixed(1)} km\n` +
-        `💰 *Estimated Fare:* ₹${price}\n` +
-        `⭐ *Driver:* ${driver.name} (${driver.rating || '4.5'}★)\n` +
-        `🔢 *Ride ID:* ${rideResponse?.id?.slice(0, 8) || 'N/A'}\n\n` +
-        `✅ *To ACCEPT this ride, click below:*\n` +
-        `https://watscrm.vercel.app/api/ride/accept?id=${rideResponse?.id}\n\n` +
-        `❌ *To DECLINE, click below:*\n` +
-        `https://watscrm.vercel.app/api/ride/decline?id=${rideResponse?.id}`;
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to send WhatsApp request');
+      }
       
-      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      alert('Ride request successfully sent to the driver via WhatsApp!');
 
       // Setup Realtime listener
       supabase

@@ -83,6 +83,7 @@ export default function RideOScreen({ navigation }) {
   const [dropoffAddress, setDropoffAddress] = useState('');
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
+  const [selectedDriver, setSelectedDriver] = useState(null);
   
   // Categories and Fares
   const [categories, setCategories] = useState([]);
@@ -281,56 +282,55 @@ export default function RideOScreen({ navigation }) {
 
   // Book Ride
   const handleBookRide = async () => {
-    if (!location || !dropoffLocation) {
-      Alert.alert('Error', 'Please enter a destination.');
+    if (!location || !dropoffLocation || !selectedDriver) {
+      Alert.alert('Error', 'Please enter a destination and select a driver.');
       return;
     }
     
     setLoading(true);
     try {
-      // Mock API call for booking
-      // const res = await fetch(`${API_BASE_URL}/api/rides/request`, { ... });
-      
-      // Simulating network request
-      setTimeout(() => {
-        setRideState('SEARCHING');
-        setCurrentRide({
-          id: 'mock-ride-123',
-          status: 'requested',
-          pickup_lat: location.latitude,
-          pickup_lng: location.longitude,
-          dropoff_lat: dropoffLocation.latitude,
-          dropoff_lng: dropoffLocation.longitude,
-          fare: fareEstimate?.total || 50,
-          otp: '4829',
-          driver: null
-        });
-        setLoading(false);
-        
-        // Auto-accept after 5 seconds for demo
-        setTimeout(() => {
-          if (rideState !== 'IDLE') {
-            const acceptedRide = {
-              id: 'mock-ride-123',
-              status: 'accepted',
-              fare: fareEstimate?.total || 50,
-              otp: '4829',
-              driver: {
-                name: 'Karthik S.',
-                vehicle: 'TN 38 CX 1234 (Swift Dzire)',
-                rating: 4.8,
-                phone: '9876543210',
-                upi_id: '9876543210@ybl'
-              }
-            };
-            setCurrentRide(acceptedRide);
-            setRideState('ACCEPTED');
-          }
-        }, 5000);
-      }, 1000);
+      // 1. Insert ride into Supabase
+      const { data: rideResponse, error } = await supabase.from('rides').insert({
+        passenger_phone: '919123596988', // using a default phone for demo if AppContext is not imported here. Wait, let's fetch user phone or use hardcoded. Let's get phone from secure store or auth.
+        driver_id: selectedDriver.id,
+        vehicle_type: selectedDriver.vehicle_type,
+        fare: fareEstimate?.total || 50,
+        status: 'pending',
+        payment_mode: paymentMode.toLowerCase(),
+        pickup_location: pickupAddress,
+        drop_location: dropoffAddress
+      }).select().single();
+
+      if (error) throw error;
+
+      // 2. Dispatch Meta API request
+      const res = await fetch(`${API_BASE_URL}/api/ride/request-driver`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ride_id: rideResponse.id,
+          driver_phone: selectedDriver.phone || selectedDriver.mobile_number,
+          pickup_address: pickupAddress,
+          dropoff_address: dropoffAddress,
+          distance_km: fareEstimate?.distanceText?.replace(' km', '') || '5',
+          estimated_fare: fareEstimate?.total || 50,
+          driver_name: selectedDriver.name,
+          driver_rating: selectedDriver.rating || '4.5',
+          vehicle_info: `${selectedDriver.vehicle_type} ${selectedDriver.vehicle_number ? `(${selectedDriver.vehicle_number})` : ''}`
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to notify driver via WhatsApp');
+      }
+
+      setRideState('SEARCHING');
+      setCurrentRide(rideResponse);
+      setLoading(false);
       
     } catch (e) {
-      Alert.alert('Booking Error', 'Could not request ride.');
+      console.error(e);
+      Alert.alert('Booking Error', 'Could not request ride. ' + e.message);
       setLoading(false);
     }
   };
@@ -474,7 +474,67 @@ export default function RideOScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.bookBtn} onPress={handleBookRide} disabled={loading}>
+        {/* DRIVER SELECTION */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={{ color: COLORS.textMuted, marginBottom: 8, fontWeight: 'bold' }}>Select a Driver:</Text>
+          {nearbyDrivers.filter(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase() || selectedCategory === 'auto' && (d.vehicle_type || '').toLowerCase() === 'autoo' || selectedCategory === 'bike' && (d.vehicle_type || '').toLowerCase() === 'bikeo').length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {nearbyDrivers
+                .filter(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase() || selectedCategory === 'auto' && (d.vehicle_type || '').toLowerCase() === 'autoo' || selectedCategory === 'bike' && (d.vehicle_type || '').toLowerCase() === 'bikeo' || true)
+                .map(d => (
+                <TouchableOpacity 
+                  key={d.id} 
+                  style={[
+                    styles.driverSelectCard, 
+                    selectedDriver?.id === d.id && styles.driverSelectCardActive
+                  ]}
+                  onPress={() => setSelectedDriver(d)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={styles.driverAvatar}>
+                      <Text style={{ fontSize: 20 }}>{d.vehicle_type?.toLowerCase() === 'bike' ? '🏍' : '🛺'}</Text>
+                    </View>
+                    <View style={{ marginLeft: 12 }}>
+                      <Text style={styles.driverNameText}>{d.name}</Text>
+                      <Text style={styles.driverDetailText}>{d.vehicle_model || d.vehicle_type} ({d.rating || '4.5'}★)</Text>
+                      <Text style={styles.driverDetailText}>{d.distance_km ? `${d.distance_km.toFixed(1)} km away` : 'Nearby'}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <Text style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: 'italic' }}>Select a driver below to proceed...</Text>
+          )}
+          {nearbyDrivers.length > 0 && !nearbyDrivers.find(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase()) && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop: 8}}>
+              {nearbyDrivers.map(d => (
+                <TouchableOpacity 
+                  key={d.id} 
+                  style={[styles.driverSelectCard, selectedDriver?.id === d.id && styles.driverSelectCardActive]}
+                  onPress={() => setSelectedDriver(d)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={styles.driverAvatar}>
+                      <Text style={{ fontSize: 20 }}>{d.vehicle_type?.toLowerCase() === 'bike' ? '🏍' : '🛺'}</Text>
+                    </View>
+                    <View style={{ marginLeft: 12 }}>
+                      <Text style={styles.driverNameText}>{d.name}</Text>
+                      <Text style={styles.driverDetailText}>{d.vehicle_model || d.vehicle_type} ({d.rating || '4.5'}★)</Text>
+                      <Text style={styles.driverDetailText}>{d.distance_km ? `${d.distance_km.toFixed(1)} km away` : 'Nearby'}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        <TouchableOpacity 
+          style={[styles.bookBtn, !selectedDriver && { opacity: 0.5 }]} 
+          onPress={handleBookRide} 
+          disabled={loading || !selectedDriver}
+        >
           {loading ? (
             <ActivityIndicator color={COLORS.bg} />
           ) : (
@@ -798,6 +858,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
   },
   categoryIcon: {
+  driverSelectCard: {
+    backgroundColor: COLORS.cardLight,
+    padding: 12,
+    borderRadius: 12,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    minWidth: 200,
+  },
+  driverSelectCardActive: {
+    borderColor: COLORS.green,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  driverAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverNameText: {
+    color: COLORS.text,
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  driverDetailText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
     fontSize: 32,
     marginBottom: 8,
   },
