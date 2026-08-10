@@ -29,8 +29,4 @@ CREATE TABLE IF NOT EXISTS public.nitro_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Insert a mock user for testing our UI integration
--- (Using an upsert to avoid conflicts, omitting username since it might not exist in the schema)
-INSERT INTO public.profiles (id, nitro_points, supro_coins)
-VALUES ('11111111-1111-1111-1111-111111111111', 500, 0)
-ON CONFLICT (id) DO UPDATE SET nitro_points = 500;
+
