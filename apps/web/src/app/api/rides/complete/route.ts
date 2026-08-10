@@ -62,21 +62,21 @@ export async function POST(req: Request) {
     });
 
     // Notify passenger
-    await sendTextMessage(
-      HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-      HARDCODED_WHATSAPP_CONFIG.access_token,
-      ride.passenger_phone,
-      `Ride completed! Total Fare: ₹${total_fare}. Thank you for riding with us. Please rate your driver out of 5.`
-    );
+    await sendTextMessage({
+      phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+      accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+      to: ride.passenger_phone,
+      text: `Ride completed! Total Fare: ₹${total_fare}. Thank you for riding with us. Please rate your driver out of 5.`,
+    });
 
     // Notify driver
     if (ride.driver?.whatsapp_number) {
-        await sendTextMessage(
-        HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-        HARDCODED_WHATSAPP_CONFIG.access_token,
-        ride.driver.whatsapp_number,
-        `Ride completed! Fare collected: ₹${total_fare}. Platform fee of ₹${platform_fee} has been logged to your account.`
-        );
+      await sendTextMessage({
+        phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+        accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+        to: ride.driver.whatsapp_number,
+        text: `Ride completed! Fare collected: ₹${total_fare}. Platform fee of ₹${platform_fee} has been logged to your account.`,
+      });
     }
 
     return NextResponse.json({ success: true, ride: updatedRide });

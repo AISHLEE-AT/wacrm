@@ -42,19 +42,19 @@ export async function POST(req: Request) {
 
     // Notify the other party
     if (cancelled_by === 'passenger' && ride.driver?.whatsapp_number) {
-        await sendTextMessage(
-            HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-            HARDCODED_WHATSAPP_CONFIG.access_token,
-            ride.driver.whatsapp_number,
-            `Ride cancelled by passenger. Reason: ${reason || 'Not provided'}`
-        );
+      await sendTextMessage({
+        phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+        accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+        to: ride.driver.whatsapp_number,
+        text: `Ride cancelled by passenger. Reason: ${reason || 'Not provided'}`,
+      });
     } else if (cancelled_by === 'driver' && ride.passenger_phone) {
-        await sendTextMessage(
-            HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-            HARDCODED_WHATSAPP_CONFIG.access_token,
-            ride.passenger_phone,
-            `Ride cancelled by driver. Reason: ${reason || 'Not provided'}`
-        );
+      await sendTextMessage({
+        phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+        accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+        to: ride.passenger_phone,
+        text: `Ride cancelled by driver. Reason: ${reason || 'Not provided'}`,
+      });
     }
 
     return NextResponse.json({ success: true });

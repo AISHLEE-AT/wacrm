@@ -139,12 +139,12 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     const isDriverPartner = !!driverMatch || 
-      existingProfile?.role?.toLowerCase().includes('driver') || 
-      existingProfile?.main_category?.toLowerCase().includes('driver') ||
+      (existingProfile as any)?.role?.toLowerCase().includes('driver') || 
+      (existingProfile as any)?.main_category?.toLowerCase().includes('driver') ||
       category?.toLowerCase().includes('driver');
 
     const resolvedRole = isDriverPartner ? 'driver' : (existingProfile?.role || 'user')
-    const finalCategory = isDriverPartner ? 'Driver' : (isExistingUser ? (existingProfile?.main_category || 'Traveller') : (category || 'Traveller'))
+    const finalCategory = isDriverPartner ? 'Driver' : (isExistingUser ? ((existingProfile as any)?.main_category || 'Traveller') : (category || 'Traveller'))
 
     // 5. SAFE UPSERT — always targets the canonical existing profile ID
     const canonicalProfileId = existingProfile?.id || userId
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       full_name: isExistingUser ? (existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`) : (fullName || `User ${cleanPhone.slice(-4)}`),
       role: resolvedRole,
       main_category: finalCategory,
-      default_module: isDriverPartner ? '/drivo' : (existingProfile?.default_module || '/rideo'),
+      default_module: isDriverPartner ? '/drivo' : ((existingProfile as any)?.default_module || '/rideo'),
       updated_at: new Date().toISOString(),
     }
 
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
 
     // Determine if user still needs to set a PIN (no pin_hash in DB and none provided now)
     const hasPinNow = !!(pin && pin.length === 4)
-    const hadPinBefore = !!(existingProfile?.pin_hash)
+    const hadPinBefore = !!((existingProfile as any)?.pin_hash)
     const needsPinSetup = !hasPinNow && !hadPinBefore
 
     const response = NextResponse.json({
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
       user: {
         id: canonicalProfileId,
         phone: cleanPhone,
-        fullName: finalName,
+        fullName: profileData.full_name,
         role: resolvedRole,
         category: finalCategory,
       },

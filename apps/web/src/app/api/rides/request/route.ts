@@ -56,16 +56,16 @@ export async function POST(req: Request) {
       for (const driver of drivers) {
         if (driver.whatsapp_number) {
           try {
-             await sendInteractiveButtons(
-               HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-               HARDCODED_WHATSAPP_CONFIG.access_token,
-               driver.whatsapp_number,
-               `New ride request from ${passenger_name}\nPickup: ${pickup_address}\nDropoff: ${dropoff_address}`,
-               [
+             await sendInteractiveButtons({
+               phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+               accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+               to: driver.whatsapp_number,
+               bodyText: `New ride request from ${passenger_name}\nPickup: ${pickup_address}\nDropoff: ${dropoff_address}`,
+               buttons: [
                  { id: `accept_${ride.id}`, title: 'Accept Ride' },
                  { id: `skip_${ride.id}`, title: 'Skip' }
                ]
-             );
+             });
           } catch (e) {
              console.error('Failed to notify driver via WA', e);
           }

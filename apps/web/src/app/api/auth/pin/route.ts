@@ -136,13 +136,13 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     const isDriverPartner = !!driverMatch || 
-      existingProfile?.role?.toLowerCase().includes('driver') || 
-      existingProfile?.main_category?.toLowerCase().includes('driver') ||
+      (existingProfile as any)?.role?.toLowerCase().includes('driver') || 
+      (existingProfile as any)?.main_category?.toLowerCase().includes('driver') ||
       category?.toLowerCase().includes('driver');
 
     const resolvedRole = isDriverPartner ? 'driver' : (existingProfile?.role || 'user')
-    const finalCategory = isDriverPartner ? 'Driver' : (category || existingProfile?.main_category || 'Traveller')
-    const defaultModule = isDriverPartner ? '/drivo' : (existingProfile?.default_module || '/rideo')
+    const finalCategory = isDriverPartner ? 'Driver' : (category || (existingProfile as any)?.main_category || 'Traveller')
+    const defaultModule = isDriverPartner ? '/drivo' : ((existingProfile as any)?.default_module || '/rideo')
 
     const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
 

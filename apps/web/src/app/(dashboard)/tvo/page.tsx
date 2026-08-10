@@ -8,7 +8,7 @@ export default function TvoPage() {
       path="/tvo"
       moduleName="TvO"
       accentColor="#ec4899"
-      icon="??"
+      icon="📺"
     />
   );
 }

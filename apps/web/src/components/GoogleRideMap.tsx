@@ -17,9 +17,10 @@ interface MapProps {
   pickup: [number, number] | null;
   dropoff: [number, number] | null;
   setDropoff: (loc: [number, number]) => void;
+  driverLocation?: [number, number] | null;
 }
 
-export default function GoogleRideMap({ pickup, dropoff, setDropoff }: MapProps) {
+export default function GoogleRideMap({ pickup, dropoff, setDropoff, driverLocation }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''

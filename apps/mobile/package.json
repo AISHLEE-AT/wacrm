@@ -1,6 +1,6 @@
 {
   "name": "mobile",
-  "version": "1.0.2B",
+  "version": "2.0.0B-SuprO",
   "main": "index.ts",
   "dependencies": {
     "@react-navigation/bottom-tabs": "^7.18.14",

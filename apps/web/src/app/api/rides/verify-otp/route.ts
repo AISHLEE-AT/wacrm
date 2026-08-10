@@ -33,12 +33,12 @@ export async function POST(req: Request) {
 
     if (updateError) throw updateError;
 
-    await sendTextMessage(
-      HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-      HARDCODED_WHATSAPP_CONFIG.access_token,
-      ride.passenger_phone,
-      "Trip started! Your driver is on the way to your destination."
-    );
+    await sendTextMessage({
+      phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+      accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+      to: ride.passenger_phone,
+      text: "Trip started! Your driver is on the way to your destination.",
+    });
 
     return NextResponse.json({ success: true, ride: updatedRide });
   } catch (error: any) {

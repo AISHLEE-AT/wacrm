@@ -8,7 +8,7 @@ export default function MoneyoPage() {
       path="/moneyo"
       moduleName="MoneyO"
       accentColor="#14b8a6"
-      icon="??"
+      icon="💰"
     />
   );
 }

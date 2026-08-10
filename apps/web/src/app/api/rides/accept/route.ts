@@ -49,22 +49,22 @@ export async function POST(req: Request) {
 
     // Send WhatsApp to passenger
     const passengerMsg = `Driver ${driver.name} accepted! Vehicle: ${driver.vehicle_number}. OTP: ${ride.otp_code}. UPI Payment QR: upi://pay?pa=${driver_upi_id}&am=${ride.estimated_fare || 0}`;
-    await sendTextMessage(
-      HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-      HARDCODED_WHATSAPP_CONFIG.access_token,
-      ride.passenger_phone,
-      passengerMsg
-    );
+    await sendTextMessage({
+      phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+      accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+      to: ride.passenger_phone,
+      text: passengerMsg,
+    });
 
     // Send WhatsApp to driver
     const driverMsg = `Ride confirmed! Pickup: ${ride.pickup_address}. Customer: ${ride.passenger_name}. Collect OTP before starting.`;
     if (driver.whatsapp_number) {
-        await sendTextMessage(
-        HARDCODED_WHATSAPP_CONFIG.phone_number_id,
-        HARDCODED_WHATSAPP_CONFIG.access_token,
-        driver.whatsapp_number,
-        driverMsg
-        );
+      await sendTextMessage({
+        phoneNumberId: HARDCODED_WHATSAPP_CONFIG.phone_number_id,
+        accessToken: HARDCODED_WHATSAPP_CONFIG.access_token,
+        to: driver.whatsapp_number,
+        text: driverMsg,
+      });
     }
 
     return NextResponse.json({ ride: updatedRide });

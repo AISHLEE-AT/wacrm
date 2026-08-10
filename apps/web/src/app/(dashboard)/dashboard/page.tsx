@@ -45,7 +45,7 @@ export default function DashboardPage() {
   // Non-admin users do not belong on the CRM dashboard
   useEffect(() => {
     if (user && !isAdmin) {
-      const isDriver = profile?.role?.toLowerCase().includes('driver') || profile?.main_category?.toLowerCase().includes('driver')
+      const isDriver = (profile as any)?.role?.toLowerCase().includes('driver') || (profile as any)?.main_category?.toLowerCase().includes('driver')
       if (isDriver) {
         router.replace('/drivo')
       } else {

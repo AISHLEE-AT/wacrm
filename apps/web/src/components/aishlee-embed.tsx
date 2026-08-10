@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { createClient } from '@/lib/supabase/client';
+import { RefreshCw, ExternalLink, ShieldCheck } from 'lucide-react';
 
 const AISHLEE_URL =
   process.env.NEXT_PUBLIC_AISHLEE_URL ?? 'https://thamizhan.vercel.app';
@@ -18,18 +19,11 @@ interface AishleeEmbedProps {
   icon?: string;
 }
 
-/**
- * Embeds an Aishlee-app page inside an <iframe> with:
- *  - Supabase access/refresh tokens injected via postMessage so the
- *    user is automatically signed in inside the Aishlee frame.
- *  - A native-app flag so Aishlee hides its own navigation.
- *  - A loading skeleton and network-error fallback with retry.
- */
 export default function AishleeEmbed({
   path,
   moduleName,
   accentColor = '#10b981',
-  icon = 'app',
+  icon = '✨',
 }: AishleeEmbedProps) {
   const { user } = useAuth();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -37,7 +31,7 @@ export default function AishleeEmbed({
   const [error, setError] = useState(false);
   const [tokenInjected, setTokenInjected] = useState(false);
 
-  // Build the iframe URL - add embed=true so Aishlee hides its own nav
+  // Build the iframe URL
   const iframeUrl = `${AISHLEE_URL}${path}?embed=true&source=supro`;
 
   // Inject Supabase session tokens into the iframe via postMessage
@@ -61,7 +55,7 @@ export default function AishleeEmbed({
         setTokenInjected(true);
       }
     } catch (err) {
-      console.error('[AishleeEmbed] auth inject failed:', err);
+      console.error('[AishleeEmbed] Auth inject error:', err);
     }
   }, [user, tokenInjected]);
 
@@ -76,6 +70,15 @@ export default function AishleeEmbed({
     setLoading(false);
     setError(true);
   }, []);
+
+  // Safety fallback: Unveil iframe after 3.5 seconds even if onLoad doesn't fire cleanly
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+      injectAuth();
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [injectAuth]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -95,64 +98,96 @@ export default function AishleeEmbed({
   };
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden bg-slate-950" style={{ height: 'calc(100vh - 8rem)', minHeight: '600px' }}>
-      {/* Loading skeleton */}
-      {loading && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 z-10">
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-1.5 w-48 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
-            <p className="text-sm font-semibold" style={{ color: accentColor }}>Loading {moduleName}...</p>
-            <p className="text-xs text-slate-500">Powered by Aishlee Platform</p>
-          </div>
-          <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3 opacity-20 pointer-events-none">
-            {[100, 85, 70, 55].map((w, i) => (
-              <div key={i} className="h-12 rounded-xl animate-pulse bg-slate-800" style={{ width: `${w}%` }} />
-            ))}
-          </div>
+    <div className="flex flex-col w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl" style={{ height: 'calc(100vh - 7rem)', minHeight: '620px' }}>
+      {/* Embedded Bar Control Header */}
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 text-xs shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{icon}</span>
+          <span className="font-bold text-white">{moduleName}</span>
+          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" /> Live Aishlee App
+          </span>
         </div>
-      )}
 
-      {/* Error state */}
-      {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 z-10 p-6 text-center">
-          <span className="text-5xl">📡</span>
-          <div>
-            <p className="text-white font-bold text-lg">{moduleName} is unreachable</p>
-            <p className="text-slate-400 text-sm mt-1">Check your connection and try again.</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleRetry}
-              className="px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
-              style={{ borderColor: accentColor, color: accentColor, backgroundColor: `${accentColor}20` }}
-            >
-              Retry
-            </button>
-            <a
-              href={`${AISHLEE_URL}${path}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all"
-            >
-              Open in Browser
-            </a>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRetry}
+            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1"
+            title="Reload Module"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Reload</span>
+          </button>
+          <a
+            href={`${AISHLEE_URL}${path}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors flex items-center gap-1"
+            title="Open in new window"
+          >
+            <ExternalLink className="w-3 h-3" />
+            <span className="hidden sm:inline">Direct Tab</span>
+          </a>
         </div>
-      )}
+      </div>
 
-      {/* The actual iframe */}
-      <iframe
-        ref={iframeRef}
-        src={iframeUrl}
-        title={moduleName}
-        onLoad={handleLoad}
-        onError={handleError}
-        className="w-full h-full border-0"
-        style={{ opacity: loading || error ? 0 : 1, transition: 'opacity 0.3s ease' }}
-        allow="microphone; camera; geolocation; autoplay; clipboard-write"
-        allowFullScreen
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
-      />
+      {/* Frame Container */}
+      <div className="relative flex-1 w-full bg-slate-950">
+        {/* Loading overlay */}
+        {loading && !error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 z-10 p-6">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <div className="h-1.5 w-48 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
+              <p className="text-sm font-semibold mt-2" style={{ color: accentColor }}>
+                Loading {moduleName}...
+              </p>
+              <p className="text-xs text-slate-500">Connecting to Aishlee Platform</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error overlay */}
+        {error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950 z-10 p-6 text-center">
+            <span className="text-5xl">📡</span>
+            <div>
+              <p className="text-white font-bold text-lg">{moduleName} is unreachable</p>
+              <p className="text-slate-400 text-sm mt-1">Check your network connection and try again.</p>
+            </div>
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={handleRetry}
+                className="px-4 py-2 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
+                style={{ borderColor: accentColor, color: accentColor, backgroundColor: `${accentColor}20` }}
+              >
+                Retry
+              </button>
+              <a
+                href={`${AISHLEE_URL}${path}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all"
+              >
+                Open Direct Tab
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* The iframe */}
+        <iframe
+          ref={iframeRef}
+          src={iframeUrl}
+          title={moduleName}
+          onLoad={handleLoad}
+          onError={handleError}
+          className="w-full h-full border-0"
+          style={{ opacity: loading || error ? 0 : 1, transition: 'opacity 0.3s ease' }}
+          allow="microphone; camera; geolocation; autoplay; clipboard-write"
+          allowFullScreen
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+        />
+      </div>
     </div>
   );
 }
