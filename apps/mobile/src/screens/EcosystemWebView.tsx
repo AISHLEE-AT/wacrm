@@ -75,7 +75,11 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           }
           if (!tokenKey) {
             // Fallback key pattern used by Supabase JS client v2
-            tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
+            if ("${targetUrl}".includes('thamizhan.vercel.app')) {
+              tokenKey = 'sb-jjgdatjthyeesmgunnlp-auth-token';
+            } else {
+              tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
+            }
           }
           var existing = localStorage.getItem(tokenKey);
           if (!existing) {
