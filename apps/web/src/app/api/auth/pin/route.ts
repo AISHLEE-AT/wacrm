@@ -126,9 +126,25 @@ export async function POST(request: Request) {
     }
 
     const userId = authResult.data.user.id
-    const resolvedRole = existingProfile?.role || 'user'
+
+    // Check if phone matches any registered driver partner
+    const { data: driverMatch } = await admin
+      .from('drivers')
+      .select('id')
+      .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+      .limit(1)
+      .maybeSingle()
+
+    const isDriverPartner = !!driverMatch || 
+      existingProfile?.role?.toLowerCase().includes('driver') || 
+      existingProfile?.main_category?.toLowerCase().includes('driver') ||
+      category?.toLowerCase().includes('driver');
+
+    const resolvedRole = isDriverPartner ? 'driver' : (existingProfile?.role || 'user')
+    const finalCategory = isDriverPartner ? 'Driver' : (category || existingProfile?.main_category || 'Traveller')
+    const defaultModule = isDriverPartner ? '/drivo' : (existingProfile?.default_module || '/rideo')
+
     const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
-    const finalCategory = category || existingProfile?.main_category || 'Traveller'
 
     // 4. Upsert profile in Supabase DB with clean PIN hash (fail-safe)
     try {
@@ -139,6 +155,7 @@ export async function POST(request: Request) {
         full_name: finalName,
         role: resolvedRole,
         main_category: finalCategory,
+        default_module: defaultModule,
         pin_hash: hashedPin,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' })
@@ -151,8 +168,13 @@ export async function POST(request: Request) {
         full_name: finalName,
         role: resolvedRole,
         main_category: finalCategory,
+        default_module: defaultModule,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' })
+    }
+
+    if (driverMatch) {
+      await admin.from('drivers').update({ user_id: userId }).eq('id', driverMatch.id)
     }
 
     const response = NextResponse.json({

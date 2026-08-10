@@ -129,29 +129,40 @@ export async function POST(request: Request) {
     }
 
     const userId = authResult.data.user.id
-    const resolvedRole = existingProfile?.role || 'user'
 
-    // ⚠️ For existing users: NEVER overwrite their name or category from login fields
-    const finalName = isExistingUser
-      ? (existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`)
-      : (fullName || `User ${cleanPhone.slice(-4)}`)
+    // Check if phone matches any registered driver partner
+    const { data: driverMatch } = await admin
+      .from('drivers')
+      .select('id')
+      .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+      .limit(1)
+      .maybeSingle()
 
-    const finalCategory = isExistingUser
-      ? (existingProfile?.main_category || 'Traveller')
-      : (category || 'Traveller')
+    const isDriverPartner = !!driverMatch || 
+      existingProfile?.role?.toLowerCase().includes('driver') || 
+      existingProfile?.main_category?.toLowerCase().includes('driver') ||
+      category?.toLowerCase().includes('driver');
+
+    const resolvedRole = isDriverPartner ? 'driver' : (existingProfile?.role || 'user')
+    const finalCategory = isDriverPartner ? 'Driver' : (isExistingUser ? (existingProfile?.main_category || 'Traveller') : (category || 'Traveller'))
 
     // 5. SAFE UPSERT — always targets the canonical existing profile ID
-    //    This guarantees one and only one profile row per phone number.
     const canonicalProfileId = existingProfile?.id || userId
 
     const profileData: any = {
       id: canonicalProfileId,
       phone: cleanPhone,
       whatsapp: cleanPhone,
-      full_name: finalName,
+      full_name: isExistingUser ? (existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`) : (fullName || `User ${cleanPhone.slice(-4)}`),
       role: resolvedRole,
       main_category: finalCategory,
+      default_module: isDriverPartner ? '/drivo' : (existingProfile?.default_module || '/rideo'),
       updated_at: new Date().toISOString(),
+    }
+
+    if (driverMatch) {
+      // Link driver record to user_id
+      await admin.from('drivers').update({ user_id: canonicalProfileId }).eq('id', driverMatch.id)
     }
 
     // Save PIN hash only if provided (new user setup or PIN change)

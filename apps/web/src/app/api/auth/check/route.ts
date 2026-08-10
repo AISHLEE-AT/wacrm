@@ -30,14 +30,39 @@ export async function GET(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    if (profile) {
+    // Check if phone matches any driver in drivers table
+    const cleanPhone = phone.slice(-10);
+    const { data: driverRow } = await admin
+      .from('drivers')
+      .select('id')
+      .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+      .limit(1)
+      .maybeSingle()
+
+    const isDriverPartner = !!driverRow || 
+      profile?.role?.toLowerCase().includes('driver') || 
+      profile?.main_category?.toLowerCase().includes('driver');
+
+    const resolvedRole = isDriverPartner ? 'driver' : (profile?.role || 'user');
+    const resolvedCategory = isDriverPartner ? 'Driver' : (profile?.main_category || 'Traveller');
+
+    if (profile || driverRow) {
+      // Self-heal profile if user is driver partner but profile had legacy category
+      if (profile && isDriverPartner && (profile.main_category !== 'Driver' || profile.role !== 'driver')) {
+        await admin.from('profiles').update({
+          role: 'driver',
+          main_category: 'Driver',
+          default_module: '/drivo'
+        }).eq('id', profile.id);
+      }
+
       return NextResponse.json({ 
         exists: true, 
-        name: profile.full_name, 
-        category: profile.main_category, 
-        role: profile.role, 
-        has_pin: !!profile.pin_hash,
-        gemini_api_key: profile.gemini_api_key
+        name: profile?.full_name || 'Driver Partner', 
+        category: resolvedCategory, 
+        role: resolvedRole, 
+        has_pin: !!profile?.pin_hash,
+        gemini_api_key: profile?.gemini_api_key
       })
     }
     
