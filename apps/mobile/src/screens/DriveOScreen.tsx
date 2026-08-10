@@ -60,8 +60,11 @@ export default function DriveOScreen() {
   const [driver, setDriver] = useState(null);
   
   // Registration States
+  const [regStep, setRegStep] = useState(1);
   const [regName, setRegName] = useState(user?.name || '');
+  const [regAadhar, setRegAadhar] = useState('');
   const [regVehicleType, setRegVehicleType] = useState('Bike');
+  const [regVehicleModel, setRegVehicleModel] = useState('');
   const [regVehicleNumber, setRegVehicleNumber] = useState('');
   const [regUpiId, setRegUpiId] = useState('');
   const [regLicense, setRegLicense] = useState('');
@@ -142,7 +145,9 @@ export default function DriveOScreen() {
         name: regName || 'Driver',
         mobile_number: phone,
         whatsapp_number: phone,
+        aadhar_number: regAadhar,
         vehicle_type: regVehicleType,
+        vehicle_model: regVehicleModel,
         vehicle_number: regVehicleNumber,
         upi_id: regUpiId,
         driving_license: regLicense,
@@ -491,72 +496,135 @@ export default function DriveOScreen() {
       <ScrollView style={styles.container}>
         <View style={styles.regContainer}>
           <Text style={styles.title}>Driver Registration</Text>
-          <Text style={styles.subtitle}>Join SuprO and start earning</Text>
+          <Text style={styles.subtitle}>Step {regStep} of 3</Text>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Full Name</Text>
-            <TextInput
-              style={styles.input}
-              value={regName}
-              onChangeText={setRegName}
-              placeholder="e.g. Ramesh Kumar"
-              placeholderTextColor="#64748b"
-            />
-          </View>
+          {regStep === 1 && (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Full Name</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regName}
+                  onChangeText={setRegName}
+                  placeholder="e.g. Ramesh Kumar"
+                  placeholderTextColor="#64748b"
+                />
+              </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vehicle Type</Text>
-            <View style={styles.vehicleTypeRow}>
-              {['Bike', 'Auto', 'Cab-Mini', 'Cargo'].map(v => (
-                <TouchableOpacity
-                  key={v}
-                  style={[styles.vehicleTypeBtn, regVehicleType === v && styles.vehicleTypeBtnActive]}
-                  onPress={() => setRegVehicleType(v)}
-                >
-                  <Text style={[styles.vehicleTypeText, regVehicleType === v && styles.vehicleTypeTextActive]}>{v}</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Aadhar Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regAadhar}
+                  onChangeText={setRegAadhar}
+                  placeholder="e.g. 1234 5678 9012"
+                  placeholderTextColor="#64748b"
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>UPI ID (For earnings)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regUpiId}
+                  onChangeText={setRegUpiId}
+                  placeholder="e.g. ramesh@okicici"
+                  placeholderTextColor="#64748b"
+                />
+              </View>
+
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => setRegStep(2)}>
+                <Text style={styles.primaryBtnText}>Next</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {regStep === 2 && (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Vehicle Type</Text>
+                <View style={styles.vehicleTypeRow}>
+                  {['Bike', 'Auto', 'Cab-Mini', 'Cargo'].map(v => (
+                    <TouchableOpacity
+                      key={v}
+                      style={[styles.vehicleTypeBtn, regVehicleType === v && styles.vehicleTypeBtnActive]}
+                      onPress={() => setRegVehicleType(v)}
+                    >
+                      <Text style={[styles.vehicleTypeText, regVehicleType === v && styles.vehicleTypeTextActive]}>{v}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Vehicle Model</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regVehicleModel}
+                  onChangeText={setRegVehicleModel}
+                  placeholder="e.g. Honda Activa"
+                  placeholderTextColor="#64748b"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Vehicle Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regVehicleNumber}
+                  onChangeText={setRegVehicleNumber}
+                  placeholder="e.g. TN38AB1234"
+                  placeholderTextColor="#64748b"
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Driving License</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regLicense}
+                  onChangeText={setRegLicense}
+                  placeholder="e.g. TN38 123456789"
+                  placeholderTextColor="#64748b"
+                  autoCapitalize="characters"
+                />
+              </View>
+
+              <View style={{flexDirection: 'row', gap: 12}}>
+                <TouchableOpacity style={[styles.primaryBtn, {flex: 1, backgroundColor: '#334155'}]} onPress={() => setRegStep(1)}>
+                  <Text style={styles.primaryBtnText}>Back</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+                <TouchableOpacity style={[styles.primaryBtn, {flex: 1}]} onPress={() => setRegStep(3)}>
+                  <Text style={styles.primaryBtnText}>Next</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Vehicle Number</Text>
-            <TextInput
-              style={styles.input}
-              value={regVehicleNumber}
-              onChangeText={setRegVehicleNumber}
-              placeholder="e.g. TN38AB1234"
-              placeholderTextColor="#64748b"
-              autoCapitalize="characters"
-            />
-          </View>
+          {regStep === 3 && (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Documents Upload</Text>
+                <Text style={{color: '#cbd5e1', marginBottom: 12, lineHeight: 22}}>
+                  Please send clear photos of your Aadhar Card, RC Book, and Driving License to our WhatsApp number: +91 63810 29380.
+                </Text>
+                <Text style={{color: '#94a3b8', fontSize: 13, lineHeight: 18}}>
+                  Your account will be activated after document verification.
+                </Text>
+              </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>UPI ID (For earnings)</Text>
-            <TextInput
-              style={styles.input}
-              value={regUpiId}
-              onChangeText={setRegUpiId}
-              placeholder="e.g. ramesh@okicici"
-              placeholderTextColor="#64748b"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Driving License</Text>
-            <TextInput
-              style={styles.input}
-              value={regLicense}
-              onChangeText={setRegLicense}
-              placeholder="e.g. TN38 123456789"
-              placeholderTextColor="#64748b"
-              autoCapitalize="characters"
-            />
-          </View>
-
-          <TouchableOpacity style={styles.primaryBtn} onPress={registerDriver}>
-            <Text style={styles.primaryBtnText}>Register</Text>
-          </TouchableOpacity>
+              <View style={{flexDirection: 'row', gap: 12}}>
+                <TouchableOpacity style={[styles.primaryBtn, {flex: 1, backgroundColor: '#334155'}]} onPress={() => setRegStep(2)}>
+                  <Text style={styles.primaryBtnText}>Back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.primaryBtn, {flex: 1}]} onPress={registerDriver}>
+                  <Text style={styles.primaryBtnText}>Register</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     );

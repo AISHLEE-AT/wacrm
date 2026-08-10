@@ -57,6 +57,20 @@ const COLORS = {
 
 const SERVICE_TYPES = ['Daily', 'Rental', 'Outstation', 'Cargo'];
 
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function RideOScreen({ navigation }) {
   const mapRef = useRef(null);
 
@@ -176,14 +190,22 @@ export default function RideOScreen({ navigation }) {
         }
       } else {
         // Mock estimate
+        const distKm = getDistance(location.latitude, location.longitude, dropLat, dropLng);
+        const base = selectedCategory === 'bike' ? 15 : selectedCategory === 'auto' ? 30 : 50;
+        const pKm = selectedCategory === 'bike' ? 8 : selectedCategory === 'auto' ? 14 : 16;
+        const totalFare = Math.max(
+          selectedCategory === 'bike' ? 25 : selectedCategory === 'auto' ? 45 : 89,
+          Math.round(base + Math.max(0, distKm - 1.5) * pKm)
+        );
+
         setFareEstimate({
-          baseFare: 30,
-          distanceFare: 38.4,
-          timeFare: 8,
-          platformFee: 5,
-          total: 81.4,
-          distanceText: '3.2 km',
-          durationText: '8 min'
+          baseFare: base,
+          distanceFare: Math.round(Math.max(0, distKm - 1.5) * pKm),
+          timeFare: 0,
+          platformFee: 0,
+          total: totalFare,
+          distanceText: `${distKm.toFixed(1)} km`,
+          durationText: 'N/A'
         });
         setRouteCoordinates([
           { latitude: location.latitude, longitude: location.longitude },
@@ -279,7 +301,7 @@ export default function RideOScreen({ navigation }) {
           pickup_lng: location.longitude,
           dropoff_lat: dropoffLocation.latitude,
           dropoff_lng: dropoffLocation.longitude,
-          fare: fareEstimate?.total || 81,
+          fare: fareEstimate?.total || 50,
           otp: '4829',
           driver: null
         });
@@ -291,7 +313,7 @@ export default function RideOScreen({ navigation }) {
             const acceptedRide = {
               id: 'mock-ride-123',
               status: 'accepted',
-              fare: fareEstimate?.total || 81,
+              fare: fareEstimate?.total || 50,
               otp: '4829',
               driver: {
                 name: 'Karthik S.',
