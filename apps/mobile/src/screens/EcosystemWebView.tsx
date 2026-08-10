@@ -82,6 +82,10 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           if (!existing) {
             localStorage.setItem(tokenKey, JSON.stringify({
               access_token: "${accessToken}",
+              refresh_token: "${refreshToken}",
+              expires_in: 3600,
+              expires_at: Math.floor(Date.now() / 1000) + 3600,
+              token_type: "bearer",
               user: {
                 id: "${user?.id}",
                 phone: "${userPhone}",
@@ -99,7 +103,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
               access_token: "${accessToken}",
               refresh_token: "${refreshToken}",
               supabaseKey: tokenKey,
-              user: { id: "${user?.id}", phone: "${userPhone}", email: "${user?.email}" }
+              user: { id: "${user?.id || ''}", phone: "${userPhone || ''}", email: "${user?.email || ''}" }
             }, "*");
             
             // If we are currently on the login page, the token injection was successful but Next.js middleware 
