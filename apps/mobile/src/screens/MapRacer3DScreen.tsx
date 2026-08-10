@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { Suspense, useRef, useState, useEffect, useContext, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, ActivityIndicator, Alert, TouchableWithoutFeedback } from 'react-native';
 import { ChevronLeft, Zap, Users } from 'lucide-react-native';

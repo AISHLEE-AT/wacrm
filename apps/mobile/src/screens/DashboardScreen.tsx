@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -15,12 +14,12 @@ const endpoints = {
 export default function DashboardScreen({ navigation }: any) {
   const { userRole, geminiApiKey, updateGeminiKey } = useContext(AppContext);
   const [phone, setPhone] = useState<string | null>('');
+  const [isDriver, setIsDriver] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [tempApiKey, setTempApiKey] = useState(geminiApiKey || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingKey, setIsEditingKey] = useState(!geminiApiKey);
-  const [isDriver, setIsDriver] = useState(false);
 
   useEffect(() => {
     setTempApiKey(geminiApiKey || '');
@@ -31,6 +30,19 @@ export default function DashboardScreen({ navigation }: any) {
     SecureStore.getItemAsync('user-phone').then(async (p) => {
       setPhone(p);
       if (p) {
+        // Check if user is a registered driver and sync role to AppContext
+        supabase
+          .from('drivers')
+          .select('id')
+          .or(`mobile_number.eq.${p},whatsapp_number.eq.${p},phone.ilike.%${p.slice(-10)}%`)
+          .limit(1)
+          .then(({ data: driverData }) => {
+            if (driverData && driverData.length > 0) {
+              setIsDriver(true);
+            }
+          })
+          .catch(() => {});
+
         // Fetch API key just in case it was updated on web or AppContext hasn't reloaded
         fetch(`https://watscrm.vercel.app/api/auth/check?phone=${p}`)
           .then(res => res.json())
@@ -52,17 +64,6 @@ export default function DashboardScreen({ navigation }: any) {
             body: JSON.stringify({ phone: p, pushToken: token })
           }).catch(console.error);
         }
-
-        // Check if user is a registered driver
-        supabase
-          .from('drivers')
-          .select('id')
-          .or(`mobile_number.eq.${p},whatsapp_number.eq.${p}`)
-          .limit(1)
-          .then(({ data }) => {
-            if (data && data.length > 0) setIsDriver(true);
-          })
-          .catch(() => {});
       }
     });
   }, []);
@@ -127,7 +128,7 @@ export default function DashboardScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 60, paddingTop: 60 }}>
       <Text style={styles.title}>Your Profile</Text>
-      <Text style={styles.subtitle}>+91 {phone} • Role: {userRole === 'admin' ? 'Admin' : isDriver ? 'Driver Partner' : 'User'}</Text>
+      <Text style={styles.subtitle}>+91 {phone} • Role: {userRole}</Text>
       
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>
@@ -225,4 +226,3 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
   logoutText: { color: '#ef4444', fontSize: 15, fontWeight: 'bold' }
 });
-

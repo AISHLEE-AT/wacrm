@@ -44,21 +44,36 @@ function RideOBookingContent() {
   const [searchingDrivers, setSearchingDrivers] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
   const [driverETA, setDriverETA] = useState<any>(null);
+  const [liveDriverLocation, setLiveDriverLocation] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    if (activeRide?.status === 'accepted' && activeRide.driver_id) {
+    let interval: NodeJS.Timeout;
+    if ((activeRide?.status === 'accepted' || activeRide?.status === 'driver_arrived' || activeRide?.status === 'in_progress') && activeRide.driver_id) {
        const fetchDriverLocation = async () => {
-         const { data: driver } = await supabase.from('drivers').select('pickup_latitude, pickup_longitude').eq('id', activeRide.driver_id).maybeSingle();
-         if (driver && driver.pickup_latitude && activeRide.pickup_latitude) {
-            const dist = getDistanceKm(driver.pickup_latitude, driver.pickup_longitude, activeRide.pickup_latitude, activeRide.pickup_longitude);
-            const mins = Math.max(1, Math.ceil(dist * 3));
-            setDriverETA({ distance: dist, mins: mins });
+         // Attempt to fetch live lat/lng, falling back to pickup coords if driver tracking isn't fully set up
+         const { data: driver } = await supabase.from('drivers').select('lat, lng, pickup_latitude, pickup_longitude').eq('id', activeRide.driver_id).maybeSingle();
+         const driverLat = driver?.lat || driver?.pickup_latitude;
+         const driverLng = driver?.lng || driver?.pickup_longitude;
+         
+         if (driverLat && driverLng) {
+            setLiveDriverLocation([driverLat, driverLng]);
+            if (activeRide.pickup_latitude) {
+               const dist = getDistanceKm(driverLat, driverLng, activeRide.pickup_latitude, activeRide.pickup_longitude);
+               const mins = Math.max(1, Math.ceil(dist * 3));
+               setDriverETA({ distance: dist, mins: mins });
+            }
          } else {
             setDriverETA({ distance: 2.5, mins: 8 });
          }
        };
+       
        fetchDriverLocation();
+       interval = setInterval(fetchDriverLocation, 5000);
+    } else {
+       setLiveDriverLocation(null);
     }
+    
+    return () => { if (interval) clearInterval(interval); };
   }, [activeRide?.status, activeRide?.driver_id]);
 
   const locateUser = () => {
@@ -145,7 +160,7 @@ function RideOBookingContent() {
       const { data: userAuth } = await supabase.auth.getUser();
       const { data: rideRecord, error: rideError } = await supabase.from('rides').insert({
         customer_id: userAuth?.user?.id || null,
-        passenger_phone: '919123596988',
+        passenger_phone: userAuth?.user?.phone || 'Unknown',
         driver_id: driver.id,
         pickup_latitude: pickup[0],
         pickup_longitude: pickup[1],
@@ -215,7 +230,10 @@ function RideOBookingContent() {
     }
   };
 
-  const cancelRide = () => {
+  const cancelRide = async () => {
+    if (activeRide?.id) {
+      await supabase.from('rides').update({ status: 'cancelled' }).eq('id', activeRide.id);
+    }
     setActiveRide(null);
     setDrivers([]);
     setDropoff(null);
@@ -253,7 +271,7 @@ function RideOBookingContent() {
             </div>
           ) : (
             <div className="w-full h-full rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
-              <RideMap pickup={pickup} dropoff={dropoff} setDropoff={setDropoff} />
+              <RideMap pickup={pickup} dropoff={dropoff} setDropoff={setDropoff} driverLocation={liveDriverLocation} />
               {/* Map hint overlay */}
               {!dropoff && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-4 py-2 rounded-full shadow-lg backdrop-blur-sm border border-white/10 z-[999] whitespace-nowrap">
@@ -316,40 +334,65 @@ function RideOBookingContent() {
           {/* Active Ride Status */}
           {activeRide ? (
             <div className={`rounded-xl border-2 p-5 text-center space-y-3 ${
-              activeRide.status === 'pending' 
-                ? 'border-orange-500 bg-orange-500/10' 
-                : activeRide.status === 'accepted'
-                ? 'border-emerald-500 bg-emerald-500/10'
-                : 'border-slate-600 bg-slate-800'
+              activeRide.status === 'pending' ? 'border-orange-500 bg-orange-500/10' 
+              : (activeRide.status === 'accepted' || activeRide.status === 'driver_arrived' || activeRide.status === 'in_progress') ? 'border-emerald-500 bg-emerald-500/10'
+              : activeRide.status === 'cancelled' ? 'border-red-500 bg-red-500/10'
+              : 'border-slate-600 bg-slate-800'
             }`}>
               <div className="text-2xl">
-                {activeRide.status === 'pending' ? '⏳' : activeRide.status === 'accepted' ? '✅' : '🏁'}
+                {activeRide.status === 'pending' ? '⏳' 
+                : activeRide.status === 'accepted' ? '👍' 
+                : activeRide.status === 'driver_arrived' ? '📍' 
+                : activeRide.status === 'in_progress' ? '🚗' 
+                : activeRide.status === 'cancelled' ? '❌' 
+                : '🏁'}
               </div>
               <h2 className={`text-base font-bold ${
-                activeRide.status === 'pending' ? 'text-orange-400' : 'text-emerald-400'
+                activeRide.status === 'pending' ? 'text-orange-400' 
+                : activeRide.status === 'cancelled' ? 'text-red-400'
+                : activeRide.status === 'completed' ? 'text-slate-300'
+                : 'text-emerald-400'
               }`}>
-                {activeRide.status === 'pending' 
-                  ? 'Waiting for Driver to Accept...' 
-                  : activeRide.status === 'accepted'
-                  ? 'Driver Accepted! Show OTP'
-                  : 'Ride Complete!'}
+                {activeRide.status === 'pending' ? 'Searching for Driver...' 
+                : activeRide.status === 'accepted' ? 'Driver Assigned & On the way.' 
+                : activeRide.status === 'driver_arrived' ? 'Driver has arrived at pickup!' 
+                : activeRide.status === 'in_progress' ? 'Ride in Transit' 
+                : activeRide.status === 'cancelled' ? 'Ride was cancelled.' 
+                : `Ride Complete. Fare: ₹${activeRide.fare || activeRide.estimated_price}`}
               </h2>
+              
               {activeRide.status === 'accepted' && (
+                <div className="mt-2 text-sm text-emerald-300">
+                  <p>Driver is en route to your location.</p>
+                </div>
+              )}
+
+              {activeRide.status === 'driver_arrived' && (
                 <div className="mt-2 bg-black/40 rounded-xl p-4 border border-emerald-500/30">
                   <p className="text-xs text-slate-400 mb-1">Share this OTP with your driver to start ride</p>
                   <div className="text-5xl font-black text-white tracking-[0.3em]">
                     {activeRide.otp}
                   </div>
-                  {driverETA && (
-                    <div className="mt-4 pt-3 border-t border-emerald-500/20 text-sm">
+                </div>
+              )}
+
+              {(activeRide.status === 'accepted' || activeRide.status === 'driver_arrived' || activeRide.status === 'in_progress') && driverETA && (
+                <div className="mt-4 pt-3 border-t border-emerald-500/20 text-sm">
+                  {activeRide.status === 'in_progress' ? (
+                    <p className="text-emerald-400 font-bold flex justify-center items-center gap-2">
+                      <span>🏁</span> Heading to destination...
+                    </p>
+                  ) : (
+                    <>
                       <p className="text-emerald-400 font-bold flex justify-center items-center gap-2">
                         <span>📍</span> Driver is {driverETA.distance.toFixed(1)} km away
                       </p>
                       <p className="text-slate-300 text-xs mt-1">Est. arrival in {driverETA.mins} mins</p>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
+
               <button
                 onClick={cancelRide}
                 className="text-xs text-slate-500 hover:text-red-400 transition underline underline-offset-2 mt-2"

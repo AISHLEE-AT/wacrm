@@ -1,11 +1,19 @@
-// @ts-nocheck
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, TouchableOpacity, TextInput, Linking, Keyboard } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MapPin, Search, Navigation, MessageCircle } from 'lucide-react-native';
 
 import { supabase } from '../lib/supabase';
+
+// Haversine distance calculation
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
 
 export default function MapScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
@@ -131,23 +139,61 @@ export default function MapScreen() {
   };
 
   const bookDriver = async (driver: any) => {
-    if (!pickup || !dropoff) return;
-    
-    // Fallback to CRM number if driver phone is missing
-    const driverPhone = driver.phone || WABA_NUMBER; 
-    const message = `🚕 *New Ride Request (RideO)* 🚕\n\n*Pickup:* ${pickup.name}\n*Drop-off:* ${dropoff.name}\n*Vehicle Requested:* ${driver.vehicle_type}\n*Distance:* ${driver.distance_km?.toFixed(1)} km\n\nPlease confirm my booking!`;
-    
-    const whatsappUrl = `whatsapp://send?phone=${driverPhone}&text=${encodeURIComponent(message)}`;
-    
+    setSearchingDrivers(true);
     try {
-      const supported = await Linking.canOpenURL(whatsappUrl);
-      if (supported) {
-        await Linking.openURL(whatsappUrl);
-      } else {
-        alert("WhatsApp is not installed on your device");
-      }
-    } catch (e) {
-      alert("An error occurred opening WhatsApp");
+      const otp = (1000 + (Date.now() % 9000)).toString();
+      // Calculate trip distance and estimated fare
+      const tripKm = getDistanceKm(pickup!.lat, pickup!.lng, dropoff!.lat, dropoff!.lng);
+      const baseFare = driver.vehicle_type === 'bike' ? 15 : driver.vehicle_type === 'auto' ? 30 : 50;
+      const perKmRate = driver.vehicle_type === 'bike' ? 8 : driver.vehicle_type === 'auto' ? 14 : 16;
+      const price = Math.max(
+        driver.vehicle_type === 'bike' ? 25 : driver.vehicle_type === 'auto' ? 45 : 89,
+        Math.round(baseFare + Math.max(0, tripKm - 1.5) * perKmRate)
+      );
+
+      // Get user id if logged in. We'll use a dummy ID for now if we don't have auth context.
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { data: rideResponse, error } = await supabase.from('rides').insert({
+        customer_id: user?.id || null, // Allow null for unregistered testing if RLS permits
+        driver_id: driver.id,
+        pickup_latitude: pickup!.lat,
+        pickup_longitude: pickup!.lng,
+        pickup_address: pickup!.name,
+        dropoff_latitude: dropoff!.lat,
+        dropoff_longitude: dropoff!.lng,
+        dropoff_address: dropoff!.name,
+        vehicle_type: driver.vehicle_type,
+        price: price,
+        status: 'pending',
+        otp: otp
+      }).select().single();
+
+      if (error) throw error;
+
+      setActiveRide(rideResponse);
+
+      // Setup Realtime listener
+      supabase
+        .channel(`public:rides:id=${rideResponse.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
+          (payload) => {
+            const updatedRide = payload.new;
+            setActiveRide(updatedRide);
+            if (updatedRide.status === 'accepted') {
+              alert(`Driver accepted! Your OTP is: ${updatedRide.otp}`);
+            }
+          }
+        )
+        .subscribe();
+
+      alert('Ride requested! Waiting for driver...');
+    } catch (e: any) {
+      alert(`Error booking ride: ${e.message}`);
+    } finally {
+      setSearchingDrivers(false);
     }
   };
 
@@ -164,7 +210,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        provider={PROVIDER_GOOGLE}
+        provider={PROVIDER_DEFAULT}
         style={styles.map}
         initialRegion={{
           latitude: location.coords.latitude,
@@ -174,16 +220,6 @@ export default function MapScreen() {
         }}
         showsUserLocation={true}
         showsMyLocationButton={false}
-        onPress={(e) => {
-          if (e.nativeEvent.coordinate) {
-            setDropoff({
-              lat: e.nativeEvent.coordinate.latitude,
-              lng: e.nativeEvent.coordinate.longitude,
-              name: 'Selected on Map'
-            });
-            setSearchQuery('Selected on Map');
-          }
-        }}
       >
         <Marker
           coordinate={{ latitude: pickup.lat, longitude: pickup.lng }}
@@ -284,7 +320,7 @@ export default function MapScreen() {
                 <View key={driver.id} style={{ backgroundColor: '#1e293b', padding: 12, borderRadius: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ fontSize: 24, marginRight: 12 }}>
-                      {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : '🚕'}
+                      {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : driver.vehicle_type === 'sedan' ? '🚙' : driver.vehicle_type === 'suv' ? '🚐' : driver.vehicle_type === 'mini' ? '🚗' : '🚕'}
                     </Text>
                     <View>
                       <Text style={{ color: '#fff', fontWeight: 'bold' }}>{driver.name}</Text>

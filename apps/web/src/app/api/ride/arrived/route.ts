@@ -19,35 +19,16 @@ export async function GET(request: Request) {
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    const { data: ride, error: fetchError } = await supabase
+    const { error: updateError } = await supabase
       .from('rides')
-      .select('status, otp')
-      .eq('id', id)
-      .maybeSingle();
-      
-    if (fetchError) throw fetchError;
-    
-    if (!ride) {
-      return NextResponse.json({ error: 'Ride not found' }, { status: 404 });
-    }
+      .update({
+        status: 'driver_arrived',
+      })
+      .eq('id', id);
 
-    if (ride.status === 'pending' || ride.status === 'requested') {
-      // Generate a fresh 4-digit OTP for trip verification
-      const tripOtp = ride.otp || String(1000 + Math.floor(Math.random() * 9000));
+    if (updateError) throw updateError;
 
-      const { error: updateError } = await supabase
-        .from('rides')
-        .update({
-          status: 'accepted',
-          otp: tripOtp,
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-    }
-
-    return NextResponse.redirect(new URL('/drivo?accepted=true', request.url));
+    return NextResponse.redirect(new URL('/drivo?arrived=true', request.url));
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

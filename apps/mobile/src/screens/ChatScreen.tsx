@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Linking, Alert } from 'react-native';
 import { GiftedChat, IMessage, Bubble } from 'react-native-gifted-chat';
@@ -201,4 +200,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   }
 });
-

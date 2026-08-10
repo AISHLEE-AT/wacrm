@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useRef, useContext, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ActivityIndicator,
@@ -38,7 +37,14 @@ export default function EcosystemWebView({ route, navigation }: Props) {
 
   let targetUrl = overrideUrl ?? `${BASE_URL}${path}`;
   const separator = targetUrl.includes('?') ? '&' : '?';
-  targetUrl = `${targetUrl}${separator}embed=true&source=supro`;
+  targetUrl = `${targetUrl}${separator}embed=true`;
+
+  if (accessToken) {
+    targetUrl = `${targetUrl}&access_token=${accessToken}`;
+    if (refreshToken) {
+      targetUrl = `${targetUrl}&refresh_token=${refreshToken}`;
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Injected JS that:
@@ -68,12 +74,8 @@ export default function EcosystemWebView({ route, navigation }: Props) {
             }
           }
           if (!tokenKey) {
-            // Fallback key pattern based on domain
-            if (window.location.hostname.includes('thamizhan')) {
-              tokenKey = 'sb-jjgdatjthyeesmgunnlp-auth-token'; // Aishlee App
-            } else {
-              tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token'; // SuprO App
-            }
+            // Fallback key pattern used by Supabase JS client v2
+            tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
           }
           var existing = localStorage.getItem(tokenKey);
           if (!existing) {
@@ -108,37 +110,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           }
           return _push.apply(history, arguments);
         };
-        
-        // Inject Supabase session so user doesn't get redirected to login
-        if ("${accessToken}") {
-          var sessionData = {
-            access_token: "${accessToken}",
-            refresh_token: "${refreshToken}",
-            user: {
-              id: "${user?.id ?? ''}",
-              phone: "${userPhone}",
-              name: "${userName}",
-              user_metadata: { role: "${userRole}", is_admin: ${isAdmin} }
-            }
-          };
-          var cookieValue = encodeURIComponent(JSON.stringify(["${accessToken}", "${refreshToken}"]));
-          
-          // Inject for BOTH SuprO and Aishlee project references.
-          // This guarantees that whichever Supabase instance the Next.js app is using,
-          // it will find the session token in localStorage and cookies.
-          var projectKeys = ['sb-gmahjdzqitbomtmdzlfp-auth-token', 'sb-jjgdatjthyeesmgunnlp-auth-token'];
-          
-          projectKeys.forEach(function(k) {
-            localStorage.setItem(k, JSON.stringify(sessionData));
-            document.cookie = k + '=' + cookieValue + '; path=/; max-age=31536000';
-          });
-          
-          // Reload so SSR can see the cookie
-          if (window.location.pathname.includes('/teacho')) {
-            window.location.reload();
-          }
-        }
-        
+
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY', module: '${moduleName}' }));
       } catch(e) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ERROR', error: e.message }));
@@ -227,7 +199,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
         applicationNameForUserAgent="SuprO-Native/1.0"
         onNavigationStateChange={(navState) => {
           // If webview navigates to the web login page, intercept
-          if (navState.url?.includes('/login') && (navState.url?.includes(BASE_URL) || navState.url?.includes('thamizhan.vercel.app'))) {
+          if (navState.url?.includes('/login') && navState.url?.includes(BASE_URL)) {
             navigation.replace('Login');
           }
         }}
@@ -292,4 +264,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

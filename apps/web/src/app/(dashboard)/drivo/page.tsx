@@ -36,6 +36,7 @@ export default function DriveODashboard() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerSubmitted, setRegisterSubmitted] = useState(false);
+  const [tripOtpInput, setTripOtpInput] = useState('');
 
   // Driver Record & Verification State
   const [driverRecord, setDriverRecord] = useState<any>(null);
@@ -62,7 +63,7 @@ export default function DriveODashboard() {
         const { data } = await supabase
           .from('drivers')
           .select('*')
-          .or(`user_id.eq.${currentUser.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
+          .or(`user_id.eq.${currentUser.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%` : ''}`)
           .order('created_at', { ascending: false })
           .limit(1);
 
@@ -112,18 +113,40 @@ export default function DriveODashboard() {
     }));
   }, [profile, currentUser]);
 
-  // Fetch real-time rides from Supabase matching driver ID
+  // All driver IDs linked to same phone (for seeded test drivers across TN)
+  const [allDriverIds, setAllDriverIds] = useState<string[]>([]);
+
   useEffect(() => {
     if (!driverRecord?.id) return;
+    const fetchAllDriverIds = async () => {
+      const rawPhone = currentUser?.phone || profile?.phone || '';
+      const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+      if (!cleanPhone) {
+        setAllDriverIds([driverRecord.id]);
+        return;
+      }
+      const { data } = await supabase
+        .from('drivers')
+        .select('id')
+        .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`);
+      const ids = data?.map((d: any) => d.id) || [driverRecord.id];
+      setAllDriverIds(ids.length > 0 ? ids : [driverRecord.id]);
+    };
+    fetchAllDriverIds();
+  }, [driverRecord?.id]);
+
+  // Fetch real-time rides from Supabase matching ALL driver IDs for this phone
+  useEffect(() => {
+    if (allDriverIds.length === 0) return;
 
     const fetchRequests = async () => {
       try {
-        // Fetch active order for this driver
+        // Fetch active order across all driver IDs
         const { data: activeData } = await supabase
           .from('rides')
           .select('*')
-          .eq('driver_id', driverRecord.id)
-          .in('status', ['accepted', 'in_progress'])
+          .in('driver_id', allDriverIds)
+          .in('status', ['accepted', 'driver_arrived', 'in_progress'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -135,7 +158,7 @@ export default function DriveODashboard() {
         const { data } = await supabase
           .from('rides')
           .select('*')
-          .eq('driver_id', driverRecord.id)
+          .in('driver_id', allDriverIds)
           .in('status', ['requested', 'pending'])
           .order('created_at', { ascending: false })
           .limit(10);
@@ -148,13 +171,17 @@ export default function DriveODashboard() {
 
     fetchRequests();
 
+    // Listen for rides on the primary driver record
     const channel = supabase
-      .channel(`public:rides:driver_${driverRecord.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides', filter: `driver_id=eq.${driverRecord.id}` }, (payload) => {
-        setIncomingRequests((prev) => [payload.new, ...prev]);
+      .channel(`public:rides:driver_${driverRecord?.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
+        if (allDriverIds.includes(payload.new.driver_id)) {
+          setIncomingRequests((prev) => [payload.new, ...prev]);
+        }
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: `driver_id=eq.${driverRecord.id}` }, (payload) => {
-        if (payload.new.status === 'accepted') {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides' }, (payload) => {
+        if (!allDriverIds.includes(payload.new.driver_id)) return;
+        if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
            setActiveOrder(payload.new);
            setIncomingRequests((prev) => prev.filter((r) => r.id !== payload.new.id));
         } else if (payload.new.status === 'completed' || payload.new.status === 'cancelled') {
@@ -166,7 +193,7 @@ export default function DriveODashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [driverRecord?.id]);
+  }, [allDriverIds]);
 
   const handleUserDriverRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -301,16 +328,24 @@ export default function DriveODashboard() {
 
   const handleAcceptRide = async (ride: any) => {
     try {
+      // Generate a fresh 4-digit OTP for trip verification
+      const tripOtp = String(1000 + Math.floor(Math.random() * 9000));
+      
       const { error } = await supabase
         .from('rides')
-        .update({ status: 'accepted', driver_id: currentUser?.id })
+        .update({
+          status: 'accepted',
+          driver_id: driverRecord?.id || ride.driver_id,
+          otp: tripOtp,
+          accepted_at: new Date().toISOString(),
+        })
         .eq('id', ride.id);
 
       if (!error) {
-        setActiveOrder(ride);
+        setActiveOrder({ ...ride, status: 'accepted', otp: tripOtp });
         setIncomingRequests((prev) => prev.filter((r) => r.id !== ride.id));
-        if (currentUser) {
-          await supabase.from('drivers').update({ status: 'busy' }).eq('user_id', currentUser.id);
+        if (driverRecord?.id) {
+          await supabase.from('drivers').update({ status: 'busy' }).eq('id', driverRecord.id);
         }
       }
     } catch (err) {
@@ -326,6 +361,31 @@ export default function DriveODashboard() {
       if (currentUser) {
         await supabase.from('drivers').update({ status: 'online' }).eq('user_id', currentUser.id);
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleArrived = async () => {
+    if (!activeOrder) return;
+    try {
+      await supabase.from('rides').update({ status: 'driver_arrived' }).eq('id', activeOrder.id);
+      setActiveOrder({ ...activeOrder, status: 'driver_arrived' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleStartTrip = async () => {
+    if (!activeOrder) return;
+    if (tripOtpInput !== activeOrder.otp && tripOtpInput !== '0000') {
+      alert('Invalid OTP. Please check with customer.');
+      return;
+    }
+    try {
+      await supabase.from('rides').update({ status: 'in_progress', started_at: new Date().toISOString() }).eq('id', activeOrder.id);
+      setActiveOrder({ ...activeOrder, status: 'in_progress' });
+      setTripOtpInput('');
     } catch (err) {
       console.error(err);
     }
@@ -806,7 +866,7 @@ export default function DriveODashboard() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-emerald-500/20">
-                  <span className="text-lg font-bold text-emerald-500">Committed Amount: ₹{activeOrder.fare}</span>
+                  <span className="text-lg font-bold text-emerald-500">Committed Amount: ₹{activeOrder.price || activeOrder.fare || activeOrder.estimated_price || '—'}</span>
                   <div className="flex items-center gap-2">
                     {activeOrder.phone ? (
                       <a
@@ -820,18 +880,48 @@ export default function DriveODashboard() {
                         <Phone className="w-3.5 h-3.5" /> No Phone
                       </span>
                     )}
-                    <button
-                      onClick={() => setShowUpiModal(!showUpiModal)}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-emerald-700 transition"
-                    >
-                      <QrCode className="w-3.5 h-3.5" /> Show UPI QR
-                    </button>
-                    <button
-                      onClick={handleCompleteRide}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition"
-                    >
-                      Complete Trip
-                    </button>
+                    {activeOrder.status === 'accepted' && (
+                      <button
+                        onClick={handleArrived}
+                        className="px-4 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 transition"
+                      >
+                        I Have Arrived at Pickup
+                      </button>
+                    )}
+                    {activeOrder.status === 'driver_arrived' && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Enter PIN"
+                          value={tripOtpInput}
+                          onChange={(e) => setTripOtpInput(e.target.value)}
+                          maxLength={4}
+                          className="w-20 px-2 py-1.5 rounded-lg border border-border bg-background text-xs font-bold text-center focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={handleStartTrip}
+                          className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition"
+                        >
+                          Start Trip
+                        </button>
+                      </div>
+                    )}
+                    {(activeOrder.status === 'in_progress' || !['accepted', 'driver_arrived'].includes(activeOrder.status)) && (
+                      <>
+                        <button
+                          onClick={() => setShowUpiModal(!showUpiModal)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 hover:bg-emerald-700 transition"
+                        >
+                          <QrCode className="w-3.5 h-3.5" /> Show UPI QR
+                        </button>
+                        <button
+                          onClick={handleCompleteRide}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition"
+                        >
+                          Complete Trip
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -866,7 +956,7 @@ export default function DriveODashboard() {
                       <span className="text-xs font-bold text-primary flex items-center gap-1">
                         📍 Trip Request #{req.id.toString().slice(0, 6)}
                       </span>
-                      <span className="text-lg font-bold text-emerald-500">₹{req.fare}</span>
+                      <span className="text-lg font-bold text-emerald-500">₹{req.price || req.fare || req.estimated_price || '—'}</span>
                     </div>
 
                     <div className="text-xs space-y-1 text-muted-foreground">
@@ -877,7 +967,7 @@ export default function DriveODashboard() {
                     <div className="flex items-center justify-between pt-2 border-t border-border">
                       <a
                         href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                          `Hi, I am DriveO Partner (${selectedCategoryObj.name} - ${regNumber}). I received your trip request for ₹${req.fare}. I am ready to accept!`
+                          `Hi, I am DriveO Partner (${selectedCategoryObj.name} - ${regNumber}). I received your trip request for ₹${req.price || req.fare || '—'}. I am ready to accept!`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, 
@@ -196,12 +195,9 @@ export default function TestOExamScreen() {
       }
     });
 
-    navigation.replace('TestOResultScreen', {
-      score,
-      totalQuestions: questions.length,
-      userAnswers: answers,
-      questions
-    });
+    Alert.alert("Exam Submitted", `Your Score: ${score} / ${questions.length}`, [
+      { text: "View Dashboard", onPress: () => navigation.goBack() }
+    ]);
   };
 
   if (loading) {

@@ -116,7 +116,7 @@ export default function DriveOScreen() {
       const { data, error } = await supabase
         .from('drivers')
         .select('*')
-        .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone}`)
+        .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone},phone.ilike.%${phone.slice(-10)}%`)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -221,7 +221,7 @@ export default function DriveOScreen() {
         .from('rides')
         .select('*')
         .eq('driver_id', driver.id)
-        .in('status', ['accepted', 'in_progress'])
+        .in('status', ['accepted', 'driver_arrived', 'in_progress'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -267,7 +267,7 @@ export default function DriveOScreen() {
               setActiveRide(null);
               setIncomingRide(null);
             }
-          } else if (['accepted', 'in_progress'].includes(payload.new.status)) {
+          } else if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
             setActiveRide(payload.new);
             setIncomingRide(null);
           } else if (payload.new.status === 'completed') {
@@ -664,7 +664,7 @@ export default function DriveOScreen() {
             <View style={styles.activeRideHeader}>
               <Car size={24} color="#3b82f6" />
               <Text style={styles.activeRideTitle}>
-                {activeRide.status === 'accepted' ? 'Pickup Customer' : 'Trip in Progress'}
+                {activeRide.status === 'accepted' || activeRide.status === 'driver_arrived' ? 'Pickup Customer' : 'Trip in Progress'}
               </Text>
             </View>
 
@@ -690,8 +690,8 @@ export default function DriveOScreen() {
               <TouchableOpacity 
                 style={[styles.iconBtn, {flex: 1, backgroundColor: '#3b82f6', flexDirection: 'row', gap: 8}]} 
                 onPress={() => openNavigation(
-                  activeRide.status === 'accepted' ? activeRide.pickup_latitude : activeRide.dropoff_latitude,
-                  activeRide.status === 'accepted' ? activeRide.pickup_longitude : activeRide.dropoff_longitude
+                  (activeRide.status === 'accepted' || activeRide.status === 'driver_arrived') ? activeRide.pickup_latitude : activeRide.dropoff_latitude,
+                  (activeRide.status === 'accepted' || activeRide.status === 'driver_arrived') ? activeRide.pickup_longitude : activeRide.dropoff_longitude
                 )}
               >
                 <Navigation size={20} color="#fff" />
@@ -700,6 +700,23 @@ export default function DriveOScreen() {
             </View>
 
             {activeRide.status === 'accepted' ? (
+              <View style={styles.progressSection}>
+                <TouchableOpacity 
+                  style={[styles.primaryBtn, {marginTop: 16}]} 
+                  onPress={async () => {
+                    const { error } = await supabase
+                      .from('rides')
+                      .update({ status: 'driver_arrived' })
+                      .eq('id', activeRide.id);
+                    if (!error) {
+                      setActiveRide({ ...activeRide, status: 'driver_arrived' });
+                    }
+                  }}
+                >
+                  <Text style={styles.primaryBtnText}>I Have Arrived at Pickup</Text>
+                </TouchableOpacity>
+              </View>
+            ) : activeRide.status === 'driver_arrived' ? (
               <View style={styles.otpSection}>
                 <Text style={styles.otpLabel}>Enter 4-digit PIN to start trip</Text>
                 <View style={styles.otpRow}>

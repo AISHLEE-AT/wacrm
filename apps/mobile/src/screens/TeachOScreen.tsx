@@ -1,9 +1,8 @@
-// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, Linking } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
-import { PlayCircle, ArrowLeft } from 'lucide-react-native';
+import { PlayCircle } from 'lucide-react-native';
 
 export default function TeachOScreen() {
   const [courses, setCourses] = useState<any[]>([]);
@@ -75,15 +74,8 @@ export default function TeachOScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>TeachO</Text>
-          <Text style={styles.headerSubtitle}>Masterclass Courses & Tuitions</Text>
-        </View>
-      </View>
+      <Text style={styles.headerTitle}>TeachO</Text>
+      <Text style={styles.headerSubtitle}>Masterclass Courses & Tuitions</Text>
       
       <FlatList
         data={courses}
@@ -109,25 +101,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#121212',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 20,
-    paddingHorizontal: 16,
-  },
-  backBtn: {
-    padding: 8,
-    marginRight: 12,
-  },
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
+    marginTop: 60,
+    marginHorizontal: 20,
   },
   headerSubtitle: {
     fontSize: 16,
     color: '#a1a1aa',
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
   listContainer: {
     paddingHorizontal: 20,

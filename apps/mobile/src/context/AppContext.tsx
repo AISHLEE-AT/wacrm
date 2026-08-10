@@ -1,6 +1,6 @@
-// @ts-nocheck
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { supabase } from '../lib/supabase';
 
 // Admin phone numbers (same as web app)
 const ADMIN_PHONES = ['6381029380', '9876543210', '9486335870'];
@@ -13,29 +13,15 @@ export interface AppUser {
   isAdmin: boolean;
   accessToken: string | null;
   refreshToken?: string | null;
-  defaultModule?: string | null;
-}
-
-export interface RecentModule {
-  name: string;
-  path: string;
-  label: string;
-  iconName: string;
 }
 
 export const AppContext = createContext<any>(null);
 
-import { supabase } from '../lib/supabase';
-
 export const AppProvider = ({ children }: any) => {
-  const [recentModules, setRecentModules] = useState<RecentModule[]>([]);
+  const [recentModules, setRecentModules] = useState<string[]>(['Map']);
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  
-  // RideO & DriveO specific state
-  const [activeRide, setActiveRide] = useState<any>(null);
-  const [driverMode, setDriverMode] = useState<boolean>(false);
 
   // Derived shorthand for components still using userRole
   const userRole = user?.isAdmin ? 'admin' : (user?.role ?? 'user');
@@ -44,15 +30,9 @@ export const AppProvider = ({ children }: any) => {
   useEffect(() => {
     const loadState = async () => {
       try {
+        // Load all persisted user state
         const savedModules = await SecureStore.getItemAsync('recent-modules');
-        if (savedModules) {
-          try {
-            const parsed = JSON.parse(savedModules);
-            // Filter out old string format, keep only objects
-            const validModules = parsed.filter((m: any) => typeof m === 'object' && m !== null && m.name);
-            setRecentModules(validModules);
-          } catch(e) {}
-        }
+        if (savedModules) setRecentModules(JSON.parse(savedModules));
 
         const phone = await SecureStore.getItemAsync('user-phone');
         const name = await SecureStore.getItemAsync('user-name');
@@ -61,20 +41,9 @@ export const AppProvider = ({ children }: any) => {
         const accessToken = await SecureStore.getItemAsync('sb-access-token');
         const refreshToken = await SecureStore.getItemAsync('sb-refresh-token');
         const apiKey = await SecureStore.getItemAsync('gemini-api-key');
-        let defaultModule = await SecureStore.getItemAsync('user-default-module');
 
         if (phone) {
           const adminStatus = ADMIN_PHONES.includes(phone);
-
-          // Fetch the latest default_module from Supabase to sync across devices
-          try {
-            const { data } = await supabase.from('profiles').select('default_module').eq('phone', phone).single();
-            if (data?.default_module) {
-              defaultModule = data.default_module;
-              await SecureStore.setItemAsync('user-default-module', defaultModule);
-            }
-          } catch(e) {}
-
           setUser({
             phone,
             name: name ?? '',
@@ -83,8 +52,27 @@ export const AppProvider = ({ children }: any) => {
             isAdmin: adminStatus || role === 'admin' || category === 'Admin',
             accessToken,
             refreshToken,
-            defaultModule,
           });
+
+          // Auto-detect if user is a registered driver partner
+          supabase
+            .from('drivers')
+            .select('id, vehicle_type')
+            .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone},phone.ilike.%${phone.slice(-10)}%`)
+            .limit(1)
+            .then(({ data: driverData }) => {
+              if (driverData && driverData.length > 0) {
+                // User is a registered driver — update role and category
+                setUser(prev => prev ? {
+                  ...prev,
+                  role: 'driver',
+                  category: 'Driver',
+                } : null);
+                SecureStore.setItemAsync('user-role', 'driver');
+                SecureStore.setItemAsync('user-category', 'Driver');
+              }
+            })
+            .catch(() => {});
 
           // Background sync API key from server across all devices
           fetch(`https://watscrm.vercel.app/api/auth/check?phone=${phone}`)
@@ -124,6 +112,25 @@ export const AppProvider = ({ children }: any) => {
 
     setUser(fullUser);
 
+    // Auto-detect if user is a registered driver partner
+    supabase
+      .from('drivers')
+      .select('id, vehicle_type')
+      .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone},phone.ilike.%${phone.slice(-10)}%`)
+      .limit(1)
+      .then(({ data: driverData }) => {
+        if (driverData && driverData.length > 0) {
+          setUser(prev => prev ? {
+            ...prev,
+            role: 'driver',
+            category: 'Driver',
+          } : null);
+          SecureStore.setItemAsync('user-role', 'driver');
+          SecureStore.setItemAsync('user-category', 'Driver');
+        }
+      })
+      .catch(() => {});
+
     // Persist
     await SecureStore.setItemAsync('user-phone', phone);
     await SecureStore.setItemAsync('user-name', fullUser.name);
@@ -152,8 +159,8 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.deleteItemAsync('gemini-api-key');
   }, []);
 
-  const addRecentModule = useCallback(async (module: RecentModule) => {
-    let updated = [module, ...recentModules.filter(m => m.path !== module.path)];
+  const addRecentModule = useCallback(async (moduleName: string) => {
+    let updated = [moduleName, ...recentModules.filter(m => m !== moduleName)];
     if (updated.length > 3) updated = updated.slice(0, 3);
     setRecentModules(updated);
     await SecureStore.setItemAsync('recent-modules', JSON.stringify(updated));
@@ -176,10 +183,6 @@ export const AppProvider = ({ children }: any) => {
       addRecentModule,
       geminiApiKey,
       updateGeminiKey,
-      activeRide,
-      setActiveRide,
-      driverMode,
-      setDriverMode,
       // Legacy compat
       setUserRole: (role: string) => setUser(prev => prev ? { ...prev, role } : null),
     }}>
