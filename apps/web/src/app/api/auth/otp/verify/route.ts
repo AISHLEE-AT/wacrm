@@ -182,7 +182,7 @@ export async function POST(request: Request) {
         role: resolvedRole,
         category: finalCategory,
       },
-      redirect_to: resolvedRole === 'admin' ? '/admin' : '/rideo',
+      redirect_to: '/',
     })
 
     // Set session cookie

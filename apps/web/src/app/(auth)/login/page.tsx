@@ -110,7 +110,7 @@ function LoginPageInner() {
 
     const target = inviteToken
       ? `/join/${encodeURIComponent(inviteToken)}`
-      : (data.redirect_to || '/rideo');
+      : (data.redirect_to || '/');
 
     if (data.needs_pin_setup) {
       // User has no PIN yet — force PIN setup before entering app
@@ -191,7 +191,7 @@ function LoginPageInner() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Authentication failed');
       await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
-      const target = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : (data.redirect_to || '/rideo');
+      const target = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : (data.redirect_to || '/');
       window.location.href = target;
     } catch (err: any) {
       setError(err.message || 'Login failed');

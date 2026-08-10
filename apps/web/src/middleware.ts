@@ -125,7 +125,21 @@ export async function middleware(request: NextRequest) {
         ].some(id => userText.includes(id.toLowerCase()))
 
         const isAdmin = role === 'admin' || isBootstrapAdmin
-        const isDriver = role === 'driver'
+        let isDriver = role === 'driver'
+
+        if (!isDriver && user.phone) {
+          const cleanPhone = user.phone.replace('+', '');
+          const { data: driverData } = await supabase
+            .from('drivers')
+            .select('id, status')
+            .eq('phone', cleanPhone)
+            .eq('status', 'approved')
+            .maybeSingle()
+          
+          if (driverData) {
+            isDriver = true;
+          }
+        }
 
         if (isAdmin) {
           defaultModule = '/crm'
