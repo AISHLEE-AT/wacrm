@@ -163,16 +163,8 @@ function RideOBookingContent() {
       const { data: rideRecord, error: rideError } = await supabase.from('rides').insert({
         passenger_phone: passengerPhone,
         driver_id: driver.id,
-        pickup_latitude: pickup[0],
-        pickup_longitude: pickup[1],
-        pickup_address: pickupAddress,
-        dropoff_latitude: dropoff[0],
-        dropoff_longitude: dropoff[1],
-        dropoff_address: dropoffAddress,
         vehicle_type: driver.vehicle_type,
-        distance_km: parseFloat(tripDistanceKm.toFixed(2)),
         fare: estimatedFare,
-        estimated_price: estimatedFare,
         status: 'pending',
         otp: otp,
         payment_mode: 'upi'

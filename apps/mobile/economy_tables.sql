@@ -1,14 +1,25 @@
--- Economy tables
+-- Economy tables and additions
 
+-- Check if profiles table exists, if not create a minimal version
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT NOT NULL,
-    nitro_points INT DEFAULT 0 NOT NULL,
-    supro_coins INT DEFAULT 0 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Safely add the required economy columns to the profiles table
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='nitro_points') THEN
+        ALTER TABLE public.profiles ADD COLUMN nitro_points INT DEFAULT 0 NOT NULL;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='supro_coins') THEN
+        ALTER TABLE public.profiles ADD COLUMN supro_coins INT DEFAULT 0 NOT NULL;
+    END IF;
+END $$;
+
+-- Create the nitro_transactions table
 CREATE TABLE IF NOT EXISTS public.nitro_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -19,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.nitro_transactions (
 );
 
 -- Insert a mock user for testing our UI integration
-INSERT INTO public.profiles (id, username, nitro_points, supro_coins)
-VALUES ('11111111-1111-1111-1111-111111111111', 'TestUser', 500, 0)
-ON CONFLICT (id) DO NOTHING;
+-- (Using an upsert to avoid conflicts, omitting username since it might not exist in the schema)
+INSERT INTO public.profiles (id, nitro_points, supro_coins)
+VALUES ('11111111-1111-1111-1111-111111111111', 500, 0)
+ON CONFLICT (id) DO UPDATE SET nitro_points = 500;
