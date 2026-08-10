@@ -37,6 +37,13 @@ export default function DriveODashboard() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [registerSubmitted, setRegisterSubmitted] = useState(false);
   const [tripOtpInput, setTripOtpInput] = useState('');
+  
+  // Cancellation UI State
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+
+  // Earnings History State
+  const [earningsHistory, setEarningsHistory] = useState<any[]>([]);
 
   // Driver Record & Verification State
   const [driverRecord, setDriverRecord] = useState<any>(null);
@@ -83,6 +90,40 @@ export default function DriveODashboard() {
 
     fetchDriverRecord();
   }, [currentUser?.id]);
+
+  // Live driver location streaming
+  useEffect(() => {
+    if (!driverRecord?.is_verified || !isOnline) return;
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        await supabase.from('drivers').update({
+          pickup_latitude: latitude,
+          pickup_longitude: longitude,
+          updated_at: new Date().toISOString()
+        }).eq('id', driverRecord.id);
+      },
+      (err) => console.error('Geo error:', err),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [driverRecord?.id, driverRecord?.is_verified, isOnline]);
+
+  // Fetch earnings history
+  useEffect(() => {
+    if (!driverRecord?.id) return;
+    const fetchHistory = async () => {
+      const { data } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('driver_id', driverRecord.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (data) setEarningsHistory(data);
+    };
+    fetchHistory();
+  }, [driverRecord?.id, activeOrder?.status]);
 
   // User Enrollment Form State
   const [regForm, setRegForm] = useState({
@@ -386,6 +427,29 @@ export default function DriveODashboard() {
       await supabase.from('rides').update({ status: 'in_progress', started_at: new Date().toISOString() }).eq('id', activeOrder.id);
       setActiveOrder({ ...activeOrder, status: 'in_progress' });
       setTripOtpInput('');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDriverCancel = async () => {
+    if (!activeOrder || !cancelReason) return;
+    try {
+      await fetch('/api/rides/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ride_id: activeOrder.id,
+          cancelled_by: 'driver',
+          reason: cancelReason
+        })
+      });
+      setActiveOrder(null);
+      setShowCancelDialog(false);
+      setCancelReason('');
+      if (currentUser) {
+        await supabase.from('drivers').update({ status: 'online' }).eq('user_id', currentUser.id);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -925,6 +989,36 @@ export default function DriveODashboard() {
                   </div>
                 </div>
 
+                {['accepted', 'driver_arrived'].includes(activeOrder.status) && (
+                  <div className="pt-2 border-t border-emerald-500/20">
+                    {!showCancelDialog ? (
+                      <button
+                        onClick={() => setShowCancelDialog(true)}
+                        className="px-3 py-1.5 rounded-lg border border-red-500 text-red-500 text-xs font-bold hover:bg-red-500 hover:text-white transition"
+                      >
+                        Cancel Ride
+                      </button>
+                    ) : (
+                      <div className="space-y-2 mt-2">
+                        <select
+                          value={cancelReason}
+                          onChange={(e) => setCancelReason(e.target.value)}
+                          className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-xs"
+                        >
+                          <option value="">Select Reason</option>
+                          <option value="Customer unreachable">Customer unreachable</option>
+                          <option value="Vehicle issue">Vehicle issue</option>
+                          <option value="Traffic/Delay">Traffic/Delay</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <button onClick={handleDriverCancel} className="px-3 py-1 rounded bg-red-500 text-white text-xs">Confirm Cancel</button>
+                          <button onClick={() => setShowCancelDialog(false)} className="px-3 py-1 rounded bg-secondary text-foreground text-xs">Back</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {showUpiModal && (
                   <div className="bg-background border border-border p-4 rounded-xl text-center space-y-2 mt-2">
                     <p className="text-xs font-bold text-muted-foreground">Customer Scans UPI to Pay Driver Directly</p>
@@ -985,6 +1079,41 @@ export default function DriveODashboard() {
                   </div>
                 ))
               )}
+            </div>
+
+            {/* Earnings History */}
+            <div className="mt-8 pt-6 border-t border-border">
+              <h3 className="text-base font-bold text-foreground mb-4">Earnings History</h3>
+              <div className="bg-background rounded-xl border border-border overflow-hidden">
+                <div className="p-4 bg-muted/30 border-b border-border flex justify-between">
+                  <span className="font-semibold text-sm">Total Earned</span>
+                  <span className="font-bold text-emerald-500">
+                    ₹{earningsHistory.reduce((sum, r) => sum + (Number(r.fare) || Number(r.price) || 0), 0)}
+                  </span>
+                </div>
+                <div className="divide-y divide-border max-h-[300px] overflow-y-auto">
+                  {earningsHistory.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-muted-foreground">No completed rides yet.</div>
+                  ) : (
+                    earningsHistory.map((ride) => (
+                      <div key={ride.id} className="p-3 text-xs flex justify-between items-center hover:bg-muted/10">
+                        <div>
+                          <div className="text-muted-foreground mb-1">{new Date(ride.created_at).toLocaleDateString()}</div>
+                          <div className="truncate max-w-[200px]">
+                            {ride.pickup_address?.split(',')[0] || 'GPS'} → {ride.dropoff_address?.split(',')[0] || 'GPS'}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-emerald-500">₹{ride.fare || ride.price}</div>
+                          <div className="text-[10px] uppercase text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded mt-1 inline-block">
+                            {ride.status}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

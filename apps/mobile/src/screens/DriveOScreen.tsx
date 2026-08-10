@@ -32,6 +32,8 @@ import {
   Clock,
   Send
 } from 'lucide-react-native';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Audio } from 'expo-av';
 
 // Haversine formula to calculate distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -51,6 +53,14 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 const formatCurrency = (amount) => {
   return `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 };
+
+const mapStyleDark = [
+  { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#17263c' }] },
+];
 
 export default function DriveOScreen() {
   const { user } = useContext(AppContext);
@@ -79,6 +89,7 @@ export default function DriveOScreen() {
   const [activeRide, setActiveRide] = useState(null);
   const [otp, setOtp] = useState(['', '', '', '']);
   const otpInputs = useRef([]);
+  const [skippedCount, setSkippedCount] = useState(0);
 
   // Earnings States
   const [earnings, setEarnings] = useState({
@@ -91,6 +102,7 @@ export default function DriveOScreen() {
   const countdownAnim = useRef(new Animated.Value(100)).current;
   const [timeLeft, setTimeLeft] = useState(15);
   const timerRef = useRef(null);
+  const mapRef = useRef(null);
 
   useEffect(() => {
     if (phone) {
@@ -109,6 +121,30 @@ export default function DriveOScreen() {
       stopLocationTracking();
     };
   }, [driver?.id]);
+
+  useEffect(() => {
+    if (activeRide && mapRef.current) {
+      const markers = [];
+      if (currentLocation) {
+        markers.push({ latitude: currentLocation.latitude, longitude: currentLocation.longitude });
+      }
+      if (activeRide.pickup_latitude) {
+        markers.push({ latitude: activeRide.pickup_latitude, longitude: activeRide.pickup_longitude });
+      }
+      if (activeRide.dropoff_latitude) {
+        markers.push({ latitude: activeRide.dropoff_latitude, longitude: activeRide.dropoff_longitude });
+      }
+      
+      if (markers.length > 1) {
+        setTimeout(() => {
+          mapRef.current?.fitToCoordinates(markers, {
+            edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+            animated: true
+          });
+        }, 500);
+      }
+    }
+  }, [activeRide, currentLocation]);
 
   const fetchDriverProfile = async () => {
     try {
@@ -281,14 +317,26 @@ export default function DriveOScreen() {
       .subscribe();
   };
 
-  const handleNewRide = (ride) => {
+  const handleNewRide = async (ride) => {
     if (!isOnline) return;
     if (activeRide) return; // Don't show if already on a ride
     if (ride.vehicle_type && ride.vehicle_type.toLowerCase() !== driver.vehicle_type?.toLowerCase() && ride.vehicle_type !== 'Any') return;
 
-    // Optional: Check distance between driver and pickup
+    if (currentLocation && ride.pickup_latitude && ride.pickup_longitude) {
+      const dist = getDistance(currentLocation.latitude, currentLocation.longitude, ride.pickup_latitude, ride.pickup_longitude);
+      if (dist > 10) return; // Skip rides more than 10km away
+    }
     
     setIncomingRide(ride);
+
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
+        { shouldPlay: true, volume: 1.0 }
+      );
+      setTimeout(() => sound.unloadAsync(), 5000);
+    } catch(e) { console.log('Audio error', e); }
+
     Vibration.vibrate([1000, 500, 1000]);
     startCountdown();
   };
@@ -346,7 +394,45 @@ export default function DriveOScreen() {
   const handleSkipRide = () => {
     clearInterval(timerRef.current);
     setIncomingRide(null);
-    // Ideally, log skipped ride or decrement acceptance rate here
+    setSkippedCount(prev => {
+      const newCount = prev + 1;
+      if (newCount % 5 === 0) {
+        Alert.alert('Warning', 'You have skipped several rides. A low acceptance rate may affect your account.');
+      }
+      return newCount;
+    });
+  };
+
+  const handleCancelRide = () => {
+    Alert.alert(
+      'Cancel Ride',
+      'Please select a reason for cancellation',
+      [
+        { text: 'Customer not reachable', onPress: () => performCancel('Customer not reachable') },
+        { text: 'Wrong pickup address', onPress: () => performCancel('Wrong pickup address') },
+        { text: 'Vehicle issue', onPress: () => performCancel('Vehicle issue') },
+        { text: 'Safety concern', onPress: () => performCancel('Safety concern') },
+        { text: 'Other', onPress: () => performCancel('Other') },
+        { text: 'Go Back', style: 'cancel' }
+      ]
+    );
+  };
+
+  const performCancel = async (reason) => {
+    if (!activeRide) return;
+    try {
+      const res = await fetch('https://watscrm.vercel.app/api/rides/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ride_id: activeRide.id, cancelled_by: 'driver', reason })
+      });
+      if (!res.ok) throw new Error('Failed to cancel ride');
+      
+      Alert.alert('Ride Cancelled', 'The ride has been cancelled successfully.');
+      setActiveRide(null);
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
   };
 
   const toggleStatus = async () => {
@@ -425,7 +511,7 @@ export default function DriveOScreen() {
     
     try {
       // Direct update for now, or use API route
-      if (activeRide.otp === fullOtp || fullOtp === '0000') { // 0000 backdoor for testing
+      if (activeRide.otp === fullOtp || (__DEV__ && fullOtp === '0000')) {
         const { error } = await supabase
           .from('rides')
           .update({ status: 'in_progress', started_at: new Date().toISOString() })
@@ -670,6 +756,34 @@ export default function DriveOScreen() {
               </Text>
             </View>
 
+            {/* MapView for Active Ride */}
+            <View style={{ height: 200, borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+              <MapView
+                ref={mapRef}
+                style={{ flex: 1 }}
+                provider={PROVIDER_GOOGLE}
+                customMapStyle={mapStyleDark}
+                initialRegion={{
+                  latitude: currentLocation?.latitude || activeRide.pickup_latitude,
+                  longitude: currentLocation?.longitude || activeRide.pickup_longitude,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }}
+              >
+                {currentLocation && (
+                  <Marker coordinate={currentLocation} title="You">
+                    <View style={styles.driverDot} />
+                  </Marker>
+                )}
+                {activeRide.pickup_latitude && (
+                  <Marker coordinate={{ latitude: activeRide.pickup_latitude, longitude: activeRide.pickup_longitude }} title="Pickup" pinColor="green" />
+                )}
+                {activeRide.dropoff_latitude && (
+                  <Marker coordinate={{ latitude: activeRide.dropoff_latitude, longitude: activeRide.dropoff_longitude }} title="Dropoff" pinColor="red" />
+                )}
+              </MapView>
+            </View>
+
             <View style={styles.rideDetails}>
               <View style={styles.locationRow}>
                 <View style={styles.dotLine} />
@@ -752,6 +866,16 @@ export default function DriveOScreen() {
                   <Text style={styles.primaryBtnText}>🏁 Complete Trip</Text>
                 </TouchableOpacity>
               </View>
+            )}
+
+            {/* Cancel Ride Button */}
+            {(activeRide.status === 'accepted' || activeRide.status === 'driver_arrived') && (
+              <TouchableOpacity 
+                style={[styles.outlineBtn, {borderColor: '#ef4444', marginTop: 16}]} 
+                onPress={handleCancelRide}
+              >
+                <Text style={[styles.outlineBtnText, {color: '#ef4444'}]}>Cancel Ride</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -1288,5 +1412,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  driverDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#3b82f6',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
 });

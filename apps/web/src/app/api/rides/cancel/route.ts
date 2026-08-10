@@ -20,6 +20,10 @@ export async function POST(req: Request) {
 
     if (!ride) return NextResponse.json({ error: 'Ride not found' }, { status: 404 });
 
+    if (ride.status === 'completed' || ride.status === 'cancelled') {
+      return NextResponse.json({ error: 'Ride cannot be cancelled at this stage' }, { status: 400 });
+    }
+
     const { error: updateError } = await supabase
       .from('rides')
       .update({
@@ -31,6 +35,10 @@ export async function POST(req: Request) {
       .eq('id', ride_id);
 
     if (updateError) throw updateError;
+
+    if (ride.driver_id) {
+      await supabase.from('drivers').update({ status: 'online' }).eq('id', ride.driver_id);
+    }
 
     // Notify the other party
     if (cancelled_by === 'passenger' && ride.driver?.whatsapp_number) {

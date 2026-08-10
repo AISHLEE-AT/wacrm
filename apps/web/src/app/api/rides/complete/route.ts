@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
     if (!ride) return NextResponse.json({ error: 'Ride not found' }, { status: 404 });
 
-    const total_fare = ride.estimated_fare || 0; // In reality, recalculate based on final distance
+    const total_fare = ride.total_fare || ride.fare || ride.estimated_fare || 0; // In reality, recalculate based on final distance
     let platform_fee = total_fare * 0.05;
     if (platform_fee < 5) platform_fee = 5;
     const driver_earnings = total_fare - platform_fee;
@@ -40,6 +40,16 @@ export async function POST(req: Request) {
       .single();
 
     if (updateError) throw updateError;
+
+    if (ride.driver_id) {
+      await supabase
+        .from('drivers')
+        .update({
+          status: 'online',
+          total_trips: (ride.driver?.total_trips || 0) + 1
+        })
+        .eq('id', ride.driver_id);
+    }
 
     // Credit driver earnings?
     // Subscription logic

@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import nextDynamic from 'next/dynamic';
-import { Navigation, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
+import { Navigation, MapPin, CheckCircle, AlertCircle, Star } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 // Dynamically import Map so it only renders on client
@@ -45,6 +45,12 @@ function RideOBookingContent() {
   const [activeRide, setActiveRide] = useState<any>(null);
   const [driverETA, setDriverETA] = useState<any>(null);
   const [liveDriverLocation, setLiveDriverLocation] = useState<[number, number] | null>(null);
+  
+  // Rating & Cancellation State
+  const [rating, setRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [showCancelPrompt, setShowCancelPrompt] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -75,6 +81,26 @@ function RideOBookingContent() {
     
     return () => { if (interval) clearInterval(interval); };
   }, [activeRide?.status, activeRide?.driver_id]);
+
+  // Realtime driver location updates
+  useEffect(() => {
+    if (activeRide?.driver_id && activeRide?.status === 'accepted') {
+      const driverChannel = supabase
+        .channel('driver-location')
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public', 
+          table: 'drivers',
+          filter: `id=eq.${activeRide.driver_id}`
+        }, (payload) => {
+          if (payload.new.pickup_latitude && payload.new.pickup_longitude) {
+            setLiveDriverLocation([payload.new.pickup_latitude, payload.new.pickup_longitude]);
+          }
+        })
+        .subscribe();
+      return () => { supabase.removeChannel(driverChannel); };
+    }
+  }, [activeRide?.driver_id, activeRide?.status]);
 
   const locateUser = () => {
     setLocating(true);
@@ -230,12 +256,54 @@ function RideOBookingContent() {
   };
 
   const cancelRide = async () => {
-    if (activeRide?.id) {
+    if (!activeRide?.id) return;
+    if (activeRide.status === 'pending') {
+      // normal cancel if pending
       await supabase.from('rides').update({ status: 'cancelled' }).eq('id', activeRide.id);
+      setActiveRide(null);
+      setDrivers([]);
+      setDropoff(null);
+    } else {
+      // POST API for accepted rides
+      try {
+        await fetch('/api/rides/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ride_id: activeRide.id,
+            cancelled_by: 'rider',
+            reason: cancelReason || 'Rider cancelled'
+          })
+        });
+        setActiveRide(null);
+        setDrivers([]);
+        setDropoff(null);
+        setShowCancelPrompt(false);
+      } catch (err) {
+        console.error(err);
+      }
     }
-    setActiveRide(null);
-    setDrivers([]);
-    setDropoff(null);
+  };
+
+  const submitRating = async () => {
+    if (!activeRide?.id) return;
+    try {
+      await fetch('/api/rides/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ride_id: activeRide.id,
+          rating,
+          review: reviewText
+        })
+      });
+      alert('Thank you for your feedback!');
+      setActiveRide(null);
+      setDrivers([]);
+      setDropoff(null);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -392,12 +460,58 @@ function RideOBookingContent() {
                 </div>
               )}
 
-              <button
-                onClick={cancelRide}
-                className="text-xs text-slate-500 hover:text-red-400 transition underline underline-offset-2 mt-2"
-              >
-                Cancel / Book Another Ride
-              </button>
+              {activeRide.status === 'completed' && (
+                <div className="mt-4 pt-4 border-t border-slate-600/50 space-y-3">
+                  <p className="text-sm font-semibold text-slate-300">Rate your driver</p>
+                  <div className="flex justify-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button key={star} onClick={() => setRating(star)} className="focus:outline-none">
+                        <Star className={`w-8 h-8 ${rating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    placeholder="Leave a review (optional)..."
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm focus:border-yellow-500 focus:outline-none"
+                    rows={2}
+                  />
+                  <button onClick={submitRating} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg text-sm transition">
+                    Submit Feedback
+                  </button>
+                </div>
+              )}
+
+              {['pending', 'accepted'].includes(activeRide.status) && (
+                <div className="mt-4">
+                  {!showCancelPrompt ? (
+                    <button
+                      onClick={() => setShowCancelPrompt(true)}
+                      className="text-xs text-slate-500 hover:text-red-400 transition underline underline-offset-2"
+                    >
+                      Cancel Ride
+                    </button>
+                  ) : (
+                    <div className="space-y-2 mt-2 bg-slate-900 p-3 rounded-lg border border-red-500/30">
+                      <select
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        className="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-xs focus:outline-none focus:border-red-500"
+                      >
+                        <option value="">Select Reason</option>
+                        <option value="Driver took too long">Driver took too long</option>
+                        <option value="Driver asked to cancel">Driver asked to cancel</option>
+                        <option value="Changed my mind">Changed my mind</option>
+                      </select>
+                      <div className="flex gap-2">
+                        <button onClick={cancelRide} className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50 py-1.5 rounded text-xs font-bold transition">Confirm</button>
+                        <button onClick={() => setShowCancelPrompt(false)} className="flex-1 bg-slate-800 text-slate-300 py-1.5 rounded text-xs transition">Back</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
           ) : drivers.length > 0 ? (

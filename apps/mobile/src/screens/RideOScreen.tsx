@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,7 @@ import {
   Menu,
 } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
+import { AppContext } from '../context/AppContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -73,6 +74,7 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
 
 export default function RideOScreen({ navigation }) {
   const mapRef = useRef(null);
+  const { user } = useContext(AppContext);
 
   // States
   const [activeTab, setActiveTab] = useState('Daily');
@@ -183,12 +185,10 @@ export default function RideOScreen({ navigation }) {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/rides/estimate?pickup_lat=${location.latitude}&pickup_lng=${location.longitude}&dropoff_lat=${dropLat}&dropoff_lng=${dropLng}&category=${selectedCategory}`);
+      let estimatedData;
       if (res.ok) {
-        const data = await res.json();
-        setFareEstimate(data);
-        if (data.routeCoordinates) {
-          setRouteCoordinates(data.routeCoordinates);
-        }
+        estimatedData = await res.json();
+        setFareEstimate(estimatedData);
       } else {
         // Mock estimate
         const distKm = getDistance(location.latitude, location.longitude, dropLat, dropLng);
@@ -199,7 +199,7 @@ export default function RideOScreen({ navigation }) {
           Math.round(base + Math.max(0, distKm - 1.5) * pKm)
         );
 
-        setFareEstimate({
+        estimatedData = {
           baseFare: base,
           distanceFare: Math.round(Math.max(0, distKm - 1.5) * pKm),
           timeFare: 0,
@@ -207,7 +207,34 @@ export default function RideOScreen({ navigation }) {
           total: totalFare,
           distanceText: `${distKm.toFixed(1)} km`,
           durationText: 'N/A'
-        });
+        };
+        setFareEstimate(estimatedData);
+      }
+      
+      // OSRM route fetch
+      try {
+        const osrmRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${location.longitude},${location.latitude};${dropLng},${dropLat}?overview=full&geometries=geojson`);
+        if (osrmRes.ok) {
+          const osrmData = await osrmRes.json();
+          if (osrmData.routes && osrmData.routes.length > 0) {
+            const coords = osrmData.routes[0].geometry.coordinates.map(coord => ({
+              latitude: coord[1],
+              longitude: coord[0]
+            }));
+            setRouteCoordinates(coords);
+          } else {
+            setRouteCoordinates([
+              { latitude: location.latitude, longitude: location.longitude },
+              { latitude: dropLat, longitude: dropLng }
+            ]);
+          }
+        } else {
+          setRouteCoordinates([
+            { latitude: location.latitude, longitude: location.longitude },
+            { latitude: dropLat, longitude: dropLng }
+          ]);
+        }
+      } catch (osrmError) {
         setRouteCoordinates([
           { latitude: location.latitude, longitude: location.longitude },
           { latitude: dropLat, longitude: dropLng }
@@ -260,16 +287,21 @@ export default function RideOScreen({ navigation }) {
             console.log('Ride update:', payload.new);
             const status = payload.new.status;
             if (status === 'accepted') {
-              setRideState('ACCEPTED');
+              (async () => {
+                const { data: driverData } = await supabase.from('drivers').select('*').eq('id', payload.new.driver_id).single();
+                setCurrentRide(prev => ({ ...prev, ...payload.new, driverInfo: driverData }));
+                setRideState('ACCEPTED');
+              })();
             } else if (status === 'in_progress') {
+              setCurrentRide(prev => ({ ...prev, ...payload.new }));
               setRideState('IN_PROGRESS');
             } else if (status === 'completed') {
+              setCurrentRide(prev => ({ ...prev, ...payload.new }));
               setRideState('COMPLETED');
             } else if (status === 'cancelled') {
               setRideState('IDLE');
               Alert.alert('Ride Cancelled', 'The ride was cancelled.');
             }
-            setCurrentRide({ ...currentRide, ...payload.new });
           }
         )
         .subscribe();
@@ -282,50 +314,44 @@ export default function RideOScreen({ navigation }) {
 
   // Book Ride
   const handleBookRide = async () => {
-    if (!location || !dropoffLocation || !selectedDriver) {
-      Alert.alert('Error', 'Please enter a destination and select a driver.');
+    if (!location || !dropoffLocation) {
+      Alert.alert('Error', 'Please enter a destination.');
       return;
     }
     
     setLoading(true);
     try {
-      // 1. Insert ride into Supabase
-      const { data: rideResponse, error } = await supabase.from('rides').insert({
-        passenger_phone: '919123596988', // using a default phone for demo if AppContext is not imported here. Wait, let's fetch user phone or use hardcoded. Let's get phone from secure store or auth.
-        driver_id: selectedDriver.id,
-        vehicle_type: selectedDriver.vehicle_type,
+      const payload = {
+        pickup_lat: location.latitude,
+        pickup_lng: location.longitude,
+        dropoff_lat: dropoffLocation.latitude,
+        dropoff_lng: dropoffLocation.longitude,
+        pickup_address: pickupAddress,
+        dropoff_address: dropoffAddress,
+        category: selectedCategory,
         fare: fareEstimate?.total || 50,
-        status: 'pending',
         payment_mode: paymentMode.toLowerCase(),
-        pickup_location: pickupAddress,
-        drop_location: dropoffAddress
-      }).select().single();
+        passenger_phone: user?.phone || ''
+      };
 
-      if (error) throw error;
+      if (selectedDriver) {
+        payload.driver_id = selectedDriver.id;
+      }
 
-      // 2. Dispatch Meta API request
-      const res = await fetch(`${API_BASE_URL}/api/ride/request-driver`, {
+      const res = await fetch(`${API_BASE_URL}/api/rides/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ride_id: rideResponse.id,
-          driver_phone: selectedDriver.phone || selectedDriver.mobile_number,
-          pickup_address: pickupAddress,
-          dropoff_address: dropoffAddress,
-          distance_km: fareEstimate?.distanceText?.replace(' km', '') || '5',
-          estimated_fare: fareEstimate?.total || 50,
-          driver_name: selectedDriver.name,
-          driver_rating: selectedDriver.rating || '4.5',
-          vehicle_info: `${selectedDriver.vehicle_type} ${selectedDriver.vehicle_number ? `(${selectedDriver.vehicle_number})` : ''}`
-        })
+        body: JSON.stringify(payload)
       });
-
+      
+      const responseData = await res.json();
+      
       if (!res.ok) {
-        throw new Error('Failed to notify driver via WhatsApp');
+        throw new Error(responseData.error || 'Failed to request ride');
       }
 
       setRideState('SEARCHING');
-      setCurrentRide(rideResponse);
+      setCurrentRide(responseData.ride || responseData);
       setLoading(false);
       
     } catch (e) {
@@ -335,9 +361,35 @@ export default function RideOScreen({ navigation }) {
     }
   };
 
+  const confirmCancel = async (reason) => {
+    try {
+      await fetch(`${API_BASE_URL}/api/rides/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ride_id: currentRide?.id, cancelled_by: 'passenger', reason })
+      });
+      setRideState('IDLE');
+      setCurrentRide(null);
+    } catch (e) {
+      console.log('Error cancelling', e);
+      setRideState('IDLE');
+      setCurrentRide(null);
+    }
+  };
+
   const handleCancelRide = () => {
-    setRideState('IDLE');
-    setCurrentRide(null);
+    if (rideState === 'SEARCHING' || rideState === 'ACCEPTED') {
+      Alert.alert('Cancel Ride', 'Why are you cancelling?', [
+        { text: 'Changed my plans', onPress: () => confirmCancel('Changed my plans') },
+        { text: 'Driver too far away', onPress: () => confirmCancel('Driver too far away') },
+        { text: 'Found another ride', onPress: () => confirmCancel('Found another ride') },
+        { text: 'Other', onPress: () => confirmCancel('Other') },
+        { text: 'Back', style: 'cancel' }
+      ]);
+    } else {
+      setRideState('IDLE');
+      setCurrentRide(null);
+    }
   };
 
   const openSOS = () => {
@@ -352,20 +404,32 @@ export default function RideOScreen({ navigation }) {
   };
 
   const payViaUPI = () => {
-    if (!currentRide?.driver?.upi_id) return;
-    const url = `upi://pay?pa=${currentRide.driver.upi_id}&pn=${currentRide.driver.name}&am=${currentRide.fare}&cu=INR`;
+    const upiId = currentRide?.driverInfo?.upi_id || currentRide?.driver?.upi_id;
+    const name = currentRide?.driverInfo?.name || currentRide?.driver?.name || 'Driver';
+    if (!upiId) return;
+    const url = `upi://pay?pa=${upiId}&pn=${name}&am=${currentRide?.fare}&cu=INR`;
     Linking.openURL(url).catch(() => {
       Alert.alert('Error', 'No UPI app found on your phone.');
     });
   };
 
-  const submitRating = () => {
+  const submitRating = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/rides/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ride_id: currentRide?.id, rating, review })
+      });
+    } catch (e) {
+      console.log('Rating error', e);
+    }
     setRideState('IDLE');
     setCurrentRide(null);
     setDropoffLocation(null);
     setDropoffQuery('');
     setRouteCoordinates([]);
     setFareEstimate(null);
+    setReview('');
     Alert.alert('Thank You', 'Your rating has been submitted.');
   };
 
@@ -476,7 +540,7 @@ export default function RideOScreen({ navigation }) {
 
         {/* DRIVER SELECTION */}
         <View style={{ marginTop: 16 }}>
-          <Text style={{ color: COLORS.textMuted, marginBottom: 8, fontWeight: 'bold' }}>Select a Driver:</Text>
+          <Text style={{ color: COLORS.textMuted, marginBottom: 8, fontWeight: 'bold' }}>Select a Driver (Optional):</Text>
           {nearbyDrivers.filter(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase() || selectedCategory === 'auto' && (d.vehicle_type || '').toLowerCase() === 'autoo' || selectedCategory === 'bike' && (d.vehicle_type || '').toLowerCase() === 'bikeo').length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {nearbyDrivers
@@ -504,7 +568,7 @@ export default function RideOScreen({ navigation }) {
               ))}
             </ScrollView>
           ) : (
-            <Text style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: 'italic' }}>Select a driver below to proceed...</Text>
+            <Text style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: 'italic' }}>Auto-assign will find the nearest driver...</Text>
           )}
           {nearbyDrivers.length > 0 && !nearbyDrivers.find(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase()) && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop: 8}}>
@@ -531,14 +595,14 @@ export default function RideOScreen({ navigation }) {
         </View>
 
         <TouchableOpacity 
-          style={[styles.bookBtn, !selectedDriver && { opacity: 0.5 }]} 
+          style={styles.bookBtn} 
           onPress={handleBookRide} 
-          disabled={loading || !selectedDriver}
+          disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color={COLORS.bg} />
           ) : (
-            <Text style={styles.bookBtnText}>Book {selectedCategory} • ₹{Math.round(fareEstimate.total)}</Text>
+            <Text style={styles.bookBtnText}>Book {selectedCategory} • ₹{Math.round(fareEstimate?.total || 0)}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -560,14 +624,14 @@ export default function RideOScreen({ navigation }) {
     <View style={styles.sheetContent}>
       <View style={styles.driverHeader}>
         <View style={styles.driverInfo}>
-          <Text style={styles.driverName}>{currentRide?.driver?.name}</Text>
-          <Text style={styles.driverVehicle}>{currentRide?.driver?.vehicle}</Text>
+          <Text style={styles.driverName}>{currentRide?.driverInfo?.name || currentRide?.driver?.name}</Text>
+          <Text style={styles.driverVehicle}>{currentRide?.driverInfo?.vehicle_model || currentRide?.driver?.vehicle}</Text>
           <View style={styles.ratingBadge}>
             <Star size={12} color={COLORS.bg} fill={COLORS.bg} />
-            <Text style={styles.ratingText}>{currentRide?.driver?.rating}</Text>
+            <Text style={styles.ratingText}>{currentRide?.driverInfo?.rating || currentRide?.driver?.rating || '4.5'}</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.callCircle} onPress={() => Linking.openURL(`tel:${currentRide?.driver?.phone}`)}>
+        <TouchableOpacity style={styles.callCircle} onPress={() => Linking.openURL(`tel:${currentRide?.driverInfo?.phone || currentRide?.driver?.phone}`)}>
           <Phone size={20} color={COLORS.bg} fill={COLORS.bg} />
         </TouchableOpacity>
       </View>
@@ -598,6 +662,46 @@ export default function RideOScreen({ navigation }) {
     </View>
   );
 
+  const renderInProgress = () => (
+    <View style={styles.sheetContent}>
+      <View style={styles.driverHeader}>
+        <View style={styles.driverInfo}>
+          <Text style={styles.driverName}>{currentRide?.driverInfo?.name || currentRide?.driver?.name}</Text>
+          <Text style={styles.driverVehicle}>{currentRide?.driverInfo?.vehicle_model || currentRide?.driver?.vehicle}</Text>
+          <View style={styles.ratingBadge}>
+            <Star size={12} color={COLORS.bg} fill={COLORS.bg} />
+            <Text style={styles.ratingText}>{currentRide?.driverInfo?.rating || currentRide?.driver?.rating || '4.5'}</Text>
+          </View>
+        </View>
+      </View>
+      
+      <View style={{ alignItems: 'center', marginBottom: 20 }}>
+        <Text style={{ color: COLORS.green, fontSize: 18, fontWeight: 'bold' }}>Trip in Progress</Text>
+        <Animated.View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.green, marginTop: 8 }} />
+      </View>
+      
+      <View style={{ width: '100%', marginBottom: 20 }}>
+        <Text style={{ color: COLORS.text, fontSize: 14 }}>From: {currentRide?.pickup_location || pickupAddress}</Text>
+        <Text style={{ color: COLORS.text, fontSize: 14, marginTop: 4 }}>To: {currentRide?.drop_location || dropoffAddress}</Text>
+      </View>
+
+      <View style={styles.driverActionsRow}>
+        <TouchableOpacity style={styles.actionBtnDark} onPress={shareTrip}>
+          <Share2 size={18} color={COLORS.text} />
+          <Text style={styles.actionBtnTextDark}>Share Trip</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtnDark} onPress={openSOS}>
+          <Shield size={18} color={COLORS.red} />
+          <Text style={styles.actionBtnTextDark}>SOS</Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.paymentUpiBtn} onPress={payViaUPI}>
+        <Text style={styles.paymentUpiBtnText}>Pay ₹{currentRide?.fare || fareEstimate?.total} via UPI</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderCompleted = () => (
     <View style={styles.sheetContent}>
       <View style={styles.successCircle}>
@@ -616,6 +720,14 @@ export default function RideOScreen({ navigation }) {
           ))}
         </View>
       </View>
+      
+      <TextInput
+        style={{ backgroundColor: COLORS.cardLight, color: COLORS.text, width: '100%', padding: 12, borderRadius: 8, marginBottom: 16 }}
+        placeholder="Leave a review..."
+        placeholderTextColor={COLORS.textMuted}
+        value={review}
+        onChangeText={setReview}
+      />
       
       <TouchableOpacity style={styles.bookBtn} onPress={submitRating}>
         <Text style={styles.bookBtnText}>Submit & Close</Text>
@@ -678,6 +790,7 @@ export default function RideOScreen({ navigation }) {
           )}
           {rideState === 'SEARCHING' && renderSearching()}
           {rideState === 'ACCEPTED' && renderAccepted()}
+          {rideState === 'IN_PROGRESS' && renderInProgress()}
           {rideState === 'COMPLETED' && renderCompleted()}
         </View>
       </KeyboardAvoidingView>
@@ -858,6 +971,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.1)',
   },
   categoryIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
   driverSelectCard: {
     backgroundColor: COLORS.cardLight,
     padding: 12,
@@ -888,9 +1004,6 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 12,
     marginTop: 2,
-  },
-    fontSize: 32,
-    marginBottom: 8,
   },
   categoryName: {
     color: COLORS.text,
@@ -971,6 +1084,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 16,
     alignItems: 'center',
+    marginTop: 12,
   },
   bookBtnText: {
     color: COLORS.bg,
