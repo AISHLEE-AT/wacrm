@@ -254,10 +254,13 @@ function ProfilePageInner() {
     const fetchDriverData = async () => {
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
+      const rawPhone = user.phone || activeProfile?.phone || '';
+      const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
       const { data } = await supabase
         .from('drivers')
         .select('*')
-        .eq('user_id', user.id)
+        .or(`user_id.eq.${user.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
+        .limit(1)
         .maybeSingle();
       if (data) setDriverProfile(data);
     };

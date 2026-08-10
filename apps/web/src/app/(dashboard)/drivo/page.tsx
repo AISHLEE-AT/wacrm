@@ -57,10 +57,13 @@ export default function DriveODashboard() {
     const fetchDriverRecord = async () => {
       setLoadingDriverRecord(true);
       try {
+        const rawPhone = currentUser.phone || profile?.phone || '';
+        const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
         const { data } = await supabase
           .from('drivers')
           .select('*')
-          .eq('user_id', currentUser.id)
+          .or(`user_id.eq.${currentUser.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
+          .limit(1)
           .maybeSingle();
 
         if (data) {
