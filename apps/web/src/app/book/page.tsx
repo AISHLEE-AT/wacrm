@@ -64,14 +64,14 @@ function BookRideContent() {
       const { data, error } = await supabase.rpc('get_nearby_drivers', {
         pickup_lat: pickup[0],
         pickup_lon: pickup[1],
-        radius_km: 2
+        radius_km: 100
       })
 
       if (error) throw error
       
       setDrivers(data || [])
       if (!data || data.length === 0) {
-        alert('No drivers found within 2km.')
+        alert('No drivers found within 100km.')
       }
     } catch (e: any) {
       alert(`Error searching drivers: ${e.message}`)

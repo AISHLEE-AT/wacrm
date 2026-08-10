@@ -73,11 +73,11 @@ function RideOBookingContent() {
       const { data, error } = await supabase.rpc('get_nearby_drivers', {
         pickup_lat: pickup[0],
         pickup_lon: pickup[1],
-        radius_km: 2
+        radius_km: 100
       });
       if (error) throw error;
       setDrivers(data || []);
-      if (!data || data.length === 0) alert('No drivers found within 2km. Virtual drivers may appear shortly.');
+      if (!data || data.length === 0) alert('No drivers found within 100km. Virtual drivers may appear shortly.');
     } catch (e: any) {
       alert(`Error searching drivers: ${e.message}`);
     } finally {
@@ -379,7 +379,7 @@ function RideOBookingContent() {
                 )}
               </button>
               {dropoff && (
-                <p className="text-center text-xs text-slate-500">Searches for active drivers within 2km of your pickup</p>
+                <p className="text-center text-xs text-slate-500">Searches for active drivers within 100km of your pickup</p>
               )}
             </div>
           )}
