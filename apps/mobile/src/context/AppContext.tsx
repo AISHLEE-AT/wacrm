@@ -18,7 +18,13 @@ export interface AppUser {
 export const AppContext = createContext<any>(null);
 
 export const AppProvider = ({ children }: any) => {
-  const [recentModules, setRecentModules] = useState<string[]>(['Map']);
+  const [recentModules, setRecentModules] = useState<any[]>([{
+    id: 'map',
+    name: 'map',
+    path: '/',
+    label: 'Map',
+    iconName: 'Map'
+  }]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +38,16 @@ export const AppProvider = ({ children }: any) => {
       try {
         // Load all persisted user state
         const savedModules = await SecureStore.getItemAsync('recent-modules');
-        if (savedModules) setRecentModules(JSON.parse(savedModules));
+        if (savedModules) {
+          const parsed = JSON.parse(savedModules);
+          // ensure it's objects
+          const normalized = parsed.map((m: any) => 
+            typeof m === 'string' 
+              ? { id: m, name: m, path: `/${m.toLowerCase()}`, label: m, iconName: 'Map' } 
+              : m
+          );
+          setRecentModules(normalized);
+        }
 
         const phone = await SecureStore.getItemAsync('user-phone');
         const name = await SecureStore.getItemAsync('user-name');
@@ -161,8 +176,14 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.deleteItemAsync('gemini-api-key');
   }, []);
 
-  const addRecentModule = useCallback(async (moduleName: string) => {
-    let updated = [moduleName, ...recentModules.filter(m => m !== moduleName)];
+  const addRecentModule = useCallback(async (moduleData: any) => {
+    let updated = [];
+    if (typeof moduleData === 'string') {
+       const newObj = { id: moduleData, name: moduleData, path: `/${moduleData.toLowerCase()}`, label: moduleData, iconName: 'Map' };
+       updated = [newObj, ...recentModules.filter(m => (m.name || m) !== moduleData && (m.id || m) !== moduleData)];
+    } else {
+       updated = [moduleData, ...recentModules.filter(m => m.name !== moduleData.name && m.id !== moduleData.id)];
+    }
     if (updated.length > 3) updated = updated.slice(0, 3);
     setRecentModules(updated);
     await SecureStore.setItemAsync('recent-modules', JSON.stringify(updated));

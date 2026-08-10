@@ -38,30 +38,7 @@ export default function AishleeEmbed({
   const [tokenInjected, setTokenInjected] = useState(false);
 
   // Build the iframe URL - add embed=true so Aishlee hides its own nav
-  let iframeUrl = `${AISHLEE_URL}${path}?embed=true&source=supro`;
-
-  // We need the session tokens directly in the URL because postMessage is often too late 
-  // (Next.js middleware already redirects to /login)
-  const [sessionTokens, setSessionTokens] = useState<{access: string, refresh: string} | null>(null);
-
-  useEffect(() => {
-    async function fetchTokens() {
-      if (!user) return;
-      const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        setSessionTokens({
-          access: data.session.access_token,
-          refresh: data.session.refresh_token
-        });
-      }
-    }
-    fetchTokens();
-  }, [user]);
-
-  if (sessionTokens) {
-    iframeUrl += `&access_token=${sessionTokens.access}&refresh_token=${sessionTokens.refresh}`;
-  }
+  const iframeUrl = `${AISHLEE_URL}${path}?embed=true&source=supro`;
 
   // Inject Supabase session tokens into the iframe via postMessage
   const injectAuth = useCallback(async () => {

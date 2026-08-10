@@ -7,18 +7,18 @@ import { AppContext } from '../context/AppContext';
 const { width } = Dimensions.get('window');
 
 const CATEGORIES = [
-  { id: 'admin', title: 'Admin CRM', desc: 'Manage Everything', icon: Shield, color: '#ef4444', bg: '#ef444420', path: '/admin', adminOnly: true },
-  { id: 'rideo', title: 'RideO', desc: 'Book Cabs & Autos', icon: Car, color: '#10b981', bg: '#10b98120', path: '/rideo' },
-  { id: 'driveo', title: 'DriveO', desc: 'Driver Partner Hub', icon: MapPin, color: '#3b82f6', bg: '#3b82f620', path: '/drivo' },
-  { id: 'dealo', title: 'DealO', desc: 'Local Deals & Offers', icon: ShoppingBag, color: '#f97316', bg: '#f9731620', path: '/dealo' },
-  { id: 'teacho', title: 'TeachO', desc: 'Courses & Tuitions', icon: GraduationCap, color: '#f59e0b', bg: '#f59e0b20', path: '/teacho' },
-  { id: 'rento', title: 'RentO', desc: 'Agri Equipment Rental', icon: Wrench, color: '#84cc16', bg: '#84cc1620', path: '/rento' },
-  { id: 'agro', title: 'AgrO & Mandi', desc: 'Crop Rates & Seeds', icon: Wrench, color: '#10b981', bg: '#10b98120', path: '/agro' },
-  { id: 'touro', title: 'TourO', desc: 'Temple & Local Tours', icon: Compass, color: '#06b6d4', bg: '#06b6d420', path: '/touro' },
-  { id: 'testo', title: 'TestO', desc: 'Mock Exams & Quiz', icon: Award, color: '#8b5cf6', bg: '#8b5cf620', path: '/testo' },
-  { id: 'tvo', title: 'TvO', desc: 'Tamil Live TV & Streams', icon: MonitorPlay, color: '#ec4899', bg: '#ec489920', path: '/tvo' },
-  { id: 'moneyo', title: 'MoneyO', desc: 'Micro Loans & Savings', icon: Wallet, color: '#14b8a6', bg: '#14b8a620', path: '/moneyo' },
-  { id: 'gameo', title: 'GameO', desc: 'MapRacer & Fitness', icon: Gamepad2, color: '#8b5cf6', bg: '#8b5cf620', path: '/gameo' },
+  { id: 'admin', title: 'Admin CRM', desc: 'Manage Everything', icon: Shield, iconName: 'Shield', color: '#ef4444', bg: '#ef444420', path: '/admin', adminOnly: true },
+  { id: 'rideo', title: 'RideO', desc: 'Book Cabs & Autos', icon: Car, iconName: 'Car', color: '#10b981', bg: '#10b98120', path: '/rideo' },
+  { id: 'driveo', title: 'DriveO', desc: 'Driver Partner Hub', icon: MapPin, iconName: 'MapPin', color: '#3b82f6', bg: '#3b82f620', path: '/drivo' },
+  { id: 'dealo', title: 'DealO', desc: 'Local Deals & Offers', icon: ShoppingBag, iconName: 'ShoppingBag', color: '#f97316', bg: '#f9731620', path: '/dealo' },
+  { id: 'teacho', title: 'TeachO', desc: 'Courses & Tuitions', icon: GraduationCap, iconName: 'GraduationCap', color: '#f59e0b', bg: '#f59e0b20', path: '/teacho' },
+  { id: 'rento', title: 'RentO', desc: 'Agri Equipment Rental', icon: Wrench, iconName: 'Wrench', color: '#84cc16', bg: '#84cc1620', path: '/rento' },
+  { id: 'agro', title: 'AgrO & Mandi', desc: 'Crop Rates & Seeds', icon: Wrench, iconName: 'Wrench', color: '#10b981', bg: '#10b98120', path: '/agro' },
+  { id: 'touro', title: 'TourO', desc: 'Temple & Local Tours', icon: Compass, iconName: 'Compass', color: '#06b6d4', bg: '#06b6d420', path: '/touro' },
+  { id: 'testo', title: 'TestO', desc: 'Mock Exams & Quiz', icon: Award, iconName: 'Award', color: '#8b5cf6', bg: '#8b5cf620', path: '/testo' },
+  { id: 'tvo', title: 'TvO', desc: 'Tamil Live TV & Streams', icon: MonitorPlay, iconName: 'MonitorPlay', color: '#ec4899', bg: '#ec489920', path: '/tvo' },
+  { id: 'moneyo', title: 'MoneyO', desc: 'Micro Loans & Savings', icon: Wallet, iconName: 'Wallet', color: '#14b8a6', bg: '#14b8a620', path: '/moneyo' },
+  { id: 'gameo', title: 'GameO', desc: 'MapRacer & Fitness', icon: Gamepad2, iconName: 'Gamepad2', color: '#8b5cf6', bg: '#8b5cf620', path: '/gameo' },
 ];
 
 export default function CategoryScreen() {
@@ -26,7 +26,13 @@ export default function CategoryScreen() {
   const { addRecentModule, userRole } = useContext(AppContext);
 
   const handleSelect = (cat: any) => {
-    addRecentModule(cat.id);
+    addRecentModule({
+      id: cat.id,
+      name: cat.id,
+      path: cat.path,
+      label: cat.title,
+      iconName: cat.iconName || 'Map'
+    });
     if (cat.path === '/gameo') {
       navigation.navigate('GameOScreen');
     } else if (cat.path === '/drivo') {
