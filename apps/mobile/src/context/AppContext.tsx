@@ -55,10 +55,12 @@ export const AppProvider = ({ children }: any) => {
           });
 
           // Auto-detect if user is a registered driver partner
+          const safePhone = String(phone || '');
+          const phoneSuffix = safePhone.length >= 10 ? safePhone.slice(-10) : safePhone;
           supabase
             .from('drivers')
             .select('id, vehicle_type')
-            .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone},phone.ilike.%${phone.slice(-10)}%`)
+            .or(`mobile_number.eq.${safePhone},whatsapp_number.eq.${safePhone},phone.ilike.%${phoneSuffix}%`)
             .limit(1)
             .then(({ data: driverData }) => {
               if (driverData && driverData.length > 0) {
@@ -113,10 +115,12 @@ export const AppProvider = ({ children }: any) => {
     setUser(fullUser);
 
     // Auto-detect if user is a registered driver partner
+    const safePhone = String(phone || '');
+    const phoneSuffix = safePhone.length >= 10 ? safePhone.slice(-10) : safePhone;
     supabase
       .from('drivers')
       .select('id, vehicle_type')
-      .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone},phone.ilike.%${phone.slice(-10)}%`)
+      .or(`mobile_number.eq.${safePhone},whatsapp_number.eq.${safePhone},phone.ilike.%${phoneSuffix}%`)
       .limit(1)
       .then(({ data: driverData }) => {
         if (driverData && driverData.length > 0) {

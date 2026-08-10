@@ -352,7 +352,7 @@ function RideOBookingContent() {
                 : activeRide.status === 'completed' ? 'text-slate-300'
                 : 'text-emerald-400'
               }`}>
-                {activeRide.status === 'pending' ? 'Searching for Driver...' 
+                {activeRide.status === 'pending' ? 'Waiting for Driver to Accept...' 
                 : activeRide.status === 'accepted' ? 'Driver Assigned & On the way.' 
                 : activeRide.status === 'driver_arrived' ? 'Driver has arrived at pickup!' 
                 : activeRide.status === 'in_progress' ? 'Ride in Transit' 
