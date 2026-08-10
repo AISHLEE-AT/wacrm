@@ -158,9 +158,11 @@ function RideOBookingContent() {
       
       // 5. Create ride record in Supabase for tracking
       const { data: userAuth } = await supabase.auth.getUser();
+      const passengerPhone = userAuth?.user?.phone || localStorage.getItem('user_phone') || 'Unknown';
+      
       const { data: rideRecord, error: rideError } = await supabase.from('rides').insert({
-        customer_id: userAuth?.user?.id || null,
-        passenger_phone: userAuth?.user?.phone || 'Unknown',
+        customer_id: userAuth?.user?.id || null, // Allow null if not signed in (RLS permitting)
+        passenger_phone: passengerPhone,
         driver_id: driver.id,
         pickup_latitude: pickup[0],
         pickup_longitude: pickup[1],
@@ -178,7 +180,10 @@ function RideOBookingContent() {
       }).select().single();
       
       if (rideError) {
-        console.warn('Ride record insert warning:', rideError.message);
+        console.error('Ride record insert error:', rideError);
+        alert(`Failed to save ride in database: ${rideError.message}. The ride request cannot proceed.`);
+        setSearchingDrivers(false);
+        return;
       }
       
       // 6. Setup Realtime listener for driver acceptance
@@ -204,22 +209,22 @@ function RideOBookingContent() {
       }
       
       // 7. Build WhatsApp booking message with all details
-      const vehicleEmoji = getVehicleEmoji(driver.vehicle_type);
       const driverPhone = driver.phone.replace(/\D/g, '');
       const whatsappPhone = driverPhone.startsWith('91') ? driverPhone : `91${driverPhone}`;
+      const appDomain = typeof window !== 'undefined' ? window.location.origin : 'https://wacrm.vercel.app';
       
-      const message = `${vehicleEmoji} *New Ride Request (RideO)* ${vehicleEmoji}\n\n` +
-        `📍 *Pickup:* ${pickupAddress}\n` +
-        `🏁 *Drop-off:* ${dropoffAddress}\n` +
-        `${vehicleEmoji} *Vehicle:* ${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}\n` +
-        `📏 *Trip Distance:* ${tripDistanceKm.toFixed(1)} km\n` +
-        `💰 *Estimated Fare:* ₹${estimatedFare}\n` +
-        `⭐ *Driver:* ${driver.name} (${driver.rating || '4.5'}★)\n` +
-        `🔢 *Ride ID:* ${rideRecord?.id?.slice(0, 8) || 'N/A'}\n\n` +
-        `✅ *To ACCEPT this ride, click below:*\n` +
-        `https://watscrm.vercel.app/api/ride/accept?id=${rideRecord?.id}\n\n` +
-        `❌ *To DECLINE, click below:*\n` +
-        `https://watscrm.vercel.app/api/ride/decline?id=${rideRecord?.id}`;
+      const message = `[New Ride Request - RideO]\n\n` +
+        `Pickup: ${pickupAddress}\n` +
+        `Drop-off: ${dropoffAddress}\n` +
+        `Vehicle: ${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}\n` +
+        `Trip Distance: ${tripDistanceKm.toFixed(1)} km\n` +
+        `Estimated Fare: Rs. ${estimatedFare}\n` +
+        `Driver: ${driver.name} (${driver.rating || '4.5'} Star)\n` +
+        `Ride ID: ${rideRecord.id.slice(0, 8)}\n\n` +
+        `--> To ACCEPT this ride, click below:\n` +
+        `${appDomain}/api/ride/accept?id=${rideRecord.id}\n\n` +
+        `--> To DECLINE, click below:\n` +
+        `${appDomain}/api/ride/decline?id=${rideRecord.id}`;
       
       const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
