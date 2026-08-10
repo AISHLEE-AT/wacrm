@@ -174,7 +174,7 @@ BEGIN
     COALESCE(d.phone, d.mobile_number, d.whatsapp_number) AS phone,
     d.vehicle_type,
     COALESCE(d.vehicle_model, '') AS vehicle_model,
-    COALESCE(d.vehicle_number, d.vehicle_registration, '') AS vehicle_number,
+    COALESCE(d.vehicle_number, '') AS vehicle_number,
     COALESCE(d.rating, 4.5) AS rating,
     d.status,
     -- Haversine distance in km
