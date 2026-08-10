@@ -39,12 +39,9 @@ export default function EcosystemWebView({ route, navigation }: Props) {
   const separator = targetUrl.includes('?') ? '&' : '?';
   targetUrl = `${targetUrl}${separator}embed=true`;
 
-  if (accessToken) {
-    targetUrl = `${targetUrl}&access_token=${accessToken}`;
-    if (refreshToken) {
-      targetUrl = `${targetUrl}&refresh_token=${refreshToken}`;
-    }
-  }
+  // We no longer pass access_token and refresh_token in the URL query parameters
+  // because it can crash the Aishlee-web Vite app router.
+  // We rely entirely on INJECTED_JS to write to localStorage and send the SUPRO_AUTH_INJECT postMessage.
 
   // ─────────────────────────────────────────────────────────────────────────
   // Injected JS that:
