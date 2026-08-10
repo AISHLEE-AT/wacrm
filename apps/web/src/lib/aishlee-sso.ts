@@ -21,9 +21,10 @@ export function buildAishleeIframeUrl(
   session: any,
   extra: Record<string, string> = {}
 ): string {
+  // Clean module path (remove leading slash if present)
+  const cleanModule = module.startsWith('/') ? module.slice(1) : module;
+
   // ── 1. Phone ─────────────────────────────────────────────────────────────
-  // WACRM stores WA users as '<phone>@whatsapp.wacrm.local'. We extract the
-  // numeric part and keep the last 10 digits for a clean local format.
   const rawPhone =
     profile?.phone ||
     user?.phone ||
@@ -48,11 +49,14 @@ export function buildAishleeIframeUrl(
   });
 
   // ── 4. Session tokens ─────────────────────────────────────────────────────
-  // Tokens are passed BOTH in query string (for XMLHttpRequest based parsers)
-  // and in the URL hash fragment (for Supabase's onAuthStateChange PKCE flow).
-  // aishlee-web AppProvider reads both with || so whichever is present works.
-  let url = `https://thamizhan.vercel.app/${module}?${params.toString()}`;
-  if (session?.access_token) {
+  // NOTE: For modules like 'teacho' and 'testo' that query LMS Supabase (jjgdatjthyeesmgunnlp),
+  // we do NOT append SuprO Supabase access_tokens (gmahjdzqitbomtmdzlfp), because token mismatch
+  // causes LMS Supabase to reject requests with 401, resulting in "No Courses Found" or broken video players.
+  const isLmsModule = cleanModule.includes('teacho') || cleanModule.includes('testo');
+
+  let url = `https://thamizhan.vercel.app/${cleanModule}?${params.toString()}`;
+
+  if (session?.access_token && !isLmsModule) {
     url +=
       `&access_token=${encodeURIComponent(session.access_token)}` +
       `&refresh_token=${encodeURIComponent(session.refresh_token)}` +
