@@ -208,26 +208,29 @@ function RideOBookingContent() {
           .subscribe();
       }
       
-      // 7. Build WhatsApp booking message with all details
-      const driverPhone = driver.phone.replace(/\D/g, '');
-      const whatsappPhone = driverPhone.startsWith('91') ? driverPhone : `91${driverPhone}`;
-      const appDomain = typeof window !== 'undefined' ? window.location.origin : 'https://wacrm.vercel.app';
+      // 7. Dispatch booking request via backend Meta API
+      const res = await fetch('/api/ride/request-driver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ride_id: rideRecord.id,
+          driver_phone: driver.phone,
+          pickup_address: pickupAddress,
+          dropoff_address: dropoffAddress,
+          distance_km: tripDistanceKm.toFixed(1),
+          estimated_fare: estimatedFare,
+          driver_name: driver.name,
+          driver_rating: driver.rating || '4.5',
+          vehicle_info: `${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}`
+        })
+      });
       
-      const message = `[New Ride Request - RideO]\n\n` +
-        `Pickup: ${pickupAddress}\n` +
-        `Drop-off: ${dropoffAddress}\n` +
-        `Vehicle: ${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}\n` +
-        `Trip Distance: ${tripDistanceKm.toFixed(1)} km\n` +
-        `Estimated Fare: Rs. ${estimatedFare}\n` +
-        `Driver: ${driver.name} (${driver.rating || '4.5'} Star)\n` +
-        `Ride ID: ${rideRecord.id.slice(0, 8)}\n\n` +
-        `--> To ACCEPT this ride, click below:\n` +
-        `${appDomain}/api/ride/accept?id=${rideRecord.id}\n\n` +
-        `--> To DECLINE, click below:\n` +
-        `${appDomain}/api/ride/decline?id=${rideRecord.id}`;
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to send WhatsApp request');
+      }
       
-      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      alert('Ride request successfully sent to the driver via WhatsApp!');
     } catch (err: any) {
       alert(`Booking error: ${err.message}`);
     } finally {

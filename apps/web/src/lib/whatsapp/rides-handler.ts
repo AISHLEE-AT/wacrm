@@ -402,27 +402,76 @@ export async function handleRideHailingBooking(
         const driver = driverRows?.[0]
         
         if (driver) {
-           await fetch('http://localhost:3000/api/rides/accept', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                 ride_id: rideId,
-                 driver_id: driver.id
+          const { data: pendingRide } = await supabase.from('rides').select('*').eq('id', rideId).single()
+          
+          if (pendingRide && pendingRide.status === 'pending') {
+            const tripOtp = String(1000 + Math.floor(Math.random() * 9000))
+
+            await supabase
+              .from('rides')
+              .update({
+                status: 'accepted',
+                driver_id: driver.id,
+                otp: tripOtp,
+                accepted_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
               })
-           })
+              .eq('id', rideId)
+
+            // Notify the DRIVER with confirmation
+            await sendTextMessage({
+              accessToken,
+              phoneNumberId: config.phone_number_id,
+              to: senderPhone,
+              text: `✅ RIDE CONFIRMED! ✅\n\n` +
+                `📍 Pickup: ${pendingRide.pickup_address || `GPS: ${pendingRide.pickup_latitude}, ${pendingRide.pickup_longitude}`}\n` +
+                `🏁 Drop-off: ${pendingRide.dropoff_address || `GPS: ${pendingRide.dropoff_latitude}, ${pendingRide.dropoff_longitude}`}\n` +
+                `📏 Distance: ${pendingRide.distance_km || '—'} km\n` +
+                `💰 Fare: ₹${pendingRide.fare || pendingRide.estimated_price || pendingRide.price || '—'}\n\n` +
+                `🔢 *START TRIP PIN:* ${tripOtp}\n` +
+                `(Rider will share this PIN to verify before starting trip)\n\n` +
+                `🗺️ Navigate to pickup:\nhttps://www.google.com/maps/dir/?api=1&destination=${pendingRide.pickup_latitude},${pendingRide.pickup_longitude}`
+            })
+
+            // Notify the RIDER (passenger) about driver acceptance + OTP
+            const riderPhone = pendingRide.passenger_phone || '919123596988'
+            const riderWhatsappPhone = riderPhone.startsWith('91') ? riderPhone : `91${riderPhone}`
+            await sendTextMessage({
+              accessToken,
+              phoneNumberId: config.phone_number_id,
+              to: riderWhatsappPhone,
+              text: `🎉 DRIVER CONFIRMED YOUR RIDE! 🎉\n\n` +
+                `👤 Driver: ${driver.name}\n` +
+                `🚗 Vehicle: ${driver.vehicle_type} (${driver.vehicle_registration || ''})\n` +
+                `📍 Pickup: ${pendingRide.pickup_address || 'Map Location'}\n` +
+                `🏁 Drop-off: ${pendingRide.dropoff_address || 'Map Location'}\n` +
+                `📏 Distance: ${pendingRide.distance_km || '—'} km\n` +
+                `💰 Fare: ₹${pendingRide.fare || pendingRide.estimated_price || pendingRide.price || '—'}\n\n` +
+                `🔐 *Your Trip OTP:* ${tripOtp}\n` +
+                `(Share this OTP with driver to start the trip)\n\n` +
+                `🔢 Ride ID: ${pendingRide.id?.slice(0, 8)}`
+            })
+          } else {
+             await sendTextMessage({
+               accessToken,
+               phoneNumberId: config.phone_number_id,
+               to: senderPhone,
+               text: `⚠️ This ride is no longer available.`
+             })
+          }
         }
         return true
       }
       
-      if (replyId && replyId.startsWith('cancel_ride_')) {
-        const rideId = replyId.replace('cancel_ride_', '')
+      if (replyId && (replyId.startsWith('cancel_ride_') || replyId.startsWith('decline_ride_'))) {
+        const rideId = replyId.replace('cancel_ride_', '').replace('decline_ride_', '')
         await supabase.from('rides').update({ status: 'cancelled' }).eq('id', rideId)
         
         await sendTextMessage({
           accessToken,
           phoneNumberId: config.phone_number_id,
           to: senderPhone,
-          text: 'Your ride request has been cancelled.'
+          text: 'Your ride request has been cancelled/declined.'
         })
         return true
       }
