@@ -9,8 +9,8 @@ import { validateFullName, validateIndianPhone, validateVehicleRegNumber, valida
 const supabase = createClient();
 
 const VEHICLE_CATEGORIES = [
-  { id: 'bike', name: 'Bike / Scooty', icon: '🛵' },
   { id: 'auto', name: 'Auto Rickshaw', icon: '🛺' },
+  { id: 'bike', name: 'Bike / Scooty', icon: '🛵' },
   { id: 'car', name: 'Car / Taxi / SUV', icon: '🚗' },
   { id: 'van', name: 'Van / Mini-Bus', icon: '🚐' },
   { id: 'bus', name: 'Bus / Travels', icon: '🚌' },
@@ -26,7 +26,7 @@ const SUBSCRIPTION_PLANS = [
 export default function DriveODashboard() {
   const { user: currentUser, profile } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
-  const [operatorCategory, setOperatorCategory] = useState<string>('truck');
+  const [operatorCategory, setOperatorCategory] = useState<string>('auto');
   const [regNumber, setRegNumber] = useState<string>('');
   const [upiId, setUpiId] = useState<string>('');
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('monthly');
@@ -83,11 +83,14 @@ export default function DriveODashboard() {
   const [regForm, setRegForm] = useState({
     name: profile?.full_name || '',
     mobile: '',
-    category: 'truck',
+    category: 'auto',
     regNo: '',
     licenseNo: '',
     upi: '',
+    aadharNo: '',
+    vehicleModel: '',
   });
+  const [regStep, setRegStep] = useState(1);
 
   // Auto pre-fill user's real name and WhatsApp phone number upon auth resolve
   useEffect(() => {
@@ -138,6 +141,8 @@ export default function DriveODashboard() {
 
   const handleUserDriverRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (regStep !== 3) return;
 
     // 0. Strict Content Validations
     const nameVal = validateFullName(regForm.name);
@@ -243,8 +248,10 @@ export default function DriveODashboard() {
           phone: cleanPhone,
           whatsapp: cleanPhone,
           vehicle_type: regForm.category,
+          vehicle_model: regForm.vehicleModel,
           vehicle_number: cleanRegNo,
           driving_license: cleanLicenseNo || 'PENDING-VERIFICATION',
+          aadhar_number: regForm.aadharNo,
           upi_id: regForm.upi || `${cleanPhone}@upi`,
           is_online: true,
           is_verified: false,
@@ -255,6 +262,7 @@ export default function DriveODashboard() {
       setTimeout(() => {
         setRegisterSubmitted(false);
         setShowRegisterModal(false);
+        setRegStep(1);
       }, 3000);
     } catch (err) {
       console.error(err);
@@ -428,7 +436,7 @@ export default function DriveODashboard() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Truck className="w-7 h-7 text-primary" />
+            <span className="text-2xl">🛺</span>
             DriveO Driver & Operator Portal
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
@@ -483,7 +491,7 @@ export default function DriveODashboard() {
             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-emerald-500" /> Enroll as DriveO Driver Partner
             </h3>
-            <button onClick={() => setShowRegisterModal(false)} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
+            <button onClick={() => { setShowRegisterModal(false); setRegStep(1); }} className="text-xs text-muted-foreground hover:text-foreground">✕ Close</button>
           </div>
 
           {registerSubmitted ? (
@@ -493,82 +501,132 @@ export default function DriveODashboard() {
             </div>
           ) : (
             <form onSubmit={handleUserDriverRegister} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Your Full Name"
-                  value={regForm.name}
-                  onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
+              {regStep === 1 && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Your Full Name"
+                      value={regForm.name}
+                      onChange={(e) => setRegForm({ ...regForm, name: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Mobile / WhatsApp Number *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter 10-digit Mobile Number"
+                      value={regForm.mobile}
+                      onChange={(e) => setRegForm({ ...regForm, mobile: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Aadhar Number</label>
+                    <input
+                      type="text"
+                      placeholder="Enter Aadhar Number"
+                      value={regForm.aadharNo}
+                      onChange={(e) => setRegForm({ ...regForm, aadharNo: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">UPI ID for Driver Settlement</label>
+                    <input
+                      type="text"
+                      placeholder="9876543210@upi"
+                      value={regForm.upi}
+                      onChange={(e) => setRegForm({ ...regForm, upi: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="md:col-span-2 pt-2">
+                    <button type="button" onClick={() => setRegStep(2)} className="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition">
+                      Next
+                    </button>
+                  </div>
+                </>
+              )}
 
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Mobile / WhatsApp Number *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Enter 10-digit Mobile Number"
-                  value={regForm.mobile}
-                  onChange={(e) => setRegForm({ ...regForm, mobile: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
+              {regStep === 2 && (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Category *</label>
+                    <select
+                      value={regForm.category}
+                      onChange={(e) => setRegForm({ ...regForm, category: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary"
+                    >
+                      {VEHICLE_CATEGORIES.map((c) => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Model</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Swift Dzire, Ape Auto"
+                      value={regForm.vehicleModel}
+                      onChange={(e) => setRegForm({ ...regForm, vehicleModel: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Reg Number *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="TN-39-AB-1234"
+                      value={regForm.regNo}
+                      onChange={(e) => setRegForm({ ...regForm, regNo: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Driving License Number</label>
+                    <input
+                      type="text"
+                      placeholder="TN-2024-998877"
+                      value={regForm.licenseNo}
+                      onChange={(e) => setRegForm({ ...regForm, licenseNo: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="md:col-span-2 pt-2 flex gap-4">
+                    <button type="button" onClick={() => setRegStep(1)} className="w-1/2 py-3 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground font-bold text-sm transition border border-border">
+                      Back
+                    </button>
+                    <button type="button" onClick={() => setRegStep(3)} className="w-1/2 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition">
+                      Next
+                    </button>
+                  </div>
+                </>
+              )}
 
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Category *</label>
-                <select
-                  value={regForm.category}
-                  onChange={(e) => setRegForm({ ...regForm, category: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary"
-                >
-                  {VEHICLE_CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Vehicle Reg Number *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="TN-39-AB-1234"
-                  value={regForm.regNo}
-                  onChange={(e) => setRegForm({ ...regForm, regNo: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Driving License Number</label>
-                <input
-                  type="text"
-                  placeholder="TN-2024-998877"
-                  value={regForm.licenseNo}
-                  onChange={(e) => setRegForm({ ...regForm, licenseNo: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-1">UPI ID for Driver Settlement</label>
-                <input
-                  type="text"
-                  placeholder="9876543210@upi"
-                  value={regForm.upi}
-                  onChange={(e) => setRegForm({ ...regForm, upi: e.target.value })}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="md:col-span-2 pt-2">
-                <button type="submit" className="w-full py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition">
-                  Submit Driver Registration
-                </button>
-              </div>
+              {regStep === 3 && (
+                <>
+                  <div className="md:col-span-2 text-center p-6 bg-emerald-500/10 rounded-xl border border-emerald-500/30">
+                    <h4 className="text-emerald-500 font-bold mb-2">Document Verification</h4>
+                    <p className="text-sm text-foreground">
+                      Please send clear photos of your Aadhar, RC Book, and Driving License to our Admin WhatsApp: <strong>+91 63810 29380</strong> to complete verification.
+                    </p>
+                  </div>
+                  <div className="md:col-span-2 pt-2 flex gap-4">
+                    <button type="button" onClick={() => setRegStep(2)} className="w-1/3 py-3 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground font-bold text-sm transition border border-border">
+                      Back
+                    </button>
+                    <button type="submit" className="w-2/3 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition">
+                      Submit Driver Registration
+                    </button>
+                  </div>
+                </>
+              )}
             </form>
           )}
         </div>

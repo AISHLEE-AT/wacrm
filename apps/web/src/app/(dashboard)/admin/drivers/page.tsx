@@ -11,6 +11,8 @@ interface DriverProfile {
   license_number: string;
   rc_number: string;
   vehicle_category: string;
+  aadhar_number?: string;
+  vehicle_model?: string;
   status: string;
   created_at: string;
 }
@@ -59,6 +61,8 @@ export default function AdminDriversPage() {
             license_number: d.license_number || d.driving_license || d.vehicle_registration || 'Submitted',
             rc_number: d.rc_number || d.vehicle_number || d.vehicle_registration || 'Submitted',
             vehicle_category: d.vehicle_category || d.vehicle_type || 'Vehicle',
+            aadhar_number: d.aadhar_number || 'N/A',
+            vehicle_model: d.vehicle_model || 'N/A',
             status: d.is_verified ? 'active' : 'pending',
             created_at: d.created_at || new Date().toISOString()
           };
@@ -228,12 +232,18 @@ export default function AdminDriversPage() {
                         <Phone className="w-3 h-3 text-emerald-600" />
                         {driver.phone}
                       </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Aadhar: <span className="font-medium text-slate-700">{driver.aadhar_number}</span>
+                      </p>
                     </td>
                     <td className="p-4">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-800 rounded-full text-xs font-bold border border-slate-200">
                         <Car className="w-3.5 h-3.5 text-orange-500" />
                         {driver.vehicle_category.toUpperCase()}
                       </span>
+                      <p className="text-xs text-slate-500 mt-1.5">
+                        Model: <span className="font-medium text-slate-700">{driver.vehicle_model}</span>
+                      </p>
                     </td>
                     <td className="p-4">
                       <p className="text-xs font-mono text-slate-800 flex items-center gap-1">

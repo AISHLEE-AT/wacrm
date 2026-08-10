@@ -7,6 +7,14 @@ import { createClient } from '@/lib/supabase/client'
 // Dynamically import Map so it only renders on client
 const RideMap = dynamic(() => import('@/components/GoogleRideMap'), { ssr: false })
 
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 function BookRideContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -77,7 +85,14 @@ function BookRideContent() {
     
     try {
       const otp = (1000 + (Date.now() % 9000)).toString()
-      const price = 50.0
+      // Calculate trip distance and fare
+      const tripKm = getDistanceKm(pickup![0], pickup![1], dropoff![0], dropoff![1]);
+      const baseFare = driver.vehicle_type === 'bike' ? 15 : driver.vehicle_type === 'auto' ? 30 : 50;
+      const perKmRate = driver.vehicle_type === 'bike' ? 8 : driver.vehicle_type === 'auto' ? 14 : 16;
+      const price = Math.max(
+        driver.vehicle_type === 'bike' ? 25 : driver.vehicle_type === 'auto' ? 45 : 89,
+        Math.round(baseFare + Math.max(0, tripKm - 1.5) * perKmRate)
+      );
 
       const { data: userAuth } = await supabase.auth.getUser()
 
@@ -86,11 +101,12 @@ function BookRideContent() {
         driver_id: driver.id,
         pickup_latitude: pickup![0],
         pickup_longitude: pickup![1],
-        pickup_address: 'Map Location',
+        pickup_address: `GPS: ${pickup![0].toFixed(4)}, ${pickup![1].toFixed(4)}`,
         dropoff_latitude: dropoff![0],
         dropoff_longitude: dropoff![1],
-        dropoff_address: 'Map Location',
+        dropoff_address: `GPS: ${dropoff![0].toFixed(4)}, ${dropoff![1].toFixed(4)}`,
         vehicle_type: driver.vehicle_type,
+        distance_km: parseFloat(tripKm.toFixed(2)),
         price: price,
         status: 'pending',
         otp: otp
@@ -163,7 +179,7 @@ function BookRideContent() {
                   <div key={driver.id} className="bg-gray-50 border p-4 rounded-xl flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
                       <span className="text-3xl">
-                        {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : '🚕'}
+                        {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : driver.vehicle_type === 'sedan' ? '🚙' : driver.vehicle_type === 'suv' ? '🚐' : driver.vehicle_type === 'mini' ? '🚗' : '🚕'}
                       </span>
                       <div>
                         <p className="font-bold text-gray-800">{driver.name}</p>

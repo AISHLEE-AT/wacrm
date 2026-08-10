@@ -129,6 +129,78 @@ export async function handleRideHailingBooking(
         })
         return true
       }
+
+      // ───── DRIVER CONFIRMS RIDE via WhatsApp text "CONFIRM" ─────
+      if (text.includes('confirm') || text.includes('accept') || text.includes('ok') || text.includes('yes')) {
+        // Find the latest pending ride assigned to this driver
+        const { data: pendingRide } = await supabase
+          .from('rides')
+          .select('*')
+          .eq('driver_id', driverRow.id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (pendingRide) {
+          // Generate fresh 4-digit OTP for trip verification
+          const tripOtp = String(1000 + Math.floor(Math.random() * 9000))
+
+          // Update ride status to 'accepted' + store OTP
+          await supabase
+            .from('rides')
+            .update({
+              status: 'accepted',
+              otp: tripOtp,
+              accepted_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', pendingRide.id)
+
+          // Notify the DRIVER with confirmation
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            text: `✅ RIDE CONFIRMED! ✅\n\n` +
+              `📍 Pickup: ${pendingRide.pickup_address || `GPS: ${pendingRide.pickup_latitude}, ${pendingRide.pickup_longitude}`}\n` +
+              `🏁 Drop-off: ${pendingRide.dropoff_address || `GPS: ${pendingRide.dropoff_latitude}, ${pendingRide.dropoff_longitude}`}\n` +
+              `📏 Distance: ${pendingRide.distance_km || '—'} km\n` +
+              `💰 Fare: ₹${pendingRide.fare || pendingRide.estimated_price || pendingRide.price || '—'}\n\n` +
+              `🔢 *START TRIP PIN:* ${tripOtp}\n` +
+              `(Rider will share this PIN to verify before starting trip)\n\n` +
+              `🗺️ Navigate to pickup:\nhttps://www.google.com/maps/dir/?api=1&destination=${pendingRide.pickup_latitude},${pendingRide.pickup_longitude}`
+          })
+
+          // Notify the RIDER (passenger) about driver acceptance + OTP
+          const riderPhone = pendingRide.passenger_phone || '919123596988'
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: riderPhone,
+            text: `🎉 DRIVER CONFIRMED YOUR RIDE! 🎉\n\n` +
+              `👤 Driver: ${driverRow.name}\n` +
+              `🚗 Vehicle: ${driverRow.vehicle_type} (${driverRow.vehicle_registration || ''})\n` +
+              `📍 Pickup: ${pendingRide.pickup_address || 'Map Location'}\n` +
+              `🏁 Drop-off: ${pendingRide.dropoff_address || 'Map Location'}\n` +
+              `📏 Distance: ${pendingRide.distance_km || '—'} km\n` +
+              `💰 Fare: ₹${pendingRide.fare || pendingRide.estimated_price || pendingRide.price || '—'}\n\n` +
+              `🔐 *Your Trip OTP:* ${tripOtp}\n` +
+              `(Share this OTP with driver to start the trip)\n\n` +
+              `🔢 Ride ID: ${pendingRide.id?.slice(0, 8)}`
+          })
+
+          return true
+        } else {
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            text: `⚠️ No pending ride requests found for your account. Please wait for a new ride request from RideO.`
+          })
+          return true
+        }
+      }
     }
 
     // ───── 1. CUSTOMER RIDE & TRANSPORT BOOKING ─────

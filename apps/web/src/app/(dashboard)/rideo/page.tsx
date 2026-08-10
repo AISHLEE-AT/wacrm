@@ -12,6 +12,28 @@ const RideMap = nextDynamic(() => import('@/components/GoogleRideMap'), { ssr: f
 
 const supabase = createClient();
 
+// Haversine distance calculation (pickup → dropoff trip distance)
+function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Get vehicle emoji based on type
+function getVehicleEmoji(type: string): string {
+  switch(type) {
+    case 'bike': return '🏍️';
+    case 'auto': return '🛺';
+    case 'sedan': return '🚙';
+    case 'suv': return '🚐';
+    case 'mini': return '🚗';
+    case 'cargo': return '🛻';
+    default: return '🚕';
+  }
+}
+
 function RideOBookingContent() {
   const [pickup, setPickup] = useState<[number, number] | null>(null);
   const [dropoff, setDropoff] = useState<[number, number] | null>(null);
@@ -71,11 +93,103 @@ function RideOBookingContent() {
       return;
     }
     
-    const driverPhone = driver.phone;
-    const message = `🚕 *New Ride Request (RideO)* 🚕\n\n*Pickup Coordinates:* ${pickup[0].toFixed(4)}, ${pickup[1].toFixed(4)}\n*Drop-off Coordinates:* ${dropoff[0].toFixed(4)}, ${dropoff[1].toFixed(4)}\n*Vehicle Requested:* ${driver.vehicle_type}\n*Distance:* ${driver.distance_km?.toFixed(1)} km\n\nPlease confirm my booking!`;
+    setSearchingDrivers(true);
     
-    const whatsappUrl = `https://wa.me/${driverPhone}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    try {
+      // 1. Calculate actual trip distance (pickup → dropoff)
+      const tripDistanceKm = getDistanceKm(pickup[0], pickup[1], dropoff[0], dropoff[1]);
+      
+      // 2. Reverse geocode for human-readable addresses (free Nominatim API)
+      let pickupAddress = `${pickup[0].toFixed(4)}, ${pickup[1].toFixed(4)}`;
+      let dropoffAddress = `${dropoff[0].toFixed(4)}, ${dropoff[1].toFixed(4)}`;
+      try {
+        const [pRes, dRes] = await Promise.all([
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pickup[0]}&lon=${pickup[1]}&format=json&zoom=16`),
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${dropoff[0]}&lon=${dropoff[1]}&format=json&zoom=16`),
+        ]);
+        const [pData, dData] = await Promise.all([pRes.json(), dRes.json()]);
+        if (pData.display_name) pickupAddress = pData.display_name.split(',').slice(0, 3).join(',').trim();
+        if (dData.display_name) dropoffAddress = dData.display_name.split(',').slice(0, 3).join(',').trim();
+      } catch { /* Fallback to coordinates silently */ }
+      
+      // 3. Calculate estimated fare
+      const baseFare = driver.vehicle_type === 'bike' ? 15 : driver.vehicle_type === 'auto' ? 30 : 50;
+      const perKmRate = driver.vehicle_type === 'bike' ? 8 : driver.vehicle_type === 'auto' ? 14 : 16;
+      const baseKm = driver.vehicle_type === 'bike' ? 1.5 : 2.0;
+      const estimatedFare = Math.max(
+        driver.vehicle_type === 'bike' ? 25 : driver.vehicle_type === 'auto' ? 45 : 89,
+        Math.round(baseFare + Math.max(0, tripDistanceKm - baseKm) * perKmRate)
+      );
+      
+      // 4. Generate 4-digit OTP
+      const otp = String(1000 + Math.floor(Math.random() * 9000));
+      
+      // 5. Create ride record in Supabase for tracking
+      const { data: userAuth } = await supabase.auth.getUser();
+      const { data: rideRecord, error: rideError } = await supabase.from('rides').insert({
+        customer_id: userAuth?.user?.id || null,
+        passenger_phone: '919123596988',
+        driver_id: driver.id,
+        pickup_latitude: pickup[0],
+        pickup_longitude: pickup[1],
+        pickup_address: pickupAddress,
+        dropoff_latitude: dropoff[0],
+        dropoff_longitude: dropoff[1],
+        dropoff_address: dropoffAddress,
+        vehicle_type: driver.vehicle_type,
+        distance_km: parseFloat(tripDistanceKm.toFixed(2)),
+        fare: estimatedFare,
+        estimated_price: estimatedFare,
+        status: 'pending',
+        otp: otp,
+        payment_mode: 'upi'
+      }).select().single();
+      
+      if (rideError) {
+        console.warn('Ride record insert warning:', rideError.message);
+      }
+      
+      // 6. Setup Realtime listener for driver acceptance
+      if (rideRecord) {
+        setActiveRide(rideRecord);
+        supabase
+          .channel(`ride-updates-${rideRecord.id}`)
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideRecord.id}` },
+            (payload) => {
+              const updated = payload.new;
+              setActiveRide(updated);
+              if (updated.status === 'accepted') {
+                // Show OTP to rider
+              }
+            }
+          )
+          .subscribe();
+      }
+      
+      // 7. Build WhatsApp booking message with all details
+      const vehicleEmoji = getVehicleEmoji(driver.vehicle_type);
+      const driverPhone = driver.phone.replace(/\D/g, '');
+      const whatsappPhone = driverPhone.startsWith('91') ? driverPhone : `91${driverPhone}`;
+      
+      const message = `${vehicleEmoji} *New Ride Request (RideO)* ${vehicleEmoji}\n\n` +
+        `📍 *Pickup:* ${pickupAddress}\n` +
+        `🏁 *Drop-off:* ${dropoffAddress}\n` +
+        `${vehicleEmoji} *Vehicle:* ${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}\n` +
+        `📏 *Trip Distance:* ${tripDistanceKm.toFixed(1)} km\n` +
+        `💰 *Estimated Fare:* ₹${estimatedFare}\n` +
+        `⭐ *Driver:* ${driver.name} (${driver.rating || '4.5'}★)\n` +
+        `🔢 *Ride ID:* ${rideRecord?.id?.slice(0, 8) || 'N/A'}\n\n` +
+        `✅ Reply *CONFIRM* to accept this ride!`;
+      
+      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    } catch (err: any) {
+      alert(`Booking error: ${err.message}`);
+    } finally {
+      setSearchingDrivers(false);
+    }
   };
 
   const cancelRide = () => {
@@ -154,6 +268,24 @@ function RideOBookingContent() {
                     {dropoff ? `📍 ${dropoff[0].toFixed(4)}, ${dropoff[1].toFixed(4)}` : 'Tap map to set destination'}
                   </p>
                 </div>
+                {pickup && dropoff && (
+                  <div className="bg-slate-800 rounded-lg px-3 py-2 mt-2 border border-yellow-500/20">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Trip Info</p>
+                        <p className="text-xs text-yellow-300 font-medium mt-0.5">
+                          📏 {getDistanceKm(pickup[0], pickup[1], dropoff[0], dropoff[1]).toFixed(1)} km
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Est. Fare</p>
+                        <p className="text-sm text-emerald-400 font-bold mt-0.5">
+                          ₹{Math.max(45, Math.round(30 + Math.max(0, getDistanceKm(pickup[0], pickup[1], dropoff[0], dropoff[1]) - 2) * 14))}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -207,7 +339,7 @@ function RideOBookingContent() {
                   <div key={driver.id} className="bg-slate-800 border border-slate-700 p-3 rounded-xl flex items-center justify-between hover:border-yellow-500/50 transition">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">
-                        {driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : '🚕'}
+                        {getVehicleEmoji(driver.vehicle_type)}
                       </span>
                       <div>
                         <p className="text-sm font-bold text-white">{driver.name}</p>
