@@ -204,7 +204,6 @@ BEGIN
   FROM public.drivers d
   WHERE
     d.status = 'online'
-    AND COALESCE(d.is_blocked, false) = false
     AND COALESCE(d.pickup_latitude, d.current_lat) IS NOT NULL
     AND COALESCE(d.pickup_longitude, d.current_lng) IS NOT NULL
     -- Fast bounding box pre-filter
