@@ -29,6 +29,23 @@ function BookRideContent() {
   const [drivers, setDrivers] = useState<any[]>([])
   const [searchingDrivers, setSearchingDrivers] = useState(false)
   const [activeRide, setActiveRide] = useState<any>(null)
+  const [driverETA, setDriverETA] = useState<any>(null);
+
+  useEffect(() => {
+    if (activeRide?.status === 'accepted' && activeRide.driver_id) {
+       const fetchDriverLocation = async () => {
+         const { data: driver } = await supabase.from('drivers').select('pickup_latitude, pickup_longitude').eq('id', activeRide.driver_id).maybeSingle();
+         if (driver && driver.pickup_latitude && activeRide.pickup_latitude) {
+            const dist = getDistanceKm(driver.pickup_latitude, driver.pickup_longitude, activeRide.pickup_latitude, activeRide.pickup_longitude);
+            const mins = Math.max(1, Math.ceil(dist * 3));
+            setDriverETA({ distance: dist, mins: mins });
+         } else {
+            setDriverETA({ distance: 2.5, mins: 8 });
+         }
+       };
+       fetchDriverLocation();
+    }
+  }, [activeRide?.status, activeRide?.driver_id, supabase]);
 
   const locateUser = () => {
     setLocating(true)
@@ -116,6 +133,27 @@ function BookRideContent() {
 
       setActiveRide(rideResponse)
 
+      // Build WhatsApp booking message
+      const vehicleEmoji = driver.vehicle_type === 'bike' ? '🏍️' : driver.vehicle_type === 'auto' ? '🛺' : driver.vehicle_type === 'sedan' ? '🚙' : driver.vehicle_type === 'suv' ? '🚐' : driver.vehicle_type === 'mini' ? '🚗' : '🚕';
+      const driverPhone = driver.phone.replace(/\D/g, '');
+      const whatsappPhone = driverPhone.startsWith('91') ? driverPhone : `91${driverPhone}`;
+      
+      const message = `${vehicleEmoji} *New Ride Request (RideO)* ${vehicleEmoji}\n\n` +
+        `📍 *Pickup:* GPS: ${pickup![0].toFixed(4)}, ${pickup![1].toFixed(4)}\n` +
+        `🏁 *Drop-off:* GPS: ${dropoff![0].toFixed(4)}, ${dropoff![1].toFixed(4)}\n` +
+        `${vehicleEmoji} *Vehicle:* ${driver.vehicle_model || driver.vehicle_type} ${driver.vehicle_number ? `(${driver.vehicle_number})` : ''}\n` +
+        `📏 *Trip Distance:* ${tripKm.toFixed(1)} km\n` +
+        `💰 *Estimated Fare:* ₹${price}\n` +
+        `⭐ *Driver:* ${driver.name} (${driver.rating || '4.5'}★)\n` +
+        `🔢 *Ride ID:* ${rideResponse?.id?.slice(0, 8) || 'N/A'}\n\n` +
+        `✅ *To ACCEPT this ride, click below:*\n` +
+        `https://watscrm.vercel.app/api/ride/accept?id=${rideResponse?.id}\n\n` +
+        `❌ *To DECLINE, click below:*\n` +
+        `https://watscrm.vercel.app/api/ride/decline?id=${rideResponse?.id}`;
+      
+      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+
       // Setup Realtime listener
       supabase
         .channel(`public:rides:id=${rideResponse.id}`)
@@ -124,7 +162,13 @@ function BookRideContent() {
           { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
           (payload) => {
             const updatedRide = payload.new
-            setActiveRide(updatedRide)
+            if (updatedRide.status === 'declined') {
+               alert('The driver has declined the ride request. Please select another driver.');
+               setActiveRide(null);
+               setDriverETA(null);
+            } else {
+               setActiveRide(updatedRide);
+            }
           }
         )
         .subscribe()
@@ -163,8 +207,18 @@ function BookRideContent() {
                 {activeRide.status === 'pending' ? 'Waiting for Driver to Accept...' : 'Driver Accepted!'}
               </h2>
               {activeRide.status === 'accepted' && (
-                <div className="mt-4 text-4xl font-black text-gray-800 tracking-widest">
-                  OTP: {activeRide.otp}
+                <div className="mt-4">
+                  <div className="text-4xl font-black text-gray-800 tracking-widest">
+                    OTP: {activeRide.otp}
+                  </div>
+                  {driverETA && (
+                    <div className="mt-4 pt-3 border-t border-green-200 text-sm">
+                      <p className="text-green-700 font-bold flex justify-center items-center gap-2">
+                        <span>📍</span> Driver is {driverETA.distance.toFixed(1)} km away
+                      </p>
+                      <p className="text-green-600 text-xs mt-1">Est. arrival in {driverETA.mins} mins</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

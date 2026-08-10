@@ -43,6 +43,23 @@ function RideOBookingContent() {
   const [drivers, setDrivers] = useState<any[]>([]);
   const [searchingDrivers, setSearchingDrivers] = useState(false);
   const [activeRide, setActiveRide] = useState<any>(null);
+  const [driverETA, setDriverETA] = useState<any>(null);
+
+  useEffect(() => {
+    if (activeRide?.status === 'accepted' && activeRide.driver_id) {
+       const fetchDriverLocation = async () => {
+         const { data: driver } = await supabase.from('drivers').select('pickup_latitude, pickup_longitude').eq('id', activeRide.driver_id).maybeSingle();
+         if (driver && driver.pickup_latitude && activeRide.pickup_latitude) {
+            const dist = getDistanceKm(driver.pickup_latitude, driver.pickup_longitude, activeRide.pickup_latitude, activeRide.pickup_longitude);
+            const mins = Math.max(1, Math.ceil(dist * 3));
+            setDriverETA({ distance: dist, mins: mins });
+         } else {
+            setDriverETA({ distance: 2.5, mins: 8 });
+         }
+       };
+       fetchDriverLocation();
+    }
+  }, [activeRide?.status, activeRide?.driver_id]);
 
   const locateUser = () => {
     setLocating(true);
@@ -159,9 +176,12 @@ function RideOBookingContent() {
             { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideRecord.id}` },
             (payload) => {
               const updated = payload.new;
-              setActiveRide(updated);
-              if (updated.status === 'accepted') {
-                // Show OTP to rider
+              if (updated.status === 'declined') {
+                 alert('The driver has declined the ride request. Please select another driver.');
+                 setActiveRide(null);
+                 setDriverETA(null);
+              } else {
+                 setActiveRide(updated);
               }
             }
           )
@@ -181,7 +201,10 @@ function RideOBookingContent() {
         `💰 *Estimated Fare:* ₹${estimatedFare}\n` +
         `⭐ *Driver:* ${driver.name} (${driver.rating || '4.5'}★)\n` +
         `🔢 *Ride ID:* ${rideRecord?.id?.slice(0, 8) || 'N/A'}\n\n` +
-        `✅ Reply *CONFIRM* to accept this ride!`;
+        `✅ *To ACCEPT this ride, click below:*\n` +
+        `https://watscrm.vercel.app/api/ride/accept?id=${rideRecord?.id}\n\n` +
+        `❌ *To DECLINE, click below:*\n` +
+        `https://watscrm.vercel.app/api/ride/decline?id=${rideRecord?.id}`;
       
       const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
@@ -317,6 +340,14 @@ function RideOBookingContent() {
                   <div className="text-5xl font-black text-white tracking-[0.3em]">
                     {activeRide.otp}
                   </div>
+                  {driverETA && (
+                    <div className="mt-4 pt-3 border-t border-emerald-500/20 text-sm">
+                      <p className="text-emerald-400 font-bold flex justify-center items-center gap-2">
+                        <span>📍</span> Driver is {driverETA.distance.toFixed(1)} km away
+                      </p>
+                      <p className="text-slate-300 text-xs mt-1">Est. arrival in {driverETA.mins} mins</p>
+                    </div>
+                  )}
                 </div>
               )}
               <button

@@ -111,13 +111,30 @@ export default function DriveODashboard() {
     }));
   }, [profile, currentUser]);
 
-  // Fetch real-time rides from Supabase matching vehicle category
+  // Fetch real-time rides from Supabase matching driver ID
   useEffect(() => {
+    if (!driverRecord?.id) return;
+
     const fetchRequests = async () => {
       try {
+        // Fetch active order for this driver
+        const { data: activeData } = await supabase
+          .from('rides')
+          .select('*')
+          .eq('driver_id', driverRecord.id)
+          .in('status', ['accepted', 'in_progress'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          
+        if (activeData) {
+          setActiveOrder(activeData);
+        }
+
         const { data } = await supabase
           .from('rides')
           .select('*')
+          .eq('driver_id', driverRecord.id)
           .in('status', ['requested', 'pending'])
           .order('created_at', { ascending: false })
           .limit(10);
@@ -131,16 +148,24 @@ export default function DriveODashboard() {
     fetchRequests();
 
     const channel = supabase
-      .channel('public:rides:driveo')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
+      .channel(`public:rides:driver_${driverRecord.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides', filter: `driver_id=eq.${driverRecord.id}` }, (payload) => {
         setIncomingRequests((prev) => [payload.new, ...prev]);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: `driver_id=eq.${driverRecord.id}` }, (payload) => {
+        if (payload.new.status === 'accepted') {
+           setActiveOrder(payload.new);
+           setIncomingRequests((prev) => prev.filter((r) => r.id !== payload.new.id));
+        } else if (payload.new.status === 'completed' || payload.new.status === 'cancelled') {
+           setActiveOrder(null);
+        }
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [driverRecord?.id]);
 
   const handleUserDriverRegister = async (e: React.FormEvent) => {
     e.preventDefault();
