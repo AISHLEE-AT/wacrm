@@ -13,12 +13,15 @@ async function run() {
     await client.connect();
     console.log("Connected to Supabase DB successfully!");
     
-    // Read the SQL file
-    const sqlPath = path.join(__dirname, 'sync_points_rpc.sql');
-    const sql = fs.readFileSync(sqlPath, 'utf8');
+    // Read the SQL files
+    const sql66 = fs.readFileSync(path.join('D:\\w\\supabase\\migrations', '066_seed_virtual_drivers_all_tamilnadu.sql'), 'utf8');
+    const sql67 = fs.readFileSync(path.join('D:\\w\\supabase\\migrations', '067_add_aadhar_number_drivers.sql'), 'utf8');
     
-    await client.query(sql);
-    console.log("Offline Sync RPC Schema executed successfully!");
+    await client.query(sql66);
+    console.log("Migration 066 executed successfully!");
+    
+    await client.query(sql67);
+    console.log("Migration 067 executed successfully!");
     
   } catch (err) {
     console.error("Error executing schema:", err);

@@ -117,13 +117,14 @@ export default function DriveOScreen() {
         .from('drivers')
         .select('*')
         .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone}`)
-        .maybeSingle();
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       
-      if (data) {
-        setDriver(data);
-        setIsOnline(data.status === 'online');
+      if (data && data.length > 0) {
+        setDriver(data[0]);
+        setIsOnline(data[0].status === 'online');
       } else {
         setDriver(null);
       }

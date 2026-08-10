@@ -260,9 +260,9 @@ function ProfilePageInner() {
         .from('drivers')
         .select('*')
         .or(`user_id.eq.${user.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
-        .limit(1)
-        .maybeSingle();
-      if (data) setDriverProfile(data);
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (data && data.length > 0) setDriverProfile(data[0]);
     };
     fetchDriverData();
   }, [user?.id]);
@@ -355,7 +355,7 @@ function ProfilePageInner() {
             </div>
           )}
           <p className="text-primary text-sm font-medium mt-0.5 uppercase tracking-wider">
-            {isAdmin ? 'Admin / Owner' : 'User'}
+            {isAdmin ? 'Admin / Owner' : driverProfile ? 'Driver Partner' : 'User'}
           </p>
         </div>
       </div>

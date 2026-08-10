@@ -63,14 +63,15 @@ export default function DriveODashboard() {
           .from('drivers')
           .select('*')
           .or(`user_id.eq.${currentUser.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
-          .limit(1)
-          .maybeSingle();
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-        if (data) {
-          setDriverRecord(data);
-          if (data.vehicle_type) setOperatorCategory(data.vehicle_type);
-          if (data.vehicle_number) setRegNumber(data.vehicle_number);
-          if (data.upi_id) setUpiId(data.upi_id);
+        if (data && data.length > 0) {
+          const driver = data[0];
+          setDriverRecord(driver);
+          if (driver.vehicle_type) setOperatorCategory(driver.vehicle_type);
+          if (driver.vehicle_number) setRegNumber(driver.vehicle_number);
+          if (driver.upi_id) setUpiId(driver.upi_id);
         }
       } catch (err) {
         console.error(err);
@@ -488,13 +489,15 @@ export default function DriveODashboard() {
           >
             ⚡ Instant UPI Settlement
           </button>
-          <button
-            onClick={() => setShowRegisterModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition"
-          >
-            <UserPlus className="w-4 h-4" />
-            Enroll as Driver Partner
-          </button>
+          {!driverRecord && (
+            <button
+              onClick={() => setShowRegisterModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition"
+            >
+              <UserPlus className="w-4 h-4" />
+              Enroll as Driver Partner
+            </button>
+          )}
           <button
             onClick={() => setShowSubscriptionModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-xs hover:bg-amber-500/25 transition"

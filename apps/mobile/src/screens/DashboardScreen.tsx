@@ -6,6 +6,7 @@ import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
 import { MapPin, Bell, LogOut, KeyRound, Save } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
+import { supabase } from '../lib/supabase';
 
 const endpoints = {
   updateProfile: 'https://watscrm.vercel.app/api/profile/update',
@@ -19,6 +20,7 @@ export default function DashboardScreen({ navigation }: any) {
   const [tempApiKey, setTempApiKey] = useState(geminiApiKey || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingKey, setIsEditingKey] = useState(!geminiApiKey);
+  const [isDriver, setIsDriver] = useState(false);
 
   useEffect(() => {
     setTempApiKey(geminiApiKey || '');
@@ -50,6 +52,17 @@ export default function DashboardScreen({ navigation }: any) {
             body: JSON.stringify({ phone: p, pushToken: token })
           }).catch(console.error);
         }
+
+        // Check if user is a registered driver
+        supabase
+          .from('drivers')
+          .select('id')
+          .or(`mobile_number.eq.${p},whatsapp_number.eq.${p}`)
+          .limit(1)
+          .then(({ data }) => {
+            if (data && data.length > 0) setIsDriver(true);
+          })
+          .catch(() => {});
       }
     });
   }, []);
@@ -114,7 +127,7 @@ export default function DashboardScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 60, paddingTop: 60 }}>
       <Text style={styles.title}>Your Profile</Text>
-      <Text style={styles.subtitle}>+91 {phone} • Role: {userRole}</Text>
+      <Text style={styles.subtitle}>+91 {phone} • Role: {userRole === 'admin' ? 'Admin' : isDriver ? 'Driver Partner' : 'User'}</Text>
       
       <View style={styles.card}>
         <View style={styles.cardHeaderRow}>

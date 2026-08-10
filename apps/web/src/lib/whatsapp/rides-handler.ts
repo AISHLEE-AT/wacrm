@@ -53,11 +53,14 @@ export async function handleRideHailingBooking(
 
     // ───── 0.1 DRIVER DAILY WAKEUP & LOCATION PINNING HOOK ─────
     // Check if sender phone matches a registered driver partner
-    const { data: driverRow } = await supabase
+    const { data: driverRows } = await supabase
       .from('drivers')
       .select('id, name, vehicle_type, vehicle_registration, status')
       .or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%`)
-      .maybeSingle()
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const driverRow = driverRows?.[0]
 
     if (driverRow) {
       // Driver pinned live location via WhatsApp Attachment (Pin Location)
@@ -132,15 +135,27 @@ export async function handleRideHailingBooking(
 
       // ───── DRIVER CONFIRMS RIDE via WhatsApp text "CONFIRM" ─────
       if (text.includes('confirm') || text.includes('accept') || text.includes('ok') || text.includes('yes')) {
-        // Find the latest pending ride assigned to this driver
-        const { data: pendingRide } = await supabase
-          .from('rides')
-          .select('*')
-          .eq('driver_id', driverRow.id)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
+        // Find ALL driver IDs associated with this phone number
+        const { data: allMatchingDrivers } = await supabase
+          .from('drivers')
+          .select('id')
+          .or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,phone.ilike.%${cleanPhone}%`);
+          
+        const driverIds = allMatchingDrivers?.map(d => d.id) || [];
+        
+        // Find the latest pending ride assigned to ANY of these driver IDs
+        let pendingRide = null;
+        if (driverIds.length > 0) {
+          const { data } = await supabase
+            .from('rides')
+            .select('*')
+            .in('driver_id', driverIds)
+            .eq('status', 'pending')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          pendingRide = data;
+        }
 
         if (pendingRide) {
           // Generate fresh 4-digit OTP for trip verification
@@ -383,7 +398,8 @@ export async function handleRideHailingBooking(
 
       if (replyId && replyId.startsWith('accept_ride_')) {
         const rideId = replyId.replace('accept_ride_', '')
-        const { data: driver } = await supabase.from('drivers').select('*').or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%`).maybeSingle()
+        const { data: driverRows } = await supabase.from('drivers').select('*').or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%`).order('created_at', { ascending: false }).limit(1)
+        const driver = driverRows?.[0]
         
         if (driver) {
            await fetch('http://localhost:3000/api/rides/accept', {
