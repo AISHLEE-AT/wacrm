@@ -86,12 +86,31 @@ export default function EcosystemWebView({ route, navigation }: Props) {
             localStorage.setItem(tokenKey, JSON.stringify({
               access_token: "${accessToken}",
               user: {
+                id: "${user?.id}",
                 phone: "${userPhone}",
                 name: "${userName}",
                 user_metadata: { role: "${userRole}", is_admin: ${isAdmin} }
               }
             }));
           }
+          
+          // Also simulate the iframe postMessage that the web app uses!
+          // This tells the aishlee-web app (which listens for message events) to sync immediately.
+          setTimeout(function() {
+            window.postMessage({
+              type: 'SUPRO_AUTH_INJECT',
+              access_token: "${accessToken}",
+              refresh_token: "${refreshToken}",
+              supabaseKey: tokenKey,
+              user: { id: "${user?.id}", phone: "${userPhone}", email: "${user?.email}" }
+            }, "*");
+            
+            // If we are currently on the login page, the token injection was successful but Next.js middleware 
+            // already redirected us here. Redirect back to the intended module path!
+            if (window.location.pathname === '/login' || window.location.pathname.startsWith('/login')) {
+              window.location.href = "${path}?embed=true";
+            }
+          }, 500);
         }
 
         // Expose native user info to the web app
