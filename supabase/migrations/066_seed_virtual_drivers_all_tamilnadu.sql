@@ -181,10 +181,10 @@ BEGIN
     ROUND((6371.0 * acos(
       LEAST(1.0, GREATEST(-1.0,
         cos(radians(pickup_lat)) *
-        cos(radians(COALESCE(d.pickup_latitude, d.current_lat, d.lat))) *
-        cos(radians(COALESCE(d.pickup_longitude, d.current_lng, d.lng)) - radians(pickup_lon)) +
+        cos(radians(COALESCE(d.pickup_latitude, d.current_lat))) *
+        cos(radians(COALESCE(d.pickup_longitude, d.current_lng)) - radians(pickup_lon)) +
         sin(radians(pickup_lat)) *
-        sin(radians(COALESCE(d.pickup_latitude, d.current_lat, d.lat)))
+        sin(radians(COALESCE(d.pickup_latitude, d.current_lat)))
       ))
     ))::NUMERIC, 2) AS distance_km,
     COALESCE(d.eta_minutes,
@@ -192,10 +192,10 @@ BEGIN
         6371.0 * acos(
           LEAST(1.0, GREATEST(-1.0,
             cos(radians(pickup_lat)) *
-            cos(radians(COALESCE(d.pickup_latitude, d.current_lat, d.lat))) *
-            cos(radians(COALESCE(d.pickup_longitude, d.current_lng, d.lng)) - radians(pickup_lon)) +
+            cos(radians(COALESCE(d.pickup_latitude, d.current_lat))) *
+            cos(radians(COALESCE(d.pickup_longitude, d.current_lng)) - radians(pickup_lon)) +
             sin(radians(pickup_lat)) *
-            sin(radians(COALESCE(d.pickup_latitude, d.current_lat, d.lat)))
+            sin(radians(COALESCE(d.pickup_latitude, d.current_lat)))
           ))
         ) * 2.0
       )::INT)
@@ -205,22 +205,22 @@ BEGIN
   WHERE
     d.status = 'online'
     AND COALESCE(d.is_blocked, false) = false
-    AND COALESCE(d.pickup_latitude, d.current_lat, d.lat) IS NOT NULL
-    AND COALESCE(d.pickup_longitude, d.current_lng, d.lng) IS NOT NULL
+    AND COALESCE(d.pickup_latitude, d.current_lat) IS NOT NULL
+    AND COALESCE(d.pickup_longitude, d.current_lng) IS NOT NULL
     -- Fast bounding box pre-filter
-    AND COALESCE(d.pickup_latitude, d.current_lat, d.lat)
+    AND COALESCE(d.pickup_latitude, d.current_lat)
         BETWEEN pickup_lat - (radius_km / 111.0) AND pickup_lat + (radius_km / 111.0)
-    AND COALESCE(d.pickup_longitude, d.current_lng, d.lng)
+    AND COALESCE(d.pickup_longitude, d.current_lng)
         BETWEEN pickup_lon - (radius_km / (111.0 * cos(radians(pickup_lat))))
             AND pickup_lon + (radius_km / (111.0 * cos(radians(pickup_lat))))
     -- Exact Haversine radius check
     AND (6371.0 * acos(
       LEAST(1.0, GREATEST(-1.0,
         cos(radians(pickup_lat)) *
-        cos(radians(COALESCE(d.pickup_latitude, d.current_lat, d.lat))) *
-        cos(radians(COALESCE(d.pickup_longitude, d.current_lng, d.lng)) - radians(pickup_lon)) +
+        cos(radians(COALESCE(d.pickup_latitude, d.current_lat))) *
+        cos(radians(COALESCE(d.pickup_longitude, d.current_lng)) - radians(pickup_lon)) +
         sin(radians(pickup_lat)) *
-        sin(radians(COALESCE(d.pickup_latitude, d.current_lat, d.lat)))
+        sin(radians(COALESCE(d.pickup_latitude, d.current_lat)))
       ))
     )) <= radius_km
   ORDER BY distance_km ASC
