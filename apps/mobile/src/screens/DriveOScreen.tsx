@@ -33,7 +33,6 @@ import {
   Send
 } from 'lucide-react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Audio } from 'expo-av';
 
 // Haversine formula to calculate distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {

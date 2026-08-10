@@ -48,8 +48,37 @@ export default function OnboardingPage() {
     async function loadProfile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Authenticated users bypass onboarding and land directly on RideO
-        router.replace('/rideo');
+        const rawPhone = user.phone || user.email || '';
+        const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+        let isDriver = false;
+        if (cleanPhone) {
+          const { data: driverData } = await supabase
+            .from('drivers')
+            .select('id')
+            .or(`user_id.eq.${user.id},phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+            .limit(1)
+            .maybeSingle();
+          if (driverData) isDriver = true;
+        }
+
+        if (!isDriver) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role, main_category')
+            .eq('id', user.id)
+            .maybeSingle();
+          const role = (profileData?.role || '').toLowerCase();
+          const cat = (profileData?.main_category || '').toLowerCase();
+          if (role.includes('driver') || cat.includes('driver')) {
+            isDriver = true;
+          }
+        }
+
+        if (isDriver) {
+          router.replace('/drivo');
+        } else {
+          router.replace('/rideo');
+        }
       }
     }
     loadProfile();

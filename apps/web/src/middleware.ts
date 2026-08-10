@@ -117,7 +117,8 @@ export async function middleware(request: NextRequest) {
           .eq('id', user.id)
           .single()
 
-        const role = profileData?.role?.toLowerCase()
+        const role = profileData?.role?.toLowerCase() || ''
+        const category = profileData?.main_category?.toLowerCase() || ''
         const userText = `${user.email ?? ''} ${user.phone ?? ''}`.toLowerCase()
         const isBootstrapAdmin = [
           ...BOOTSTRAP_ADMIN_PHONES,
@@ -125,19 +126,22 @@ export async function middleware(request: NextRequest) {
         ].some(id => userText.includes(id.toLowerCase()))
 
         const isAdmin = role === 'admin' || isBootstrapAdmin
-        let isDriver = role === 'driver'
+        let isDriver = role.includes('driver') || category.includes('driver')
 
-        if (!isDriver && user.phone) {
-          const cleanPhone = user.phone.replace('+', '');
-          const { data: driverData } = await supabase
-            .from('drivers')
-            .select('id, status')
-            .eq('phone', cleanPhone)
-            .eq('status', 'approved')
-            .maybeSingle()
-          
-          if (driverData) {
-            isDriver = true;
+        if (!isDriver && (user.phone || user.email)) {
+          const rawPhone = user.phone || user.email || ''
+          const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10)
+          if (cleanPhone) {
+            const { data: driverData } = await supabase
+              .from('drivers')
+              .select('id')
+              .or(`user_id.eq.${user.id},phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+              .limit(1)
+              .maybeSingle()
+            
+            if (driverData) {
+              isDriver = true;
+            }
           }
         }
 
@@ -147,7 +151,7 @@ export async function middleware(request: NextRequest) {
           defaultModule = '/drivo'
         } else {
           const routeMap: Record<string, string> = {
-            Traveller: '/rideo', Driver: '/drivo', Farmer: '/rento',
+            Traveller: '/rideo', Driver: '/drivo', 'Driver Partner': '/drivo', Farmer: '/rento',
             Shopper: '/dealo', Student: '/teacho', Teacher: '/teacho',
             Financier: '/moneyo', JobSeeker: '/teacho', Tourist: '/touro'
           }

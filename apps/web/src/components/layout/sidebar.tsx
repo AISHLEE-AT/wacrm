@@ -250,7 +250,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         aria-label="Primary"
       >
         <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/5 px-4 bg-gradient-to-r from-emerald-950/50 to-transparent">
-          <Link href={isAdmin ? "/dashboard" : "/rideo"} className="flex items-center gap-2.5">
+          <Link href={isAdmin ? "/dashboard" : isRegisteredDriver ? "/drivo" : "/rideo"} className="flex items-center gap-2.5">
             <div className="relative flex-shrink-0">
               {/* Outer glow */}
               <div className="absolute inset-0 rounded-xl bg-emerald-400/20 blur-md scale-125" />
