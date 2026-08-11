@@ -161,7 +161,7 @@ export default function AishleeEmbed({
           style={{ opacity: loading || error ? 0 : 1, transition: 'opacity 0.3s ease' }}
           allow="microphone; camera; geolocation; autoplay; clipboard-write; display-capture"
           allowFullScreen
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-downloads"
         />
       </div>
     </div>
