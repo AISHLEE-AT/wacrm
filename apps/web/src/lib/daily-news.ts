@@ -104,6 +104,28 @@ export async function fetchAllTodayNews(): Promise<DailyNewsItem[]> {
   }
 }
 
+/** Save an AI generated summary to the daily_news table */
+export async function saveAiSummary(module: string, title: string, description: string): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const today = todayString();
+    const { error } = await supabase.from('daily_news').insert({
+      module,
+      title,
+      description,
+      source_name: 'SuprO AI',
+      published_date: today,
+      loaded_date: today,
+      data_type: 'weekly_ai_news',
+    });
+    if (error) throw error;
+    return true;
+  } catch (e) {
+    console.error('saveAiSummary error:', e);
+    return false;
+  }
+}
+
 /** Module metadata */
 export const MODULE_META: Record<string, { label: string; color: string; emoji: string }> = {
   agro:    { label: 'AgrO',    color: '#10b981', emoji: '🌾' },
