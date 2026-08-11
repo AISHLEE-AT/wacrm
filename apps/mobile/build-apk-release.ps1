@@ -13,7 +13,12 @@ Write-Host "====================================="
 
 Write-Host "`n[1/2] Building the Release APK..."
 Set-Location android
-.\gradlew assembleRelease
+.\gradlew :app:assembleRelease
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Gradle build failed! Aborting installation."
+    Set-Location ..
+    exit $LASTEXITCODE
+}
 Set-Location ..
 
 Write-Host "`n[2/2] Installing and Launching the App on the Device..."

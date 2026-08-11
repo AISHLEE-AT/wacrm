@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -33,14 +34,13 @@ class _MainLayoutState extends State<MainLayout> {
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/ai-bot')) return 2;
     if (location.startsWith('/dashboard')) return 3; // Profile
     
     // Everything else (admin, teacho, testo, etc.) falls into the "Module" tab
     return 1; 
   }
 
-  void _onItemTapped(int index, BuildContext context) {
+  void _onItemTapped(int index, BuildContext context) async {
     switch (index) {
       case 0:
         context.go('/home');
@@ -48,11 +48,15 @@ class _MainLayoutState extends State<MainLayout> {
       case 1:
         final location = GoRouterState.of(context).uri.path;
         if (location == '/home' || location == '/dashboard') {
-          context.go('/driveo'); // Default module to avoid confusion
+          final prefs = await SharedPreferences.getInstance();
+          final selectedModule = prefs.getString('selected_module') ?? '/driveo';
+          if (mounted) context.go(selectedModule);
         }
         break;
       case 2:
-        context.go('/ai-bot');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('AI Assistant coming soon to Flutter!')),
+        );
         break;
       case 3:
         context.go('/dashboard');

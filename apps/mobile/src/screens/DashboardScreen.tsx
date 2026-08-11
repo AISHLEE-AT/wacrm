@@ -1,97 +1,157 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, ScrollView, ActivityIndicator, Linking } from 'react-native';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
-import { MapPin, Bell, LogOut, KeyRound, Save } from 'lucide-react-native';
+import { MapPin, Bell, LogOut } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { supabase } from '../lib/supabase';
+import { colors, spacing, radius, fontSize } from '../lib/theme';
+
+// ─── Profile Section Components ───
+import { ProfileHeader } from '../components/profile/ProfileHeader';
+import { ContactInfoCard } from '../components/profile/ContactInfoCard';
+import { UpiQrCard } from '../components/profile/UpiQrCard';
+import { DigitalIdCard } from '../components/profile/DigitalIdCard';
+import { DriverStatusCard } from '../components/profile/DriverStatusCard';
+import { SecuritySection } from '../components/profile/SecuritySection';
+import { AppearanceSection } from '../components/profile/AppearanceSection';
+import { SetupChecklist } from '../components/profile/SetupChecklist';
+import { SupportCard } from '../components/profile/SupportCard';
 
 const endpoints = {
   updateProfile: 'https://watscrm.vercel.app/api/profile/update',
 };
 
 export default function DashboardScreen({ navigation }: any) {
-  const { userRole, geminiApiKey, updateGeminiKey } = useContext(AppContext);
+  const {
+    user,
+    userRole,
+    isAdmin,
+    geminiApiKey,
+    updateGeminiKey,
+    themeMode,
+    themeAccent,
+    setThemeMode,
+    setThemeAccent,
+  } = useContext(AppContext);
+
   const [phone, setPhone] = useState<string | null>('');
+  const [dbProfile, setDbProfile] = useState<any>(null);
+  const [driverProfile, setDriverProfile] = useState<any>(null);
   const [isDriver, setIsDriver] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
-  const [tempApiKey, setTempApiKey] = useState(geminiApiKey || '');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isEditingKey, setIsEditingKey] = useState(!geminiApiKey);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  useEffect(() => {
-    setTempApiKey(geminiApiKey || '');
-    if (geminiApiKey) setIsEditingKey(false);
-  }, [geminiApiKey]);
-
-  useEffect(() => {
-    SecureStore.getItemAsync('user-phone').then(async (p) => {
-      setPhone(p);
-      if (p) {
-        // Check if user is a registered driver and sync role to AppContext
-        supabase
-          .from('drivers')
-          .select('id')
-          .or(`mobile_number.eq.${p},whatsapp_number.eq.${p},phone.ilike.%${p.slice(-10)}%`)
-          .limit(1)
-          .then(({ data: driverData }) => {
-            if (driverData && driverData.length > 0) {
-              setIsDriver(true);
-            }
-          }, () => {});
-
-        // Fetch API key just in case it was updated on web or AppContext hasn't reloaded
-        fetch(`https://watscrm.vercel.app/api/auth/check?phone=${p}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.gemini_api_key && data.gemini_api_key !== geminiApiKey) {
-              updateGeminiKey(data.gemini_api_key);
-            }
-          })
-          .catch(() => {});
-
-        // Initialize notifications and get token on load
-        const token = await NotificationService.registerForPushNotificationsAsync();
-        if (token) {
-          setPushToken(token);
-          // Save the token to our Next.js backend
-          fetch(endpoints.updateProfile, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: p, pushToken: token })
-          }).catch(console.error);
-        }
-      }
-    });
-  }, []);
-
-  const handleSaveApiKey = async () => {
-    if (!phone) return;
-    setIsSaving(true);
-    try {
-      const cleanKey = tempApiKey.trim();
-      // 1. Save locally via context
-      await updateGeminiKey(cleanKey);
-      
-      // 2. Sync to Supabase Backend
-      const res = await fetch(endpoints.updateProfile, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, gemini_api_key: cleanKey })
-      });
-      
-      if (!res.ok) throw new Error('Failed to sync to web');
-      
-      Alert.alert('Success', 'Gemini API Key saved and synced successfully!');
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Could not save API key');
-    } finally {
-      setIsSaving(false);
-    }
+  // ─── Format phone for display ───
+  const formatCleanPhone = (raw?: string) => {
+    if (!raw) return '';
+    let clean = raw;
+    if (clean.includes('@')) clean = clean.split('@')[0];
+    clean = clean.replace(/\D/g, '');
+    if (clean.startsWith('91') && clean.length === 12) clean = clean.substring(2);
+    if (clean.length === 10) return `+91 ${clean.substring(0, 5)} ${clean.substring(5)}`;
+    return raw;
   };
 
+  const displayPhone = formatCleanPhone(phone || '');
+
+  // ─── Load profile from Supabase + Realtime subscription ───
+  useEffect(() => {
+    let channel: any = null;
+
+    const initProfile = async () => {
+      const savedPhone = await SecureStore.getItemAsync('user-phone');
+      setPhone(savedPhone);
+
+      if (!savedPhone) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      const cleanPhone = savedPhone.replace(/\D/g, '').slice(-10);
+
+      try {
+        // Fetch full profile from Supabase
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .or(`phone.ilike.%${cleanPhone}%,email.ilike.%${cleanPhone}%`)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (profileData && profileData.length > 0) {
+          setDbProfile(profileData[0]);
+
+          // Set up Realtime subscription for live profile updates
+          channel = supabase
+            .channel(`mobile:profiles:${profileData[0].id}`)
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'profiles' },
+              (payload: any) => {
+                if (payload.new && payload.new.id === profileData[0].id) {
+                  setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
+                }
+              }
+            )
+            .subscribe();
+        }
+
+        // Fetch driver profile
+        const { data: driverData } = await supabase
+          .from('drivers')
+          .select('*')
+          .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (driverData && driverData.length > 0) {
+          setDriverProfile(driverData[0]);
+          setIsDriver(true);
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+
+      // Initialize push notifications
+      const token = await NotificationService.registerForPushNotificationsAsync();
+      if (token) {
+        setPushToken(token);
+        fetch(endpoints.updateProfile, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: savedPhone, pushToken: token }),
+        }).catch(console.error);
+      }
+    };
+
+    initProfile();
+
+    return () => {
+      if (channel) channel.unsubscribe();
+    };
+  }, []);
+
+  // ─── Callback: refresh profile after update ───
+  const handleProfileUpdate = useCallback((updatedProfile: any) => {
+    if (updatedProfile) {
+      setDbProfile((prev: any) => ({ ...prev, ...updatedProfile }));
+    }
+  }, []);
+
+  // ─── GPS Tracking ───
   const toggleTracking = async () => {
     if (isTracking) {
       await LocationService.stopTracking();
@@ -106,6 +166,7 @@ export default function DashboardScreen({ navigation }: any) {
     }
   };
 
+  // ─── Push Notification Test ───
   const handleTestNotification = async () => {
     if (pushToken) {
       await NotificationService.sendTestNotification(pushToken);
@@ -115,6 +176,7 @@ export default function DashboardScreen({ navigation }: any) {
     }
   };
 
+  // ─── Logout ───
   const handleLogout = async () => {
     await LocationService.stopTracking();
     await SecureStore.deleteItemAsync('sb-access-token');
@@ -124,104 +186,197 @@ export default function DashboardScreen({ navigation }: any) {
     navigation.replace('Login');
   };
 
+  // ─── Loading State ───
+  if (isLoadingProfile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color={colors.primary} size="large" />
+        <Text style={styles.loadingText}>Loading Profile...</Text>
+      </View>
+    );
+  }
+
+  const userId = dbProfile?.id || user?.phone || '';
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 60, paddingTop: 60 }}>
-      <Text style={styles.title}>Your Profile</Text>
-      <Text style={styles.subtitle}>+91 {phone} • Role: {userRole}</Text>
-      
-      <View style={styles.card}>
-        <View style={styles.cardHeaderRow}>
-          <Text style={styles.sectionTitle}>AI Helper Configuration</Text>
-          <TouchableOpacity onPress={() => Linking.openURL('https://aistudio.google.com/app/apikey')}>
-            <Text style={styles.linkText}>Get API Key</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.cardDesc}>Enter your Gemini API key to power the AI Assistant in the Inbox tab. It will sync securely across your devices.</Text>
-        
-        {!isEditingKey && geminiApiKey ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: 16, borderRadius: 12, marginTop: 12, borderWidth: 1, borderColor: '#334155' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <KeyRound color="#10b981" size={20} />
-              <Text style={{ color: '#f8fafc', marginLeft: 12, fontSize: 16, fontWeight: '500' }}>
-                Configured (â€¢â€¢â€¢â€¢{geminiApiKey.slice(-4)})
-              </Text>
-            </View>
-            <TouchableOpacity onPress={() => setIsEditingKey(true)}>
-              <Text style={{ color: '#38bdf8', fontSize: 14, fontWeight: '600' }}>Edit</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <View style={styles.inputContainer}>
-              <KeyRound color="#94a3b8" size={20} style={{ marginLeft: 12 }} />
-              <TextInput 
-                style={styles.input}
-                placeholder="AIzaSy..."
-                placeholderTextColor="#475569"
-                secureTextEntry={true}
-                value={tempApiKey}
-                onChangeText={setTempApiKey}
-              />
-            </View>
-            
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveApiKey} disabled={isSaving}>
-              {isSaving ? <ActivityIndicator color="#fff" size="small" /> : <Save color="#fff" size={18} style={{ marginRight: 8 }} />}
-              <Text style={styles.buttonText}>{isSaving ? 'Saving...' : 'Save API Key'}</Text>
-            </TouchableOpacity>
-            
-            {geminiApiKey && (
-              <TouchableOpacity onPress={() => setIsEditingKey(false)} style={{ alignItems: 'center', marginTop: 12 }}>
-                <Text style={{ color: '#94a3b8' }}>Cancel</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        )}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ──── 1. Profile Header (Avatar, Name, Role) ──── */}
+      <ProfileHeader
+        profile={dbProfile}
+        userId={userId}
+        isAdmin={isAdmin}
+        isDriver={isDriver}
+        phone={phone || ''}
+        onProfileUpdate={handleProfileUpdate}
+      />
+
+      {/* ──── 2. Contact & Info Card (Phone, Location, UPI, Gemini Key) ──── */}
+      <ContactInfoCard
+        profile={dbProfile}
+        userId={userId}
+        phone={phone || ''}
+        onProfileUpdate={handleProfileUpdate}
+      />
+
+      {/* ──── 3. Setup Checklist ──── */}
+      <SetupChecklist
+        profile={dbProfile}
+        driverProfile={driverProfile}
+        geminiApiKey={geminiApiKey}
+        pushToken={pushToken}
+      />
+
+      {/* ──── 4. Device Settings (GPS + Push Notifications) ──── */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Device Settings</Text>
+
+        <TouchableOpacity
+          style={[styles.deviceButton, styles.trackButton, isTracking && styles.trackButtonActive]}
+          onPress={toggleTracking}
+          activeOpacity={0.8}
+        >
+          <MapPin color="#fff" size={20} style={{ marginRight: 8 }} />
+          <Text style={styles.buttonText}>
+            {isTracking ? 'Stop GPS Tracking' : 'Start Background GPS Tracking'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.deviceButton, styles.notifyButton]}
+          onPress={handleTestNotification}
+          activeOpacity={0.8}
+        >
+          <Bell color="#fff" size={20} style={{ marginRight: 8 }} />
+          <Text style={styles.buttonText}>Test Push Notification</Text>
+        </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Device Settings</Text>
+      {/* ──── 5. Security (PIN Change) ──── */}
+      <SecuritySection phone={phone || ''} />
 
-      <TouchableOpacity 
-        style={[styles.trackButton, isTracking ? styles.trackButtonActive : null]} 
-        onPress={toggleTracking}
+      {/* ──── 6. Appearance (Theme) ──── */}
+      <AppearanceSection
+        currentMode={themeMode}
+        currentAccent={themeAccent}
+        onModeChange={setThemeMode}
+        onAccentChange={setThemeAccent}
+      />
+
+      {/* ──── 7. UPI QR Code ──── */}
+      <UpiQrCard
+        upiId={dbProfile?.upi_id || ''}
+        fullName={dbProfile?.full_name || user?.name || 'FAGO Partner'}
+        phone={(phone || '').replace(/\D/g, '')}
+      />
+
+      {/* ──── 8. Digital ID ──── */}
+      <DigitalIdCard
+        profile={dbProfile}
+        isAdmin={isAdmin}
+        phone={displayPhone}
+      />
+
+      {/* ──── 9. Driver Status ──── */}
+      <DriverStatusCard
+        driverProfile={driverProfile}
+        fullName={dbProfile?.full_name || user?.name || 'Driver Partner'}
+        navigation={navigation}
+      />
+
+      {/* ──── 10. Support FAGO ──── */}
+      <SupportCard />
+
+      {/* ──── 11. Sign Out ──── */}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+        activeOpacity={0.8}
       >
-        <MapPin color="#fff" size={20} style={{ marginRight: 8 }} />
-        <Text style={styles.buttonText}>
-          {isTracking ? "Stop GPS Tracking" : "Start Background GPS Tracking"}
-        </Text>
+        <LogOut color={colors.destructive} size={20} style={{ marginRight: 8 }} />
+        <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.notifyButton} 
-        onPress={handleTestNotification}
-      >
-        <Bell color="#fff" size={20} style={{ marginRight: 8 }} />
-        <Text style={styles.buttonText}>Test Push Notification</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <LogOut color="#ef4444" size={20} style={{ marginRight: 8 }} />
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      {/* Bottom spacing */}
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0f1e' },
-  title: { fontSize: 28, fontWeight: '900', color: '#10b981', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#94a3b8', marginBottom: 32, fontWeight: 'bold' },
-  sectionTitle: { fontSize: 16, color: '#fff', fontWeight: 'bold', marginBottom: 12 },
-  card: { backgroundColor: '#111827', padding: 20, borderRadius: 16, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(52, 211, 153, 0.2)' },
-  cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  linkText: { color: '#3b82f6', fontSize: 13, fontWeight: 'bold' },
-  cardDesc: { color: '#94a3b8', fontSize: 13, marginBottom: 16, lineHeight: 20 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderRadius: 12, borderWidth: 1, borderColor: '#334155', marginBottom: 16 },
-  input: { flex: 1, color: '#fff', padding: 12, fontSize: 14 },
-  saveButton: { flexDirection: 'row', backgroundColor: '#10b981', padding: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  trackButton: { flexDirection: 'row', backgroundColor: '#3b82f6', padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  trackButtonActive: { backgroundColor: '#eab308' },
-  notifyButton: { flexDirection: 'row', backgroundColor: '#8b5cf6', padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 32 },
-  logoutButton: { flexDirection: 'row', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.3)', alignItems: 'center', justifyContent: 'center' },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
-  logoutText: { color: '#ef4444', fontSize: 15, fontWeight: 'bold' }
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  contentContainer: {
+    padding: spacing.xl,
+    paddingTop: 60,
+    paddingBottom: 80,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: colors.textSecondary,
+    fontSize: fontSize.md,
+    fontWeight: '600',
+  },
+
+  // ─── Device Settings Section ───
+  sectionContainer: {
+    marginBottom: spacing.xxxl,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    color: colors.text,
+    fontWeight: 'bold',
+    marginBottom: spacing.md,
+  },
+  deviceButton: {
+    flexDirection: 'row',
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  trackButton: {
+    backgroundColor: colors.accent,
+  },
+  trackButtonActive: {
+    backgroundColor: colors.amber,
+  },
+  notifyButton: {
+    backgroundColor: colors.purple,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: fontSize.md + 1,
+    fontWeight: 'bold',
+  },
+
+  // ─── Sign Out ───
+  logoutButton: {
+    flexDirection: 'row',
+    backgroundColor: colors.destructiveLight,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.destructiveBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  logoutText: {
+    color: colors.destructive,
+    fontSize: fontSize.md + 1,
+    fontWeight: 'bold',
+  },
 });

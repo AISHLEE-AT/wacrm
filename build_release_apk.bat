@@ -5,15 +5,21 @@ echo =======================================================
 
 echo.
 cd /d "%~dp0\apps\mobile\android"
-call gradlew clean assembleRelease -PreactNativeArchitectures=arm64-v8a
+call gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo =======================================================
+    echo BUILD FAILED! Aborting installation.
+    echo =======================================================
+    exit /b %ERRORLEVEL%
+)
 cd /d "%~dp0"
 
 echo.
 echo =======================================================
 echo Build complete! Installing to connected device...
 echo =======================================================
-adb install -r apps\mobile\android\app\build\outputs\apk\release\app-release.apk
+adb install -r "%~dp0\apps\mobile\android\app\build\outputs\apk\release\app-release.apk"
 
 echo.
 echo Done!
-pause

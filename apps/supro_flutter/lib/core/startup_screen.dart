@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class StartupScreen extends StatefulWidget {
   const StartupScreen({super.key});
 
@@ -19,33 +21,41 @@ class _StartupScreenState extends State<StartupScreen> {
   Future<void> _checkDefaultModule() async {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
+    final prefs = await SharedPreferences.getInstance();
     
     if (user != null) {
+      // Check onboarding completion locally first (fast)
+      final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+      
+      if (!onboardingComplete) {
+        if (mounted) context.go('/onboarding/biometric');
+        return;
+      }
+      
+      // Check if verified driver → default to DriveO
       try {
-        // Find default_module by phone because Flutter app relies on phone-based authentication mapping in this ecosystem
-        // Actually, user.id is fine if they are truly logged in with Supabase JWT. Let's try phone first just in case.
-        // Wait, in auth_provider we used setSession. The user.id is valid. Let's use user.id to be safe and cross-platform.
-        final data = await supabase.from('profiles').select('default_module').eq('id', user.id).maybeSingle();
+        final driverData = await supabase.from('drivers')
+            .select('is_verified').eq('user_id', user.id).maybeSingle();
+        if (driverData != null && driverData['is_verified'] == true) {
+          if (mounted) context.go('/driveo');
+          return;
+        }
+      } catch (e) {}
+      
+      // Existing default module logic
+      try {
+        final data = await supabase.from('profiles').select('default_module')
+            .eq('id', user.id).maybeSingle();
         if (data != null && data['default_module'] != null) {
-          final defaultModule = data['default_module'] as String;
-          String route = defaultModule;
+          String route = data['default_module'] as String;
           if (route == '/rideo') route = '/ride';
           if (route == '/drivo') route = '/driveo';
-          
-          if (mounted) {
-            context.go(route);
-            return;
-          }
+          if (mounted) { context.go(route); return; }
         }
-      } catch (e) {
-        // Fallback on error
-      }
+      } catch (e) {}
     }
     
-    // Fallback
-    if (mounted) {
-      context.go('/home');
-    }
+    if (mounted) context.go('/home');
   }
 
   @override

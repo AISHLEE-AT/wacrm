@@ -1,5 +1,4 @@
 // @ts-nocheck
-import 'react-native-gesture-handler';
 import React, { useContext, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -10,14 +9,8 @@ import {
   BookOpen, MonitorPlay, Wallet, Map,
   MessageSquare, LayoutGrid, User, Bot,
   Shield, Tv, GraduationCap, ShoppingBag,
-  Compass, Zap, Wrench, MapPin, Award, Gamepad2, Car
+  Compass, Zap, Wrench, MapPin
 } from 'lucide-react-native';
-
-const iconMap: Record<string, any> = {
-  Map, MapPin, GraduationCap, Wrench, ShoppingBag, 
-  Compass, Wallet, Tv, BookOpen, MonitorPlay, 
-  Award, Shield, Bot, User, LayoutGrid, MessageSquare, Gamepad2, Car
-};
 
 import LoginScreen      from './src/screens/LoginScreen';
 import CategoryScreen   from './src/screens/CategoryScreen';
@@ -25,8 +18,6 @@ import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import MapScreen        from './src/screens/MapScreen';
 import ChatScreen       from './src/screens/ChatScreen';
-import RideOScreen      from './src/screens/RideOScreen';
-import DriveOScreen     from './src/screens/DriveOScreen';
 import GameOScreen      from './src/screens/GameOScreen';
 import GamingHubScreen  from './src/screens/GamingHubScreen';
 import RewardsScreen    from './src/screens/RewardsScreen';
@@ -37,6 +28,10 @@ import TestOHubScreen   from './src/screens/TestOHubScreen';
 import TestOExamScreen  from './src/screens/TestOExamScreen';
 import TestOResultScreen from './src/screens/TestOResultScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
+
+import OnboardingPermissionsScreen from './src/screens/OnboardingPermissionsScreen';
+import OnboardingProfileScreen from './src/screens/OnboardingProfileScreen';
+import OnboardingModuleScreen from './src/screens/OnboardingModuleScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
 
@@ -108,7 +103,59 @@ function AdminTabs() {
 // ─── User Bottom Tabs ──────────────────────────────────────────────────────
 // Tailors Tab 2 dynamically based on user category (Driver -> DriveO, Student -> TeachO, Farmer -> AgrO, Shopper -> DealO, etc.)
 function UserTabs() {
-  const { recentModules } = useContext(AppContext);
+  const { user } = useContext(AppContext);
+  const category = (user?.category || user?.role || '').toLowerCase();
+  const defaultModulePath = user?.defaultModule;
+
+  let primaryModule = {
+    name: 'PrimaryModule',
+    path: '/rideo',
+    label: 'RideO',
+    icon: Map,
+  };
+
+  const selectedPath = user?.selectedModule || defaultModulePath;
+
+  // First try to match selectedModule / defaultModule if available
+  if (selectedPath === '/drivo') {
+    primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
+  } else if (selectedPath === '/teacho') {
+    primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
+  } else if (selectedPath === '/agro') {
+    primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
+  } else if (selectedPath === '/dealo') {
+    primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+  } else if (selectedPath === '/touro') {
+    primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
+  } else if (selectedPath === '/moneyo') {
+    primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+  } else if (selectedPath === '/gameo') {
+    primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map }; 
+  } else if (selectedPath === '/rento') {
+    primaryModule = { name: 'RentO', path: '/rento', label: 'RentO', icon: Compass }; // fallback icon
+  } else if (selectedPath === '/testo') {
+    primaryModule = { name: 'TestO', path: '/testo', label: 'TestO', icon: GraduationCap }; // fallback icon
+  } else if (selectedPath === '/tvo') {
+    primaryModule = { name: 'TvO', path: '/tvo', label: 'TvO', icon: Tv }; 
+  } else {
+    // Fallback to category-based logic
+    if (category.includes('driver')) {
+      primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
+    } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
+      primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
+    } else if (category.includes('farmer') || category.includes('agri')) {
+      primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
+    } else if (category.includes('shopper') || category.includes('merchant')) {
+      primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+    } else if (category.includes('tourist')) {
+      primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
+    } else if (category.includes('financier')) {
+      primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+    }
+  }
+
+  const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(primaryModule.path);
+  const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${primaryModule.path}` : undefined;
 
   return (
     <Tab.Navigator
@@ -130,32 +177,26 @@ function UserTabs() {
         options={tabOpts('Grid', LayoutGrid)}
       />
 
-      {/* Dynamic Recent Modules */}
-      {recentModules.map((mod: any, index: number) => {
-        const IconComponent = iconMap[mod.iconName] || Map;
-        const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(mod.path);
-        const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${mod.path}` : undefined;
+      {/* 2. User's Tailored Primary Module */}
+      <Tab.Screen
+        name={primaryModule.name}
+        component={EcosystemWebView}
+        initialParams={{ 
+          path: primaryModule.path, 
+          moduleName: primaryModule.label,
+          ...(aishleeUrl ? { url: aishleeUrl } : {})
+        }}
+        options={tabOpts(primaryModule.label, primaryModule.icon)}
+      />
 
-        // Custom direct-screen mapping for some modules if needed, or fallback to EcosystemWebView
-        // Actually for RideO, GameO, AgrO, TeachO we have dedicated screens, but the Tab Navigator handles the WebViews mainly, 
-        // and screens are rendered by the stack navigator. Wait, the previous primaryModule just mapped to EcosystemWebView always.
-        
-        return (
-          <Tab.Screen
-            key={`tab-${mod.name}-${index}`}
-            name={mod.name}
-            component={EcosystemWebView}
-            initialParams={{ 
-              path: mod.path, 
-              moduleName: mod.label,
-              ...(aishleeUrl ? { url: aishleeUrl } : {})
-            }}
-            options={tabOpts(mod.label, IconComponent)}
-          />
-        );
-      })}
+      {/* 3. AI Assistant */}
+      <Tab.Screen
+        name="AIBot"
+        component={ChatScreen}
+        options={tabOpts('AI Assistant', Bot)}
+      />
 
-      {/* Profile */}
+      {/* 4. Profile */}
       <Tab.Screen
         name="DashboardTab"
         component={DashboardScreen}
@@ -186,6 +227,9 @@ function RootNavigator() {
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="OnboardingPermissions" component={OnboardingPermissionsScreen} />
+      <Stack.Screen name="OnboardingProfile" component={OnboardingProfileScreen} />
+      <Stack.Screen name="OnboardingModule" component={OnboardingModuleScreen} />
       <Stack.Screen
         name="Dashboard"
         component={isAdmin ? AdminTabs : UserTabs}
@@ -195,8 +239,6 @@ function RootNavigator() {
         name="ModuleView"
         component={EcosystemWebView}
       />
-      <Stack.Screen name="RideOScreen" component={RideOScreen} />
-      <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
       <Stack.Screen name="GameOScreen" component={GameOScreen} />
       <Stack.Screen name="MapRacer3DScreen" component={MapRacer3DScreen} />
       <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />

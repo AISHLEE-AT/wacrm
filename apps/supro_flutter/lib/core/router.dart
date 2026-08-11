@@ -10,6 +10,11 @@ import 'module_webview.dart';
 import '../features/gaming_hub/screens/gaming_hub_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import 'startup_screen.dart';
+import '../features/onboarding/screens/biometric_setup_screen.dart';
+import '../features/onboarding/screens/permissions_screen.dart';
+import '../features/onboarding/screens/profile_setup_screen.dart';
+import '../features/onboarding/screens/module_selector_screen.dart';
+import '../features/driveo/screens/driveo_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -29,6 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/startup', builder: (context, state) => const StartupScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/onboarding/biometric', builder: (_, __) => const BiometricSetupScreen()),
+      GoRoute(path: '/onboarding/permissions', builder: (_, __) => const PermissionsScreen()),
+      GoRoute(path: '/onboarding/profile', builder: (_, __) => const ProfileSetupScreen()),
+      GoRoute(path: '/onboarding/modules', builder: (_, __) => const ModuleSelectorScreen()),
       ShellRoute(
         builder: (context, state, child) => MainLayout(child: child),
         routes: [
@@ -36,7 +45,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
           GoRoute(path: '/ride', builder: (context, state) => const RideScreen()),
           GoRoute(path: '/admin', builder: (context, state) => const ModuleWebView(path: '/admin')),
-          GoRoute(path: '/driveo', builder: (context, state) => const ModuleWebView(path: '/drivo')),
+          GoRoute(path: '/driveo', builder: (context, state) => const DriveoScreen()),
           GoRoute(path: '/dealo', builder: (context, state) => const ModuleWebView(path: '/dealo')),
           GoRoute(path: '/teacho', builder: (context, state) => const ModuleWebView(path: '/teacho')),
           GoRoute(path: '/rento', builder: (context, state) => const ModuleWebView(path: '/rento')),
@@ -46,7 +55,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/tvo', builder: (context, state) => const ModuleWebView(path: '/tvo')),
           GoRoute(path: '/moneyo', builder: (context, state) => const ModuleWebView(path: '/moneyo')),
           GoRoute(path: '/gameo', builder: (context, state) => const ModuleWebView(path: '/gameo')),
-          GoRoute(path: '/ai-bot', builder: (context, state) => const ModuleWebView(path: '/toolso?tab=gemini')),
           GoRoute(path: '/gaming_hub', builder: (context, state) => const GamingHubScreen()),
         ],
       ),

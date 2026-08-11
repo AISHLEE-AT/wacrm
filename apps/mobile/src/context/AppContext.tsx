@@ -1,6 +1,6 @@
+// @ts-nocheck
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from '../lib/supabase';
 
 // Admin phone numbers (same as web app)
 const ADMIN_PHONES = ['6381029380', '9876543210', '9486335870'];
@@ -13,21 +13,20 @@ export interface AppUser {
   isAdmin: boolean;
   accessToken: string | null;
   refreshToken?: string | null;
+  defaultModule?: string | null;
+  selectedModule?: string | null;
 }
 
 export const AppContext = createContext<any>(null);
 
+import { supabase } from '../lib/supabase';
+
 export const AppProvider = ({ children }: any) => {
-  const [recentModules, setRecentModules] = useState<any[]>([{
-    id: 'map',
-    name: 'map',
-    path: '/',
-    label: 'Map',
-    iconName: 'Map'
-  }]);
+  const [recentModules, setRecentModules] = useState<string[]>(['Map']);
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
 
   // Derived shorthand for components still using userRole
   const userRole = user?.isAdmin ? 'admin' : (user?.role ?? 'user');
@@ -38,16 +37,7 @@ export const AppProvider = ({ children }: any) => {
       try {
         // Load all persisted user state
         const savedModules = await SecureStore.getItemAsync('recent-modules');
-        if (savedModules) {
-          const parsed = JSON.parse(savedModules);
-          // ensure it's objects
-          const normalized = parsed.map((m: any) => 
-            typeof m === 'string' 
-              ? { id: m, name: m, path: `/${m.toLowerCase()}`, label: m, iconName: 'Map' } 
-              : m
-          );
-          setRecentModules(normalized);
-        }
+        if (savedModules) setRecentModules(JSON.parse(savedModules));
 
         const phone = await SecureStore.getItemAsync('user-phone');
         const name = await SecureStore.getItemAsync('user-name');
@@ -56,9 +46,23 @@ export const AppProvider = ({ children }: any) => {
         const accessToken = await SecureStore.getItemAsync('sb-access-token');
         const refreshToken = await SecureStore.getItemAsync('sb-refresh-token');
         const apiKey = await SecureStore.getItemAsync('gemini-api-key');
+        let defaultModule = await SecureStore.getItemAsync('user-default-module');
+        const selectedModule = await SecureStore.getItemAsync('user-selected-module');
+        const onboardingDone = await SecureStore.getItemAsync('onboarding-complete');
+        setOnboardingComplete(onboardingDone === 'true');
 
         if (phone) {
           const adminStatus = ADMIN_PHONES.includes(phone);
+
+          // Fetch the latest default_module from Supabase to sync across devices
+          try {
+            const { data } = await supabase.from('profiles').select('default_module').eq('phone', phone).single();
+            if (data?.default_module) {
+              defaultModule = data.default_module;
+              await SecureStore.setItemAsync('user-default-module', defaultModule);
+            }
+          } catch(e) {}
+
           setUser({
             phone,
             name: name ?? '',
@@ -67,28 +71,9 @@ export const AppProvider = ({ children }: any) => {
             isAdmin: adminStatus || role === 'admin' || category === 'Admin',
             accessToken,
             refreshToken,
+            defaultModule,
+            selectedModule,
           });
-
-          // Auto-detect if user is a registered driver partner
-          const safePhone = String(phone || '');
-          const phoneSuffix = safePhone.length >= 10 ? safePhone.slice(-10) : safePhone;
-          supabase
-            .from('drivers')
-            .select('id, vehicle_type')
-            .or(`mobile_number.eq.${safePhone},whatsapp_number.eq.${safePhone},phone.ilike.%${phoneSuffix}%`)
-            .limit(1)
-            .then(({ data: driverData }) => {
-              if (driverData && driverData.length > 0) {
-                // User is a registered driver — update role and category
-                setUser(prev => prev ? {
-                  ...prev,
-                  role: 'driver',
-                  category: 'Driver',
-                } : null);
-                SecureStore.setItemAsync('user-role', 'driver');
-                SecureStore.setItemAsync('user-category', 'Driver');
-              }
-            }, () => {});
 
           // Background sync API key from server across all devices
           fetch(`https://watscrm.vercel.app/api/auth/check?phone=${phone}`)
@@ -124,29 +109,10 @@ export const AppProvider = ({ children }: any) => {
       isAdmin: adminStatus,
       accessToken: userData.accessToken ?? null,
       refreshToken: userData.refreshToken ?? null,
+      selectedModule: userData.selectedModule ?? null,
     };
 
     setUser(fullUser);
-
-    // Auto-detect if user is a registered driver partner
-    const safePhone = String(phone || '');
-    const phoneSuffix = safePhone.length >= 10 ? safePhone.slice(-10) : safePhone;
-    supabase
-      .from('drivers')
-      .select('id, vehicle_type')
-      .or(`mobile_number.eq.${safePhone},whatsapp_number.eq.${safePhone},phone.ilike.%${phoneSuffix}%`)
-      .limit(1)
-      .then(({ data: driverData }) => {
-        if (driverData && driverData.length > 0) {
-          setUser(prev => prev ? {
-            ...prev,
-            role: 'driver',
-            category: 'Driver',
-          } : null);
-          SecureStore.setItemAsync('user-role', 'driver');
-          SecureStore.setItemAsync('user-category', 'Driver');
-        }
-      }, () => {});
 
     // Persist
     await SecureStore.setItemAsync('user-phone', phone);
@@ -163,6 +129,9 @@ export const AppProvider = ({ children }: any) => {
       setGeminiApiKey(userData.geminiApiKey);
       await SecureStore.setItemAsync('gemini-api-key', userData.geminiApiKey);
     }
+    if (userData.selectedModule) {
+      await SecureStore.setItemAsync('user-selected-module', userData.selectedModule);
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -174,16 +143,13 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.deleteItemAsync('user-role');
     await SecureStore.deleteItemAsync('user-category');
     await SecureStore.deleteItemAsync('gemini-api-key');
+    await SecureStore.deleteItemAsync('user-selected-module');
+    await SecureStore.deleteItemAsync('onboarding-complete');
+    setOnboardingComplete(false);
   }, []);
 
-  const addRecentModule = useCallback(async (moduleData: any) => {
-    let updated = [];
-    if (typeof moduleData === 'string') {
-       const newObj = { id: moduleData, name: moduleData, path: `/${moduleData.toLowerCase()}`, label: moduleData, iconName: 'Map' };
-       updated = [newObj, ...recentModules.filter(m => (m.name || m) !== moduleData && (m.id || m) !== moduleData)];
-    } else {
-       updated = [moduleData, ...recentModules.filter(m => m.name !== moduleData.name && m.id !== moduleData.id)];
-    }
+  const addRecentModule = useCallback(async (moduleName: string) => {
+    let updated = [moduleName, ...recentModules.filter(m => m !== moduleName)];
     if (updated.length > 3) updated = updated.slice(0, 3);
     setRecentModules(updated);
     await SecureStore.setItemAsync('recent-modules', JSON.stringify(updated));
@@ -192,6 +158,11 @@ export const AppProvider = ({ children }: any) => {
   const updateGeminiKey = useCallback(async (key: string) => {
     setGeminiApiKey(key);
     await SecureStore.setItemAsync('gemini-api-key', key);
+  }, []);
+
+  const setSelectedModule = useCallback(async (modulePath: string) => {
+    setUser(prev => prev ? { ...prev, selectedModule: modulePath } : null);
+    await SecureStore.setItemAsync('user-selected-module', modulePath);
   }, []);
 
   return (
@@ -206,6 +177,8 @@ export const AppProvider = ({ children }: any) => {
       addRecentModule,
       geminiApiKey,
       updateGeminiKey,
+      onboardingComplete,
+      setSelectedModule,
       // Legacy compat
       setUserRole: (role: string) => setUser(prev => prev ? { ...prev, role } : null),
     }}>

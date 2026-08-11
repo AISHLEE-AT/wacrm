@@ -1,4 +1,4 @@
-Ôªøimport 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
@@ -36,10 +36,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   late Animation<double> _pulseAnimation;
 
   final List<Map<String, String>> categories = [
-    {'key': 'Admin', 'label': 'üëë Admin (CRM)'},
-    {'key': 'Traveller', 'label': 'üß≥ Traveller'},
-    {'key': 'Farmer', 'label': 'üöú Farmer'},
-    {'key': 'Shopper', 'label': 'üõçÔ∏è Shopper'},
+    {'key': 'Admin', 'label': '?? Admin (CRM)'},
+    {'key': 'Traveller', 'label': '?? Traveller'},
+    {'key': 'Farmer', 'label': '?? Farmer'},
+    {'key': 'Shopper', 'label': '??? Shopper'},
   ];
 
   @override
@@ -123,7 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       if (res['needs_pin_setup'] == true) {
         setState(() => _step = AuthStep.setPin);
       } else {
-        if (mounted) context.go('/dashboard');
+        if (mounted) context.go('/startup');
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
@@ -137,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         phone: _phoneController.text,
         pin: _pinController.text,
       );
-      if (mounted) context.go('/dashboard');
+      if (mounted) context.go('/startup');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
     }
@@ -151,7 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         pin: _newPinController.text,
         confirmPin: _confirmPinController.text,
       );
-      if (mounted) context.go('/dashboard');
+      if (mounted) context.go('/startup');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
     }
@@ -273,7 +273,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
         ),
         const SizedBox(height: 12),
         const Text(
-          '‚ú¶ FOR LOCAL NEEDS ‚ú¶',
+          '? FOR LOCAL NEEDS ?',
           style: TextStyle(
             color: Color(0xFFF59E0B),
             fontSize: 11,
@@ -494,14 +494,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 6,
           style: const TextStyle(fontSize: 32, letterSpacing: 12, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢'),
+          decoration: _buildInputDecoration('ïïïïïï'),
         ),
         const SizedBox(height: 32),
         _buildPrimaryButton('Verify OTP & Continue', LucideIcons.shieldCheck, isLoading ? null : _verifyOtp, isLoading),
         const SizedBox(height: 16),
         TextButton(
           onPressed: () => setState(() => _step = AuthStep.phone), 
-          child: const Center(child: Text('‚Üê Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
+          child: const Center(child: Text('? Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
         )
       ],
     );
@@ -522,14 +522,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 4,
           style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('‚Ä¢‚Ä¢‚Ä¢‚Ä¢'),
+          decoration: _buildInputDecoration('ïïïï'),
         ),
         const SizedBox(height: 32),
         _buildPrimaryButton('Sign In with PIN', LucideIcons.unlock, isLoading ? null : _loginWithPin, isLoading),
         const SizedBox(height: 16),
         TextButton(
           onPressed: () => setState(() => _step = AuthStep.phone), 
-          child: const Center(child: Text('‚Üê Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
+          child: const Center(child: Text('? Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
         )
       ],
     );
@@ -549,7 +549,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 4,
           style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('‚Ä¢‚Ä¢‚Ä¢‚Ä¢'),
+          decoration: _buildInputDecoration('ïïïï'),
         ),
         const SizedBox(height: 20),
         _buildInputLabel('CONFIRM PIN'),
@@ -561,7 +561,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 4,
           style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('‚Ä¢‚Ä¢‚Ä¢‚Ä¢'),
+          decoration: _buildInputDecoration('ïïïï'),
         ),
         const SizedBox(height: 32),
         _buildPrimaryButton('Save PIN & Continue', LucideIcons.save, isLoading ? null : _setPin, isLoading),
