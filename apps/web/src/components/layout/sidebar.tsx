@@ -102,7 +102,6 @@ const adminItems: NavItem[] = [
   { href: "/admin", label: "Admin Overview", icon: Shield },
   { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
   { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
-  { href: "/admin/daily-news", label: "Daily News Manager", icon: Newspaper },
 ];
 
 const bottomNavItems = [

@@ -5,18 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// ─── RSS Feed config ──────────────────────────────────────────────────────────
-const RSS_FEEDS = [
-  { module: 'agro',    name: 'Dinamalar Vivasayam', url: 'https://www.dinamalar.com/rss_vivasayam.asp' },
-  { module: 'teacho',  name: 'Dinamalar Kalvi',     url: 'https://www.dinamalar.com/rss_kalvi.asp' },
-  { module: 'dealo',   name: 'Dinamalar Vanikam',   url: 'https://www.dinamalar.com/rss_vanikam.asp' },
-  { module: 'jobo',    name: 'Dinamalar Thozil',    url: 'https://www.dinamalar.com/rss_thozil.asp' },
-  { module: 'testo',   name: 'Dinamalar Health',    url: 'https://www.dinamalar.com/rss_health.asp' },
-  { module: 'general', name: 'Dinamalar Main',      url: 'https://www.dinamalar.com/rss.asp' },
-  { module: 'general', name: 'BBC Tamil',           url: 'https://feeds.bbci.co.uk/tamil/rss.xml' },
-  { module: 'general', name: 'OneIndia Tamil',      url: 'https://tamil.oneindia.com/rss/tamil-news-fb.xml' },
-  { module: 'driveo',  name: 'OneIndia Auto',       url: 'https://tamil.oneindia.com/rss/auto-news.xml' },
-];
+// ─── Only fetching government data for AgrO & DealO ─────────────────────────
 
 const GOV_API_KEY = '579b464db66ec23bdd0000010e0f365c1ff840af51b6b8944d54f72b';
 
@@ -24,12 +13,7 @@ function todayString() {
   return new Date().toISOString().split('T')[0];
 }
 
-function extractTag(xml: string, tag: string): string {
-  const cdata = xml.match(new RegExp(`<${tag}><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`));
-  if (cdata) return cdata[1].trim();
-  const plain = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
-  return plain ? plain[1].trim() : '';
-}
+
 
 export async function GET() {
   const today = todayString();
@@ -48,43 +32,7 @@ export async function GET() {
   const allItems: Record<string, unknown>[] = [];
   const log: string[] = [];
 
-  // ── 1. RSS Feeds ─────────────────────────────────────────────────────────
-  for (const feed of RSS_FEEDS) {
-    try {
-      const res = await fetch(feed.url, { signal: AbortSignal.timeout(10000) });
-      if (!res.ok) continue;
-      const body = await res.text();
-      const items = [...body.matchAll(/<item>([\s\S]*?)<\/item>/g)];
-
-      for (const [, itemXml] of items) {
-        const title   = extractTag(itemXml, 'title');
-        const link    = extractTag(itemXml, 'link');
-        const pubDate = extractTag(itemXml, 'pubDate');
-        let   desc    = extractTag(itemXml, 'description');
-
-        let imageUrl: string | null = null;
-        const enc = itemXml.match(/enclosure[^>]+url="([^"]+)"/);
-        if (enc) imageUrl = enc[1];
-        else {
-          const img = desc.match(/src="([^"]+\.(jpg|jpeg|png|webp))"/i);
-          if (img) imageUrl = img[1];
-        }
-
-        desc = desc.replace(/<[^>]*>|&[^;]+;/g, '').trim();
-        if (desc.length > 200) desc = desc.slice(0, 200) + '...';
-
-        if (title) {
-          allItems.push({
-            module: feed.module, title: title.trim(), description: desc,
-            image_url: imageUrl, source_name: feed.name,
-            link: link.trim(), published_date: pubDate.trim(),
-            loaded_date: today, data_type: 'rss',
-          });
-        }
-      }
-      log.push(`✅ ${feed.name}: ${items.length} items`);
-    } catch (e) { log.push(`❌ ${feed.name}: ${e}`); }
-  }
+  // RSS feature has been removed as per request.
 
   // ── 2. data.gov.in — Mandi Prices (AgrO) ────────────────────────────────
   try {
