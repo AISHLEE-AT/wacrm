@@ -133,10 +133,10 @@ export default function AdminDriversPage() {
 
   const filteredDrivers = drivers.filter(
     (d) =>
-      d.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      d.phone.includes(search) ||
-      d.license_number.toLowerCase().includes(search.toLowerCase()) ||
-      d.rc_number.toLowerCase().includes(search.toLowerCase())
+      String(d.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
+      String(d.phone || '').toLowerCase().includes(search.toLowerCase()) ||
+      String(d.license_number || '').toLowerCase().includes(search.toLowerCase()) ||
+      String(d.rc_number || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -180,7 +180,7 @@ export default function AdminDriversPage() {
             placeholder="Search driver by name, phone, DL, or RC..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none shadow-sm"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none shadow-sm"
           />
         </div>
         <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex items-center justify-between">
