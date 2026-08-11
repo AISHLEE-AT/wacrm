@@ -42,8 +42,12 @@ export default function AishleeEmbed({
 
   const cleanModule = path.replace(/^\//, '');
 
-  // Build the complete SSO iframe URL with embed=true, phone, name, access_token, refresh_token
-  const iframeUrl = buildAishleeIframeUrl(cleanModule, user, profile, session);
+  // Build the complete SSO iframe URL with embed=true, phone, name, access_token, refresh_token, and gemini_api_key
+  const extraParams: Record<string, string> = {};
+  if (profile?.gemini_api_key) {
+    extraParams.gemini_api_key = profile.gemini_api_key;
+  }
+  const iframeUrl = buildAishleeIframeUrl(cleanModule, user, profile, session, extraParams);
 
   const handleLoad = useCallback(() => {
     setLoading(false);
