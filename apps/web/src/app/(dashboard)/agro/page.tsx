@@ -3,8 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect } from 'react';
-import { Store, TrendingUp, Sprout, Landmark, Newspaper, ExternalLink, Zap } from 'lucide-react';
-import { fetchDailyNewsForModule, DailyNewsItem } from '@/lib/daily-news';
+import { Store, TrendingUp, Sprout, Landmark, Newspaper, ExternalLink, Zap, Bot, Loader2 } from 'lucide-react';
+import { fetchDailyNewsForModule, DailyNewsItem, saveAiSummary } from '@/lib/daily-news';
 import MarketPriceBoard from '@/components/news/MarketPriceBoard';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -26,6 +26,45 @@ export default function AgroPage() {
   const [newsItems, setNewsItems] = useState<DailyNewsItem[]>([]);
   const [loadingNews, setLoadingNews] = useState(true);
   const { profile } = useAuth(); // Import useAuth to get user's district
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateWeeklyNews = async () => {
+    setIsGenerating(true);
+    try {
+      // 1. Fetch raw mandi data
+      const res = await fetch('/api/load-daily-news');
+      if (!res.ok) throw new Error('Failed to load mandi data');
+      
+      const allNews = await fetchDailyNewsForModule('agro');
+      const mandiData = allNews.filter(n => n.data_type === 'mandi').slice(0, 50); // limit for prompt size
+      
+      const promptData = mandiData.map(n => n.description).join('\n');
+      
+      const aiRes = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Recent Tamil Nadu Govt Mandi Data:\n${promptData}`,
+          type: 'weekly_agro_news',
+        })
+      });
+      
+      if (!aiRes.ok) throw new Error('Failed to generate AI relay');
+      const { result } = await aiRes.json();
+      
+      // Save it as weekly_ai_news
+      await saveAiSummary('agro', 'Weekly AI Agro & Market News Relay', result);
+      
+      // Reload news
+      const updatedNews = await fetchDailyNewsForModule('agro');
+      setNewsItems(updatedNews.filter(item => item.data_type !== 'mandi'));
+    } catch (e) {
+      console.error(e);
+      alert('Failed to generate weekly news relay. Please ensure you have your Gemini API Key set in your profile.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   useEffect(() => {
     fetchDailyNewsForModule('agro').then(items => {
@@ -75,13 +114,25 @@ export default function AgroPage() {
         </div>
       </div>
 
-      {/* ── TODAY'S NEWS (Admin-curated, 6 AM daily) ── */}
+      {/* ── TODAY'S NEWS & WEEKLY RELAY ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <Newspaper className="w-4 h-4" /> Today's Agriculture News
+            <Newspaper className="w-4 h-4" /> Weekly News Relay & Insights
           </h3>
-          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">Updated 6 AM daily</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">Updated 6 AM daily</span>
+            {profile?.role === 'admin' && (
+              <button 
+                onClick={generateWeeklyNews}
+                disabled={isGenerating}
+                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
+                Generate Weekly AI Relay
+              </button>
+            )}
+          </div>
         </div>
 
         {loadingNews ? (
@@ -107,7 +158,7 @@ export default function AgroPage() {
                   target={item.link ? '_blank' : '_self'}
                   rel="noopener noreferrer"
                   className={`bg-slate-900/90 border rounded-2xl overflow-hidden flex flex-col transition-colors group ${
-                    isAiSummary ? 'border-purple-500/50 hover:border-purple-400' :
+                    isAiSummary || item.data_type === 'weekly_ai_news' ? 'border-purple-500/50 hover:border-purple-400' :
                     isGovt ? 'border-emerald-500/30 hover:border-emerald-500/50' : 'border-slate-800 hover:border-slate-600'
                   }`}
                 >
@@ -116,10 +167,10 @@ export default function AgroPage() {
                     <img src={item.image_url} alt={item.title} className="w-full h-36 object-cover" />
                   )}
                   
-                  {isAiSummary && (
+                  {(isAiSummary || item.data_type === 'weekly_ai_news') && (
                     <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 border-b border-purple-500/20">
                       <Zap className="w-3 h-3 text-purple-400" />
-                      <span className="text-xs text-purple-400 font-bold">🤖 SuprO AI Analysis</span>
+                      <span className="text-xs text-purple-400 font-bold">🤖 SuprO AI {item.data_type === 'weekly_ai_news' ? 'Weekly Relay' : 'Analysis'}</span>
                     </div>
                   )}
 
@@ -133,10 +184,10 @@ export default function AgroPage() {
                   <div className="p-4 flex flex-col gap-2 flex-1">
                     <div className="flex items-center justify-between">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                        isAiSummary ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' :
+                        (isAiSummary || item.data_type === 'weekly_ai_news') ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' :
                         isGovt ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
                       }`}>
-                        {isAiSummary ? '🤖 AI Insight' : isGovt ? '🏛️ Govt' : item.source_name}
+                        {(isAiSummary || item.data_type === 'weekly_ai_news') ? '🤖 AI Insight' : isGovt ? '🏛️ Govt' : item.source_name}
                       </span>
                       {item.link && <ExternalLink className="w-3 h-3 text-slate-600 group-hover:text-emerald-400 transition-colors" />}
                     </div>

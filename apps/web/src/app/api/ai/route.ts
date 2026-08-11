@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
       systemPrompt = 'You are an expert document summarizer. Extract the most important key points from the following text and present them as a bulleted list:\n\n';
     } else if (type === 'market_summary') {
       systemPrompt = 'You are an expert agriculture market analyst for Tamil Nadu. Analyze the following raw market data and write a concise, helpful daily summary for farmers and traders. Highlight major trends, high/low prices, or notable changes:\n\n';
+    } else if (type === 'weekly_agro_news') {
+      systemPrompt = 'You are an expert Indian Agriculture News Analyst. Based on the following raw government market data, generate a comprehensive "Weekly Agro News Relay". Focus heavily on Tamil Nadu related news and Indian level important updates. Format the output with clear headings, bullet points, and actionable insights for farmers.\n\n';
     } else {
       systemPrompt = 'You are Gemini AI, a helpful and knowledgeable assistant built into the SuprO Local Ecosystem platform. Answer the following query clearly and concisely:\n\n';
     }
