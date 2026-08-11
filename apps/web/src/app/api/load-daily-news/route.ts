@@ -89,8 +89,8 @@ export async function GET() {
   // ── 2. data.gov.in — Mandi Prices (AgrO) ────────────────────────────────
   try {
     const res = await fetch(
-      `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${GOV_API_KEY}&format=json&filters[state]=Tamil+Nadu&limit=25`,
-      { signal: AbortSignal.timeout(15000) }
+      `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=${GOV_API_KEY}&format=json&filters[state]=Tamil+Nadu&limit=1000`,
+      { signal: AbortSignal.timeout(20000) } // increased timeout for larger payload
     );
     if (res.ok) {
       const data = await res.json();
@@ -105,7 +105,7 @@ export async function GET() {
           extra_data: { commodity: r.commodity, market: r.market, district: r.district, modal_price: r.modal_price },
         });
       }
-      log.push(`✅ Mandi: ${data.records?.length ?? 0} records`);
+      log.push(`✅ Mandi: ${data.records?.length ?? 0} records fetched`);
     }
   } catch (e) { log.push(`❌ Mandi API: ${e}`); }
 

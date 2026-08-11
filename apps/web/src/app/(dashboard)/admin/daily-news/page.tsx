@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Newspaper, RefreshCw, Landmark, Rss, Download, CheckCircle2, AlertCircle, Clock, Zap } from 'lucide-react';
 import { fetchAllTodayNews, DailyNewsItem, MODULE_META } from '@/lib/daily-news';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 
 const MODULE_FILTERS = [
   { key: 'all',     emoji: '📦', label: 'All' },
@@ -22,6 +24,11 @@ export default function AdminDailyNewsPage() {
   const [loadResult, setLoadResult] = useState<{ saved: number; total: number; log: string[]; message?: string } | null>(null);
   const [selectedModule, setSelectedModule] = useState('all');
 
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiSummary, setAiSummary] = useState('');
+  const [publishLoading, setPublishLoading] = useState(false);
+
+  const { profile } = useAuth();
   const today = new Date();
   const dateStr = today.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -57,6 +64,60 @@ export default function AdminDailyNewsPage() {
   const display = selectedModule === 'all'
     ? items
     : items.filter(i => i.module === selectedModule);
+
+  const handleGenerateSummary = async () => {
+    setGeneratingAi(true);
+    try {
+      const mandiItems = items.filter(i => i.data_type === 'mandi');
+      if (mandiItems.length === 0) {
+        alert('No mandi prices available to summarize.');
+        setGeneratingAi(false);
+        return;
+      }
+      
+      const promptData = mandiItems.map(i => `${i.extra_data?.commodity} in ${i.extra_data?.district}: ₹${i.extra_data?.modal_price}`).join(', ');
+      
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Today's market data: ${promptData}`,
+          type: 'market_summary',
+          apiKey: profile?.gemini_api_key
+        })
+      });
+      const data = await res.json();
+      if (data.result) setAiSummary(data.result);
+      else alert(data.error || 'Failed to generate');
+    } catch (e) {
+      alert('Error generating summary');
+    }
+    setGeneratingAi(false);
+  };
+
+  const handlePublishSummary = async () => {
+    if (!aiSummary) return;
+    setPublishLoading(true);
+    const supabase = createClient();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { error } = await supabase.from('daily_news').insert({
+      module: 'agro',
+      title: '🤖 AI Market Insights for Today',
+      description: aiSummary,
+      source_name: 'SuprO AI Analysis',
+      published_date: todayStr,
+      loaded_date: todayStr,
+      data_type: 'ai_summary'
+    });
+    setPublishLoading(false);
+    if (!error) {
+      alert('Published successfully!');
+      setAiSummary('');
+      refresh();
+    } else {
+      alert('Failed to publish: ' + error.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 space-y-6">
@@ -172,6 +233,41 @@ export default function AdminDailyNewsPage() {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* AI Summary Tool (Only for Agro) */}
+      {selectedModule === 'agro' && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-emerald-400 flex items-center gap-2">
+              <Zap className="w-5 h-5" /> Generate AI Market Insights (AgrO)
+            </h3>
+            <button
+              onClick={handleGenerateSummary}
+              disabled={generatingAi}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 flex items-center gap-2"
+            >
+              {generatingAi ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Generate Summary'}
+            </button>
+          </div>
+          
+          {aiSummary && (
+            <div className="space-y-3">
+              <textarea
+                value={aiSummary}
+                onChange={e => setAiSummary(e.target.value)}
+                className="w-full bg-slate-900 border border-emerald-500/30 rounded-xl p-3 text-sm text-slate-200 h-32 focus:outline-none focus:border-emerald-500"
+              />
+              <button
+                onClick={handlePublishSummary}
+                disabled={publishLoading}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50 w-full"
+              >
+                {publishLoading ? 'Publishing...' : 'Publish Insight to All Users'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

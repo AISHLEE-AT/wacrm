@@ -24,6 +24,8 @@ export async function POST(req: NextRequest) {
       systemPrompt = 'You are a professional WhatsApp business auto-reply generator. Write a concise, polite, and helpful auto-reply for the following scenario/message:\n\n';
     } else if (type === 'summarize') {
       systemPrompt = 'You are an expert document summarizer. Extract the most important key points from the following text and present them as a bulleted list:\n\n';
+    } else if (type === 'market_summary') {
+      systemPrompt = 'You are an expert agriculture market analyst for Tamil Nadu. Analyze the following raw market data and write a concise, helpful daily summary for farmers and traders. Highlight major trends, high/low prices, or notable changes:\n\n';
     } else {
       systemPrompt = 'You are Gemini AI, a helpful and knowledgeable assistant built into the SuprO Local Ecosystem platform. Answer the following query clearly and concisely:\n\n';
     }
