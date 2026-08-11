@@ -48,22 +48,7 @@ export function buildAishleeIframeUrl(
     ...extra,
   });
 
-  // ── 4. Session tokens ─────────────────────────────────────────────────────
-  // NOTE: For modules like 'teacho' and 'testo' that query LMS Supabase (jjgdatjthyeesmgunnlp),
-  // we do NOT append SuprO Supabase access_tokens (gmahjdzqitbomtmdzlfp), because token mismatch
-  // causes LMS Supabase to reject requests with 401, resulting in "No Courses Found" or broken video players.
-  const isLmsModule = cleanModule.includes('teacho') || cleanModule.includes('testo');
-
   let url = `https://thamizhan.vercel.app/${cleanModule}?${params.toString()}`;
-
-  if (session?.access_token && !isLmsModule) {
-    url +=
-      `&access_token=${encodeURIComponent(session.access_token)}` +
-      `&refresh_token=${encodeURIComponent(session.refresh_token)}` +
-      `#access_token=${session.access_token}` +
-      `&refresh_token=${session.refresh_token}` +
-      `&token_type=bearer`;
-  }
 
   return url;
 }
