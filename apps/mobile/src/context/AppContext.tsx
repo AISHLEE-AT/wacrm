@@ -28,6 +28,20 @@ export const AppProvider = ({ children }: any) => {
   const [isLoading, setIsLoading] = useState(true);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
 
+  // Theme state
+  const [themeMode, setThemeModeState] = useState<'light'|'dark'>('dark');
+  const [themeAccent, setThemeAccentState] = useState<string>('Teal');
+
+  const setThemeMode = useCallback(async (mode: 'light'|'dark') => {
+    setThemeModeState(mode);
+    await SecureStore.setItemAsync('theme-mode', mode);
+  }, []);
+
+  const setThemeAccent = useCallback(async (accent: string) => {
+    setThemeAccentState(accent);
+    await SecureStore.setItemAsync('theme-accent', accent);
+  }, []);
+
   // Derived shorthand for components still using userRole
   const userRole = user?.isAdmin ? 'admin' : (user?.role ?? 'user');
   const isAdmin = user?.isAdmin ?? false;
@@ -35,9 +49,14 @@ export const AppProvider = ({ children }: any) => {
   useEffect(() => {
     const loadState = async () => {
       try {
-        // Load all persisted user state
         const savedModules = await SecureStore.getItemAsync('recent-modules');
         if (savedModules) setRecentModules(JSON.parse(savedModules));
+
+        const savedThemeMode = await SecureStore.getItemAsync('theme-mode');
+        if (savedThemeMode === 'light' || savedThemeMode === 'dark') setThemeModeState(savedThemeMode);
+
+        const savedThemeAccent = await SecureStore.getItemAsync('theme-accent');
+        if (savedThemeAccent) setThemeAccentState(savedThemeAccent);
 
         const phone = await SecureStore.getItemAsync('user-phone');
         const name = await SecureStore.getItemAsync('user-name');
@@ -196,6 +215,10 @@ export const AppProvider = ({ children }: any) => {
       updateGeminiKey,
       onboardingComplete,
       setSelectedModule,
+      themeMode,
+      themeAccent,
+      setThemeMode,
+      setThemeAccent,
       // Legacy compat
       setUserRole: (role: string) => setUser(prev => prev ? { ...prev, role } : null),
     }}>

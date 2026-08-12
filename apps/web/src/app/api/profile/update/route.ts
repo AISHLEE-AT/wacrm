@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       const { data, error } = await admin
         .from('profiles')
         .update(updates)
-        .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},whatsapp.eq.${cleanPhone},whatsapp.eq.91${cleanPhone}`)
+        .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
         .select('*')
 
       if (data && data.length > 0) updateResult = data[0]
