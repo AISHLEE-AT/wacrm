@@ -65,15 +65,18 @@ export function AppearanceSection({
           return (
             <TouchableOpacity
               key={theme.id}
-              style={[styles.accentCard, isActive && styles.activeAccentCard]}
+              style={[
+                styles.accentCard,
+                isActive && { borderColor: theme.swatch }
+              ]}
               onPress={() => onAccentChange(theme.id)}
               activeOpacity={0.7}
             >
               <View style={styles.accentHeader}>
                 <View style={[styles.swatch, { backgroundColor: theme.swatch }]} />
                 {isActive && (
-                  <View style={styles.activeBadge}>
-                    <Text style={styles.activeBadgeText}>Active</Text>
+                  <View style={[styles.activeBadge, { backgroundColor: theme.swatch + '20' }]}>
+                    <Text style={[styles.activeBadgeText, { color: theme.swatch }]}>Active</Text>
                   </View>
                 )}
               </View>
@@ -137,13 +140,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   activeBadge: {
-    backgroundColor: colors.primary + '20',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
   },
   activeBadgeText: {
-    color: colors.primary,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
@@ -167,9 +168,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     padding: spacing.md,
-  },
-  activeAccentCard: {
-    borderColor: colors.primary,
   },
   accentHeader: {
     flexDirection: 'row',

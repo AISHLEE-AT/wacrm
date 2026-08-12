@@ -37,6 +37,7 @@ import OnboardingModuleScreen from './src/screens/OnboardingModuleScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
 import { LocationProvider } from './src/context/LocationContext';
+import { colors } from './src/lib/theme';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -55,12 +56,12 @@ function AdminTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0d1526',
-          borderTopColor: '#ef444430',
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: '#ef4444',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
       {/* 1. Grid — all modules */}
@@ -172,12 +173,12 @@ function UserTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0d1526',
-          borderTopColor: '#10b98130',
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: '#10b981',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
       {/* 1. Grid — always first */}

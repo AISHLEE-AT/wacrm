@@ -20,6 +20,7 @@ export interface AppUser {
 export const AppContext = createContext<any>(null);
 
 import { supabase } from '../lib/supabase';
+import { applyThemeToGlobalColors } from '../lib/theme';
 
 export const AppProvider = ({ children }: any) => {
   const [recentModules, setRecentModules] = useState<string[]>(['Map']);
@@ -39,6 +40,7 @@ export const AppProvider = ({ children }: any) => {
 
   const setThemeAccent = useCallback(async (accent: string) => {
     setThemeAccentState(accent);
+    applyThemeToGlobalColors(accent);
     await SecureStore.setItemAsync('theme-accent', accent);
   }, []);
 
@@ -56,7 +58,10 @@ export const AppProvider = ({ children }: any) => {
         if (savedThemeMode === 'light' || savedThemeMode === 'dark') setThemeModeState(savedThemeMode);
 
         const savedThemeAccent = await SecureStore.getItemAsync('theme-accent');
-        if (savedThemeAccent) setThemeAccentState(savedThemeAccent);
+        if (savedThemeAccent) {
+          setThemeAccentState(savedThemeAccent);
+          applyThemeToGlobalColors(savedThemeAccent);
+        }
 
         const phone = await SecureStore.getItemAsync('user-phone');
         const name = await SecureStore.getItemAsync('user-name');

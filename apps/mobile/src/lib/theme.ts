@@ -96,3 +96,19 @@ export const ACCENT_THEMES = [
 
 export type AccentThemeId = typeof ACCENT_THEMES[number]['id'];
 export type ThemeMode = 'light' | 'dark';
+
+export const applyThemeToGlobalColors = (accentId: string) => {
+  const theme = ACCENT_THEMES.find((t) => t.id === accentId) || ACCENT_THEMES[0];
+  
+  colors.primary = theme.swatch;
+  colors.accent = theme.swatch;
+  
+  const hex = theme.swatch.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  
+  colors.primaryLight = `rgba(${r}, ${g}, ${b}, 0.1)`;
+  colors.primaryBorder = `rgba(${r}, ${g}, ${b}, 0.3)`;
+  colors.accentLight = `rgba(${r}, ${g}, ${b}, 0.1)`;
+};
