@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Share } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { CheckCircle, Copy } from 'lucide-react-native';
+import { CheckCircle, Copy, Share2 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
 
@@ -12,22 +12,34 @@ interface DigitalIdCardProps {
 }
 
 export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({ profile, isAdmin, phone }) => {
-  const idHash = profile?.digital_id_hash || `FAGO-TN-${phone.replace(/\D/g, '')}`;
-  const qrData = `https://watscrm.vercel.app/profile?id=${idHash}`;
+  const idHash = profile?.digital_id_hash || `SUPRO-${phone.replace(/\D/g, '')}`;
+  const userId = profile?.id || idHash;
+  const qrData = `https://watscrm.vercel.app/profile?id=${userId}`;
   const fullName = profile?.full_name || 'User Name';
   const role = isAdmin ? 'Admin' : (profile?.role || 'Member');
 
   const handleCopyId = async () => {
-    await Clipboard.setStringAsync(idHash);
+    await Clipboard.setStringAsync(userId);
     Alert.alert('Copied!', 'Digital ID copied to clipboard');
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out my SuprO Digital ID: ${qrData}`,
+        title: 'SuprO Digital ID'
+      });
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    }
   };
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>FAGO DIGITAL ID</Text>
-          <Text style={styles.subtitle}>Official Tamil Nadu Pass</Text>
+          <Text style={styles.title}>SuprO DIGITAL ID</Text>
+          <Text style={styles.subtitle}>SuprO Ecosystem Pass</Text>
         </View>
         <View style={styles.badge}>
           <CheckCircle color={colors.text} size={14} />
@@ -43,10 +55,16 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({ profile, isAdmin, 
         <Text style={styles.role}>{role}</Text>
         <Text style={styles.phone}>{phone}</Text>
 
-        <TouchableOpacity style={styles.copyButton} onPress={handleCopyId}>
-          <Copy color={colors.text} size={16} />
-          <Text style={styles.copyText}>Copy ID</Text>
-        </TouchableOpacity>
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleCopyId}>
+            <Copy color={colors.text} size={16} />
+            <Text style={styles.actionText}>Copy ID</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.shareButton]} onPress={handleShare}>
+            <Share2 color={colors.text} size={16} />
+            <Text style={styles.actionText}>Share</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -125,7 +143,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     marginBottom: spacing.lg,
   },
-  copyButton: {
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.border,
@@ -133,8 +155,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     gap: spacing.xs,
+    flex: 1,
+    justifyContent: 'center',
   },
-  copyText: {
+  shareButton: {
+    backgroundColor: colors.primary,
+  },
+  actionText: {
     color: colors.text,
     fontSize: fontSize.sm,
     fontWeight: '600',
