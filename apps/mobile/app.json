@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "SuprO 1.0.0 Beta AT",
+    "name": "SuprO 2.0 Stable Release",
     "slug": "supro",
     "scheme": "supro",
-    "version": "1.0.2B",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
