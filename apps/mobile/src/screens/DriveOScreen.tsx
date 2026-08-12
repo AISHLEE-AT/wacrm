@@ -16,6 +16,7 @@ import {
   Alert
 } from 'react-native';
 import * as Location from 'expo-location';
+import { Audio } from 'expo-av';
 import { supabase } from '../lib/supabase';
 import { AppContext } from '../context/AppContext';
 import {
@@ -486,8 +487,8 @@ export default function DriveOScreen() {
     locationSubRef.current = await Location.watchPositionAsync(
       {
         accuracy: Location.Accuracy.Balanced,
-        timeInterval: 30000,
-        distanceInterval: 50,
+        timeInterval: 10000,
+        distanceInterval: 10,
       },
       async (location) => {
         setCurrentLocation(location.coords);

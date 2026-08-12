@@ -170,13 +170,22 @@ function RideOBookingContent() {
         if (dData.display_name) dropoffAddress = dData.display_name.split(',').slice(0, 3).join(',').trim();
       } catch { /* Fallback to coordinates silently */ }
       
-      // 3. Calculate estimated fare
+      // 3. Calculate estimated fare with Surge Pricing
       const baseFare = driver.vehicle_type === 'bike' ? 15 : driver.vehicle_type === 'auto' ? 30 : 50;
       const perKmRate = driver.vehicle_type === 'bike' ? 8 : driver.vehicle_type === 'auto' ? 14 : 16;
       const baseKm = driver.vehicle_type === 'bike' ? 1.5 : 2.0;
+      
+      const currentHour = new Date().getHours();
+      let surgeMultiplier = 1.0;
+      if (currentHour >= 17 && currentHour <= 20) {
+        surgeMultiplier = 1.5; // Evening peak
+      } else if (currentHour >= 8 && currentHour <= 10) {
+        surgeMultiplier = 1.3; // Morning peak
+      }
+      
       const estimatedFare = Math.max(
         driver.vehicle_type === 'bike' ? 25 : driver.vehicle_type === 'auto' ? 45 : 89,
-        Math.round(baseFare + Math.max(0, tripDistanceKm - baseKm) * perKmRate)
+        Math.round((baseFare + Math.max(0, tripDistanceKm - baseKm) * perKmRate) * surgeMultiplier)
       );
       
       // 4. Generate 4-digit OTP

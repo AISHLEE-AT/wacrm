@@ -94,10 +94,10 @@ export default function RideOScreen({ navigation }) {
   const [paymentMode, setPaymentMode] = useState('UPI'); // 'UPI' | 'CASH'
   const [rentalPackages, setRentalPackages] = useState([]);
   
-  // Ride State Machine: 'IDLE' | 'SEARCHING' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED'
   const [rideState, setRideState] = useState('IDLE');
   const [currentRide, setCurrentRide] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isMapMoving, setIsMapMoving] = useState(false);
   
   // Rating State
   const [rating, setRating] = useState(5);
@@ -194,14 +194,23 @@ export default function RideOScreen({ navigation }) {
         const distKm = getDistance(location.latitude, location.longitude, dropLat, dropLng);
         const base = selectedCategory === 'bike' ? 15 : selectedCategory === 'auto' ? 30 : 50;
         const pKm = selectedCategory === 'bike' ? 8 : selectedCategory === 'auto' ? 14 : 16;
+        // Surge Pricing logic (Time-based demand)
+        const currentHour = new Date().getHours();
+        let surgeMultiplier = 1.0;
+        if (currentHour >= 17 && currentHour <= 20) {
+          surgeMultiplier = 1.5; // Evening peak
+        } else if (currentHour >= 8 && currentHour <= 10) {
+          surgeMultiplier = 1.3; // Morning peak
+        }
+
         const totalFare = Math.max(
           selectedCategory === 'bike' ? 25 : selectedCategory === 'auto' ? 45 : 89,
-          Math.round(base + Math.max(0, distKm - 1.5) * pKm)
+          Math.round((base + Math.max(0, distKm - 1.5) * pKm) * surgeMultiplier)
         );
 
         estimatedData = {
           baseFare: base,
-          distanceFare: Math.round(Math.max(0, distKm - 1.5) * pKm),
+          distanceFare: Math.round(Math.max(0, distKm - 1.5) * pKm * surgeMultiplier),
           timeFare: 0,
           platformFee: 0,
           total: totalFare,
@@ -312,6 +321,34 @@ export default function RideOScreen({ navigation }) {
     }
   }, [currentRide?.id]);
 
+  // Subscribe to Driver Live Location
+  useEffect(() => {
+    if ((rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS') && currentRide?.driver_id) {
+      const driverChannel = supabase
+        .channel(`driver-loc-${currentRide.driver_id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'drivers', filter: `id=eq.${currentRide.driver_id}` },
+          (payload) => {
+            if (payload.new.pickup_latitude && payload.new.pickup_longitude) {
+              setCurrentRide(prev => ({
+                ...prev,
+                driverInfo: {
+                  ...prev?.driverInfo,
+                  pickup_latitude: payload.new.pickup_latitude,
+                  pickup_longitude: payload.new.pickup_longitude
+                }
+              }));
+            }
+          }
+        )
+        .subscribe();
+      return () => {
+        supabase.removeChannel(driverChannel);
+      };
+    }
+  }, [rideState, currentRide?.driver_id]);
+
   // Book Ride
   const handleBookRide = async () => {
     if (!location || !dropoffLocation) {
@@ -333,10 +370,6 @@ export default function RideOScreen({ navigation }) {
         payment_mode: paymentMode.toLowerCase(),
         passenger_phone: user?.phone || ''
       };
-
-      if (selectedDriver) {
-        payload.driver_id = selectedDriver.id;
-      }
 
       const res = await fetch(`${API_BASE_URL}/api/rides/request`, {
         method: 'POST',
@@ -538,60 +571,11 @@ export default function RideOScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* DRIVER SELECTION */}
+        {/* AUTO ASSIGN MESSAGE */}
         <View style={{ marginTop: 16 }}>
-          <Text style={{ color: COLORS.textMuted, marginBottom: 8, fontWeight: 'bold' }}>Select a Driver (Optional):</Text>
-          {nearbyDrivers.filter(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase() || selectedCategory === 'auto' && (d.vehicle_type || '').toLowerCase() === 'autoo' || selectedCategory === 'bike' && (d.vehicle_type || '').toLowerCase() === 'bikeo').length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {nearbyDrivers
-                .filter(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase() || selectedCategory === 'auto' && (d.vehicle_type || '').toLowerCase() === 'autoo' || selectedCategory === 'bike' && (d.vehicle_type || '').toLowerCase() === 'bikeo' || true)
-                .map(d => (
-                <TouchableOpacity 
-                  key={d.id} 
-                  style={[
-                    styles.driverSelectCard, 
-                    selectedDriver?.id === d.id && styles.driverSelectCardActive
-                  ]}
-                  onPress={() => setSelectedDriver(d)}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={styles.driverAvatar}>
-                      <Text style={{ fontSize: 20 }}>{d.vehicle_type?.toLowerCase() === 'bike' ? '🏍' : '🛺'}</Text>
-                    </View>
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={styles.driverNameText}>{d.name}</Text>
-                      <Text style={styles.driverDetailText}>{d.vehicle_model || d.vehicle_type} ({d.rating || '4.5'}★)</Text>
-                      <Text style={styles.driverDetailText}>{d.distance_km ? `${d.distance_km.toFixed(1)} km away` : 'Nearby'}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <Text style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: 'italic' }}>Auto-assign will find the nearest driver...</Text>
-          )}
-          {nearbyDrivers.length > 0 && !nearbyDrivers.find(d => (d.vehicle_type || '').toLowerCase() === (selectedCategory || '').toLowerCase()) && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginTop: 8}}>
-              {nearbyDrivers.map(d => (
-                <TouchableOpacity 
-                  key={d.id} 
-                  style={[styles.driverSelectCard, selectedDriver?.id === d.id && styles.driverSelectCardActive]}
-                  onPress={() => setSelectedDriver(d)}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={styles.driverAvatar}>
-                      <Text style={{ fontSize: 20 }}>{d.vehicle_type?.toLowerCase() === 'bike' ? '🏍' : '🛺'}</Text>
-                    </View>
-                    <View style={{ marginLeft: 12 }}>
-                      <Text style={styles.driverNameText}>{d.name}</Text>
-                      <Text style={styles.driverDetailText}>{d.vehicle_model || d.vehicle_type} ({d.rating || '4.5'}★)</Text>
-                      <Text style={styles.driverDetailText}>{d.distance_km ? `${d.distance_km.toFixed(1)} km away` : 'Nearby'}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+          <Text style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: 'italic', textAlign: 'center' }}>
+            Auto-assign will find the nearest driver...
+          </Text>
         </View>
 
         <TouchableOpacity 
@@ -743,8 +727,26 @@ export default function RideOScreen({ navigation }) {
         provider={PROVIDER_GOOGLE}
         showsUserLocation={true}
         customMapStyle={mapStyleDark}
+        onRegionChange={() => {
+          if (rideState === 'IDLE' && !dropoffLocation) setIsMapMoving(true);
+        }}
+        onRegionChangeComplete={async (region) => {
+          if (rideState === 'IDLE' && !dropoffLocation) {
+            setIsMapMoving(false);
+            setLocation({ latitude: region.latitude, longitude: region.longitude });
+            try {
+              let geocode = await Location.reverseGeocodeAsync({
+                latitude: region.latitude,
+                longitude: region.longitude,
+              });
+              if (geocode && geocode.length > 0) {
+                setPickupAddress(`${geocode[0].name || ''}, ${geocode[0].street || ''}, ${geocode[0].city || ''}`.replace(/^, |, $/g, ''));
+              }
+            } catch(e) {}
+          }
+        }}
       >
-        {location && !dropoffLocation && (
+        {location && (dropoffLocation || rideState !== 'IDLE') && (
           <Marker coordinate={location}>
             <View style={styles.pickupMarker}>
               <View style={styles.pickupMarkerInner} />
@@ -767,7 +769,31 @@ export default function RideOScreen({ navigation }) {
             strokeWidth={4}
           />
         )}
+
+        {/* Driver Live Location Marker */}
+        {(rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS') && currentRide?.driverInfo?.pickup_latitude && (
+          <Marker 
+            coordinate={{ 
+              latitude: currentRide.driverInfo.pickup_latitude, 
+              longitude: currentRide.driverInfo.pickup_longitude 
+            }}
+          >
+            <View style={styles.driverAvatar}>
+              <Text style={{ fontSize: 20 }}>{currentRide.driverInfo.vehicle_type?.toLowerCase() === 'bike' ? '🏍' : '🛺'}</Text>
+            </View>
+          </Marker>
+        )}
       </MapView>
+
+      {/* Center Marker for Draggable Map Pickup */}
+      {rideState === 'IDLE' && !dropoffLocation && (
+        <View style={styles.centerMarkerContainer} pointerEvents="none">
+          <View style={[styles.pickupMarker, isMapMoving && { transform: [{ translateY: -10 }] }]}>
+            <View style={styles.pickupMarkerInner} />
+          </View>
+          <View style={styles.markerPinBase} />
+        </View>
+      )}
 
       <SafeAreaView style={styles.topOverlay} pointerEvents="box-none">
         <View style={styles.header}>
@@ -1231,6 +1257,20 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: COLORS.green,
+  },
+  centerMarkerContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginLeft: -12,
+    marginTop: -24,
+    alignItems: 'center',
+  },
+  markerPinBase: {
+    width: 2,
+    height: 14,
+    backgroundColor: COLORS.green,
+    marginTop: -4,
   },
   dropoffMarker: {
     backgroundColor: COLORS.red,
