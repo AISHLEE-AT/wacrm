@@ -112,12 +112,6 @@ export const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
           <CheckCircle color={colors.emerald} size={16} />
           <Text style={styles.greenBadgeText}>Verified & Active Driver Partner</Text>
         </View>
-        <TouchableOpacity
-          style={styles.enrollButton}
-          onPress={() => navigation.navigate('DriveOScreen')}
-        >
-          <Text style={styles.buttonText}>Open DriveO Portal</Text>
-        </TouchableOpacity>
       </View>
     );
   };

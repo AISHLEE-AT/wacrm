@@ -280,8 +280,7 @@ export default function DriveOScreen() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'rides',
-          filter: `driver_id=eq.${driver.id}`
+          table: 'rides'
         },
         (payload) => {
           if (payload.new.status === 'pending' || payload.new.status === 'requested') {
@@ -294,8 +293,7 @@ export default function DriveOScreen() {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'rides',
-          filter: `driver_id=eq.${driver.id}`
+          table: 'rides'
         },
         (payload) => {
           if (payload.new.status === 'cancelled') {
@@ -304,12 +302,20 @@ export default function DriveOScreen() {
               setActiveRide(null);
               setIncomingRide(null);
             }
-          } else if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
-            setActiveRide(payload.new);
-            setIncomingRide(null);
-          } else if (payload.new.status === 'completed') {
-            setActiveRide(null);
-            fetchEarnings();
+          } else if (payload.new.driver_id === driver.id) {
+            if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
+              setActiveRide(payload.new);
+              setIncomingRide(null);
+            } else if (payload.new.status === 'completed') {
+              setActiveRide(null);
+              fetchEarnings();
+            }
+          } else if (payload.new.status === 'accepted' && payload.new.driver_id !== driver.id) {
+            // Someone else accepted the ride
+            if (incomingRide?.id === payload.new.id) {
+              setIncomingRide(null);
+              clearInterval(timerRef.current);
+            }
           }
         }
       )
@@ -373,15 +379,23 @@ export default function DriveOScreen() {
     try {
       const tripOtp = String(1000 + Math.floor(Math.random() * 9000));
       
-      const { error } = await supabase
+      // Update DB. Ensure status is still requested to prevent race conditions.
+      const { data, error } = await supabase
         .from('rides')
         .update({
           status: 'accepted',
+          driver_id: driver.id,
           otp: tripOtp
         })
-        .eq('id', rideId);
+        .eq('id', rideId)
+        .eq('status', 'requested')
+        .select();
         
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        throw new Error('Ride already accepted by another driver or cancelled.');
+      }
       
       Alert.alert('Success', 'Ride accepted!');
       fetchActiveRide(); // Fallback in case realtime misses it
