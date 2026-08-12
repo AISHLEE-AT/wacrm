@@ -10,13 +10,12 @@ import {
   Modal,
   Animated,
   Vibration,
-  Linking,
   Platform,
   ActivityIndicator,
-  Alert
+  Alert,
+  Dimensions
 } from 'react-native';
 import * as Location from 'expo-location';
-import { Audio } from 'expo-av';
 import { supabase } from '../lib/supabase';
 import { AppContext } from '../context/AppContext';
 import {
@@ -31,36 +30,41 @@ import {
   IndianRupee,
   Wallet,
   Clock,
-  Send
+  Send,
+  Star,
+  Shield,
+  User,
+  RefreshCw,
+  ArrowLeft,
+  AlertTriangle
 } from 'lucide-react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
-// Haversine formula to calculate distance in km
-const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import {
+  COLORS,
+  VEHICLE_CATEGORIES,
+  RIDE_STATUS,
+  API_BASE_URL,
+  ADMIN_UPI,
+  ADMIN_PHONE,
+  getDistanceKm,
+  calculateFare,
+  generateRideOTP,
+  openNativeNavigation as rideUtilsOpenNav,
+  shareLocationWhatsApp,
+  whatsappToPhone,
+  callPhone,
+  fetchOSRMRoute,
+  payViaUPI,
+  mapStyleDark,
+  formatPhoneForWhatsApp
+} from '../lib/rideUtils';
+
+const { width, height } = Dimensions.get('window');
 
 const formatCurrency = (amount) => {
   return `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 };
-
-const mapStyleDark = [
-  { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#38414e' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#17263c' }] },
-];
 
 export default function DriveOScreen() {
   const { user } = useContext(AppContext);
@@ -73,7 +77,7 @@ export default function DriveOScreen() {
   const [regStep, setRegStep] = useState(1);
   const [regName, setRegName] = useState(user?.name || '');
   const [regAadhar, setRegAadhar] = useState('');
-  const [regVehicleType, setRegVehicleType] = useState('Bike');
+  const [regVehicleType, setRegVehicleType] = useState('bikeo');
   const [regVehicleModel, setRegVehicleModel] = useState('');
   const [regVehicleNumber, setRegVehicleNumber] = useState('');
   const [regUpiId, setRegUpiId] = useState('');
@@ -83,10 +87,12 @@ export default function DriveOScreen() {
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
   const locationSubRef = useRef(null);
+  const channelRef = useRef(null);
 
   // Ride States
   const [incomingRide, setIncomingRide] = useState(null);
   const [activeRide, setActiveRide] = useState(null);
+  const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [otp, setOtp] = useState(['', '', '', '']);
   const otpInputs = useRef([]);
   const [skippedCount, setSkippedCount] = useState(0);
@@ -104,6 +110,7 @@ export default function DriveOScreen() {
   const timerRef = useRef(null);
   const mapRef = useRef(null);
 
+  // ─── LIFECYCLE HOOKS ───
   useEffect(() => {
     if (phone) {
       fetchDriverProfile();
@@ -117,11 +124,48 @@ export default function DriveOScreen() {
       setupRealtimeSubscription();
     }
     return () => {
-      supabase.removeAllChannels();
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
       stopLocationTracking();
     };
   }, [driver?.id]);
 
+  // ─── OSRM ROUTE FETCHING ───
+  useEffect(() => {
+    const fetchRoute = async () => {
+      if (!activeRide) {
+        setRouteCoordinates([]);
+        return;
+      }
+      
+      let startLat, startLng, endLat, endLng;
+      
+      if (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED) {
+        startLat = currentLocation?.latitude || activeRide.pickup_latitude;
+        startLng = currentLocation?.longitude || activeRide.pickup_longitude;
+        endLat = activeRide.pickup_latitude;
+        endLng = activeRide.pickup_longitude;
+      } else if (activeRide.status === RIDE_STATUS.IN_PROGRESS) {
+        startLat = currentLocation?.latitude || activeRide.pickup_latitude;
+        startLng = currentLocation?.longitude || activeRide.pickup_longitude;
+        endLat = activeRide.dropoff_latitude;
+        endLng = activeRide.dropoff_longitude;
+      } else {
+        setRouteCoordinates([]);
+        return;
+      }
+      
+      if (startLat && startLng && endLat && endLng) {
+        const coords = await fetchOSRMRoute(startLat, startLng, endLat, endLng);
+        setRouteCoordinates(coords);
+      }
+    };
+    
+    fetchRoute();
+  }, [activeRide?.status, activeRide?.pickup_latitude, activeRide?.dropoff_latitude, currentLocation]);
+
+  // ─── MAP FIT TO MARKERS ───
   useEffect(() => {
     if (activeRide && mapRef.current) {
       const markers = [];
@@ -146,13 +190,14 @@ export default function DriveOScreen() {
     }
   }, [activeRide, currentLocation]);
 
+  // ─── DRIVER PROFILE ───
   const fetchDriverProfile = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('drivers')
         .select('*')
-        .or(`mobile_number.eq.${phone},whatsapp_number.eq.${phone},phone.ilike.%${phone.slice(-10)}%`)
+        .or(`phone.eq.${phone},mobile_number.eq.${phone},whatsapp_number.eq.${phone}`)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -171,9 +216,10 @@ export default function DriveOScreen() {
     }
   };
 
+  // ─── DRIVER REGISTRATION ───
   const registerDriver = async () => {
     if (!regVehicleNumber || !regUpiId) {
-      Alert.alert('Validation Error', 'Please fill all required fields');
+      Alert.alert('Validation Error', 'Please fill Vehicle Number and UPI ID');
       return;
     }
     try {
@@ -182,6 +228,7 @@ export default function DriveOScreen() {
         name: regName || 'Driver',
         mobile_number: phone,
         whatsapp_number: phone,
+        phone: phone,
         aadhar_number: regAadhar,
         vehicle_type: regVehicleType,
         vehicle_model: regVehicleModel,
@@ -204,17 +251,17 @@ export default function DriveOScreen() {
       setDriver(data);
     } catch (err) {
       console.error('Registration error:', err);
-      Alert.alert('Error', 'Failed to register as driver.');
+      Alert.alert('Error', 'Failed to register. ' + (err.message || ''));
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ─── EARNINGS FETCH ───
   const fetchEarnings = async () => {
     try {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
-
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - 7);
 
@@ -222,16 +269,13 @@ export default function DriveOScreen() {
         .from('rides')
         .select('total_fare, driver_earnings, completed_at')
         .eq('driver_id', driver.id)
-        .eq('status', 'completed')
+        .eq('status', RIDE_STATUS.COMPLETED)
         .gte('completed_at', weekStart.toISOString());
 
       if (error) throw error;
 
-      let tSum = 0;
-      let tTrips = 0;
-      let wSum = 0;
-
-      data.forEach(ride => {
+      let tSum = 0, tTrips = 0, wSum = 0;
+      data?.forEach(ride => {
         const d = new Date(ride.completed_at);
         const earningsAmt = ride.driver_earnings || ride.total_fare || 0;
         wSum += earningsAmt;
@@ -241,81 +285,79 @@ export default function DriveOScreen() {
         }
       });
 
-      setEarnings({
-        todaySum: tSum,
-        todayTrips: tTrips,
-        weekSum: wSum
-      });
+      setEarnings({ todaySum: tSum, todayTrips: tTrips, weekSum: wSum });
     } catch (err) {
       console.error('Error fetching earnings:', err);
     }
   };
 
+  // ─── ACTIVE RIDE FETCH ───
   const fetchActiveRide = async () => {
     try {
       const { data, error } = await supabase
         .from('rides')
         .select('*')
         .eq('driver_id', driver.id)
-        .in('status', ['accepted', 'driver_arrived', 'in_progress'])
+        .in('status', [RIDE_STATUS.ACCEPTED, RIDE_STATUS.DRIVER_ARRIVED, RIDE_STATUS.IN_PROGRESS])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (error) throw error;
-      if (data) {
-        setActiveRide(data);
-      } else {
-        setActiveRide(null);
-      }
+      setActiveRide(data || null);
     } catch (err) {
       console.error('Error fetching active ride:', err);
     }
   };
 
+  // ─── SUPABASE REALTIME SUBSCRIPTION ───
   const setupRealtimeSubscription = () => {
-    supabase
-      .channel('driver-rides')
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+    
+    channelRef.current = supabase
+      .channel(`driver-rides-${driver.id}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'rides'
-        },
+        { event: '*', schema: 'public', table: 'rides' },
         (payload) => {
-          if (payload.new.status === 'pending' || payload.new.status === 'requested') {
-            handleNewRide(payload.new);
+          // New ride request (broadcast — no specific driver assigned)
+          if (payload.eventType === 'INSERT' && 
+              (payload.new.status === RIDE_STATUS.PENDING || payload.new.status === RIDE_STATUS.REQUESTED)) {
+            // If driver_id matches this driver, or no driver_id (broadcast)
+            if (payload.new.driver_id === driver.id || !payload.new.driver_id) {
+              handleNewRide(payload.new);
+            }
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'rides'
-        },
-        (payload) => {
-          if (payload.new.status === 'cancelled') {
-            if (activeRide?.id === payload.new.id || incomingRide?.id === payload.new.id) {
-              Alert.alert('Ride Cancelled', 'The customer cancelled the ride.');
-              setActiveRide(null);
-              setIncomingRide(null);
+          
+          // Ride updates
+          if (payload.eventType === 'UPDATE') {
+            // Ride cancelled
+            if (payload.new.status === RIDE_STATUS.CANCELLED) {
+              if (activeRide?.id === payload.new.id || incomingRide?.id === payload.new.id) {
+                Alert.alert('Ride Cancelled', 'The customer cancelled the ride.');
+                setActiveRide(null);
+                setIncomingRide(null);
+                clearInterval(timerRef.current);
+              }
             }
-          } else if (payload.new.driver_id === driver.id) {
-            if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
-              setActiveRide(payload.new);
-              setIncomingRide(null);
-            } else if (payload.new.status === 'completed') {
-              setActiveRide(null);
-              fetchEarnings();
+            // Ride status update for this driver
+            else if (payload.new.driver_id === driver.id) {
+              if ([RIDE_STATUS.ACCEPTED, RIDE_STATUS.DRIVER_ARRIVED, RIDE_STATUS.IN_PROGRESS].includes(payload.new.status)) {
+                setActiveRide(payload.new);
+                setIncomingRide(null);
+              } else if (payload.new.status === RIDE_STATUS.COMPLETED) {
+                setActiveRide(null);
+                fetchEarnings();
+              }
             }
-          } else if (payload.new.status === 'accepted' && payload.new.driver_id !== driver.id) {
-            // Someone else accepted the ride
-            if (incomingRide?.id === payload.new.id) {
-              setIncomingRide(null);
-              clearInterval(timerRef.current);
+            // Ride accepted by another driver
+            else if (payload.new.status === RIDE_STATUS.ACCEPTED && payload.new.driver_id !== driver.id) {
+              if (incomingRide?.id === payload.new.id) {
+                setIncomingRide(null);
+                clearInterval(timerRef.current);
+              }
             }
           }
         }
@@ -323,30 +365,26 @@ export default function DriveOScreen() {
       .subscribe();
   };
 
+  // ─── INCOMING RIDE HANDLER ───
   const handleNewRide = async (ride) => {
     if (!isOnline) return;
-    if (activeRide) return; // Don't show if already on a ride
-    if (ride.vehicle_type && ride.vehicle_type.toLowerCase() !== driver.vehicle_type?.toLowerCase() && ride.vehicle_type !== 'Any') return;
+    if (activeRide) return;
+    
+    // Check vehicle type match
+    if (ride.vehicle_category && ride.vehicle_category.toLowerCase() !== driver.vehicle_type?.toLowerCase()) return;
 
+    // Check distance (max 10km)
     if (currentLocation && ride.pickup_latitude && ride.pickup_longitude) {
-      const dist = getDistance(currentLocation.latitude, currentLocation.longitude, ride.pickup_latitude, ride.pickup_longitude);
-      if (dist > 10) return; // Skip rides more than 10km away
+      const dist = getDistanceKm(currentLocation.latitude, currentLocation.longitude, ride.pickup_latitude, ride.pickup_longitude);
+      if (dist > 10) return;
     }
     
     setIncomingRide(ride);
-
-    try {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
-        { shouldPlay: true, volume: 1.0 }
-      );
-      setTimeout(() => sound.unloadAsync(), 5000);
-    } catch(e) { console.log('Audio error', e); }
-
-    Vibration.vibrate([1000, 500, 1000]);
+    Vibration.vibrate([500, 500, 500]);
     startCountdown();
   };
 
+  // ─── COUNTDOWN TIMER ───
   const startCountdown = () => {
     setTimeLeft(15);
     countdownAnim.setValue(100);
@@ -371,6 +409,7 @@ export default function DriveOScreen() {
     }, 1000);
   };
 
+  // ─── ACCEPT RIDE (FIX: handles both 'pending' and 'requested' status) ───
   const handleAcceptRide = async () => {
     if (!incomingRide) return;
     clearInterval(timerRef.current);
@@ -378,18 +417,18 @@ export default function DriveOScreen() {
     setIncomingRide(null);
     
     try {
-      const tripOtp = String(1000 + Math.floor(Math.random() * 9000));
+      const tripOtp = generateRideOTP();
       
-      // Update DB. Ensure status is still requested to prevent race conditions.
       const { data, error } = await supabase
         .from('rides')
         .update({
-          status: 'accepted',
+          status: RIDE_STATUS.ACCEPTED,
           driver_id: driver.id,
-          otp: tripOtp
+          otp: tripOtp,
+          accepted_at: new Date().toISOString()
         })
+        .in('status', [RIDE_STATUS.REQUESTED, RIDE_STATUS.PENDING])
         .eq('id', rideId)
-        .eq('status', 'requested')
         .select();
         
       if (error) throw error;
@@ -398,29 +437,31 @@ export default function DriveOScreen() {
         throw new Error('Ride already accepted by another driver or cancelled.');
       }
       
-      Alert.alert('Success', 'Ride accepted!');
-      fetchActiveRide(); // Fallback in case realtime misses it
+      Alert.alert('Ride Accepted!', `OTP for rider: ${tripOtp}`);
+      fetchActiveRide();
     } catch (err) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error', err.message || 'Could not accept ride');
     }
   };
 
+  // ─── SKIP RIDE ───
   const handleSkipRide = () => {
     clearInterval(timerRef.current);
     setIncomingRide(null);
     setSkippedCount(prev => {
       const newCount = prev + 1;
       if (newCount % 5 === 0) {
-        Alert.alert('Warning', 'You have skipped several rides. A low acceptance rate may affect your account.');
+        Alert.alert('Warning', 'You have skipped several rides. Low acceptance may affect your account.');
       }
       return newCount;
     });
   };
 
+  // ─── CANCEL RIDE ───
   const handleCancelRide = () => {
     Alert.alert(
       'Cancel Ride',
-      'Please select a reason for cancellation',
+      'Select a reason for cancellation',
       [
         { text: 'Customer not reachable', onPress: () => performCancel('Customer not reachable') },
         { text: 'Wrong pickup address', onPress: () => performCancel('Wrong pickup address') },
@@ -435,20 +476,24 @@ export default function DriveOScreen() {
   const performCancel = async (reason) => {
     if (!activeRide) return;
     try {
-      const res = await fetch('https://watscrm.vercel.app/api/rides/cancel', {
+      const res = await fetch(`${API_BASE_URL}/api/rides/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ride_id: activeRide.id, cancelled_by: 'driver', reason })
       });
       if (!res.ok) throw new Error('Failed to cancel ride');
       
-      Alert.alert('Ride Cancelled', 'The ride has been cancelled successfully.');
+      Alert.alert('Ride Cancelled', 'The ride has been cancelled.');
       setActiveRide(null);
     } catch (err) {
-      Alert.alert('Error', err.message);
+      // Fallback: direct DB update
+      await supabase.from('rides').update({ status: RIDE_STATUS.CANCELLED }).eq('id', activeRide.id);
+      Alert.alert('Ride Cancelled');
+      setActiveRide(null);
     }
   };
 
+  // ─── ONLINE/OFFLINE TOGGLE ───
   const toggleStatus = async () => {
     const newStatus = !isOnline;
     
@@ -460,39 +505,36 @@ export default function DriveOScreen() {
       }
       
       try {
-        const location = await Location.getCurrentPositionAsync({});
-        setCurrentLocation(location.coords);
+        const loc = await Location.getCurrentPositionAsync({});
+        setCurrentLocation(loc.coords);
         
         await supabase.from('drivers').update({
           status: 'online',
-          pickup_latitude: location.coords.latitude,
-          pickup_longitude: location.coords.longitude
+          pickup_latitude: loc.coords.latitude,
+          pickup_longitude: loc.coords.longitude,
+          updated_at: new Date().toISOString()
         }).eq('id', driver.id);
         
         setIsOnline(true);
         startLocationTracking();
       } catch (err) {
-        console.error(err);
         Alert.alert('Error', 'Could not get location.');
       }
     } else {
-      await supabase.from('drivers').update({ status: 'offline' }).eq('id', driver.id);
+      await supabase.from('drivers').update({ status: 'offline', updated_at: new Date().toISOString() }).eq('id', driver.id);
       setIsOnline(false);
       stopLocationTracking();
     }
   };
 
+  // ─── LOCATION TRACKING ───
   const startLocationTracking = async () => {
     stopLocationTracking();
     locationSubRef.current = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 10000,
-        distanceInterval: 10,
-      },
+      { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 10 },
       async (location) => {
         setCurrentLocation(location.coords);
-        if (driver?.id && isOnline) {
+        if (driver?.id) {
           await supabase.from('drivers').update({
             pickup_latitude: location.coords.latitude,
             pickup_longitude: location.coords.longitude,
@@ -510,12 +552,13 @@ export default function DriveOScreen() {
     }
   };
 
+  // ─── OTP VERIFICATION (FIX: removed dev bypass) ───
   const handleOtpInput = (text, index) => {
     const newOtp = [...otp];
     newOtp[index] = text;
     setOtp(newOtp);
     if (text && index < 3) {
-      otpInputs.current[index + 1].focus();
+      otpInputs.current[index + 1]?.focus();
     }
   };
 
@@ -524,121 +567,134 @@ export default function DriveOScreen() {
     if (fullOtp.length !== 4) return;
     
     try {
-      // Direct update for now, or use API route
-      if (activeRide.otp === fullOtp || (__DEV__ && fullOtp === '0000')) {
+      if (activeRide.otp === fullOtp) {
         const { error } = await supabase
           .from('rides')
-          .update({ status: 'in_progress', started_at: new Date().toISOString() })
+          .update({ status: RIDE_STATUS.IN_PROGRESS, started_at: new Date().toISOString() })
           .eq('id', activeRide.id);
           
         if (error) throw error;
-        Alert.alert('Success', 'Trip started!');
-        setActiveRide({...activeRide, status: 'in_progress'});
+        Alert.alert('Trip Started!', 'Navigate to the dropoff location.');
+        setActiveRide({ ...activeRide, status: RIDE_STATUS.IN_PROGRESS, started_at: new Date().toISOString() });
         setOtp(['', '', '', '']);
       } else {
-        Alert.alert('Invalid OTP', 'Please check the OTP with customer.');
+        Alert.alert('Wrong OTP', 'Please ask the rider for the correct 4-digit PIN.');
       }
     } catch (err) {
       Alert.alert('Error', err.message);
     }
   };
 
+  // ─── COMPLETE TRIP ───
   const completeTrip = async () => {
     try {
-      const res = await fetch('https://watscrm.vercel.app/api/rides/complete', {
+      const res = await fetch(`${API_BASE_URL}/api/rides/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ride_id: activeRide.id })
       });
-      if (!res.ok) throw new Error('Failed to complete trip');
       
-      Alert.alert('Trip Completed', `Collect ₹${activeRide.total_fare || 0} via UPI or Cash.`);
+      if (!res.ok) throw new Error('API failed');
+      
+      const fare = activeRide.fare || activeRide.total_fare || 0;
+      Alert.alert('Trip Completed! 🎉', `Earned ₹${fare}. Collect via UPI or Cash.`);
       setActiveRide(null);
       fetchEarnings();
     } catch (err) {
-      Alert.alert('Error', err.message);
-      
-      // Fallback direct update
+      // Fallback: direct DB update
       const { error } = await supabase
         .from('rides')
-        .update({ status: 'completed', completed_at: new Date().toISOString() })
+        .update({ status: RIDE_STATUS.COMPLETED, completed_at: new Date().toISOString() })
         .eq('id', activeRide.id);
         
       if (!error) {
+        const fare = activeRide.fare || activeRide.total_fare || 0;
+        Alert.alert('Trip Completed!', `Earned ₹${fare}`);
         setActiveRide(null);
         fetchEarnings();
       }
     }
   };
 
+  // ─── SAFE NAVIGATION (FIX: guards undefined coordinates) ───
   const openNavigation = (lat, lng) => {
-    const url = Platform.OS === 'ios'
-      ? `http://maps.apple.com/?daddr=${lat},${lng}`
-      : `google.navigation:q=${lat},${lng}`;
-    Linking.openURL(url).catch(() => {
-      Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
-    });
+    if (!lat || !lng) {
+      Alert.alert('Error', 'Location coordinates not available');
+      return;
+    }
+    rideUtilsOpenNav(lat, lng);
   };
 
+  // ─── WHATSAPP CHECK-IN ───
   const shareWhatsAppPin = () => {
-    const msg = encodeURIComponent("Active");
-    Linking.openURL(`whatsapp://send?phone=+916381029380&text=${msg}`);
+    whatsappToPhone(ADMIN_PHONE, 'Active');
   };
 
+  // ─── LOADING STATE ───
   if (isLoading && !driver) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#10b981" />
+        <ActivityIndicator size="large" color={COLORS.green} />
+        <Text style={{ color: COLORS.textMuted, marginTop: 12 }}>Loading driver profile...</Text>
       </View>
     );
   }
 
-  // REGISTRATION SCREEN
+  // ══════════════════════════════════════════════
+  // ─── REGISTRATION SCREEN ───
+  // ══════════════════════════════════════════════
   if (!driver) {
     return (
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.regContainer}>
-          <Text style={styles.title}>Driver Registration</Text>
+          <Text style={styles.title}>🚗 Driver Registration</Text>
           <Text style={styles.subtitle}>Step {regStep} of 3</Text>
+
+          {/* Step Progress Bar */}
+          <View style={styles.progressBar}>
+            {[1, 2, 3].map((step) => (
+              <View key={step} style={[styles.progressStep, regStep >= step && styles.progressStepActive]} />
+            ))}
+          </View>
 
           {regStep === 1 && (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
+                <Text style={styles.label}>Full Name *</Text>
                 <TextInput
                   style={styles.input}
                   value={regName}
                   onChangeText={setRegName}
                   placeholder="e.g. Ramesh Kumar"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={COLORS.textMuted}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Aadhar Number</Text>
+                <Text style={styles.label}>Phone Number</Text>
                 <TextInput
-                  style={styles.input}
-                  value={regAadhar}
-                  onChangeText={setRegAadhar}
-                  placeholder="e.g. 1234 5678 9012"
-                  placeholderTextColor="#64748b"
-                  keyboardType="numeric"
+                  style={[styles.input, { opacity: 0.6 }]}
+                  value={phone}
+                  editable={false}
+                  placeholderTextColor={COLORS.textMuted}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>UPI ID (For earnings)</Text>
+                <Text style={styles.label}>WhatsApp Number</Text>
                 <TextInput
-                  style={styles.input}
-                  value={regUpiId}
-                  onChangeText={setRegUpiId}
-                  placeholder="e.g. ramesh@okicici"
-                  placeholderTextColor="#64748b"
+                  style={[styles.input, { opacity: 0.6 }]}
+                  value={phone}
+                  editable={false}
+                  placeholderTextColor={COLORS.textMuted}
                 />
               </View>
 
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => setRegStep(2)}>
-                <Text style={styles.primaryBtnText}>Next</Text>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => {
+                if (!regName.trim()) { Alert.alert('Required', 'Please enter your full name'); return; }
+                setRegStep(2);
+              }}>
+                <Text style={styles.primaryBtnText}>Next →</Text>
               </TouchableOpacity>
             </>
           )}
@@ -646,15 +702,16 @@ export default function DriveOScreen() {
           {regStep === 2 && (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Vehicle Type</Text>
+                <Text style={styles.label}>Vehicle Type *</Text>
                 <View style={styles.vehicleTypeRow}>
-                  {['Bike', 'Auto', 'Cab-Mini', 'Cargo'].map(v => (
+                  {VEHICLE_CATEGORIES.map((v) => (
                     <TouchableOpacity
-                      key={v}
-                      style={[styles.vehicleTypeBtn, regVehicleType === v && styles.vehicleTypeBtnActive]}
-                      onPress={() => setRegVehicleType(v)}
+                      key={v.id}
+                      style={[styles.vehicleTypeBtn, regVehicleType === v.id && styles.vehicleTypeBtnActive]}
+                      onPress={() => setRegVehicleType(v.id)}
                     >
-                      <Text style={[styles.vehicleTypeText, regVehicleType === v && styles.vehicleTypeTextActive]}>{v}</Text>
+                      <Text style={{ fontSize: 20, textAlign: 'center' }}>{v.emoji}</Text>
+                      <Text style={[styles.vehicleTypeText, regVehicleType === v.id && styles.vehicleTypeTextActive]}>{v.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -666,41 +723,44 @@ export default function DriveOScreen() {
                   style={styles.input}
                   value={regVehicleModel}
                   onChangeText={setRegVehicleModel}
-                  placeholder="e.g. Honda Activa"
-                  placeholderTextColor="#64748b"
+                  placeholder="e.g. Honda Activa 125"
+                  placeholderTextColor={COLORS.textMuted}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Vehicle Number</Text>
+                <Text style={styles.label}>Vehicle Registration Number *</Text>
                 <TextInput
                   style={styles.input}
                   value={regVehicleNumber}
                   onChangeText={setRegVehicleNumber}
                   placeholder="e.g. TN38AB1234"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={COLORS.textMuted}
                   autoCapitalize="characters"
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Driving License</Text>
+                <Text style={styles.label}>Driving License Number</Text>
                 <TextInput
                   style={styles.input}
                   value={regLicense}
                   onChangeText={setRegLicense}
-                  placeholder="e.g. TN38 123456789"
-                  placeholderTextColor="#64748b"
+                  placeholder="e.g. TN38 20230012345"
+                  placeholderTextColor={COLORS.textMuted}
                   autoCapitalize="characters"
                 />
               </View>
 
-              <View style={{flexDirection: 'row', gap: 12}}>
-                <TouchableOpacity style={[styles.primaryBtn, {flex: 1, backgroundColor: '#334155'}]} onPress={() => setRegStep(1)}>
-                  <Text style={styles.primaryBtnText}>Back</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity style={[styles.primaryBtn, { flex: 1, backgroundColor: COLORS.border }]} onPress={() => setRegStep(1)}>
+                  <Text style={styles.primaryBtnText}>← Back</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.primaryBtn, {flex: 1}]} onPress={() => setRegStep(3)}>
-                  <Text style={styles.primaryBtnText}>Next</Text>
+                <TouchableOpacity style={[styles.primaryBtn, { flex: 1 }]} onPress={() => {
+                  if (!regVehicleNumber.trim()) { Alert.alert('Required', 'Vehicle registration number is required'); return; }
+                  setRegStep(3);
+                }}>
+                  <Text style={styles.primaryBtnText}>Next →</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -709,21 +769,47 @@ export default function DriveOScreen() {
           {regStep === 3 && (
             <>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Documents Upload</Text>
-                <Text style={{color: '#cbd5e1', marginBottom: 12, lineHeight: 22}}>
-                  Please send clear photos of your Aadhar Card, RC Book, and Driving License to our WhatsApp number: +91 63810 29380.
+                <Text style={styles.label}>Aadhar Number</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regAadhar}
+                  onChangeText={setRegAadhar}
+                  placeholder="e.g. 1234 5678 9012"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="numeric"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>UPI ID (For earnings) *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={regUpiId}
+                  onChangeText={setRegUpiId}
+                  placeholder="e.g. ramesh@okicici"
+                  placeholderTextColor={COLORS.textMuted}
+                />
+              </View>
+
+              <View style={[styles.inputGroup, { backgroundColor: COLORS.cardLight, padding: 16, borderRadius: 12 }]}>
+                <Text style={{ color: COLORS.yellow, fontWeight: 'bold', fontSize: 15, marginBottom: 8 }}>📄 Document Verification</Text>
+                <Text style={{ color: COLORS.textSecondary, lineHeight: 22 }}>
+                  Send clear photos of your Aadhar Card, RC Book, and Driving License to WhatsApp:
                 </Text>
-                <Text style={{color: '#94a3b8', fontSize: 13, lineHeight: 18}}>
-                  Your account will be activated after document verification.
+                <Text style={{ color: COLORS.green, fontWeight: 'bold', fontSize: 16, marginTop: 8 }}>
+                  +91 {ADMIN_PHONE.replace('91', '').replace(/(\d{5})(\d{5})/, '$1 $2')}
+                </Text>
+                <Text style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 8 }}>
+                  Your account will be activated after document verification (usually within 24 hours).
                 </Text>
               </View>
 
-              <View style={{flexDirection: 'row', gap: 12}}>
-                <TouchableOpacity style={[styles.primaryBtn, {flex: 1, backgroundColor: '#334155'}]} onPress={() => setRegStep(2)}>
-                  <Text style={styles.primaryBtnText}>Back</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity style={[styles.primaryBtn, { flex: 1, backgroundColor: COLORS.border }]} onPress={() => setRegStep(2)}>
+                  <Text style={styles.primaryBtnText}>← Back</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.primaryBtn, {flex: 1}]} onPress={registerDriver}>
-                  <Text style={styles.primaryBtnText}>Register</Text>
+                <TouchableOpacity style={[styles.primaryBtn, { flex: 1 }]} onPress={registerDriver}>
+                  {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Register ✓</Text>}
                 </TouchableOpacity>
               </View>
             </>
@@ -733,95 +819,131 @@ export default function DriveOScreen() {
     );
   }
 
-  // MAIN DASHBOARD
+  // ══════════════════════════════════════════════
+  // ─── MAIN DRIVER DASHBOARD ───
+  // ══════════════════════════════════════════════
   return (
     <View style={styles.container}>
-      {/* HEADER & TOGGLE */}
+      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>SuprO Driver</Text>
-          <Text style={styles.headerSubtitle}>{driver.vehicle_number} • {driver.vehicle_type}</Text>
+          <Text style={styles.headerSubtitle}>{driver.name} • {driver.vehicle_number || driver.vehicle_registration}</Text>
         </View>
         <TouchableOpacity
           style={[styles.toggleBtn, isOnline ? styles.toggleOn : styles.toggleOff]}
           onPress={toggleStatus}
         >
-          <Power size={24} color="#fff" />
+          <Power size={22} color="#fff" />
           <Text style={styles.toggleText}>{isOnline ? 'ONLINE' : 'OFFLINE'}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* OFFLINE / ONLINE STATUS TEXT */}
+        {/* STATUS INDICATOR */}
         <View style={styles.statusIndicator}>
-          <View style={[styles.statusDot, isOnline ? {backgroundColor: '#10b981'} : {backgroundColor: '#ef4444'}]} />
+          <View style={[styles.statusDot, isOnline ? { backgroundColor: COLORS.green } : { backgroundColor: COLORS.red }]} />
           <Text style={styles.statusText}>
             {isOnline ? 'You are Online — Accepting Rides' : 'You are Offline — Go online to get rides'}
           </Text>
         </View>
 
-        {/* ACTIVE RIDE PANEL */}
+        {/* ──── ACTIVE RIDE PANEL ──── */}
         {activeRide && (
           <View style={styles.activeRideCard}>
             <View style={styles.activeRideHeader}>
-              <Car size={24} color="#3b82f6" />
+              <Car size={24} color={COLORS.blue} />
               <Text style={styles.activeRideTitle}>
-                {activeRide.status === 'accepted' || activeRide.status === 'driver_arrived' ? 'Pickup Customer' : 'Trip in Progress'}
+                {activeRide.status === RIDE_STATUS.ACCEPTED ? 'Go to Pickup' :
+                 activeRide.status === RIDE_STATUS.DRIVER_ARRIVED ? 'Waiting for Rider' :
+                 'Trip in Progress'}
               </Text>
             </View>
 
-            {/* MapView for Active Ride */}
-            <View style={{ height: 200, borderRadius: 8, overflow: 'hidden', marginBottom: 16 }}>
+            {/* Map View */}
+            <View style={{ height: 200, borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
               <MapView
                 ref={mapRef}
                 style={{ flex: 1 }}
                 provider={PROVIDER_GOOGLE}
                 customMapStyle={mapStyleDark}
                 initialRegion={{
-                  latitude: currentLocation?.latitude || activeRide.pickup_latitude,
-                  longitude: currentLocation?.longitude || activeRide.pickup_longitude,
+                  latitude: currentLocation?.latitude || activeRide.pickup_latitude || 11.0,
+                  longitude: currentLocation?.longitude || activeRide.pickup_longitude || 78.0,
                   latitudeDelta: 0.05,
                   longitudeDelta: 0.05,
                 }}
               >
                 {currentLocation && (
                   <Marker coordinate={currentLocation} title="You">
-                    <View style={styles.driverDot} />
+                    <View style={styles.driverDot}>
+                      <View style={styles.driverDotInner} />
+                    </View>
                   </Marker>
                 )}
                 {activeRide.pickup_latitude && (
-                  <Marker coordinate={{ latitude: activeRide.pickup_latitude, longitude: activeRide.pickup_longitude }} title="Pickup" pinColor="green" />
+                  <Marker
+                    coordinate={{ latitude: activeRide.pickup_latitude, longitude: activeRide.pickup_longitude }}
+                    title="Pickup"
+                    pinColor="green"
+                  />
                 )}
-                {activeRide.dropoff_latitude && (
-                  <Marker coordinate={{ latitude: activeRide.dropoff_latitude, longitude: activeRide.dropoff_longitude }} title="Dropoff" pinColor="red" />
+                {activeRide.dropoff_latitude && activeRide.dropoff_latitude !== 0 && (
+                  <Marker
+                    coordinate={{ latitude: activeRide.dropoff_latitude, longitude: activeRide.dropoff_longitude }}
+                    title="Dropoff"
+                    pinColor="red"
+                  />
+                )}
+                {routeCoordinates.length > 0 && (
+                  <Polyline coordinates={routeCoordinates} strokeWidth={4} strokeColor={COLORS.blue} />
                 )}
               </MapView>
             </View>
 
+            {/* Ride Location Details */}
             <View style={styles.rideDetails}>
               <View style={styles.locationRow}>
-                <View style={styles.dotLine} />
-                <MapPin size={16} color="#10b981" />
-                <Text style={styles.locationText} numberOfLines={2}>{activeRide.pickup_address}</Text>
+                <MapPin size={16} color={COLORS.green} />
+                <Text style={styles.locationText} numberOfLines={2}>{activeRide.pickup_address || 'Pickup location'}</Text>
               </View>
-              <View style={[styles.locationRow, {marginTop: 16}]}>
-                <MapPin size={16} color="#ef4444" />
+              <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 12, marginLeft: 28 }} />
+              <View style={styles.locationRow}>
+                <MapPin size={16} color={COLORS.red} />
                 <Text style={styles.locationText} numberOfLines={2}>{activeRide.dropoff_address || 'Drop location not specified'}</Text>
               </View>
             </View>
 
+            {/* Rider Info */}
+            <View style={[styles.rideDetails, { marginTop: 0 }]}>
+              <Text style={{ color: COLORS.text, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
+                {activeRide.passenger_name || activeRide.customer_name || 'Rider'}
+              </Text>
+              <Text style={{ color: COLORS.textSecondary }}>
+                {activeRide.passenger_phone || activeRide.customer_phone || 'No phone'}
+              </Text>
+              {activeRide.fare && (
+                <Text style={{ color: COLORS.green, fontWeight: 'bold', fontSize: 18, marginTop: 8 }}>
+                  Fare: ₹{activeRide.fare || activeRide.total_fare || 0}
+                </Text>
+              )}
+            </View>
+
+            {/* Action Buttons */}
             <View style={styles.actionsRow}>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => Linking.openURL(`tel:${activeRide.customer_phone || ''}`)}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => callPhone(activeRide.passenger_phone || activeRide.customer_phone)}>
                 <Phone size={20} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconBtn, {backgroundColor: '#10b981'}]} onPress={() => Linking.openURL(`whatsapp://send?phone=91${activeRide.customer_phone || ''}`)}>
+              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.green }]} onPress={() => whatsappToPhone(activeRide.passenger_phone || activeRide.customer_phone)}>
                 <MessageCircle size={20} color="#fff" />
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.iconBtn, {flex: 1, backgroundColor: '#3b82f6', flexDirection: 'row', gap: 8}]} 
+              <TouchableOpacity
+                style={[styles.iconBtn, { flex: 1, backgroundColor: COLORS.blue, flexDirection: 'row', gap: 8 }]}
                 onPress={() => openNavigation(
-                  (activeRide.status === 'accepted' || activeRide.status === 'driver_arrived') ? activeRide.pickup_latitude : activeRide.dropoff_latitude,
-                  (activeRide.status === 'accepted' || activeRide.status === 'driver_arrived') ? activeRide.pickup_longitude : activeRide.dropoff_longitude
+                  (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED)
+                    ? activeRide.pickup_latitude : activeRide.dropoff_latitude,
+                  (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED)
+                    ? activeRide.pickup_longitude : activeRide.dropoff_longitude
                 )}
               >
                 <Navigation size={20} color="#fff" />
@@ -829,31 +951,38 @@ export default function DriveOScreen() {
               </TouchableOpacity>
             </View>
 
-            {activeRide.status === 'accepted' ? (
-              <View style={styles.progressSection}>
-                <TouchableOpacity 
-                  style={[styles.primaryBtn, {marginTop: 16}]} 
-                  onPress={async () => {
-                    const { error } = await supabase
-                      .from('rides')
-                      .update({ status: 'driver_arrived' })
-                      .eq('id', activeRide.id);
-                    if (!error) {
-                      setActiveRide({ ...activeRide, status: 'driver_arrived' });
-                    }
-                  }}
-                >
-                  <Text style={styles.primaryBtnText}>I Have Arrived at Pickup</Text>
-                </TouchableOpacity>
-              </View>
-            ) : activeRide.status === 'driver_arrived' ? (
+            {/* Share Location during trip */}
+            {activeRide.status === RIDE_STATUS.IN_PROGRESS && currentLocation && (
+              <TouchableOpacity
+                style={[styles.outlineBtn, { borderColor: COLORS.green, marginBottom: 12 }]}
+                onPress={() => shareLocationWhatsApp(currentLocation.latitude, currentLocation.longitude, 'Driver live location — SuprO')}
+              >
+                <Navigation size={16} color={COLORS.green} />
+                <Text style={[styles.outlineBtnText, { color: COLORS.green }]}>Share Live Location</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Status-specific Actions */}
+            {activeRide.status === RIDE_STATUS.ACCEPTED && (
+              <TouchableOpacity
+                style={[styles.primaryBtn, { marginTop: 8 }]}
+                onPress={async () => {
+                  const { error } = await supabase.from('rides').update({ status: RIDE_STATUS.DRIVER_ARRIVED }).eq('id', activeRide.id);
+                  if (!error) setActiveRide({ ...activeRide, status: RIDE_STATUS.DRIVER_ARRIVED });
+                }}
+              >
+                <Text style={styles.primaryBtnText}>📍 I Have Arrived at Pickup</Text>
+              </TouchableOpacity>
+            )}
+
+            {activeRide.status === RIDE_STATUS.DRIVER_ARRIVED && (
               <View style={styles.otpSection}>
-                <Text style={styles.otpLabel}>Enter 4-digit PIN to start trip</Text>
+                <Text style={styles.otpLabel}>Enter rider's 4-digit PIN to start trip</Text>
                 <View style={styles.otpRow}>
-                  {[0,1,2,3].map((i) => (
+                  {[0, 1, 2, 3].map((i) => (
                     <TextInput
                       key={i}
-                      ref={el => otpInputs.current[i] = el}
+                      ref={(el) => (otpInputs.current[i] = el)}
                       style={styles.otpInput}
                       keyboardType="number-pad"
                       maxLength={1}
@@ -862,134 +991,161 @@ export default function DriveOScreen() {
                     />
                   ))}
                 </View>
-                <TouchableOpacity 
-                  style={[styles.primaryBtn, {marginTop: 16}]} 
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { marginTop: 16 }, otp.join('').length !== 4 && { opacity: 0.5 }]}
                   onPress={verifyOtp}
                   disabled={otp.join('').length !== 4}
                 >
-                  <Text style={styles.primaryBtnText}>Start Trip</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.progressSection}>
-                <View style={styles.fareEst}>
-                  <Text style={styles.fareEstLabel}>Est. Fare</Text>
-                  <Text style={styles.fareEstVal}>{formatCurrency(activeRide.total_fare)}</Text>
-                </View>
-                <TouchableOpacity style={[styles.primaryBtn, {backgroundColor: '#ef4444', marginTop: 16}]} onPress={completeTrip}>
-                  <Text style={styles.primaryBtnText}>🏁 Complete Trip</Text>
+                  <Text style={styles.primaryBtnText}>✅ Verify OTP & Start Trip</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* Cancel Ride Button */}
-            {(activeRide.status === 'accepted' || activeRide.status === 'driver_arrived') && (
-              <TouchableOpacity 
-                style={[styles.outlineBtn, {borderColor: '#ef4444', marginTop: 16}]} 
-                onPress={handleCancelRide}
-              >
-                <Text style={[styles.outlineBtnText, {color: '#ef4444'}]}>Cancel Ride</Text>
+            {activeRide.status === RIDE_STATUS.IN_PROGRESS && (
+              <View style={styles.progressSection}>
+                <View style={styles.fareEst}>
+                  <Text style={styles.fareEstLabel}>Estimated Fare</Text>
+                  <Text style={styles.fareEstVal}>₹{activeRide.fare || activeRide.total_fare || 0}</Text>
+                </View>
+                {activeRide.started_at && (
+                  <Text style={{ color: COLORS.textMuted, textAlign: 'center', marginTop: 8 }}>
+                    Trip started at {new Date(activeRide.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                )}
+                <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#dc2626', marginTop: 16 }]} onPress={completeTrip}>
+                  <Text style={styles.primaryBtnText}>🏁 Complete Trip — ₹{activeRide.fare || activeRide.total_fare || 0}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Cancel Ride */}
+            {(activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED) && (
+              <TouchableOpacity style={[styles.outlineBtn, { borderColor: COLORS.red, marginTop: 12 }]} onPress={handleCancelRide}>
+                <XCircle size={16} color={COLORS.red} />
+                <Text style={[styles.outlineBtnText, { color: COLORS.red }]}>Cancel Ride</Text>
               </TouchableOpacity>
             )}
           </View>
         )}
 
-        {/* EARNINGS DASHBOARD */}
+        {/* ──── EARNINGS DASHBOARD ──── */}
         {!activeRide && (
-          <View style={styles.dashboardGrid}>
-            <View style={styles.statCard}>
-              <IndianRupee size={24} color="#10b981" />
-              <Text style={styles.statValue}>{formatCurrency(earnings.todaySum)}</Text>
-              <Text style={styles.statLabel}>Today's Earnings</Text>
+          <>
+            <View style={styles.dashboardGrid}>
+              <View style={styles.statCard}>
+                <IndianRupee size={24} color={COLORS.green} />
+                <Text style={styles.statValue}>₹{earnings.todaySum}</Text>
+                <Text style={styles.statLabel}>Today's Earnings</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Car size={24} color={COLORS.blue} />
+                <Text style={styles.statValue}>{earnings.todayTrips}</Text>
+                <Text style={styles.statLabel}>Today's Trips</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Wallet size={24} color={COLORS.yellow} />
+                <Text style={styles.statValue}>₹{driver.wallet_balance || 0}</Text>
+                <Text style={styles.statLabel}>Wallet Balance</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Clock size={24} color={COLORS.purple} />
+                <Text style={styles.statValue}>₹{earnings.weekSum}</Text>
+                <Text style={styles.statLabel}>Weekly Earnings</Text>
+              </View>
             </View>
-            <View style={styles.statCard}>
-              <Car size={24} color="#3b82f6" />
-              <Text style={styles.statValue}>{earnings.todayTrips}</Text>
-              <Text style={styles.statLabel}>Today's Trips</Text>
+
+            {/* WhatsApp Check-in Card */}
+            <View style={styles.card}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                <MessageCircle size={20} color={COLORS.green} />
+                <Text style={styles.cardTitle}>Check-in via WhatsApp</Text>
+              </View>
+              <Text style={styles.cardText}>Go online and get ride alerts on WhatsApp by sending "Active" to our bot.</Text>
+              <TouchableOpacity style={styles.outlineBtn} onPress={shareWhatsAppPin}>
+                <Send size={16} color={COLORS.green} />
+                <Text style={styles.outlineBtnText}>Send "Active" on WhatsApp</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.statCard}>
-              <Wallet size={24} color="#f59e0b" />
-              <Text style={styles.statValue}>{formatCurrency(driver.wallet_balance || 0)}</Text>
-              <Text style={styles.statLabel}>Wallet Balance</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Clock size={24} color="#8b5cf6" />
-              <Text style={styles.statValue}>{formatCurrency(earnings.weekSum)}</Text>
-              <Text style={styles.statLabel}>This Week</Text>
-            </View>
-          </View>
+
+            {/* Subscription Dues */}
+            {driver.pending_commission > 0 && (
+              <View style={styles.card}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                  <Wallet size={20} color={COLORS.yellow} />
+                  <Text style={styles.cardTitle}>Subscription Dues</Text>
+                </View>
+                <Text style={styles.cardText}>Pending Commission: ₹{driver.pending_commission}</Text>
+                <Text style={styles.cardTextLight}>Pay your dues via UPI to continue accepting rides.</Text>
+                <TouchableOpacity
+                  style={[styles.outlineBtn, { borderColor: COLORS.yellow }]}
+                  onPress={() => payViaUPI(driver.pending_commission, ADMIN_UPI, 'SuprO Driver Dues')}
+                >
+                  <IndianRupee size={16} color={COLORS.yellow} />
+                  <Text style={[styles.outlineBtnText, { color: COLORS.yellow }]}>Pay Dues via UPI</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
-
-        {/* QUICK WHATSAPP PIN */}
-        <View style={styles.card}>
-          <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 12}}>
-            <MessageCircle size={20} color="#10b981" />
-            <Text style={styles.cardTitle}>WhatsApp Integration</Text>
-          </View>
-          <Text style={styles.cardText}>You can also go online and get ride alerts on WhatsApp by sending "Active" to our bot.</Text>
-          <TouchableOpacity style={styles.outlineBtn} onPress={shareWhatsAppPin}>
-            <Send size={16} color="#10b981" />
-            <Text style={styles.outlineBtnText}>Send "Active" on WhatsApp</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* SUBSCRIPTION */}
-        <View style={styles.card}>
-          <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 12}}>
-            <CheckCircle size={20} color="#3b82f6" />
-            <Text style={styles.cardTitle}>Subscription</Text>
-          </View>
-          <Text style={styles.cardText}>Pending Commission: {formatCurrency(driver.pending_commission || 0)}</Text>
-          <Text style={styles.cardTextLight}>Pay your dues via UPI to continue accepting rides without interruption.</Text>
-          <TouchableOpacity 
-            style={[styles.outlineBtn, {borderColor: '#3b82f6', marginTop: 12}]} 
-            onPress={() => {
-              const upiLink = `upi://pay?pa=9486335870@hdfcbank&pn=SuprO&am=${driver.pending_commission || 100}&cu=INR&tn=SuprO+Driver+Subscription`;
-              Linking.openURL(upiLink).catch(() => Alert.alert('Error', 'No UPI app found'));
-            }}
-          >
-            <Text style={[styles.outlineBtnText, {color: '#3b82f6'}]}>Pay Dues via UPI</Text>
-          </TouchableOpacity>
-        </View>
-
       </ScrollView>
 
-      {/* INCOMING RIDE MODAL */}
+      {/* ──── INCOMING RIDE REQUEST MODAL ──── */}
       <Modal visible={!!incomingRide} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>🔔 NEW RIDE REQUEST!</Text>
-            
+
             <View style={styles.modalDetails}>
+              <Text style={{ color: COLORS.text, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
+                {incomingRide?.passenger_name || incomingRide?.customer_name || 'Rider'}
+              </Text>
+              <Text style={{ color: COLORS.textSecondary, marginBottom: 12 }}>
+                {incomingRide?.passenger_phone || incomingRide?.customer_phone || ''}
+              </Text>
               <View style={styles.locationRow}>
-                <MapPin size={16} color="#10b981" />
-                <Text style={styles.locationText}>{incomingRide?.pickup_address}</Text>
+                <MapPin size={16} color={COLORS.green} />
+                <Text style={styles.locationText}>{incomingRide?.pickup_address || 'Pickup location'}</Text>
               </View>
-              <View style={[styles.locationRow, {marginTop: 12}]}>
-                <MapPin size={16} color="#ef4444" />
+              <View style={[styles.locationRow, { marginTop: 12 }]}>
+                <MapPin size={16} color={COLORS.red} />
                 <Text style={styles.locationText}>{incomingRide?.dropoff_address || 'Not specified'}</Text>
               </View>
             </View>
 
             <View style={styles.fareBox}>
-              <Text style={styles.fareLabel}>Est. Earnings</Text>
-              <Text style={styles.fareAmount}>{formatCurrency(incomingRide?.total_fare)}</Text>
-              <Text style={styles.fareSub}>(Fare {formatCurrency(incomingRide?.total_fare)} - Platform Fee ₹0)</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 8 }}>
+                <Text style={{ color: COLORS.textMuted }}>
+                  📏 {incomingRide?.estimated_distance || incomingRide?.distance_km || '—'} km
+                </Text>
+                <Text style={{ color: COLORS.textMuted }}>
+                  💳 {incomingRide?.payment_mode || 'Cash/UPI'}
+                </Text>
+              </View>
+              <Text style={styles.fareAmount}>₹{incomingRide?.fare || incomingRide?.total_fare || '—'}</Text>
+              <Text style={styles.fareSub}>Estimated Fare</Text>
             </View>
 
+            {/* Countdown Timer */}
             <View style={styles.timerContainer}>
               <Text style={styles.timerText}>⏱️ {timeLeft}s remaining</Text>
               <View style={styles.progressBg}>
-                <Animated.View style={[
-                  styles.progressFill, 
-                  { width: countdownAnim.interpolate({inputRange: [0, 100], outputRange: ['0%', '100%']}) }
-                ]} />
+                <Animated.View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: countdownAnim.interpolate({
+                        inputRange: [0, 100],
+                        outputRange: ['0%', '100%'],
+                      }),
+                    },
+                  ]}
+                />
               </View>
             </View>
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.skipBtn} onPress={handleSkipRide}>
-                <XCircle size={20} color="#ef4444" />
+                <XCircle size={20} color={COLORS.red} />
                 <Text style={styles.skipBtnText}>SKIP</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.acceptBtn} onPress={handleAcceptRide}>
@@ -1000,21 +1156,23 @@ export default function DriveOScreen() {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
 
+// ══════════════════════════════════════════════
+// ─── STYLES ───
+// ══════════════════════════════════════════════
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0f1e',
+    backgroundColor: COLORS.bg,
   },
   centerContainer: {
     flex: 1,
-    backgroundColor: '#0a0f1e',
+    backgroundColor: COLORS.bg,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   regContainer: {
     padding: 24,
@@ -1023,30 +1181,44 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: COLORS.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#94a3b8',
+    color: COLORS.textMuted,
+    marginBottom: 24,
+  },
+  progressBar: {
+    flexDirection: 'row',
+    gap: 8,
     marginBottom: 32,
+  },
+  progressStep: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+  },
+  progressStepActive: {
+    backgroundColor: COLORS.green,
   },
   inputGroup: {
     marginBottom: 20,
   },
   label: {
-    color: '#cbd5e1',
+    color: COLORS.textSecondary,
     marginBottom: 8,
     fontSize: 14,
-    fontWeight: '500'
+    fontWeight: '500',
   },
   input: {
-    backgroundColor: '#1e293b',
+    backgroundColor: COLORS.cardLight,
     borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 8,
+    borderColor: COLORS.border,
+    borderRadius: 10,
     padding: 14,
-    color: '#fff',
+    color: COLORS.text,
     fontSize: 16,
   },
   vehicleTypeRow: {
@@ -1055,29 +1227,36 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   vehicleTypeBtn: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#1e293b',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.cardLight,
+    alignItems: 'center',
+    minWidth: 70,
   },
   vehicleTypeBtnActive: {
-    borderColor: '#10b981',
-    backgroundColor: '#10b98120',
+    borderColor: COLORS.green,
+    backgroundColor: `${COLORS.green}15`,
   },
   vehicleTypeText: {
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontWeight: '500',
+    fontSize: 12,
+    marginTop: 4,
   },
   vehicleTypeTextActive: {
-    color: '#10b981',
+    color: COLORS.green,
   },
   primaryBtn: {
-    backgroundColor: '#10b981',
+    backgroundColor: COLORS.green,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   primaryBtnText: {
     color: '#fff',
@@ -1090,9 +1269,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingTop: 50,
-    backgroundColor: '#111827',
+    backgroundColor: COLORS.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+    borderBottomColor: COLORS.cardLight,
   },
   headerTitle: {
     color: '#fff',
@@ -1100,7 +1279,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerSubtitle: {
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 14,
     marginTop: 2,
   },
@@ -1113,10 +1292,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   toggleOn: {
-    backgroundColor: '#10b981',
+    backgroundColor: COLORS.green,
   },
   toggleOff: {
-    backgroundColor: '#ef4444',
+    backgroundColor: COLORS.red,
   },
   toggleText: {
     color: '#fff',
@@ -1125,17 +1304,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   statusIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#111827',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: COLORS.card,
+    padding: 14,
+    borderRadius: 10,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: COLORS.cardLight,
   },
   statusDot: {
     width: 10,
@@ -1144,23 +1324,23 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   statusText: {
-    color: '#cbd5e1',
+    color: COLORS.textSecondary,
     fontSize: 14,
     fontWeight: '500',
   },
   dashboardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 12,
     marginBottom: 20,
   },
   statCard: {
     width: '47%',
-    backgroundColor: '#111827',
+    backgroundColor: COLORS.card,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: COLORS.cardLight,
   },
   statValue: {
     color: '#fff',
@@ -1169,16 +1349,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   statLabel: {
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 13,
     marginTop: 4,
   },
   card: {
-    backgroundColor: '#111827',
+    backgroundColor: COLORS.card,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: COLORS.cardLight,
     marginBottom: 16,
   },
   cardTitle: {
@@ -1188,13 +1368,13 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cardText: {
-    color: '#cbd5e1',
+    color: COLORS.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 4,
   },
   cardTextLight: {
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -1203,22 +1383,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#10b981',
-    marginTop: 16,
+    borderColor: COLORS.green,
+    marginTop: 12,
     gap: 8,
   },
   outlineBtnText: {
-    color: '#10b981',
+    color: COLORS.green,
     fontSize: 14,
     fontWeight: '600',
   },
   activeRideCard: {
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#3b82f6',
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.blue,
     padding: 20,
     marginBottom: 20,
   },
@@ -1236,7 +1416,7 @@ const styles = StyleSheet.create({
   rideDetails: {
     backgroundColor: '#0f172a',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 10,
     marginBottom: 16,
   },
   locationRow: {
@@ -1248,42 +1428,36 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     flex: 1,
-  },
-  dotLine: {
-    position: 'absolute',
-    left: 7,
-    top: 20,
-    bottom: -20,
-    width: 2,
-    backgroundColor: '#334155',
-    zIndex: -1,
+    lineHeight: 20,
   },
   actionsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   iconBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#334155',
+    backgroundColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   btnText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 14,
   },
   otpSection: {
     borderTopWidth: 1,
-    borderTopColor: '#1e293b',
-    paddingTop: 16,
+    borderTopColor: COLORS.cardLight,
+    paddingTop: 20,
   },
   otpLabel: {
-    color: '#cbd5e1',
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    fontSize: 15,
   },
   otpRow: {
     flexDirection: 'row',
@@ -1291,20 +1465,20 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   otpInput: {
-    width: 50,
-    height: 60,
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
-    borderRadius: 8,
+    width: 56,
+    height: 64,
+    backgroundColor: COLORS.cardLight,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    borderRadius: 12,
     color: '#fff',
-    fontSize: 24,
+    fontSize: 28,
     textAlign: 'center',
     fontWeight: 'bold',
   },
   progressSection: {
     borderTopWidth: 1,
-    borderTopColor: '#1e293b',
+    borderTopColor: COLORS.cardLight,
     paddingTop: 16,
   },
   fareEst: {
@@ -1313,33 +1487,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#0f172a',
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   fareEstLabel: {
-    color: '#94a3b8',
+    color: COLORS.textMuted,
     fontSize: 14,
   },
   fareEstVal: {
-    color: '#fff',
-    fontSize: 20,
+    color: COLORS.green,
+    fontSize: 22,
     fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#111827',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#1e293b',
+    borderTopWidth: 2,
+    borderTopColor: COLORS.green,
   },
   modalTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
@@ -1352,45 +1526,43 @@ const styles = StyleSheet.create({
   },
   fareBox: {
     alignItems: 'center',
-    backgroundColor: '#0a0f1e',
+    backgroundColor: COLORS.bg,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: COLORS.cardLight,
     marginBottom: 20,
   },
-  fareLabel: {
-    color: '#94a3b8',
-    fontSize: 14,
-  },
   fareAmount: {
-    color: '#10b981',
-    fontSize: 32,
+    color: COLORS.green,
+    fontSize: 36,
     fontWeight: 'bold',
     marginVertical: 4,
   },
   fareSub: {
-    color: '#64748b',
+    color: COLORS.textMuted,
     fontSize: 12,
   },
   timerContainer: {
     marginBottom: 24,
   },
   timerText: {
-    color: '#cbd5e1',
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: '600',
+    fontSize: 16,
   },
   progressBg: {
     height: 8,
-    backgroundColor: '#1e293b',
+    backgroundColor: COLORS.cardLight,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#10b981',
+    backgroundColor: COLORS.green,
+    borderRadius: 4,
   },
   modalActions: {
     flexDirection: 'row',
@@ -1403,12 +1575,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ef4444',
+    borderWidth: 1.5,
+    borderColor: COLORS.red,
     gap: 8,
   },
   skipBtnText: {
-    color: '#ef4444',
+    color: COLORS.red,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -1419,7 +1591,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#10b981',
+    backgroundColor: COLORS.green,
     gap: 8,
   },
   acceptBtnText: {
@@ -1428,10 +1600,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   driverDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#3b82f6',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverDotInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.blue,
     borderWidth: 2,
     borderColor: '#fff',
   },

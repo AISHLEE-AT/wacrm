@@ -15,7 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import ViewShot from 'react-native-view-shot';
-import { Audio } from 'expo-av';
+
 
 import { AppContext } from '../context/AppContext';
 import { geminiToolsService } from '../services/geminiToolsService';
@@ -51,7 +51,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   
   // Voice Recording (Kural AI)
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<any | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
   // Status Image Gen (StatusO)
@@ -77,11 +77,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
 
   const startRecording = async () => {
     try {
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: newRec } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      setRecording(newRec);
-      setIsRecording(true);
+      Alert.alert('Notice', 'Voice recording temporarily disabled due to audio module upgrade.');
     } catch (err) {
       Alert.alert('Error', 'Failed to start recording');
     }
@@ -89,13 +85,6 @@ export default function AishleeToolsScreen({ navigation }: any) {
 
   const stopRecording = async () => {
     setIsRecording(false);
-    if (!recording) return;
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    if (uri) {
-      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-      setAttachment({ uri, base64, mimeType: 'audio/m4a', name: 'Voice Input (Kural AI)' });
-    }
     setRecording(null);
   };
 

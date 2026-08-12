@@ -13,7 +13,6 @@ import {
   Linking,
   Animated,
   SafeAreaView,
-  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -31,87 +30,81 @@ import {
   Star,
   CheckCircle,
   X,
-  CreditCard,
-  Banknote,
-  MoreHorizontal,
   ChevronRight,
-  Menu,
+  User,
+  Truck,
+  ArrowLeft,
+  RefreshCw,
 } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { AppContext } from '../context/AppContext';
+import {
+  COLORS,
+  VEHICLE_CATEGORIES,
+  RIDE_STATUS,
+  API_BASE_URL,
+  ADMIN_UPI,
+  getDistanceKm,
+  calculateFare,
+  generateRideOTP,
+  openNativeNavigation,
+  shareLocationWhatsApp,
+  whatsappToPhone,
+  callPhone,
+  fetchOSRMRoute,
+  payViaUPI,
+  dispatchRideToDriverWhatsApp,
+  mapStyleDark,
+  formatPhoneForWhatsApp,
+} from '../lib/rideUtils';
 
 const { width, height } = Dimensions.get('window');
-
-const API_BASE_URL = 'https://watscrm.vercel.app';
-const ADMIN_UPI = '9486335870@hdfcbank';
-const COLORS = {
-  bg: '#0a0f1e',
-  card: '#111827',
-  cardLight: '#1e293b',
-  green: '#10b981',
-  red: '#ef4444',
-  text: '#ffffff',
-  textMuted: '#94a3b8',
-  border: '#334155',
-  overlay: 'rgba(0,0,0,0.6)',
-};
-
-const SERVICE_TYPES = ['Daily', 'Rental', 'Outstation', 'Cargo'];
-
-const getDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
 
 export default function RideOScreen({ navigation }) {
   const mapRef = useRef(null);
   const { user } = useContext(AppContext);
 
-  // States
-  const [activeTab, setActiveTab] = useState('Daily');
+  // Core State
+  const [rideState, setRideState] = useState('SELECT_PICKUP'); // IDLE, SELECT_DROPOFF, SHOW_DRIVERS, DRIVER_SELECTED, SEARCHING, ACCEPTED, IN_PROGRESS, COMPLETED
+  
+  // Location & Addresses
   const [location, setLocation] = useState(null);
-  const [pickupAddress, setPickupAddress] = useState('Fetching location...');
+  const [pickupAddress, setPickupAddress] = useState('Locating...');
+  const [pickupQuery, setPickupQuery] = useState('');
   const [dropoffQuery, setDropoffQuery] = useState('');
   const [dropoffLocation, setDropoffLocation] = useState(null);
   const [dropoffAddress, setDropoffAddress] = useState('');
+  
+  // Map Routing
   const [routeCoordinates, setRouteCoordinates] = useState([]);
+  const [driverRouteCoordinates, setDriverRouteCoordinates] = useState([]);
+  const [isMapMoving, setIsMapMoving] = useState(false);
+  
+  // Data State
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
   const [selectedDriver, setSelectedDriver] = useState(null);
-  
-  // Categories and Fares
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
   const [fareEstimate, setFareEstimate] = useState(null);
-  const [paymentMode, setPaymentMode] = useState('UPI'); // 'UPI' | 'CASH'
-  const [rentalPackages, setRentalPackages] = useState([]);
-  
-  const [rideState, setRideState] = useState('IDLE');
+  const [paymentMode, setPaymentMode] = useState('UPI');
   const [currentRide, setCurrentRide] = useState(null);
+  const [driverInfo, setDriverInfo] = useState(null);
+  
+  // UI State
   const [loading, setLoading] = useState(false);
-  const [isMapMoving, setIsMapMoving] = useState(false);
+  const [countdown, setCountdown] = useState(60);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   
   // Rating State
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState('');
 
-  // Initial Location & Data Fetch
+  // 1. Initial Setup: Get Location
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission denied', 'Allow location access to book a ride.');
+        Alert.alert('Permission denied', 'Location is required to book a ride.');
         return;
       }
-
       let currentLoc = await Location.getCurrentPositionAsync({});
       setLocation(currentLoc.coords);
       
@@ -119,331 +112,369 @@ export default function RideOScreen({ navigation }) {
         mapRef.current.animateToRegion({
           latitude: currentLoc.coords.latitude,
           longitude: currentLoc.coords.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
         });
       }
-
-      // Reverse geocode pickup
-      let geocode = await Location.reverseGeocodeAsync({
-        latitude: currentLoc.coords.latitude,
-        longitude: currentLoc.coords.longitude,
-      });
-      if (geocode && geocode.length > 0) {
-        setPickupAddress(`${geocode[0].name || ''}, ${geocode[0].street || ''}, ${geocode[0].city || ''}`.replace(/^, |, $/g, ''));
-      }
-
-      fetchCategories();
-      fetchNearbyDrivers(currentLoc.coords.latitude, currentLoc.coords.longitude);
+      
+      reverseGeocode(currentLoc.coords.latitude, currentLoc.coords.longitude, setPickupAddress);
     })();
   }, []);
 
-  // Fetch Categories
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/rides/categories`);
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data.categories || []);
-        if (data.categories?.length > 0) setSelectedCategory(data.categories[0].id);
-      } else {
-        // Fallback mock data
-        setCategories([
-          { id: 'bike', name: 'BikeO', icon: '🏍', minFare: 25 },
-          { id: 'auto', name: 'AutoO', icon: '🛺', minFare: 45 },
-          { id: 'mini', name: 'Mini', icon: '🚕', minFare: 89 },
-          { id: 'sedan', name: 'Sedan', icon: '🚘', minFare: 129 },
-          { id: 'suv', name: 'SUV', icon: '🚙', minFare: 199 },
-          { id: 'cargo', name: 'Cargo', icon: '📦', minFare: 99 },
-        ]);
-        setSelectedCategory('bike');
-      }
-    } catch (e) {
-      console.log('Error fetching categories', e);
-    }
-  };
-
-  // Fetch Nearby Drivers via Supabase RPC
-  const fetchNearbyDrivers = async (lat, lng) => {
-    try {
-      const { data, error } = await supabase.rpc('get_nearby_drivers', {
-        pickup_lat: lat,
-        pickup_lon: lng,
-        radius_km: 5,
-      });
-      if (!error && data) {
-        setNearbyDrivers(data);
-      }
-    } catch (e) {
-      console.log('Error fetching drivers', e);
-    }
-  };
-
-  // Fetch Fare Estimate
-  const fetchFareEstimate = async (dropLat, dropLng) => {
-    if (!location || !selectedCategory) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/rides/estimate?pickup_lat=${location.latitude}&pickup_lng=${location.longitude}&dropoff_lat=${dropLat}&dropoff_lng=${dropLng}&category=${selectedCategory}`);
-      let estimatedData;
-      if (res.ok) {
-        estimatedData = await res.json();
-        setFareEstimate(estimatedData);
-      } else {
-        // Mock estimate
-        const distKm = getDistance(location.latitude, location.longitude, dropLat, dropLng);
-        const base = selectedCategory === 'bike' ? 15 : selectedCategory === 'auto' ? 30 : 50;
-        const pKm = selectedCategory === 'bike' ? 8 : selectedCategory === 'auto' ? 14 : 16;
-        // Surge Pricing logic (Time-based demand)
-        const currentHour = new Date().getHours();
-        let surgeMultiplier = 1.0;
-        if (currentHour >= 17 && currentHour <= 20) {
-          surgeMultiplier = 1.5; // Evening peak
-        } else if (currentHour >= 8 && currentHour <= 10) {
-          surgeMultiplier = 1.3; // Morning peak
-        }
-
-        const totalFare = Math.max(
-          selectedCategory === 'bike' ? 25 : selectedCategory === 'auto' ? 45 : 89,
-          Math.round((base + Math.max(0, distKm - 1.5) * pKm) * surgeMultiplier)
-        );
-
-        estimatedData = {
-          baseFare: base,
-          distanceFare: Math.round(Math.max(0, distKm - 1.5) * pKm * surgeMultiplier),
-          timeFare: 0,
-          platformFee: 0,
-          total: totalFare,
-          distanceText: `${distKm.toFixed(1)} km`,
-          durationText: 'N/A'
-        };
-        setFareEstimate(estimatedData);
-      }
-      
-      // OSRM route fetch
-      try {
-        const osrmRes = await fetch(`https://router.project-osrm.org/route/v1/driving/${location.longitude},${location.latitude};${dropLng},${dropLat}?overview=full&geometries=geojson`);
-        if (osrmRes.ok) {
-          const osrmData = await osrmRes.json();
-          if (osrmData.routes && osrmData.routes.length > 0) {
-            const coords = osrmData.routes[0].geometry.coordinates.map(coord => ({
-              latitude: coord[1],
-              longitude: coord[0]
-            }));
-            setRouteCoordinates(coords);
-          } else {
-            setRouteCoordinates([
-              { latitude: location.latitude, longitude: location.longitude },
-              { latitude: dropLat, longitude: dropLng }
-            ]);
-          }
-        } else {
-          setRouteCoordinates([
-            { latitude: location.latitude, longitude: location.longitude },
-            { latitude: dropLat, longitude: dropLng }
-          ]);
-        }
-      } catch (osrmError) {
-        setRouteCoordinates([
-          { latitude: location.latitude, longitude: location.longitude },
-          { latitude: dropLat, longitude: dropLng }
-        ]);
-      }
-    } catch (e) {
-      console.log('Estimate error', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle Dropoff Search
-  const handleDropoffSearch = async () => {
-    if (!dropoffQuery) return;
-    try {
-      const geocoded = await Location.geocodeAsync(dropoffQuery);
-      if (geocoded && geocoded.length > 0) {
-        const { latitude, longitude } = geocoded[0];
-        setDropoffLocation({ latitude, longitude });
-        setDropoffAddress(dropoffQuery);
-        fetchFareEstimate(latitude, longitude);
-        
-        if (mapRef.current && location) {
-          mapRef.current.fitToCoordinates(
-            [
-              { latitude: location.latitude, longitude: location.longitude },
-              { latitude, longitude }
-            ],
-            { edgePadding: { top: 100, right: 50, bottom: 400, left: 50 }, animated: true }
-          );
-        }
-      } else {
-        Alert.alert('Location not found', 'Try a different search term.');
-      }
-    } catch (e) {
-      Alert.alert('Search Error', 'Could not find location.');
-    }
-  };
-
-  // Subscribe to Ride Updates
+  // Pulse animation for SEARCHING state
   useEffect(() => {
-    if (currentRide && currentRide.id) {
-      const channel = supabase
+    if (rideState === 'SEARCHING') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true })
+        ])
+      ).start();
+
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            handleSearchTimeout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      setCountdown(60);
+      pulseAnim.setValue(1);
+    }
+  }, [rideState]);
+
+  // Realtime Subscriptions
+  useEffect(() => {
+    let rideChannel = null;
+    let driverChannel = null;
+
+    if (currentRide?.id && (rideState === 'SEARCHING' || rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS')) {
+      rideChannel = supabase
         .channel(`ride-${currentRide.id}`)
         .on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${currentRide.id}` },
-          (payload) => {
-            console.log('Ride update:', payload.new);
+          async (payload) => {
             const status = payload.new.status;
-            if (status === 'accepted') {
-              (async () => {
-                const { data: driverData } = await supabase.from('drivers').select('*').eq('id', payload.new.driver_id).single();
-                setCurrentRide(prev => ({ ...prev, ...payload.new, driverInfo: driverData }));
-                setRideState('ACCEPTED');
-              })();
+            if (status === 'accepted' && rideState === 'SEARCHING') {
+              // Fetch latest driver info
+              const { data: driverData } = await supabase
+                .from('drivers')
+                .select('*')
+                .eq('id', payload.new.driver_id)
+                .single();
+              setDriverInfo(driverData);
+              setCurrentRide(payload.new);
+              setRideState('ACCEPTED');
             } else if (status === 'in_progress') {
-              setCurrentRide(prev => ({ ...prev, ...payload.new }));
+              setCurrentRide(payload.new);
               setRideState('IN_PROGRESS');
             } else if (status === 'completed') {
-              setCurrentRide(prev => ({ ...prev, ...payload.new }));
+              setCurrentRide(payload.new);
               setRideState('COMPLETED');
             } else if (status === 'cancelled') {
-              setRideState('IDLE');
-              Alert.alert('Ride Cancelled', 'The ride was cancelled.');
+              Alert.alert('Ride Cancelled', 'The driver cancelled the ride.');
+              resetToPickup();
             }
           }
         )
         .subscribe();
-        
-      return () => {
-        supabase.removeChannel(channel);
-      };
     }
-  }, [currentRide?.id]);
 
-  // Subscribe to Driver Live Location
-  useEffect(() => {
-    if ((rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS') && currentRide?.driver_id) {
-      const driverChannel = supabase
-        .channel(`driver-loc-${currentRide.driver_id}`)
+    if (driverInfo?.id && (rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS')) {
+      driverChannel = supabase
+        .channel(`driver-loc-${driverInfo.id}`)
         .on(
           'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'drivers', filter: `id=eq.${currentRide.driver_id}` },
+          { event: 'UPDATE', schema: 'public', table: 'drivers', filter: `id=eq.${driverInfo.id}` },
           (payload) => {
-            if (payload.new.pickup_latitude && payload.new.pickup_longitude) {
-              setCurrentRide(prev => ({
+            if (payload.new.latitude && payload.new.longitude) {
+              setDriverInfo(prev => ({
                 ...prev,
-                driverInfo: {
-                  ...prev?.driverInfo,
-                  pickup_latitude: payload.new.pickup_latitude,
-                  pickup_longitude: payload.new.pickup_longitude
-                }
+                latitude: payload.new.latitude,
+                longitude: payload.new.longitude
               }));
             }
           }
         )
         .subscribe();
-      return () => {
-        supabase.removeChannel(driverChannel);
-      };
     }
-  }, [rideState, currentRide?.driver_id]);
 
-  // Book Ride
-  const handleBookRide = async () => {
-    if (!location || !dropoffLocation) {
-      Alert.alert('Error', 'Please enter a destination.');
-      return;
+    return () => {
+      if (rideChannel) supabase.removeChannel(rideChannel);
+      if (driverChannel) supabase.removeChannel(driverChannel);
+    };
+  }, [currentRide?.id, driverInfo?.id, rideState]);
+
+  // Helpers
+  const reverseGeocode = async (lat, lng, setter) => {
+    try {
+      let geocode = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      if (geocode && geocode.length > 0) {
+        const g = geocode[0];
+        // Build address preferring readable parts, skip Plus Codes (contain '+')
+        const parts = [
+          g.street && !g.street.includes('+') ? g.street : null,
+          g.district || g.subregion || null,
+          g.city || g.region || null,
+        ].filter(Boolean);
+        // Fallback: if street is a Plus Code, use name if it's not a Plus Code either
+        if (parts.length === 0 && g.name && !g.name.includes('+')) {
+          parts.push(g.name);
+        }
+        const address = parts.length > 0 ? parts.join(', ') : `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        setter(address);
+      }
+    } catch (e) {
+      setter('Unknown location');
     }
-    
+  };
+
+  const resetToPickup = () => {
+    setRideState('IDLE');
+    setDropoffLocation(null);
+    setDropoffAddress('');
+    setDropoffQuery('');
+    setRouteCoordinates([]);
+    setDriverRouteCoordinates([]);
+    setSelectedDriver(null);
+    setNearbyDrivers([]);
+    setCurrentRide(null);
+    setDriverInfo(null);
+    setLoading(false);
+  };
+
+  const handleMapRegionChangeComplete = async (region) => {
+    setIsMapMoving(false);
+    if (rideState === 'SELECT_PICKUP') {
+      setLocation({ latitude: region.latitude, longitude: region.longitude });
+      reverseGeocode(region.latitude, region.longitude, setPickupAddress);
+    } else if (rideState === 'SELECT_DROPOFF') {
+      setDropoffLocation({ latitude: region.latitude, longitude: region.longitude });
+      reverseGeocode(region.latitude, region.longitude, setDropoffAddress);
+    }
+  };
+
+  // Actions
+  const handlePickupSubmit = async () => {
+    if (!pickupQuery) return;
     setLoading(true);
     try {
-      const payload = {
-        pickup_lat: location.latitude,
-        pickup_lng: location.longitude,
-        dropoff_lat: dropoffLocation.latitude,
-        dropoff_lng: dropoffLocation.longitude,
-        pickup_address: pickupAddress,
-        dropoff_address: dropoffAddress,
-        category: selectedCategory,
-        fare: fareEstimate?.total || 50,
-        payment_mode: paymentMode.toLowerCase(),
-        passenger_phone: user?.phone || ''
-      };
-
-      const res = await fetch(`${API_BASE_URL}/api/rides/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      
-      const responseData = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(responseData.error || 'Failed to request ride');
+      const geocoded = await Location.geocodeAsync(pickupQuery);
+      if (geocoded && geocoded.length > 0) {
+        const loc = { latitude: geocoded[0].latitude, longitude: geocoded[0].longitude };
+        setLocation(loc);
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            ...loc,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+        }
+      } else {
+        Alert.alert('Location not found', 'Try another address.');
       }
-
-      setRideState('SEARCHING');
-      setCurrentRide(responseData.ride || responseData);
-      setLoading(false);
-      
     } catch (e) {
-      console.error(e);
-      Alert.alert('Booking Error', 'Could not request ride. ' + e.message);
+      Alert.alert('Error', 'Could not search location.');
+    } finally {
       setLoading(false);
     }
   };
 
-  const confirmCancel = async (reason) => {
+  const handleDropoffSubmit = async () => {
+    if (!dropoffQuery) return;
+    setLoading(true);
     try {
-      await fetch(`${API_BASE_URL}/api/rides/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ride_id: currentRide?.id, cancelled_by: 'passenger', reason })
-      });
-      setRideState('IDLE');
-      setCurrentRide(null);
+      const geocoded = await Location.geocodeAsync(dropoffQuery);
+      if (geocoded && geocoded.length > 0) {
+        const dropLoc = { latitude: geocoded[0].latitude, longitude: geocoded[0].longitude };
+        setDropoffLocation(dropLoc);
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            ...dropLoc,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+        }
+      } else {
+        Alert.alert('Location not found', 'Try another address.');
+      }
     } catch (e) {
-      console.log('Error cancelling', e);
-      setRideState('IDLE');
-      setCurrentRide(null);
+      Alert.alert('Error', 'Could not search location.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCancelRide = () => {
-    if (rideState === 'SEARCHING' || rideState === 'ACCEPTED') {
-      Alert.alert('Cancel Ride', 'Why are you cancelling?', [
-        { text: 'Changed my plans', onPress: () => confirmCancel('Changed my plans') },
-        { text: 'Driver too far away', onPress: () => confirmCancel('Driver too far away') },
-        { text: 'Found another ride', onPress: () => confirmCancel('Found another ride') },
-        { text: 'Other', onPress: () => confirmCancel('Other') },
-        { text: 'Back', style: 'cancel' }
-      ]);
-    } else {
-      setRideState('IDLE');
-      setCurrentRide(null);
+  const confirmPickup = () => {
+    setRideState('SELECT_DROPOFF');
+    if (!dropoffLocation && location) {
+      setDropoffLocation(location);
     }
   };
 
-  const openSOS = () => {
-    Linking.openURL('tel:112');
-    const message = `EMERGENCY SOS! My live location: https://maps.google.com/?q=${location?.latitude},${location?.longitude}`;
-    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`);
+  const confirmDropoff = async () => {
+    if (!location || !dropoffLocation) return;
+    setLoading(true);
+    try {
+      const route = await fetchOSRMRoute(location.latitude, location.longitude, dropoffLocation.latitude, dropoffLocation.longitude);
+      setRouteCoordinates(route);
+      
+      const distance = getDistanceKm(location.latitude, location.longitude, dropoffLocation.latitude, dropoffLocation.longitude);
+      setFareEstimate({ distanceKm: distance.toFixed(1) });
+      
+      if (mapRef.current) {
+        mapRef.current.fitToCoordinates([location, dropoffLocation], {
+          edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
+          animated: true
+        });
+      }
+      setRideState('CONFIRM_TRIP');
+    } catch (e) {
+      Alert.alert('Route Error', 'Could not fetch route.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const shareTrip = () => {
-    const message = `Track my ride! https://maps.google.com/?q=${location?.latitude},${location?.longitude}`;
-    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(message)}`);
+  const findNearbyDrivers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_nearby_drivers', {
+        pickup_lat: location.latitude,
+        pickup_lon: location.longitude,
+        radius_km: 10
+      });
+      
+      if (!error && data) {
+        // Map distance and fares for each driver
+        const distanceKmSafe = fareEstimate?.distanceKm ? parseFloat(fareEstimate.distanceKm) : 5.0;
+        const enrichedDrivers = data.map(d => {
+          const lat = parseFloat(d.latitude);
+          const lon = parseFloat(d.longitude);
+          const distFromPickup = (!isNaN(lat) && !isNaN(lon) && location) 
+            ? getDistanceKm(lat, lon, location.latitude, location.longitude) 
+            : 0;
+          const fareObj = calculateFare(distanceKmSafe, d.vehicle_type?.toLowerCase() || 'bikeo');
+          return {
+            ...d,
+            latitude: lat,
+            longitude: lon,
+            distanceFromPickup: distFromPickup,
+            etaToPickup: Math.round(distFromPickup * 3), // rough 3 mins per km
+            fareObj,
+          };
+        }).filter(d => !isNaN(d.latitude) && !isNaN(d.longitude)).sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
+        
+        setNearbyDrivers(enrichedDrivers);
+        setRideState('SHOW_DRIVERS');
+        
+        // Zoom to show pickup and nearby drivers
+        if (mapRef.current && enrichedDrivers.length > 0) {
+          const coords = [location, ...enrichedDrivers.map(d => ({ latitude: d.latitude, longitude: d.longitude }))];
+          mapRef.current.fitToCoordinates(coords, {
+            edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
+            animated: true
+          });
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const payViaUPI = () => {
-    const upiId = currentRide?.driverInfo?.upi_id || currentRide?.driver?.upi_id;
-    const name = currentRide?.driverInfo?.name || currentRide?.driver?.name || 'Driver';
-    if (!upiId) return;
-    const url = `upi://pay?pa=${upiId}&pn=${name}&am=${currentRide?.fare}&cu=INR`;
-    Linking.openURL(url).catch(() => {
-      Alert.alert('Error', 'No UPI app found on your phone.');
-    });
+  const selectDriver = async (driver) => {
+    setSelectedDriver(driver);
+    setFareEstimate(driver.fareObj);
+    
+    // Draw route from driver to pickup, and pickup to dropoff
+    const dRoute = await fetchOSRMRoute(driver.latitude, driver.longitude, location.latitude, location.longitude);
+    setDriverRouteCoordinates(dRoute);
+    
+    if (mapRef.current) {
+      mapRef.current.fitToCoordinates([
+        { latitude: driver.latitude, longitude: driver.longitude },
+        location,
+        dropoffLocation
+      ], {
+        edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
+        animated: true
+      });
+    }
+    setRideState('DRIVER_SELECTED');
+  };
+
+  const bookRide = async () => {
+    if (!selectedDriver) return;
+    setLoading(true);
+    
+    const otp = generateRideOTP();
+    
+    try {
+      const { data: rideData, error } = await supabase.from('rides').insert({
+        passenger_phone: user?.phone || 'unknown',
+        passenger_name: user?.name || 'Rider',
+        pickup_latitude: location.latitude,
+        pickup_longitude: location.longitude,
+        pickup_address: pickupAddress,
+        dropoff_latitude: dropoffLocation.latitude,
+        dropoff_longitude: dropoffLocation.longitude,
+        dropoff_address: dropoffAddress,
+        driver_id: selectedDriver.id,
+        vehicle_category: selectedDriver.vehicle_type,
+        fare: fareEstimate.total,
+        estimated_distance: parseFloat(fareEstimate.distanceKm),
+        status: 'pending',
+        payment_mode: paymentMode,
+        otp: otp
+      }).select().single();
+
+      if (error) throw error;
+      
+      setCurrentRide(rideData);
+      
+      // Send WhatsApp message to driver
+      await dispatchRideToDriverWhatsApp({
+        rideId: rideData.id,
+        driverPhone: selectedDriver.phone,
+        pickupAddress,
+        dropoffAddress,
+        distanceKm: fareEstimate.distanceKm,
+        estimatedFare: fareEstimate.total,
+        driverName: selectedDriver.name,
+        driverRating: selectedDriver.rating,
+        vehicleInfo: `${selectedDriver.vehicle_type} - ${selectedDriver.registration_number}`
+      });
+      
+      setRideState('SEARCHING');
+    } catch (e) {
+      Alert.alert('Booking Failed', 'Could not request ride. ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchTimeout = async () => {
+    // If not accepted in 60s
+    if (currentRide) {
+      await supabase.from('rides').update({ status: 'cancelled' }).eq('id', currentRide.id);
+    }
+    Alert.alert('No response', 'The driver did not accept in time.');
+    setRideState('SHOW_DRIVERS');
+  };
+
+  const cancelRide = async () => {
+    if (currentRide) {
+      await supabase.from('rides').update({ status: 'cancelled' }).eq('id', currentRide.id);
+    }
+    resetToPickup();
   };
 
   const submitRating = async () => {
@@ -453,271 +484,13 @@ export default function RideOScreen({ navigation }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ride_id: currentRide?.id, rating, review })
       });
-    } catch (e) {
-      console.log('Rating error', e);
-    }
-    setRideState('IDLE');
-    setCurrentRide(null);
-    setDropoffLocation(null);
-    setDropoffQuery('');
-    setRouteCoordinates([]);
-    setFareEstimate(null);
-    setReview('');
-    Alert.alert('Thank You', 'Your rating has been submitted.');
+    } catch (e) {}
+    resetToPickup();
   };
 
-  // UI Renderers
-  const renderTopTabs = () => (
-    <View style={styles.tabsContainer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-        {SERVICE_TYPES.map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
-          >
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-
-  const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <View style={styles.searchInputWrapper}>
-        <View style={styles.searchDot} />
-        <Text style={styles.searchAddressText} numberOfLines={1}>{pickupAddress}</Text>
-      </View>
-      <View style={styles.searchDivider} />
-      <View style={styles.searchInputWrapper}>
-        <View style={[styles.searchDot, { backgroundColor: COLORS.red }]} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Where to?"
-          placeholderTextColor={COLORS.textMuted}
-          value={dropoffQuery}
-          onChangeText={setDropoffQuery}
-          onSubmitEditing={handleDropoffSearch}
-          returnKeyType="search"
-        />
-        {dropoffQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setDropoffQuery('')} style={{ padding: 4 }}>
-            <X color={COLORS.textMuted} size={16} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-
-  const renderCategoryCarousel = () => (
-    <View style={styles.carouselContainer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.id || cat.name}
-            style={[styles.categoryCard, selectedCategory === (cat.id || cat.name) && styles.categoryCardSelected]}
-            onPress={() => {
-              setSelectedCategory(cat.id || cat.name);
-              if (dropoffLocation) fetchFareEstimate(dropoffLocation.latitude, dropoffLocation.longitude);
-            }}
-          >
-            <Text style={styles.categoryIcon}>{cat.icon}</Text>
-            <Text style={styles.categoryName}>{cat.name}</Text>
-            <Text style={styles.categoryFare}>₹{cat.minFare || '--'}</Text>
-            <Text style={styles.categoryTime}>3 min</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
-  );
-
-  const renderFareCard = () => {
-    if (!fareEstimate) return null;
-    return (
-      <View style={styles.fareCard}>
-        <View style={styles.fareRow}>
-          <Text style={styles.fareLabel}>Distance ({fareEstimate.distanceText})</Text>
-          <Text style={styles.fareValue}>₹{fareEstimate.distanceFare}</Text>
-        </View>
-        <View style={styles.fareRow}>
-          <Text style={styles.fareLabel}>Time ({fareEstimate.durationText})</Text>
-          <Text style={styles.fareValue}>₹{fareEstimate.timeFare}</Text>
-        </View>
-        <View style={styles.fareRow}>
-          <Text style={styles.fareLabel}>Base Fare</Text>
-          <Text style={styles.fareValue}>₹{fareEstimate.baseFare}</Text>
-        </View>
-        <View style={styles.fareDivider} />
-        <View style={styles.fareRow}>
-          <Text style={styles.fareLabelBold}>Total Fare</Text>
-          <Text style={styles.fareValueBold}>₹{Math.round(fareEstimate.total)}</Text>
-        </View>
-
-        <View style={styles.paymentModeContainer}>
-          <TouchableOpacity 
-            style={[styles.paymentBtn, paymentMode === 'CASH' && styles.paymentBtnActive]}
-            onPress={() => setPaymentMode('CASH')}
-          >
-            <Banknote size={18} color={paymentMode === 'CASH' ? COLORS.bg : COLORS.green} />
-            <Text style={[styles.paymentBtnText, paymentMode === 'CASH' && styles.paymentBtnTextActive]}>Cash</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.paymentBtn, paymentMode === 'UPI' && styles.paymentBtnActive]}
-            onPress={() => setPaymentMode('UPI')}
-          >
-            <CreditCard size={18} color={paymentMode === 'UPI' ? COLORS.bg : COLORS.green} />
-            <Text style={[styles.paymentBtnText, paymentMode === 'UPI' && styles.paymentBtnTextActive]}>UPI QR</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* AUTO ASSIGN MESSAGE */}
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: 'italic', textAlign: 'center' }}>
-            Auto-assign will find the nearest driver...
-          </Text>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.bookBtn} 
-          onPress={handleBookRide} 
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={COLORS.bg} />
-          ) : (
-            <Text style={styles.bookBtnText}>Book {selectedCategory} • ₹{Math.round(fareEstimate?.total || 0)}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const renderSearching = () => (
-    <View style={styles.sheetContent}>
-      <ActivityIndicator size="large" color={COLORS.green} style={{ marginBottom: 16 }} />
-      <Text style={styles.sheetTitle}>Looking for drivers...</Text>
-      <Text style={styles.sheetSubtitle}>Contacting nearby {selectedCategory} partners</Text>
-      <TouchableOpacity style={styles.cancelBtnOutline} onPress={handleCancelRide}>
-        <Text style={styles.cancelBtnText}>Cancel Search</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderAccepted = () => (
-    <View style={styles.sheetContent}>
-      <View style={styles.driverHeader}>
-        <View style={styles.driverInfo}>
-          <Text style={styles.driverName}>{currentRide?.driverInfo?.name || currentRide?.driver?.name}</Text>
-          <Text style={styles.driverVehicle}>{currentRide?.driverInfo?.vehicle_model || currentRide?.driver?.vehicle}</Text>
-          <View style={styles.ratingBadge}>
-            <Star size={12} color={COLORS.bg} fill={COLORS.bg} />
-            <Text style={styles.ratingText}>{currentRide?.driverInfo?.rating || currentRide?.driver?.rating || '4.5'}</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.callCircle} onPress={() => Linking.openURL(`tel:${currentRide?.driverInfo?.phone || currentRide?.driver?.phone}`)}>
-          <Phone size={20} color={COLORS.bg} fill={COLORS.bg} />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.otpBox}>
-        <Text style={styles.otpLabel}>Share OTP with driver to start</Text>
-        <Text style={styles.otpValue}>{currentRide?.otp}</Text>
-      </View>
-      
-      <View style={styles.driverActionsRow}>
-        <TouchableOpacity style={styles.actionBtnDark} onPress={shareTrip}>
-          <Share2 size={18} color={COLORS.text} />
-          <Text style={styles.actionBtnTextDark}>Share Trip</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtnDark} onPress={openSOS}>
-          <Shield size={18} color={COLORS.red} />
-          <Text style={styles.actionBtnTextDark}>SOS</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.paymentUpiBtn} onPress={payViaUPI}>
-        <Text style={styles.paymentUpiBtnText}>Pay ₹{currentRide?.fare} via UPI</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.cancelBtnOutline} onPress={handleCancelRide}>
-        <Text style={styles.cancelBtnText}>Cancel Ride</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderInProgress = () => (
-    <View style={styles.sheetContent}>
-      <View style={styles.driverHeader}>
-        <View style={styles.driverInfo}>
-          <Text style={styles.driverName}>{currentRide?.driverInfo?.name || currentRide?.driver?.name}</Text>
-          <Text style={styles.driverVehicle}>{currentRide?.driverInfo?.vehicle_model || currentRide?.driver?.vehicle}</Text>
-          <View style={styles.ratingBadge}>
-            <Star size={12} color={COLORS.bg} fill={COLORS.bg} />
-            <Text style={styles.ratingText}>{currentRide?.driverInfo?.rating || currentRide?.driver?.rating || '4.5'}</Text>
-          </View>
-        </View>
-      </View>
-      
-      <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={{ color: COLORS.green, fontSize: 18, fontWeight: 'bold' }}>Trip in Progress</Text>
-        <Animated.View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.green, marginTop: 8 }} />
-      </View>
-      
-      <View style={{ width: '100%', marginBottom: 20 }}>
-        <Text style={{ color: COLORS.text, fontSize: 14 }}>From: {currentRide?.pickup_location || pickupAddress}</Text>
-        <Text style={{ color: COLORS.text, fontSize: 14, marginTop: 4 }}>To: {currentRide?.drop_location || dropoffAddress}</Text>
-      </View>
-
-      <View style={styles.driverActionsRow}>
-        <TouchableOpacity style={styles.actionBtnDark} onPress={shareTrip}>
-          <Share2 size={18} color={COLORS.text} />
-          <Text style={styles.actionBtnTextDark}>Share Trip</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtnDark} onPress={openSOS}>
-          <Shield size={18} color={COLORS.red} />
-          <Text style={styles.actionBtnTextDark}>SOS</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={styles.paymentUpiBtn} onPress={payViaUPI}>
-        <Text style={styles.paymentUpiBtnText}>Pay ₹{currentRide?.fare || fareEstimate?.total} via UPI</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderCompleted = () => (
-    <View style={styles.sheetContent}>
-      <View style={styles.successCircle}>
-        <CheckCircle size={40} color={COLORS.green} />
-      </View>
-      <Text style={styles.sheetTitle}>Trip Completed!</Text>
-      <Text style={styles.fareAmountLarge}>₹{currentRide?.fare}</Text>
-      
-      <View style={styles.ratingContainer}>
-        <Text style={styles.ratingLabel}>How was your ride?</Text>
-        <View style={styles.starsRow}>
-          {[1,2,3,4,5].map(s => (
-            <TouchableOpacity key={s} onPress={() => setRating(s)} style={{ padding: 8 }}>
-              <Star size={32} color={s <= rating ? '#eab308' : COLORS.border} fill={s <= rating ? '#eab308' : 'transparent'} />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-      
-      <TextInput
-        style={{ backgroundColor: COLORS.cardLight, color: COLORS.text, width: '100%', padding: 12, borderRadius: 8, marginBottom: 16 }}
-        placeholder="Leave a review..."
-        placeholderTextColor={COLORS.textMuted}
-        value={review}
-        onChangeText={setReview}
-      />
-      
-      <TouchableOpacity style={styles.bookBtn} onPress={submitRating}>
-        <Text style={styles.bookBtnText}>Submit & Close</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  // Get greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <View style={styles.container}>
@@ -726,124 +499,388 @@ export default function RideOScreen({ navigation }) {
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         showsUserLocation={true}
-        customMapStyle={mapStyleDark}
+        initialRegion={{
+          latitude: location?.latitude || 10.79,
+          longitude: location?.longitude || 79.13,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }}
         onRegionChange={() => {
-          if (rideState === 'IDLE' && !dropoffLocation) setIsMapMoving(true);
+          if (rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') setIsMapMoving(true);
         }}
-        onRegionChangeComplete={async (region) => {
-          if (rideState === 'IDLE' && !dropoffLocation) {
-            setIsMapMoving(false);
-            setLocation({ latitude: region.latitude, longitude: region.longitude });
-            try {
-              let geocode = await Location.reverseGeocodeAsync({
-                latitude: region.latitude,
-                longitude: region.longitude,
-              });
-              if (geocode && geocode.length > 0) {
-                setPickupAddress(`${geocode[0].name || ''}, ${geocode[0].street || ''}, ${geocode[0].city || ''}`.replace(/^, |, $/g, ''));
-              }
-            } catch(e) {}
-          }
-        }}
+        onRegionChangeComplete={handleMapRegionChangeComplete}
       >
-        {location && (dropoffLocation || rideState !== 'IDLE') && (
-          <Marker coordinate={location}>
-            <View style={styles.pickupMarker}>
-              <View style={styles.pickupMarkerInner} />
-            </View>
-          </Marker>
-        )}
-        
-        {dropoffLocation && (
-          <Marker coordinate={dropoffLocation}>
-            <View style={styles.dropoffMarker}>
-              <MapPin color="#fff" size={16} />
+        {/* Pickup Marker */}
+        {(rideState !== 'SELECT_PICKUP' && location) && (
+          <Marker coordinate={location} anchor={{ x: 0.5, y: 1 }}>
+            <View style={styles.dotMarkerContainer}>
+              <View style={[styles.dotMarker, { backgroundColor: COLORS.green }]} />
             </View>
           </Marker>
         )}
 
+        {/* Dropoff Marker */}
+        {(rideState !== 'SELECT_DROPOFF' && rideState !== 'SELECT_PICKUP' && dropoffLocation) && (
+          <Marker coordinate={dropoffLocation} anchor={{ x: 0.5, y: 1 }}>
+            <View style={styles.dotMarkerContainer}>
+              <View style={[styles.dotMarker, { backgroundColor: COLORS.red }]} />
+            </View>
+          </Marker>
+        )}
+
+        {/* Route Polyline (Pickup -> Dropoff) */}
         {routeCoordinates.length > 0 && (
-          <Polyline
-            coordinates={routeCoordinates}
-            strokeColor={COLORS.green}
-            strokeWidth={4}
-          />
+          <Polyline coordinates={routeCoordinates} strokeColor={COLORS.blue} strokeWidth={4} />
         )}
 
-        {/* Driver Live Location Marker */}
-        {(rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS') && currentRide?.driverInfo?.pickup_latitude && (
-          <Marker 
-            coordinate={{ 
-              latitude: currentRide.driverInfo.pickup_latitude, 
-              longitude: currentRide.driverInfo.pickup_longitude 
-            }}
-          >
-            <View style={styles.driverAvatar}>
-              <Text style={{ fontSize: 20 }}>{currentRide.driverInfo.vehicle_type?.toLowerCase() === 'bike' ? '🏍' : '🛺'}</Text>
+        {/* Driver Route Polyline (Driver -> Pickup) */}
+        {driverRouteCoordinates.length > 0 && (
+          <Polyline coordinates={driverRouteCoordinates} strokeColor={COLORS.textMuted} strokeWidth={3} lineDashPattern={[5, 5]} />
+        )}
+
+        {/* All Nearby Drivers (SHOW_DRIVERS) */}
+        {rideState === 'SHOW_DRIVERS' && nearbyDrivers.map(d => (
+          <Marker key={d.id} coordinate={{ latitude: d.latitude, longitude: d.longitude }}>
+            <View style={styles.driverMapIcon}>
+              <Text style={{ fontSize: 18 }}>{d.vehicle_type?.toLowerCase() === 'bike' ? '🏍️' : '🚗'}</Text>
+            </View>
+          </Marker>
+        ))}
+
+        {/* Selected Driver Marker (DRIVER_SELECTED, SEARCHING) */}
+        {(rideState === 'DRIVER_SELECTED' || rideState === 'SEARCHING') && selectedDriver && (
+          <Marker coordinate={{ latitude: selectedDriver.latitude, longitude: selectedDriver.longitude }}>
+            <View style={[styles.driverMapIcon, { borderColor: COLORS.green, borderWidth: 2 }]}>
+              <Text style={{ fontSize: 18 }}>{selectedDriver.vehicle_type?.toLowerCase() === 'bike' ? '🏍️' : '🚗'}</Text>
+            </View>
+          </Marker>
+        )}
+
+        {/* Live Driver Tracking (ACCEPTED, IN_PROGRESS) */}
+        {(rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS') && driverInfo?.latitude && (
+          <Marker coordinate={{ latitude: driverInfo.latitude, longitude: driverInfo.longitude }}>
+            <View style={[styles.driverMapIcon, { backgroundColor: COLORS.green }]}>
+              <Text style={{ fontSize: 18 }}>{driverInfo.vehicle_type?.toLowerCase() === 'bike' ? '🏍️' : '🚗'}</Text>
             </View>
           </Marker>
         )}
       </MapView>
 
-      {/* Center Marker for Draggable Map Pickup */}
-      {rideState === 'IDLE' && !dropoffLocation && (
-        <View style={styles.centerMarkerContainer} pointerEvents="none">
-          <View style={[styles.pickupMarker, isMapMoving && { transform: [{ translateY: -10 }] }]}>
-            <View style={styles.pickupMarkerInner} />
-          </View>
-          <View style={styles.markerPinBase} />
+      {/* Draggable Center Pin for IDLE */}
+      {rideState === 'SELECT_PICKUP' && (
+        <View style={styles.centerPinContainer} pointerEvents="none">
+          <MapPin size={40} color={COLORS.green} style={isMapMoving ? { transform: [{ translateY: -10 }] } : {}} />
         </View>
       )}
 
-      <SafeAreaView style={styles.topOverlay} pointerEvents="box-none">
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.menuBtn} onPress={() => navigation?.openDrawer?.()}>
-            <Menu color={COLORS.text} size={24} />
+      {/* Top Address Overlay — only show after IDLE (when route is set) */}
+      {['SELECT_DROPOFF', 'SHOW_DRIVERS'].includes(rideState) && (
+        <View style={styles.topOverlay}>
+          <TouchableOpacity 
+            style={styles.backBtn} 
+            onPress={() => resetToPickup()}
+          >
+            <ArrowLeft color={COLORS.text} size={24} />
           </TouchableOpacity>
-          {renderTopTabs()}
+          <View style={styles.topAddressCard}>
+            <View style={styles.addressRow}>
+              <View style={[styles.addressDot, { backgroundColor: COLORS.green }]} />
+              <Text style={styles.addressText} numberOfLines={1}>{pickupAddress}</Text>
+            </View>
+          </View>
         </View>
-        {rideState === 'IDLE' && renderSearchBar()}
-      </SafeAreaView>
+      )}
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.bottomSheetContainer} pointerEvents="box-none">
+      {/* BOTTOM SHEETS */}
+      
+      {/* 1. SELECT_PICKUP SHEET */}
+      {rideState === 'SELECT_PICKUP' && (
         <View style={styles.bottomSheet}>
-          <View style={styles.dragHandle} />
-          {rideState === 'IDLE' && (
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {renderCategoryCarousel()}
-              {renderFareCard()}
+          <View style={styles.idleTopRow}>
+            <TouchableOpacity style={styles.backBtnSmall} onPress={() => navigation?.goBack()}>
+              <ArrowLeft color={COLORS.text} size={22} />
+            </TouchableOpacity>
+            <Text style={styles.greetingText}>{greeting}, {user?.name || 'Rider'}!</Text>
+          </View>
+          <View style={styles.searchBox}>
+            <Search color={COLORS.textMuted} size={20} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search pickup location..."
+              placeholderTextColor={COLORS.textMuted}
+              value={pickupQuery}
+              onChangeText={setPickupQuery}
+              onSubmitEditing={handlePickupSubmit}
+              returnKeyType="search"
+            />
+            {loading && <ActivityIndicator color={COLORS.green} size="small" />}
+          </View>
+          <View style={{ marginTop: 16 }}>
+             <Text style={{ color: COLORS.text, fontSize: 14, marginBottom: 12, fontWeight: '500' }} numberOfLines={2}>
+               Pickup: {pickupAddress}
+             </Text>
+             <TouchableOpacity style={styles.primaryBtn} onPress={confirmPickup}>
+               <Text style={styles.primaryBtnText}>Confirm Pickup</Text>
+             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 2. SELECT_DROPOFF SHEET */}
+      {rideState === 'SELECT_DROPOFF' && (
+        <View style={styles.bottomSheet}>
+          <Text style={styles.sheetTitle}>Where to?</Text>
+          <View style={styles.searchBox}>
+            <Search color={COLORS.textMuted} size={20} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search destination..."
+              placeholderTextColor={COLORS.textMuted}
+              value={dropoffQuery}
+              onChangeText={setDropoffQuery}
+              onSubmitEditing={handleDropoffSubmit}
+              returnKeyType="search"
+            />
+            {loading && <ActivityIndicator color={COLORS.green} size="small" />}
+          </View>
+          <View style={{ marginTop: 16 }}>
+             <Text style={{ color: COLORS.text, fontSize: 14, marginBottom: 12, fontWeight: '500' }} numberOfLines={2}>
+               Dropoff: {dropoffAddress || 'Locating...'}
+             </Text>
+             <TouchableOpacity style={styles.primaryBtn} onPress={confirmDropoff}>
+               <Text style={styles.primaryBtnText}>Confirm Destination</Text>
+             </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 2.5 CONFIRM TRIP SHEET */}
+      {rideState === 'CONFIRM_TRIP' && (
+        <View style={styles.bottomSheet}>
+          <Text style={styles.sheetTitle}>Trip Details</Text>
+          <View style={styles.tripInfoRow}>
+            <View style={styles.tripInfoItem}>
+              <Navigation color={COLORS.blue} size={20} />
+              <Text style={styles.tripInfoText}>{fareEstimate?.distanceKm} km</Text>
+            </View>
+            <View style={styles.tripInfoItem}>
+              <Clock color={COLORS.yellow} size={20} />
+              <Text style={styles.tripInfoText}>{Math.round(parseFloat(fareEstimate?.distanceKm || 0) * 3)} mins</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.primaryBtn} onPress={findNearbyDrivers}>
+            <Text style={styles.primaryBtnText}>Find Nearby Drivers</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 3. SHOW DRIVERS SHEET */}
+      {rideState === 'SHOW_DRIVERS' && (
+        <View style={styles.bottomSheetLarge}>
+          <View style={styles.sheetHeaderRow}>
+            <Text style={styles.sheetTitle}>Nearby Drivers</Text>
+            <TouchableOpacity onPress={findNearbyDrivers}>
+              <RefreshCw color={COLORS.green} size={20} />
+            </TouchableOpacity>
+          </View>
+          
+          {nearbyDrivers.length === 0 ? (
+            <View style={styles.noDrivers}>
+              <Text style={styles.noDriversText}>No drivers found nearby.</Text>
+            </View>
+          ) : (
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
+              {nearbyDrivers.map(d => (
+                <TouchableOpacity key={d.id} style={styles.driverCard} onPress={() => selectDriver(d)}>
+                  <View style={styles.driverCardLeft}>
+                    <Text style={styles.driverEmoji}>{d.vehicle_type?.toLowerCase() === 'bike' ? '🏍️' : '🚗'}</Text>
+                    <View>
+                      <Text style={styles.driverCardName}>{d.name}</Text>
+                      <View style={styles.driverCardMeta}>
+                        <Star size={12} color={COLORS.yellow} fill={COLORS.yellow} />
+                        <Text style={styles.driverCardMetaText}>{d.rating || '4.5'} • {d.etaToPickup} min away</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.driverCardRight}>
+                    <Text style={styles.driverCardFare}>₹{d.fareObj?.total}</Text>
+                    <View style={styles.selectBtnMini}>
+                      <Text style={styles.selectBtnMiniText}>Select</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           )}
-          {rideState === 'SEARCHING' && renderSearching()}
-          {rideState === 'ACCEPTED' && renderAccepted()}
-          {rideState === 'IN_PROGRESS' && renderInProgress()}
-          {rideState === 'COMPLETED' && renderCompleted()}
         </View>
-      </KeyboardAvoidingView>
+      )}
+
+      {/* 4. DRIVER SELECTED SHEET */}
+      {rideState === 'DRIVER_SELECTED' && selectedDriver && (
+        <View style={styles.bottomSheet}>
+          <View style={styles.sheetHeaderRow}>
+            <TouchableOpacity onPress={() => setRideState('SHOW_DRIVERS')}>
+              <ArrowLeft color={COLORS.text} size={24} />
+            </TouchableOpacity>
+            <Text style={styles.sheetTitle}>Confirm Booking</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          
+          <View style={styles.driverProfileBox}>
+            <View style={styles.driverProfileLeft}>
+              <User size={24} color={COLORS.textMuted} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.driverProfileName}>{selectedDriver.name}</Text>
+                <Text style={styles.driverProfileReg}>{selectedDriver.registration_number}</Text>
+              </View>
+            </View>
+            <View style={styles.ratingPill}>
+              <Star size={14} color="#000" fill="#000" />
+              <Text style={styles.ratingPillText}>{selectedDriver.rating || '4.5'}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.fareBreakdown}>
+            <View style={styles.fareRow}><Text style={styles.fareLabel}>Base Fare</Text><Text style={styles.fareValue}>₹{fareEstimate?.base}</Text></View>
+            <View style={styles.fareRow}><Text style={styles.fareLabel}>Distance ({fareEstimate?.distanceKm}km)</Text><Text style={styles.fareValue}>₹{fareEstimate?.distance}</Text></View>
+            {fareEstimate?.surgeMultiplier > 1 && (
+              <View style={styles.fareRow}><Text style={[styles.fareLabel, {color: COLORS.yellow}]}>{fareEstimate.surgeLabel}</Text><Text style={[styles.fareValue, {color: COLORS.yellow}]}>Applied</Text></View>
+            )}
+            <View style={styles.fareDivider} />
+            <View style={styles.fareRow}><Text style={styles.fareTotalLabel}>Total Fare</Text><Text style={styles.fareTotalValue}>₹{fareEstimate?.total}</Text></View>
+          </View>
+
+          <View style={styles.paymentToggle}>
+            <TouchableOpacity style={[styles.payModeBtn, paymentMode === 'CASH' && styles.payModeBtnActive]} onPress={() => setPaymentMode('CASH')}>
+              <Text style={[styles.payModeText, paymentMode === 'CASH' && styles.payModeTextActive]}>Cash</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.payModeBtn, paymentMode === 'UPI' && styles.payModeBtnActive]} onPress={() => setPaymentMode('UPI')}>
+              <Text style={[styles.payModeText, paymentMode === 'UPI' && styles.payModeTextActive]}>UPI</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.primaryBtn} onPress={bookRide} disabled={loading}>
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.primaryBtnText}>Book & Send Request ₹{fareEstimate?.total}</Text>}
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 5. SEARCHING SHEET */}
+      {rideState === 'SEARCHING' && (
+        <View style={styles.bottomSheet}>
+          <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]}>
+            <ActivityIndicator size="large" color={COLORS.green} />
+          </Animated.View>
+          <Text style={styles.searchingTitle}>Waiting for {selectedDriver?.name}...</Text>
+          <Text style={styles.countdownText}>{countdown}s remaining</Text>
+          <TouchableOpacity style={styles.cancelBtnOutline} onPress={cancelRide}>
+            <Text style={styles.cancelBtnText}>Cancel Request</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 6. ACCEPTED SHEET */}
+      {rideState === 'ACCEPTED' && (
+        <View style={styles.bottomSheet}>
+          <View style={styles.statusBanner}>
+            <Text style={styles.statusBannerText}>Driver is on the way</Text>
+          </View>
+          
+          <View style={styles.driverProfileBox}>
+            <View style={styles.driverProfileLeft}>
+              <User size={24} color={COLORS.textMuted} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.driverProfileName}>{driverInfo?.name || selectedDriver?.name}</Text>
+                <Text style={styles.driverProfileReg}>{driverInfo?.registration_number || selectedDriver?.registration_number}</Text>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.callCircle} onPress={() => callPhone(driverInfo?.phone || selectedDriver?.phone)}>
+              <Phone size={20} color="#000" fill="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.otpContainer}>
+            <Text style={styles.otpLabel}>OTP for this ride</Text>
+            <Text style={styles.otpValue}>{currentRide?.otp}</Text>
+          </View>
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => whatsappToPhone(driverInfo?.phone || selectedDriver?.phone)}>
+              <MessageSquare size={20} color={COLORS.text} />
+              <Text style={styles.actionBtnText}>WhatsApp</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => shareLocationWhatsApp(location.latitude, location.longitude, 'My pickup location for RideO')}>
+              <Share2 size={20} color={COLORS.text} />
+              <Text style={styles.actionBtnText}>Share</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { borderColor: COLORS.red }]} onPress={() => { Linking.openURL('tel:112'); shareLocationWhatsApp(location.latitude, location.longitude, 'SOS EMERGENCY'); }}>
+              <Shield size={20} color={COLORS.red} />
+              <Text style={[styles.actionBtnText, { color: COLORS.red }]}>SOS</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 7. IN PROGRESS SHEET */}
+      {rideState === 'IN_PROGRESS' && (
+        <View style={styles.bottomSheet}>
+          <View style={[styles.statusBanner, { backgroundColor: COLORS.blue }]}>
+            <Text style={styles.statusBannerText}>Trip in Progress</Text>
+          </View>
+          <Text style={styles.inProgressAddress}>To: {dropoffAddress}</Text>
+          
+          <TouchableOpacity style={styles.primaryBtn} onPress={() => openNativeNavigation(dropoffLocation.latitude, dropoffLocation.longitude)}>
+            <Navigation color="#000" size={20} />
+            <Text style={[styles.primaryBtnText, { marginLeft: 8 }]}>Navigate</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.cancelBtnOutline, { borderColor: COLORS.red, marginTop: 12 }]} onPress={() => { Linking.openURL('tel:112'); shareLocationWhatsApp(location.latitude, location.longitude, 'SOS EMERGENCY'); }}>
+            <Shield size={20} color={COLORS.red} />
+            <Text style={[styles.cancelBtnText, { color: COLORS.red, marginLeft: 8 }]}>Emergency SOS</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 8. COMPLETED SHEET */}
+      {rideState === 'COMPLETED' && (
+        <View style={styles.bottomSheet}>
+          <CheckCircle size={48} color={COLORS.green} style={{ alignSelf: 'center', marginBottom: 16 }} />
+          <Text style={styles.sheetTitle}>Trip Completed</Text>
+          <Text style={styles.fareTotalValueLarge}>₹{currentRide?.fare}</Text>
+          
+          <View style={styles.ratingBox}>
+            <Text style={styles.ratingLabel}>Rate your driver</Text>
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map(s => (
+                <TouchableOpacity key={s} onPress={() => setRating(s)}>
+                  <Star size={32} color={s <= rating ? COLORS.yellow : COLORS.border} fill={s <= rating ? COLORS.yellow : 'transparent'} style={{ marginHorizontal: 4 }} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <TextInput
+            style={styles.reviewInput}
+            placeholder="Leave a review (optional)"
+            placeholderTextColor={COLORS.textMuted}
+            value={review}
+            onChangeText={setReview}
+          />
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={[styles.primaryBtn, { flex: 1, marginRight: 8, backgroundColor: COLORS.cardLight }]} onPress={submitRating}>
+              <Text style={[styles.primaryBtnText, { color: COLORS.text }]}>Done</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.primaryBtn, { flex: 1, marginLeft: 8 }]} onPress={() => payViaUPI(currentRide?.fare, driverInfo?.upi_id || ADMIN_UPI, driverInfo?.name || 'Driver', currentRide?.id)}>
+              <Text style={styles.primaryBtnText}>Pay via UPI</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
     </View>
   );
 }
-
-const mapStyleDark = [
-  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-  { featureType: "administrative.locality", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#263c3f" }] },
-  { featureType: "poi.park", elementType: "labels.text.fill", stylers: [{ color: "#6b9a76" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-  { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#9ca5b3" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#746855" }] },
-  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#1f2835" }] },
-  { featureType: "road.highway", elementType: "labels.text.fill", stylers: [{ color: "#f3d19c" }] },
-  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-  { featureType: "transit.station", elementType: "labels.text.fill", stylers: [{ color: "#d59563" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#515c6d" }] },
-  { featureType: "water", elementType: "labels.text.stroke", stylers: [{ color: "#17263c" }] }
-];
 
 const styles = StyleSheet.create({
   container: {
@@ -851,203 +888,320 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.bg,
   },
   map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  topOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 40 : 10,
+    bottom: 0,
+    width: width,
+    height: height,
   },
-  header: {
+  centerPinContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginLeft: -20,
+    marginTop: -40,
+    zIndex: 2,
+  },
+  dotMarkerContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dotMarker: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  driverMapIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  topOverlay: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    zIndex: 10,
   },
-  menuBtn: {
+  backBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: COLORS.card,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 4,
   },
-  tabsContainer: {
+  topAddressCard: {
     flex: 1,
     backgroundColor: COLORS.card,
-    borderRadius: 22,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  tabsScroll: {
-    paddingHorizontal: 4,
-  },
-  tab: {
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    marginRight: 4,
-  },
-  tabActive: {
-    backgroundColor: COLORS.cardLight,
-  },
-  tabText: {
-    color: COLORS.textMuted,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  tabTextActive: {
-    color: COLORS.text,
-  },
-  searchContainer: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 16,
+    paddingVertical: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  searchInputWrapper: {
+  addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
   },
-  searchDot: {
+  addressDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.green,
     marginRight: 12,
   },
-  searchAddressText: {
+  addressText: {
     color: COLORS.text,
-    fontSize: 15,
+    fontSize: 14,
+    fontWeight: '500',
     flex: 1,
   },
-  searchDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginVertical: 8,
-    marginLeft: 20,
+  idleTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  searchInput: {
+  backBtnSmall: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: COLORS.cardLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  pickupPill: {
     flex: 1,
-    color: COLORS.text,
-    fontSize: 15,
-    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardLight,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  bottomSheetContainer: {
+  pickupPillText: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
+  },
+  bottomSheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    justifyContent: 'flex-end',
-  },
-  bottomSheet: {
     backgroundColor: COLORS.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    padding: 24,
+    paddingBottom: 48,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
     elevation: 10,
-    minHeight: 300,
-    maxHeight: height * 0.7,
+    zIndex: 10,
   },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.border,
-    alignSelf: 'center',
-    marginVertical: 12,
-  },
-  carouselContainer: {
-    marginVertical: 12,
-  },
-  categoryCard: {
-    width: 100,
-    height: 120,
-    backgroundColor: COLORS.cardLight,
-    borderRadius: 16,
-    padding: 12,
-    marginRight: 12,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  categoryCardSelected: {
-    borderColor: COLORS.green,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-  },
-  categoryIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  driverSelectCard: {
-    backgroundColor: COLORS.cardLight,
-    padding: 12,
-    borderRadius: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    minWidth: 200,
-  },
-  driverSelectCardActive: {
-    borderColor: COLORS.green,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-  },
-  driverAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  bottomSheetLarge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: COLORS.card,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+    maxHeight: height * 0.7,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+    zIndex: 10,
+  },
+  sheetHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  greetingText: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  sheetTitle: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardLight,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 56,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  tripInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  },
+  tripInfoItem: {
+    alignItems: 'center',
+  },
+  tripInfoText: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  primaryBtn: {
+    backgroundColor: COLORS.green,
+    borderRadius: 12,
+    height: 56,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 12,
   },
-  driverNameText: {
-    color: COLORS.text,
+  primaryBtnText: {
+    color: '#000',
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 15,
   },
-  driverDetailText: {
+  noDrivers: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  noDriversText: {
     color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 16,
   },
-  categoryName: {
+  driverCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardLight,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  driverCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  driverEmoji: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  driverCardName: {
     color: COLORS.text,
-    fontWeight: '600',
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
-  categoryFare: {
-    color: COLORS.text,
-    fontSize: 13,
-  },
-  categoryTime: {
-    color: COLORS.textMuted,
-    fontSize: 11,
+  driverCardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 4,
   },
-  fareCard: {
-    padding: 20,
+  driverCardMetaText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  driverCardRight: {
+    alignItems: 'flex-end',
+  },
+  driverCardFare: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  selectBtnMini: {
+    backgroundColor: COLORS.green,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  selectBtnMiniText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  driverProfileBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardLight,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  driverProfileLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  driverProfileName: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  driverProfileReg: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.yellow,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  ratingPillText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  fareBreakdown: {
+    marginBottom: 20,
   },
   fareRow: {
     flexDirection: 'row',
@@ -1067,236 +1221,169 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border,
     marginVertical: 12,
   },
-  fareLabelBold: {
+  fareTotalLabel: {
     color: COLORS.text,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
-  fareValueBold: {
-    color: COLORS.text,
+  fareTotalValue: {
+    color: COLORS.green,
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
-  paymentModeContainer: {
+  paymentToggle: {
     flexDirection: 'row',
-    marginTop: 20,
+    backgroundColor: COLORS.cardLight,
+    borderRadius: 8,
+    padding: 4,
     marginBottom: 20,
-    gap: 12,
   },
-  paymentBtn: {
+  payModeBtn: {
     flex: 1,
-    flexDirection: 'row',
+    paddingVertical: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 8,
+    borderRadius: 6,
   },
-  paymentBtnActive: {
-    backgroundColor: COLORS.green,
-    borderColor: COLORS.green,
+  payModeBtnActive: {
+    backgroundColor: COLORS.card,
   },
-  paymentBtnText: {
-    color: COLORS.text,
-    fontWeight: '600',
-  },
-  paymentBtnTextActive: {
-    color: COLORS.bg,
-  },
-  bookBtn: {
-    backgroundColor: COLORS.green,
-    padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  bookBtnText: {
-    color: COLORS.bg,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  sheetContent: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  sheetTitle: {
-    color: COLORS.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  sheetSubtitle: {
+  payModeText: {
     color: COLORS.textMuted,
     fontSize: 14,
+    fontWeight: '600',
+  },
+  payModeTextActive: {
+    color: COLORS.text,
+  },
+  pulseCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: COLORS.green,
+  },
+  searchingTitle: {
+    color: COLORS.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  countdownText: {
+    color: COLORS.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
     marginBottom: 24,
   },
   cancelBtnOutline: {
-    padding: 16,
-    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.red,
-    width: '100%',
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    height: 56,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
+    flexDirection: 'row',
   },
   cancelBtnText: {
-    color: COLORS.red,
-    fontWeight: '600',
-  },
-  driverHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 24,
-    backgroundColor: COLORS.cardLight,
-    padding: 16,
-    borderRadius: 16,
-  },
-  driverInfo: {
-    flex: 1,
-  },
-  driverName: {
     color: COLORS.text,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
   },
-  driverVehicle: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  ratingBadge: {
+  statusBanner: {
     backgroundColor: COLORS.green,
-    flexDirection: 'row',
+    paddingVertical: 8,
+    borderRadius: 8,
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+    marginBottom: 16,
   },
-  ratingText: {
-    color: COLORS.bg,
+  statusBannerText: {
+    color: '#000',
     fontWeight: 'bold',
-    fontSize: 12,
   },
   callCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: COLORS.green,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  otpBox: {
-    backgroundColor: COLORS.cardLight,
-    padding: 20,
-    borderRadius: 16,
-    width: '100%',
+  otpContainer: {
     alignItems: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: COLORS.green,
+    backgroundColor: COLORS.cardLight,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   otpLabel: {
     color: COLORS.textMuted,
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
   },
   otpValue: {
-    color: COLORS.green,
+    color: COLORS.text,
     fontSize: 32,
     fontWeight: 'bold',
     letterSpacing: 8,
   },
-  driverActionsRow: {
+  actionRow: {
     flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-    marginBottom: 16,
+    justifyContent: 'space-between',
   },
-  actionBtnDark: {
+  actionBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.cardLight,
-    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     borderRadius: 12,
-    gap: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginHorizontal: 4,
   },
-  actionBtnTextDark: {
+  actionBtnText: {
     color: COLORS.text,
-    fontWeight: '600',
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
   },
-  paymentUpiBtn: {
-    backgroundColor: COLORS.green,
-    padding: 16,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-  },
-  paymentUpiBtnText: {
-    color: COLORS.bg,
-    fontWeight: 'bold',
+  inProgressAddress: {
+    color: COLORS.text,
     fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  pickupMarker: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(16, 185, 129, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickupMarkerInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.green,
-  },
-  centerMarkerContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginLeft: -12,
-    marginTop: -24,
-    alignItems: 'center',
-  },
-  markerPinBase: {
-    width: 2,
-    height: 14,
-    backgroundColor: COLORS.green,
-    marginTop: -4,
-  },
-  dropoffMarker: {
-    backgroundColor: COLORS.red,
-    padding: 8,
-    borderRadius: 20,
-  },
-  successCircle: {
-    marginBottom: 16,
-  },
-  fareAmountLarge: {
+  fareTotalValueLarge: {
     color: COLORS.text,
     fontSize: 36,
     fontWeight: 'bold',
+    textAlign: 'center',
     marginVertical: 16,
   },
-  ratingContainer: {
+  ratingBox: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   ratingLabel: {
     color: COLORS.textMuted,
-    fontSize: 16,
-    marginBottom: 12,
+    fontSize: 14,
+    marginBottom: 8,
   },
   starsRow: {
     flexDirection: 'row',
-    gap: 8,
-  }
+  },
+  reviewInput: {
+    backgroundColor: COLORS.cardLight,
+    color: COLORS.text,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 14,
+    marginBottom: 20,
+  },
 });
