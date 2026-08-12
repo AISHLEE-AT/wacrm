@@ -3,6 +3,10 @@ export interface ToolResponse {
   error?: string;
 }
 
+// Model Configuration - Easily switch between models
+// You can upgrade to 'gemini-2.5-pro' for more complex reasoning tasks.
+const GEMINI_MODEL = 'gemini-2.5-flash';
+
 export const geminiToolsService = {
   async executePrompt(prompt: string, apiKey: string, language: string = 'Tamil', attachments: any[] = []): Promise<ToolResponse> {
     if (!apiKey) {
@@ -32,7 +36,7 @@ export const geminiToolsService = {
     }
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,7 +77,62 @@ export const geminiToolsService = {
     return this.executePrompt(prompt, apiKey, language);
   },
 
-  // 2. Agri & Rural
+  // 2. Education & Quizzes
+  async createQuiz(topic: string, apiKey: string, language: string) {
+    const prompt = `You are an expert Quiz Master. Create a multiple choice quiz about: ${topic}. Format it beautifully in Markdown. Provide 5 questions, options, and answers at the end.`;
+    return this.executePrompt(prompt, apiKey, language);
+  },
+
+  async generateAndSaveQuiz(
+    topic: string, 
+    numQuestions: number, 
+    difficulty: string,
+    apiKey: string, 
+    language: string, 
+    attachments: any[] = []
+  ): Promise<{ data: any, error?: string }> {
+    if (!apiKey) return { data: null, error: 'API Key is missing.' };
+    
+    const prompt = `You are an expert Examiner preparing an IBPS-style online test.
+Create exactly ${numQuestions} questions on the topic/source: "${topic}".
+Difficulty level: ${difficulty}.
+${language === 'Tamil' ? 'The questions, options, and explanations MUST be in Tamil.' : 'The questions, options, and explanations MUST be in English.'}
+
+CRITICAL: You MUST respond ONLY with a raw, strictly valid JSON array. DO NOT wrap it in \`\`\`json or \`\`\` tags. DO NOT include any conversational text.
+The JSON array MUST exactly follow this structure:
+[
+  {
+    "question": "What is the capital of France?",
+    "options": ["London", "Berlin", "Paris", "Madrid"],
+    "answer": "Paris",
+    "explanation": "Paris is the capital and most populous city of France."
+  }
+]`;
+
+    try {
+      const response = await this.executePrompt(prompt, apiKey, 'English', attachments);
+      if (response.error) return { data: null, error: response.error };
+      
+      let rawText = response.text.trim();
+      // Clean up markdown formatting if Gemini still adds it despite the prompt
+      if (rawText.startsWith('\`\`\`json')) {
+        rawText = rawText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+      } else if (rawText.startsWith('\`\`\`')) {
+        rawText = rawText.replace(/\`\`\`/g, '').trim();
+      }
+      
+      const parsedData = JSON.parse(rawText);
+      if (!Array.isArray(parsedData) || parsedData.length === 0) {
+        throw new Error('Generated JSON is invalid or empty.');
+      }
+      
+      return { data: parsedData };
+    } catch (e: any) {
+      return { data: null, error: 'Failed to generate a valid Quiz payload. ' + e.message };
+    }
+  },
+
+  // 3. Agri & Rural
   async analyzeCrop(issue: string, apiKey: string, language: string, attachments: any[] = []) {
     const prompt = `You are an expert Agricultural Advisor and Botanist specializing in farming, crop diseases, and modern agricultural practices. 
 User Query: ${issue}
@@ -138,5 +197,48 @@ Requirements:
   async improveResume(text: string, apiKey: string, language: string) {
     const prompt = `You are an expert Career Coach and Resume Writer. Improve the following resume bullet points to make them sound more professional, impactful, and action-oriented:\n\n${text}`;
     return this.executePrompt(prompt, apiKey, language);
+  },
+
+  // 6. Viral & Social (StatusO / MemeO)
+  async statusQuoteGen(topic: string, mood: string, apiKey: string) {
+    const prompt = `You are a creative writer specializing in highly viral WhatsApp status quotes in Tamil Nadu.
+Topic: ${topic}
+Mood: ${mood}
+Generate a very short, punchy, and highly shareable 1 or 2 line quote in Tamil (Tanglish or pure Tamil, whichever fits best). 
+DO NOT include any hashtags, markdown, or extra conversational text. Return ONLY the quote text.`;
+    return this.executePrompt(prompt, apiKey, 'Tamil'); // Force Tamil for TN viral feature
+  },
+
+  // 7. Voice Assistant (Kural AI)
+  async processAudioInput(apiKey: string, base64Audio: string, mimeType: string, language: string) {
+    if (!apiKey) return { text: '', error: 'API Key is missing.' };
+    
+    const prompt = `You are "Kural AI", a highly intelligent assistant for the SuprO App. 
+Please listen to the attached audio and respond to the user's query or command.
+${language === 'Tamil' ? 'Respond in clear, natural Tamil.' : 'Respond in clear English.'}
+Keep your response concise and helpful.`;
+
+    const parts = [
+      { text: prompt },
+      { inlineData: { data: base64Audio, mimeType: mimeType } }
+    ];
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || 'Failed to generate response.');
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      return { text };
+    } catch (err: any) {
+      return { text: '', error: err.message || 'An error occurred processing the audio.' };
+    }
   }
 };

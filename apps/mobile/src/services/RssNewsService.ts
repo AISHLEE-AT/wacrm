@@ -1,4 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface NewsItem {
   title: string;
@@ -23,6 +24,21 @@ export class RssNewsService {
 
   static async fetchNews(): Promise<NewsItem[]> {
     let allNews: NewsItem[] = [];
+    
+    // Attempt to load from cache first for offline resilience
+    try {
+      const cached = await AsyncStorage.getItem('@rss_news_cache');
+      if (cached) {
+        const parsedCache = JSON.parse(cached);
+        if (parsedCache.length > 0) {
+          allNews = parsedCache; // We'll return this later if fetch fails, or return it immediately for instant load
+        }
+      }
+    } catch (e) {
+      console.warn("Error reading RSS cache", e);
+    }
+
+    let fetchedNews: NewsItem[] = [];
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "@_"
@@ -61,7 +77,7 @@ export class RssNewsService {
             // Clean up description HTML
             desc = desc.replace(/<[^>]*>?/gm, '').replace(/&[^;]+;/gm, '').trim();
 
-            allNews.push({
+            fetchedNews.push({
               title: (item.title || 'No Title').trim(),
               link: (item.link || '').trim(),
               pubDate: (item.pubDate || '').trim(),
@@ -76,6 +92,15 @@ export class RssNewsService {
       }
     }
 
-    return allNews;
+    if (fetchedNews.length > 0) {
+      try {
+        await AsyncStorage.setItem('@rss_news_cache', JSON.stringify(fetchedNews));
+      } catch (e) {
+        console.warn("Error saving RSS cache", e);
+      }
+      return fetchedNews;
+    }
+
+    return allNews; // Return cached news if network fetch failed completely
   }
 }

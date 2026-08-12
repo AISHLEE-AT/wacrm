@@ -32,6 +32,7 @@ export default function TestOExamScreen() {
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 mins default
   const [isPaletteVisible, setIsPaletteVisible] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -60,15 +61,22 @@ export default function TestOExamScreen() {
 
   const fetchExamData = async () => {
     try {
-      const { data, error } = await aishleeSupabase
-        .from('unified_master_data')
-        .select('*')
-        .eq('id', testId)
-        .single();
+      let info: any = {};
       
-      if (error) throw error;
+      if (route.params.localQuestions) {
+        // If passing raw JSON from AI Hub local history
+        info = { questions: route.params.localQuestions };
+      } else {
+        const { data, error } = await aishleeSupabase
+          .from('unified_master_data')
+          .select('*')
+          .eq('id', testId)
+          .single();
+        
+        if (error) throw error;
+        info = data.additional_info || data.metadata || {};
+      }
       
-      let info = data.additional_info || data.metadata || {};
       if (typeof info === 'string') {
         try { info = JSON.parse(info); } catch(e) {}
       }
@@ -194,10 +202,7 @@ export default function TestOExamScreen() {
         score += 1;
       }
     });
-
-    Alert.alert("Exam Submitted", `Your Score: ${score} / ${questions.length}`, [
-      { text: "View Dashboard", onPress: () => navigation.goBack() }
-    ]);
+    setFinalScore(score);
   };
 
   if (loading) {
@@ -210,6 +215,58 @@ export default function TestOExamScreen() {
   }
 
   const currentQ = questions[currentIdx];
+
+  if (submitted) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.examTitle}>Exam Results</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <X size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        <ScrollView style={styles.content}>
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreTitle}>Your Score</Text>
+            <Text style={styles.scoreValue}>{finalScore} / {questions.length}</Text>
+            <Text style={styles.scorePercent}>{Math.round((finalScore / questions.length) * 100)}%</Text>
+          </View>
+          
+          <Text style={styles.reviewTitle}>Detailed Review</Text>
+          {questions.map((q, idx) => {
+            const userAnswer = answers[idx];
+            const correctAns = q.correct_answer || q.correctAnswer || q.answer;
+            const isCorrect = userAnswer === correctAns;
+            
+            return (
+              <View key={idx} style={[styles.reviewCard, { borderColor: isCorrect ? '#22c55e' : '#ef4444' }]}>
+                <Text style={styles.reviewQNum}>Question {idx + 1}</Text>
+                <Text style={styles.reviewQText}>{q.question || q.q}</Text>
+                
+                <View style={styles.reviewAnswers}>
+                  <Text style={{ color: isCorrect ? '#22c55e' : '#ef4444', fontWeight: 'bold' }}>
+                    Your Answer: {userAnswer || 'Not Answered'}
+                  </Text>
+                  {!isCorrect && (
+                    <Text style={{ color: '#22c55e', fontWeight: 'bold', marginTop: 4 }}>
+                      Correct Answer: {correctAns}
+                    </Text>
+                  )}
+                </View>
+                
+                {q.explanation && (
+                  <View style={styles.explanationBox}>
+                    <Text style={styles.explanationTitle}>Explanation:</Text>
+                    <Text style={styles.explanationText}>{q.explanation}</Text>
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -549,5 +606,75 @@ const styles = StyleSheet.create({
   gridBtnText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  scoreCard: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 24,
+    elevation: 2,
+  },
+  scoreTitle: {
+    fontSize: 18,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  scoreValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#2563eb',
+  },
+  scorePercent: {
+    fontSize: 16,
+    color: '#10b981',
+    marginTop: 4,
+    fontWeight: 'bold',
+  },
+  reviewTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 16,
+  },
+  reviewCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    marginBottom: 16,
+    elevation: 1,
+  },
+  reviewQNum: {
+    color: '#6b7280',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  reviewQText: {
+    fontSize: 16,
+    color: '#111827',
+    marginBottom: 12,
+  },
+  reviewAnswers: {
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 6,
+  },
+  explanationBox: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  explanationTitle: {
+    fontWeight: 'bold',
+    color: '#4b5563',
+    marginBottom: 4,
+  },
+  explanationText: {
+    color: '#374151',
+    fontSize: 14,
+    lineHeight: 20,
   }
 });

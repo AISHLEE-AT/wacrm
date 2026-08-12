@@ -26,6 +26,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
   const { path, moduleName, url: overrideUrl } = route.params;
   const { user } = useContext(AppContext);
   const webViewRef = useRef<WebView>(null);
+  const [canGoBack, setCanGoBack] = React.useState(false);
 
   const accessToken = user?.accessToken ?? '';
   const refreshToken = user?.refreshToken ?? '';
@@ -164,8 +165,11 @@ export default function EcosystemWebView({ route, navigation }: Props) {
 
   const handleReload = () => webViewRef.current?.reload();
   const handleBack   = () => {
-    if (webViewRef.current) webViewRef.current.goBack();
-    else navigation.goBack();
+    if (canGoBack && webViewRef.current) {
+      webViewRef.current.goBack();
+    } else {
+      navigation.goBack();
+    }
   };
 
   const MODULE_COLORS: Record<string, string> = {
@@ -237,6 +241,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
         // Pass user agent so Next.js middleware can detect native app
         applicationNameForUserAgent="SuprO-Native/1.0"
         onNavigationStateChange={(navState) => {
+          setCanGoBack(navState.canGoBack);
           // Only redirect to native Login if the web server stripped embed=true
           // and sent us to a bare /login page. If embed=true is still in the URL,
           // the injected JS will handle the redirect back to the module path.
