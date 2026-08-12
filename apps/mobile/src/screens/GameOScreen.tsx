@@ -341,13 +341,7 @@ export default function GameOScreen() {
                 <Text style={styles.startBtnText}>Gaming Hub & Rewards</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
-                style={[styles.startBtn, { backgroundColor: '#db2777', marginTop: 12, borderWidth: 2, borderColor: '#fbcfe8' }]}
-                onPress={() => navigation.navigate('MapRacer3DScreen')}
-              >
-                <Zap color="#fff" size={20} />
-                <Text style={styles.startBtnText}>PLAY 3D MAPRACER</Text>
-              </TouchableOpacity>
+
             </View>
           </View>
         ) : (

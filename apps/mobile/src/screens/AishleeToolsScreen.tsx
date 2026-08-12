@@ -328,6 +328,13 @@ export default function AishleeToolsScreen({ navigation }: any) {
     }
   };
 
+  const copyToClipboard = async () => {
+    if (output) {
+      await Clipboard.setStringAsync(output);
+      Alert.alert('Copied', 'Text copied to clipboard!');
+    }
+  };
+
   const renderDynamicInput = () => {
     const isUrlTool = ['YouTube Summarizer', 'Webpage Summarizer'].includes(activeTool);
     const isCropTool = activeTool === 'Crop Disease Analysis';

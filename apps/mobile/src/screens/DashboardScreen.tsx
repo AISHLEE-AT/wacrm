@@ -11,7 +11,7 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
-import { MapPin, Bell, LogOut } from 'lucide-react-native';
+import { MapPin, Bell, LogOut, LayoutGrid } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { LocationContext } from '../context/LocationContext';
 import { supabase } from '../lib/supabase';
@@ -230,6 +230,20 @@ export default function DashboardScreen({ navigation }: any) {
         geminiApiKey={geminiApiKey}
         pushToken={pushToken}
       />
+
+      {/* ──── 3.5 App Navigation Settings ──── */}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>App Navigation</Text>
+
+        <TouchableOpacity
+          style={[styles.deviceButton, { backgroundColor: colors.primary }]}
+          onPress={() => navigation.navigate('CategoryScreen')}
+          activeOpacity={0.8}
+        >
+          <LayoutGrid color="#fff" size={20} style={{ marginRight: 8 }} />
+          <Text style={styles.buttonText}>Open Full Module Grid (Setup)</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* ──── 4. Device Settings (GPS + Push Notifications) ──── */}
       <View style={styles.sectionContainer}>

@@ -9,7 +9,7 @@ import {
   BookOpen, MonitorPlay, Wallet, Map,
   MessageSquare, LayoutGrid, User, Bot,
   Shield, Tv, GraduationCap, ShoppingBag,
-  Compass, Zap, Wrench, MapPin
+  Compass, Zap, Wrench, MapPin, Car, Gamepad2, Award
 } from 'lucide-react-native';
 
 import LoginScreen      from './src/screens/LoginScreen';
@@ -18,12 +18,10 @@ import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import DriveOScreen     from './src/screens/DriveOScreen';
 import RideOScreen      from './src/screens/RideOScreen';
-import MapScreen        from './src/screens/MapScreen';
 import AishleeToolsScreen from './src/screens/AishleeToolsScreen';
 import GameOScreen      from './src/screens/GameOScreen';
 import GamingHubScreen  from './src/screens/GamingHubScreen';
 import RewardsScreen    from './src/screens/RewardsScreen';
-import MapRacer3DScreen from './src/screens/MapRacer3DScreen';
 import TeachOScreen     from './src/screens/TeachOScreen';
 import TeachOCourseScreen from './src/screens/TeachOCourseScreen';
 import TestOHubScreen   from './src/screens/TestOHubScreen';
@@ -107,8 +105,55 @@ function AdminTabs() {
 // ─── User Bottom Tabs ──────────────────────────────────────────────────────
 // Tailors Tab 2 dynamically based on user category (Driver -> DriveO, Student -> TeachO, Farmer -> AgrO, Shopper -> DealO, etc.)
 function UserTabs() {
-  const { user } = useContext(AppContext);
+  const { user, pinnedModules } = useContext(AppContext);
   const category = (user?.category || user?.role || '').toLowerCase();
+  
+  const getModuleConfig = (id: string) => {
+    switch (id) {
+      case 'driveo': return { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
+      case 'rideo': return { name: 'RideO', path: '/rideo', label: 'RideO', icon: Car, nativeComponent: RideOScreen };
+      case 'teacho': return { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
+      case 'agro': return { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
+      case 'dealo': return { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+      case 'touro': return { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
+      case 'moneyo': return { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+      case 'gameo': return { name: 'GameO', path: '/gameo', label: 'GameO', icon: Gamepad2, nativeComponent: GameOScreen }; 
+      case 'rento': return { name: 'RentO', path: '/rento', label: 'RentO', icon: Wrench };
+      case 'testo': return { name: 'TestO', path: '/testo', label: 'TestO', icon: Award, nativeComponent: TestOHubScreen };
+      case 'tvo': return { name: 'TvO', path: '/tvo', label: 'TvO', icon: MonitorPlay };
+      default: return null;
+    }
+  };
+
+  if (pinnedModules && pinnedModules.length > 0) {
+    const mod1 = getModuleConfig(pinnedModules[0]);
+    const mod2 = pinnedModules.length > 1 ? getModuleConfig(pinnedModules[1]) : null;
+
+    const renderMod = (mod: any) => {
+      if (!mod) return null;
+      const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(mod.path);
+      const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${mod.path}` : undefined;
+
+      if (mod.nativeComponent) {
+        return <Tab.Screen key={mod.name} name={mod.name} component={mod.nativeComponent} options={tabOpts(mod.label, mod.icon)} />;
+      }
+      return (
+        <Tab.Screen key={mod.name} name={mod.name} component={EcosystemWebView}
+          initialParams={{ path: mod.path, moduleName: mod.label, ...(aishleeUrl ? { url: aishleeUrl } : {}) }}
+          options={tabOpts(mod.label, mod.icon)}
+        />
+      );
+    };
+
+    return (
+      <Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border, borderTopWidth: 1 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.textSecondary }}>
+        {renderMod(mod1)}
+        {renderMod(mod2)}
+        <Tab.Screen name="AIBot" component={AishleeToolsScreen} options={tabOpts('AI Hub', Bot)} />
+        <Tab.Screen name="DashboardTab" component={DashboardScreen} options={tabOpts('Profile', User)} />
+      </Tab.Navigator>
+    );
+  }
   const defaultModulePath = user?.defaultModule;
 
   let primaryModule: {
@@ -261,7 +306,6 @@ function RootNavigator() {
       <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
       <Stack.Screen name="RideOScreen" component={RideOScreen} />
       <Stack.Screen name="GameOScreen" component={GameOScreen} />
-      <Stack.Screen name="MapRacer3DScreen" component={MapRacer3DScreen} />
       <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />
       <Stack.Screen name="RewardsScreen" component={RewardsScreen} />
       <Stack.Screen name="TeachOScreen" component={TeachOScreen} />
@@ -270,6 +314,7 @@ function RootNavigator() {
       <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
+      <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: true, title: 'All Modules', headerStyle: { backgroundColor: colors.card }, headerTintColor: colors.text }} />
     </Stack.Navigator>
   );
 }

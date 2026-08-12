@@ -24,6 +24,7 @@ import { applyThemeToGlobalColors } from '../lib/theme';
 
 export const AppProvider = ({ children }: any) => {
   const [recentModules, setRecentModules] = useState<string[]>(['Map']);
+  const [pinnedModules, setPinnedModules] = useState<string[]>([]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +54,9 @@ export const AppProvider = ({ children }: any) => {
       try {
         const savedModules = await SecureStore.getItemAsync('recent-modules');
         if (savedModules) setRecentModules(JSON.parse(savedModules));
+
+        const savedPinned = await SecureStore.getItemAsync('user-pinned-modules');
+        if (savedPinned) setPinnedModules(JSON.parse(savedPinned));
 
         const savedThemeMode = await SecureStore.getItemAsync('theme-mode');
         if (savedThemeMode === 'light' || savedThemeMode === 'dark') setThemeModeState(savedThemeMode);
@@ -182,6 +186,7 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.deleteItemAsync('user-category');
     await SecureStore.deleteItemAsync('gemini-api-key');
     await SecureStore.deleteItemAsync('user-selected-module');
+    await SecureStore.deleteItemAsync('user-pinned-modules');
     await SecureStore.deleteItemAsync('onboarding-complete');
     setOnboardingComplete(false);
     
@@ -206,6 +211,21 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.setItemAsync('user-selected-module', modulePath);
   }, []);
 
+  const togglePinnedModule = useCallback(async (moduleId: string) => {
+    setPinnedModules(prev => {
+      let newPinned = [...prev];
+      if (newPinned.includes(moduleId)) {
+        newPinned = newPinned.filter(id => id !== moduleId);
+      } else {
+        if (newPinned.length < 2) {
+          newPinned.push(moduleId);
+        }
+      }
+      SecureStore.setItemAsync('user-pinned-modules', JSON.stringify(newPinned));
+      return newPinned;
+    });
+  }, []);
+
   return (
     <AppContext.Provider value={{
       user,
@@ -220,6 +240,8 @@ export const AppProvider = ({ children }: any) => {
       updateGeminiKey,
       onboardingComplete,
       setSelectedModule,
+      pinnedModules,
+      togglePinnedModule,
       themeMode,
       themeAccent,
       setThemeMode,

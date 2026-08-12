@@ -87,7 +87,6 @@ export default function OnboardingPermissionsScreen({ navigation }: any) {
           granted={locationGranted} 
           onRequest={requestLocation} 
         />
-        />
       </ScrollView>
 
       <View style={styles.footer}>

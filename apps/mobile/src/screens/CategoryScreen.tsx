@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award, Gamepad2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -23,9 +23,14 @@ const CATEGORIES = [
 
 export default function CategoryScreen() {
   const navigation = useNavigation<any>();
-  const { addRecentModule, userRole } = useContext(AppContext);
+  const { addRecentModule, userRole, pinnedModules, togglePinnedModule } = useContext(AppContext);
+  const [setupMode, setSetupMode] = useState(false);
 
   const handleSelect = (cat: any) => {
+    if (setupMode) {
+      togglePinnedModule(cat.id);
+      return;
+    }
     addRecentModule({
       id: cat.id,
       name: cat.id,
@@ -58,17 +63,29 @@ export default function CategoryScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.title}>SuprO Ecosystem</Text>
-        <Text style={styles.subtitle}>Select a module to get started</Text>
+        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+          <View>
+            <Text style={styles.title}>SuprO Ecosystem</Text>
+            <Text style={styles.subtitle}>{setupMode ? "Select up to 2 modules to pin" : "Select a module to get started"}</Text>
+          </View>
+          <TouchableOpacity onPress={() => setSetupMode(!setupMode)} style={[styles.setupBtn, setupMode && styles.setupBtnActive]}>
+            <Text style={[styles.setupBtnText, setupMode && {color: '#000'}]}>{setupMode ? "Done" : "Setup"}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.grid}>
         {filteredCategories.map((cat) => {
           const Icon = cat.icon;
+          const isPinned = pinnedModules?.includes(cat.id);
           return (
             <TouchableOpacity 
               key={cat.id} 
-              style={[styles.card, { borderColor: cat.color + '40' }]} 
+              style={[
+                styles.card, 
+                { borderColor: cat.color + '40' },
+                setupMode && isPinned && { borderColor: '#10b981', borderWidth: 2, backgroundColor: 'rgba(16, 185, 129, 0.2)' }
+              ]} 
               activeOpacity={0.7}
               onPress={() => handleSelect(cat)}
             >
@@ -154,4 +171,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#475569',
   },
+  setupBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155'
+  },
+  setupBtnActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981'
+  },
+  setupBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12
+  }
 });
