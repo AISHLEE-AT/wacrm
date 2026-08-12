@@ -13,6 +13,7 @@ import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
 import { MapPin, Bell, LogOut } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
+import { LocationContext } from '../context/LocationContext';
 import { supabase } from '../lib/supabase';
 import { colors, spacing, radius, fontSize } from '../lib/theme';
 

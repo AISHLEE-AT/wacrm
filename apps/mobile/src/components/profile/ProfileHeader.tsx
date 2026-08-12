@@ -51,7 +51,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
       if (!result.canceled && result.assets && result.assets[0].base64) {
         setIsUploading(true);
-        
+
         const filePath = `${userId}/avatar.jpg`;
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -81,7 +81,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         }
 
         const data = await response.json();
-        onProfileUpdate(data);
+        onProfileUpdate(data.profile || data);
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to upload avatar');
@@ -105,7 +105,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       }
 
       const data = await response.json();
-      onProfileUpdate(data);
+      onProfileUpdate(data.profile || data);
       setIsEditingName(false);
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to update name');

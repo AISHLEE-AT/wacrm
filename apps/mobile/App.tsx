@@ -16,8 +16,10 @@ import LoginScreen      from './src/screens/LoginScreen';
 import CategoryScreen   from './src/screens/CategoryScreen';
 import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
+import DriveOScreen     from './src/screens/DriveOScreen';
+import RideOScreen      from './src/screens/RideOScreen';
 import MapScreen        from './src/screens/MapScreen';
-import ChatScreen       from './src/screens/ChatScreen';
+import AishleeToolsScreen from './src/screens/AishleeToolsScreen';
 import GameOScreen      from './src/screens/GameOScreen';
 import GamingHubScreen  from './src/screens/GamingHubScreen';
 import RewardsScreen    from './src/screens/RewardsScreen';
@@ -34,6 +36,7 @@ import OnboardingProfileScreen from './src/screens/OnboardingProfileScreen';
 import OnboardingModuleScreen from './src/screens/OnboardingModuleScreen';
 
 import { AppProvider, AppContext } from './src/context/AppContext';
+import { LocationProvider } from './src/context/LocationContext';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -86,8 +89,8 @@ function AdminTabs() {
       {/* 4. AI Assistant */}
       <Tab.Screen
         name="AIBot"
-        component={ChatScreen}
-        options={tabOpts('AI Assistant', Bot)}
+        component={AishleeToolsScreen}
+        options={tabOpts('AI Hub', Bot)}
       />
 
       {/* 5. Profile */}
@@ -107,22 +110,29 @@ function UserTabs() {
   const category = (user?.category || user?.role || '').toLowerCase();
   const defaultModulePath = user?.defaultModule;
 
-  let primaryModule = {
+  let primaryModule: {
+    name: string;
+    path: string;
+    label: string;
+    icon: any;
+    nativeComponent?: any;
+  } = {
     name: 'PrimaryModule',
     path: '/rideo',
     label: 'RideO',
     icon: Map,
+    nativeComponent: RideOScreen,
   };
 
   const selectedPath = user?.selectedModule || defaultModulePath;
 
   // First try to match selectedModule / defaultModule if available
   if (selectedPath === '/drivo') {
-    primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
+    primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
   } else if (selectedPath === '/teacho') {
-    primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
+    primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
   } else if (selectedPath === '/agro') {
-    primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
+    primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
   } else if (selectedPath === '/dealo') {
     primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
   } else if (selectedPath === '/touro') {
@@ -130,21 +140,21 @@ function UserTabs() {
   } else if (selectedPath === '/moneyo') {
     primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
   } else if (selectedPath === '/gameo') {
-    primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map }; 
+    primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map, nativeComponent: GameOScreen }; 
   } else if (selectedPath === '/rento') {
     primaryModule = { name: 'RentO', path: '/rento', label: 'RentO', icon: Compass }; // fallback icon
   } else if (selectedPath === '/testo') {
-    primaryModule = { name: 'TestO', path: '/testo', label: 'TestO', icon: GraduationCap }; // fallback icon
+    primaryModule = { name: 'TestO', path: '/testo', label: 'TestO', icon: GraduationCap, nativeComponent: TestOHubScreen }; // fallback icon
   } else if (selectedPath === '/tvo') {
     primaryModule = { name: 'TvO', path: '/tvo', label: 'TvO', icon: Tv }; 
   } else {
     // Fallback to category-based logic
     if (category.includes('driver')) {
-      primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin };
+      primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
     } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
-      primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap };
+      primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
     } else if (category.includes('farmer') || category.includes('agri')) {
-      primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench };
+      primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
     } else if (category.includes('shopper') || category.includes('merchant')) {
       primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
     } else if (category.includes('tourist')) {
@@ -178,22 +188,30 @@ function UserTabs() {
       />
 
       {/* 2. User's Tailored Primary Module */}
-      <Tab.Screen
-        name={primaryModule.name}
-        component={EcosystemWebView}
-        initialParams={{ 
-          path: primaryModule.path, 
-          moduleName: primaryModule.label,
-          ...(aishleeUrl ? { url: aishleeUrl } : {})
-        }}
-        options={tabOpts(primaryModule.label, primaryModule.icon)}
-      />
+      {primaryModule.nativeComponent ? (
+        <Tab.Screen
+          name={primaryModule.name}
+          component={primaryModule.nativeComponent}
+          options={tabOpts(primaryModule.label, primaryModule.icon)}
+        />
+      ) : (
+        <Tab.Screen
+          name={primaryModule.name}
+          component={EcosystemWebView}
+          initialParams={{ 
+            path: primaryModule.path, 
+            moduleName: primaryModule.label,
+            ...(aishleeUrl ? { url: aishleeUrl } : {})
+          }}
+          options={tabOpts(primaryModule.label, primaryModule.icon)}
+        />
+      )}
 
       {/* 3. AI Assistant */}
       <Tab.Screen
         name="AIBot"
-        component={ChatScreen}
-        options={tabOpts('AI Assistant', Bot)}
+        component={AishleeToolsScreen}
+        options={tabOpts('AI Hub', Bot)}
       />
 
       {/* 4. Profile */}
@@ -239,6 +257,8 @@ function RootNavigator() {
         name="ModuleView"
         component={EcosystemWebView}
       />
+      <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
+      <Stack.Screen name="RideOScreen" component={RideOScreen} />
       <Stack.Screen name="GameOScreen" component={GameOScreen} />
       <Stack.Screen name="MapRacer3DScreen" component={MapRacer3DScreen} />
       <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />
@@ -308,7 +328,9 @@ function NavigationWrapper() {
 export default function App() {
   return (
     <AppProvider>
-      <NavigationWrapper />
+      <LocationProvider>
+        <NavigationWrapper />
+      </LocationProvider>
     </AppProvider>
   );
 }

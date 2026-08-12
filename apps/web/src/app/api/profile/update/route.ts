@@ -10,7 +10,7 @@ function getAdminClient() {
 
 export async function POST(request: Request) {
   try {
-    const { userId, phone, full_name, upi_id, location, main_category, gemini_api_key } = await request.json()
+    const { userId, phone, full_name, upi_id, location, main_category, gemini_api_key, city, district, state, country, pincode, latitude, longitude, avatar_url, pushToken } = await request.json()
 
     if (!userId && !phone) {
       return NextResponse.json({ error: 'User ID or Phone number is required' }, { status: 400 })
@@ -29,6 +29,15 @@ export async function POST(request: Request) {
     if (location !== undefined) updates.location = location.trim()
     if (main_category !== undefined) updates.main_category = main_category
     if (gemini_api_key !== undefined) updates.gemini_api_key = gemini_api_key
+    if (city !== undefined) updates.city = city
+    if (district !== undefined) updates.district = district
+    if (state !== undefined) updates.state = state
+    if (country !== undefined) updates.country = country
+    if (pincode !== undefined) updates.pincode = pincode
+    if (latitude !== undefined) updates.latitude = latitude
+    if (longitude !== undefined) updates.longitude = longitude
+    if (avatar_url !== undefined) updates.avatar_url = avatar_url
+    if (pushToken !== undefined) updates.push_token = pushToken
 
     // Strategy 1: Update by userId or id
     let updateResult = null

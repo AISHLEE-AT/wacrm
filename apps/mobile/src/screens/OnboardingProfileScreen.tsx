@@ -1,11 +1,13 @@
 // @ts-nocheck
 import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { User, CreditCard, Camera } from 'lucide-react-native';
+import { User, CreditCard, Camera, MapPin, Navigation, RefreshCw } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
+import { LocationContext } from '../context/LocationContext';
 
 export default function OnboardingProfileScreen({ navigation }: any) {
   const { user, signIn } = useContext(AppContext);
+  const locationCtx = useContext(LocationContext);
   const [fullName, setFullName] = useState(user?.name || '');
   const [upiId, setUpiId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,15 @@ export default function OnboardingProfileScreen({ navigation }: any) {
         body: JSON.stringify({ 
           phone: user?.phone,
           full_name: fullName,
-          upi_id: upiId
+          upi_id: upiId,
+          location: locationCtx.locationString !== 'Detecting location...' ? locationCtx.locationString : undefined,
+          city: locationCtx.city || undefined,
+          district: locationCtx.district || undefined,
+          state: locationCtx.state || undefined,
+          pincode: locationCtx.pincode || undefined,
+          country: locationCtx.country || undefined,
+          latitude: locationCtx.latitude || undefined,
+          longitude: locationCtx.longitude || undefined,
         })
       });
       
@@ -91,6 +101,35 @@ export default function OnboardingProfileScreen({ navigation }: any) {
             />
           </View>
 
+          <Text style={[styles.label, { marginTop: 20 }]}>YOUR LOCATION</Text>
+          <View style={styles.locationRow}>
+            <View style={styles.locationIconBox}>
+              <MapPin color="#34d399" size={20} />
+            </View>
+            <View style={{ flex: 1 }}>
+              {locationCtx.isLoading ? (
+                <View style={styles.locationLoadingRow}>
+                  <ActivityIndicator size="small" color="#34d399" />
+                  <Text style={styles.locationLoadingText}>Detecting your location...</Text>
+                </View>
+              ) : (
+                <Text style={styles.locationValue}>
+                  {locationCtx.locationString || 'Location not available'}
+                </Text>
+              )}
+              {locationCtx.city && !locationCtx.isLoading && (
+                <Text style={styles.locationSubText}>
+                  {[locationCtx.city, locationCtx.district, locationCtx.pincode].filter(Boolean).join(' · ')}
+                </Text>
+              )}
+            </View>
+            {!locationCtx.isLoading && (
+              <TouchableOpacity onPress={locationCtx.refreshLocation} style={styles.refreshBtn}>
+                <RefreshCw color="#3b82f6" size={16} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <Text style={[styles.label, { marginTop: 20 }]}>UPI ID (OPTIONAL)</Text>
           <View style={styles.inputContainer}>
             <View style={styles.inputLeftIcon}>
@@ -141,4 +180,11 @@ const styles = StyleSheet.create({
   primaryButton: { backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center' },
   primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   disabledButton: { opacity: 0.5 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', borderWidth: 1, borderColor: 'rgba(52,211,153,0.3)', borderRadius: 12, padding: 14 },
+  locationIconBox: { marginRight: 12 },
+  locationValue: { color: '#e2e8f0', fontSize: 15, fontWeight: '600' },
+  locationSubText: { color: '#64748b', fontSize: 11, marginTop: 2 },
+  locationLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  locationLoadingText: { color: '#94a3b8', fontSize: 14 },
+  refreshBtn: { padding: 8, marginLeft: 8, backgroundColor: 'rgba(59,130,246,0.1)', borderRadius: 8 },
 });

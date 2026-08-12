@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { CheckCircle2, XCircle } from 'lucide-react-native';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
+import { LocationContext } from '../../context/LocationContext';
 
 interface SetupChecklistProps {
   profile: any;
@@ -16,10 +17,11 @@ export function SetupChecklist({
   geminiApiKey,
   pushToken
 }: SetupChecklistProps) {
+  const locationCtx = useContext(LocationContext);
   const checks = [
     { id: 'account', label: 'Account Created', isComplete: true },
     { id: 'name', label: 'Full Name Set', isComplete: !!(profile?.full_name && profile.full_name.trim() !== '') },
-    { id: 'location', label: 'Location Set', isComplete: !!profile?.location },
+    { id: 'location', label: 'Location Set', isComplete: !!(profile?.location || (locationCtx.latitude !== null && !locationCtx.error)) },
     { id: 'api_key', label: 'Gemini API Key', isComplete: !!geminiApiKey },
     { id: 'push', label: 'Push Notifications', isComplete: !!pushToken },
     { id: 'upi', label: 'UPI ID Configured', isComplete: !!profile?.upi_id },

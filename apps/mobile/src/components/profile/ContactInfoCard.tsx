@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, Linking } from 'react-native';
-import { Smartphone, MapPin, CreditCard, Sparkles, Check, X, ExternalLink } from 'lucide-react-native';
+import { Smartphone, MapPin, CreditCard, Sparkles, Check, X, ExternalLink, Navigation } from 'lucide-react-native';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
+import { LocationContext } from '../../context/LocationContext';
 
 interface ContactInfoCardProps {
   profile: any;
@@ -11,6 +12,7 @@ interface ContactInfoCardProps {
 }
 
 export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userId, phone, onProfileUpdate }) => {
+  const locationCtx = useContext(LocationContext);
   const [editingField, setEditingField] = useState<'location' | 'upi_id' | 'gemini_api_key' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -97,12 +99,23 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
                 style={styles.input}
                 value={editValue}
                 onChangeText={setEditValue}
-                placeholder="e.g. Tamil Nadu, India"
+                placeholder="e.g. Chennai, Tamil Nadu, India"
                 placeholderTextColor={colors.textMuted}
                 autoFocus
               />
             ) : (
-              <Text style={styles.value}>{profile?.location || 'Tamil Nadu, India'}</Text>
+              <View>
+                <Text style={styles.value}>
+                  {locationCtx.isLoading
+                    ? 'Detecting...'
+                    : profile?.location || locationCtx.locationString || 'Tap Detect to set location'}
+                </Text>
+                {locationCtx.city && !locationCtx.isLoading && (
+                  <Text style={styles.locationDetail}>
+                    {[locationCtx.city, locationCtx.district, locationCtx.pincode].filter(Boolean).join(' · ')}
+                  </Text>
+                )}
+              </View>
             )}
           </View>
         </View>
@@ -121,9 +134,19 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
               </View>
             )
           ) : (
-            <TouchableOpacity onPress={() => handleEdit('location', profile?.location || 'Tamil Nadu, India')}>
-              <Text style={styles.editBtnText}>Edit</Text>
-            </TouchableOpacity>
+            <View style={styles.editActions}>
+              {locationCtx.isLoading ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <TouchableOpacity onPress={locationCtx.refreshLocation} style={styles.detectBtn}>
+                  <Navigation size={14} color={colors.accent} />
+                  <Text style={styles.detectBtnText}>Detect</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={() => handleEdit('location', profile?.location || locationCtx.locationString || '')}>
+                <Text style={styles.editBtnText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
@@ -314,5 +337,25 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: fontSize.xs,
     marginLeft: spacing.xs,
-  }
+  },
+  detectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accentLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    marginRight: spacing.sm,
+  },
+  detectBtnText: {
+    color: colors.accent,
+    fontSize: fontSize.xs,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  locationDetail: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
 });

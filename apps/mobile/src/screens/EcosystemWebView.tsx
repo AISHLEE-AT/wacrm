@@ -78,22 +78,31 @@ export default function EcosystemWebView({ route, navigation }: Props) {
               tokenKey = 'sb-gmahjdzqitbomtmdzlfp-auth-token';
             }
           }
-          var existing = localStorage.getItem(tokenKey);
-          if (!existing) {
-            localStorage.setItem(tokenKey, JSON.stringify({
-              access_token: "${accessToken}",
-              refresh_token: "${refreshToken}",
-              expires_in: 3600,
-              expires_at: Math.floor(Date.now() / 1000) + 3600,
-              token_type: "bearer",
-              user: {
-                id: "${user?.id}",
-                phone: "${userPhone}",
+
+          // Always overwrite token — stale/expired tokens cause "Access Denied"
+          var sessionData = JSON.stringify({
+            access_token: "${accessToken}",
+            refresh_token: "${refreshToken}",
+            expires_in: 3600,
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            token_type: "bearer",
+            user: {
+              id: "${user?.id || ''}",
+              phone: "${userPhone}",
+              email: "${user?.email || ''}",
+              user_metadata: {
+                full_name: "${userName}",
                 name: "${userName}",
-                user_metadata: { role: "${userRole}", is_admin: ${isAdmin} }
-              }
-            }));
-          }
+                role: "${userRole}",
+                is_admin: ${isAdmin},
+                phone: "${userPhone}"
+              },
+              app_metadata: {},
+              aud: "authenticated",
+              role: "authenticated"
+            }
+          });
+          localStorage.setItem(tokenKey, sessionData);
           
           // Also simulate the iframe postMessage that the web app uses!
           // This tells the aishlee-web app (which listens for message events) to sync immediately.
@@ -199,7 +208,13 @@ export default function EcosystemWebView({ route, navigation }: Props) {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: targetUrl }}
+        source={{ 
+          uri: targetUrl,
+          headers: {
+            'x-supro-access-token': accessToken,
+            'x-supro-refresh-token': refreshToken
+          }
+        }}
         injectedJavaScript={INJECTED_JS}
         injectedJavaScriptBeforeContentLoaded={INJECTED_JS}
         onMessage={handleMessage}
@@ -222,8 +237,10 @@ export default function EcosystemWebView({ route, navigation }: Props) {
         // Pass user agent so Next.js middleware can detect native app
         applicationNameForUserAgent="SuprO-Native/1.0"
         onNavigationStateChange={(navState) => {
-          // If webview navigates to the web login page, intercept
-          if (navState.url?.includes('/login') && navState.url?.includes(BASE_URL)) {
+          // Only redirect to native Login if the web server stripped embed=true
+          // and sent us to a bare /login page. If embed=true is still in the URL,
+          // the injected JS will handle the redirect back to the module path.
+          if (navState.url?.includes('/login') && navState.url?.includes(BASE_URL) && !navState.url?.includes('embed=true')) {
             navigation.replace('Login');
           }
         }}

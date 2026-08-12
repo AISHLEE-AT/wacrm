@@ -52,9 +52,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Handle access_token in URL (deep-link from mobile apps)
-  const accessToken = request.nextUrl.searchParams.get('access_token')
-  const refreshToken = request.nextUrl.searchParams.get('refresh_token')
+  // Handle access_token in URL (deep-link) OR from custom headers (native app WebView)
+  const accessToken = request.nextUrl.searchParams.get('access_token') || request.headers.get('x-supro-access-token')
+  const refreshToken = request.nextUrl.searchParams.get('refresh_token') || request.headers.get('x-supro-refresh-token')
 
   let user = null
 

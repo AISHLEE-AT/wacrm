@@ -56,6 +56,12 @@ export const AppProvider = ({ children }: any) => {
 
           // Fetch the latest default_module from Supabase to sync across devices
           try {
+            if (accessToken) {
+              await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken || '',
+              });
+            }
             const { data } = await supabase.from('profiles').select('default_module').eq('phone', phone).single();
             if (data?.default_module) {
               defaultModule = data.default_module;
@@ -132,6 +138,14 @@ export const AppProvider = ({ children }: any) => {
     if (userData.selectedModule) {
       await SecureStore.setItemAsync('user-selected-module', userData.selectedModule);
     }
+    
+    // Sync the Supabase client session natively
+    if (fullUser.accessToken) {
+      await supabase.auth.setSession({
+        access_token: fullUser.accessToken,
+        refresh_token: fullUser.refreshToken || '',
+      });
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -146,6 +160,9 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.deleteItemAsync('user-selected-module');
     await SecureStore.deleteItemAsync('onboarding-complete');
     setOnboardingComplete(false);
+    
+    // Clear Supabase client session natively
+    await supabase.auth.signOut();
   }, []);
 
   const addRecentModule = useCallback(async (moduleName: string) => {
