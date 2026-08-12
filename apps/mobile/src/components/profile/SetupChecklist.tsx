@@ -22,7 +22,7 @@ export function SetupChecklist({
     { id: 'account', label: 'Account Created', isComplete: true },
     { id: 'name', label: 'Full Name Set', isComplete: !!(profile?.full_name && profile.full_name.trim() !== '') },
     { id: 'location', label: 'Location Set', isComplete: !!(profile?.location || (locationCtx.latitude !== null && !locationCtx.error)) },
-    { id: 'api_key', label: 'Gemini API Key', isComplete: !!geminiApiKey },
+    { id: 'api_key', label: 'Gemini API Key', isComplete: !!(geminiApiKey || profile?.gemini_api_key) },
     { id: 'push', label: 'Push Notifications', isComplete: !!pushToken },
     { id: 'upi', label: 'UPI ID Configured', isComplete: !!profile?.upi_id },
     { id: 'driver', label: 'Driver Profile', isComplete: !!driverProfile },
