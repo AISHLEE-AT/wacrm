@@ -51,9 +51,10 @@ export async function POST(req: Request) {
       max_distance_km: 5
     });
 
-    // Notify drivers via WhatsApp
+    // Notify drivers via WhatsApp & Expo Push
     if (drivers && drivers.length > 0) {
       for (const driver of drivers) {
+        // WhatsApp Notification
         if (driver.whatsapp_number) {
           try {
              await sendInteractiveButtons({
@@ -69,6 +70,39 @@ export async function POST(req: Request) {
           } catch (e) {
              console.error('Failed to notify driver via WA', e);
           }
+        }
+
+        // Expo Push Notification
+        try {
+          // Get push token from profiles table using phone number
+          const phoneForSearch = driver.mobile_number || driver.whatsapp_number;
+          if (phoneForSearch) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('push_token')
+              .eq('phone', phoneForSearch)
+              .single();
+
+            if (profile?.push_token) {
+              await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                  Accept: 'application/json',
+                  'Accept-encoding': 'gzip, deflate',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  to: profile.push_token,
+                  sound: 'default',
+                  title: 'New Ride Request! 🚕',
+                  body: `Pickup: ${pickup_address}\nTap to open SuprO and accept.`,
+                  data: { rideId: ride.id, type: 'new_ride' },
+                }),
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Failed to send Expo push to driver', e);
         }
       }
     }

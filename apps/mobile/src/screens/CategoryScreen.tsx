@@ -37,6 +37,8 @@ export default function CategoryScreen() {
       navigation.navigate('GameOScreen');
     } else if (cat.path === '/drivo') {
       navigation.navigate('DriveOScreen');
+    } else if (cat.path === '/rideo') {
+      navigation.navigate('RideOScreen');
     } else if (cat.path === '/teacho') {
       navigation.navigate('TeachOScreen');
     } else if (cat.path === '/testo') {
