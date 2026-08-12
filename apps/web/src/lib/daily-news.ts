@@ -48,6 +48,20 @@ export async function fetchDailyNewsForModule(module: string): Promise<DailyNews
   try {
     const supabase = createClient();
     const yesterday = yesterdayString();
+    const cacheKey = `supro_news_cache_${module}`;
+
+    // Try to get from localStorage first (offline support)
+    let cachedItems: DailyNewsItem[] = [];
+    try {
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          cachedItems = JSON.parse(cached);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to read cache", e);
+    }
 
     const { data, error } = await supabase
       .from('daily_news')
@@ -58,16 +72,28 @@ export async function fetchDailyNewsForModule(module: string): Promise<DailyNews
       .order('created_at', { ascending: true })
       .limit(30);
 
-    if (error) throw error;
+    // If network fails and we have cache, return cache
+    if (error && cachedItems.length > 0) {
+      console.warn("Network error, returning cached news:", error);
+      return cachedItems;
+    } else if (error) {
+      throw error;
+    }
 
     const items = (data as DailyNewsItem[]) ?? [];
 
     // If empty → silently trigger server-side load and retry once
     if (items.length === 0) {
+      if (cachedItems.length > 0) {
+        // Return cache instantly but trigger background fetch
+        triggerLoadIfEmpty();
+        return cachedItems;
+      }
+      
       await triggerLoadIfEmpty();
       // Short wait then retry
       await new Promise(r => setTimeout(r, 2500));
-      const { data: retryData } = await supabase
+      const { data: retryData, error: retryError } = await supabase
         .from('daily_news')
         .select('*')
         .eq('module', module)
@@ -75,12 +101,38 @@ export async function fetchDailyNewsForModule(module: string): Promise<DailyNews
         .order('loaded_date', { ascending: false })
         .order('created_at', { ascending: true })
         .limit(30);
-      return (retryData as DailyNewsItem[]) ?? [];
+      
+      const retryItems = (retryData as DailyNewsItem[]) ?? [];
+      
+      // Save retry items to cache
+      if (retryItems.length > 0 && typeof window !== 'undefined') {
+        localStorage.setItem(cacheKey, JSON.stringify(retryItems));
+      }
+      
+      return retryItems;
+    }
+
+    // Save successful fetch to cache
+    if (items.length > 0 && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(items));
+      } catch (e) {
+        console.warn("Failed to set cache", e);
+      }
     }
 
     return items;
   } catch (e) {
     console.error('fetchDailyNewsForModule error:', e);
+    
+    // Ultimate fallback: return cache if we hit any exception
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem(`supro_news_cache_${module}`);
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
+    }
+    
     return [];
   }
 }
