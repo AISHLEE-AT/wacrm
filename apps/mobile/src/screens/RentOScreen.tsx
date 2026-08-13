@@ -108,6 +108,7 @@ export default function RentOScreen({ navigation }) {
 
   // Active Category State: 'agri' | 'cargo' | 'package' | 'tour'
   const [activeTab, setActiveTab] = useState('agri');
+  const [isTamil, setIsTamil] = useState(false);
 
   // Location States
   const [location, setLocation] = useState({ latitude: 11.9401, longitude: 79.8083 });
@@ -305,8 +306,28 @@ export default function RentOScreen({ navigation }) {
           <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
-          <Text style={styles.headerTitle}>RentO Tamil Nadu</Text>
-          <Text style={styles.headerSub}>Agri Machinery, Cargo & Rental Hailing</Text>
+          <Text style={styles.headerTitle}>{isTamil ? 'ரென்ட்ஓ தமிழ்நாடுகள்' : 'RentO Tamil Nadu'}</Text>
+          <Text style={styles.headerSub}>{isTamil ? 'வேளாண் இயந்திரங்கள் & வாடகை சேவை' : 'Agri Machinery, Cargo & Rental Hailing'}</Text>
+        </View>
+
+        {/* BILINGUAL TOGGLE & SOS BUTTONS */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <TouchableOpacity
+            style={[styles.langChip, isTamil && styles.langChipActive]}
+            onPress={() => setIsTamil(!isTamil)}
+          >
+            <Text style={[styles.langChipText, isTamil && { color: '#000' }]}>{isTamil ? 'English' : 'தமிழ்'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.sosHeaderBtn}
+            onPress={() => {
+              Linking.openURL('tel:112');
+              shareLocationWhatsApp(location.latitude, location.longitude, 'SOS EMERGENCY - RentO Field Location');
+            }}
+          >
+            <Shield size={18} color="#ef4444" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -396,7 +417,7 @@ export default function RentOScreen({ navigation }) {
                   style={styles.locationInput}
                   value={pickupAddress}
                   onChangeText={setPickupAddress}
-                  placeholder="Pickup / Farm Field Address"
+                  placeholder={isTamil ? "வயல்வெளி / புறப்படும் இடம்" : "Pickup / Farm Field Address"}
                   placeholderTextColor="#64748b"
                 />
               </View>
@@ -407,10 +428,18 @@ export default function RentOScreen({ navigation }) {
                   style={styles.locationInput}
                   value={dropoffAddress}
                   onChangeText={setDropoffAddress}
-                  placeholder="Destination / Market Mandi Address"
+                  placeholder={isTamil ? "சந்தை / சேருமிடம்" : "Destination / Market Mandi Address"}
                   placeholderTextColor="#64748b"
                 />
               </View>
+            </View>
+
+            {/* SUPRO SAFETY GUARANTEE BADGE */}
+            <View style={styles.safetyGuaranteeCard}>
+              <Shield size={16} color={COLORS.green} />
+              <Text style={styles.safetyGuaranteeText}>
+                {isTamil ? '🛡️ சுப்ரோ பாதுகாப்பு உத்தரவாதம்: சரிபார்க்கப்பட்ட ஓட்டுனர் & பயிர் பாதுகாப்பு' : '🛡️ SuprO Safety Guarantee: Verified Operator & Crop Protection'}
+              </Text>
             </View>
 
             {/* TAMIL NADU MANDI PRESETS */}
@@ -578,7 +607,7 @@ export default function RentOScreen({ navigation }) {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.driverName}>{activeBooking.driver.name}</Text>
                     <Text style={styles.driverVehicle}>{activeBooking.driver.vehicle}</Text>
-                    <Text style={styles.driverRating}>⭐ {activeBooking.driver.rating} Rating</Text>
+                    <Text style={styles.driverRating}>⭐ {activeBooking.driver.rating} Rating • Verified Operator 🛡️</Text>
                   </View>
                   <TouchableOpacity style={styles.iconCallBtn} onPress={() => callPhone(activeBooking.driver.phone)}>
                     <Phone size={20} color="#fff" />
@@ -973,5 +1002,45 @@ const styles = StyleSheet.create({
   cancelBookingText: {
     color: '#ef4444',
     fontSize: 13,
+  },
+  langChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#10b981',
+  },
+  langChipActive: {
+    backgroundColor: '#10b981',
+  },
+  langChipText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  sosHeaderBtn: {
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: '#ef444420',
+    borderWidth: 1,
+    borderColor: '#ef444460',
+  },
+  safetyGuaranteeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#10b98115',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#10b98140',
+    marginBottom: 12,
+  },
+  safetyGuaranteeText: {
+    fontSize: 12,
+    color: '#10b981',
+    fontWeight: '500',
+    flex: 1,
   },
 });
