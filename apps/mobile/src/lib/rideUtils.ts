@@ -46,6 +46,12 @@ export const VEHICLE_CATEGORIES = [
   { id: 'mini', name: 'Mini', icon: '🚗', emoji: '🚗', base: 80, perKm: 25, perMin: 2, seats: 4, description: 'Compact car' },
   { id: 'sedan', name: 'Sedan', icon: '🚙', emoji: '🚙', base: 120, perKm: 30, perMin: 2.5, seats: 4, description: 'Comfortable sedan' },
   { id: 'suv', name: 'SUV', icon: '🚐', emoji: '🚐', base: 150, perKm: 35, perMin: 3, seats: 6, description: 'Spacious SUV' },
+  { id: 'tata_ace', name: 'Tata Ace (Chota Hathi)', icon: '🚚', emoji: '🚚', base: 250, perKm: 18, perMin: 4, seats: 2, description: 'Mini Truck / Cargo Mandi' },
+  { id: 'bolero', name: 'Bolero Maxi Truck', icon: '🛻', emoji: '🛻', base: 400, perKm: 22, perMin: 5, seats: 2, description: 'Medium Mandi Pickup' },
+  { id: 'lorry', name: 'Heavy Lorry / Eicher', icon: '🚛', emoji: '🚛', base: 900, perKm: 38, perMin: 8, seats: 3, description: 'Heavy Goods Lorry' },
+  { id: 'bus', name: 'Bus / Tempo', icon: '🚌', emoji: '🚌', base: 1200, perKm: 42, perMin: 10, seats: 20, description: 'Tour & Group Bus' },
+  { id: 'tractor', name: 'Agri Tractor', icon: '🚜', emoji: '🚜', base: 450, perKm: 30, perMin: 6, seats: 1, description: 'Plowing & Farm Equipment' },
+  { id: 'harvester', name: 'Harvester', icon: '🌾', emoji: '🌾', base: 1800, perKm: 50, perMin: 15, seats: 1, description: 'Paddy & Field Harvester' },
 ];
 
 // ─── HAVERSINE DISTANCE (km) ───

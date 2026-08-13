@@ -28,6 +28,7 @@ import TestOHubScreen   from './src/screens/TestOHubScreen';
 import TestOExamScreen  from './src/screens/TestOExamScreen';
 import TestOResultScreen from './src/screens/TestOResultScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
+import RentOScreen      from './src/screens/RentOScreen';
 
 import OnboardingPermissionsScreen from './src/screens/OnboardingPermissionsScreen';
 import OnboardingProfileScreen from './src/screens/OnboardingProfileScreen';
@@ -118,7 +119,7 @@ function UserTabs() {
       case 'touro': return { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
       case 'moneyo': return { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
       case 'gameo': return { name: 'GameO', path: '/gameo', label: 'GameO', icon: Gamepad2, nativeComponent: GameOScreen }; 
-      case 'rento': return { name: 'RentO', path: '/rento', label: 'RentO', icon: Wrench };
+      case 'rento': return { name: 'RentO', path: '/rento', label: 'RentO', icon: Wrench, nativeComponent: RentOScreen };
       case 'testo': return { name: 'TestO', path: '/testo', label: 'TestO', icon: Award, nativeComponent: TestOHubScreen };
       case 'tvo': return { name: 'TvO', path: '/tvo', label: 'TvO', icon: MonitorPlay };
       default: return null;
@@ -188,7 +189,7 @@ function UserTabs() {
   } else if (selectedPath === '/gameo') {
     primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map, nativeComponent: GameOScreen }; 
   } else if (selectedPath === '/rento') {
-    primaryModule = { name: 'RentO', path: '/rento', label: 'RentO', icon: Compass }; // fallback icon
+    primaryModule = { name: 'RentO', path: '/rento', label: 'RentO', icon: Wrench, nativeComponent: RentOScreen };
   } else if (selectedPath === '/testo') {
     primaryModule = { name: 'TestO', path: '/testo', label: 'TestO', icon: GraduationCap, nativeComponent: TestOHubScreen }; // fallback icon
   } else if (selectedPath === '/tvo') {
@@ -314,6 +315,7 @@ function RootNavigator() {
       <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
+      <Stack.Screen name="RentOScreen" component={RentOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: true, title: 'All Modules', headerStyle: { backgroundColor: colors.card }, headerTintColor: colors.text }} />
     </Stack.Navigator>
   );

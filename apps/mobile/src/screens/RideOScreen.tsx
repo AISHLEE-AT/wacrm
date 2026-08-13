@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
   Animated,
+  Easing,
   SafeAreaView,
   Platform,
 } from 'react-native';
@@ -35,6 +36,7 @@ import {
   Truck,
   ArrowLeft,
   RefreshCw,
+  Crosshair,
 } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { AppContext } from '../context/AppContext';
@@ -93,6 +95,12 @@ export default function RideOScreen({ navigation }) {
   const [countdown, setCountdown] = useState(60);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   
+  // Pin animation state
+  const pinLiftAnim = useRef(new Animated.Value(0)).current;
+  const pinShadowOpacity = useRef(new Animated.Value(0.3)).current;
+  const pinShadowScale = useRef(new Animated.Value(1)).current;
+  const pinPulseAnim = useRef(new Animated.Value(0)).current;
+  
   // Rating State
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState('');
@@ -145,6 +153,20 @@ export default function RideOScreen({ navigation }) {
     } else {
       setCountdown(60);
       pulseAnim.setValue(1);
+    }
+  }, [rideState]);
+
+  // Pin ground pulse animation
+  useEffect(() => {
+    if (rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pinPulseAnim, { toValue: 1, duration: 1500, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+          Animated.timing(pinPulseAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pinPulseAnim.setValue(0);
     }
   }, [rideState]);
 
@@ -236,7 +258,7 @@ export default function RideOScreen({ navigation }) {
   };
 
   const resetToPickup = () => {
-    setRideState('IDLE');
+    setRideState('SELECT_PICKUP');
     setDropoffLocation(null);
     setDropoffAddress('');
     setDropoffQuery('');
@@ -249,14 +271,50 @@ export default function RideOScreen({ navigation }) {
     setLoading(false);
   };
 
+  const animatePinLift = () => {
+    Animated.parallel([
+      Animated.spring(pinLiftAnim, { toValue: -22, useNativeDriver: true, friction: 8, tension: 100 }),
+      Animated.timing(pinShadowOpacity, { toValue: 0.12, duration: 200, useNativeDriver: true }),
+      Animated.spring(pinShadowScale, { toValue: 1.4, useNativeDriver: true, friction: 8, tension: 100 }),
+    ]).start();
+  };
+
+  const animatePinDrop = () => {
+    Animated.parallel([
+      Animated.spring(pinLiftAnim, { toValue: 0, useNativeDriver: true, friction: 6, tension: 120 }),
+      Animated.timing(pinShadowOpacity, { toValue: 0.3, duration: 250, useNativeDriver: true }),
+      Animated.spring(pinShadowScale, { toValue: 1, useNativeDriver: true, friction: 6, tension: 120 }),
+    ]).start();
+  };
+
   const handleMapRegionChangeComplete = async (region) => {
     setIsMapMoving(false);
+    animatePinDrop();
     if (rideState === 'SELECT_PICKUP') {
       setLocation({ latitude: region.latitude, longitude: region.longitude });
       reverseGeocode(region.latitude, region.longitude, setPickupAddress);
     } else if (rideState === 'SELECT_DROPOFF') {
       setDropoffLocation({ latitude: region.latitude, longitude: region.longitude });
       reverseGeocode(region.latitude, region.longitude, setDropoffAddress);
+    }
+  };
+
+  const useMyLocation = async () => {
+    try {
+      let currentLoc = await Location.getCurrentPositionAsync({});
+      const coords = { latitude: currentLoc.coords.latitude, longitude: currentLoc.coords.longitude };
+      if (rideState === 'SELECT_PICKUP') {
+        setLocation(coords);
+        reverseGeocode(coords.latitude, coords.longitude, setPickupAddress);
+      } else if (rideState === 'SELECT_DROPOFF') {
+        setDropoffLocation(coords);
+        reverseGeocode(coords.latitude, coords.longitude, setDropoffAddress);
+      }
+      if (mapRef.current) {
+        mapRef.current.animateToRegion({ ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 });
+      }
+    } catch (e) {
+      Alert.alert('Location Error', 'Could not get your current location.');
     }
   };
 
@@ -348,18 +406,25 @@ export default function RideOScreen({ navigation }) {
       const { data, error } = await supabase.rpc('get_nearby_drivers', {
         pickup_lat: location.latitude,
         pickup_lon: location.longitude,
-        radius_km: 10
+        radius_km: 100000
       });
       
       if (!error && data) {
         // Map distance and fares for each driver
         const distanceKmSafe = fareEstimate?.distanceKm ? parseFloat(fareEstimate.distanceKm) : 5.0;
         const enrichedDrivers = data.map(d => {
-          const lat = parseFloat(d.latitude);
-          const lon = parseFloat(d.longitude);
-          const distFromPickup = (!isNaN(lat) && !isNaN(lon) && location) 
-            ? getDistanceKm(lat, lon, location.latitude, location.longitude) 
-            : 0;
+          let lat = parseFloat(d.latitude);
+          let lon = parseFloat(d.longitude);
+
+          // Fallback if RPC doesn't return lat/lon (e.g. virtual drivers)
+          if (isNaN(lat) || isNaN(lon)) {
+            const jitterLat = (Math.random() - 0.5) * 0.015; // ~1.5km
+            const jitterLon = (Math.random() - 0.5) * 0.015;
+            lat = location.latitude + jitterLat;
+            lon = location.longitude + jitterLon;
+          }
+
+          const distFromPickup = getDistanceKm(lat, lon, location.latitude, location.longitude);
           const fareObj = calculateFare(distanceKmSafe, d.vehicle_type?.toLowerCase() || 'bikeo');
           return {
             ...d,
@@ -369,7 +434,7 @@ export default function RideOScreen({ navigation }) {
             etaToPickup: Math.round(distFromPickup * 3), // rough 3 mins per km
             fareObj,
           };
-        }).filter(d => !isNaN(d.latitude) && !isNaN(d.longitude)).sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
+        }).sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
         
         setNearbyDrivers(enrichedDrivers);
         setRideState('SHOW_DRIVERS');
@@ -421,16 +486,20 @@ export default function RideOScreen({ navigation }) {
       const { data: rideData, error } = await supabase.from('rides').insert({
         passenger_phone: user?.phone || 'unknown',
         passenger_name: user?.name || 'Rider',
-        pickup_latitude: location.latitude,
-        pickup_longitude: location.longitude,
-        pickup_address: pickupAddress,
-        dropoff_latitude: dropoffLocation.latitude,
-        dropoff_longitude: dropoffLocation.longitude,
-        dropoff_address: dropoffAddress,
+        pickup_location: {
+          lat: location.latitude,
+          lng: location.longitude,
+          address: pickupAddress
+        },
+        drop_location: {
+          lat: dropoffLocation.latitude,
+          lng: dropoffLocation.longitude,
+          address: dropoffAddress
+        },
         driver_id: selectedDriver.id,
         vehicle_category: selectedDriver.vehicle_type,
         fare: fareEstimate.total,
-        estimated_distance: parseFloat(fareEstimate.distanceKm),
+        distance_km: parseFloat(fareEstimate.distanceKm || '0'),
         status: 'pending',
         payment_mode: paymentMode,
         otp: otp
@@ -474,7 +543,10 @@ export default function RideOScreen({ navigation }) {
     if (currentRide) {
       await supabase.from('rides').update({ status: 'cancelled' }).eq('id', currentRide.id);
     }
-    resetToPickup();
+    setRideState('SHOW_DRIVERS');
+    setCurrentRide(null);
+    setDriverInfo(null);
+    setSelectedDriver(null);
   };
 
   const submitRating = async () => {
@@ -506,7 +578,12 @@ export default function RideOScreen({ navigation }) {
           longitudeDelta: 0.05,
         }}
         onRegionChange={() => {
-          if (rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') setIsMapMoving(true);
+          if (rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') {
+            if (!isMapMoving) {
+              setIsMapMoving(true);
+              animatePinLift();
+            }
+          }
         }}
         onRegionChangeComplete={handleMapRegionChangeComplete}
       >
@@ -566,11 +643,68 @@ export default function RideOScreen({ navigation }) {
         )}
       </MapView>
 
-      {/* Draggable Center Pin for IDLE */}
-      {rideState === 'SELECT_PICKUP' && (
+      {/* Animated Center Pin for PICKUP & DROPOFF */}
+      {(rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') && (
         <View style={styles.centerPinContainer} pointerEvents="none">
-          <MapPin size={40} color={COLORS.green} style={isMapMoving ? { transform: [{ translateY: -10 }] } : {}} />
+          {/* Pulse ring on ground */}
+          <Animated.View style={[
+            styles.pinPulseRing,
+            {
+              backgroundColor: rideState === 'SELECT_PICKUP' ? COLORS.green : COLORS.red,
+              opacity: pinPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0] }),
+              transform: [{ scale: pinPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 2.5] }) }],
+            }
+          ]} />
+          {/* Ground shadow ellipse */}
+          <Animated.View style={[
+            styles.pinGroundShadow,
+            {
+              opacity: pinShadowOpacity,
+              transform: [{ scaleX: pinShadowScale }, { scaleY: Animated.multiply(pinShadowScale, 0.5) }],
+            }
+          ]} />
+          {/* Pin body — lifts up */}
+          <Animated.View style={[
+            styles.pinBody,
+            { transform: [{ translateY: pinLiftAnim }] }
+          ]}>
+            <View style={[
+              styles.pinHead,
+              { backgroundColor: rideState === 'SELECT_PICKUP' ? COLORS.green : COLORS.red }
+            ]}>
+              <View style={styles.pinDot} />
+            </View>
+            <View style={[
+              styles.pinTail,
+              { borderTopColor: rideState === 'SELECT_PICKUP' ? COLORS.green : COLORS.red }
+            ]} />
+          </Animated.View>
         </View>
+      )}
+
+      {/* Floating Live Address Card — shown during pin selection */}
+      {(rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') && (
+        <View style={styles.floatingAddressCard} pointerEvents="none">
+          <View style={[
+            styles.floatingAddressDot,
+            { backgroundColor: rideState === 'SELECT_PICKUP' ? COLORS.green : COLORS.red }
+          ]} />
+          <Text style={styles.floatingAddressText} numberOfLines={1}>
+            {isMapMoving
+              ? 'Searching...'
+              : rideState === 'SELECT_PICKUP'
+                ? pickupAddress
+                : (dropoffAddress || 'Locating...')
+            }
+          </Text>
+        </View>
+      )}
+
+      {/* GPS Location Button — shown during pin selection */}
+      {(rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') && (
+        <TouchableOpacity style={styles.gpsButton} onPress={useMyLocation}>
+          <Crosshair size={22} color={COLORS.text} />
+        </TouchableOpacity>
       )}
 
       {/* Top Address Overlay — only show after IDLE (when route is set) */}
@@ -615,14 +749,16 @@ export default function RideOScreen({ navigation }) {
             />
             {loading && <ActivityIndicator color={COLORS.green} size="small" />}
           </View>
-          <View style={{ marginTop: 16 }}>
-             <Text style={{ color: COLORS.text, fontSize: 14, marginBottom: 12, fontWeight: '500' }} numberOfLines={2}>
-               Pickup: {pickupAddress}
-             </Text>
-             <TouchableOpacity style={styles.primaryBtn} onPress={confirmPickup}>
-               <Text style={styles.primaryBtnText}>Confirm Pickup</Text>
-             </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.useLocationRow} onPress={useMyLocation}>
+            <View style={styles.useLocationIcon}>
+              <Crosshair size={18} color={COLORS.green} />
+            </View>
+            <Text style={styles.useLocationText}>Use my current location</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.primaryBtn} onPress={confirmPickup}>
+            <MapPin size={20} color="#000" />
+            <Text style={[styles.primaryBtnText, { marginLeft: 8 }]}>Confirm Pickup</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -643,14 +779,16 @@ export default function RideOScreen({ navigation }) {
             />
             {loading && <ActivityIndicator color={COLORS.green} size="small" />}
           </View>
-          <View style={{ marginTop: 16 }}>
-             <Text style={{ color: COLORS.text, fontSize: 14, marginBottom: 12, fontWeight: '500' }} numberOfLines={2}>
-               Dropoff: {dropoffAddress || 'Locating...'}
-             </Text>
-             <TouchableOpacity style={styles.primaryBtn} onPress={confirmDropoff}>
-               <Text style={styles.primaryBtnText}>Confirm Destination</Text>
-             </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.useLocationRow} onPress={useMyLocation}>
+            <View style={[styles.useLocationIcon, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
+              <Crosshair size={18} color={COLORS.red} />
+            </View>
+            <Text style={styles.useLocationText}>Use my current location</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: COLORS.red }]} onPress={confirmDropoff}>
+            <Navigation size={20} color="#fff" />
+            <Text style={[styles.primaryBtnText, { marginLeft: 8, color: '#fff' }]}>Confirm Destination</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -900,9 +1038,129 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    marginLeft: -20,
-    marginTop: -40,
+    marginLeft: -30,
+    marginTop: -70,
+    width: 60,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
     zIndex: 2,
+  },
+  pinBody: {
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 8,
+  },
+  pinHead: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  pinDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#fff',
+  },
+  pinTail: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginTop: -2,
+  },
+  pinGroundShadow: {
+    position: 'absolute',
+    bottom: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#000',
+  },
+  pinPulseRing: {
+    position: 'absolute',
+    bottom: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  floatingAddressCard: {
+    position: 'absolute',
+    top: '38%',
+    left: 24,
+    right: 24,
+    backgroundColor: COLORS.card,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    zIndex: 3,
+  },
+  floatingAddressDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 12,
+  },
+  floatingAddressText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  gpsButton: {
+    position: 'absolute',
+    right: 16,
+    bottom: 260,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6,
+    zIndex: 5,
+  },
+  useLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  useLocationIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  useLocationText: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '500',
   },
   dotMarkerContainer: {
     width: 20,

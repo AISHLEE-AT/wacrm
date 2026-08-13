@@ -142,15 +142,15 @@ export default function DriveOScreen() {
       let startLat, startLng, endLat, endLng;
       
       if (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED) {
-        startLat = currentLocation?.latitude || activeRide.pickup_latitude;
-        startLng = currentLocation?.longitude || activeRide.pickup_longitude;
-        endLat = activeRide.pickup_latitude;
-        endLng = activeRide.pickup_longitude;
+        startLat = currentLocation?.latitude || activeRide?.pickup_location?.lat;
+        startLng = currentLocation?.longitude || activeRide?.pickup_location?.lng;
+        endLat = activeRide?.pickup_location?.lat;
+        endLng = activeRide?.pickup_location?.lng;
       } else if (activeRide.status === RIDE_STATUS.IN_PROGRESS) {
-        startLat = currentLocation?.latitude || activeRide.pickup_latitude;
-        startLng = currentLocation?.longitude || activeRide.pickup_longitude;
-        endLat = activeRide.dropoff_latitude;
-        endLng = activeRide.dropoff_longitude;
+        startLat = currentLocation?.latitude || activeRide?.pickup_location?.lat;
+        startLng = currentLocation?.longitude || activeRide?.pickup_location?.lng;
+        endLat = activeRide?.drop_location?.lat;
+        endLng = activeRide?.drop_location?.lng;
       } else {
         setRouteCoordinates([]);
         return;
@@ -172,11 +172,11 @@ export default function DriveOScreen() {
       if (currentLocation) {
         markers.push({ latitude: currentLocation.latitude, longitude: currentLocation.longitude });
       }
-      if (activeRide.pickup_latitude) {
-        markers.push({ latitude: activeRide.pickup_latitude, longitude: activeRide.pickup_longitude });
+      if (activeRide?.pickup_location?.lat) {
+        markers.push({ latitude: activeRide?.pickup_location?.lat, longitude: activeRide?.pickup_location?.lng });
       }
-      if (activeRide.dropoff_latitude) {
-        markers.push({ latitude: activeRide.dropoff_latitude, longitude: activeRide.dropoff_longitude });
+      if (activeRide?.drop_location?.lat) {
+        markers.push({ latitude: activeRide?.drop_location?.lat, longitude: activeRide?.drop_location?.lng });
       }
       
       if (markers.length > 1) {
@@ -370,13 +370,19 @@ export default function DriveOScreen() {
     if (!isOnline) return;
     if (activeRide) return;
     
-    // Check vehicle type match
-    if (ride.vehicle_category && ride.vehicle_category.toLowerCase() !== driver.vehicle_type?.toLowerCase()) return;
+    // Check vehicle type match (supports Truck, Ace, Bus, Tractor, Harvester & All-vehicle drivers)
+    if (ride.vehicle_category && driver.vehicle_type) {
+      const dType = driver.vehicle_type.toLowerCase();
+      const rCat  = ride.vehicle_category.toLowerCase();
+      const isUniversal = dType === 'all' || dType === 'all_vehicles' || dType === 'admin';
+      const isMatch = dType === rCat || rCat.includes(dType) || dType.includes(rCat);
+      if (!isUniversal && !isMatch) return;
+    }
 
     // Check distance (max 10km)
-    if (currentLocation && ride.pickup_latitude && ride.pickup_longitude) {
-      const dist = getDistanceKm(currentLocation.latitude, currentLocation.longitude, ride.pickup_latitude, ride.pickup_longitude);
-      if (dist > 10) return;
+    if (currentLocation && ride?.pickup_location?.lat && ride?.pickup_location?.lng) {
+      const dist = getDistanceKm(currentLocation.latitude, currentLocation.longitude, ride?.pickup_location?.lat, ride?.pickup_location?.lng);
+      if (dist > 100000) return; // Expanded for virtual drivers (statewide)
     }
     
     setIncomingRide(ride);
@@ -437,6 +443,16 @@ export default function DriveOScreen() {
         throw new Error('Ride already accepted by another driver or cancelled.');
       }
       
+      try {
+        await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ride_id: rideId, driver_id: driver.id, action: 'accepted' })
+        });
+      } catch (err) {
+        console.warn('Failed to notify WhatsApp:', err);
+      }
+      
       Alert.alert('Ride Accepted!', `OTP for rider: ${tripOtp}`);
       fetchActiveRide();
     } catch (err) {
@@ -485,11 +501,31 @@ export default function DriveOScreen() {
       
       Alert.alert('Ride Cancelled', 'The ride has been cancelled.');
       setActiveRide(null);
+      
+      try {
+        await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ride_id: activeRide.id, driver_id: driver.id, action: 'cancelled' })
+        });
+      } catch (err) {
+        console.warn('Failed to notify WhatsApp:', err);
+      }
     } catch (err) {
       // Fallback: direct DB update
       await supabase.from('rides').update({ status: RIDE_STATUS.CANCELLED }).eq('id', activeRide.id);
       Alert.alert('Ride Cancelled');
       setActiveRide(null);
+      
+      try {
+        await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ride_id: activeRide.id, driver_id: driver.id, action: 'cancelled' })
+        });
+      } catch (err) {
+        console.warn('Failed to notify WhatsApp:', err);
+      }
     }
   };
 
@@ -868,8 +904,8 @@ export default function DriveOScreen() {
                 provider={PROVIDER_GOOGLE}
                 customMapStyle={mapStyleDark}
                 initialRegion={{
-                  latitude: currentLocation?.latitude || activeRide.pickup_latitude || 11.0,
-                  longitude: currentLocation?.longitude || activeRide.pickup_longitude || 78.0,
+                  latitude: currentLocation?.latitude || activeRide?.pickup_location?.lat || 11.0,
+                  longitude: currentLocation?.longitude || activeRide?.pickup_location?.lng || 78.0,
                   latitudeDelta: 0.05,
                   longitudeDelta: 0.05,
                 }}
@@ -881,16 +917,16 @@ export default function DriveOScreen() {
                     </View>
                   </Marker>
                 )}
-                {activeRide.pickup_latitude && (
+                {activeRide?.pickup_location?.lat && (
                   <Marker
-                    coordinate={{ latitude: activeRide.pickup_latitude, longitude: activeRide.pickup_longitude }}
+                    coordinate={{ latitude: activeRide?.pickup_location?.lat, longitude: activeRide?.pickup_location?.lng }}
                     title="Pickup"
                     pinColor="green"
                   />
                 )}
-                {activeRide.dropoff_latitude && activeRide.dropoff_latitude !== 0 && (
+                {activeRide?.drop_location?.lat && activeRide?.drop_location?.lat !== 0 && (
                   <Marker
-                    coordinate={{ latitude: activeRide.dropoff_latitude, longitude: activeRide.dropoff_longitude }}
+                    coordinate={{ latitude: activeRide?.drop_location?.lat, longitude: activeRide?.drop_location?.lng }}
                     title="Dropoff"
                     pinColor="red"
                   />
@@ -905,12 +941,12 @@ export default function DriveOScreen() {
             <View style={styles.rideDetails}>
               <View style={styles.locationRow}>
                 <MapPin size={16} color={COLORS.green} />
-                <Text style={styles.locationText} numberOfLines={2}>{activeRide.pickup_address || 'Pickup location'}</Text>
+                <Text style={styles.locationText} numberOfLines={2}>{activeRide?.pickup_location?.address || 'Pickup location'}</Text>
               </View>
               <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 12, marginLeft: 28 }} />
               <View style={styles.locationRow}>
                 <MapPin size={16} color={COLORS.red} />
-                <Text style={styles.locationText} numberOfLines={2}>{activeRide.dropoff_address || 'Drop location not specified'}</Text>
+                <Text style={styles.locationText} numberOfLines={2}>{activeRide?.drop_location?.address || 'Drop location not specified'}</Text>
               </View>
             </View>
 
@@ -941,9 +977,9 @@ export default function DriveOScreen() {
                 style={[styles.iconBtn, { flex: 1, backgroundColor: COLORS.blue, flexDirection: 'row', gap: 8 }]}
                 onPress={() => openNavigation(
                   (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED)
-                    ? activeRide.pickup_latitude : activeRide.dropoff_latitude,
+                    ? activeRide?.pickup_location?.lat : activeRide?.drop_location?.lat,
                   (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED)
-                    ? activeRide.pickup_longitude : activeRide.dropoff_longitude
+                    ? activeRide?.pickup_location?.lng : activeRide?.drop_location?.lng
                 )}
               >
                 <Navigation size={20} color="#fff" />

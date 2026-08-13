@@ -50,6 +50,8 @@ export default function CategoryScreen() {
       navigation.navigate('TestOHubScreen');
     } else if (cat.path === '/agro') {
       navigation.navigate('AgrOScreen');
+    } else if (cat.path === '/rento') {
+      navigation.navigate('RentOScreen');
     } else {
       navigation.navigate('ModuleView', {
         path: cat.path,
