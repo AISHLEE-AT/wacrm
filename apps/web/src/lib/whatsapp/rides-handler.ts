@@ -479,16 +479,101 @@ export async function handleRideHailingBooking(
       
       if (replyId && (replyId.startsWith('cancel_ride_') || replyId.startsWith('decline_ride_'))) {
         const rideId = replyId.replace('cancel_ride_', '').replace('decline_ride_', '')
-        await supabase.from('rides').update({ status: 'cancelled' }).eq('id', rideId)
         
-        await sendTextMessage({
-          accessToken,
-          phoneNumberId: config.phone_number_id,
-          to: senderPhone,
-          text: 'Your ride request has been cancelled/declined.'
-        })
+        const { data: checkRide } = await supabase.from('rides').select('status').eq('id', rideId).single()
+        if (checkRide && checkRide.status === 'pending') {
+          await supabase.from('rides').update({ status: 'cancelled' }).eq('id', rideId)
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            text: 'Your ride request has been cancelled/declined.'
+          })
+        } else {
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            text: `⚠️ This request has already been processed (Current status: ${checkRide?.status || 'unknown'}).`
+          })
+        }
         return true
       }
+
+      // --- RENTO ACCEPT HANDLER ---
+      if (replyId && replyId.startsWith('accept_rento_')) {
+        const bookingCode = replyId.replace('accept_rento_', '')
+        const { data: driverRows } = await supabase.from('drivers').select('*').or(`whatsapp_number.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%`).order('created_at', { ascending: false }).limit(1)
+        const driver = driverRows?.[0]
+        
+        if (driver) {
+          const { data: pendingBooking } = await supabase.from('rento_bookings').select('*').eq('booking_code', bookingCode).single()
+          
+          if (pendingBooking && pendingBooking.status === 'pending') {
+            await supabase.from('rento_bookings').update({ status: 'accepted', driver_phone: senderPhone }).eq('booking_code', bookingCode)
+            
+            // Notify Driver
+            await sendTextMessage({
+              accessToken,
+              phoneNumberId: config.phone_number_id,
+              to: senderPhone,
+              text: `✅ RENTO BOOKING CONFIRMED! ✅\n\n` +
+                `👤 Customer: ${pendingBooking.user_name}\n` +
+                `📞 Phone: ${pendingBooking.user_phone}\n` +
+                `🚜 Vehicle: ${pendingBooking.vehicle_type}\n` +
+                `📍 Field/Pickup: ${pendingBooking.pickup_address}\n` +
+                `💰 Est. Fare: ₹${pendingBooking.estimated_fare}\n\n` +
+                `Navigate to Pickup:\nhttps://www.google.com/maps/dir/?api=1&destination=${pendingBooking.pickup_lat},${pendingBooking.pickup_lng}`
+            })
+
+            // Notify Customer
+            const custPhone = pendingBooking.user_phone.startsWith('91') ? pendingBooking.user_phone : `91${pendingBooking.user_phone}`
+            await sendTextMessage({
+              accessToken,
+              phoneNumberId: config.phone_number_id,
+              to: custPhone,
+              text: `🚜 RENTO PARTNER CONFIRMED! 🚜\n\n` +
+                `👨‍✈️ Partner: ${driver.name}\n` +
+                `🚗 Vehicle: ${driver.vehicle_type} (${driver.vehicle_registration || ''})\n` +
+                `📍 Arriving at: ${pendingBooking.pickup_address}\n\n` +
+                `🆔 Booking ID: ${bookingCode}`
+            })
+          } else {
+            await sendTextMessage({
+              accessToken,
+              phoneNumberId: config.phone_number_id,
+              to: senderPhone,
+              text: `⚠️ This RentO booking is no longer available or already processed.`
+            })
+          }
+        }
+        return true
+      }
+
+      // --- RENTO DECLINE HANDLER ---
+      if (replyId && replyId.startsWith('decline_rento_')) {
+        const bookingCode = replyId.replace('decline_rento_', '')
+        
+        const { data: checkBooking } = await supabase.from('rento_bookings').select('status').eq('booking_code', bookingCode).single()
+        if (checkBooking && checkBooking.status === 'pending') {
+          await supabase.from('rento_bookings').update({ status: 'cancelled' }).eq('booking_code', bookingCode)
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            text: 'You have declined this RentO booking request.'
+          })
+        } else {
+          await sendTextMessage({
+            accessToken,
+            phoneNumberId: config.phone_number_id,
+            to: senderPhone,
+            text: `⚠️ This request has already been processed (Current status: ${checkBooking?.status || 'unknown'}).`
+          })
+        }
+        return true
+      }
+
 
       if (replyId && replyId.startsWith('report_ride_')) {
         const rideId = replyId.replace('report_ride_', '')
