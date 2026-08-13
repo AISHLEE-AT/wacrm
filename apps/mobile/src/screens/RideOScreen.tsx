@@ -406,13 +406,20 @@ export default function RideOScreen({ navigation }) {
       const { data, error } = await supabase.rpc('get_nearby_drivers', {
         pickup_lat: location.latitude,
         pickup_lon: location.longitude,
-        radius_km: 100000
+        radius_km: 5
       });
       
-      if (!error && data) {
+      if (!error) {
+        const virtualDrivers = [
+          { id: 'v1', name: 'Partner 1', phone: '9344532738', vehicle_type: 'Sedan', rating: '4.9', latitude: location.latitude + 0.01, longitude: location.longitude + 0.01 },
+          { id: 'v2', name: 'Partner 2', phone: '9123596988', vehicle_type: 'SUV', rating: '4.8', latitude: location.latitude - 0.01, longitude: location.longitude - 0.01 },
+          { id: 'v3', name: 'Partner 3', phone: '9486335870', vehicle_type: 'Mini', rating: '4.95', latitude: location.latitude + 0.02, longitude: location.longitude - 0.02 }
+        ];
+        const mergedData = [...(data || []), ...virtualDrivers];
+
         // Map distance and fares for each driver
         const distanceKmSafe = fareEstimate?.distanceKm ? parseFloat(fareEstimate.distanceKm) : 5.0;
-        const enrichedDrivers = data.map(d => {
+        const enrichedDrivers = mergedData.map(d => {
           let lat = parseFloat(d.latitude);
           let lon = parseFloat(d.longitude);
 
@@ -499,7 +506,7 @@ export default function RideOScreen({ navigation }) {
         driver_id: selectedDriver.id,
         vehicle_category: selectedDriver.vehicle_type,
         fare: fareEstimate.total,
-        distance_km: parseFloat(fareEstimate.distanceKm || '0'),
+        estimated_distance: parseFloat(fareEstimate.distanceKm || '0'),
         status: 'pending',
         payment_mode: paymentMode,
         otp: otp

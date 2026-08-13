@@ -233,7 +233,7 @@ export default function RentOScreen({ navigation }) {
           },
           vehicle_category: selectedItem?.id || selectedItem?.name || 'tractor',
           fare: estimatedFare,
-          distance_km: getDistanceKm(location.latitude, location.longitude, dropoffLocation.latitude, dropoffLocation.longitude),
+          estimated_distance: getDistanceKm(location.latitude, location.longitude, dropoffLocation.latitude, dropoffLocation.longitude),
           status: 'pending',
           otp: otp
         });
@@ -242,6 +242,11 @@ export default function RentOScreen({ navigation }) {
       }
 
       // Set Mock Active Booking
+      const testPhones = ['919344532738', '919123596988', '919486335870'];
+      const assignedPhone = testPhones[Math.floor(Math.random() * testPhones.length)];
+
+      
+
       const bookingObj = {
         id: data?.id || bookingCode,
         code: bookingCode,
@@ -250,8 +255,8 @@ export default function RentOScreen({ navigation }) {
         fare: estimatedFare,
         otp: otp,
         driver: {
-          name: 'admin2 (SuprO Partner)',
-          phone: '919486335870',
+          name: 'RentO Partner',
+          phone: assignedPhone,
           vehicle: selectedItem?.name || 'Tractor Swaraj 744',
           rating: '4.8'
         }
@@ -262,19 +267,21 @@ export default function RentOScreen({ navigation }) {
 
       // 2. Dispatch WhatsApp Notification to Drivers
       try {
-        await fetch(`${API_BASE_URL}/api/ride/request-driver`, {
+        await fetch(`${API_BASE_URL}/api/rento/request`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            ride_id: bookingCode,
-            driver_phone: '919486335870',
+            booking_code: bookingCode,
+            user_phone: user?.phone || 'Unknown',
+            user_name: user?.name || 'Customer',
+            service_category: activeTab,
+            vehicle_type: selectedItem?.name || 'Rental Vehicle',
             pickup_address: pickupAddress,
-            dropoff_address: dropoffAddress,
-            distance_km: getDistanceKm(location.latitude, location.longitude, dropoffLocation.latitude, dropoffLocation.longitude).toFixed(1),
+            destination_address: dropoffAddress,
             estimated_fare: estimatedFare,
-            driver_name: 'RentO Partner',
-            driver_rating: '4.8',
-            vehicle_info: selectedItem?.name || 'Rental Vehicle'
+            driver_phone: assignedPhone,
+            pickup_lat: location.latitude,
+            pickup_lon: location.longitude
           })
         });
       } catch (err) {

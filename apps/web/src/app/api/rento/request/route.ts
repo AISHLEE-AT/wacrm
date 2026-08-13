@@ -22,7 +22,9 @@ export async function POST(request: Request) {
       pickup_address,
       destination_address,
       estimated_fare,
-      driver_phone
+      driver_phone,
+      pickup_lat,
+      pickup_lon
     } = body;
 
     const supabase = supabaseAdmin();
@@ -62,11 +64,13 @@ export async function POST(request: Request) {
       service_category === 'package' ? '🚕 [New Hourly Package Rental - RentO]' :
       '🏔️ [New Outstation / Tour Rental - RentO]';
 
+    const mapsLink = (pickup_lat && pickup_lon) ? `\n🗺️ *GPS Link:* https://maps.google.com/?q=${pickup_lat},${pickup_lon}` : '';
+
     const messageText = `*${categoryTitle}*\n\n` +
       `👤 *Customer/Farmer:* ${user_name || 'Customer'}\n` +
       `📞 *Phone:* ${user_phone || '—'}\n` +
       `🚜 *Machinery/Vehicle:* ${vehicle_type}\n` +
-      `📍 *Field / Pickup:* ${pickup_address}\n` +
+      `📍 *Field / Pickup:* ${pickup_address}${mapsLink}\n` +
       `🏬 *Drop / Mandi:* ${destination_address || 'As directed'}\n` +
       `💰 *Est. Fare:* ₹${estimated_fare}\n` +
       `🆔 *Booking Code:* ${booking_code || 'RNT-NEW'}\n\n` +
