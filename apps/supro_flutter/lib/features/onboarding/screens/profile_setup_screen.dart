@@ -1,7 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -16,7 +18,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _upiController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  
   bool _isLoading = false;
+  Uint8List? _avatarBytes;
+  String? _avatarUrl;
+
+  final List<String> _presetAvatars = [
+    'https://api.dicebear.com/7.x/bottts/png?seed=SuprO1',
+    'https://api.dicebear.com/7.x/bottts/png?seed=SuprO2',
+    'https://api.dicebear.com/7.x/adventurer/png?seed=Alex',
+    'https://api.dicebear.com/7.x/adventurer/png?seed=Sam',
+    'https://api.dicebear.com/7.x/micah/png?seed=RideO',
+    'https://api.dicebear.com/7.x/personas/png?seed=DriveO',
+  ];
 
   @override
   void initState() {
@@ -37,7 +52,157 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       if (user.userMetadata!['full_name'] != null) {
         _nameController.text = user.userMetadata!['full_name'];
       }
+      if (user.userMetadata!['avatar_url'] != null) {
+        _avatarUrl = user.userMetadata!['avatar_url'];
+      }
     }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    Navigator.pop(context);
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      setState(() {
+        _avatarBytes = bytes;
+      });
+
+      // Upload to Supabase bucket if available
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        final userId = user?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+        final path = 'avatars/$userId-${DateTime.now().millisecondsSinceEpoch}.jpg';
+        
+        await Supabase.instance.client.storage.from('avatars').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+        );
+        final publicUrl = Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
+        setState(() {
+          _avatarUrl = publicUrl;
+        });
+      } catch (e) {
+        debugPrint('Supabase storage upload fallback: $e');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text('Image selection error: $e')),
+        );
+      }
+    }
+  }
+
+  void _showAvatarOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF111827),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Choose Profile Picture',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildOptionButton(
+                    icon: LucideIcons.camera,
+                    label: 'Camera',
+                    onTap: () => _pickImage(ImageSource.camera),
+                  ),
+                  _buildOptionButton(
+                    icon: LucideIcons.image,
+                    label: 'Gallery',
+                    onTap: () => _pickImage(ImageSource.gallery),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Or Select an Avatar',
+                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 64,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _presetAvatars.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, index) {
+                    final url = _presetAvatars[index];
+                    final isSelected = _avatarUrl == url;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _avatarUrl = url;
+                          _avatarBytes = null;
+                        });
+                        Navigator.pop(ctx);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF10B981) : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 28,
+                          backgroundColor: const Color(0xFF1E293B),
+                          backgroundImage: NetworkImage(url),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionButton({required IconData icon, required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: const Color(0xFF10B981), size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
   }
 
   Future<void> _saveProfile() async {
@@ -57,8 +222,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             'phone': phone,
             'full_name': _nameController.text.trim(),
             'upi_id': _upiController.text.trim(),
+            'avatar_url': _avatarUrl,
           }),
         ).catchError((_) => http.Response('', 500));
+
+        try {
+          await Supabase.instance.client.from('profiles').upsert({
+            'id': user.id,
+            'full_name': _nameController.text.trim(),
+            'upi_id': _upiController.text.trim(),
+            'avatar_url': _avatarUrl,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+        } catch (_) {}
       }
 
       if (mounted) {
@@ -123,25 +299,44 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       const SizedBox(height: 32),
                       
                       GestureDetector(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Avatar upload coming soon')),
-                          );
-                        },
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF111827),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              LucideIcons.camera,
-                              color: Color(0xFF94A3B8),
-                              size: 32,
+                        onTap: _showAvatarOptions,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 108,
+                              height: 108,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF111827),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF10B981), width: 2),
+                              ),
+                              child: ClipOval(
+                                child: _avatarBytes != null
+                                    ? Image.memory(_avatarBytes!, fit: BoxFit.cover)
+                                    : _avatarUrl != null
+                                        ? Image.network(_avatarUrl!, fit: BoxFit.cover)
+                                        : const Center(
+                                            child: Icon(
+                                              LucideIcons.camera,
+                                              color: Color(0xFF94A3B8),
+                                              size: 36,
+                                            ),
+                                          ),
+                              ),
                             ),
-                          ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(LucideIcons.penLine, size: 14, color: Colors.white),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 32),

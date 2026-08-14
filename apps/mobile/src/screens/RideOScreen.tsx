@@ -541,13 +541,6 @@ export default function RideOScreen({ navigation }) {
       const { data: rideData, error } = await supabase.from('rides').insert({
         passenger_phone: user?.phone || 'unknown',
         passenger_name: user?.name || 'Rider',
-        pickup_address: pickupAddress,
-        dropoff_address: dropoffAddress,
-        pickup_latitude: location.latitude,
-        pickup_longitude: location.longitude,
-        dropoff_latitude: dropoffLocation.latitude,
-        dropoff_longitude: dropoffLocation.longitude,
-        distance_km: fareEstimate.distanceKm,
         pickup_location: {
           lat: location.latitude,
           lng: location.longitude,
@@ -556,7 +549,8 @@ export default function RideOScreen({ navigation }) {
         drop_location: {
           lat: dropoffLocation.latitude,
           lng: dropoffLocation.longitude,
-          address: dropoffAddress
+          address: dropoffAddress,
+          distance_km: fareEstimate.distanceKm
         },
         driver_id: selectedDriver.id,
         driver_phone: selectedDriver.phone,
