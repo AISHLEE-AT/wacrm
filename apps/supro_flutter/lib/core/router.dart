@@ -1,4 +1,3 @@
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'main_layout.dart';
@@ -6,7 +5,17 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
-import 'module_webview.dart';
+import '../features/driveo/screens/driveo_screen.dart';
+import '../features/rento/screens/rento_screen.dart';
+import '../features/admin/screens/admin_screen.dart';
+import '../features/agro/screens/agro_screen.dart';
+import '../features/dealo/screens/dealo_screen.dart';
+import '../features/teacho/screens/teacho_screen.dart';
+import '../features/testo/screens/testo_screen.dart';
+import '../features/touro/screens/touro_screen.dart';
+import '../features/tvo/screens/tvo_screen.dart';
+import '../features/moneyo/screens/moneyo_screen.dart';
+import '../features/gameo/screens/gameo_screen.dart';
 import '../features/gaming_hub/screens/gaming_hub_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import 'startup_screen.dart';
@@ -14,7 +23,6 @@ import '../features/onboarding/screens/biometric_setup_screen.dart';
 import '../features/onboarding/screens/permissions_screen.dart';
 import '../features/onboarding/screens/profile_setup_screen.dart';
 import '../features/onboarding/screens/module_selector_screen.dart';
-import '../features/driveo/screens/driveo_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -27,7 +35,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final bool isStartup = state.matchedLocation == '/startup';
 
       if (!loggedIn) return '/login';
-      // Do not redirect to /home if they are just opening the app and are already logged in
       if (loggingIn) return '/startup';
       return null;
     },
@@ -44,17 +51,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
           GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
           GoRoute(path: '/ride', builder: (context, state) => const RideScreen()),
-          GoRoute(path: '/admin', builder: (context, state) => const ModuleWebView(path: '/admin')),
           GoRoute(path: '/driveo', builder: (context, state) => const DriveoScreen()),
-          GoRoute(path: '/dealo', builder: (context, state) => const ModuleWebView(path: '/dealo')),
-          GoRoute(path: '/teacho', builder: (context, state) => const ModuleWebView(path: '/teacho')),
-          GoRoute(path: '/rento', builder: (context, state) => const ModuleWebView(path: '/rento')),
-          GoRoute(path: '/agro', builder: (context, state) => const ModuleWebView(path: '/agro')),
-          GoRoute(path: '/touro', builder: (context, state) => const ModuleWebView(path: '/touro')),
-          GoRoute(path: '/testo', builder: (context, state) => const ModuleWebView(path: '/testo')),
-          GoRoute(path: '/tvo', builder: (context, state) => const ModuleWebView(path: '/tvo')),
-          GoRoute(path: '/moneyo', builder: (context, state) => const ModuleWebView(path: '/moneyo')),
-          GoRoute(path: '/gameo', builder: (context, state) => const ModuleWebView(path: '/gameo')),
+          GoRoute(path: '/rento', builder: (context, state) => const RentoScreen()),
+          GoRoute(path: '/admin', builder: (context, state) => const AdminScreen()),
+          GoRoute(path: '/dealo', builder: (context, state) => const DealoScreen()),
+          GoRoute(path: '/teacho', builder: (context, state) => const TeachoScreen()),
+          GoRoute(path: '/agro', builder: (context, state) => const AgroScreen()),
+          GoRoute(path: '/touro', builder: (context, state) => const TouroScreen()),
+          GoRoute(path: '/testo', builder: (context, state) => const TestoScreen()),
+          GoRoute(path: '/tvo', builder: (context, state) => const TvoScreen()),
+          GoRoute(path: '/moneyo', builder: (context, state) => const MoneyoScreen()),
+          GoRoute(path: '/gameo', builder: (context, state) => const GameoScreen()),
           GoRoute(path: '/gaming_hub', builder: (context, state) => const GamingHubScreen()),
         ],
       ),

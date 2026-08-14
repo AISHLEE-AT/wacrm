@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
 
 class RentalItem {
   final String id;
@@ -79,18 +82,73 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
   }
 
   void _bookItemViaWhatsApp(RentalItem item) async {
-    final message = '🚜 *RentO Booking Inquiry* 🚜\n\n'
-        '*Item / Package:* ${item.name} (${item.tamilName})\n'
-        '*Rate:* ${item.rate} (${item.unit})\n'
-        '*Details:* ${item.desc}\n\n'
-        'Hi, I would like to book this via SuprO RentO. Please provide availability and confirmation!';
+    final prefs = await SharedPreferences.getInstance();
+    final userName = prefs.getString('user_name') ?? 'SuprO Customer';
+    final userLocation = prefs.getString('user_location') ?? 'Thanjavur, Tamil Nadu';
+    final userPhone = prefs.getString('user_phone') ?? '919344532738';
+    final bookingCode = 'RENTO-${1000 + Random().nextInt(9000)}';
+    final otp = '${1000 + Random().nextInt(9000)}';
 
-    final uri = Uri.parse('whatsapp://send?phone=$_adminPhone&text=${Uri.encodeComponent(message)}');
-    if (await canLaunchUrl(uri)) {
-      launchUrl(uri);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('WhatsApp not installed.')));
+    // 1. Insert into Supabase rento_bookings and rides for real-time driver partner matching
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.from('rento_bookings').insert({
+        'booking_code': bookingCode,
+        'user_name': userName,
+        'user_phone': userPhone,
+        'vehicle_type': item.name,
+        'pickup_address': userLocation,
+        'pickup_lat': 10.7867,
+        'pickup_lng': 79.1378,
+        'destination_address': userLocation,
+        'destination_lat': 10.7950,
+        'destination_lng': 79.1450,
+        'booking_type': 'instant',
+        'estimated_fare': 500,
+        'billing_unit': item.unit,
+        'status': 'pending',
+        'otp': otp,
+      });
+
+      await supabase.from('rides').insert({
+        'passenger_phone': userPhone,
+        'passenger_name': userName,
+        'pickup_location': {'lat': 10.7867, 'lng': 79.1378, 'address': userLocation},
+        'drop_location': {'lat': 10.7950, 'lng': 79.1450, 'address': userLocation},
+        'vehicle_category': item.id,
+        'fare': 500,
+        'status': 'pending',
+        'otp': otp,
+      });
+    } catch (e) {
+      debugPrint('Supabase rento insert error (non-blocking): $e');
+    }
+
+    final message = '🚜 *SuprO RentO Booking Inquiry* 🚜\n\n'
+        '👤 *Customer:* $userName ($userPhone)\n'
+        '📍 *Location:* $userLocation\n'
+        '🚜 *Item:* ${item.name} (${item.tamilName})\n'
+        '💰 *Rate:* ${item.rate} (${item.unit})\n'
+        '📝 *Details:* ${item.desc}\n'
+        '🆔 *Booking Code:* $bookingCode\n\n'
+        'Hi, I would like to confirm this RentO booking with an available operator!';
+
+    final waUrl = Uri.parse('https://wa.me/$_adminPhone?text=${Uri.encodeComponent(message)}');
+    final nativeUri = Uri.parse('whatsapp://send?phone=$_adminPhone&text=${Uri.encodeComponent(message)}');
+
+    try {
+      if (await canLaunchUrl(nativeUri)) {
+        await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      try {
+        await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open WhatsApp.')));
+        }
       }
     }
   }

@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ModuleWebView extends StatefulWidget {
   final String path;
@@ -41,6 +40,40 @@ class _ModuleWebViewState extends State<ModuleWebView> {
       ..setBackgroundColor(const Color(0xFF0a0f1e))
       ..setNavigationDelegate(
         NavigationDelegate(
+          onNavigationRequest: (NavigationRequest request) async {
+            final url = request.url;
+            debugPrint('ModuleWebView navigation request: $url');
+            
+            // Intercept WhatsApp, phone calls, mailto, and external map links
+            if (url.startsWith('whatsapp://') ||
+                url.startsWith('https://wa.me/') ||
+                url.startsWith('https://api.whatsapp.com/') ||
+                url.startsWith('tel:') ||
+                url.startsWith('mailto:') ||
+                url.startsWith('geo:') ||
+                url.contains('maps.google.com') ||
+                url.contains('google.com/maps')) {
+              try {
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } else {
+                  // Fallback: convert whatsapp:// to https://wa.me/
+                  if (url.startsWith('whatsapp://send')) {
+                    final uriParsed = Uri.parse(url);
+                    final phone = uriParsed.queryParameters['phone'] ?? '';
+                    final text = uriParsed.queryParameters['text'] ?? '';
+                    final fallbackUri = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(text)}');
+                    await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+                  }
+                }
+              } catch (e) {
+                debugPrint('Failed to launch external URL: $e');
+              }
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
           onPageFinished: (String url) async {
             if (mounted) {
               setState(() {
@@ -48,11 +81,11 @@ class _ModuleWebViewState extends State<ModuleWebView> {
               });
             }
             
-            // Hide web app desktop nav sidebar to make it feel native
+            // Hide desktop nav sidebar to make it feel native
             final js = '''
               (function() {
                 var style = document.createElement('style');
-                style.innerHTML = 'nav.w-64 { display: none !important; } .lg\\\\:pl-64 { padding-left: 0 !important; }';
+                style.innerHTML = 'nav.w-64 { display: none !important; } .lg\\\\:pl-64 { padding-left: 0 !important; } header { display: none !important; }';
                 document.head.appendChild(style);
               })();
             ''';
