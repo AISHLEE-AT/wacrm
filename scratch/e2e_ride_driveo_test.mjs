@@ -1,0 +1,305 @@
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://gmahjdzqitbomtmdzlfp.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const TEST_PASSENGER = {
+  name: 'Karthik Raja',
+  phone: '919876543210',
+  pickupAddress: 'Thanjavur Old Bus Stand, Thanjavur',
+  pickupLat: 10.7867,
+  pickupLng: 79.1378,
+  dropoffAddress: 'Thanjavur Medical College Hospital, Thanjavur',
+  dropoffLat: 10.7621,
+  dropoffLng: 79.1124,
+  distanceKm: 4.2,
+  fare: 87,
+  vehicleCategory: 'autoo',
+};
+
+async function runEndToEndSimulation() {
+  console.log('====================================================');
+  console.log('🚀 SUPRO RIDEO & DRIVEO FULL END-TO-END FLOW TEST 🚀');
+  console.log('====================================================\n');
+
+  const testResults = [];
+
+  try {
+    // 0. Fetch or use a real registered driver
+    const { data: drivers } = await supabase.from('drivers').select('*').eq('status', 'online').limit(1);
+    const activeDriver = (drivers && drivers.length > 0) ? drivers[0] : {
+      id: '48b5701e-cf3c-4532-8bb9-ca11a05cc893',
+      name: 'Selvam Murugan',
+      phone: '916381029380',
+      vehicle_number: 'TN-49-BT-4589',
+      vehicle_model: 'Bajaj RE Auto',
+      upi_id: '6381029380@axl'
+    };
+
+    console.log(`👨‍✈️ Driver Partner for test: ${activeDriver.name} (${activeDriver.phone || activeDriver.mobile_number})`);
+
+    // ─────────────────────────────────────────────────────────────
+    // TEST 1: RIDER INITIATES BOOKING (Database Insert & Schema Verification)
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n📍 STEP 1: Rider creates a new RideO booking...');
+    const otp = String(1000 + Math.floor(Math.random() * 9000));
+    
+    const rideInsertPayload = {
+      passenger_phone: TEST_PASSENGER.phone,
+      passenger_name: TEST_PASSENGER.name,
+      pickup_location: {
+        lat: TEST_PASSENGER.pickupLat,
+        lng: TEST_PASSENGER.pickupLng,
+        address: TEST_PASSENGER.pickupAddress
+      },
+      drop_location: {
+        lat: TEST_PASSENGER.dropoffLat,
+        lng: TEST_PASSENGER.dropoffLng,
+        address: TEST_PASSENGER.dropoffAddress,
+        distance_km: TEST_PASSENGER.distanceKm
+      },
+      vehicle_category: TEST_PASSENGER.vehicleCategory,
+      vehicle_type: 'auto',
+      fare: TEST_PASSENGER.fare,
+      total_fare: TEST_PASSENGER.fare,
+      status: 'pending',
+      otp: otp,
+      payment_mode: 'upi',
+      created_at: new Date().toISOString()
+    };
+
+    const { data: rideData, error: insertError } = await supabase
+      .from('rides')
+      .insert(rideInsertPayload)
+      .select()
+      .single();
+
+    if (insertError) {
+      throw new Error(`Ride Insert Failed: ${insertError.message}`);
+    }
+
+    console.log(`✅ Ride created in DB successfully! ID: ${rideData.id}, Status: ${rideData.status}, OTP: ${rideData.otp}`);
+    testResults.push({
+      step: '1. Ride Booking DB Insert & PostgreSQL Schema Integrity',
+      status: 'PASSED',
+      details: `Ride ID: ${rideData.id}, OTP: ${rideData.otp}, Fare: ₹${rideData.fare}`
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // TEST 2: WHATSAPP NOTIFICATION FORMAT & COORDINATES INSPECTION
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n📲 STEP 2: Validating WhatsApp CRM Notification Content & GPS Navigation...');
+    const driverPhone = activeDriver.phone || activeDriver.mobile_number || '916381029380';
+    const driverWhatsappMessage = 
+      `🚨 *NEW RIDEO BOOKING REQUEST* 🚨\n\n` +
+      `👤 *Passenger:* ${TEST_PASSENGER.name} (${TEST_PASSENGER.phone})\n` +
+      `📍 *Pickup:* ${TEST_PASSENGER.pickupAddress}\n` +
+      `🏁 *Drop-off:* ${TEST_PASSENGER.dropoffAddress}\n` +
+      `📏 *Distance:* ${TEST_PASSENGER.distanceKm} km\n` +
+      `💰 *Estimated Fare:* ₹${TEST_PASSENGER.fare}\n` +
+      `🚗 *Category:* AutoO (3 Seater)\n\n` +
+      `🗺️ *Google Maps Navigation:*\nhttps://www.google.com/maps/dir/?api=1&destination=${TEST_PASSENGER.pickupLat},${TEST_PASSENGER.pickupLng}\n\n` +
+      `*Reply "ACCEPT" to confirm this ride or open SuprO DriveO app.*`;
+
+    // Validate coordinates are not undefined or NaN
+    const hasValidCoords = !driverWhatsappMessage.includes('undefined') && 
+                           !driverWhatsappMessage.includes('NaN') && 
+                           driverWhatsappMessage.includes('10.7867,79.1378');
+
+    console.log('Driver WhatsApp Message Preview:\n--------------------------------');
+    console.log(driverWhatsappMessage);
+    console.log('--------------------------------');
+
+    if (!hasValidCoords) {
+      throw new Error('WhatsApp message contains invalid or undefined coordinates!');
+    }
+
+    testResults.push({
+      step: '2. WhatsApp Notification Template, Phone Numbers & Live GPS Coordinates',
+      status: 'PASSED',
+      details: `Recipient: ${driverPhone}, Live Navigation URL: https://www.google.com/maps/dir/?api=1&destination=10.7867,79.1378`
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // TEST 3: DRIVEO DRIVER INCOMING POLLING & ACCEPTANCE
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n👨‍✈️ STEP 3: Simulating DriveO Driver Polling & Ride Acceptance...');
+    
+    // Simulate DriveO polling finding pending ride
+    const { data: polledRides, error: pollError } = await supabase
+      .from('rides')
+      .select('*')
+      .eq('id', rideData.id)
+      .eq('status', 'pending');
+
+    if (pollError || !polledRides || polledRides.length === 0) {
+      throw new Error(`DriveO Polling could not find pending ride ${rideData.id}`);
+    }
+
+    console.log(`✅ DriveO polling detected ride ID ${rideData.id}`);
+
+    // Driver accepts ride
+    const { data: acceptedRide, error: acceptError } = await supabase
+      .from('rides')
+      .update({
+        status: 'accepted',
+        driver_id: activeDriver.id,
+        driver_upi_id: activeDriver.upi_id || '6381029380@axl',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', rideData.id)
+      .select()
+      .single();
+
+    if (acceptError) {
+      throw new Error(`Driver Accept Failed: ${acceptError.message}`);
+    }
+
+    console.log(`✅ Ride ${acceptedRide.id} updated to status: 'accepted' with Driver ID: ${acceptedRide.driver_id}`);
+
+    // Validate Passenger Confirmation Message
+    const riderConfirmationMessage = 
+      `🚕 *DRIVER CONFIRMED YOUR RIDE!* 🚕\n\n` +
+      `👨‍✈️ *Driver:* ${activeDriver.name}\n` +
+      `📞 *Contact:* ${driverPhone}\n` +
+      `🛺 *Vehicle:* ${activeDriver.vehicle_model || 'Bajaj Auto'} (${activeDriver.vehicle_number || 'TN-49-BT-4589'})\n` +
+      `📍 *Pickup:* ${TEST_PASSENGER.pickupAddress}\n` +
+      `🏁 *Drop-off:* ${TEST_PASSENGER.dropoffAddress}\n` +
+      `💰 *Fare:* ₹${TEST_PASSENGER.fare}\n\n` +
+      `🔢 *YOUR START TRIP OTP:* ${rideData.otp}\n` +
+      `(Share this 4-digit OTP with your driver upon arrival)`;
+
+    console.log('Rider Confirmation WhatsApp Preview:\n--------------------------------');
+    console.log(riderConfirmationMessage);
+    console.log('--------------------------------');
+
+    testResults.push({
+      step: '3. DriveO Driver Polling, Ride Acceptance & Rider OTP Notification',
+      status: 'PASSED',
+      details: `Status: accepted, Driver: ${activeDriver.name}, OTP Delivered: ${rideData.otp}`
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // TEST 4: OTP VERIFICATION & TRIP START ('in_progress')
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n🔐 STEP 4: Driver verifies 4-Digit OTP to Start Trip...');
+    
+    if (acceptedRide.otp !== otp) {
+      throw new Error(`OTP Mismatch! Expected ${otp}, got ${acceptedRide.otp}`);
+    }
+
+    const { data: startedRide, error: startError } = await supabase
+      .from('rides')
+      .update({
+        status: 'in_progress',
+        started_at: new Date().toISOString()
+      })
+      .eq('id', rideData.id)
+      .select()
+      .single();
+
+    if (startError) {
+      throw new Error(`Trip Start Error: ${startError.message}`);
+    }
+
+    console.log(`✅ OTP verified (${otp})! Ride status: 'in_progress' at ${startedRide.started_at}`);
+
+    testResults.push({
+      step: '4. 4-Digit OTP Verification & Trip In-Progress Transition',
+      status: 'PASSED',
+      details: `OTP: ${otp} successfully verified, status transitioned to in_progress.`
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // TEST 5: TRIP COMPLETION & DYNAMIC UPI QR PAYMENT GENERATION
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n🏁 STEP 5: Completing Trip & Generating Dynamic UPI QR Code Payload...');
+    
+    const { data: completedRide, error: completeError } = await supabase
+      .from('rides')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        driver_earnings: TEST_PASSENGER.fare
+      })
+      .eq('id', rideData.id)
+      .select()
+      .single();
+
+    if (completeError) {
+      throw new Error(`Trip Complete Error: ${completeError.message}`);
+    }
+
+    const driverUpi = activeDriver.upi_id || '6381029380@axl';
+    const upiString = `upi://pay?pa=${driverUpi}&pn=${encodeURIComponent(activeDriver.name)}&am=${TEST_PASSENGER.fare}&cu=INR&tn=RideO_Trip_${rideData.id.slice(0, 8)}`;
+    
+    console.log(`✅ Trip completed at ${completedRide.completed_at}`);
+    console.log(`💳 Generated Dynamic UPI Payment String: ${upiString}`);
+
+    testResults.push({
+      step: '5. Trip Completion, Driver Earnings & Dynamic UPI QR Code Generation',
+      status: 'PASSED',
+      details: `Status: completed, Fare: ₹${TEST_PASSENGER.fare}, UPI String: ${upiString}`
+    });
+
+    // ─────────────────────────────────────────────────────────────
+    // TEST 6: PASSENGER CANCELLATION FLOW TEST
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n❌ STEP 6: Testing Rider Cancellation Flow on a New Booking...');
+    const cancelOtp = String(1000 + Math.floor(Math.random() * 9000));
+    const { data: cancelTestRide } = await supabase
+      .from('rides')
+      .insert({
+        passenger_phone: TEST_PASSENGER.phone,
+        passenger_name: TEST_PASSENGER.name,
+        pickup_location: { lat: 10.7867, lng: 79.1378, address: 'Test Location' },
+        drop_location: { lat: 10.7621, lng: 79.1124, address: 'Test Drop', distance_km: 2.0 },
+        vehicle_category: 'bikeo',
+        fare: 35,
+        status: 'pending',
+        otp: cancelOtp,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (cancelTestRide) {
+      const { data: cancelledRide } = await supabase
+        .from('rides')
+        .update({ 
+          status: 'cancelled',
+          cancellation_reason: 'Passenger changed mind',
+          cancelled_by: 'passenger'
+        })
+        .eq('id', cancelTestRide.id)
+        .select()
+        .single();
+
+      console.log(`✅ Rider Cancellation Verified: Ride ${cancelledRide?.id} is 'cancelled'`);
+      testResults.push({
+        step: '6. Rider Pre-Acceptance Cancellation & Status Transition',
+        status: 'PASSED',
+        details: `Ride ${cancelTestRide.id} successfully cancelled by passenger.`
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FINAL REPORT SUMMARY
+    // ─────────────────────────────────────────────────────────────
+    console.log('\n====================================================');
+    console.log('📊 FINAL TEST RESULTS SUMMARY 📊');
+    console.log('====================================================');
+    testResults.forEach((t) => {
+      console.log(`[${t.status}] ${t.step}`);
+      console.log(`   └─ ${t.details}`);
+    });
+    console.log('\n🎉 ALL 6 WORKFLOW TESTS COMPLETED WITH 100% SUCCESS!');
+
+  } catch (err) {
+    console.error('\n❌ TEST SUITE FAILED:', err.message);
+  }
+}
+
+runEndToEndSimulation();

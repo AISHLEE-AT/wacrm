@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import { sendInteractiveButtons } from '@/lib/whatsapp/meta-api';
 import { decrypt } from '@/lib/whatsapp/encryption';
 
-// Initialize Supabase admin client to bypass RLS for server-side ops
 function supabaseAdmin() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +22,11 @@ export async function POST(request: Request) {
       estimated_fare, 
       driver_name, 
       driver_rating,
-      vehicle_info
+      vehicle_info,
+      pickup_lat,
+      pickup_lng,
+      passenger_name,
+      passenger_phone
     } = body;
 
     if (!ride_id || !driver_phone) {
@@ -32,7 +35,19 @@ export async function POST(request: Request) {
 
     const supabase = supabaseAdmin();
     
-    // Fetch WhatsApp config (assume single tenant for this prototype)
+    // Look up passenger saved profile name if not provided
+    let finalPassengerName = passenger_name;
+    if (!finalPassengerName && passenger_phone) {
+      const cleanRiderPhone = passenger_phone.replace(/\D/g, '').slice(-10);
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .ilike('phone', `%${cleanRiderPhone}%`)
+        .maybeSingle();
+      finalPassengerName = prof?.full_name || 'Passenger';
+    }
+
+    // Fetch WhatsApp config
     const { data: config } = await supabase
       .from('whatsapp_config')
       .select('*')
@@ -60,25 +75,29 @@ export async function POST(request: Request) {
     const cleanPhone = driver_phone.replace(/\D/g, '');
     const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
+    const navLink = (pickup_lat && pickup_lng) 
+      ? `\n🗺️ *Google Maps Navigation:*\nhttps://www.google.com/maps/dir/?api=1&destination=${pickup_lat},${pickup_lng}\n\n` 
+      : '\n';
+
     // Construct the interactive message body
-    const messageText = `*[New Ride Request - RideO]*\n\n` +
+    const messageText = `🚨 *NEW RIDEO BOOKING REQUEST* 🚨\n\n` +
+      `👤 *Passenger:* ${finalPassengerName || 'Passenger'} (${passenger_phone || ''})\n` +
       `📍 *Pickup:* ${pickup_address}\n` +
       `🏁 *Drop-off:* ${dropoff_address}\n` +
-      `🚗 *Vehicle:* ${vehicle_info}\n` +
+      `🚗 *Vehicle:* ${vehicle_info || 'Standard Auto'}\n` +
       `📏 *Distance:* ${distance_km} km\n` +
-      `💰 *Est. Fare:* ₹${estimated_fare}\n\n` +
-      `👤 *Driver:* ${driver_name} (${driver_rating} ⭐)\n` +
-      `🆔 *Ride ID:* ${String(ride_id).slice(0, 8)}\n\n` +
+      `💰 *Estimated Fare:* ₹${estimated_fare}\n` +
+      navLink +
       `Please accept or decline this ride below:`;
 
-    // Dispatch via Meta API
+    // Dispatch Interactive Buttons via Meta API
     await sendInteractiveButtons({
       phoneNumberId,
       accessToken,
       to: whatsappPhone,
       bodyText: messageText,
       buttons: [
-        { id: `accept_ride_${ride_id}`, title: '✅ Accept' },
+        { id: `accept_ride_${ride_id}`, title: '✅ Accept Ride' },
         { id: `decline_ride_${ride_id}`, title: '❌ Decline' }
       ]
     });
