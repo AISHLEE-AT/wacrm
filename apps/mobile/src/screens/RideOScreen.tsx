@@ -465,57 +465,86 @@ export default function RideOScreen({ navigation }) {
   const findNearbyDrivers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_nearby_drivers', {
-        pickup_lat: location.latitude,
-        pickup_lon: location.longitude,
-        radius_km: 5
+      // 1. Fetch real online drivers
+      const { data: realDrivers } = await supabase
+        .from('drivers')
+        .select('*')
+        .eq('status', 'online');
+
+      // 2. Fetch profiles to sync real names
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone, whatsapp');
+
+      const profileMap = new Map();
+      allProfiles?.forEach((p: any) => {
+        if (p.phone) profileMap.set(p.phone.replace(/\D/g, '').slice(-10), p.full_name);
+        if (p.whatsapp) profileMap.set(p.whatsapp.replace(/\D/g, '').slice(-10), p.full_name);
       });
-      
-      if (!error) {
-        const virtualDrivers = [
-          { id: 'v1', name: 'Partner 1', phone: '9344532738', vehicle_type: 'Sedan', rating: '4.9', latitude: location.latitude + 0.01, longitude: location.longitude + 0.01 },
-          { id: 'v2', name: 'Partner 2', phone: '9123596988', vehicle_type: 'SUV', rating: '4.8', latitude: location.latitude - 0.01, longitude: location.longitude - 0.01 },
-          { id: 'v3', name: 'Partner 3', phone: '9486335870', vehicle_type: 'Mini', rating: '4.95', latitude: location.latitude + 0.02, longitude: location.longitude - 0.02 }
-        ];
-        const mergedData = [...(data || []), ...virtualDrivers];
 
-        // Map distance and fares for each driver
-        const distanceKmSafe = fareEstimate?.distanceKm ? parseFloat(fareEstimate.distanceKm) : 5.0;
-        const enrichedDrivers = mergedData.map(d => {
-          let lat = parseFloat(d.latitude);
-          let lon = parseFloat(d.longitude);
+      const processedRealDrivers = (realDrivers || []).map((d: any) => {
+        const dPhone = (d.phone || d.mobile_number || d.whatsapp_number || '').replace(/\D/g, '').slice(-10);
+        const realName = profileMap.get(dPhone) || d.name || 'Verified Partner';
+        return {
+          ...d,
+          name: realName,
+          latitude: d.pickup_latitude || d.current_lat || (location.latitude + (Math.random() - 0.5) * 0.01),
+          longitude: d.pickup_longitude || d.current_lng || (location.longitude + (Math.random() - 0.5) * 0.01),
+        };
+      });
 
-          // Fallback if RPC doesn't return lat/lon (e.g. virtual drivers)
-          if (isNaN(lat) || isNaN(lon)) {
-            const jitterLat = (Math.random() - 0.5) * 0.015; // ~1.5km
-            const jitterLon = (Math.random() - 0.5) * 0.015;
-            lat = location.latitude + jitterLat;
-            lon = location.longitude + jitterLon;
-          }
+      const virtualDrivers = [
+        { id: 'v1', name: 'Partner 1', phone: '9344532738', vehicle_type: 'Sedan', rating: '4.9', latitude: location.latitude + 0.008, longitude: location.longitude + 0.008 },
+        { id: 'v2', name: 'Partner 2', phone: '9123596988', vehicle_type: 'SUV', rating: '4.8', latitude: location.latitude - 0.008, longitude: location.longitude - 0.008 },
+        { id: 'v3', name: 'Partner 3', phone: '9486335870', vehicle_type: 'Mini', rating: '4.95', latitude: location.latitude + 0.012, longitude: location.longitude - 0.012 }
+      ];
 
-          const distFromPickup = getDistanceKm(lat, lon, location.latitude, location.longitude);
-          const fareObj = calculateFare(distanceKmSafe, d.vehicle_type?.toLowerCase() || 'bikeo');
-          return {
-            ...d,
-            latitude: lat,
-            longitude: lon,
-            distanceFromPickup: distFromPickup,
-            etaToPickup: Math.round(distFromPickup * 3), // rough 3 mins per km
-            fareObj,
-          };
-        }).sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
-        
-        setNearbyDrivers(enrichedDrivers);
-        setRideState('SHOW_DRIVERS');
-        
-        // Zoom to show pickup and nearby drivers
-        if (mapRef.current && enrichedDrivers.length > 0) {
-          const coords = [location, ...enrichedDrivers.map(d => ({ latitude: d.latitude, longitude: d.longitude }))];
-          mapRef.current.fitToCoordinates(coords, {
-            edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
-            animated: true
-          });
+      const mergedData = [...processedRealDrivers, ...virtualDrivers];
+
+      // Remove duplicate phone entries (prefer real registered drivers)
+      const seenPhones = new Set();
+      const uniqueDrivers: any[] = [];
+      for (const d of mergedData) {
+        const pKey = (d.phone || d.mobile_number || d.id).replace(/\D/g, '').slice(-10);
+        if (!seenPhones.has(pKey)) {
+          seenPhones.add(pKey);
+          uniqueDrivers.push(d);
         }
+      }
+
+      // Map distance and fares for each driver
+      const distanceKmSafe = fareEstimate?.distanceKm ? parseFloat(fareEstimate.distanceKm) : 5.0;
+      const enrichedDrivers = uniqueDrivers.map((d: any) => {
+        let lat = parseFloat(d.latitude);
+        let lon = parseFloat(d.longitude);
+
+        if (isNaN(lat) || isNaN(lon)) {
+          lat = location.latitude + 0.005;
+          lon = location.longitude + 0.005;
+        }
+
+        const distFromPickup = getDistanceKm(lat, lon, location.latitude, location.longitude);
+        const fareObj = calculateFare(distanceKmSafe, d.vehicle_type?.toLowerCase() || 'autoo');
+        return {
+          ...d,
+          latitude: lat,
+          longitude: lon,
+          distanceFromPickup: distFromPickup,
+          etaToPickup: Math.max(1, Math.round(distFromPickup * 3)),
+          fareObj,
+        };
+      }).sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
+      
+      setNearbyDrivers(enrichedDrivers);
+      setRideState('SHOW_DRIVERS');
+      
+      // Zoom to show pickup and nearby drivers
+      if (mapRef.current && enrichedDrivers.length > 0) {
+        const coords = [location, ...enrichedDrivers.map((d: any) => ({ latitude: d.latitude, longitude: d.longitude }))];
+        mapRef.current.fitToCoordinates(coords, {
+          edgePadding: { top: 100, right: 50, bottom: 400, left: 50 },
+          animated: true
+        });
       }
     } catch (e) {
       console.log(e);

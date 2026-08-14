@@ -208,7 +208,10 @@ export default function DriveOScreen() {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setDriver(data[0]);
+        setDriver({
+          ...data[0],
+          name: user?.name || data[0].name || 'Partner Driver',
+        });
         setIsOnline(data[0].status === 'online');
       } else {
         setDriver(null);
