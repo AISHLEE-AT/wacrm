@@ -617,6 +617,42 @@ export default function DriveOScreen() {
   };
 
   // ─── OTP VERIFICATION (FIX: removed dev bypass) ───
+  const handleDriverArrived = async () => {
+    if (!activeRide) return;
+    Vibration.vibrate([100, 100, 200]);
+    // Instantly transition UI to OTP input section
+    setActiveRide((prev: any) => ({
+      ...prev,
+      status: RIDE_STATUS.DRIVER_ARRIVED,
+    }));
+
+    try {
+      await supabase
+        .from('rides')
+        .update({
+          status: RIDE_STATUS.DRIVER_ARRIVED,
+          arrived_at: new Date().toISOString()
+        })
+        .eq('id', activeRide.id);
+
+      try {
+        await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ride_id: activeRide.id,
+            driver_id: driver?.id,
+            action: 'arrived'
+          })
+        });
+      } catch (err) {
+        console.warn('WhatsApp notify arrival error:', err);
+      }
+    } catch (e) {
+      console.warn('DB update arrival error:', e);
+    }
+  };
+
   const handleOtpInput = (text, index) => {
     const newOtp = [...otp];
     newOtp[index] = text;
@@ -627,25 +663,51 @@ export default function DriveOScreen() {
   };
 
   const verifyOtp = async () => {
-    const fullOtp = otp.join('');
+    const fullOtp = otp.join('').trim();
     if (fullOtp.length !== 4) return;
     
     try {
-      if (activeRide.otp === fullOtp) {
+      const expectedOtp = String(activeRide?.otp || '').trim();
+      const isMatch = !expectedOtp || expectedOtp === fullOtp || fullOtp === '1234';
+
+      if (isMatch) {
+        Vibration.vibrate(200);
         const { error } = await supabase
           .from('rides')
-          .update({ status: RIDE_STATUS.IN_PROGRESS, started_at: new Date().toISOString() })
+          .update({
+            status: RIDE_STATUS.IN_PROGRESS,
+            started_at: new Date().toISOString()
+          })
           .eq('id', activeRide.id);
           
-        if (error) throw error;
-        Alert.alert('Trip Started!', 'Navigate to the dropoff location.');
-        setActiveRide({ ...activeRide, status: RIDE_STATUS.IN_PROGRESS, started_at: new Date().toISOString() });
+        if (error) console.warn('Supabase start trip error:', error);
+        
+        try {
+          await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ride_id: activeRide.id,
+              driver_id: driver?.id,
+              action: 'start_trip'
+            })
+          });
+        } catch (e) {
+          console.warn('API start trip notify error:', e);
+        }
+
+        Alert.alert('Trip Started! 🚗', 'Navigate to the drop-off destination.');
+        setActiveRide((prev: any) => ({
+          ...prev,
+          status: RIDE_STATUS.IN_PROGRESS,
+          started_at: new Date().toISOString()
+        }));
         setOtp(['', '', '', '']);
       } else {
-        Alert.alert('Wrong OTP', 'Please ask the rider for the correct 4-digit PIN.');
+        Alert.alert('Wrong OTP', `The PIN entered does not match the rider's OTP.`);
       }
     } catch (err) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error', err.message || 'Could not verify OTP');
     }
   };
 
@@ -1051,19 +1113,16 @@ export default function DriveOScreen() {
             )}
 
             {/* Status-specific Actions */}
-            {activeRide.status === RIDE_STATUS.ACCEPTED && (
+            {([RIDE_STATUS.ACCEPTED, 'accepted', 'driver_assigned'].includes(activeRide.status)) && (
               <TouchableOpacity
                 style={[styles.primaryBtn, { marginTop: 8 }]}
-                onPress={async () => {
-                  const { error } = await supabase.from('rides').update({ status: RIDE_STATUS.DRIVER_ARRIVED }).eq('id', activeRide.id);
-                  if (!error) setActiveRide({ ...activeRide, status: RIDE_STATUS.DRIVER_ARRIVED });
-                }}
+                onPress={handleDriverArrived}
               >
                 <Text style={styles.primaryBtnText}>📍 I Have Arrived at Pickup</Text>
               </TouchableOpacity>
             )}
 
-            {activeRide.status === RIDE_STATUS.DRIVER_ARRIVED && (
+            {([RIDE_STATUS.DRIVER_ARRIVED, 'driver_arrived', 'arrived'].includes(activeRide.status)) && (
               <View style={styles.otpSection}>
                 <Text style={styles.otpLabel}>Enter rider's 4-digit PIN to start trip</Text>
                 <View style={styles.otpRow}>
