@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 
@@ -23,40 +22,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   final TextEditingController _newPinController = TextEditingController();
   final TextEditingController _confirmPinController = TextEditingController();
   
-  // Registration data
   final TextEditingController _nameController = TextEditingController();
-  String _category = 'Traveller';
-  
+  String _category = 'buyer';
+
   bool _isChecking = false;
   bool? _isExistingUser;
-  bool _hasPin = false;
-  String _fullName = '';
-
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  String _existingName = '';
 
   final List<Map<String, String>> categories = [
-    {'key': 'Admin', 'label': '?? Admin (CRM)'},
-    {'key': 'Traveller', 'label': '?? Traveller'},
-    {'key': 'Farmer', 'label': '?? Farmer'},
-    {'key': 'Shopper', 'label': '??? Shopper'},
+    {'key': 'buyer', 'label': 'Shopper / General User'},
+    {'key': 'driver', 'label': 'Driver / Transport Partner'},
+    {'key': 'student', 'label': 'Student / Jobseeker'},
+    {'key': 'farmer', 'label': 'Farmer / Agriculture'},
+    {'key': 'owner', 'label': 'Business / Service Provider'},
   ];
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _phoneController.addListener(_onPhoneChanged);
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
+    _phoneController.removeListener(_onPhoneChanged);
     _phoneController.dispose();
     _otpController.dispose();
     _pinController.dispose();
@@ -66,317 +55,247 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     super.dispose();
   }
 
-  void _onPhoneChange(String val) async {
-    if (val.length == 10) {
-      setState(() => _isChecking = true);
-      try {
-        final data = await ref.read(authControllerProvider.notifier).checkUser(val);
-        setState(() {
-          _isExistingUser = data['exists'];
-          if (_isExistingUser == true) {
-            _fullName = data['name'] ?? '';
-            _category = data['category'] ?? 'Traveller';
-            _hasPin = data['has_pin'] ?? false;
-            
-            if (_hasPin) {
-              _step = AuthStep.pinFallback;
-            }
-          }
-        });
-        if (_isExistingUser == true && data['gemini_api_key'] != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('gemini_api_key', data['gemini_api_key']);
-        }
-      } catch (e) {
-        setState(() => _isExistingUser = false);
-      } finally {
-        setState(() => _isChecking = false);
-      }
+  void _onPhoneChanged() {
+    final text = _phoneController.text.trim();
+    if (text.length == 10) {
+      _checkUserStatus(text);
     } else {
-      setState(() {
-        _isExistingUser = null;
-        _hasPin = false;
-      });
+      if (_isExistingUser != null) {
+        setState(() {
+          _isExistingUser = null;
+          _isChecking = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _checkUserStatus(String phone) async {
+    setState(() => _isChecking = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      final profile = await authService.getProfileByPhone(phone);
+      if (!mounted) return;
+      if (profile != null) {
+        setState(() {
+          _isExistingUser = true;
+          _existingName = profile['full_name'] ?? '';
+          _isChecking = false;
+        });
+      } else {
+        setState(() {
+          _isExistingUser = false;
+          _isChecking = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isChecking = false);
     }
   }
 
   Future<void> _requestOtp() async {
-    if (_phoneController.text.length != 10) return;
-    setState(() => _step = AuthStep.otp);
-    final url = Uri.parse('https://wa.me/916381029380?text=Requesting%20OTP%20for%20Login');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    final phone = _phoneController.text.trim();
+    if (phone.length != 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid 10-digit mobile number')),
+      );
+      return;
+    }
+
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final success = await authNotifier.requestOtp(
+      phone,
+      isNewUser: _isExistingUser == false,
+      name: _nameController.text.trim(),
+      category: _category,
+    );
+
+    if (success && mounted) {
+      setState(() => _step = AuthStep.otp);
     }
   }
 
-  void _verifyOtp() async {
-    if (_otpController.text.length != 6) return;
-    
-    try {
-      final res = await ref.read(authControllerProvider.notifier).verifyOtp(
-        phone: _phoneController.text,
-        otp: _otpController.text,
-        fullName: _isExistingUser == false ? _nameController.text : null,
-        category: _isExistingUser == false ? _category : null,
+  Future<void> _verifyOtp() async {
+    final otp = _otpController.text.trim();
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a 6-digit OTP')),
       );
-      
-      if (res['needs_pin_setup'] == true) {
+      return;
+    }
+
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final success = await authNotifier.verifyOtp(_phoneController.text.trim(), otp);
+
+    if (success && mounted) {
+      if (_isExistingUser == false) {
         setState(() => _step = AuthStep.setPin);
       } else {
-        if (mounted) context.go('/startup');
+        _handlePostAuth();
       }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
     }
   }
 
-  void _loginWithPin() async {
-    if (_pinController.text.length != 4) return;
-    try {
-      await ref.read(authControllerProvider.notifier).loginWithPin(
-        phone: _phoneController.text,
-        pin: _pinController.text,
+  Future<void> _loginWithPin() async {
+    final pin = _pinController.text.trim();
+    if (pin.length != 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a 4-digit PIN')),
       );
-      if (mounted) context.go('/startup');
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
+      return;
+    }
+
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final success = await authNotifier.loginWithPin(_phoneController.text.trim(), pin);
+
+    if (success && mounted) {
+      _handlePostAuth();
     }
   }
 
-  void _setPin() async {
-    if (_newPinController.text.length != 4 || _newPinController.text != _confirmPinController.text) return;
-    try {
-      await ref.read(authControllerProvider.notifier).setPin(
-        phone: _phoneController.text,
-        pin: _newPinController.text,
-        confirmPin: _confirmPinController.text,
+  Future<void> _setPin() async {
+    final p1 = _newPinController.text.trim();
+    final p2 = _confirmPinController.text.trim();
+
+    if (p1.length != 4 || p2.length != 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PIN must be 4 digits')),
       );
-      if (mounted) context.go('/startup');
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
+      return;
+    }
+
+    if (p1 != p2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PINs do not match')),
+      );
+      return;
+    }
+
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    final success = await authNotifier.setPin(p1);
+
+    if (success && mounted) {
+      _handlePostAuth();
+    }
+  }
+
+  void _handlePostAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+
+    if (mounted) {
+      if (onboardingComplete) {
+        context.go('/home');
+      } else {
+        context.go('/onboarding/biometric');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
+    final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1E),
+      backgroundColor: const Color(0xFF0A0F1D),
       body: SafeArea(
-        child: KeyboardAvoidingView(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 48),
-                Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111827),
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: const Color(0x3334D399), width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A34D399),
-                        blurRadius: 30,
-                        offset: Offset(0, 8),
-                      )
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildHeader(),
+                      const SizedBox(height: 36),
+                      if (authState.hasError) ...[
+                        _buildErrorMessage(authState.error.toString()),
+                        const SizedBox(height: 20),
+                      ],
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _buildCurrentStep(isLoading),
+                      ),
+                      const Spacer(),
+                      _buildFooter(),
                     ],
                   ),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _buildCurrentStep(isLoading),
-                  ),
                 ),
-              ],
-            ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFF334155)),
+            boxShadow: const [
+              BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, 8)),
+            ],
+          ),
+          child: const Center(
+            child: Icon(LucideIcons.sparkles, color: Color(0xFF34D399), size: 36),
           ),
         ),
+        const SizedBox(height: 20),
+        const Text(
+          'SuprO Super App',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.5),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Fast, direct, and zero-commission access.',
+          style: TextStyle(fontSize: 14, color: Color(0xFF94A3B8)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorMessage(String msg) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0x1AEF4444),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x33EF4444)),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.alertCircle, color: Color(0xFFEF4444), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(msg.replaceAll('Exception: ', ''), style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildCurrentStep(bool isLoading) {
     switch (_step) {
-      case AuthStep.phone: return _buildPhoneStep(isLoading);
-      case AuthStep.otp: return _buildOtpStep(isLoading);
-      case AuthStep.pinFallback: return _buildPinStep(isLoading);
-      case AuthStep.setPin: return _buildSetPinStep(isLoading);
+      case AuthStep.phone:
+        return _buildPhoneStep(isLoading);
+      case AuthStep.otp:
+        return _buildOtpStep(isLoading);
+      case AuthStep.pinFallback:
+        return _buildPinStep(isLoading);
+      case AuthStep.setPin:
+        return _buildSetPinStep(isLoading);
     }
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0x1AF59E0B),
-                ),
-              ),
-            ),
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0x33F59E0B),
-                ),
-              ),
-            ),
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0x99F59E0B), width: 2),
-                color: const Color(0xFF1E293B),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x80F59E0B),
-                    blurRadius: 20,
-                  )
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'SuprO',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 36,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2,
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          '? FOR LOCAL NEEDS ?',
-          style: TextStyle(
-            color: Color(0xFFF59E0B),
-            fontSize: 11,
-            letterSpacing: 4,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWelcomeBack() {
-    if (_isExistingUser != true) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 28),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0x1A10B981),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x3310B981)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0x3310B981),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(LucideIcons.userCheck, color: Color(0xFF10B981), size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('WELCOME BACK', style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                const SizedBox(height: 4),
-                Text(_fullName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                Text(_category, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFF94A3B8),
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1,
-      ),
-    );
-  }
-
-  InputDecoration _buildInputDecoration(String hint, {Widget? prefixIcon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF475569)),
-      filled: true,
-      fillColor: const Color(0xFF0F172A),
-      prefixIcon: prefixIcon,
-      counterText: '',
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF34D399), width: 2),
-      ),
-    );
-  }
-
-  Widget _buildPrimaryButton(String text, IconData icon, VoidCallback? onPressed, bool isLoading) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF10B981),
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: const Color(0xFF1E293B),
-        disabledForegroundColor: const Color(0xFF64748B),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 0,
-      ),
-      child: isLoading
-          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 22),
-                const SizedBox(width: 12),
-                Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-              ],
-            ),
-    );
   }
 
   Widget _buildPhoneStep(bool isLoading) {
@@ -385,51 +304,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_isExistingUser == true) _buildWelcomeBack(),
-        _buildInputLabel('MOBILE NUMBER'),
-        const SizedBox(height: 12),
+        _buildInputLabel('PHONE NUMBER'),
+        const SizedBox(height: 8),
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
-          onChanged: _onPhoneChange,
-          style: const TextStyle(fontSize: 20, letterSpacing: 2, color: Colors.white, fontWeight: FontWeight.w600),
-          decoration: _buildInputDecoration('10-digit number', prefixIcon: const Icon(LucideIcons.smartphone, color: Color(0xFF34D399))),
+          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2),
+          decoration: _buildInputDecoration(
+            '10-digit mobile number',
+            prefixIcon: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text('+91 ', style: TextStyle(color: Color(0xFF34D399), fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+          ),
         ),
         if (_isChecking) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: CircularProgressIndicator(color: Color(0xFF34D399)))),
         
         if (_isExistingUser == false) ...[
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0x1A3B82F6),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x333B82F6)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0x333B82F6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(LucideIcons.userPlus, color: Color(0xFF60A5FA), size: 20),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('CREATE NEW ACCOUNT', style: TextStyle(color: Color(0xFF60A5FA), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                      SizedBox(height: 4),
-                      Text("Looks like you're new! Let's set up your profile.", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
           _buildInputLabel('FULL NAME'),
           const SizedBox(height: 8),
@@ -494,14 +386,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 6,
           style: const TextStyle(fontSize: 32, letterSpacing: 12, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('••••••'),
+          decoration: _buildInputDecoration('      '),
         ),
         const SizedBox(height: 32),
         _buildPrimaryButton('Verify OTP & Continue', LucideIcons.shieldCheck, isLoading ? null : _verifyOtp, isLoading),
         const SizedBox(height: 16),
         TextButton(
           onPressed: () => setState(() => _step = AuthStep.phone), 
-          child: const Center(child: Text('? Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
+          child: const Center(child: Text('Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
         )
       ],
     );
@@ -522,14 +414,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 4,
           style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('••••'),
+          decoration: _buildInputDecoration('    '),
         ),
         const SizedBox(height: 32),
         _buildPrimaryButton('Sign In with PIN', LucideIcons.unlock, isLoading ? null : _loginWithPin, isLoading),
         const SizedBox(height: 16),
         TextButton(
           onPressed: () => setState(() => _step = AuthStep.phone), 
-          child: const Center(child: Text('? Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
+          child: const Center(child: Text('Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
         )
       ],
     );
@@ -549,7 +441,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 4,
           style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('••••'),
+          decoration: _buildInputDecoration('    '),
         ),
         const SizedBox(height: 20),
         _buildInputLabel('CONFIRM PIN'),
@@ -561,30 +453,89 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
           maxLength: 4,
           style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('••••'),
+          decoration: _buildInputDecoration('    '),
         ),
         const SizedBox(height: 32),
         _buildPrimaryButton('Save PIN & Continue', LucideIcons.save, isLoading ? null : _setPin, isLoading),
       ],
     );
   }
-}
 
-class KeyboardAvoidingView extends StatelessWidget {
-  final Widget child;
-  const KeyboardAvoidingView({super.key, required this.child});
+  Widget _buildWelcomeBack() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0x1A10B981),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x3310B981)),
+      ),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.checkCircle, color: Color(0xFF34D399), size: 20),
+          const SizedBox(width: 12),
+          Text('Welcome back, $_existingName!', style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 14)),
+        ],
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(child: child),
-          ),
-        );
-      },
+  Widget _buildInputLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2),
+    );
+  }
+
+  InputDecoration _buildInputDecoration(String hint, {Widget? prefixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Color(0xFF475569)),
+      prefixIcon: prefixIcon,
+      prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+      filled: true,
+      fillColor: const Color(0xFF1E293B),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF334155))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF334155))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF34D399), width: 2)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      counterText: '',
+    );
+  }
+
+  Widget _buildPrimaryButton(String text, IconData icon, VoidCallback? onPressed, bool isLoading) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        backgroundColor: const Color(0xFF34D399),
+        disabledBackgroundColor: const Color(0xFF334155),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+      ),
+      child: isLoading
+          ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5))
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                Text(text, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return const Column(
+      children: [
+        SizedBox(height: 24),
+        Text(
+          'SuprO Ecosystem â€¢ Unified Open Access',
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

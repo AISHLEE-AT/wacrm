@@ -147,7 +147,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
     setOutput('');
     
     try {
-      let result = { text: '', error: '' };
+      let result: { text: string; error?: string } = { text: '', error: '' };
       const attachList = attachment ? [attachment] : [];
       
       if (activeTool === 'Quiz Creator') {
@@ -660,10 +660,14 @@ const styles = StyleSheet.create({
   historyCard: { backgroundColor: '#111827', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#1e293b' },
   historyCardTool: { color: '#06b6d4', fontWeight: 'bold', fontSize: 14 },
   historyCardDate: { color: '#6b7280', fontSize: 12 },
-  historyCardQuery: { color: '#d1d5db', fontSize: 13, marginTop: 8 }
+  historyCardQuery: { color: '#d1d5db', fontSize: 13, marginTop: 8 },
+
+  outputActions: { marginTop: 16, alignItems: 'center' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, gap: 8 },
+  actionText: { color: '#06b6d4', fontWeight: 'bold', fontSize: 14 }
 });
 
-const markdownStyles = {
+const markdownStyles: any = {
   body: { color: '#fff', fontSize: 15, lineHeight: 24 },
   heading1: { color: '#06b6d4', fontSize: 20, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
   heading2: { color: '#06b6d4', fontSize: 18, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },

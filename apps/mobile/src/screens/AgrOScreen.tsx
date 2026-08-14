@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Linking, Image } from 'react-native';
-import { Leaf, Newspaper, BellRing, MapPin, Landmark } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Linking, Image, Alert } from 'react-native';
+import { Leaf, Newspaper, BellRing, MapPin, Landmark, Volume2, Share2, Sparkles } from 'lucide-react-native';
 import { MandiApiService, MandiItem } from '../services/MandiApiService';
 import { fetchDailyNewsForModule, DailyNewsItem } from '../services/aishleeSupabase';
 
@@ -10,6 +10,7 @@ export default function AgrOScreen() {
   const [newsData, setNewsData] = useState<DailyNewsItem[]>([]);
   const [loadingMandi, setLoadingMandi] = useState(true);
   const [loadingNews, setLoadingNews] = useState(true);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   useEffect(() => {
     MandiApiService.fetchMandiPrices().then(data => {
@@ -22,6 +23,28 @@ export default function AgrOScreen() {
       setLoadingNews(false);
     });
   }, []);
+
+  const shareMandiWhatsApp = () => {
+    if (mandiData.length === 0) return;
+    const top3 = mandiData.slice(0, 5).map(m => `🌾 *${m.commodity}* (${m.market}): ₹${m.modalPrice}/Qtl`).join('\n');
+    const msg = `📢 *SuprO உழவர் சந்தை இன்றைய விலை நிலவரம்:*\n\n${top3}\n\n📲 முழு விலை நிலவரம் காண SuprO செயலியை பதிவிறக்கம் செய்க: https://watscrm.vercel.app/agro`;
+    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(msg)}`).catch(() => {
+      Linking.openURL(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+    });
+  };
+
+  const playVoiceDigest = () => {
+    if (mandiData.length === 0) return;
+    setIsPlayingAudio(true);
+    const topItems = mandiData.slice(0, 3).map(m => `${m.market} சந்தையில் ${m.commodity} ஒரு குவிண்டால் ${m.modalPrice} ரூபாய்`).join(', ');
+    const speechText = `இன்றைய உழவர் சந்தை முக்கிய விலை நிலவரம்: ${topItems}.`;
+    
+    Alert.alert(
+      '🌾 உழவர் சந்தை குரல் சுருக்கம்',
+      speechText,
+      [{ text: 'நன்றி', onPress: () => setIsPlayingAudio(false) }]
+    );
+  };
 
   const renderTab = (id: 'mandi' | 'news' | 'alerts', label: string, Icon: any) => {
     const isActive = activeTab === id;
@@ -45,6 +68,26 @@ export default function AgrOScreen() {
         data={mandiData}
         keyExtractor={(item, idx) => idx.toString()}
         contentContainerStyle={{ padding: 16 }}
+        ListHeaderComponent={() => (
+          <View style={styles.mandiDigestBanner}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <Sparkles color="#34d399" size={14} />
+                <Text style={styles.digestBadge}>DAILY AGRI INTELLIGENCE</Text>
+              </View>
+              <Text style={styles.digestTitle}>இன்றைய சந்தை குரல் சுருக்கம்</Text>
+              <Text style={styles.digestSubtitle}>தமிழ்நாடு மாவட்ட நேரடி உழவர் சந்தை விலை</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={playVoiceDigest} style={styles.voiceButton} activeOpacity={0.8}>
+                <Volume2 color="#000" size={18} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={shareMandiWhatsApp} style={styles.shareButton} activeOpacity={0.8}>
+                <Share2 color="#fff" size={18} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -52,14 +95,14 @@ export default function AgrOScreen() {
                 <Leaf color="#10b981" size={20} style={{ marginRight: 8 }} />
                 <Text style={styles.cardTitle}>{item.commodity} ({item.variety})</Text>
               </View>
-              <Text style={styles.priceText}>â‚¹{item.modalPrice}/Qtl</Text>
+              <Text style={styles.priceText}>₹{item.modalPrice}/Qtl</Text>
             </View>
             <View style={styles.cardBody}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <MapPin color="#94a3b8" size={14} style={{ marginRight: 4 }} />
                 <Text style={styles.cardSubtitle}>{item.market}, {item.district}</Text>
               </View>
-              <Text style={styles.minMaxText}>Min: â‚¹{item.minPrice} | Max: â‚¹{item.maxPrice}</Text>
+              <Text style={styles.minMaxText}>Min: ₹{item.minPrice} | Max: ₹{item.maxPrice}</Text>
             </View>
             <Text style={styles.dateText}>Date: {item.arrivalDate}</Text>
           </View>
@@ -324,5 +367,55 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     marginTop: 40,
-  }
+  },
+  mandiDigestBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0c261b',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#10b981',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  digestBadge: {
+    color: '#34d399',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  digestTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  digestSubtitle: {
+    color: '#94a3b8',
+    fontSize: 12,
+  },
+  voiceButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  shareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
 });

@@ -233,7 +233,6 @@ export default function RentOScreen({ navigation }) {
           },
           vehicle_category: selectedItem?.id || selectedItem?.name || 'tractor',
           fare: estimatedFare,
-          estimated_distance: getDistanceKm(location.latitude, location.longitude, dropoffLocation.latitude, dropoffLocation.longitude),
           status: 'pending',
           otp: otp
         });

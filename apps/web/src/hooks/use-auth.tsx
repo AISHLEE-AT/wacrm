@@ -33,6 +33,12 @@ interface Profile {
   pincode: string | null;
   /** WhatsApp phone — used by FAGO for buyer contact */
   phone: string | null;
+  district?: string | null;
+  gemini_api_key?: string | null;
+  category?: string | null;
+  default_module?: string | null;
+  pinned_modules?: string[] | null;
+  profile_complete?: boolean | null;
 }
 
 interface AccountSummary {

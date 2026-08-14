@@ -78,11 +78,6 @@ export const geminiToolsService = {
   },
 
   // 2. Education & Quizzes
-  async createQuiz(topic: string, apiKey: string, language: string) {
-    const prompt = `You are an expert Quiz Master. Create a multiple choice quiz about: ${topic}. Format it beautifully in Markdown. Provide 5 questions, options, and answers at the end.`;
-    return this.executePrompt(prompt, apiKey, language);
-  },
-
   async generateAndSaveQuiz(
     topic: string, 
     numQuestions: number, 

@@ -77,7 +77,7 @@ export default function RewardsScreen() {
 
     Alert.alert(
       'Confirm Redemption',
-      `Are you sure you want to spend ${reward.points} points on ${reward.name}?`,
+      `Are you sure you want to spend ${reward.points_cost} points on ${reward.name}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 

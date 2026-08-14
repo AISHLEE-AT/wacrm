@@ -17,7 +17,7 @@ class _ModuleSelectorScreenState extends State<ModuleSelectorScreen> {
 
   final List<Map<String, dynamic>> _modules = [
     {'name': 'RideO', 'path': '/ride', 'icon': LucideIcons.car},
-    {'name': 'DriveO', 'path': '/driveo', 'icon': LucideIcons.steeringWheel},
+    {'name': 'DriveO', 'path': '/driveo', 'icon': LucideIcons.navigation},
     {'name': 'DealO', 'path': '/dealo', 'icon': LucideIcons.handshake},
     {'name': 'TeachO', 'path': '/teacho', 'icon': LucideIcons.graduationCap},
     {'name': 'RentO', 'path': '/rento', 'icon': LucideIcons.home},

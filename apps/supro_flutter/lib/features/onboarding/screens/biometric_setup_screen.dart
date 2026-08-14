@@ -42,10 +42,6 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
     try {
       final authenticated = await auth.authenticate(
         localizedReason: 'Enable biometric login for SuprO',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false,
-        ),
       );
 
       if (authenticated) {

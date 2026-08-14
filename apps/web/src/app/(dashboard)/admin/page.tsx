@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Shield, Car, Users, ArrowRight, Activity, CheckCircle, Clock, Newspaper, RefreshCw } from 'lucide-react';
+import { Shield, Car, Users, ArrowRight, Activity, CheckCircle, Clock, Newspaper, RefreshCw, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function AdminOverviewPage() {
@@ -158,6 +158,23 @@ export default function AdminOverviewPage() {
               <CardTitle className="text-xl">Service Providers</CardTitle>
               <CardDescription>
                 Audit user profiles, inspect onboarding completion status, track contact details, and review role assignments.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </Link>
+
+        <Link href="/admin/demands" className="group">
+          <Card className="h-full border-emerald-500/30 hover:border-emerald-400/60 bg-emerald-500/5 transition-all duration-300 shadow-sm hover:shadow-md">
+            <CardHeader>
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+              </div>
+              <CardTitle className="text-xl text-white">Student Exam Demands</CardTitle>
+              <CardDescription>
+                Live topic requests from Guided Assessment flow. See most requested syllabus topics and launch 1-click WhatsApp release broadcasts.
               </CardDescription>
             </CardHeader>
           </Card>

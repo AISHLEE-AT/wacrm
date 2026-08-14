@@ -107,7 +107,7 @@ export default function GameOScreen() {
 
   // Game Loop Scaffold - Progression
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: any;
     
     if (gameStarted && mockPath.length > 0) {
       interval = setInterval(() => {

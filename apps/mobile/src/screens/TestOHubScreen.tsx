@@ -110,8 +110,28 @@ export default function TestOHubScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headerTitle}>TestO Hub</Text>
-      <Text style={styles.headerSubtitle}>Explore Mock Exams & Quizzes</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>TestO Assessment Hub</Text>
+        <Text style={styles.headerSubtitle}>Master competitive exams with high-yield practice tests</Text>
+      </View>
+
+      {/* Guided Path Finder Banner */}
+      <TouchableOpacity
+        style={styles.guidedBanner}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('FlowQuestionScreen')}
+      >
+        <View style={styles.guidedBannerLeft}>
+          <Text style={styles.guidedBannerBadge}>NEW • AI GUIDED FLOW</Text>
+          <Text style={styles.guidedBannerTitle}>Narrow Down Your Test Topic</Text>
+          <Text style={styles.guidedBannerDesc}>
+            Step-by-step branch navigation to find your exact syllabus mock test.
+          </Text>
+        </View>
+        <View style={styles.guidedBannerArrow}>
+          <Text style={styles.guidedBannerArrowText}>→</Text>
+        </View>
+      </TouchableOpacity>
       
       <SectionList
         sections={sections}
@@ -138,18 +158,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#121212',
   },
+  header: {
+    marginTop: 50,
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 60,
-    marginHorizontal: 20,
+    marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#a1a1aa',
-    marginHorizontal: 20,
-    marginBottom: 20,
   },
   listContainer: {
     paddingHorizontal: 20,
@@ -234,5 +256,56 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
     fontSize: 16,
-  }
+  },
+  guidedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0f291e',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#10b981',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  guidedBannerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  guidedBannerBadge: {
+    color: '#34d399',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  guidedBannerTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  guidedBannerDesc: {
+    color: '#94a3b8',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  guidedBannerArrow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#10b981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guidedBannerArrowText: {
+    color: '#000000',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });

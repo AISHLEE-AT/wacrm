@@ -40,6 +40,7 @@ import {
   Smartphone,
   Bot,
   Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
 import {
@@ -100,6 +101,7 @@ const crmItems: NavItem[] = [
 
 const adminItems: NavItem[] = [
   { href: "/admin", label: "Admin Overview", icon: Shield },
+  { href: "/admin/demands", label: "Student Demands", icon: TrendingUp },
   { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
   { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
 ];

@@ -105,6 +105,9 @@ export default function RideOScreen({ navigation }) {
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState('');
 
+  // Geocoding debounce ref
+  const geocodeDebounceRef = useRef<any>(null);
+
   // 1. Initial Setup: Get Location
   useEffect(() => {
     (async () => {
@@ -287,16 +290,23 @@ export default function RideOScreen({ navigation }) {
     ]).start();
   };
 
-  const handleMapRegionChangeComplete = async (region) => {
+  const handleMapRegionChangeComplete = async (region: any) => {
     setIsMapMoving(false);
     animatePinDrop();
-    if (rideState === 'SELECT_PICKUP') {
-      setLocation({ latitude: region.latitude, longitude: region.longitude });
-      reverseGeocode(region.latitude, region.longitude, setPickupAddress);
-    } else if (rideState === 'SELECT_DROPOFF') {
-      setDropoffLocation({ latitude: region.latitude, longitude: region.longitude });
-      reverseGeocode(region.latitude, region.longitude, setDropoffAddress);
+
+    if (geocodeDebounceRef.current) {
+      clearTimeout(geocodeDebounceRef.current);
     }
+
+    geocodeDebounceRef.current = setTimeout(() => {
+      if (rideState === 'SELECT_PICKUP') {
+        setLocation({ latitude: region.latitude, longitude: region.longitude });
+        reverseGeocode(region.latitude, region.longitude, setPickupAddress);
+      } else if (rideState === 'SELECT_DROPOFF') {
+        setDropoffLocation({ latitude: region.latitude, longitude: region.longitude });
+        reverseGeocode(region.latitude, region.longitude, setDropoffAddress);
+      }
+    }, 350);
   };
 
   const useMyLocation = async () => {
@@ -506,7 +516,6 @@ export default function RideOScreen({ navigation }) {
         driver_id: selectedDriver.id,
         vehicle_category: selectedDriver.vehicle_type,
         fare: fareEstimate.total,
-        estimated_distance: parseFloat(fareEstimate.distanceKm || '0'),
         status: 'pending',
         payment_mode: paymentMode,
         otp: otp

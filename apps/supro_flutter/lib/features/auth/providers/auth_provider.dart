@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -19,6 +19,30 @@ final currentUserProvider = Provider<User?>((ref) {
   return authState?.session?.user;
 });
 
+final authServiceProvider = Provider<AuthService>((ref) {
+  return AuthService(ref.watch(supabaseClientProvider));
+});
+
+class AuthService {
+  final SupabaseClient _supabase;
+  final String _apiUrl = 'https://watscrm.vercel.app/api';
+
+  AuthService(this._supabase);
+
+  Future<Map<String, dynamic>?> getProfileByPhone(String phone) async {
+    try {
+      final res = await _supabase
+          .from('profiles')
+          .select()
+          .eq('phone', phone)
+          .maybeSingle();
+      return res;
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
 class AuthController extends AsyncNotifier<void> {
   late final SupabaseClient _supabase;
   final String _apiUrl = 'https://watscrm.vercel.app/api'; 
@@ -28,32 +52,38 @@ class AuthController extends AsyncNotifier<void> {
     _supabase = ref.watch(supabaseClientProvider);
   }
 
-  Future<Map<String, dynamic>> checkUser(String phone) async {
+  Future<bool> requestOtp(
+    String phone, {
+    bool isNewUser = false,
+    String? name,
+    String? category,
+  }) async {
     state = const AsyncValue.loading();
     try {
-      final response = await http.get(Uri.parse('$_apiUrl/auth/check?phone=$phone'));
+      final response = await http.post(
+        Uri.parse('$_apiUrl/auth/otp/request'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'phone': phone,
+          'isNewUser': isNewUser,
+          'fullName': name,
+          'category': category,
+        }),
+      );
       if (response.statusCode == 200) {
         state = const AsyncValue.data(null);
-        return json.decode(response.body);
+        return true;
       } else {
-        throw Exception('Failed to check user');
+        final data = json.decode(response.body);
+        throw Exception(data['error'] ?? 'Failed to request OTP');
       }
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      rethrow;
+      return false;
     }
   }
 
-  Future<void> sendOtp(String phone) async {
-    // UI handles WhatsApp redirect
-  }
-
-  Future<Map<String, dynamic>> verifyOtp({
-    required String phone,
-    required String otp,
-    String? fullName,
-    String? category,
-  }) async {
+  Future<bool> verifyOtp(String phone, String otp) async {
     state = const AsyncValue.loading();
     try {
       final response = await http.post(
@@ -62,8 +92,6 @@ class AuthController extends AsyncNotifier<void> {
         body: json.encode({
           'phone': phone,
           'otp': otp,
-          'fullName': ?fullName,
-          'category': ?category,
         }),
       );
       
@@ -73,49 +101,44 @@ class AuthController extends AsyncNotifier<void> {
           await _supabase.auth.setSession(data['session']['refresh_token']);
         }
         state = const AsyncValue.data(null);
-        return data;
+        return true;
       } else {
         throw Exception(data['error'] ?? 'OTP Verification failed');
       }
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      rethrow;
+      return false;
     }
   }
 
-  Future<Map<String, dynamic>> setPin({
-    required String phone,
-    required String pin,
-    required String confirmPin,
-  }) async {
+  Future<bool> setPin(String pin) async {
     state = const AsyncValue.loading();
     try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
+
       final response = await http.post(
         Uri.parse('$_apiUrl/auth/pin/set'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'phone': phone,
+          'userId': user.id,
           'pin': pin,
-          'confirmPin': confirmPin,
         }),
       );
       final data = json.decode(response.body);
       if (response.statusCode == 200) {
         state = const AsyncValue.data(null);
-        return data;
+        return true;
       } else {
         throw Exception(data['error'] ?? 'Failed to set PIN');
       }
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      rethrow;
+      return false;
     }
   }
 
-  Future<Map<String, dynamic>> loginWithPin({
-    required String phone,
-    required String pin,
-  }) async {
+  Future<bool> loginWithPin(String phone, String pin) async {
     state = const AsyncValue.loading();
     try {
       final response = await http.post(
@@ -132,13 +155,13 @@ class AuthController extends AsyncNotifier<void> {
           await _supabase.auth.setSession(data['session']['refresh_token']);
         }
         state = const AsyncValue.data(null);
-        return data;
+        return true;
       } else {
         throw Exception(data['error'] ?? 'PIN Login failed');
       }
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      rethrow;
+      return false;
     }
   }
   
@@ -150,3 +173,5 @@ class AuthController extends AsyncNotifier<void> {
 final authControllerProvider = AsyncNotifierProvider<AuthController, void>(() {
   return AuthController();
 });
+
+final authNotifierProvider = authControllerProvider;

@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Clock, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { Clock, Menu, X, ChevronLeft, ChevronRight, WifiOff } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -34,7 +35,7 @@ export default function TestOExamScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     fetchExamData();
@@ -109,15 +110,38 @@ export default function TestOExamScreen() {
       }
 
       setQuestions(qs);
+      // Cache for offline usage
+      if (testId) {
+        AsyncStorage.setItem(`offline_test_${testId}`, JSON.stringify(qs)).catch(() => {});
+      }
+
       // Initialize statuses
       const initialStatus: Record<number, string> = {};
-      qs.forEach((_, i) => {
+      qs.forEach((_: any, i: number) => {
         initialStatus[i] = i === 0 ? 'NOT_ANSWERED' : 'NOT_VISITED';
       });
       setQStatus(initialStatus);
     } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Failed to load exam data.");
+      console.warn('[TestOExamScreen] Network fetch failed, checking offline cache...');
+      try {
+        const cached = await AsyncStorage.getItem(`offline_test_${testId}`);
+        if (cached) {
+          const cachedQs = JSON.parse(cached);
+          if (Array.isArray(cachedQs) && cachedQs.length > 0) {
+            setQuestions(cachedQs);
+            const initialStatus: Record<number, string> = {};
+            cachedQs.forEach((_: any, i: number) => {
+              initialStatus[i] = i === 0 ? 'NOT_ANSWERED' : 'NOT_VISITED';
+            });
+            setQStatus(initialStatus);
+            Alert.alert("Offline Mode", "Loaded exam questions from offline storage.");
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (cacheErr) {}
+
+      Alert.alert("Error", "Failed to load exam data. Please check your internet connection.");
       navigation.goBack();
     } finally {
       setLoading(false);

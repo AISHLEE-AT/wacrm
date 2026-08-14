@@ -29,6 +29,7 @@ import TestOExamScreen  from './src/screens/TestOExamScreen';
 import TestOResultScreen from './src/screens/TestOResultScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
+import FlowQuestionScreen from './src/screens/FlowQuestionScreen';
 
 import OnboardingPermissionsScreen from './src/screens/OnboardingPermissionsScreen';
 import OnboardingProfileScreen from './src/screens/OnboardingProfileScreen';
@@ -316,6 +317,8 @@ function RootNavigator() {
       <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
       <Stack.Screen name="RentOScreen" component={RentOScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="FlowQuestionScreen" component={FlowQuestionScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Flow" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: true, title: 'All Modules', headerStyle: { backgroundColor: colors.card }, headerTintColor: colors.text }} />
     </Stack.Navigator>
   );

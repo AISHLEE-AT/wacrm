@@ -9,8 +9,15 @@ export interface Profile {
   whatsapp?: string;
   upi_id?: string;
   location?: string;
+  district?: string;
+  state?: string;
   pincode?: string;
   avatar_url?: string;
+  category?: string;
+  default_module?: string;
+  pinned_modules?: string[];
+  gemini_api_key?: string;
+  profile_complete?: boolean;
   /**
    * Legacy free-form role column from migration 001. Never read
    * by the app since 017_account_sharing.sql introduced the typed

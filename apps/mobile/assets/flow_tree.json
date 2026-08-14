@@ -1,0 +1,126 @@
+{
+  "root": {
+    "id": "root",
+    "type": "BRANCH",
+    "question": "Which competitive exam or learning path are you preparing for?",
+    "options": [
+      { "label": "🏛️ TNPSC (Tamil Nadu Public Service Commission)", "nextId": "tnpsc_group_select" },
+      { "label": "🏦 Banking & Insurance Exams (IBPS, SBI, RBI)", "nextId": "banking_coming_soon" },
+      { "label": "🚆 Railway Recruitment Board (RRB NTPC & Group D)", "nextId": "rrb_coming_soon" },
+      { "label": "👮 TNUSRB Police & Sub-Inspector Exams", "nextId": "police_coming_soon" }
+    ]
+  },
+  "banking_coming_soon": {
+    "id": "banking_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "Banking & Insurance Test Series",
+    "message": "IBPS PO/Clerk, SBI PO, and RBI Assistant mock test series with Tamil & English bilingual explanations are currently being crafted by our expert educators."
+  },
+  "rrb_coming_soon": {
+    "id": "rrb_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "Railway Recruitment (RRB) Test Series",
+    "message": "Comprehensive CBT 1 & 2 mock test packs for RRB NTPC, Group D, and ALP are coming in the next release."
+  },
+  "police_coming_soon": {
+    "id": "police_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "TNUSRB Police Constable & SI Test Series",
+    "message": "Full-length physical test guidance & theoretical mock exams for TNUSRB are in development."
+  },
+  "tnpsc_group_select": {
+    "id": "tnpsc_group_select",
+    "type": "BRANCH",
+    "question": "Select your specific TNPSC Examination Target:",
+    "options": [
+      { "label": "🎯 TNPSC Group 1 (Prelims & Mains)", "nextId": "tnpsc_g1_subject_select" },
+      { "label": "📑 TNPSC Group 2 & 2A (Services)", "nextId": "tnpsc_g2_coming_soon" },
+      { "label": "💼 TNPSC Group 4 & VAO (Village Admin Officer)", "nextId": "tnpsc_g4_coming_soon" }
+    ]
+  },
+  "tnpsc_g2_coming_soon": {
+    "id": "tnpsc_g2_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "TNPSC Group 2 & 2A Mock Tests",
+    "message": "Group 2 & 2A full syllabus preliminary test papers and evaluation keys are arriving shortly."
+  },
+  "tnpsc_g4_coming_soon": {
+    "id": "tnpsc_g4_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "TNPSC Group 4 & VAO Master Pack",
+    "message": "The 100-test VAO master bundle is currently in final verification by subject matter experts."
+  },
+  "tnpsc_g1_subject_select": {
+    "id": "tnpsc_g1_subject_select",
+    "type": "BRANCH",
+    "question": "Choose the Subject for TNPSC Group 1 Preparation:",
+    "options": [
+      { "label": "📖 General Tamil & Literature (பொதுத் தமிழ்)", "nextId": "tnpsc_g1_tamil_topic_select" },
+      { "label": "📜 Indian History & Culture of Tamil Nadu", "nextId": "tnpsc_g1_history_coming_soon" },
+      { "label": "⚖️ Indian Polity & Governance", "nextId": "tnpsc_g1_polity_coming_soon" },
+      { "label": "📐 Aptitude & Mental Ability", "nextId": "tnpsc_g1_aptitude_coming_soon" }
+    ]
+  },
+  "tnpsc_g1_history_coming_soon": {
+    "id": "tnpsc_g1_history_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "TNPSC G1 History & Tamil Culture Pack",
+    "message": "Ancient to Modern Indian History & Sangam Age deep-dive questions are being finalized."
+  },
+  "tnpsc_g1_polity_coming_soon": {
+    "id": "tnpsc_g1_polity_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "Indian Polity & Constitution Pack",
+    "message": "Articles, Amendments, and Landmark Supreme Court judgments test suite is coming soon."
+  },
+  "tnpsc_g1_aptitude_coming_soon": {
+    "id": "tnpsc_g1_aptitude_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "Aptitude & Mental Ability Fast-Track",
+    "message": "Speed math, logical reasoning, and data interpretation tests are releasing soon."
+  },
+  "tnpsc_g1_tamil_topic_select": {
+    "id": "tnpsc_g1_tamil_topic_select",
+    "type": "BRANCH",
+    "question": "Select the Tamil Section you want to master:",
+    "options": [
+      { "label": "✍️ Tamil Grammar & Usage (இலக்கணம்)", "nextId": "tnpsc_g1_tamil_grammar_subtopic" },
+      { "label": "📜 Sangam Literature & Epics (இலக்கியம்)", "nextId": "tnpsc_g1_tamil_literature_coming_soon" },
+      { "label": "🏛️ Tamil Scholars & Service (தமிழ் அறிஞர்களும் தமிழ்த் தொண்டும்)", "nextId": "tnpsc_g1_tamil_scholars_coming_soon" }
+    ]
+  },
+  "tnpsc_g1_tamil_literature_coming_soon": {
+    "id": "tnpsc_g1_tamil_literature_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "TNPSC Tamil Literature Master Module",
+    "message": "Ettuthogai, Pathupattu, Thirukkural, and Silappathikaram chapter-wise quizzes are under preparation."
+  },
+  "tnpsc_g1_tamil_scholars_coming_soon": {
+    "id": "tnpsc_g1_tamil_scholars_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "Tamil Scholars & Renaissance",
+    "message": "Bharathiyar, Bharathidasan, and contemporary Tamil literary scholars test set is coming soon."
+  },
+  "tnpsc_g1_tamil_grammar_subtopic": {
+    "id": "tnpsc_g1_tamil_grammar_subtopic",
+    "type": "BRANCH",
+    "question": "Select your specific Grammar (இலக்கணம்) Focus Area:",
+    "options": [
+      { "label": "🔍 சொல்லிலக்கணம் & பெயரெச்சம்/வினையெச்சம் Master Test", "nextId": "test_purchase_tamil_grammar_pro" },
+      { "label": "📝 வேற்றுமை உருபுகள் & புணர்ச்சி விதிகள்", "nextId": "tamil_punarchi_coming_soon" }
+    ]
+  },
+  "tamil_punarchi_coming_soon": {
+    "id": "tamil_punarchi_coming_soon",
+    "type": "LEAF_COMING_SOON",
+    "title": "புணர்ச்சி விதிகள் & சந்திப் பிழை திருத்தம் Test Series",
+    "message": "Rule-based grammar exercises and error identification tests are in production."
+  },
+  "test_purchase_tamil_grammar_pro": {
+    "id": "test_purchase_tamil_grammar_pro",
+    "type": "LEAF_PURCHASE",
+    "title": "TNPSC Group 1: சொல்லிலக்கணம் & இலக்கணக் குறிப்பு Premium Test Pack",
+    "description": "500+ Curated high-yield multiple-choice questions with detailed Tamil explanations, Samacheer Kalvi aligned syllabus, timer-based mock exam interface, and instant percentile ranking.",
+    "purchaseUrl": "https://watscrm.vercel.app/testo/tnpsc-g1-tamil-grammar"
+  }
+}
