@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, Menu, Settings as SettingsIcon, User, Shield, FileText } from "lucide-react";
+import { LogOut, LayoutGrid, MapPin, Sparkles, User, Settings, Shield, CreditCard } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -17,158 +17,153 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/layout/mode-toggle";
+import { useState } from "react";
+import { AppLauncherModal } from "./app-launcher-modal";
 
-const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/inbox": "Inbox",
-  "/contacts": "Contacts",
-  "/pipelines": "Pipelines",
-  "/broadcasts": "Broadcasts",
-  "/automations": "Automations",
-  "/profile": "Profile & Settings",
-  "/settings": "Settings",
+const MODULE_TITLES: Record<string, { name: string; tamil: string; icon: string }> = {
+  "/rideo": { name: "RideO", tamil: "பயணி டாக்ஸி", icon: "🚗" },
+  "/rento": { name: "RentO", tamil: "விவசாயக் கருவிகள் வாடகை", icon: "🚜" },
+  "/drivo": { name: "DriveO", tamil: "ஓட்டுநர் தளம்", icon: "👨‍✈️" },
+  "/teacho": { name: "TeachO", tamil: "கல்வி & வகுப்புகள்", icon: "🎓" },
+  "/testo": { name: "TestO", tamil: "தேர்வு பயிற்சி மையம்", icon: "📝" },
+  "/gameo": { name: "GameO", tamil: "வினாடி வினா & விளையாட்டு", icon: "🎮" },
+  "/agro": { name: "AgriO", tamil: "மண்டி விலை & விவசாயம்", icon: "🌾" },
+  "/dealo": { name: "DealO", tamil: "உள்ளூர் வணிகம்", icon: "🏪" },
+  "/touro": { name: "TourO", tamil: "ஆன்மீக சுற்றுலா", icon: "🗺️" },
+  "/tvo": { name: "TvO", tamil: "உள்ளூர் நேரலை டிவி", icon: "📺" },
+  "/inbox": { name: "WhatsApp CRM", tamil: "இன்பாக்ஸ்", icon: "💬" },
+  "/contacts": { name: "Contacts", tamil: "வாடிக்கையாளர்கள்", icon: "👥" },
+  "/dashboard": { name: "Dashboard", tamil: "முகப்பு", icon: "📊" },
+  "/wallet": { name: "Wallet & UPI", tamil: "பணப்பை", icon: "💳" },
+  "/profile": { name: "Profile & Settings", tamil: "சுயவிவரம்", icon: "👤" },
+  "/admin": { name: "Admin Hub", tamil: "நிர்வாகம்", icon: "🛡️" },
 };
 
-function getPageTitle(pathname: string): string {
-  if (pageTitles[pathname]) return pageTitles[pathname];
-  const match = Object.entries(pageTitles).find(([path]) =>
-    pathname.startsWith(path),
-  );
-  return match ? match[1] : "Dashboard";
-}
-
-interface HeaderProps {
-  /** Wired to the shell's drawer state. Used only on mobile — the
-   *  hamburger button is hidden on lg+. */
-  onOpenSidebar?: () => void;
-}
-
-export function Header({ onOpenSidebar }: HeaderProps) {
+export function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const pathname = usePathname();
   const { profile, signOut } = useAuth();
-  const title = getPageTitle(pathname);
+  const [isLauncherOpen, setIsLauncherOpen] = useState(false);
 
-  const initial =
-    profile?.full_name?.charAt(0)?.toUpperCase() ??
-    profile?.email?.charAt(0)?.toUpperCase() ??
-    "U";
-
-  let displayEmail = profile?.email ?? "";
-  if (displayEmail.includes("@whatsapp.wacrm.local")) {
-    const rawNumber = displayEmail.split("@")[0];
-    displayEmail = rawNumber.slice(-10);
-  }
+  const currentMod = Object.entries(MODULE_TITLES).find(([path]) =>
+    pathname === path || pathname.startsWith(`${path}/`)
+  )?.[1] || { name: "SuprO Ecosystem", tamil: "சுப்ரோ", icon: "✨" };
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-white/5 bg-background/40 backdrop-blur-lg sticky top-0 z-50 px-4 lg:px-6">
-      <div className="flex min-w-0 items-center gap-2">
-        {/* Hamburger — mobile only. 44×44 hit target per Apple HIG. */}
-        <button
-          type="button"
-          onClick={onOpenSidebar}
-          aria-label="Open menu"
-          className="flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-        <h1 className="truncate text-base font-semibold text-foreground sm:text-lg">
-          {title}
-        </h1>
-      </div>
+    <>
+      <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border/60 bg-card/75 backdrop-blur-xl sticky top-0 z-40 px-4 sm:px-6">
+        {/* Left: Brand Logo & Active Module */}
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-2xl bg-black border border-primary/40 flex items-center justify-center shadow-md shadow-primary/20 transition-transform group-hover:scale-105">
+              <img src="/supro-logo-ai.jpg" alt="SuprO" className="w-7 h-7 object-contain rounded-xl" />
+            </div>
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-200 bg-clip-text text-transparent">
+                SuprO
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium -mt-0.5">Tamil Nadu Ecosystem</span>
+            </div>
+          </Link>
 
-      <div className="flex items-center gap-1 sm:gap-2">
-        <ModeToggle />
+          {/* Vertical Divider */}
+          <div className="h-6 w-[1px] bg-border/80 hidden sm:block" />
 
-        <DropdownMenu>
-        <DropdownMenuTrigger
-          className="flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:bg-muted/70 focus:bg-muted/70 focus:outline-none data-popup-open:bg-muted/70 sm:gap-3 sm:pl-1 sm:pr-3"
-          aria-label="Open account menu"
-        >
-          <Avatar className="size-8">
-            {profile?.avatar_url ? (
-              <AvatarImage
-                src={profile.avatar_url}
-                alt={profile.full_name ?? "Avatar"}
-              />
-            ) : null}
-            <AvatarFallback className="bg-black border border-emerald-500/20">
-              <img src="/supro-logo-ai.jpg" alt="User" className="w-full h-full object-contain p-0.5" />
-            </AvatarFallback>
-          </Avatar>
-          <span className="hidden text-sm font-medium text-foreground sm:inline">
-            {profile?.full_name ?? displayEmail}
-          </span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="end"
-          sideOffset={6}
-          className="min-w-56 bg-popover text-popover-foreground ring-border"
-        >
-          <div className="px-2 py-1.5">
-            <p className="truncate text-sm font-medium text-foreground">
-              {profile?.full_name ?? displayEmail}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {displayEmail}
-            </p>
+          {/* Active Module Indicator */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/80 border border-border/80 shadow-sm">
+            <span className="text-sm">{currentMod.icon}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs font-bold text-foreground">{currentMod.name}</span>
+              <span className="text-[10px] text-muted-foreground hidden md:inline">({currentMod.tamil})</span>
+            </div>
           </div>
-          <DropdownMenuSeparator className="bg-border" />
-          <DropdownMenuItem
-            render={
-              <Link
-                href="/profile"
-                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-              />
-            }
+        </div>
+
+        {/* Center/Right: Location, 9-Dot App Grid, Wallet, Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* User Location Pill */}
+          {profile?.location && (
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium max-w-[200px] truncate">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{profile.location}</span>
+            </div>
+          )}
+
+          {/* 9-Dot All Apps Button */}
+          <button
+            onClick={() => setIsLauncherOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 border border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground text-xs font-bold transition-all shadow-sm"
           >
-            <User className="size-4" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            render={
-              <Link
-                href="/profile?tab=crm_whatsapp"
-                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-              />
-            }
-          >
-            <SettingsIcon className="size-4" />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-border" />
-          <DropdownMenuItem
-            render={
-              <Link
-                href="/privacy"
-                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-              />
-            }
-          >
-            <Shield className="size-4" />
-            Privacy Policy
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            render={
-              <Link
-                href="/terms"
-                className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-              />
-            }
-          >
-            <FileText className="size-4" />
-            Terms of Service
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-border" />
-          <DropdownMenuItem
-            onClick={signOut}
-            className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
-          >
-            <LogOut className="size-4" />
-            Sign out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+            <LayoutGrid className="w-4 h-4" />
+            <span className="hidden sm:inline">All Apps</span>
+          </button>
+
+          <ModeToggle />
+
+          {/* User Profile Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="flex items-center gap-2 rounded-xl p-1 transition-colors hover:bg-muted/70 focus:outline-none"
+              aria-label="Open user menu"
+            >
+              <Avatar className="size-8 ring-2 ring-primary/30">
+                {profile?.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={profile.full_name ?? "Avatar"} />
+                ) : null}
+                <AvatarFallback className="bg-emerald-950 text-emerald-300 font-bold text-xs">
+                  {profile?.full_name?.charAt(0)?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden text-xs font-bold text-foreground sm:inline max-w-[120px] truncate">
+                {profile?.full_name || "Account"}
+              </span>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-xl border border-border/80 rounded-2xl shadow-2xl p-1.5">
+              <div className="px-3 py-2 border-b border-border/50">
+                <p className="text-xs font-bold text-foreground">{profile?.full_name || "SuprO User"}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{profile?.phone || profile?.email || ""}</p>
+                {profile?.upi_id && (
+                  <p className="text-[10px] text-emerald-400 font-mono mt-0.5">UPI: {profile.upi_id}</p>
+                )}
+              </div>
+
+              <DropdownMenuItem asChild className="rounded-xl mt-1">
+                <Link href="/profile" className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                  <User className="w-4 h-4 text-primary" />
+                  <span>My Profile & Location</span>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild className="rounded-xl">
+                <Link href="/wallet" className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                  <CreditCard className="w-4 h-4 text-amber-400" />
+                  <span>Wallet & Payments</span>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild className="rounded-xl">
+                <Link href="/admin" className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                  <Shield className="w-4 h-4 text-indigo-400" />
+                  <span>Admin Hub</span>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="my-1 bg-border/50" />
+
+              <DropdownMenuItem
+                onClick={() => signOut()}
+                className="rounded-xl text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer text-xs font-semibold"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* App Launcher Overlay Modal */}
+      <AppLauncherModal isOpen={isLauncherOpen} onClose={() => setIsLauncherOpen(false)} />
+    </>
   );
 }

@@ -1,19 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
-import { Sidebar } from "@/components/layout/sidebar";
+import { FloatingDock } from "@/components/layout/floating-dock";
 import { Header } from "@/components/layout/header";
 import { PresenceHeartbeat } from "@/components/presence/presence-heartbeat";
-import { MessageCircle } from "lucide-react";
-
-// Auth-gated dashboard shell. Extracted from the layout so the layout
-// itself can stay a server component and export metadata (noindex) —
-// client components can't export Next's metadata object.
-
 import { checkIsAdmin } from "@/lib/auth/admin";
-
 import { createClient } from "@/lib/supabase/client";
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
@@ -22,11 +15,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isEmbed = searchParams.get("embed") === "true";
-
-  // Sidebar drawer state — only used on mobile. On lg+ the sidebar is
-  // always visible and this stays at `false` (ignored by the component).
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   const isAdmin = checkIsAdmin(user, profile ?? undefined);
 
@@ -44,7 +32,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user || !profile || !pathname) return;
 
-    const topLevelModules = ['/crm', '/rideo', '/drivo', '/gameo', '/teacho', '/agro', '/dealo', '/touro', '/moneyo', '/toolso', '/testo', '/tvo', '/tasko', '/tradeo'];
+    const topLevelModules = ['/crm', '/rideo', '/rento', '/drivo', '/gameo', '/teacho', '/agro', '/dealo', '/touro', '/moneyo', '/toolso', '/testo', '/tvo', '/tasko', '/tradeo'];
     
     // Check if the current route belongs to a top-level module
     const currentModule = topLevelModules.find(m => pathname === m || pathname.startsWith(`${m}/`));
@@ -85,21 +73,23 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Reports this tab's online/away presence once we know a user is
-          signed in. Headless — renders nothing. */}
+    <div className="flex flex-col min-h-screen w-full bg-background text-foreground relative overflow-x-hidden">
+      {/* Headless presence tracker */}
       <PresenceHeartbeat />
-      <Sidebar open={sidebarOpen} onClose={closeSidebar} />
-      <div className="flex flex-1 flex-col overflow-hidden relative">
-        <Header onOpenSidebar={() => setSidebarOpen(true)} />
-        {/* Thinner horizontal padding on mobile so cards have room to breathe. */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
-      </div>
+
+      {/* Modern Top Header */}
+      <Header />
+
+      {/* Full-Width Workspace Canvas with bottom padding for Floating Dock */}
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 pb-28 md:pb-32 overflow-y-auto">
+        {children}
+      </main>
+
+      {/* Modern Floating Glassmorphic Bottom Dock */}
+      <FloatingDock />
     </div>
   );
 }
-
-import { Suspense } from "react";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (

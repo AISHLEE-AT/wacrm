@@ -750,7 +750,17 @@ async function processMessage(
   const isFirstInboundMessage = (priorCustomerMsgCount ?? 0) === 0
 
   // -- RIDEO BOOKING HOOK --
-  if (contentText && (contentText.toLowerCase().includes('ride') || contentText.toLowerCase().includes('book'))) {
+  const isDriverReply = message.type === 'interactive' || 
+    (contentText && (
+      contentText.toLowerCase().includes('accept') || 
+      contentText.toLowerCase().includes('decline') || 
+      contentText.toLowerCase().includes('confirm') ||
+      contentText.toLowerCase().includes('active') ||
+      contentText.toLowerCase().includes('arrived') ||
+      contentText.toLowerCase().includes('start')
+    ));
+
+  if (!isDriverReply && contentText && (contentText.toLowerCase() === 'book ride' || contentText.toLowerCase() === 'book cab' || contentText.toLowerCase() === 'need ride' || contentText.toLowerCase() === 'rideo')) {
     const rideMsg = `🚕 Ready to book a ride?\n\n📍 *Option 1 (Native Map):*\nSimply tap the Attachment icon (📎) in WhatsApp, select *Location*, and send your current location as your Pickup point.\n\n🌐 *Option 2 (Web Map):*\nIf you prefer, tap this link to select your destination on a map:\nhttps://watscrm.vercel.app/book?phone=${encodeURIComponent(senderPhone)}`
     
     // Fire and forget
