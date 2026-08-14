@@ -227,35 +227,39 @@ export async function handleRideHailingBooking(
           const distanceVal = pendingRide.distance_km || pendingRide.distance || '3.5';
           const fareVal = pendingRide.fare || pendingRide.estimated_price || pendingRide.price || '132';
 
+          // 1. WhatsApp to DRIVER (No OTP exposed - driver must ask passenger directly)
           await sendTextMessage({
             accessToken,
             phoneNumberId: config.phone_number_id,
             to: senderPhone,
             text: `✅ RIDE CONFIRMED! ✅\n\n` +
-              `📍 Pickup: ${pickupAddress}\n` +
-              `🏁 Drop-off: ${dropoffAddress}\n` +
-              `📏 Distance: ${distanceVal} km\n` +
-              `💰 Fare: ₹${fareVal}\n\n` +
-              `🔢 *START TRIP PIN:* ${tripOtp}\n` +
-              `(Rider will share this PIN to verify before starting trip)\n\n` +
-              `🗺️ Navigate to pickup:\nhttps://www.google.com/maps/dir/?api=1&destination=${navLat},${navLng}`
+              `👤 *Passenger:* ${pendingRide.passenger_name || 'Passenger'} (${pendingRide.passenger_phone || ''})\n` +
+              `📍 *Pickup:* ${pickupAddress}\n` +
+              `🏁 *Drop-off:* ${dropoffAddress}\n` +
+              `📏 *Distance:* ${distanceVal} km\n` +
+              `💰 *Fare:* ₹${fareVal}\n\n` +
+              `🔢 *Trip OTP:* (Ask passenger for the 4-digit OTP upon arrival to verify & start trip)\n\n` +
+              `🗺️ *Pickup Navigation:*\nhttps://www.google.com/maps/dir/?api=1&destination=${navLat},${navLng}\n\n` +
+              `🗺️ *Drop-off Navigation:*\nhttps://www.google.com/maps/dir/?api=1&destination=${dropLat},${dropLng}`
           });
 
-          // Notify the RIDER (passenger) about driver acceptance + OTP
+          // 2. WhatsApp to RIDER (Contains private start-trip OTP)
           const riderWhatsappPhone = pendingRide.passenger_phone || '919123596988';
           await sendTextMessage({
             accessToken,
             phoneNumberId: config.phone_number_id,
             to: riderWhatsappPhone,
             text: `🚕 DRIVER CONFIRMED YOUR RIDE! 🚕\n\n` +
-              `👨‍✈️ Driver: ${driverRow.name}\n` +
-              `🚗 Vehicle: ${driverRow.vehicle_type} (${driverRow.vehicle_registration || ''})\n` +
-              `📍 Pickup: ${pickupAddress}\n` +
-              `🏁 Drop-off: ${dropoffAddress}\n` +
-              `📏 Distance: ${distanceVal} km\n` +
-              `💰 Fare: ₹${fareVal}\n\n` +
-              `📍 *Your Trip OTP:* ${tripOtp}\n` +
-              `(Share this OTP with driver to start the trip)\n\n` +
+              `👨‍✈️ *Driver:* ${driverRow.name}\n` +
+              `📞 *Contact:* ${driverRow.phone || driverRow.mobile_number || senderPhone}\n` +
+              `🛺 *Vehicle:* ${driverRow.vehicle_type} (${driverRow.vehicle_registration || driverRow.vehicle_number || ''})\n` +
+              `📍 *Pickup:* ${pickupAddress}\n` +
+              `🏁 *Drop-off:* ${dropoffAddress}\n` +
+              `💰 *Fare:* ₹${fareVal}\n\n` +
+              `🔢 *YOUR START TRIP OTP:* ${tripOtp}\n` +
+              `(Tell this 4-digit OTP directly to your driver when you meet to begin trip)\n\n` +
+              `🗺️ *Pickup Location:*\nhttps://www.google.com/maps/dir/?api=1&destination=${navLat},${navLng}\n\n` +
+              `🗺️ *Drop-off Destination:*\nhttps://www.google.com/maps/dir/?api=1&destination=${dropLat},${dropLng}\n\n` +
               `🆔 Ride ID: ${pendingRide.id?.slice(0, 8)}`
           });
 
