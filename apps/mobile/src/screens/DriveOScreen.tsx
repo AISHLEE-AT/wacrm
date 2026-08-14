@@ -310,51 +310,50 @@ export default function DriveOScreen() {
     }
   };
 
-  // ─── SUPABASE REALTIME SUBSCRIPTION ───
+  // ─── ACTIVE RIDE & PENDING RIDE REALTIME + POLLING ───
   const setupRealtimeSubscription = () => {
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
     }
     
+    const cleanPhone = (phone || driver.phone || driver.mobile_number || driver.whatsapp_number || '').replace(/\D/g, '');
+    const tenDigit = cleanPhone.slice(-10);
+
     channelRef.current = supabase
       .channel(`driver-rides-${driver.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rides' },
         (payload) => {
-          // New ride request (broadcast — no specific driver assigned)
+          const row = payload.new || {};
+          const rowDriverPhone = (row.driver_phone || '').replace(/\D/g, '');
+          const isAssignedToMe = row.driver_id === driver.id || (rowDriverPhone && (rowDriverPhone.includes(tenDigit) || cleanPhone.includes(rowDriverPhone.slice(-10)))) || !row.driver_id;
+
+          // New ride request
           if (payload.eventType === 'INSERT' && 
-              (payload.new.status === RIDE_STATUS.PENDING || payload.new.status === RIDE_STATUS.REQUESTED)) {
-            // If driver_id matches this driver, or no driver_id (broadcast)
-            if (payload.new.driver_id === driver.id || !payload.new.driver_id) {
-              handleNewRide(payload.new);
+              (row.status === RIDE_STATUS.PENDING || row.status === RIDE_STATUS.REQUESTED)) {
+            if (isAssignedToMe) {
+              handleNewRide(row);
             }
           }
           
           // Ride updates
           if (payload.eventType === 'UPDATE') {
-            // Ride cancelled
-            if (payload.new.status === RIDE_STATUS.CANCELLED) {
-              if (activeRide?.id === payload.new.id || incomingRide?.id === payload.new.id) {
+            if (row.status === RIDE_STATUS.CANCELLED) {
+              if (activeRide?.id === row.id || incomingRide?.id === row.id) {
                 Alert.alert('Ride Cancelled', 'The customer cancelled the ride.');
                 setActiveRide(null);
                 setIncomingRide(null);
                 clearInterval(timerRef.current);
               }
-            }
-            // Ride status update for this driver
-            else if (payload.new.driver_id === driver.id) {
-              if ([RIDE_STATUS.ACCEPTED, RIDE_STATUS.DRIVER_ARRIVED, RIDE_STATUS.IN_PROGRESS].includes(payload.new.status)) {
-                setActiveRide(payload.new);
-                setIncomingRide(null);
-              } else if (payload.new.status === RIDE_STATUS.COMPLETED) {
-                setActiveRide(null);
-                fetchEarnings();
-              }
-            }
-            // Ride accepted by another driver
-            else if (payload.new.status === RIDE_STATUS.ACCEPTED && payload.new.driver_id !== driver.id) {
-              if (incomingRide?.id === payload.new.id) {
+            } else if (isAssignedToMe && [RIDE_STATUS.ACCEPTED, RIDE_STATUS.DRIVER_ARRIVED, RIDE_STATUS.IN_PROGRESS].includes(row.status)) {
+              setActiveRide(row);
+              setIncomingRide(null);
+            } else if (row.status === RIDE_STATUS.COMPLETED && row.driver_id === driver.id) {
+              setActiveRide(null);
+              fetchEarnings();
+            } else if (row.status === RIDE_STATUS.ACCEPTED && row.driver_id !== driver.id) {
+              if (incomingRide?.id === row.id) {
                 setIncomingRide(null);
                 clearInterval(timerRef.current);
               }
@@ -364,6 +363,46 @@ export default function DriveOScreen() {
       )
       .subscribe();
   };
+
+  // Active polling fallback for incoming rides and active ride status (every 2s)
+  useEffect(() => {
+    if (!driver?.id || !isOnline || activeRide) return;
+
+    const cleanPhone = (phone || driver.phone || driver.mobile_number || driver.whatsapp_number || '').replace(/\D/g, '');
+    const tenDigit = cleanPhone.slice(-10);
+
+    const pollPendingRides = async () => {
+      try {
+        if (incomingRide) return;
+
+        const { data: pendingList, error } = await supabase
+          .from('rides')
+          .select('*')
+          .in('status', [RIDE_STATUS.PENDING, RIDE_STATUS.REQUESTED])
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (!error && pendingList && pendingList.length > 0) {
+          const matchedRide = pendingList.find(r => {
+            const rDriverPhone = (r.driver_phone || '').replace(/\D/g, '');
+            return r.driver_id === driver.id ||
+                   (rDriverPhone && (rDriverPhone.includes(tenDigit) || cleanPhone.includes(rDriverPhone.slice(-10)))) ||
+                   !r.driver_id;
+          });
+
+          if (matchedRide && !incomingRide) {
+            handleNewRide(matchedRide);
+          }
+        }
+      } catch (e) {
+        console.warn('DriveO pending ride poll error:', e);
+      }
+    };
+
+    pollPendingRides();
+    const interval = setInterval(pollPendingRides, 2000);
+    return () => clearInterval(interval);
+  }, [driver?.id, isOnline, activeRide, incomingRide, phone]);
 
   // ─── INCOMING RIDE HANDLER ───
   const handleNewRide = async (ride) => {

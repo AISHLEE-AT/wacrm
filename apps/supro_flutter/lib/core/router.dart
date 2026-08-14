@@ -24,6 +24,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final bool loggedIn = authState.value?.session != null;
       final bool loggingIn = state.matchedLocation == '/login';
+      final bool isStartup = state.matchedLocation == '/startup';
 
       if (!loggedIn) return '/login';
       // Do not redirect to /home if they are just opening the app and are already logged in
@@ -33,10 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/startup', builder: (context, state) => const StartupScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/onboarding/biometric', builder: (context, state) => const BiometricSetupScreen()),
-      GoRoute(path: '/onboarding/permissions', builder: (context, state) => const PermissionsScreen()),
-      GoRoute(path: '/onboarding/profile', builder: (context, state) => const ProfileSetupScreen()),
-      GoRoute(path: '/onboarding/modules', builder: (context, state) => const ModuleSelectorScreen()),
+      GoRoute(path: '/onboarding/biometric', builder: (_, __) => const BiometricSetupScreen()),
+      GoRoute(path: '/onboarding/permissions', builder: (_, __) => const PermissionsScreen()),
+      GoRoute(path: '/onboarding/profile', builder: (_, __) => const ProfileSetupScreen()),
+      GoRoute(path: '/onboarding/modules', builder: (_, __) => const ModuleSelectorScreen()),
       ShellRoute(
         builder: (context, state, child) => MainLayout(child: child),
         routes: [

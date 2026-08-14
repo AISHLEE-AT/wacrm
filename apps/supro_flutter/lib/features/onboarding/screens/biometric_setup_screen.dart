@@ -41,7 +41,7 @@ class _BiometricSetupScreenState extends State<BiometricSetupScreen> {
   Future<void> _enableBiometric() async {
     try {
       final authenticated = await auth.authenticate(
-        localizedReason: 'Enable biometric login for SuprO',
+        localizedReason: 'Authenticate to enable biometric login',
       );
 
       if (authenticated) {

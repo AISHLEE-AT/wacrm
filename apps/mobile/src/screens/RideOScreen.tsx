@@ -185,15 +185,18 @@ export default function RideOScreen({ navigation }) {
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${currentRide.id}` },
           async (payload) => {
-            const status = payload.new.status;
-            if (status === 'accepted' && rideState === 'SEARCHING') {
-              // Fetch latest driver info
-              const { data: driverData } = await supabase
-                .from('drivers')
-                .select('*')
-                .eq('id', payload.new.driver_id)
-                .single();
-              setDriverInfo(driverData);
+            const status = payload.new?.status;
+            if (status === 'accepted') {
+              let dData = null;
+              if (payload.new.driver_id) {
+                const { data } = await supabase
+                  .from('drivers')
+                  .select('*')
+                  .eq('id', payload.new.driver_id)
+                  .maybeSingle();
+                dData = data;
+              }
+              setDriverInfo(dData || selectedDriver || { name: 'Driver Partner', phone: payload.new.driver_phone, vehicle_type: payload.new.vehicle_category || 'Cab' });
               setCurrentRide(payload.new);
               setRideState('ACCEPTED');
             } else if (status === 'in_progress') {
@@ -203,12 +206,46 @@ export default function RideOScreen({ navigation }) {
               setCurrentRide(payload.new);
               setRideState('COMPLETED');
             } else if (status === 'cancelled') {
-              Alert.alert('Ride Cancelled', 'The driver cancelled the ride.');
+              Alert.alert('Ride Cancelled', 'The driver was unable to take this trip.');
               resetToPickup();
             }
           }
         )
         .subscribe();
+    }
+
+    // Active polling fallback during SEARCHING state (updates within 1.5s even if WebSockets are quiet)
+    let pollInterval: any = null;
+    if (rideState === 'SEARCHING' && currentRide?.id) {
+      pollInterval = setInterval(async () => {
+        try {
+          const { data: latestRide } = await supabase
+            .from('rides')
+            .select('*')
+            .eq('id', currentRide.id)
+            .maybeSingle();
+
+          if (latestRide && latestRide.status === 'accepted') {
+            let dData = null;
+            if (latestRide.driver_id) {
+              const { data } = await supabase
+                .from('drivers')
+                .select('*')
+                .eq('id', latestRide.driver_id)
+                .maybeSingle();
+              dData = data;
+            }
+            setDriverInfo(dData || selectedDriver || { name: 'Driver Partner', phone: latestRide.driver_phone, vehicle_type: latestRide.vehicle_category || 'Cab' });
+            setCurrentRide(latestRide);
+            setRideState('ACCEPTED');
+          } else if (latestRide && latestRide.status === 'cancelled') {
+            Alert.alert('Ride Cancelled', 'The driver was unable to take this trip.');
+            resetToPickup();
+          }
+        } catch (pollErr) {
+          console.warn('Ride polling error:', pollErr);
+        }
+      }, 1500);
     }
 
     if (driverInfo?.id && (rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS')) {
@@ -233,8 +270,9 @@ export default function RideOScreen({ navigation }) {
     return () => {
       if (rideChannel) supabase.removeChannel(rideChannel);
       if (driverChannel) supabase.removeChannel(driverChannel);
+      if (pollInterval) clearInterval(pollInterval);
     };
-  }, [currentRide?.id, driverInfo?.id, rideState]);
+  }, [currentRide?.id, driverInfo?.id, rideState, selectedDriver]);
 
   // Helpers
   const reverseGeocode = async (lat, lng, setter) => {
@@ -503,6 +541,13 @@ export default function RideOScreen({ navigation }) {
       const { data: rideData, error } = await supabase.from('rides').insert({
         passenger_phone: user?.phone || 'unknown',
         passenger_name: user?.name || 'Rider',
+        pickup_address: pickupAddress,
+        dropoff_address: dropoffAddress,
+        pickup_latitude: location.latitude,
+        pickup_longitude: location.longitude,
+        dropoff_latitude: dropoffLocation.latitude,
+        dropoff_longitude: dropoffLocation.longitude,
+        distance_km: fareEstimate.distanceKm,
         pickup_location: {
           lat: location.latitude,
           lng: location.longitude,
@@ -514,6 +559,7 @@ export default function RideOScreen({ navigation }) {
           address: dropoffAddress
         },
         driver_id: selectedDriver.id,
+        driver_phone: selectedDriver.phone,
         vehicle_category: selectedDriver.vehicle_type,
         fare: fareEstimate.total,
         status: 'pending',
