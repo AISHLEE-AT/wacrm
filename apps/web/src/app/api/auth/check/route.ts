@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     // Query profiles to see if the user exists
     const { data: profile, error } = await admin
       .from('profiles')
-      .select('id, full_name, main_category, role, pin_hash, gemini_api_key')
+      .select('id, full_name, main_category, role, pin_hash, gemini_api_key, upi_id, avatar_url, location, latitude, longitude, city, state, country, pincode, profile_complete')
       .or(`phone.eq.${phone},phone.eq.91${phone},whatsapp.eq.${phone},whatsapp.eq.91${phone}`)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     const cleanPhone = phone.slice(-10);
     const { data: driverRow } = await admin
       .from('drivers')
-      .select('id')
+      .select('id, upi_id, vehicle_type, vehicle_model, vehicle_number')
       .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
       .limit(1)
       .maybeSingle()
@@ -45,6 +45,7 @@ export async function GET(request: Request) {
 
     const resolvedRole = isDriverPartner ? 'driver' : (profile?.role || 'user');
     const resolvedCategory = isDriverPartner ? 'Driver' : (profile?.main_category || 'Traveller');
+    const resolvedUpi = profile?.upi_id || driverRow?.upi_id || '';
 
     if (profile || driverRow) {
       // Self-heal profile if user is driver partner but profile had legacy category
@@ -58,25 +59,35 @@ export async function GET(request: Request) {
 
       return NextResponse.json({ 
         exists: true, 
+        id: profile?.id,
         name: profile?.full_name || 'Driver Partner', 
+        full_name: profile?.full_name || 'Driver Partner',
         category: resolvedCategory, 
         role: resolvedRole, 
         has_pin: !!profile?.pin_hash,
-        gemini_api_key: profile?.gemini_api_key
+        gemini_api_key: profile?.gemini_api_key,
+        upi_id: resolvedUpi,
+        avatar_url: profile?.avatar_url || '',
+        location: profile?.location || '',
+        latitude: profile?.latitude || null,
+        longitude: profile?.longitude || null,
+        city: profile?.city || '',
+        state: profile?.state || '',
+        country: profile?.country || 'India',
+        pincode: profile?.pincode || '',
+        profile_complete: profile?.profile_complete || (!!profile?.full_name && !!profile?.location)
       })
     }
     
     return NextResponse.json({ 
       exists: false, 
-      reason: 'Profile not found', 
-      debug_phone: phone, 
-      debug_url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      debug_error: error 
+      category: 'Traveller', 
+      role: 'user', 
+      has_pin: false 
     })
   } catch (err: any) {
     return NextResponse.json({ exists: false, error: err.message })
   }
-}
 
 
 

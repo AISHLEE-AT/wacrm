@@ -6,6 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 const ADMIN_PHONES = ['6381029380', '9876543210', '9486335870'];
 
 export interface AppUser {
+  id?: string;
   phone: string;
   name: string;
   role: string;       // e.g. 'admin' | 'user' | 'driver' | 'Teacher' etc.
@@ -15,6 +16,16 @@ export interface AppUser {
   refreshToken?: string | null;
   defaultModule?: string | null;
   selectedModule?: string | null;
+  upiId?: string;
+  avatarUrl?: string;
+  location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  pincode?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  profileComplete?: boolean;
 }
 
 export const AppContext = createContext<any>(null);
@@ -68,7 +79,7 @@ export const AppProvider = ({ children }: any) => {
         }
 
         const phone = await SecureStore.getItemAsync('user-phone');
-        const name = await SecureStore.getItemAsync('user-name');
+        let name = await SecureStore.getItemAsync('user-name');
         const role = await SecureStore.getItemAsync('user-role');
         const category = await SecureStore.getItemAsync('user-category');
         const accessToken = await SecureStore.getItemAsync('sb-access-token');
@@ -77,12 +88,19 @@ export const AppProvider = ({ children }: any) => {
         let defaultModule = await SecureStore.getItemAsync('user-default-module');
         const selectedModule = await SecureStore.getItemAsync('user-selected-module');
         const onboardingDone = await SecureStore.getItemAsync('onboarding-complete');
+        let upiId = await SecureStore.getItemAsync('user-upi-id');
+        let avatarUrl = await SecureStore.getItemAsync('user-avatar-url');
+        let location = await SecureStore.getItemAsync('user-location');
+        let latStr = await SecureStore.getItemAsync('user-latitude');
+        let lngStr = await SecureStore.getItemAsync('user-longitude');
+
         setOnboardingComplete(onboardingDone === 'true');
 
         if (phone) {
           const adminStatus = ADMIN_PHONES.includes(phone);
+          const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
-          // Fetch the latest default_module from Supabase to sync across devices
+          // Fetch the full profile from Supabase to sync across all devices
           try {
             if (accessToken) {
               await supabase.auth.setSession({
@@ -90,10 +108,43 @@ export const AppProvider = ({ children }: any) => {
                 refresh_token: refreshToken || '',
               });
             }
-            const { data } = await supabase.from('profiles').select('default_module').eq('phone', phone).single();
-            if (data?.default_module) {
-              defaultModule = data.default_module;
-              await SecureStore.setItemAsync('user-default-module', defaultModule);
+            const { data: prof } = await supabase
+              .from('profiles')
+              .select('*')
+              .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (prof) {
+              if (prof.full_name) {
+                name = prof.full_name;
+                await SecureStore.setItemAsync('user-name', prof.full_name);
+              }
+              if (prof.upi_id) {
+                upiId = prof.upi_id;
+                await SecureStore.setItemAsync('user-upi-id', prof.upi_id);
+              }
+              if (prof.avatar_url) {
+                avatarUrl = prof.avatar_url;
+                await SecureStore.setItemAsync('user-avatar-url', prof.avatar_url);
+              }
+              if (prof.location) {
+                location = prof.location;
+                await SecureStore.setItemAsync('user-location', prof.location);
+              }
+              if (prof.latitude) {
+                latStr = String(prof.latitude);
+                await SecureStore.setItemAsync('user-latitude', latStr);
+              }
+              if (prof.longitude) {
+                lngStr = String(prof.longitude);
+                await SecureStore.setItemAsync('user-longitude', lngStr);
+              }
+              if (prof.default_module) {
+                defaultModule = prof.default_module;
+                await SecureStore.setItemAsync('user-default-module', defaultModule);
+              }
             }
           } catch(e) {}
 
@@ -107,6 +158,12 @@ export const AppProvider = ({ children }: any) => {
             refreshToken,
             defaultModule,
             selectedModule,
+            upiId: upiId || '',
+            avatarUrl: avatarUrl || '',
+            location: location || '',
+            latitude: latStr ? parseFloat(latStr) : null,
+            longitude: lngStr ? parseFloat(lngStr) : null,
+            profileComplete: !!name && !!location,
           });
 
           // Background sync API key from server across all devices
@@ -144,6 +201,12 @@ export const AppProvider = ({ children }: any) => {
       accessToken: userData.accessToken ?? null,
       refreshToken: userData.refreshToken ?? null,
       selectedModule: userData.selectedModule ?? null,
+      upiId: userData.upiId ?? '',
+      avatarUrl: userData.avatarUrl ?? '',
+      location: userData.location ?? '',
+      latitude: userData.latitude ?? null,
+      longitude: userData.longitude ?? null,
+      profileComplete: !!(userData.name && userData.location),
     };
 
     setUser(fullUser);
@@ -153,6 +216,11 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.setItemAsync('user-name', fullUser.name);
     await SecureStore.setItemAsync('user-role', fullUser.role);
     await SecureStore.setItemAsync('user-category', fullUser.category);
+    if (fullUser.upiId) await SecureStore.setItemAsync('user-upi-id', fullUser.upiId);
+    if (fullUser.avatarUrl) await SecureStore.setItemAsync('user-avatar-url', fullUser.avatarUrl);
+    if (fullUser.location) await SecureStore.setItemAsync('user-location', fullUser.location);
+    if (fullUser.latitude) await SecureStore.setItemAsync('user-latitude', String(fullUser.latitude));
+    if (fullUser.longitude) await SecureStore.setItemAsync('user-longitude', String(fullUser.longitude));
     if (fullUser.accessToken) {
       await SecureStore.setItemAsync('sb-access-token', fullUser.accessToken);
     }

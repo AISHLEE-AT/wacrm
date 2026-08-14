@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -60,15 +60,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               _geminiState = data['gemini_api_key'] ?? '';
               _apiKeyController.text = _geminiState;
               
-              _nameState = data['name'] ?? 'User';
+              _nameState = data['name'] ?? data['full_name'] ?? 'User';
               _nameController.text = _nameState;
               
-              // Simulate location and upi fetch if not present in basic auth/check
-              // In production we would add these to auth/check or call a separate profile endpoint.
+              _locationState = data['location'] ?? 'Tamil Nadu, India';
+              _locationController.text = _locationState;
+
+              _upiState = data['upi_id'] ?? '';
+              _upiController.text = _upiState;
             });
             final prefs = await SharedPreferences.getInstance();
             if (_geminiState.isNotEmpty) {
               await prefs.setString('gemini_api_key', _geminiState);
+            }
+            if (_nameState.isNotEmpty) {
+              await prefs.setString('user_name', _nameState);
+            }
+            if (_locationState.isNotEmpty) {
+              await prefs.setString('user_location', _locationState);
+            }
+            if (_upiState.isNotEmpty) {
+              await prefs.setString('user_upi', _upiState);
             }
           }
         }
