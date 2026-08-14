@@ -54,12 +54,7 @@ class _ModuleSelectorScreenState extends State<ModuleSelectorScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent,
-            content: Text('Error: ${e.toString()}'),
-          ),
-        );
+        context.go(_selectedModule ?? '/home');
       }
     } finally {
       if (mounted) {

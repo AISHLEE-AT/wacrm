@@ -202,20 +202,19 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _allGranted ? () => context.go('/onboarding/profile') : null,
+                  onPressed: () => context.go('/onboarding/profile'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
-                    disabledBackgroundColor: const Color(0xFF1E293B),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Continue',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: _allGranted ? Colors.white : const Color(0xFF94A3B8),
+                      color: Colors.white,
                     ),
                   ),
                 ),

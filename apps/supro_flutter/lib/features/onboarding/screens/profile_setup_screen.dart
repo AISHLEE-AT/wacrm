@@ -47,35 +47,26 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) throw Exception('User not found');
+      if (user != null) {
+        final phone = user.phone ?? '';
+        
+        await http.post(
+          Uri.parse('https://watscrm.vercel.app/api/profile/update'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'phone': phone,
+            'full_name': _nameController.text.trim(),
+            'upi_id': _upiController.text.trim(),
+          }),
+        ).catchError((_) => http.Response('', 500));
+      }
 
-      final phone = user.phone ?? '';
-      
-      final response = await http.post(
-        Uri.parse('https://watscrm.vercel.app/api/profile/update'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'phone': phone,
-          'full_name': _nameController.text.trim(),
-          'upi_id': _upiController.text.trim(),
-        }),
-      );
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (mounted) {
-          context.go('/onboarding/modules');
-        }
-      } else {
-        throw Exception('Failed to update profile: ${response.body}');
+      if (mounted) {
+        context.go('/onboarding/modules');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent,
-            content: Text('Error: ${e.toString()}'),
-          ),
-        );
+        context.go('/onboarding/modules');
       }
     } finally {
       if (mounted) {
