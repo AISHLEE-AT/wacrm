@@ -205,7 +205,7 @@ export function payViaUPI(amount, upiId, name = 'SuprO Ride', rideId = '') {
 }
 
 // ─── SEND RIDE REQUEST TO DRIVER VIA WHATSAPP CRM API ───
-export async function dispatchRideToDriverWhatsApp(rideDetails) {
+export async function dispatchRideToDriverWhatsApp(rideDetails: any) {
   try {
     const res = await fetch(`${API_BASE_URL}/api/ride/request-driver`, {
       method: 'POST',
@@ -213,13 +213,19 @@ export async function dispatchRideToDriverWhatsApp(rideDetails) {
       body: JSON.stringify({
         ride_id: rideDetails.rideId,
         driver_phone: rideDetails.driverPhone,
+        passenger_name: rideDetails.passengerName,
+        passenger_phone: rideDetails.passengerPhone,
         pickup_address: rideDetails.pickupAddress,
         dropoff_address: rideDetails.dropoffAddress,
+        pickup_lat: rideDetails.pickupLat,
+        pickup_lng: rideDetails.pickupLng,
+        dropoff_lat: rideDetails.dropoffLat,
+        dropoff_lng: rideDetails.dropoffLng,
         distance_km: rideDetails.distanceKm,
         estimated_fare: rideDetails.estimatedFare,
         driver_name: rideDetails.driverName,
-        driver_rating: rideDetails.driverRating || '—',
-        vehicle_info: rideDetails.vehicleInfo,
+        driver_rating: rideDetails.driverRating || '4.9',
+        vehicle_info: rideDetails.vehicleInfo || 'Standard Cab',
       }),
     });
     return res.ok;

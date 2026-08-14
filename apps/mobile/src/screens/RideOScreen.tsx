@@ -609,16 +609,28 @@ export default function RideOScreen({ navigation }) {
       setCurrentRide(rideData);
       
       // Send WhatsApp message to driver
+      const cleanRiderPhone = user?.phone || '919486335870';
+      const cleanRiderName = user?.name || 'Admin-RAJA';
+      const vehicleDesc = selectedDriver.vehicle_model 
+        ? `${selectedDriver.vehicle_model} (${selectedDriver.vehicle_number || selectedDriver.vehicle_type?.toUpperCase() || 'CAB'})`
+        : `${selectedDriver.vehicle_type?.toUpperCase() || 'CAB'} (Verified Partner)`;
+
       await dispatchRideToDriverWhatsApp({
         rideId: rideData.id,
-        driverPhone: selectedDriver.phone,
+        driverPhone: selectedDriver.phone || selectedDriver.mobile_number,
+        passengerName: cleanRiderName,
+        passengerPhone: cleanRiderPhone,
         pickupAddress,
         dropoffAddress,
+        pickupLat: location.latitude,
+        pickupLng: location.longitude,
+        dropoffLat: dropoffLocation.latitude,
+        dropoffLng: dropoffLocation.longitude,
         distanceKm: fareEstimate.distanceKm,
         estimatedFare: fareEstimate.total,
         driverName: selectedDriver.name,
         driverRating: selectedDriver.rating,
-        vehicleInfo: `${selectedDriver.vehicle_type} - ${selectedDriver.registration_number}`
+        vehicleInfo: vehicleDesc
       });
       
       setRideState('SEARCHING');

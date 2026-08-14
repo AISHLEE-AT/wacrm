@@ -77,19 +77,17 @@ export async function POST(request: Request) {
     const cleanPhone = driver_phone.replace(/\D/g, '');
     const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
-    const pickupMap = (pickup_lat && pickup_lng) 
-      ? `🗺️ *Pickup Navigation:*\nhttps://www.google.com/maps/dir/?api=1&destination=${pickup_lat},${pickup_lng}\n\n` 
-      : '';
-    const dropMap = (dropoff_lat && dropoff_lng)
-      ? `🗺️ *Drop-off Destination:*\nhttps://www.google.com/maps/dir/?api=1&destination=${dropoff_lat},${dropoff_lng}\n\n`
-      : '';
+    // Clean up addresses
+    const cleanPickup = (pickup_address || 'Current Location').replace(/^Unnamed Road,\s*/i, '');
+    const cleanDropoff = (dropoff_address || 'Destination').replace(/^Unnamed Road,\s*/i, '');
+    const riderDisplayPhone = passenger_phone ? `(📞 ${passenger_phone.replace(/\D/g, '').slice(-10)})` : '';
 
     // Construct the interactive message body (No OTP exposed to driver)
     const messageText = `🚨 *NEW RIDEO BOOKING REQUEST* 🚨\n\n` +
-      `👤 *Passenger:* ${finalPassengerName || 'Passenger'} (${passenger_phone || ''})\n` +
-      `📍 *Pickup:* ${pickup_address}\n` +
-      `🏁 *Drop-off:* ${dropoff_address}\n` +
-      `🚗 *Vehicle:* ${vehicle_info || 'Standard Auto'}\n` +
+      `👤 *Passenger:* ${finalPassengerName || 'Customer'} ${riderDisplayPhone}\n` +
+      `📍 *Pickup:* ${cleanPickup}\n` +
+      `🏁 *Drop-off:* ${cleanDropoff}\n` +
+      `🚗 *Vehicle:* ${vehicle_info || 'Standard Vehicle'}\n` +
       `📏 *Distance:* ${distance_km} km\n` +
       `💰 *Estimated Fare:* ₹${estimated_fare}\n\n` +
       `🔢 *Trip OTP:* (Ask passenger for the 4-digit OTP upon arrival to verify & start trip)\n\n` +
