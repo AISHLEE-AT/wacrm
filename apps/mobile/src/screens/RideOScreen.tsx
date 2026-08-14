@@ -214,9 +214,9 @@ export default function RideOScreen({ navigation }) {
         .subscribe();
     }
 
-    // Active polling fallback during SEARCHING state (updates within 1.5s even if WebSockets are quiet)
+    // Active polling fallback during SEARCHING & ACTIVE states (updates every 1s)
     let pollInterval: any = null;
-    if (rideState === 'SEARCHING' && currentRide?.id) {
+    if (currentRide?.id && (rideState === 'SEARCHING' || rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS')) {
       pollInterval = setInterval(async () => {
         try {
           const { data: latestRide } = await supabase
@@ -225,27 +225,41 @@ export default function RideOScreen({ navigation }) {
             .eq('id', currentRide.id)
             .maybeSingle();
 
-          if (latestRide && latestRide.status === 'accepted') {
-            let dData = null;
-            if (latestRide.driver_id) {
-              const { data } = await supabase
-                .from('drivers')
-                .select('*')
-                .eq('id', latestRide.driver_id)
-                .maybeSingle();
-              dData = data;
+          if (!latestRide) return;
+
+          if (latestRide.status === 'accepted' || latestRide.status === 'driver_arrived') {
+            if (rideState !== 'ACCEPTED') {
+              let dData = null;
+              if (latestRide.driver_id) {
+                const { data } = await supabase
+                  .from('drivers')
+                  .select('*')
+                  .eq('id', latestRide.driver_id)
+                  .maybeSingle();
+                dData = data;
+              }
+              setDriverInfo(dData || selectedDriver || { name: 'Driver Partner', phone: '9123596988', vehicle_type: latestRide.vehicle_category || 'Auto' });
+              setCurrentRide(latestRide);
+              setRideState('ACCEPTED');
             }
-            setDriverInfo(dData || selectedDriver || { name: 'Driver Partner', phone: latestRide.driver_phone, vehicle_type: latestRide.vehicle_category || 'Cab' });
-            setCurrentRide(latestRide);
-            setRideState('ACCEPTED');
-          } else if (latestRide && latestRide.status === 'cancelled') {
+          } else if (latestRide.status === 'in_progress') {
+            if (rideState !== 'IN_PROGRESS') {
+              setCurrentRide(latestRide);
+              setRideState('IN_PROGRESS');
+            }
+          } else if (latestRide.status === 'completed') {
+            if (rideState !== 'COMPLETED') {
+              setCurrentRide(latestRide);
+              setRideState('COMPLETED');
+            }
+          } else if (latestRide.status === 'cancelled') {
             Alert.alert('Ride Cancelled', 'The driver was unable to take this trip.');
             resetToPickup();
           }
         } catch (pollErr) {
           console.warn('Ride polling error:', pollErr);
         }
-      }, 1500);
+      }, 1000);
     }
 
     if (driverInfo?.id && (rideState === 'ACCEPTED' || rideState === 'IN_PROGRESS')) {
@@ -553,9 +567,9 @@ export default function RideOScreen({ navigation }) {
           distance_km: fareEstimate.distanceKm
         },
         driver_id: selectedDriver.id,
-        driver_phone: selectedDriver.phone,
         vehicle_category: selectedDriver.vehicle_type,
         fare: fareEstimate.total,
+        total_fare: fareEstimate.total,
         status: 'pending',
         payment_mode: paymentMode,
         otp: otp

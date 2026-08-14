@@ -194,10 +194,14 @@ export default function DriveOScreen() {
   const fetchDriverProfile = async () => {
     try {
       setIsLoading(true);
+      const rawPhone = user?.phone || phone || '';
+      const cleanPhone = rawPhone.replace(/\D/g, '');
+      const tenDigit = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
+
       const { data, error } = await supabase
         .from('drivers')
         .select('*')
-        .or(`phone.eq.${phone},mobile_number.eq.${phone},whatsapp_number.eq.${phone}`)
+        .or(`phone.ilike.%${tenDigit}%,mobile_number.ilike.%${tenDigit}%,whatsapp_number.ilike.%${tenDigit}%`)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -409,21 +413,6 @@ export default function DriveOScreen() {
     if (!isOnline) return;
     if (activeRide) return;
     
-    // Check vehicle type match (supports Truck, Ace, Bus, Tractor, Harvester & All-vehicle drivers)
-    if (ride.vehicle_category && driver.vehicle_type) {
-      const dType = driver.vehicle_type.toLowerCase();
-      const rCat  = ride.vehicle_category.toLowerCase();
-      const isUniversal = dType === 'all' || dType === 'all_vehicles' || dType === 'admin';
-      const isMatch = dType === rCat || rCat.includes(dType) || dType.includes(rCat);
-      if (!isUniversal && !isMatch) return;
-    }
-
-    // Check distance (max 10km)
-    if (currentLocation && ride?.pickup_location?.lat && ride?.pickup_location?.lng) {
-      const dist = getDistanceKm(currentLocation.latitude, currentLocation.longitude, ride?.pickup_location?.lat, ride?.pickup_location?.lng);
-      if (dist > 100000) return; // Expanded for virtual drivers (statewide)
-    }
-    
     setIncomingRide(ride);
     Vibration.vibrate([500, 500, 500]);
     startCountdown();
@@ -462,14 +451,11 @@ export default function DriveOScreen() {
     setIncomingRide(null);
     
     try {
-      const tripOtp = generateRideOTP();
-      
       const { data, error } = await supabase
         .from('rides')
         .update({
           status: RIDE_STATUS.ACCEPTED,
           driver_id: driver.id,
-          otp: tripOtp,
           accepted_at: new Date().toISOString()
         })
         .in('status', [RIDE_STATUS.REQUESTED, RIDE_STATUS.PENDING])
@@ -492,7 +478,7 @@ export default function DriveOScreen() {
         console.warn('Failed to notify WhatsApp:', err);
       }
       
-      Alert.alert('Ride Accepted!', `OTP for rider: ${tripOtp}`);
+      Alert.alert('Ride Accepted!', 'Please navigate to pickup. Ask the rider for their 4-digit OTP upon arrival.');
       fetchActiveRide();
     } catch (err) {
       Alert.alert('Error', err.message || 'Could not accept ride');
@@ -936,95 +922,119 @@ export default function DriveOScreen() {
             </View>
 
             {/* Map View */}
-            <View style={{ height: 200, borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-              <MapView
-                ref={mapRef}
-                style={{ flex: 1 }}
-                provider={PROVIDER_GOOGLE}
-                customMapStyle={mapStyleDark}
-                initialRegion={{
-                  latitude: currentLocation?.latitude || activeRide?.pickup_location?.lat || 11.0,
-                  longitude: currentLocation?.longitude || activeRide?.pickup_location?.lng || 78.0,
-                  latitudeDelta: 0.05,
-                  longitudeDelta: 0.05,
-                }}
-              >
-                {currentLocation && (
-                  <Marker coordinate={currentLocation} title="You">
-                    <View style={styles.driverDot}>
-                      <View style={styles.driverDotInner} />
-                    </View>
-                  </Marker>
-                )}
-                {activeRide?.pickup_location?.lat && (
-                  <Marker
-                    coordinate={{ latitude: activeRide?.pickup_location?.lat, longitude: activeRide?.pickup_location?.lng }}
-                    title="Pickup"
-                    pinColor="green"
-                  />
-                )}
-                {activeRide?.drop_location?.lat && activeRide?.drop_location?.lat !== 0 && (
-                  <Marker
-                    coordinate={{ latitude: activeRide?.drop_location?.lat, longitude: activeRide?.drop_location?.lng }}
-                    title="Dropoff"
-                    pinColor="red"
-                  />
-                )}
-                {routeCoordinates.length > 0 && (
-                  <Polyline coordinates={routeCoordinates} strokeWidth={4} strokeColor={COLORS.blue} />
-                )}
-              </MapView>
+            <View style={{ height: 220, borderRadius: 16, overflow: 'hidden', marginBottom: 16, borderWidth: 1, borderColor: COLORS.border }}>
+              {(() => {
+                const pLoc = typeof activeRide?.pickup_location === 'string' ? JSON.parse(activeRide.pickup_location || '{}') : (activeRide?.pickup_location || {});
+                const dLoc = typeof activeRide?.drop_location === 'string' ? JSON.parse(activeRide.drop_location || '{}') : (activeRide?.drop_location || {});
+                const pLat = pLoc.lat || activeRide?.pickup_latitude || 12.2215;
+                const pLng = pLoc.lng || activeRide?.pickup_longitude || 78.7133;
+                const dLat = dLoc.lat || activeRide?.dropoff_latitude;
+                const dLng = dLoc.lng || activeRide?.dropoff_longitude;
+
+                return (
+                  <MapView
+                    ref={mapRef}
+                    style={{ flex: 1 }}
+                    provider={PROVIDER_GOOGLE}
+                    customMapStyle={mapStyleDark}
+                    initialRegion={{
+                      latitude: currentLocation?.latitude || pLat,
+                      longitude: currentLocation?.longitude || pLng,
+                      latitudeDelta: 0.05,
+                      longitudeDelta: 0.05,
+                    }}
+                  >
+                    {currentLocation && (
+                      <Marker coordinate={currentLocation} title="Driver (You)">
+                        <View style={styles.driverDot}>
+                          <View style={styles.driverDotInner} />
+                        </View>
+                      </Marker>
+                    )}
+                    {pLat && pLng && (
+                      <Marker
+                        coordinate={{ latitude: pLat, longitude: pLng }}
+                        title="Pickup"
+                        pinColor="green"
+                      />
+                    )}
+                    {dLat && dLng && (
+                      <Marker
+                        coordinate={{ latitude: dLat, longitude: dLng }}
+                        title="Drop-off"
+                        pinColor="red"
+                      />
+                    )}
+                    {routeCoordinates.length > 0 && (
+                      <Polyline coordinates={routeCoordinates} strokeWidth={4} strokeColor={COLORS.blue} />
+                    )}
+                  </MapView>
+                );
+              })()}
             </View>
 
             {/* Ride Location Details */}
-            <View style={styles.rideDetails}>
-              <View style={styles.locationRow}>
-                <MapPin size={16} color={COLORS.green} />
-                <Text style={styles.locationText} numberOfLines={2}>{activeRide?.pickup_location?.address || 'Pickup location'}</Text>
-              </View>
-              <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 12, marginLeft: 28 }} />
-              <View style={styles.locationRow}>
-                <MapPin size={16} color={COLORS.red} />
-                <Text style={styles.locationText} numberOfLines={2}>{activeRide?.drop_location?.address || 'Drop location not specified'}</Text>
-              </View>
-            </View>
+            {(() => {
+              const pLoc = typeof activeRide?.pickup_location === 'string' ? JSON.parse(activeRide.pickup_location || '{}') : (activeRide?.pickup_location || {});
+              const dLoc = typeof activeRide?.drop_location === 'string' ? JSON.parse(activeRide.drop_location || '{}') : (activeRide?.drop_location || {});
+              const pAddr = pLoc.address || activeRide?.pickup_address || 'Pickup location';
+              const dAddr = dLoc.address || activeRide?.dropoff_address || 'Drop-off destination';
+              const pLat = pLoc.lat || activeRide?.pickup_latitude || 12.2215;
+              const pLng = pLoc.lng || activeRide?.pickup_longitude || 78.7133;
+              const dLat = dLoc.lat || activeRide?.dropoff_latitude;
+              const dLng = dLoc.lng || activeRide?.dropoff_longitude;
 
-            {/* Rider Info */}
-            <View style={[styles.rideDetails, { marginTop: 0 }]}>
-              <Text style={{ color: COLORS.text, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
-                {activeRide.passenger_name || activeRide.customer_name || 'Rider'}
-              </Text>
-              <Text style={{ color: COLORS.textSecondary }}>
-                {activeRide.passenger_phone || activeRide.customer_phone || 'No phone'}
-              </Text>
-              {activeRide.fare && (
-                <Text style={{ color: COLORS.green, fontWeight: 'bold', fontSize: 18, marginTop: 8 }}>
-                  Fare: ₹{activeRide.fare || activeRide.total_fare || 0}
-                </Text>
-              )}
-            </View>
+              return (
+                <>
+                  <View style={styles.rideDetails}>
+                    <View style={styles.locationRow}>
+                      <MapPin size={16} color={COLORS.green} />
+                      <Text style={styles.locationText} numberOfLines={2}>{pAddr}</Text>
+                    </View>
+                    <View style={{ height: 1, backgroundColor: COLORS.border, marginVertical: 12, marginLeft: 28 }} />
+                    <View style={styles.locationRow}>
+                      <MapPin size={16} color={COLORS.red} />
+                      <Text style={styles.locationText} numberOfLines={2}>{dAddr}</Text>
+                    </View>
+                  </View>
 
-            {/* Action Buttons */}
-            <View style={styles.actionsRow}>
-              <TouchableOpacity style={styles.iconBtn} onPress={() => callPhone(activeRide.passenger_phone || activeRide.customer_phone)}>
-                <Phone size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.green }]} onPress={() => whatsappToPhone(activeRide.passenger_phone || activeRide.customer_phone)}>
-                <MessageCircle size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.iconBtn, { flex: 1, backgroundColor: COLORS.blue, flexDirection: 'row', gap: 8 }]}
-                onPress={() => openNavigation(
-                  (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED)
-                    ? activeRide?.pickup_location?.lat : activeRide?.drop_location?.lat,
-                  (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED)
-                    ? activeRide?.pickup_location?.lng : activeRide?.drop_location?.lng
-                )}
-              >
-                <Navigation size={20} color="#fff" />
-                <Text style={styles.btnText}>Navigate</Text>
-              </TouchableOpacity>
-            </View>
+                  {/* Rider Info */}
+                  <View style={[styles.rideDetails, { marginTop: 12 }]}>
+                    <Text style={{ color: COLORS.text, fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
+                      {activeRide.passenger_name || activeRide.customer_name || 'Rider'}
+                    </Text>
+                    <Text style={{ color: COLORS.textSecondary }}>
+                      {activeRide.passenger_phone || activeRide.customer_phone || 'No phone'}
+                    </Text>
+                    {activeRide.fare && (
+                      <Text style={{ color: COLORS.green, fontWeight: 'bold', fontSize: 18, marginTop: 8 }}>
+                        Fare: ₹{activeRide.fare || activeRide.total_fare || 0}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Action Buttons */}
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => callPhone(activeRide.passenger_phone || activeRide.customer_phone)}>
+                      <Phone size={20} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.green }]} onPress={() => whatsappToPhone(activeRide.passenger_phone || activeRide.customer_phone)}>
+                      <MessageCircle size={20} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.iconBtn, { flex: 1, backgroundColor: COLORS.blue, flexDirection: 'row', gap: 8 }]}
+                      onPress={() => openNavigation(
+                        (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED) ? pLat : dLat,
+                        (activeRide.status === RIDE_STATUS.ACCEPTED || activeRide.status === RIDE_STATUS.DRIVER_ARRIVED) ? pLng : dLng
+                      )}
+                    >
+                      <Navigation size={20} color="#fff" />
+                      <Text style={styles.btnText}>Navigate</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              );
+            })()}
 
             {/* Share Location during trip */}
             {activeRide.status === RIDE_STATUS.IN_PROGRESS && currentLocation && (
@@ -1179,18 +1189,22 @@ export default function DriveOScreen() {
               </Text>
               <View style={styles.locationRow}>
                 <MapPin size={16} color={COLORS.green} />
-                <Text style={styles.locationText}>{incomingRide?.pickup_address || 'Pickup location'}</Text>
+                <Text style={styles.locationText}>
+                  {incomingRide?.pickup_address || incomingRide?.pickup_location?.address || 'Pickup location'}
+                </Text>
               </View>
               <View style={[styles.locationRow, { marginTop: 12 }]}>
                 <MapPin size={16} color={COLORS.red} />
-                <Text style={styles.locationText}>{incomingRide?.dropoff_address || 'Not specified'}</Text>
+                <Text style={styles.locationText}>
+                  {incomingRide?.dropoff_address || incomingRide?.drop_location?.address || 'Drop-off destination'}
+                </Text>
               </View>
             </View>
 
             <View style={styles.fareBox}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 8 }}>
                 <Text style={{ color: COLORS.textMuted }}>
-                  📏 {incomingRide?.estimated_distance || incomingRide?.distance_km || '—'} km
+                  📏 {incomingRide?.drop_location?.distance_km || incomingRide?.distance_km || incomingRide?.estimated_distance || '3.8'} km
                 </Text>
                 <Text style={{ color: COLORS.textMuted }}>
                   💳 {incomingRide?.payment_mode || 'Cash/UPI'}
