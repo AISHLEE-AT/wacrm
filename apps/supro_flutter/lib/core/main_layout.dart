@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -15,6 +16,35 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   String? _lastTrackedLocation;
+  Timer? _globalPresenceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startGlobalPresenceHeartbeat();
+  }
+
+  @override
+  void dispose() {
+    _globalPresenceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startGlobalPresenceHeartbeat() {
+    _sendHeartbeat();
+    _globalPresenceTimer = Timer.periodic(const Duration(seconds: 45), (_) => _sendHeartbeat());
+  }
+
+  Future<void> _sendHeartbeat() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) return;
+
+      final nowIso = DateTime.now().toIso8601String();
+      await supabase.from('profiles').update({'updated_at': nowIso}).eq('id', user.id);
+    } catch (_) {}
+  }
 
   void _trackLocation(String location) async {
     // Only track actual core modules

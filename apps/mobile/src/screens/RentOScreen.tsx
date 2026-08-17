@@ -417,6 +417,8 @@ export default function RentOScreen({ navigation }) {
     const baseLat = location.latitude;
     const baseLng = location.longitude;
 
+    const myPhoneClean = (user?.phone || '').replace(/\D/g, '').slice(-10);
+
     const operators = [
       {
         id: 'op1',
@@ -470,10 +472,13 @@ export default function RentOScreen({ navigation }) {
         longitude: baseLng + 0.011,
         distance: '2.1 km away',
       },
-    ];
+    ].filter(op => {
+      const opPhoneClean = op.phone.replace(/\D/g, '').slice(-10);
+      return !myPhoneClean || opPhoneClean !== myPhoneClean;
+    });
 
     setNearbyOperators(operators);
-  }, [location?.latitude, location?.longitude]);
+  }, [location?.latitude, location?.longitude, user?.phone]);
 
   // 3. Update Route & Calculate Fare when tab, item, quantity or coordinates change
   useEffect(() => {

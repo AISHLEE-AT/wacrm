@@ -53,8 +53,11 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     _initDriver();
   }
 
+  Timer? _heartbeatTimer;
+
   @override
   void dispose() {
+    _heartbeatTimer?.cancel();
     _pollingTimer?.cancel();
     _countdownTimer?.cancel();
     _otpController.dispose();
@@ -76,6 +79,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
       await _checkActiveRide();
       _setupRealtimeSubscription();
       _startPendingRidePolling();
+      _startPresenceHeartbeat();
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -252,6 +256,34 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     });
   }
 
+  void _startPresenceHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 45), (_) async {
+      if (!_isOnline || _driverRecord == null) return;
+      try {
+        final nowIso = DateTime.now().toIso8601String();
+        await _supabase
+            .from('drivers')
+            .update({
+              'status': 'online',
+              'is_online': true,
+              'updated_at': nowIso,
+            })
+            .eq('id', _driverRecord!['id']);
+
+        final userId = _supabase.auth.currentUser?.id;
+        if (userId != null) {
+          await _supabase
+              .from('profiles')
+              .update({'updated_at': nowIso})
+              .eq('id', userId);
+        }
+      } catch (e) {
+        debugPrint('Driver presence heartbeat error: $e');
+      }
+    });
+  }
+
   void _triggerIncomingRide(Map<String, dynamic> ride) {
     final id = ride['id']?.toString() ?? '';
     if (_handledRides.contains(id)) return;
@@ -265,6 +297,25 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
           return;
         }
       } catch (_) {}
+    }
+
+    // Exclude self-requests:
+    final passengerPhone = (ride['passenger_phone'] ?? ride['user_phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+    final driverPhone = (_driverRecord?['phone'] ?? _driverRecord?['mobile_number'] ?? _driverRecord?['whatsapp_number'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
+    final currentUserId = _supabase.auth.currentUser?.id;
+
+    if (passengerPhone.isNotEmpty && driverPhone.isNotEmpty) {
+      final p10 = passengerPhone.length >= 10 ? passengerPhone.substring(passengerPhone.length - 10) : passengerPhone;
+      final d10 = driverPhone.length >= 10 ? driverPhone.substring(driverPhone.length - 10) : driverPhone;
+      if (p10 == d10) {
+        _handledRides.add(id);
+        return;
+      }
+    }
+
+    if (ride['user_id'] != null && (ride['user_id'] == currentUserId || ride['user_id'] == _driverRecord?['user_id'])) {
+      _handledRides.add(id);
+      return;
     }
 
     setState(() {

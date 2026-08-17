@@ -319,7 +319,56 @@ export const AppProvider = ({ children }: any) => {
     }
   }, []);
 
+  // ─── USER PRESENCE & ACTIVE SESSION HEARTBEAT (Every 45s) ───
+  useEffect(() => {
+    if (!user?.phone) return;
+    const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+
+    const sendHeartbeat = async () => {
+      try {
+        const nowIso = new Date().toISOString();
+        // 1. Keep profile active in Supabase
+        await supabase
+          .from('profiles')
+          .update({ updated_at: nowIso })
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
+
+        // 2. If user is a driver partner, ensure active online status
+        if (user.role === 'driver' || user.category === 'Driver') {
+          await supabase
+            .from('drivers')
+            .update({ 
+              status: 'online', 
+              is_online: true, 
+              updated_at: nowIso,
+              ...(user.latitude && user.longitude ? {
+                pickup_latitude: user.latitude,
+                pickup_longitude: user.longitude,
+                current_lat: user.latitude,
+                current_lng: user.longitude,
+              } : {})
+            })
+            .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`);
+        }
+      } catch (err) {
+        console.warn('Presence heartbeat error:', err);
+      }
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 45000);
+    return () => clearInterval(interval);
+  }, [user?.phone, user?.role, user?.category, user?.latitude, user?.longitude]);
+
   const signOut = useCallback(async () => {
+    if (user?.phone) {
+      const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+      supabase
+        .from('drivers')
+        .update({ status: 'offline', is_online: false, updated_at: new Date().toISOString() })
+        .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
+        .then(() => {});
+    }
     setUser(null);
     await SecureStore.deleteItemAsync('sb-access-token');
     await SecureStore.deleteItemAsync('sb-refresh-token');
@@ -335,7 +384,7 @@ export const AppProvider = ({ children }: any) => {
     
     // Clear Supabase client session natively
     await supabase.auth.signOut();
-  }, []);
+  }, [user?.phone]);
 
   const addRecentModule = useCallback(async (moduleName: string) => {
     let updated = [moduleName, ...recentModules.filter(m => m !== moduleName)];

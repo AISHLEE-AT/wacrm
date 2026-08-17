@@ -93,6 +93,7 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
     try {
       final supabase = Supabase.instance.client;
       await supabase.from('rento_bookings').insert({
+        'user_id': supabase.auth.currentUser?.id,
         'booking_code': bookingCode,
         'user_name': userName,
         'user_phone': userPhone,
@@ -111,6 +112,7 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
       });
 
       await supabase.from('rides').insert({
+        'user_id': supabase.auth.currentUser?.id,
         'passenger_phone': userPhone,
         'passenger_name': userName,
         'pickup_location': {'lat': 10.7867, 'lng': 79.1378, 'address': userLocation},

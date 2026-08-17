@@ -207,9 +207,17 @@ export default function DriveODashboard() {
         
         if (data) {
           const now = Date.now();
+          const myClean = (currentUser?.phone || profile?.phone || '').replace(/\D/g, '').slice(-10);
           const valid = data.filter((r: any) => {
             const age = now - new Date(r.created_at).getTime();
-            return age < 300000 && !handledRidesRef.current.has(r.id);
+            if (age >= 300000 || handledRidesRef.current.has(r.id)) return false;
+
+            // Exclude self-requests
+            const rPassengerPhone = (r.passenger_phone || r.user_phone || '').replace(/\D/g, '').slice(-10);
+            if (rPassengerPhone && myClean && rPassengerPhone === myClean) return false;
+            if (r.user_id && currentUser?.id && r.user_id === currentUser.id) return false;
+
+            return true;
           });
           setIncomingRequests(valid);
         }
@@ -226,7 +234,11 @@ export default function DriveODashboard() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
         if (allDriverIds.includes(payload.new.driver_id)) {
           const age = Date.now() - new Date(payload.new.created_at).getTime();
-          if (age < 300000 && !handledRidesRef.current.has(payload.new.id)) {
+          const rPassengerPhone = (payload.new.passenger_phone || payload.new.user_phone || '').replace(/\D/g, '').slice(-10);
+          const myClean = (currentUser?.phone || profile?.phone || '').replace(/\D/g, '').slice(-10);
+          const isSelf = (rPassengerPhone && myClean && rPassengerPhone === myClean) || (payload.new.user_id && currentUser?.id && payload.new.user_id === currentUser.id);
+
+          if (age < 300000 && !handledRidesRef.current.has(payload.new.id) && !isSelf) {
             setIncomingRequests((prev) => [payload.new, ...prev.filter((r) => r.id !== payload.new.id)]);
           }
         }

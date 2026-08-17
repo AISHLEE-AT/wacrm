@@ -399,6 +399,15 @@ export default function DriveOScreen() {
         { event: '*', schema: 'public', table: 'rides' },
         (payload) => {
           const row = payload.new || {};
+          const rowPassengerPhone = (row.passenger_phone || row.user_phone || '').replace(/\D/g, '').slice(-10);
+          const isSelfRequest = (rowPassengerPhone && tenDigit && rowPassengerPhone === tenDigit) ||
+                                (row.user_id && driver.user_id && row.user_id === driver.user_id);
+
+          // Never show user's own ride request to themselves
+          if (isSelfRequest) {
+            return;
+          }
+
           const rowDriverPhone = (row.driver_phone || '').replace(/\D/g, '');
           const isAssignedToMe = row.driver_id === driver.id || (rowDriverPhone && (rowDriverPhone.includes(tenDigit) || cleanPhone.includes(rowDriverPhone.slice(-10)))) || !row.driver_id;
 
@@ -480,6 +489,11 @@ export default function DriveOScreen() {
           const matchedRide = pendingList.find((r: any) => {
             if (handledRidesRef.current.has(r.id) || dismissedRidesRef.current.has(r.id)) return false;
             if (r.created_at && (Date.now() - new Date(r.created_at).getTime() > 5 * 60 * 1000)) return false;
+
+            // Exclude self-requests:
+            const rPassengerPhone = (r.passenger_phone || r.user_phone || '').replace(/\D/g, '').slice(-10);
+            if (rPassengerPhone && tenDigit && rPassengerPhone === tenDigit) return false;
+            if (r.user_id && driver.user_id && r.user_id === driver.user_id) return false;
 
             const rDriverPhone = (r.driver_phone || '').replace(/\D/g, '');
             return r.driver_id === driver.id ||

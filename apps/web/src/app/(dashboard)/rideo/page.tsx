@@ -156,6 +156,7 @@ export default function RideOBookingPage() {
       const { data: rideRecord, error } = await supabase
         .from('rides')
         .insert({
+          user_id: userAuth?.user?.id,
           passenger_phone: passengerPhone,
           passenger_name: passengerName,
           pickup_location: {

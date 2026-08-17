@@ -525,11 +525,15 @@ export default function RideOScreen({ navigation }) {
   const findNearbyDrivers = async () => {
     setLoading(true);
     try {
-      // 1. Fetch real online drivers
+      const myPhoneClean = (user?.phone || '').replace(/\D/g, '').slice(-10);
+      const myUserId = user?.id;
+
+      // 1. Fetch real online drivers active in Supabase
       const { data: realDrivers } = await supabase
         .from('drivers')
         .select('*')
-        .eq('status', 'online');
+        .eq('status', 'online')
+        .eq('is_online', true);
 
       // 2. Fetch profiles to sync real names
       const { data: allProfiles } = await supabase
@@ -542,22 +546,34 @@ export default function RideOScreen({ navigation }) {
         if (p.whatsapp) profileMap.set(p.whatsapp.replace(/\D/g, '').slice(-10), p.full_name);
       });
 
-      const processedRealDrivers = (realDrivers || []).map((d: any) => {
-        const dPhone = (d.phone || d.mobile_number || d.whatsapp_number || '').replace(/\D/g, '').slice(-10);
-        const realName = profileMap.get(dPhone) || d.name || 'Verified Partner';
-        return {
-          ...d,
-          name: realName,
-          latitude: d.pickup_latitude || d.current_lat || (location.latitude + (Math.random() - 0.5) * 0.01),
-          longitude: d.pickup_longitude || d.current_lng || (location.longitude + (Math.random() - 0.5) * 0.01),
-        };
-      });
+      const processedRealDrivers = (realDrivers || [])
+        .filter((d: any) => {
+          const dPhone = (d.phone || d.mobile_number || d.whatsapp_number || '').replace(/\D/g, '').slice(-10);
+          // Exclude self-driver
+          if (myPhoneClean && dPhone && dPhone === myPhoneClean) return false;
+          if (myUserId && d.user_id && d.user_id === myUserId) return false;
+          return true;
+        })
+        .map((d: any) => {
+          const dPhone = (d.phone || d.mobile_number || d.whatsapp_number || '').replace(/\D/g, '').slice(-10);
+          const realName = profileMap.get(dPhone) || d.name || 'Verified Partner';
+          return {
+            ...d,
+            name: realName,
+            latitude: d.pickup_latitude || d.current_lat || (location.latitude + (Math.random() - 0.5) * 0.01),
+            longitude: d.pickup_longitude || d.current_lng || (location.longitude + (Math.random() - 0.5) * 0.01),
+          };
+        });
 
+      // Virtual fallback fleet (also excluding current user's phone)
       const virtualDrivers = [
         { id: 'v1', name: 'Partner 1', phone: '9344532738', vehicle_type: 'Sedan', rating: '4.9', latitude: location.latitude + 0.008, longitude: location.longitude + 0.008 },
         { id: 'v2', name: 'Partner 2', phone: '9123596988', vehicle_type: 'SUV', rating: '4.8', latitude: location.latitude - 0.008, longitude: location.longitude - 0.008 },
         { id: 'v3', name: 'Partner 3', phone: '9486335870', vehicle_type: 'Mini', rating: '4.95', latitude: location.latitude + 0.012, longitude: location.longitude - 0.012 }
-      ];
+      ].filter(vd => {
+        const vdPhone = vd.phone.replace(/\D/g, '').slice(-10);
+        return !myPhoneClean || vdPhone !== myPhoneClean;
+      });
 
       const mergedData = [...processedRealDrivers, ...virtualDrivers];
 
