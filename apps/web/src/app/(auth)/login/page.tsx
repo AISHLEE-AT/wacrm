@@ -161,6 +161,9 @@ function LoginPageInner() {
           setIsExistingUser(true);
           setFullName(data.name || data.full_name || "");
           if (data.category) setCategory(data.category);
+          if (data.has_pin) {
+            setStep('pin');
+          }
         } else {
           setIsExistingUser(false);
         }
