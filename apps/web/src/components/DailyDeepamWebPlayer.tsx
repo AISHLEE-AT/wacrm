@@ -230,9 +230,12 @@ export default function DailyDeepamWebPlayer({
       </p>
 
       {/* Video Container with aggressive CSS cropping to hide YouTube top branding & controls */}
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-emerald-500/20 shadow-inner group">
+      <div 
+        onClick={resumePlay}
+        className="relative w-full aspect-video rounded-xl overflow-hidden bg-black border border-emerald-500/20 shadow-inner group cursor-pointer"
+      >
         {isLoading && (
-          <div className="absolute inset-0 bg-[#0a0f1e]/90 flex flex-col items-center justify-center gap-2 z-20">
+          <div className="absolute inset-0 bg-[#0a0f1e]/90 flex flex-col items-center justify-center gap-2 z-20 pointer-events-none">
             <div className="animate-spin h-6 w-6 border-2 border-emerald-400 border-t-transparent rounded-full" />
             <span className="text-xs text-emerald-400 font-bold">Starting Daily Broadcast...</span>
           </div>
@@ -244,14 +247,14 @@ export default function DailyDeepamWebPlayer({
         </div>
 
         {/* Custom Clean Overlay Controls */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
           {!isPlaying && !isLoading && !hasEnded && (
             <button
               type="button"
-              onClick={resumePlay}
-              className="p-4 rounded-full bg-emerald-500/90 text-white shadow-lg hover:scale-110 transition flex items-center justify-center pointer-events-auto"
+              onClick={(e) => { e.stopPropagation(); resumePlay(); }}
+              className="p-4 rounded-full bg-emerald-500/90 hover:bg-emerald-400 text-white shadow-xl hover:scale-110 active:scale-95 transition flex items-center justify-center pointer-events-auto"
             >
-              <Play className="w-6 h-6 fill-white" />
+              <Play className="w-7 h-7 fill-white translate-x-0.5" />
             </button>
           )}
         </div>
@@ -260,7 +263,7 @@ export default function DailyDeepamWebPlayer({
         {!isLoading && !hasEnded && (
           <button
             type="button"
-            onClick={toggleSound}
+            onClick={(e) => { e.stopPropagation(); toggleSound(); }}
             className="absolute top-2 right-2 z-20 px-2.5 py-1 rounded-full bg-black/70 hover:bg-black/90 text-white text-[11px] font-bold border border-white/20 backdrop-blur-md flex items-center gap-1.5 transition pointer-events-auto shadow-md"
           >
             {isMuted ? (
@@ -279,7 +282,7 @@ export default function DailyDeepamWebPlayer({
 
         {/* Completion Transition Overlay */}
         {hasEnded && (
-          <div className="absolute inset-0 bg-[#0a0f1e]/95 flex flex-col items-center justify-center gap-1.5 z-30 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-[#0a0f1e]/95 flex flex-col items-center justify-center gap-1.5 z-30 animate-in fade-in duration-300 pointer-events-none">
             <CheckCircle2 className="w-10 h-10 text-emerald-400 animate-bounce" />
             <span className="text-sm font-bold text-white">Broadcast Completed</span>
             <span className="text-xs text-emerald-400 font-medium">Entering SuprO Login...</span>
