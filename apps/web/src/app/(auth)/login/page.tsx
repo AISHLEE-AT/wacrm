@@ -154,16 +154,13 @@ function LoginPageInner() {
     if (cleaned.length === 10) {
       setIsChecking(true);
       try {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, main_category, role, pin_hash")
-          .eq("phone", cleaned)
-          .maybeSingle();
+        const res = await fetch(`/api/auth/check?phone=${cleaned}`);
+        const data = await res.json();
 
-        if (profile) {
+        if (data.exists) {
           setIsExistingUser(true);
-          setFullName(profile.full_name || "");
-          if (profile.main_category) setCategory(profile.main_category);
+          setFullName(data.name || data.full_name || "");
+          if (data.category) setCategory(data.category);
         } else {
           setIsExistingUser(false);
         }

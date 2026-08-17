@@ -164,7 +164,6 @@ class _AdminScreenState extends State<AdminScreen> {
           BottomNavigationBarItem(icon: Icon(LucideIcons.car), label: 'Live Rides'),
           BottomNavigationBarItem(icon: Icon(LucideIcons.users), label: 'Drivers'),
           BottomNavigationBarItem(icon: Icon(LucideIcons.megaphone), label: 'Broadcast'),
-          BottomNavigationBarItem(icon: Icon(LucideIcons.newspaper), label: 'Daily News'),
         ],
       ),
     );
@@ -180,8 +179,6 @@ class _AdminScreenState extends State<AdminScreen> {
         return _buildDriversTab();
       case 3:
         return _buildBroadcastTab();
-      case 4:
-        return const AdminDailyNewsTab();
       default:
         return Container();
     }

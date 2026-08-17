@@ -979,6 +979,7 @@ export default function RentOScreen({ navigation }) {
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
+          provider={PROVIDER_GOOGLE}
           showsUserLocation={true}
           showsMyLocationButton={false}
           showsCompass={true}

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class DailyDeepamVideoPlayer extends StatefulWidget {
@@ -46,6 +47,11 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
 
     _skipTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _canSkip = true);
+    });
+
+    // Dismiss loading overlay quickly so video is visible immediately
+    Timer(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _isLoading = false);
     });
 
     final String htmlContent = '''
@@ -142,7 +148,12 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                         e.target.unMute();
                         e.target.setVolume(100);
                         e.target.playVideo();
-                      } catch(err) {}
+                      } catch(err) {
+                        try {
+                          e.target.mute();
+                          e.target.playVideo();
+                        } catch(_) {}
+                      }
                       notifyFlutter('READY');
                     },
                     'onStateChange': function(e) {
@@ -168,7 +179,9 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                     }
                   }
                 });
-              } catch(err) {}
+              } catch(err) {
+                notifyFlutter('ERROR');
+              }
             }
           </script>
         </body>
@@ -180,7 +193,14 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
       ..setBackgroundColor(const Color(0xFF0A0F1E))
       ..setUserAgent(
         'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-      )
+      );
+
+    if (_controller.platform is AndroidWebViewController) {
+      final androidController = _controller.platform as AndroidWebViewController;
+      androidController.setMediaPlaybackRequiresUserGesture(false);
+    }
+
+    _controller
       ..addJavaScriptChannel(
         'FlutterDeepamBridge',
         onMessageReceived: (JavaScriptMessage message) {
@@ -228,39 +248,40 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1526),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF10B981).withValues(alpha: 0.3),
-        ),
-        boxShadow: [
+        color: const Color(0xFF0E1628),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0x4D10B981)),
+        boxShadow: const [
           BoxShadow(
-            color: const Color(0xFF10B981).withValues(alpha: 0.08),
+            color: Color(0x1A10B981),
             blurRadius: 16,
             spreadRadius: 2,
           ),
         ],
       ),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Banner Header
+          // Header Row with glowing sparkles
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ScaleTransition(
                 scale: _pulseAnimation,
-                child: const Icon(LucideIcons.sparkles, color: Color(0xFFFBBF24), size: 14),
+                child: const Icon(
+                  LucideIcons.sparkles,
+                  color: Color(0xFFFBBF24),
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 8),
               const Text(
-                "✦ TODAY'S SUPRO DEEPAM BROADCAST ✦",
+                '✦ TODAY\'S SUPRO DEEPAM BROADCAST ✦',
                 style: TextStyle(
                   color: Color(0xFFFBBF24),
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.8,
                 ),
@@ -268,32 +289,40 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
               const SizedBox(width: 8),
               ScaleTransition(
                 scale: _pulseAnimation,
-                child: const Icon(LucideIcons.sparkles, color: Color(0xFFFBBF24), size: 14),
+                child: const Icon(
+                  LucideIcons.sparkles,
+                  color: Color(0xFFFBBF24),
+                  size: 16,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 4),
+
+          // Subtitle / Video topic
           Text(
             widget.videoTitle ?? 'SuprO commercial ad #suprotrailer #suprotec #supro',
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
+            style: const TextStyle(
+              color: Color(0xFF94A3B8),
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 10),
 
-          // Video Container
+          // Video Container with 16:9 Aspect Ratio
           AspectRatio(
             aspectRatio: 16 / 9,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               child: Stack(
                 children: [
                   WebViewWidget(controller: _controller),
+
+                  // Loading State Overlay
                   if (_isLoading)
                     Container(
                       color: const Color(0xFF0A0F1E),
@@ -302,14 +331,14 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(
-                              width: 24,
-                              height: 24,
+                              width: 28,
+                              height: 28,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: 2.5,
                                 color: Color(0xFF10B981),
                               ),
                             ),
-                            SizedBox(height: 8),
+                            SizedBox(height: 10),
                             Text(
                               'Starting Daily Broadcast...',
                               style: TextStyle(
@@ -322,14 +351,20 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                         ),
                       ),
                     ),
+
+                  // Broadcast Completed Overlay
                   if (_hasEnded)
                     Container(
-                      color: const Color(0xFF0A0F1E).withValues(alpha: 0.95),
+                      color: const Color(0xF00A0F1E),
                       child: const Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(LucideIcons.circleCheck, color: Color(0xFF10B981), size: 32),
+                            Icon(
+                              LucideIcons.circleCheck,
+                              color: Color(0xFF10B981),
+                              size: 32,
+                            ),
                             SizedBox(height: 6),
                             Text(
                               'Broadcast Completed',
@@ -340,7 +375,7 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                               ),
                             ),
                             Text(
-                              'Entering SuprO...',
+                              'Login Unlocked!',
                               style: TextStyle(
                                 color: Color(0xFF10B981),
                                 fontSize: 11,
@@ -354,9 +389,9 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
-          // Action row
+          // Bottom Action Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -381,18 +416,17 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                   ),
                 ],
               ),
+
               if (_canSkip && !_hasEnded)
                 InkWell(
                   onTap: _triggerFinish,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                      ),
+                      color: const Color(0x3310B981),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0x6610B981)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -406,7 +440,11 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                           ),
                         ),
                         SizedBox(width: 4),
-                        Icon(LucideIcons.arrowRight, color: Color(0xFF6EE7B7), size: 12),
+                        Icon(
+                          LucideIcons.arrowRight,
+                          color: Color(0xFF6EE7B7),
+                          size: 13,
+                        ),
                       ],
                     ),
                   ),

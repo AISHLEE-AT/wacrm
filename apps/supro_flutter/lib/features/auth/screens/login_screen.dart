@@ -192,7 +192,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         category: _isExistingUser == false ? _category : null,
       );
 
-      if (res['needs_pin_setup'] == true) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_phone', _phoneController.text.replaceAll(RegExp(r'\D'), ''));
+      await prefs.setString('last_whatsapp_sync_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
+      await prefs.setBool('onboarding_complete', true);
+
+      if (res['needs_pin_setup'] == true || res['hasPin'] == false) {
         setState(() => _step = AuthStep.setPin);
       } else {
         if (mounted) context.go('/startup');
@@ -214,6 +219,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         phone: _phoneController.text.replaceAll(RegExp(r'\D'), ''),
         pin: cleanPin,
       );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_phone', _phoneController.text.replaceAll(RegExp(r'\D'), ''));
+      await prefs.setString('last_whatsapp_sync_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
+      await prefs.setBool('onboarding_complete', true);
+
       if (mounted) context.go('/startup');
     } catch (e) {
       if (mounted) {
@@ -227,7 +238,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void _setPin() async {
     final cleanNew = _newPinController.text.replaceAll(RegExp(r'\D'), '');
     final cleanConfirm = _confirmPinController.text.replaceAll(RegExp(r'\D'), '');
-    if (cleanNew.length != 4 || cleanNew != cleanConfirm) return;
+    if (cleanNew.length != 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(backgroundColor: Colors.redAccent, content: Text('PIN must be 4 digits')),
+      );
+      return;
+    }
+    if (cleanNew != cleanConfirm) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(backgroundColor: Colors.redAccent, content: Text('PINs do not match')),
+      );
+      return;
+    }
 
     try {
       await ref.read(authControllerProvider.notifier).setPin(
@@ -235,6 +257,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         pin: cleanNew,
         confirmPin: cleanConfirm,
       );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_phone', _phoneController.text.replaceAll(RegExp(r'\D'), ''));
+      await prefs.setString('last_whatsapp_sync_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
+      await prefs.setBool('onboarding_complete', true);
+
       if (mounted) context.go('/startup');
     } catch (e) {
       if (mounted) {
@@ -544,6 +572,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           const SizedBox(height: 6),
           TextField(
             controller: _nameController,
+            onChanged: (val) => setState(() {}),
             style: const TextStyle(color: Colors.white, fontSize: 14),
             decoration: InputDecoration(
               hintText: 'Your Full Name',
@@ -670,7 +699,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         // Send OTP Button
         ElevatedButton.icon(
-          onPressed: (clean.length != 10 || _isChecking || isVideoLocked || isLoading)
+          onPressed: (clean.length != 10 ||
+                  (_isExistingUser == false && _nameController.text.trim().isEmpty) ||
+                  _isChecking ||
+                  isVideoLocked ||
+                  isLoading)
               ? null
               : _requestOtp,
           style: ElevatedButton.styleFrom(
@@ -717,6 +750,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildOtpStep(bool isLoading) {
+    final cleanOtp = _otpController.text.replaceAll(RegExp(r'\D'), '');
+
     return Column(
       key: const ValueKey('otp_step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -736,6 +771,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
+          onChanged: (val) {
+            setState(() {});
+            final digits = val.replaceAll(RegExp(r'\D'), '');
+            if (digits.length == 6) {
+              _verifyOtp();
+            }
+          },
           style: const TextStyle(
             color: Colors.white,
             fontSize: 22,
@@ -762,9 +804,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 16),
         ElevatedButton(
-          onPressed: isLoading || _otpController.text.length != 6 ? null : _verifyOtp,
+          onPressed: (isLoading || cleanOtp.length != 6) ? null : _verifyOtp,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF10B981),
+            disabledBackgroundColor: const Color(0xFF1E293B),
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -788,6 +832,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildPinStep(bool isLoading) {
+    final cleanPin = _pinController.text.replaceAll(RegExp(r'\D'), '');
+
     return Column(
       key: const ValueKey('pin_step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -808,6 +854,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           maxLength: 4,
           obscureText: !_showPin,
           textAlign: TextAlign.center,
+          onChanged: (val) {
+            setState(() {});
+            final digits = val.replaceAll(RegExp(r'\D'), '');
+            if (digits.length == 4) {
+              _loginWithPin();
+            }
+          },
           style: const TextStyle(
             color: Colors.white,
             fontSize: 22,
@@ -842,9 +895,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 16),
         ElevatedButton(
-          onPressed: isLoading || _pinController.text.length != 4 ? null : _loginWithPin,
+          onPressed: (isLoading || cleanPin.length != 4) ? null : _loginWithPin,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFFBBF24),
+            disabledBackgroundColor: const Color(0xFF1E293B),
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -869,6 +923,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildSetPinStep(bool isLoading) {
+    final cleanNew = _newPinController.text.replaceAll(RegExp(r'\D'), '');
+    final cleanConfirm = _confirmPinController.text.replaceAll(RegExp(r'\D'), '');
+
     return Column(
       key: const ValueKey('set_pin_step'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -915,6 +972,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           maxLength: 4,
           obscureText: true,
           textAlign: TextAlign.center,
+          onChanged: (val) => setState(() {}),
           style: const TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -947,6 +1005,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           maxLength: 4,
           obscureText: true,
           textAlign: TextAlign.center,
+          onChanged: (val) => setState(() {}),
           style: const TextStyle(
             color: Colors.white,
             fontSize: 20,
@@ -965,9 +1024,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 16),
         ElevatedButton(
-          onPressed: isLoading || _newPinController.text.length != 4 ? null : _setPin,
+          onPressed: (isLoading || cleanNew.length != 4 || cleanConfirm.length != 4) ? null : _setPin,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFFBBF24),
+            disabledBackgroundColor: const Color(0xFF1E293B),
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

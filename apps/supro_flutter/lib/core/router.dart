@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'main_layout.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
@@ -30,7 +31,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/startup',
     redirect: (context, state) {
-      final bool loggedIn = authState.value?.session != null;
+      final bool loggedIn = (authState.value?.session != null) ||
+          (Supabase.instance.client.auth.currentSession != null);
       final bool loggingIn = state.matchedLocation == '/login';
       final bool isStartup = state.matchedLocation == '/startup';
 
