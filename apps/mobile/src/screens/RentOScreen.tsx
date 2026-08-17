@@ -980,25 +980,23 @@ export default function RentOScreen({ navigation }) {
         </View>
       </View>
 
-      {/* ─── INTERACTIVE FULLSCREEN MAP CONTAINER ─── */}
-      <View style={styles.mapContainer}>
-        <MapView
-          ref={mapRef}
-          provider={PROVIDER_GOOGLE}
-          showsUserLocation={true}
-          showsMyLocationButton={false}
-          showsCompass={true}
-          showsScale={true}
-          customMapStyle={mapStyleDark}
-          style={styles.map}
-          initialRegion={{
-            latitude: location?.latitude || 11.9401,
-            longitude: location?.longitude || 79.8083,
-            latitudeDelta: 0.08,
-            longitudeDelta: 0.08,
-          }}
-          onPress={handleMapPress}
-        >
+      {/* ─── INTERACTIVE FULLSCREEN MAP ─── */}
+      <MapView
+        ref={mapRef}
+        provider={PROVIDER_GOOGLE}
+        showsUserLocation={true}
+        showsMyLocationButton={false}
+        showsCompass={true}
+        showsScale={true}
+        style={styles.map}
+        initialRegion={{
+          latitude: location?.latitude || 11.9401,
+          longitude: location?.longitude || 79.8083,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        }}
+        onPress={handleMapPress}
+      >
           {/* Pickup Marker (Farm Field) */}
           <Marker
             coordinate={location}
@@ -1120,7 +1118,6 @@ export default function RentOScreen({ navigation }) {
             <Crosshair size={20} color="#000" />
           </TouchableOpacity>
         </View>
-      </View>
 
       {/* ─── 1. COMPACT FLOATING BOTTOM BAR (~20% screen height) ─── */}
       {bookingState === 'IDLE' && !isOptionsExpanded && (
@@ -1900,12 +1897,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ef444460',
   },
-  mapContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0a0f1e',
-  },
   map: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
   },
   pickupMarker: {
     backgroundColor: '#10b981',
