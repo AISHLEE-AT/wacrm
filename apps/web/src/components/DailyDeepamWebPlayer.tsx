@@ -245,7 +245,7 @@ export default function DailyDeepamWebPlayer({
   }, [videoId]);
 
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://watscrm.vercel.app';
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&muted=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${originUrl}`;
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${originUrl}`;
 
   return (
     <div className="bg-[#0e1628] border border-emerald-500/30 rounded-2xl p-4 shadow-2xl overflow-hidden space-y-3">
@@ -270,7 +270,7 @@ export default function DailyDeepamWebPlayer({
         {isLoading && (
           <div className="absolute inset-0 bg-[#0a0f1e]/90 flex flex-col items-center justify-center gap-2 z-20 pointer-events-none">
             <div className="animate-spin h-6 w-6 border-2 border-emerald-400 border-t-transparent rounded-full" />
-            <span className="text-xs text-emerald-400 font-bold">Starting Daily Broadcast...</span>
+            <span className="text-xs text-emerald-400 font-bold">Starting Daily Broadcast with Audio...</span>
           </div>
         )}
 
@@ -284,13 +284,23 @@ export default function DailyDeepamWebPlayer({
             className="w-full h-full border-0"
             onLoad={() => {
               setIsLoading(false);
-              sendCommand('mute');
+              sendCommand('unMute');
+              sendCommand('setVolume', [100]);
               sendCommand('playVideo');
+              setIsMuted(false);
               setTimeout(() => {
                 if (!playerRef.current && window.YT?.Player) {
                   try {
                     playerRef.current = new window.YT.Player('deepam-web-player', {
                       events: {
+                        onReady: (e: any) => {
+                          try {
+                            e.target.unMute();
+                            e.target.setVolume(100);
+                            e.target.playVideo();
+                            setIsMuted(false);
+                          } catch (_) {}
+                        },
                         onStateChange: (e: any) => {
                           if (e.data === 1) {
                             setIsLoading(false);
