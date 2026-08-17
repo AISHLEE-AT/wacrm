@@ -10,23 +10,83 @@ const endpoints = {
 
 export const API = {
   checkUser: async (phone: string) => {
-    // 1. Check vercel API
-    const res = await fetch(`${endpoints.authCheck}?phone=${phone}`);
-    const data = await res.json();
-    
-    // 2. Fetch API key directly from Supabase to bypass outdated Vercel endpoints
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE";
+
+    // 1. Try Vercel API with 2.5s timeout
     try {
-      const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE";
-      const spRes = await fetch(`https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/profiles?phone=eq.${phone}&select=gemini_api_key`, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const res = await fetch(`${endpoints.authCheck}?phone=${cleanPhone}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.exists) {
+          return data;
+        }
+      }
+    } catch (_) {
+      // Fallback to direct Supabase query
+    }
+
+    // 2. Direct Supabase Query (100% offline-resilient & checks all phone formats)
+    try {
+      const spUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/profiles?or=(phone.ilike.*${cleanPhone}*,whatsapp.ilike.*${cleanPhone}*)&select=id,full_name,main_category,role,pin_hash,gemini_api_key,whatsapp_window_expires_at,is_whatsapp_session_active&order=updated_at.desc&limit=1`;
+      const spRes = await fetch(spUrl, {
         headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
       });
       const spData = await spRes.json();
-      if (spData && spData.length > 0 && spData[0].gemini_api_key) {
-        data.gemini_api_key = spData[0].gemini_api_key;
+      
+      if (Array.isArray(spData) && spData.length > 0) {
+        const profile = spData[0];
+        const expiresAt = profile.whatsapp_window_expires_at;
+        const isWindowActive = expiresAt ? new Date(expiresAt).getTime() > Date.now() : (profile.is_whatsapp_session_active || false);
+        const hoursRemaining = expiresAt ? Math.max(0, Math.round(((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0;
+
+        return {
+          exists: true,
+          id: profile.id,
+          name: profile.full_name || 'SuprO User',
+          full_name: profile.full_name || 'SuprO User',
+          category: profile.main_category || 'Traveller',
+          role: profile.role || 'user',
+          has_pin: !!profile.pin_hash,
+          gemini_api_key: profile.gemini_api_key,
+          is_whatsapp_session_active: isWindowActive,
+          whatsapp_window_expires_at: expiresAt,
+          whatsapp_hours_remaining: hoursRemaining,
+        };
       }
-    } catch (e) {}
-    
-    return data;
+
+      // Also check drivers table in case user registered as driver
+      const drvUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/drivers?or=(phone.ilike.*${cleanPhone}*,mobile_number.ilike.*${cleanPhone}*,whatsapp_number.ilike.*${cleanPhone}*)&select=id,name,vehicle_type,is_whatsapp_active&limit=1`;
+      const drvRes = await fetch(drvUrl, {
+        headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
+      });
+      const drvData = await drvRes.json();
+      if (Array.isArray(drvData) && drvData.length > 0) {
+        return {
+          exists: true,
+          id: drvData[0].id,
+          name: drvData[0].name || 'Driver Partner',
+          full_name: drvData[0].name || 'Driver Partner',
+          category: 'Driver',
+          role: 'driver',
+          has_pin: false,
+          is_whatsapp_session_active: drvData[0].is_whatsapp_active || false,
+        };
+      }
+    } catch (e) {
+      console.error('Supabase direct check error:', e);
+    }
+
+    return {
+      exists: false,
+      category: 'Traveller',
+      role: 'user',
+      has_pin: false,
+      is_whatsapp_session_active: false
+    };
   },
   
   verifyOtp: async (phone: string, otp: string, fullName?: string, category?: string) => {
