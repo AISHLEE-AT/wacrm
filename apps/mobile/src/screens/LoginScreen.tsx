@@ -101,24 +101,23 @@ export default function LoginScreen({ navigation }: any) {
         const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
         const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 24 * 60 * 60 * 1000;
 
-        if (!isWindowExpired) {
-          // Active 24h session is valid — auto-login directly to Dashboard without asking for login
-          await SecureStore.setItemAsync('onboarding-complete', 'true');
-          navigation.replace('Dashboard');
-          return;
-        }
+        if (!isWindowExpired || savedToken) {
+          // Allow fast biometric authentication if available
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-        // Allow fast biometric authentication if available
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          if (hasHardware && isEnrolled) {
+            const result = await LocalAuthentication.authenticateAsync({
+              promptMessage: 'Login to SuprO',
+              fallbackLabel: 'Use PIN',
+            });
 
-        if (hasHardware && isEnrolled) {
-          const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: 'Login to SuprO',
-            fallbackLabel: 'Use PIN',
-          });
-
-          if (result.success) {
+            if (result.success) {
+              await SecureStore.setItemAsync('onboarding-complete', 'true');
+              navigation.replace('Dashboard');
+              return;
+            }
+          } else {
             await SecureStore.setItemAsync('onboarding-complete', 'true');
             navigation.replace('Dashboard');
             return;
@@ -152,6 +151,10 @@ export default function LoginScreen({ navigation }: any) {
           if (data.category) setCategory(data.category);
           if (data.role) await SecureStore.setItemAsync('user-role', data.role);
           if (data.gemini_api_key) await SecureStore.setItemAsync('gemini-api-key', data.gemini_api_key);
+          if (data.is_whatsapp_session_active) {
+            await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
+            setIs23hSyncRequired(false);
+          }
           if (data.has_pin) {
             setStep('pin');
           }

@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     // Profiles table query
     const { data: profile, error } = await admin
       .from('profiles')
-      .select('id, full_name, main_category, role, pin_hash, gemini_api_key, upi_id, avatar_url, location, latitude, longitude, city, state, country, pincode, profile_complete')
+      .select('id, full_name, main_category, role, pin_hash, gemini_api_key, upi_id, avatar_url, location, latitude, longitude, city, state, country, pincode, profile_complete, whatsapp_last_active_at, whatsapp_window_expires_at, is_whatsapp_session_active')
       .or(`phone.eq.${phone},phone.eq.91${phone},whatsapp.eq.${phone},whatsapp.eq.91${phone}`)
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     const cleanPhone = phone.slice(-10)
     const { data: driverRow } = await admin
       .from('drivers')
-      .select('id, upi_id, vehicle_type, vehicle_model, vehicle_number')
+      .select('id, upi_id, vehicle_type, vehicle_model, vehicle_number, is_whatsapp_active, whatsapp_last_active_at')
       .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
       .limit(1)
       .maybeSingle()
@@ -44,6 +44,11 @@ export async function GET(request: Request) {
     const resolvedRole = isDriverPartner ? 'driver' : (profile?.role || 'user')
     const resolvedCategory = isDriverPartner ? 'Driver' : (profile?.main_category || 'Traveller')
     const resolvedUpi = profile?.upi_id || driverRow?.upi_id || ''
+
+    // Compute Meta 24-hour customer service window status
+    const expiresAt = profile?.whatsapp_window_expires_at || null
+    const isWindowActive = expiresAt ? new Date(expiresAt).getTime() > Date.now() : (profile?.is_whatsapp_session_active || false)
+    const hoursRemaining = expiresAt ? Math.max(0, Math.round(((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0
 
     if (profile || driverRow) {
       // Self-heal profile if user is driver partner but profile had legacy category
@@ -63,6 +68,9 @@ export async function GET(request: Request) {
         category: resolvedCategory, 
         role: resolvedRole, 
         has_pin: !!profile?.pin_hash,
+        is_whatsapp_session_active: isWindowActive,
+        whatsapp_window_expires_at: expiresAt,
+        whatsapp_hours_remaining: hoursRemaining,
         gemini_api_key: profile?.gemini_api_key,
         upi_id: resolvedUpi,
         avatar_url: profile?.avatar_url || '',
@@ -81,7 +89,10 @@ export async function GET(request: Request) {
       exists: false, 
       category: 'Traveller', 
       role: 'user', 
-      has_pin: false 
+      has_pin: false,
+      is_whatsapp_session_active: false,
+      whatsapp_window_expires_at: null,
+      whatsapp_hours_remaining: 0
     })
   } catch (err: any) {
     return NextResponse.json({ exists: false, error: err.message })

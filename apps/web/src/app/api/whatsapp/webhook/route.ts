@@ -600,12 +600,79 @@ async function processMessage(
     return
   }
 
+  // -- META 24-HOUR CUSTOMER SERVICE WINDOW STAMPING --
+  const nowIso = new Date().toISOString();
+  const windowExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const clean10Phone = senderPhone.slice(-10);
+
+  // Asynchronously update profiles, contacts, and drivers so webhook response is never delayed
+  ;(async () => {
+    try {
+      await supabaseAdmin()
+        .from('profiles')
+        .update({
+          whatsapp_last_active_at: nowIso,
+          whatsapp_window_expires_at: windowExpiresAt,
+          is_whatsapp_session_active: true,
+          updated_at: nowIso,
+        })
+        .or(`phone.ilike.%${clean10Phone}%,whatsapp.ilike.%${clean10Phone}%`);
+
+      await supabaseAdmin()
+        .from('contacts')
+        .update({
+          last_active_at: nowIso,
+          whatsapp_window_expires_at: windowExpiresAt,
+          updated_at: nowIso,
+        })
+        .eq('id', contactRecord.id);
+
+      await supabaseAdmin()
+        .from('drivers')
+        .update({
+          is_whatsapp_active: true,
+          whatsapp_last_active_at: nowIso,
+          updated_at: nowIso,
+        })
+        .or(`phone.ilike.%${clean10Phone}%,mobile_number.ilike.%${clean10Phone}%,whatsapp_number.ilike.%${clean10Phone}%`);
+    } catch (e) {
+      console.error('[webhook] Error stamping 24h WhatsApp window:', e);
+    }
+  })();
   // Parse message content based on type
   const { contentText, mediaUrl, mediaType, interactiveReplyId } =
     await parseMessageContent(message, accessToken)
 
+  // -- 24H DAILY SYNC / KEEP-ALIVE HOOK --
+  if (contentText && (
+    contentText.includes('Keep-Alive') || 
+    contentText.includes('Daily Sync') || 
+    contentText.includes('24h') ||
+    contentText.includes('Check-in')
+  )) {
+    await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: senderPhone,
+        type: 'text',
+        text: {
+          body: `✅ SuprO 24-Hour Active Session is renewed! 🎉\n\nYou now have full real-time access to RideO, RentO, Agro, and DriveO updates for the next 24 hours.`
+        }
+      })
+    }).catch(err => console.error('Failed to send daily sync confirmation:', err));
+
+    return; // Keep-alive handled, skip polluting inbox
+  }
+  // ---------------------------------------
+
   // -- OTP AUTHENTICATION HOOK --
-  if (contentText && contentText.trim() === 'Requesting OTP for Login') {
+  if (contentText && (contentText.trim() === 'Requesting OTP for Login' || contentText.includes('Request OTP'))) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
     

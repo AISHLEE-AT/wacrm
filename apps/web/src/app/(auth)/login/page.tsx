@@ -48,6 +48,8 @@ function LoginPageInner() {
   const [loading, setLoading] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [isWhatsAppActive, setIsWhatsAppActive] = useState<boolean>(false);
+  const [whatsAppHoursRemaining, setWhatsAppHoursRemaining] = useState<number>(0);
   const [pendingSession, setPendingSession] = useState<any>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string>('/rideo');
   const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
@@ -161,11 +163,14 @@ function LoginPageInner() {
           setIsExistingUser(true);
           setFullName(data.name || data.full_name || "");
           if (data.category) setCategory(data.category);
+          setIsWhatsAppActive(!!data.is_whatsapp_session_active);
+          setWhatsAppHoursRemaining(data.whatsapp_hours_remaining || 0);
           if (data.has_pin) {
             setStep('pin');
           }
         } else {
           setIsExistingUser(false);
+          setIsWhatsAppActive(false);
         }
       } catch (err) {
         console.error("Profile check error:", err);
@@ -174,6 +179,15 @@ function LoginPageInner() {
         setIsChecking(false);
       }
     }
+  };
+
+  const handleDailyWhatsAppSync = () => {
+    const text = encodeURIComponent(
+      `SuprO 24h Daily Sync for +91${phone} 🔔`
+    );
+    window.open(`https://wa.me/${wabaPhone}?text=${text}`, "_blank");
+    setIsWhatsAppActive(true);
+    setWhatsAppHoursRemaining(24);
   };
 
   const requestOtp = async () => {
@@ -568,6 +582,27 @@ function LoginPageInner() {
                       </div>
                     </div>
                   )}
+
+                  {/* 24-Hour WhatsApp Session Status / Daily Check-in */}
+                  {isWhatsAppActive ? (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-emerald-300 font-bold">WhatsApp 24h Active Session</span>
+                      </div>
+                      <span className="text-emerald-400 font-mono text-[11px] font-semibold">{whatsAppHoursRemaining}h remaining</span>
+                    </div>
+                  ) : isExistingUser ? (
+                    <button
+                      type="button"
+                      onClick={handleDailyWhatsAppSync}
+                      className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2 transition shadow-sm"
+                    >
+                      <MessageCircle className="w-4 h-4 text-emerald-400" />
+                      <span>📲 1-Tap WhatsApp Daily Check-in (Keep 24h CRM Active)</span>
+                    </button>
+                  ) : null}
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">4-Digit Secure PIN</label>
                     <div className="relative flex items-center">
@@ -578,15 +613,18 @@ function LoginPageInner() {
                         className="w-full bg-[#111c35] border border-amber-500/30 rounded-xl text-white pl-12 pr-4 py-3.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal font-mono"
                         required />
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">Use your PIN set during registration. If you forgot it, login via WhatsApp OTP.</p>
+                    <p className="text-xs text-gray-500 mt-2">Use your secret 4-digit PIN for instant access.</p>
                   </div>
                   <button type="submit" disabled={loading || pin.length !== 4}
                     className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50 text-base">
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
                     Sign In with PIN
                   </button>
+                  <button type="button" onClick={() => { setError(null); requestOtp(); }} className="w-full text-center text-xs text-gray-500 hover:text-emerald-400 transition-colors">
+                    Forgot PIN? Login via WhatsApp OTP instead
+                  </button>
                   <button type="button" onClick={() => { setError(null); setStep('phone'); }} className="w-full text-center text-sm text-gray-400 hover:text-white transition-colors">
-                    ← Go back
+                    ← Change Number
                   </button>
                 </motion.form>
               )}
