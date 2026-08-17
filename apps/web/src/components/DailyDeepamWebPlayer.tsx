@@ -31,6 +31,15 @@ export default function DailyDeepamWebPlayer({
   const playerRef = useRef<any>(null);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const sendCommand = (func: string, args: any = '') => {
+    try {
+      const iframe = document.getElementById('deepam-web-player') as HTMLIFrameElement;
+      if (iframe?.contentWindow) {
+        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+      }
+    } catch (_) {}
+  };
+
   const triggerFinish = () => {
     if (isEndingRef.current) return;
     isEndingRef.current = true;
@@ -44,39 +53,54 @@ export default function DailyDeepamWebPlayer({
   };
 
   const attemptUnmute = () => {
-    if (!playerRef.current) return;
-    try {
-      playerRef.current.unMute();
-      playerRef.current.setVolume(100);
-      if (!playerRef.current.isMuted()) {
-        setIsMuted(false);
-      }
-    } catch (_) {}
+    sendCommand('unMute');
+    sendCommand('setVolume', [100]);
+    if (playerRef.current) {
+      try {
+        playerRef.current.unMute();
+        playerRef.current.setVolume(100);
+        if (!playerRef.current.isMuted()) {
+          setIsMuted(false);
+        }
+      } catch (_) {}
+    }
   };
 
   const toggleSound = () => {
-    if (!playerRef.current) return;
-    try {
-      if (playerRef.current.isMuted()) {
-        playerRef.current.unMute();
-        playerRef.current.setVolume(100);
-        setIsMuted(false);
-      } else {
-        playerRef.current.mute();
-        setIsMuted(true);
+    if (isMuted) {
+      sendCommand('unMute');
+      sendCommand('setVolume', [100]);
+      if (playerRef.current) {
+        try {
+          playerRef.current.unMute();
+          playerRef.current.setVolume(100);
+        } catch (_) {}
       }
-    } catch (_) {}
+      setIsMuted(false);
+    } else {
+      sendCommand('mute');
+      if (playerRef.current) {
+        try {
+          playerRef.current.mute();
+        } catch (_) {}
+      }
+      setIsMuted(true);
+    }
   };
 
   const resumePlay = () => {
-    if (!playerRef.current) return;
-    try {
-      playerRef.current.playVideo();
-      playerRef.current.unMute();
-      playerRef.current.setVolume(100);
-      setIsMuted(false);
-      setIsPlaying(true);
-    } catch (_) {}
+    sendCommand('playVideo');
+    sendCommand('unMute');
+    sendCommand('setVolume', [100]);
+    if (playerRef.current) {
+      try {
+        playerRef.current.playVideo();
+        playerRef.current.unMute();
+        playerRef.current.setVolume(100);
+      } catch (_) {}
+    }
+    setIsMuted(false);
+    setIsPlaying(true);
   };
 
   useEffect(() => {
@@ -88,6 +112,7 @@ export default function DailyDeepamWebPlayer({
     // Global listener to immediately unlock and enable audio on any user interaction with the page
     const handleGlobalInteraction = () => {
       attemptUnmute();
+      sendCommand('playVideo');
       if (playerRef.current) {
         try {
           playerRef.current.playVideo();
@@ -101,13 +126,40 @@ export default function DailyDeepamWebPlayer({
     window.addEventListener('mousemove', handleGlobalInteraction, { passive: true, once: true });
     window.addEventListener('keydown', handleGlobalInteraction, { passive: true });
 
+    // Listen to direct postMessage from YouTube Iframe
+    const handleWindowMessage = (event: MessageEvent) => {
+      try {
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (data?.event === 'onStateChange') {
+          if (data.info === 1) {
+            setIsLoading(false);
+            setIsPlaying(true);
+          } else if (data.info === 0) {
+            triggerFinish();
+          }
+        } else if (data?.event === 'infoDelivery' && data?.info) {
+          if (data.info.playerState === 1) {
+            setIsLoading(false);
+            setIsPlaying(true);
+          } else if (data.info.playerState === 0) {
+            triggerFinish();
+          }
+          if (data.info.currentTime && data.info.duration) {
+            if (data.info.duration > 0 && data.info.duration - data.info.currentTime <= 0.35) {
+              triggerFinish();
+            }
+          }
+        }
+      } catch (_) {}
+    };
+    window.addEventListener('message', handleWindowMessage);
+
     const checkVideoProgress = () => {
       if (isEndingRef.current || !playerRef.current) return;
       try {
         if (playerRef.current.getCurrentTime && playerRef.current.getDuration) {
           const current = playerRef.current.getCurrentTime();
           const duration = playerRef.current.getDuration();
-          // Auto-trigger completion 0.35s before video ends to prevent end-screen suggestions
           if (duration > 0 && duration - current <= 0.35) {
             triggerFinish();
           }
@@ -183,6 +235,7 @@ export default function DailyDeepamWebPlayer({
       window.removeEventListener('touchstart', handleGlobalInteraction);
       window.removeEventListener('pointerdown', handleGlobalInteraction);
       window.removeEventListener('keydown', handleGlobalInteraction);
+      window.removeEventListener('message', handleWindowMessage);
       try {
         if (playerRef.current && playerRef.current.destroy) {
           playerRef.current.destroy();
@@ -192,7 +245,7 @@ export default function DailyDeepamWebPlayer({
   }, [videoId]);
 
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://watscrm.vercel.app';
-  const iframeSrc = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${encodeURIComponent(originUrl)}`;
+  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&muted=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${originUrl}`;
 
   return (
     <div className="bg-[#0e1628] border border-emerald-500/30 rounded-2xl p-4 shadow-2xl overflow-hidden space-y-3">
@@ -231,13 +284,26 @@ export default function DailyDeepamWebPlayer({
             className="w-full h-full border-0"
             onLoad={() => {
               setIsLoading(false);
+              sendCommand('mute');
+              sendCommand('playVideo');
               setTimeout(() => {
                 if (!playerRef.current && window.YT?.Player) {
                   try {
-                    playerRef.current = new window.YT.Player('deepam-web-player', {});
+                    playerRef.current = new window.YT.Player('deepam-web-player', {
+                      events: {
+                        onStateChange: (e: any) => {
+                          if (e.data === 1) {
+                            setIsLoading(false);
+                            setIsPlaying(true);
+                          } else if (e.data === 0) {
+                            triggerFinish();
+                          }
+                        }
+                      }
+                    });
                   } catch (_) {}
                 }
-              }, 500);
+              }, 300);
             }}
           />
         </div>
