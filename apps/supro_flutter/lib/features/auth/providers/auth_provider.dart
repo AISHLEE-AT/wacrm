@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -30,17 +30,70 @@ class AuthController extends AsyncNotifier<void> {
 
   Future<Map<String, dynamic>> checkUser(String phone) async {
     state = const AsyncValue.loading();
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').replaceAll(' ', '');
+    final clean10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+    
+    // 1. Try API first with timeout
     try {
-      final response = await http.get(Uri.parse('$_apiUrl/auth/check?phone=$phone'));
+      final response = await http.get(
+        Uri.parse('$_apiUrl/auth/check?phone=$clean10'),
+      ).timeout(const Duration(seconds: 3));
+      
       if (response.statusCode == 200) {
+        final data = json.decode(response.body);
         state = const AsyncValue.data(null);
-        return json.decode(response.body);
-      } else {
-        throw Exception('Failed to check user');
+        return data;
       }
+    } catch (_) {
+      // Fallback to direct Supabase query
+    }
+
+    // 2. Direct Supabase Fallback (100% offline-resistant & self-healing)
+    try {
+      final profileRes = await _supabase
+          .from('profiles')
+          .select('id, full_name, main_category, role, pin_hash, gemini_api_key, last_whatsapp_inbound_at')
+          .or('phone.eq.$clean10,phone.eq.91$clean10,phone.ilike.%$clean10%,whatsapp.eq.$clean10,whatsapp.ilike.%$clean10%')
+          .order('updated_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (profileRes != null) {
+        state = const AsyncValue.data(null);
+        final lastInboundStr = profileRes['last_whatsapp_inbound_at'];
+        final lastInbound = lastInboundStr != null ? DateTime.tryParse(lastInboundStr.toString()) : null;
+        final isWindowActive = lastInbound != null && DateTime.now().difference(lastInbound).inHours < 24;
+        
+        return {
+          'exists': true,
+          'id': profileRes['id'],
+          'name': profileRes['full_name'] ?? 'SuprO User',
+          'full_name': profileRes['full_name'] ?? 'SuprO User',
+          'category': profileRes['main_category'] ?? 'Traveller',
+          'role': profileRes['role'] ?? 'user',
+          'has_pin': profileRes['pin_hash'] != null && profileRes['pin_hash'].toString().isNotEmpty,
+          'gemini_api_key': profileRes['gemini_api_key'],
+          'is_whatsapp_session_active': isWindowActive,
+          'whatsapp_window_expires_at': lastInbound?.add(const Duration(hours: 24)).toIso8601String(),
+        };
+      }
+
+      state = const AsyncValue.data(null);
+      return {
+        'exists': false,
+        'category': 'Traveller',
+        'role': 'user',
+        'has_pin': false,
+        'is_whatsapp_session_active': false,
+      };
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      rethrow;
+      return {
+        'exists': false,
+        'category': 'Traveller',
+        'role': 'user',
+        'has_pin': false,
+      };
     }
   }
 

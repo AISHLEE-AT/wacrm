@@ -31,7 +31,7 @@ export const API = {
 
     // 2. Direct Supabase Query (100% offline-resilient & checks all phone formats)
     try {
-      const spUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/profiles?or=(phone.ilike.*${cleanPhone}*,whatsapp.ilike.*${cleanPhone}*)&select=id,full_name,main_category,role,pin_hash,gemini_api_key,whatsapp_window_expires_at,is_whatsapp_session_active&order=updated_at.desc&limit=1`;
+      const spUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/profiles?or=(phone.ilike.*${cleanPhone}*,whatsapp.ilike.*${cleanPhone}*)&select=id,full_name,main_category,role,pin_hash,gemini_api_key,last_whatsapp_inbound_at&order=updated_at.desc&limit=1`;
       const spRes = await fetch(spUrl, {
         headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
       });
@@ -39,9 +39,10 @@ export const API = {
       
       if (Array.isArray(spData) && spData.length > 0) {
         const profile = spData[0];
-        const expiresAt = profile.whatsapp_window_expires_at;
-        const isWindowActive = expiresAt ? new Date(expiresAt).getTime() > Date.now() : (profile.is_whatsapp_session_active || false);
-        const hoursRemaining = expiresAt ? Math.max(0, Math.round(((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0;
+        const lastInbound = profile.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0;
+        const isWindowActive = lastInbound > 0 && (Date.now() - lastInbound) < 24 * 60 * 60 * 1000;
+        const hoursRemaining = isWindowActive ? Math.max(0, Math.round(((lastInbound + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0;
+        const expiresAt = lastInbound > 0 ? new Date(lastInbound + 24 * 60 * 60 * 1000).toISOString() : null;
 
         return {
           exists: true,

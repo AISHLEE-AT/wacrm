@@ -611,9 +611,7 @@ async function processMessage(
       await supabaseAdmin()
         .from('profiles')
         .update({
-          whatsapp_last_active_at: nowIso,
-          whatsapp_window_expires_at: windowExpiresAt,
-          is_whatsapp_session_active: true,
+          last_whatsapp_inbound_at: nowIso,
           updated_at: nowIso,
         })
         .or(`phone.ilike.%${clean10Phone}%,whatsapp.ilike.%${clean10Phone}%`);

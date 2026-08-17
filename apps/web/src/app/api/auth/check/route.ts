@@ -20,19 +20,19 @@ export async function GET(request: Request) {
     )
 
     // Profiles table query
+    const cleanPhone = phone.slice(-10)
     const { data: profile, error } = await admin
       .from('profiles')
-      .select('id, full_name, main_category, role, pin_hash, gemini_api_key, upi_id, avatar_url, location, latitude, longitude, city, state, country, pincode, profile_complete, whatsapp_last_active_at, whatsapp_window_expires_at, is_whatsapp_session_active')
-      .or(`phone.eq.${phone},phone.eq.91${phone},whatsapp.eq.${phone},whatsapp.eq.91${phone}`)
+      .select('id, full_name, main_category, role, pin_hash, gemini_api_key, upi_id, avatar_url, location, latitude, longitude, city, state, country, pincode, profile_complete, last_whatsapp_inbound_at')
+      .or(`phone.eq.${cleanPhone},phone.eq.91${cleanPhone},phone.ilike.%${cleanPhone}%,whatsapp.eq.${cleanPhone},whatsapp.ilike.%${cleanPhone}%`)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle()
 
     // Check if phone matches any driver in drivers table
-    const cleanPhone = phone.slice(-10)
     const { data: driverRow } = await admin
       .from('drivers')
-      .select('id, upi_id, vehicle_type, vehicle_model, vehicle_number, is_whatsapp_active, whatsapp_last_active_at')
+      .select('id, name, upi_id, vehicle_type, vehicle_model, vehicle_number')
       .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`)
       .limit(1)
       .maybeSingle()
@@ -45,10 +45,11 @@ export async function GET(request: Request) {
     const resolvedCategory = isDriverPartner ? 'Driver' : (profile?.main_category || 'Traveller')
     const resolvedUpi = profile?.upi_id || driverRow?.upi_id || ''
 
-    // Compute Meta 24-hour customer service window status
-    const expiresAt = profile?.whatsapp_window_expires_at || null
-    const isWindowActive = expiresAt ? new Date(expiresAt).getTime() > Date.now() : (profile?.is_whatsapp_session_active || false)
-    const hoursRemaining = expiresAt ? Math.max(0, Math.round(((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0
+    // Compute Meta 24-hour customer service window status from last_whatsapp_inbound_at
+    const lastInbound = profile?.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0
+    const isWindowActive = lastInbound > 0 && (Date.now() - lastInbound) < 24 * 60 * 60 * 1000
+    const hoursRemaining = isWindowActive ? Math.max(0, Math.round(((lastInbound + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0
+    const expiresAt = lastInbound > 0 ? new Date(lastInbound + 24 * 60 * 60 * 1000).toISOString() : null
 
     if (profile || driverRow) {
       // Self-heal profile if user is driver partner but profile had legacy category
