@@ -280,14 +280,18 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
                   size: 16,
                 ),
               ),
-              const SizedBox(width: 8),
-              const Text(
-                '✦ TODAY\'S SUPRO DEEPAM BROADCAST ✦',
-                style: TextStyle(
-                  color: Color(0xFFFBBF24),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.8,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: const Text(
+                    '✦ TODAY\'S SUPRO DEEPAM BROADCAST ✦',
+                    style: TextStyle(
+                      color: Color(0xFFFBBF24),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),

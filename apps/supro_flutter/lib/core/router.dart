@@ -18,6 +18,7 @@ import '../features/tvo/screens/tvo_screen.dart';
 import '../features/moneyo/screens/moneyo_screen.dart';
 import '../features/gameo/screens/gameo_screen.dart';
 import '../features/gaming_hub/screens/gaming_hub_screen.dart';
+import '../features/ai_hub/screens/ai_hub_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import 'startup_screen.dart';
 import '../features/onboarding/screens/biometric_setup_screen.dart';
@@ -65,6 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/moneyo', builder: (context, state) => const MoneyoScreen()),
           GoRoute(path: '/gameo', builder: (context, state) => const GameoScreen()),
           GoRoute(path: '/gaming_hub', builder: (context, state) => const GamingHubScreen()),
+          GoRoute(path: '/ai_hub', builder: (context, state) => const AiHubScreen()),
         ],
       ),
     ],

@@ -987,11 +987,11 @@ export default function AishleeToolsScreen({ navigation }: any) {
 
         {/* Dual Action Buttons: Big Microphone Voice Assistant + Tool Specific Submit */}
         <View style={styles.actionButtonsRow}>
-          {/* Prominent Voice Input Button - Immediate Dictation & Prompts */}
+          {/* Prominent Voice Input Button - Opens Kural Voice Assistant */}
           <TouchableOpacity
             style={[styles.prominentVoiceBtn, isVoiceActive && styles.prominentVoiceBtnActive]}
-            onPress={handleTriggerVoiceInput}
-            onLongPress={() => setShowVoiceModal(true)}
+            onPress={() => setShowVoiceModal(true)}
+            onLongPress={handleTriggerVoiceInput}
             activeOpacity={0.8}
           >
             <Mic size={20} color={isVoiceActive ? '#000' : '#fff'} />
@@ -1246,7 +1246,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
             </ScrollView>
 
             {/* Direct Voice Query Input */}
-            <View style={[styles.voiceInputRow, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+            <View style={[styles.voiceInputRow, { backgroundColor: colors.inputBg, borderColor: colors.border, gap: 6 }]}>
               <TextInput
                 style={[styles.voiceTextInput, { color: colors.text }]}
                 placeholder={language === 'Tamil' ? 'குரல் வழியே பேச அல்லது தட்டச்சு செய்ய...' : 'Speak via keyboard mic or type query...'}
@@ -1254,6 +1254,15 @@ export default function AishleeToolsScreen({ navigation }: any) {
                 value={voiceQuery}
                 onChangeText={setVoiceQuery}
               />
+              <TouchableOpacity
+                style={[styles.presetUseBtn, { borderColor: colors.border, paddingVertical: 8, paddingHorizontal: 10 }]}
+                onPress={() => handleApplyVoiceQuery(false)}
+              >
+                <FileText size={13} color={colors.textSecondary} />
+                <Text style={[styles.presetUseBtnText, { color: colors.textSecondary }]}>
+                  {language === 'Tamil' ? 'உள்ளீடு' : 'Use'}
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.voiceApplyBtn, { backgroundColor: colors.primary }]}
                 onPress={() => handleApplyVoiceQuery(true)}

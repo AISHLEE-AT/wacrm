@@ -144,9 +144,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() {
           _isExistingUser = data['exists'];
           if (_isExistingUser == true) {
-            _fullName = data['name'] ?? '';
+            _fullName = data['name'] ?? data['full_name'] ?? '';
             _category = data['category'] ?? 'Traveller';
             _hasPin = data['has_pin'] ?? false;
+            if (_hasPin) {
+              _step = AuthStep.pinFallback;
+            }
           }
         });
         if (_isExistingUser == true && data['gemini_api_key'] != null) {

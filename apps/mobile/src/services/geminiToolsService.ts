@@ -7,11 +7,21 @@ export interface ToolResponse {
 
 // Supported Google Gemini Models
 export const GEMINI_MODELS = {
-  FLASH_20: 'gemini-2.0-flash',
-  FLASH_LITE: 'gemini-2.0-flash-lite',
+  FLASH_25: 'gemini-2.5-flash',
+  FLASH_15: 'gemini-1.5-flash',
+  FLASH_LITE: 'gemini-2.5-flash-lite',
+  PRO_25: 'gemini-2.5-pro',
 };
 
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+const CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-1.5-flash',
+  'gemini-2.0-flash-exp',
+  'gemini-2.5-pro',
+  'gemini-1.5-pro',
+];
+
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 const CLOUD_AI_API = 'https://watscrm.vercel.app/api/ai';
 
 export const geminiToolsService = {
@@ -51,29 +61,38 @@ export const geminiToolsService = {
           }
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey.trim()}`;
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 2048,
-            },
-          }),
-        });
+        const modelsToTry = modelName && !CANDIDATE_MODELS.includes(modelName)
+          ? [modelName, ...CANDIDATE_MODELS]
+          : CANDIDATE_MODELS;
 
-        const data = await response.json();
+        for (const candidate of modelsToTry) {
+          try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${apiKey.trim()}`;
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts }],
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 2048,
+                },
+              }),
+            });
 
-        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          const text = data.candidates[0].content.parts[0].text;
-          return { text, source: 'direct' };
-        }
+            const data = await response.json();
 
-        if (data.error?.message) {
-          console.warn('Direct Gemini API error:', data.error.message);
-          // If direct API failed (e.g. quota, invalid key), attempt cloud fallback below
+            if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+              const text = data.candidates[0].content.parts[0].text;
+              return { text, source: 'direct' };
+            }
+
+            if (data.error?.code === 404 || data.error?.message?.includes('not found') || data.error?.message?.includes('no longer available')) {
+              continue; // Try next candidate model
+            }
+          } catch (modelErr) {
+            continue;
+          }
         }
       } catch (directErr: any) {
         console.warn('Direct Gemini call exception:', directErr.message);
@@ -126,23 +145,25 @@ export const geminiToolsService = {
     if (!apiKey || apiKey.trim().length === 0) {
       return { success: false, message: 'Please enter an API Key.' };
     }
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Respond with "OK" in 1 word.' }] }],
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return { success: true, message: 'Gemini API Key is valid and active! 🎉' };
+    for (const candidate of CANDIDATE_MODELS) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${apiKey.trim()}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'Respond with "OK" in 1 word.' }] }],
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          return { success: true, message: `Gemini API Key is valid and active! 🎉 (${candidate})` };
+        }
+      } catch (e: any) {
+        // Try next
       }
-      return { success: false, message: data.error?.message || 'Invalid API Key response.' };
-    } catch (e: any) {
-      return { success: false, message: e.message || 'Connection error while testing key.' };
     }
+    return { success: false, message: 'Invalid API Key or connection error.' };
   },
 
   // ─── 1. SUMMARIZE AI TOOLS ───

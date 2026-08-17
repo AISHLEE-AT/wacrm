@@ -64,6 +64,7 @@ class _MainLayoutState extends State<MainLayout> {
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
+    if (location.startsWith('/ai_hub')) return 2;
     if (location.startsWith('/dashboard')) return 3; // Profile
     
     // Everything else (admin, teacho, testo, etc.) falls into the "Module" tab
@@ -77,16 +78,14 @@ class _MainLayoutState extends State<MainLayout> {
         break;
       case 1:
         final location = GoRouterState.of(context).uri.path;
-        if (location == '/home' || location == '/dashboard') {
+        if (location == '/home' || location == '/dashboard' || location == '/ai_hub') {
           final prefs = await SharedPreferences.getInstance();
           final selectedModule = prefs.getString('selected_module') ?? '/driveo';
           if (mounted) context.go(selectedModule);
         }
         break;
       case 2:
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('AI Assistant coming soon to Flutter!')),
-        );
+        context.go('/ai_hub');
         break;
       case 3:
         context.go('/dashboard');
@@ -122,6 +121,7 @@ class _MainLayoutState extends State<MainLayout> {
     else if (location.startsWith('/ride')) { moduleLabel = 'RideO'; moduleIcon = LucideIcons.car; }
     else if (location.startsWith('/gameo')) { moduleLabel = 'GameO'; moduleIcon = LucideIcons.gamepad2; }
     else if (location.startsWith('/gaming_hub')) { moduleLabel = 'GameHub'; moduleIcon = LucideIcons.library; }
+    else if (location.startsWith('/ai_hub')) { moduleLabel = 'AI Hub'; moduleIcon = LucideIcons.bot; }
     else if (location.startsWith('/rento')) { moduleLabel = 'RentO'; moduleIcon = LucideIcons.wrench; }
 
     return Scaffold(

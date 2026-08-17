@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+// Resilient model fallback hierarchy
+const CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-1.5-flash',
+  'gemini-2.0-flash-exp',
+  'gemini-2.5-pro',
+  'gemini-1.5-pro',
+];
+
 export async function POST(req: NextRequest) {
   try {
     const { prompt, type, apiKey: clientApiKey, base64Audio } = await req.json();
@@ -11,7 +20,6 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     let systemPrompt = '';
     if (type === 'translate') {
@@ -30,32 +38,46 @@ export async function POST(req: NextRequest) {
       systemPrompt = 'You are Gemini AI, a helpful and knowledgeable assistant built into the SuprO Local Ecosystem platform. Answer the following query clearly and concisely:\n\n';
     }
 
-    let result;
-    if (base64Audio) {
-      const audioPart = {
-        inlineData: {
-          data: base64Audio,
-          mimeType: "audio/webm",
-        },
-      };
-      // For audio, we might just pass the prompt directly without system prompt if prompt is empty, but we can pass both
-      const contentParts: any[] = [audioPart];
-      if (prompt) contentParts.push({ text: systemPrompt + prompt });
-      else contentParts.push({ text: "Please respond to the audio in Tamil." });
-      
-      result = await model.generateContent(contentParts);
-    } else {
-      if (!prompt) {
-        return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    let lastError: any = null;
+
+    // Try candidate models in order with automatic fallback
+    for (const modelName of CANDIDATE_MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        let result;
+        if (base64Audio) {
+          const audioPart = {
+            inlineData: {
+              data: base64Audio,
+              mimeType: 'audio/webm',
+            },
+          };
+          const contentParts: any[] = [audioPart];
+          if (prompt) contentParts.push({ text: systemPrompt + prompt });
+          else contentParts.push({ text: 'Please respond to the audio in Tamil.' });
+          
+          result = await model.generateContent(contentParts);
+        } else {
+          if (!prompt) {
+            return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+          }
+          const fullPrompt = systemPrompt + prompt;
+          result = await model.generateContent(fullPrompt);
+        }
+
+        const response = await result.response;
+        const text = response.text();
+
+        if (text && text.trim().length > 0) {
+          return NextResponse.json({ result: text, model: modelName });
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Gemini Model ${modelName} failed, attempting next candidate:`, err.message);
       }
-      const fullPrompt = systemPrompt + prompt;
-      result = await model.generateContent(fullPrompt);
     }
 
-    const response = await result.response;
-    const text = response.text();
-
-    return NextResponse.json({ result: text });
+    throw lastError || new Error('Failed to generate AI response from all available Gemini models');
   } catch (error: any) {
     console.error('Gemini API Error:', error);
     return NextResponse.json({ error: error.message || 'Failed to generate AI response' }, { status: 500 });

@@ -1,6 +1,6 @@
 {
   "name": "wacrm-monorepo",
-  "version": "0.0.1v beta",
+  "version": "3.2.1",
   "private": true,
   "workspaces": [
     "apps/*",
