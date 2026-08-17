@@ -137,7 +137,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
             );
             _updateMarkers();
           });
-          final ctrl = await _mapController.future;
+          final ctrl = await _controller.future;
           ctrl.animateCamera(CameraUpdate.newLatLngZoom(LatLng(lastKnown.latitude, lastKnown.longitude), 15));
         }
 
@@ -168,7 +168,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
             _updateMarkers();
           });
 
-          final ctrl = await _mapController.future;
+          final ctrl = await _controller.future;
           ctrl.animateCamera(CameraUpdate.newLatLngZoom(LatLng(position.latitude, position.longitude), 15));
         }
 
