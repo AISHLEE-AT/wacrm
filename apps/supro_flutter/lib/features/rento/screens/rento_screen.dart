@@ -132,6 +132,7 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
 
   Set<Marker> _markers = {};
   List<OperatorItem> _nearbyOperators = [];
+  StreamSubscription<Position>? _positionStreamSub;
 
   static const String _defaultAdminPhone = '916381029380';
 
@@ -145,6 +146,7 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
 
   @override
   void dispose() {
+    _positionStreamSub?.cancel();
     _countdownTimer?.cancel();
     _pickupController.dispose();
     _dropoffController.dispose();
@@ -153,17 +155,50 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
 
   Future<void> _initLocation() async {
     try {
-      final perm = await Geolocator.requestPermission();
-      if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
-        final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-        setState(() {
-          _location = LatLng(pos.latitude, pos.longitude);
-        });
-        _reverseGeocode(pos.latitude, pos.longitude);
-        _generateNearbyOperators(pos.latitude, pos.longitude);
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
 
-        final ctrl = await _mapController.future;
-        ctrl.animateCamera(CameraUpdate.newLatLngZoom(_location, 14));
+      if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
+        // 1. Instant last known position
+        final lastPos = await Geolocator.getLastKnownPosition();
+        if (lastPos != null && mounted) {
+          setState(() {
+            _location = LatLng(lastPos.latitude, lastPos.longitude);
+          });
+          _reverseGeocode(lastPos.latitude, lastPos.longitude);
+          _generateNearbyOperators(lastPos.latitude, lastPos.longitude);
+        }
+
+        // 2. High accuracy fresh position
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        );
+        if (mounted) {
+          setState(() {
+            _location = LatLng(pos.latitude, pos.longitude);
+          });
+          _reverseGeocode(pos.latitude, pos.longitude);
+          _generateNearbyOperators(pos.latitude, pos.longitude);
+
+          final ctrl = await _mapController.future;
+          ctrl.animateCamera(CameraUpdate.newLatLngZoom(_location, 15));
+        }
+
+        // 3. Live continuous GPS position stream
+        _positionStreamSub = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
+        ).listen((livePos) {
+          if (mounted && _bookingState == RentOBookingState.idle) {
+            setState(() {
+              _location = LatLng(livePos.latitude, livePos.longitude);
+            });
+            _updateMarkers();
+          }
+        });
+      } else {
+        _generateNearbyOperators(_location.latitude, _location.longitude);
       }
     } catch (_) {
       _generateNearbyOperators(_location.latitude, _location.longitude);

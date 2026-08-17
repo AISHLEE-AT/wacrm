@@ -383,13 +383,39 @@ export default function RentOScreen({ navigation }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
 
-  // 1. Initial Setup: Get Real Location and center Map
+  // 1. Initial Setup: Get Real Location and center Map with instant fallback and live watcher
   useEffect(() => {
+    let sub = null;
     (async () => {
       try {
+        // Instant profile or global fallback
+        if (globalLoc?.latitude && globalLoc?.longitude) {
+          setLocation({ latitude: globalLoc.latitude, longitude: globalLoc.longitude });
+          reverseGeocode(globalLoc.latitude, globalLoc.longitude, setPickupAddress);
+        } else if (user?.latitude && user?.longitude) {
+          setLocation({ latitude: Number(user.latitude), longitude: Number(user.longitude) });
+          if (user.location) setPickupAddress(user.location);
+        }
+
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          // Instant last known position
+          const lastLoc = await Location.getLastKnownPositionAsync({});
+          if (lastLoc?.coords) {
+            const current = { latitude: lastLoc.coords.latitude, longitude: lastLoc.coords.longitude };
+            setLocation(current);
+            reverseGeocode(current.latitude, current.longitude, setPickupAddress);
+            if (mapRef.current) {
+              mapRef.current.animateToRegion({
+                ...current,
+                latitudeDelta: 0.04,
+                longitudeDelta: 0.04,
+              }, 400);
+            }
+          }
+
+          // Accurate fresh GPS position
+          let loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
           if (loc?.coords) {
             const current = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
             setLocation(current);
@@ -398,16 +424,31 @@ export default function RentOScreen({ navigation }) {
             if (mapRef.current) {
               mapRef.current.animateToRegion({
                 ...current,
-                latitudeDelta: 0.05,
-                longitudeDelta: 0.05,
-              }, 800);
+                latitudeDelta: 0.04,
+                longitudeDelta: 0.04,
+              }, 600);
             }
           }
+
+          // Live position watcher
+          sub = await Location.watchPositionAsync(
+            { accuracy: Location.Accuracy.High, distanceInterval: 10 },
+            (newLoc) => {
+              if (newLoc?.coords && bookingState === 'IDLE') {
+                const current = { latitude: newLoc.coords.latitude, longitude: newLoc.coords.longitude };
+                setLocation(current);
+              }
+            }
+          );
         }
       } catch (err) {
         console.warn('Location initialization error:', err);
       }
     })();
+
+    return () => {
+      if (sub?.remove) sub.remove();
+    };
   }, []);
 
   // 2. Generate Nearby Regional Operators around Location

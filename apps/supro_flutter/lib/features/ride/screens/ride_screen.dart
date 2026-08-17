@@ -93,6 +93,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
   // Rating state
   int _ratingStars = 5;
   final TextEditingController _feedbackController = TextEditingController();
+  StreamSubscription<Position>? _positionStreamSub;
 
   static const String _defaultAdminPhone = '916381029380';
 
@@ -105,6 +106,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
 
   @override
   void dispose() {
+    _positionStreamSub?.cancel();
     _searchController.dispose();
     _feedbackController.dispose();
     _pollingTimer?.cancel();
@@ -118,53 +120,74 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
   // ─── INITIAL POSITION & REVERSE GEOCODING ───
   Future<void> _determinePosition() async {
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location services are disabled.')),
-          );
-        }
-        return;
-      }
-
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permission is denied.')),
+      }
+
+      if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+        // 1. Instant last known position
+        final lastKnown = await Geolocator.getLastKnownPosition();
+        if (lastKnown != null && mounted) {
+          setState(() {
+            _pickup = LocationPoint(
+              lat: lastKnown.latitude,
+              lng: lastKnown.longitude,
+              name: 'Current Location',
             );
-          }
-          return;
+            _updateMarkers();
+          });
+          final ctrl = await _mapController.future;
+          ctrl.animateCamera(CameraUpdate.newLatLngZoom(LatLng(lastKnown.latitude, lastKnown.longitude), 15));
         }
-      }
-      
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
 
-      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      String name = 'Current Location';
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        final parts = [p.street, p.subLocality, p.locality].where((e) => e != null && e.isNotEmpty).toList();
-        if (parts.isNotEmpty) name = parts.join(', ');
-      }
-
-      setState(() {
-        _pickup = LocationPoint(
-          lat: position.latitude,
-          lng: position.longitude,
-          name: name,
+        // 2. High accuracy fresh GPS fix
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
         );
-        _updateMarkers();
-      });
+
+        List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+
+        String name = 'Current Location';
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final parts = [p.street, p.subLocality, p.locality].where((e) => e != null && e.isNotEmpty).toList();
+          if (parts.isNotEmpty) name = parts.join(', ');
+        }
+
+        if (mounted) {
+          setState(() {
+            _pickup = LocationPoint(
+              lat: position.latitude,
+              lng: position.longitude,
+              name: name,
+            );
+            _updateMarkers();
+          });
+
+          final ctrl = await _mapController.future;
+          ctrl.animateCamera(CameraUpdate.newLatLngZoom(LatLng(position.latitude, position.longitude), 15));
+        }
+
+        // 3. Live continuous GPS position stream
+        _positionStreamSub = Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
+        ).listen((livePos) {
+          if (mounted && _rideState == RideState.idle && _dropoff == null) {
+            setState(() {
+              _pickup = LocationPoint(
+                lat: livePos.latitude,
+                lng: livePos.longitude,
+                name: _pickup?.name ?? 'Current Location',
+              );
+              _updateMarkers();
+            });
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Error determining location: $e');
     }

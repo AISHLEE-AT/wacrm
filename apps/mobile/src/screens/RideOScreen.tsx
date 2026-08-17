@@ -108,9 +108,17 @@ export default function RideOScreen({ navigation }) {
   // Geocoding debounce ref
   const geocodeDebounceRef = useRef<any>(null);
 
-  // 1. Initial Setup: Get Location
+  // 1. Initial Setup: Get Location with instant fallback and live watcher
   useEffect(() => {
+    let sub = null;
     (async () => {
+      // Instant profile fallback
+      if (user?.latitude && user?.longitude) {
+        const profileCoords = { latitude: Number(user.latitude), longitude: Number(user.longitude) };
+        setLocation(profileCoords);
+        if (user.location) setPickupAddress(user.location);
+      }
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission denied', 'Location is required to book a ride.');
@@ -122,19 +130,34 @@ export default function RideOScreen({ navigation }) {
         }
       } catch {}
 
+      // Instant last known position
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync({});
+        if (lastKnown?.coords) {
+          setLocation(lastKnown.coords);
+          if (mapRef.current) {
+            mapRef.current.animateToRegion({
+              latitude: lastKnown.coords.latitude,
+              longitude: lastKnown.coords.longitude,
+              latitudeDelta: 0.008,
+              longitudeDelta: 0.008,
+            }, 300);
+          }
+          reverseGeocode(lastKnown.coords.latitude, lastKnown.coords.longitude, setPickupAddress);
+        }
+      } catch {}
+
       let currentLoc = null;
       try {
         currentLoc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Highest,
+          accuracy: Location.Accuracy.High,
         });
       } catch {
         try {
           currentLoc = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
+            accuracy: Location.Accuracy.Balanced,
           });
-        } catch {
-          currentLoc = await Location.getLastKnownPositionAsync({});
-        }
+        } catch {}
       }
 
       if (currentLoc?.coords) {
@@ -149,7 +172,23 @@ export default function RideOScreen({ navigation }) {
         }
         reverseGeocode(currentLoc.coords.latitude, currentLoc.coords.longitude, setPickupAddress);
       }
+
+      // Live position watcher
+      try {
+        sub = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.High, distanceInterval: 10 },
+          (newLoc) => {
+            if (newLoc?.coords && rideState === 'IDLE') {
+              setLocation(newLoc.coords);
+            }
+          }
+        );
+      } catch {}
     })();
+
+    return () => {
+      if (sub?.remove) sub.remove();
+    };
   }, []);
 
   // Pulse animation for SEARCHING state (5-minute auto-expiry)
