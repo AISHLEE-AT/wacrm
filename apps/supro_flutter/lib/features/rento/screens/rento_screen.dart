@@ -190,8 +190,9 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
   }
 
   Widget _buildItemList(List<RentalItem> items) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset + 80),
       itemCount: items.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -224,11 +225,16 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
                     Text(item.tamilName, style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Text(item.desc, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${item.rate} • ${item.unit}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                        Expanded(
+                          child: Text(
+                            '${item.rate} • ${item.unit}',
+                            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                         ElevatedButton.icon(
                           onPressed: () => _bookItemViaWhatsApp(item),
                           icon: const Icon(LucideIcons.messageCircle, size: 14),
@@ -236,7 +242,7 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF10B981),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),

@@ -1189,8 +1189,8 @@ export default function RentOScreen({ navigation }) {
       {/* ─── 2. EXPANDABLE OPTIONS OVERLAY SHEET ─── */}
       {(bookingState !== 'IDLE' || isOptionsExpanded) && (
         <ScrollView
-          style={[styles.sheetContainerOverlay, isOptionsExpanded && { maxHeight: '70%' }]}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          style={[styles.sheetContainerOverlay, isOptionsExpanded && { maxHeight: '75%' }]}
+          contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 100 : 70 }}
           showsVerticalScrollIndicator={false}
         >
           {isOptionsExpanded && bookingState === 'IDLE' && (
@@ -1997,12 +1997,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(17, 24, 39, 0.96)',
+    backgroundColor: 'rgba(17, 24, 39, 0.98)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 28,
     zIndex: 15,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
@@ -2073,13 +2073,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#10b981',
-    borderRadius: 12,
-    height: 44,
+    borderRadius: 14,
+    height: 50,
+    marginTop: 4,
     shadowColor: '#10b981',
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 4,
-    gap: 6,
+    gap: 8,
   },
   compactBookBtnText: {
     color: '#000',

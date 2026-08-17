@@ -656,8 +656,9 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
 
   // ─── 11-CATEGORY VEHICLE SELECTOR VIEW ───
   Widget _buildVehicleSelectorView() {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, max(24.0, bottomInset + 16)),
       decoration: const BoxDecoration(
         color: Color(0xFF0A0F1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -748,8 +749,9 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
 
   // ─── SEARCHING MODAL VIEW ───
   Widget _buildSearchingView() {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, max(24.0, bottomInset + 16)),
       decoration: const BoxDecoration(
         color: Color(0xFF0A0F1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -789,6 +791,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
 
   // ─── ACCEPTED / IN-PROGRESS TRACKING VIEW ───
   Widget _buildAcceptedTrackingView() {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final otp = _driverInfo?['otp'] ?? '----';
     final name = _driverInfo?['name'] ?? 'Driver Partner';
     final vehicle = _driverInfo?['vehicle_model'] ?? 'Standard Vehicle';
@@ -796,7 +799,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     final phone = _driverInfo?['phone'] ?? _defaultAdminPhone;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, max(24.0, bottomInset + 16)),
       decoration: const BoxDecoration(
         color: Color(0xFF0A0F1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
