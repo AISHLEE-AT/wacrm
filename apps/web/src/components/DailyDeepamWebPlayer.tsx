@@ -24,7 +24,7 @@ export default function DailyDeepamWebPlayer({
   const [isLoading, setIsLoading] = useState(true);
   const [hasEnded, setHasEnded] = useState(false);
   const [canSkip, setCanSkip] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const isEndingRef = useRef(false);
@@ -41,6 +41,17 @@ export default function DailyDeepamWebPlayer({
     setTimeout(() => {
       onVideoEnded();
     }, 400);
+  };
+
+  const attemptUnmute = () => {
+    if (!playerRef.current) return;
+    try {
+      playerRef.current.unMute();
+      playerRef.current.setVolume(100);
+      if (!playerRef.current.isMuted()) {
+        setIsMuted(false);
+      }
+    } catch (_) {}
   };
 
   const toggleSound = () => {
@@ -62,6 +73,7 @@ export default function DailyDeepamWebPlayer({
     try {
       playerRef.current.playVideo();
       playerRef.current.unMute();
+      playerRef.current.setVolume(100);
       setIsMuted(false);
       setIsPlaying(true);
     } catch (_) {}
@@ -72,6 +84,16 @@ export default function DailyDeepamWebPlayer({
     const skipTimer = setTimeout(() => {
       setCanSkip(true);
     }, 3000);
+
+    // Global listener to immediately unlock and enable audio on any user interaction with the page
+    const handleGlobalInteraction = () => {
+      attemptUnmute();
+    };
+
+    window.addEventListener('click', handleGlobalInteraction, { passive: true });
+    window.addEventListener('touchstart', handleGlobalInteraction, { passive: true });
+    window.addEventListener('pointerdown', handleGlobalInteraction, { passive: true });
+    window.addEventListener('keydown', handleGlobalInteraction, { passive: true });
 
     const checkVideoProgress = () => {
       if (isEndingRef.current || !playerRef.current) return;
@@ -93,7 +115,7 @@ export default function DailyDeepamWebPlayer({
           videoId: videoId,
           playerVars: {
             autoplay: 1,
-            mute: 1, // Muted is required by browser autoplay policies
+            mute: 0, // Request audio autoplay
             controls: 0,
             rel: 0,
             modestbranding: 1,
@@ -109,15 +131,45 @@ export default function DailyDeepamWebPlayer({
             onReady: (e: any) => {
               setIsLoading(false);
               try {
-                e.target.playVideo();
+                // Try playing unmuted first
+                e.target.unMute();
+                e.target.setVolume(100);
+                const playPromise = e.target.playVideo();
                 setIsPlaying(true);
-              } catch (_) {}
+                setIsMuted(false);
+
+                // If browser blocks unmuted autoplay, fallback to muted autoplay and unmute on first gesture
+                if (playPromise && typeof playPromise.catch === 'function') {
+                  playPromise.catch(() => {
+                    try {
+                      e.target.mute();
+                      e.target.playVideo();
+                      setIsMuted(true);
+                    } catch (_) {}
+                  });
+                }
+              } catch (_) {
+                try {
+                  e.target.mute();
+                  e.target.playVideo();
+                  setIsMuted(true);
+                } catch (_) {}
+              }
             },
             onStateChange: (e: any) => {
               if (e.data === 1) {
                 // Playing
                 setIsLoading(false);
                 setIsPlaying(true);
+                // Attempt auto unmute during playback
+                try {
+                  e.target.unMute();
+                  e.target.setVolume(100);
+                  if (!e.target.isMuted()) {
+                    setIsMuted(false);
+                  }
+                } catch (_) {}
+
                 if (!pollTimerRef.current) {
                   pollTimerRef.current = setInterval(checkVideoProgress, 120);
                 }
@@ -155,6 +207,10 @@ export default function DailyDeepamWebPlayer({
     return () => {
       clearTimeout(skipTimer);
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      window.removeEventListener('click', handleGlobalInteraction);
+      window.removeEventListener('touchstart', handleGlobalInteraction);
+      window.removeEventListener('pointerdown', handleGlobalInteraction);
+      window.removeEventListener('keydown', handleGlobalInteraction);
       try {
         if (playerRef.current && playerRef.current.destroy) {
           playerRef.current.destroy();
@@ -220,7 +276,7 @@ export default function DailyDeepamWebPlayer({
             ) : (
               <>
                 <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-300">Sound ON</span>
+                <span className="text-emerald-300">Sound ON 🔊</span>
               </>
             )}
           </button>

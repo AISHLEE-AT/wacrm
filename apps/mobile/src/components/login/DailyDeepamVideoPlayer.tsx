@@ -168,11 +168,19 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
               player = new YT.Player('ytplayer', {
                 events: {
                   'onReady': function(e) {
-                    try { e.target.playVideo(); } catch(err) {}
+                    try {
+                      e.target.unMute();
+                      e.target.setVolume(100);
+                      e.target.playVideo();
+                    } catch(err) {}
                     notifyApp({ type: 'READY' });
                   },
                   'onStateChange': function(e) {
                     if (e.data === 1 || e.data === 3) {
+                      try {
+                        e.target.unMute();
+                        e.target.setVolume(100);
+                      } catch(err) {}
                       notifyApp({ type: 'PLAYING' });
                       if (!pollTimer) {
                         pollTimer = setInterval(checkVideoProgress, 150);
