@@ -117,70 +117,47 @@ export default function DailyDeepamWebPlayer({
 
     const initPlayer = () => {
       try {
-        playerRef.current = new window.YT.Player('deepam-web-player', {
-          videoId: videoId,
-          playerVars: {
-            autoplay: 1,
-            mute: 1, // Start muted for 100% browser autoplay guarantee
-            controls: 0,
-            rel: 0,
-            modestbranding: 1,
-            playsinline: 1,
-            iv_load_policy: 3,
-            fs: 0,
-            disablekb: 1,
-            autohide: 1,
-            showinfo: 0,
-            origin: typeof window !== 'undefined' ? window.location.origin : 'https://watscrm.vercel.app',
-          },
-          events: {
-            onReady: (e: any) => {
-              setIsLoading(false);
-              setIsPlaying(true);
-              try {
-                e.target.playVideo();
-                // Attempt unmute immediately
-                e.target.unMute();
-                e.target.setVolume(100);
-                setIsMuted(e.target.isMuted ? e.target.isMuted() : false);
-              } catch (_) {
-                setIsMuted(true);
-              }
-            },
-            onStateChange: (e: any) => {
-              if (e.data === 1) {
-                // Playing
+        const iframeElement = document.getElementById('deepam-web-player');
+        if (iframeElement && window.YT && window.YT.Player) {
+          playerRef.current = new window.YT.Player('deepam-web-player', {
+            events: {
+              onReady: (e: any) => {
                 setIsLoading(false);
                 setIsPlaying(true);
-                // Attempt auto unmute during playback
                 try {
+                  e.target.playVideo();
                   e.target.unMute();
                   e.target.setVolume(100);
-                  if (e.target.isMuted && !e.target.isMuted()) {
-                    setIsMuted(false);
-                  }
-                } catch (_) {}
-
-                if (!pollTimerRef.current) {
-                  pollTimerRef.current = setInterval(checkVideoProgress, 120);
+                  setIsMuted(e.target.isMuted ? e.target.isMuted() : false);
+                } catch (_) {
+                  setIsMuted(true);
                 }
-              } else if (e.data === 2) {
-                // Paused
-                setIsPlaying(false);
-              } else if (e.data === 0) {
-                // Ended
-                triggerFinish();
-              }
+              },
+              onStateChange: (e: any) => {
+                if (e.data === 1) {
+                  // Playing
+                  setIsLoading(false);
+                  setIsPlaying(true);
+                  if (!pollTimerRef.current) {
+                    pollTimerRef.current = setInterval(checkVideoProgress, 120);
+                  }
+                } else if (e.data === 2) {
+                  // Paused
+                  setIsPlaying(false);
+                } else if (e.data === 0) {
+                  // Ended
+                  triggerFinish();
+                }
+              },
+              onError: () => {
+                setIsLoading(false);
+                setTimeout(() => {
+                  triggerFinish();
+                }, 1200);
+              },
             },
-            onError: () => {
-              setIsLoading(false);
-              // In case of any playback error, smoothly proceed to login
-              setTimeout(() => {
-                triggerFinish();
-              }, 1500);
-            },
-          },
-        });
+          });
+        }
       } catch (_) {
         setIsLoading(false);
       }
@@ -214,6 +191,9 @@ export default function DailyDeepamWebPlayer({
     };
   }, [videoId]);
 
+  const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://watscrm.vercel.app';
+  const iframeSrc = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${encodeURIComponent(originUrl)}`;
+
   return (
     <div className="bg-[#0e1628] border border-emerald-500/30 rounded-2xl p-4 shadow-2xl overflow-hidden space-y-3">
       {/* Header Banner */}
@@ -241,9 +221,25 @@ export default function DailyDeepamWebPlayer({
           </div>
         )}
 
-        {/* Cropped YouTube Frame */}
+        {/* Cropped YouTube Direct Frame */}
         <div className="absolute -top-[16%] -left-[3%] w-[106%] h-[132%] pointer-events-none">
-          <div id="deepam-web-player" className="w-full h-full" />
+          <iframe
+            id="deepam-web-player"
+            src={iframeSrc}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full border-0"
+            onLoad={() => {
+              setIsLoading(false);
+              setTimeout(() => {
+                if (!playerRef.current && window.YT?.Player) {
+                  try {
+                    playerRef.current = new window.YT.Player('deepam-web-player', {});
+                  } catch (_) {}
+                }
+              }, 500);
+            }}
+          />
         </div>
 
         {/* Custom Clean Overlay Controls */}
