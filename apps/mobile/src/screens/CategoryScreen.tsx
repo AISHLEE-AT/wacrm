@@ -1,32 +1,238 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import { Car, GraduationCap, MonitorPlay, Wallet, MapPin, ShoppingBag, Compass, Wrench, Shield, Award, Gamepad2 } from 'lucide-react-native';
+import React, { useContext, useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  TextInput,
+  Platform,
+  StatusBar,
+} from 'react-native';
+import {
+  Car,
+  GraduationCap,
+  MonitorPlay,
+  Wallet,
+  MapPin,
+  ShoppingBag,
+  Compass,
+  Wrench,
+  Shield,
+  Award,
+  Gamepad2,
+  Search,
+  X,
+  Sparkles,
+  ChevronRight,
+  Pin,
+  TrendingUp,
+  Zap,
+  Layers,
+} from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../context/AppContext';
+import { colors } from '../lib/theme';
 
 const { width } = Dimensions.get('window');
 
-const CATEGORIES = [
-  { id: 'admin', title: 'Admin CRM', desc: 'Manage Everything', icon: Shield, iconName: 'Shield', color: '#ef4444', bg: '#ef444420', path: '/admin', adminOnly: true },
-  { id: 'rideo', title: 'RideO', desc: 'Book Cabs & Autos', icon: Car, iconName: 'Car', color: '#10b981', bg: '#10b98120', path: '/rideo' },
-  { id: 'driveo', title: 'DriveO', desc: 'Driver Partner Hub', icon: MapPin, iconName: 'MapPin', color: '#3b82f6', bg: '#3b82f620', path: '/drivo' },
-  { id: 'dealo', title: 'DealO', desc: 'Local Deals & Offers', icon: ShoppingBag, iconName: 'ShoppingBag', color: '#f97316', bg: '#f9731620', path: '/dealo' },
-  { id: 'teacho', title: 'TeachO', desc: 'Courses & Tuitions', icon: GraduationCap, iconName: 'GraduationCap', color: '#f59e0b', bg: '#f59e0b20', path: '/teacho' },
-  { id: 'rento', title: 'RentO', desc: 'Agri Equipment Rental', icon: Wrench, iconName: 'Wrench', color: '#84cc16', bg: '#84cc1620', path: '/rento' },
-  { id: 'agro', title: 'AgrO & Mandi', desc: 'Crop Rates & Seeds', icon: Wrench, iconName: 'Wrench', color: '#10b981', bg: '#10b98120', path: '/agro' },
-  { id: 'touro', title: 'TourO', desc: 'Temple & Local Tours', icon: Compass, iconName: 'Compass', color: '#06b6d4', bg: '#06b6d420', path: '/touro' },
-  { id: 'testo', title: 'TestO', desc: 'Mock Exams & Quiz', icon: Award, iconName: 'Award', color: '#8b5cf6', bg: '#8b5cf620', path: '/testo' },
-  { id: 'tvo', title: 'TvO', desc: 'Tamil Live TV & Streams', icon: MonitorPlay, iconName: 'MonitorPlay', color: '#ec4899', bg: '#ec489920', path: '/tvo' },
-  { id: 'moneyo', title: 'MoneyO', desc: 'Micro Loans & Savings', icon: Wallet, iconName: 'Wallet', color: '#14b8a6', bg: '#14b8a620', path: '/moneyo' },
-  { id: 'gameo', title: 'GameO', desc: 'MapRacer & Fitness', icon: Gamepad2, iconName: 'Gamepad2', color: '#8b5cf6', bg: '#8b5cf620', path: '/gameo' },
+interface CategoryItem {
+  id: string;
+  title: string;
+  desc: string;
+  categoryGroup: 'mobility' | 'agri' | 'education' | 'finance' | 'admin';
+  tag: string;
+  tagColor: string;
+  icon: any;
+  iconName: string;
+  color: string;
+  bg: string;
+  path: string;
+  adminOnly?: boolean;
+  featured?: boolean;
+}
+
+const CATEGORIES: CategoryItem[] = [
+  {
+    id: 'rideo',
+    title: 'RideO',
+    desc: 'Instant Cabs, Autos & Bikes',
+    categoryGroup: 'mobility',
+    tag: '⚡ 0% Fee',
+    tagColor: '#10b981',
+    icon: Car,
+    iconName: 'Car',
+    color: '#10b981',
+    bg: 'rgba(16, 185, 129, 0.15)',
+    path: '/rideo',
+    featured: true,
+  },
+  {
+    id: 'driveo',
+    title: 'DriveO',
+    desc: 'Driver Partner & Earnings Hub',
+    categoryGroup: 'mobility',
+    tag: '🚗 Driver',
+    tagColor: '#3b82f6',
+    icon: MapPin,
+    iconName: 'MapPin',
+    color: '#3b82f6',
+    bg: 'rgba(59, 130, 246, 0.15)',
+    path: '/drivo',
+  },
+  {
+    id: 'agro',
+    title: 'AgrO & Mandi',
+    desc: 'Live Crop Prices & Farm Advisory',
+    categoryGroup: 'agri',
+    tag: '🌾 Live Rates',
+    tagColor: '#10b981',
+    icon: Wrench,
+    iconName: 'Wrench',
+    color: '#10b981',
+    bg: 'rgba(16, 185, 129, 0.15)',
+    path: '/agro',
+    featured: true,
+  },
+  {
+    id: 'rento',
+    title: 'RentO',
+    desc: 'Tractors, Harvesters & Cargo',
+    categoryGroup: 'agri',
+    tag: '🚜 Equipment',
+    tagColor: '#84cc16',
+    icon: Wrench,
+    iconName: 'Wrench',
+    color: '#84cc16',
+    bg: 'rgba(132, 204, 22, 0.15)',
+    path: '/rento',
+  },
+  {
+    id: 'dealo',
+    title: 'DealO',
+    desc: 'Hyperlocal Stores & Marketplace',
+    categoryGroup: 'agri',
+    tag: '🛍️ Offers',
+    tagColor: '#f97316',
+    icon: ShoppingBag,
+    iconName: 'ShoppingBag',
+    color: '#f97316',
+    bg: 'rgba(249, 115, 22, 0.15)',
+    path: '/dealo',
+  },
+  {
+    id: 'teacho',
+    title: 'TeachO',
+    desc: 'Live Courses & Skill Coaching',
+    categoryGroup: 'education',
+    tag: '🎓 Courses',
+    tagColor: '#f59e0b',
+    icon: GraduationCap,
+    iconName: 'GraduationCap',
+    color: '#f59e0b',
+    bg: 'rgba(245, 158, 11, 0.15)',
+    path: '/teacho',
+  },
+  {
+    id: 'testo',
+    title: 'TestO',
+    desc: 'TNPSC, Bank & Mock Exams',
+    categoryGroup: 'education',
+    tag: '📝 Prep',
+    tagColor: '#8b5cf6',
+    icon: Award,
+    iconName: 'Award',
+    color: '#8b5cf6',
+    bg: 'rgba(139, 92, 246, 0.15)',
+    path: '/testo',
+  },
+  {
+    id: 'tvo',
+    title: 'TvO',
+    desc: 'Live Tamil Channels & Streams',
+    categoryGroup: 'education',
+    tag: '📺 Live TV',
+    tagColor: '#ec4899',
+    icon: MonitorPlay,
+    iconName: 'MonitorPlay',
+    color: '#ec4899',
+    bg: 'rgba(236, 72, 153, 0.15)',
+    path: '/tvo',
+  },
+  {
+    id: 'touro',
+    title: 'TourO',
+    desc: 'Temple Trails & Village Tours',
+    categoryGroup: 'mobility',
+    tag: '🛕 Pilgrimage',
+    tagColor: '#06b6d4',
+    icon: Compass,
+    iconName: 'Compass',
+    color: '#06b6d4',
+    bg: 'rgba(6, 182, 212, 0.15)',
+    path: '/touro',
+  },
+  {
+    id: 'moneyo',
+    title: 'MoneyO',
+    desc: 'Micro Credit & Direct P2P Pay',
+    categoryGroup: 'finance',
+    tag: '💰 0-Interest',
+    tagColor: '#14b8a6',
+    icon: Wallet,
+    iconName: 'Wallet',
+    color: '#14b8a6',
+    bg: 'rgba(20, 184, 166, 0.15)',
+    path: '/moneyo',
+  },
+  {
+    id: 'gameo',
+    title: 'GameO',
+    desc: 'MapRacer & Walk-to-Earn',
+    categoryGroup: 'finance',
+    tag: '🎮 Rewards',
+    tagColor: '#a855f7',
+    icon: Gamepad2,
+    iconName: 'Gamepad2',
+    color: '#a855f7',
+    bg: 'rgba(168, 85, 247, 0.15)',
+    path: '/gameo',
+  },
+  {
+    id: 'admin',
+    title: 'Admin CRM',
+    desc: 'Ecosystem & Fleet Control',
+    categoryGroup: 'admin',
+    tag: '🛡️ Master',
+    tagColor: '#ef4444',
+    icon: Shield,
+    iconName: 'Shield',
+    color: '#ef4444',
+    bg: 'rgba(239, 68, 68, 0.15)',
+    path: '/admin',
+    adminOnly: true,
+  },
+];
+
+const FILTER_GROUPS = [
+  { id: 'all', label: 'All Apps', icon: Layers },
+  { id: 'mobility', label: '🚗 Mobility', icon: Car },
+  { id: 'agri', label: '🌾 Rural & Farm', icon: Wrench },
+  { id: 'education', label: '🎓 Learn & Media', icon: GraduationCap },
+  { id: 'finance', label: '💰 Finance & Play', icon: Wallet },
 ];
 
 export default function CategoryScreen() {
   const navigation = useNavigation<any>();
-  const { addRecentModule, userRole, pinnedModules, togglePinnedModule } = useContext(AppContext);
-  const [setupMode, setSetupMode] = useState(false);
+  const { addRecentModule, userRole, pinnedModules, togglePinnedModule, themeMode, themeVer } = useContext(AppContext);
 
-  const handleSelect = (cat: any) => {
+  const [setupMode, setSetupMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeGroup, setActiveGroup] = useState<string>('all');
+
+  // Handle module navigation
+  const handleSelect = (cat: CategoryItem) => {
     if (setupMode) {
       togglePinnedModule(cat.id);
       return;
@@ -36,8 +242,9 @@ export default function CategoryScreen() {
       name: cat.id,
       path: cat.path,
       label: cat.title,
-      iconName: cat.iconName || 'Map'
+      iconName: cat.iconName || 'Map',
     });
+
     if (cat.path === '/gameo') {
       navigation.navigate('GameOScreen');
     } else if (cat.path === '/drivo') {
@@ -52,6 +259,8 @@ export default function CategoryScreen() {
       navigation.navigate('AgrOScreen');
     } else if (cat.path === '/rento') {
       navigation.navigate('RentOScreen');
+    } else if (cat.path === '/dealo') {
+      navigation.navigate('DealOScreen');
     } else {
       navigation.navigate('ModuleView', {
         path: cat.path,
@@ -60,134 +269,474 @@ export default function CategoryScreen() {
     }
   };
 
-  const filteredCategories = CATEGORIES.filter(c => !c.adminOnly || userRole === 'admin');
+  // Filtered categories
+  const filteredCategories = useMemo(() => {
+    return CATEGORIES.filter((c) => {
+      if (c.adminOnly && userRole !== 'admin') return false;
+      if (activeGroup !== 'all' && c.categoryGroup !== activeGroup) return false;
+      if (searchQuery.trim().length > 0) {
+        const q = searchQuery.toLowerCase();
+        return (
+          c.title.toLowerCase().includes(q) ||
+          c.desc.toLowerCase().includes(q) ||
+          c.tag.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [userRole, activeGroup, searchQuery]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+
+      {/* ─── Top Header & Search ─── */}
+      <View style={[styles.headerContainer, { backgroundColor: colors.card, borderBottomColor: colors.borderLight }]}>
+        <View style={styles.headerTopRow}>
           <View>
-            <Text style={styles.title}>SuprO Ecosystem</Text>
-            <Text style={styles.subtitle}>{setupMode ? "Select up to 2 modules to pin" : "Select a module to get started"}</Text>
+            <View style={styles.brandRow}>
+              <Text style={[styles.brandTitle, { color: colors.text }]}>SuprO</Text>
+              <View style={styles.hubBadge}>
+                <Sparkles size={11} color="#00D084" />
+                <Text style={styles.hubBadgeText}>ECOSYSTEM</Text>
+              </View>
+            </View>
+            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+              {setupMode
+                ? 'Tap up to 2 apps to pin in bottom navigation'
+                : '12 Connected Super-App Services'}
+            </Text>
           </View>
-          <TouchableOpacity onPress={() => setSetupMode(!setupMode)} style={[styles.setupBtn, setupMode && styles.setupBtnActive]}>
-            <Text style={[styles.setupBtnText, setupMode && {color: '#000'}]}>{setupMode ? "Done" : "Setup"}</Text>
+
+          <TouchableOpacity
+            onPress={() => setSetupMode(!setupMode)}
+            style={[styles.pinToggleBtn, setupMode && styles.pinToggleBtnActive]}
+            activeOpacity={0.8}
+          >
+            <Pin size={14} color={setupMode ? '#070C18' : '#00D084'} />
+            <Text style={[styles.pinToggleText, setupMode && { color: '#070C18' }]}>
+              {setupMode ? 'Done' : 'Pin Tabs'}
+            </Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.grid}>
-        {filteredCategories.map((cat) => {
-          const Icon = cat.icon;
-          const isPinned = pinnedModules?.includes(cat.id);
-          return (
-            <TouchableOpacity 
-              key={cat.id} 
-              style={[
-                styles.card, 
-                { borderColor: cat.color + '40' },
-                setupMode && isPinned && { borderColor: '#10b981', borderWidth: 2, backgroundColor: 'rgba(16, 185, 129, 0.2)' }
-              ]} 
-              activeOpacity={0.7}
-              onPress={() => handleSelect(cat)}
-            >
-              <View style={[styles.iconWrapper, { backgroundColor: cat.bg }]}>
-                <Icon color={cat.color} size={32} />
-              </View>
-              <Text style={styles.cardTitle}>{cat.title}</Text>
-              <Text style={styles.cardDesc}>{cat.desc}</Text>
+        {/* Search Bar */}
+        <View style={[styles.searchBarWrapper, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+          <Search size={18} color={colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholder="Search rides, tractors, mandi, exams, tv..."
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={16} color={colors.textSecondary} />
             </TouchableOpacity>
-          );
-        })}
+          )}
+        </View>
+
+        {/* Category Filter Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
+          {FILTER_GROUPS.map((group) => {
+            const isActive = activeGroup === group.id;
+            return (
+              <TouchableOpacity
+                key={group.id}
+                style={[styles.filterChip, { backgroundColor: colors.card, borderColor: colors.borderLight }, isActive && styles.filterChipActive]}
+                onPress={() => setActiveGroup(group.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.filterChipText, { color: colors.textSecondary }, isActive && styles.filterChipTextActive]}>
+                  {group.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Powered by Aishlee Technology</Text>
-      </View>
-    </ScrollView>
+      {/* ─── Main Content Grid ─── */}
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Featured Spotlight Banner (Shown when no search query) */}
+        {!searchQuery && activeGroup === 'all' && (
+          <TouchableOpacity
+            style={[styles.spotlightCard, { backgroundColor: colors.card }]}
+            activeOpacity={0.85}
+            onPress={() => handleSelect(CATEGORIES[0])}
+          >
+            <View style={styles.spotlightGlow} />
+            <View style={styles.spotlightContent}>
+              <View style={styles.spotlightHeader}>
+                <View style={styles.spotlightBadge}>
+                  <Zap size={12} color="#00D084" />
+                  <Text style={styles.spotlightBadgeText}>POPULAR SPOTLIGHT</Text>
+                </View>
+                <Text style={styles.spotlightCommission}>0% Commission</Text>
+              </View>
+
+              <Text style={[styles.spotlightTitle, { color: colors.text }]}>RideO & Mandi Direct Connect</Text>
+              <Text style={[styles.spotlightDesc, { color: colors.textSecondary }]}>
+                Instant ride booking, driver payouts, and crop mandi prices at your fingertips.
+              </Text>
+
+              <View style={styles.spotlightActionRow}>
+                <Text style={styles.spotlightActionText}>Explore Now</Text>
+                <ChevronRight size={16} color="#00D084" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Bento Grid */}
+        <View style={styles.bentoGrid}>
+          {filteredCategories.map((cat) => {
+            const Icon = cat.icon;
+            const isPinned = pinnedModules?.includes(cat.id);
+
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.bentoCard,
+                  { backgroundColor: colors.card, borderColor: cat.color + '30' },
+                  setupMode &&
+                    isPinned && {
+                      borderColor: '#00D084',
+                      borderWidth: 2,
+                      backgroundColor: 'rgba(0, 208, 132, 0.12)',
+                    },
+                ]}
+                activeOpacity={0.75}
+                onPress={() => handleSelect(cat)}
+              >
+                {/* Card Top Row: Icon + Tag */}
+                <View style={styles.cardTopRow}>
+                  <View style={[styles.iconBox, { backgroundColor: cat.bg }]}>
+                    <Icon color={cat.color} size={24} />
+                  </View>
+                  <View style={[styles.cardTag, { backgroundColor: cat.color + '1A' }]}>
+                    <Text style={[styles.cardTagText, { color: cat.color }]}>{cat.tag}</Text>
+                  </View>
+                </View>
+
+                {/* Card Title & Desc */}
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{cat.title}</Text>
+                <Text style={[styles.cardDesc, { color: colors.textMuted }]} numberOfLines={2}>
+                  {cat.desc}
+                </Text>
+
+                {/* Pinned Badge in setup mode */}
+                {setupMode && (
+                  <View style={[styles.pinIndicator, { borderTopColor: colors.borderLight }]}>
+                    <Pin
+                      size={12}
+                      color={isPinned ? '#00D084' : colors.textMuted}
+                      fill={isPinned ? '#00D084' : 'transparent'}
+                    />
+                    <Text
+                      style={[
+                        styles.pinIndicatorText,
+                        { color: isPinned ? '#00D084' : colors.textMuted },
+                      ]}
+                    >
+                      {isPinned ? 'Pinned' : 'Tap to Pin'}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {filteredCategories.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>No modules match "{searchQuery}"</Text>
+            <Text style={[styles.emptySub, { color: colors.textMuted }]}>Try searching for cab, tractor, crop, or exams.</Text>
+          </View>
+        )}
+
+        {/* Footer info */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerBrand, { color: colors.textMuted }]}>SuprO Super Ecosystem</Text>
+          <Text style={[styles.footerText, { color: colors.border }]}>Powered by Aishlee Technology • 0% Platform Fee</Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0f1e',
   },
-  content: {
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
+  headerContainer: {
+    paddingTop: Platform.OS === 'android' ? 44 : 54,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
   },
-  header: {
-    marginBottom: 30,
+  headerTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
   },
-  title: {
-    fontSize: 26,
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandTitle: {
+    fontSize: 24,
     fontWeight: '900',
-    color: '#ffffff',
-    marginBottom: 6,
     letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#94a3b8',
+  hubBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 208, 132, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
   },
-  grid: {
+  hubBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#00D084',
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  pinToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 208, 132, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 208, 132, 0.3)',
+    gap: 6,
+  },
+  pinToggleBtnActive: {
+    backgroundColor: '#00D084',
+    borderColor: '#00D084',
+  },
+  pinToggleText: {
+    color: '#00D084',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  // Search bar
+  searchBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+  },
+  // Filter chips
+  filterScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterChipActive: {
+    backgroundColor: '#00D084',
+    borderColor: '#00D084',
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filterChipTextActive: {
+    color: '#070C18',
+    fontWeight: '700',
+  },
+  // Scroll content
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  // Spotlight banner
+  spotlightCard: {
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 208, 132, 0.3)',
+    overflow: 'hidden',
+  },
+  spotlightGlow: {
+    position: 'absolute',
+    top: -30,
+    right: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+  },
+  spotlightContent: {
+    position: 'relative',
+    zIndex: 2,
+  },
+  spotlightHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  spotlightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  spotlightBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#00D084',
+  },
+  spotlightCommission: {
+    fontSize: 11,
+    color: '#6EE7B7',
+    fontWeight: '600',
+  },
+  spotlightTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  spotlightDesc: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 12,
+  },
+  spotlightActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  spotlightActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#00D084',
+  },
+  // Bento Grid
+  bentoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 14,
+    gap: 12,
   },
-  card: {
-    width: (width - 54) / 2,
-    backgroundColor: '#0d1526',
-    borderRadius: 18,
-    padding: 16,
+  bentoCard: {
+    width: (width - 44) / 2,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    alignItems: 'flex-start',
+    marginBottom: 4,
   },
-  iconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  cardTag: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  cardTagText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
     marginBottom: 4,
   },
   cardDesc: {
     fontSize: 12,
-    color: '#64748b',
     lineHeight: 16,
+    height: 32,
   },
-  footer: {
-    marginTop: 40,
+  pinIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+  },
+  pinIndicatorText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    paddingVertical: 40,
     alignItems: 'center',
   },
-  footerText: {
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  emptySub: {
     fontSize: 12,
-    color: '#475569',
+    marginTop: 4,
   },
-  setupBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155'
+  footer: {
+    marginTop: 28,
+    alignItems: 'center',
+    paddingBottom: 20,
   },
-  setupBtnActive: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981'
+  footerBrand: {
+    fontSize: 12,
+    fontWeight: '700',
   },
-  setupBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12
-  }
+  footerText: {
+    fontSize: 11,
+    marginTop: 2,
+  },
 });
+

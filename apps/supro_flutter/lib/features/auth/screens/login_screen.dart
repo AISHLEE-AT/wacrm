@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../providers/auth_provider.dart';
+import '../../../shared/widgets/daily_deepam_video_player.dart';
 
 enum AuthStep { phone, otp, pinFallback, setPin }
 
@@ -15,48 +17,115 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   AuthStep _step = AuthStep.phone;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   final TextEditingController _pinController = TextEditingController();
   final TextEditingController _newPinController = TextEditingController();
   final TextEditingController _confirmPinController = TextEditingController();
-  
+
   // Registration data
   final TextEditingController _nameController = TextEditingController();
   String _category = 'Traveller';
-  
+
   bool _isChecking = false;
   bool? _isExistingUser;
   bool _hasPin = false;
   String _fullName = '';
+  bool _showPin = false;
 
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  // Daily Deepam Video Player states
+  bool _isDailyVideoRequired = false;
+  String _dailyVideoId = 'xhYONNuUZuk';
+  String _dailyVideoTitle = 'SuprO commercial ad #suprotrailer #suprotec #supro';
+  bool _isDailyVideoFinished = false;
 
   final List<Map<String, String>> categories = [
-    {'key': 'Admin', 'label': '?? Admin (CRM)'},
-    {'key': 'Traveller', 'label': '?? Traveller'},
-    {'key': 'Farmer', 'label': '?? Farmer'},
-    {'key': 'Shopper', 'label': '??? Shopper'},
+    {'key': 'Admin', 'label': '👑 Admin (CRM & All Modules)'},
+    {'key': 'Traveller', 'label': '🧳 Traveller (RideO)'},
+    {'key': 'Farmer', 'label': '🚜 Farmer (RentO Agri)'},
+    {'key': 'Shopper', 'label': '🛍️ Shopper (DealO)'},
+    {'key': 'Driver', 'label': '🚖 Driver (DriveO)'},
+    {'key': 'Student', 'label': '🎓 Student (TeachO)'},
+    {'key': 'Teacher', 'label': '👨‍🏫 Teacher (TeachO)'},
+    {'key': 'Financier', 'label': '💰 Financier (MoneyO)'},
+    {'key': 'Tourist', 'label': '🛕 Tourist (TourO)'},
   ];
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
+    _checkDailyVideo();
+  }
+
+  Future<void> _checkDailyVideo() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T')[0];
+      final savedDate = prefs.getString('supro_daily_video_date');
+
+      if (savedDate != today) {
+        setState(() {
+          _isDailyVideoRequired = true;
+          _isDailyVideoFinished = false;
+        });
+        _fetchLatestVideo();
+      } else {
+        setState(() {
+          _isDailyVideoRequired = false;
+          _isDailyVideoFinished = true;
+        });
+      }
+    } catch (_) {
+      setState(() {
+        _isDailyVideoRequired = false;
+        _isDailyVideoFinished = true;
+      });
+    }
+  }
+
+  Future<void> _fetchLatestVideo() async {
+    try {
+      final res = await http.get(
+        Uri.parse('https://www.youtube.com/feeds/videos.xml?channel_id=UC0K47n1iAXa_aAKhGZzdhDQ'),
+        headers: {'Accept': 'application/xml, text/xml, */*'},
+      ).timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200) {
+        final xml = res.body;
+        final idMatch = RegExp(r'<yt:videoId>([^<]+)</yt:videoId>').firstMatch(xml);
+        final titleMatch = RegExp(r'<title>([^<]+)</title>').allMatches(xml);
+
+        if (idMatch != null && idMatch.group(1) != null) {
+          if (mounted) {
+            setState(() {
+              _dailyVideoId = idMatch.group(1)!;
+              if (titleMatch.length > 1 && titleMatch.elementAt(1).group(1) != null) {
+                _dailyVideoTitle = titleMatch.elementAt(1).group(1)!;
+              }
+            });
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleDailyVideoEnded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    await prefs.setString('supro_daily_video_date', today);
+
+    if (mounted) {
+      setState(() {
+        _isDailyVideoFinished = true;
+        _isDailyVideoRequired = false;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _pulseController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     _pinController.dispose();
@@ -67,20 +136,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   }
 
   void _onPhoneChange(String val) async {
-    if (val.length == 10) {
+    final clean = val.replaceAll(RegExp(r'\D'), '');
+    if (clean.length == 10) {
       setState(() => _isChecking = true);
       try {
-        final data = await ref.read(authControllerProvider.notifier).checkUser(val);
+        final data = await ref.read(authControllerProvider.notifier).checkUser(clean);
         setState(() {
           _isExistingUser = data['exists'];
           if (_isExistingUser == true) {
             _fullName = data['name'] ?? '';
             _category = data['category'] ?? 'Traveller';
             _hasPin = data['has_pin'] ?? false;
-            
-            if (_hasPin) {
-              _step = AuthStep.pinFallback;
-            }
           }
         });
         if (_isExistingUser == true && data['gemini_api_key'] != null) {
@@ -101,59 +167,81 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   }
 
   Future<void> _requestOtp() async {
-    if (_phoneController.text.length != 10) return;
+    final cleanPhone = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.length != 10) return;
+
     setState(() => _step = AuthStep.otp);
-    final url = Uri.parse('https://wa.me/916381029380?text=Requesting%20OTP%20for%20Login');
+    final msg = Uri.encodeComponent(
+      '🔐 SuprO Login Verification\n\nMobile: $cleanPhone\nAction: Request OTP\n\nPlease send my 6-digit login OTP.',
+    );
+    final url = Uri.parse('https://wa.me/916381029380?text=$msg');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
   }
 
   void _verifyOtp() async {
-    if (_otpController.text.length != 6) return;
-    
+    final cleanOtp = _otpController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanOtp.length != 6) return;
+
     try {
       final res = await ref.read(authControllerProvider.notifier).verifyOtp(
-        phone: _phoneController.text,
-        otp: _otpController.text,
-        fullName: _isExistingUser == false ? _nameController.text : null,
+        phone: _phoneController.text.replaceAll(RegExp(r'\D'), ''),
+        otp: cleanOtp,
+        fullName: _isExistingUser == false ? _nameController.text.trim() : null,
         category: _isExistingUser == false ? _category : null,
       );
-      
+
       if (res['needs_pin_setup'] == true) {
         setState(() => _step = AuthStep.setPin);
       } else {
         if (mounted) context.go('/startup');
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())),
+        );
+      }
     }
   }
 
   void _loginWithPin() async {
-    if (_pinController.text.length != 4) return;
+    final cleanPin = _pinController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanPin.length != 4) return;
     try {
       await ref.read(authControllerProvider.notifier).loginWithPin(
-        phone: _phoneController.text,
-        pin: _pinController.text,
+        phone: _phoneController.text.replaceAll(RegExp(r'\D'), ''),
+        pin: cleanPin,
       );
       if (mounted) context.go('/startup');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())),
+        );
+      }
     }
   }
 
   void _setPin() async {
-    if (_newPinController.text.length != 4 || _newPinController.text != _confirmPinController.text) return;
+    final cleanNew = _newPinController.text.replaceAll(RegExp(r'\D'), '');
+    final cleanConfirm = _confirmPinController.text.replaceAll(RegExp(r'\D'), '');
+    if (cleanNew.length != 4 || cleanNew != cleanConfirm) return;
+
     try {
       await ref.read(authControllerProvider.notifier).setPin(
-        phone: _phoneController.text,
-        pin: _newPinController.text,
-        confirmPin: _confirmPinController.text,
+        phone: _phoneController.text.replaceAll(RegExp(r'\D'), ''),
+        pin: cleanNew,
+        confirmPin: cleanConfirm,
       );
       if (mounted) context.go('/startup');
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(backgroundColor: Colors.redAccent, content: Text(e.toString())),
+        );
+      }
     }
   }
 
@@ -165,426 +253,731 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1E),
       body: SafeArea(
-        child: KeyboardAvoidingView(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 48),
-                Container(
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF111827),
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: const Color(0x3334D399), width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x1A34D399),
-                        blurRadius: 30,
-                        offset: Offset(0, 8),
-                      )
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1526),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: const Color(0x3310B981), width: 1.2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A10B981),
+                      blurRadius: 24,
+                      offset: Offset(0, 8),
+                    )
+                  ],
+                ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildCurrentStep(isLoading),
+                ),
+              ),
+
+              // Daily Deepam Video Player Broadcast
+              if (_isDailyVideoRequired)
+                DailyDeepamVideoPlayer(
+                  videoId: _dailyVideoId,
+                  videoTitle: _dailyVideoTitle,
+                  onVideoEnded: _handleDailyVideoEnded,
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(top: 24.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        '✦ SUPRO DEEPAM ENGINE ✦',
+                        style: TextStyle(
+                          color: Color(0xFFFBBF24),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Authentication verified by SuprO Engine',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'வாழ்க • வளர்க • வெல்க 🌿',
+                        style: TextStyle(
+                          color: Color(0xFF10B981),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: _buildCurrentStep(isLoading),
-                  ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
     );
-  }
-
-  Widget _buildCurrentStep(bool isLoading) {
-    switch (_step) {
-      case AuthStep.phone: return _buildPhoneStep(isLoading);
-      case AuthStep.otp: return _buildOtpStep(isLoading);
-      case AuthStep.pinFallback: return _buildPinStep(isLoading);
-      case AuthStep.setPin: return _buildSetPinStep(isLoading);
-    }
   }
 
   Widget _buildHeader() {
     return Column(
       children: [
         Stack(
-          alignment: Alignment.center,
+          alignment: Alignment.topRight,
           children: [
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0x1AF59E0B),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A0F1E),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.6),
+                  width: 2,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-            ),
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0x33F59E0B),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(LucideIcons.sparkles, color: Color(0xFF10B981), size: 36),
+                  ),
                 ),
               ),
             ),
             Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0x99F59E0B), width: 2),
-                color: const Color(0xFF1E293B),
-                boxShadow: const [
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFBBF24),
+                shape: BoxShape.circle,
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x80F59E0B),
-                    blurRadius: 20,
+                    color: Color(0xFFFBBF24),
+                    blurRadius: 8,
+                    spreadRadius: 1,
                   )
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.cover,
-                ),
-              ),
+              child: const Icon(LucideIcons.sparkles, color: Colors.black, size: 10),
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        Text(
+        const SizedBox(height: 14),
+        const Text(
           'SuprO',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.w900,
-            letterSpacing: 2,
+            color: Color(0xFF34D399),
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 2),
         const Text(
-          '? FOR LOCAL NEEDS ?',
+          '✦ FOR LOCAL NEEDS ✦',
           style: TextStyle(
-            color: Color(0xFFF59E0B),
-            fontSize: 11,
-            letterSpacing: 4,
-            fontWeight: FontWeight.bold,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFFFBBF24),
+            letterSpacing: 2.5,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _step == AuthStep.setPin
+              ? '🔐 Set Your 4-Digit Secret PIN'
+              : '🔒 Secure Auth via WhatsApp',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.6),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildWelcomeBack() {
-    if (_isExistingUser != true) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(bottom: 28),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0x1A10B981),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0x3310B981)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0x3310B981),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(LucideIcons.userCheck, color: Color(0xFF10B981), size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('WELCOME BACK', style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                const SizedBox(height: 4),
-                Text(_fullName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                Text(_category, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500)),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFF94A3B8),
-        fontSize: 12,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 1,
-      ),
-    );
-  }
-
-  InputDecoration _buildInputDecoration(String hint, {Widget? prefixIcon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF475569)),
-      filled: true,
-      fillColor: const Color(0xFF0F172A),
-      prefixIcon: prefixIcon,
-      counterText: '',
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF34D399), width: 2),
-      ),
-    );
-  }
-
-  Widget _buildPrimaryButton(String text, IconData icon, VoidCallback? onPressed, bool isLoading) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF10B981),
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: const Color(0xFF1E293B),
-        disabledForegroundColor: const Color(0xFF64748B),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 0,
-      ),
-      child: isLoading
-          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 22),
-                const SizedBox(width: 12),
-                Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-              ],
-            ),
-    );
+  Widget _buildCurrentStep(bool isLoading) {
+    switch (_step) {
+      case AuthStep.phone:
+        return _buildPhoneStep(isLoading);
+      case AuthStep.otp:
+        return _buildOtpStep(isLoading);
+      case AuthStep.pinFallback:
+        return _buildPinStep(isLoading);
+      case AuthStep.setPin:
+        return _buildSetPinStep(isLoading);
+    }
   }
 
   Widget _buildPhoneStep(bool isLoading) {
+    final clean = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final isVideoLocked = _isDailyVideoRequired && !_isDailyVideoFinished;
+
     return Column(
-      key: const ValueKey('phone'),
-      crossAxisAlignment: CrossAxisAlignment.start,
+      key: const ValueKey('phone_step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_isExistingUser == true) _buildWelcomeBack(),
-        _buildInputLabel('MOBILE NUMBER'),
-        const SizedBox(height: 12),
+        const Text(
+          'MOBILE NUMBER',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           maxLength: 10,
           onChanged: _onPhoneChange,
-          style: const TextStyle(fontSize: 20, letterSpacing: 2, color: Colors.white, fontWeight: FontWeight.w600),
-          decoration: _buildInputDecoration('10-digit number', prefixIcon: const Icon(LucideIcons.smartphone, color: Color(0xFF34D399))),
-        ),
-        if (_isChecking) const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Center(child: CircularProgressIndicator(color: Color(0xFF34D399)))),
-        
-        if (_isExistingUser == false) ...[
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0x1A3B82F6),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0x333B82F6)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0x333B82F6),
-                    borderRadius: BorderRadius.circular(12),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+          decoration: InputDecoration(
+            counterText: '',
+            prefixIcon: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(LucideIcons.smartphone, color: Color(0xFF10B981), size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    '+91',
+                    style: TextStyle(
+                      color: Color(0xFF10B981),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
-                  child: const Icon(LucideIcons.userPlus, color: Color(0xFF60A5FA), size: 20),
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
+                  SizedBox(width: 8),
+                  VerticalDivider(color: Color(0x3310B981), thickness: 1, width: 1),
+                ],
+              ),
+            ),
+            hintText: '10-digit mobile number',
+            hintStyle: const TextStyle(color: Color(0xFF475569)),
+            filled: true,
+            fillColor: const Color(0xFF111C35),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+            ),
+          ),
+        ),
+
+        // New User Form
+        if (clean.length == 10 && _isExistingUser == false && !_isChecking) ...[
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+            ),
+            child: const Row(
+              children: [
+                Icon(LucideIcons.userCheck, color: Color(0xFF60A5FA), size: 20),
+                SizedBox(width: 10),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('CREATE NEW ACCOUNT', style: TextStyle(color: Color(0xFF60A5FA), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                      SizedBox(height: 4),
-                      Text("Looks like you're new! Let's set up your profile.", style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text(
+                        'CREATE NEW ACCOUNT',
+                        style: TextStyle(
+                          color: Color(0xFF60A5FA),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "Looks like you're new! Let's set up your profile.",
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          _buildInputLabel('FULL NAME'),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nameController, 
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
-            decoration: _buildInputDecoration('Enter your name', prefixIcon: const Icon(LucideIcons.user, color: Color(0xFF94A3B8)))
+          const SizedBox(height: 12),
+          const Text(
+            'FULL NAME',
+            style: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-          const SizedBox(height: 20),
-          _buildInputLabel('ROLE'),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _category,
-            dropdownColor: const Color(0xFF1E293B),
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
-            decoration: _buildInputDecoration('Select role', prefixIcon: const Icon(LucideIcons.briefcase, color: Color(0xFF94A3B8))),
-            items: categories.map((c) => DropdownMenuItem(value: c['key'], child: Text(c['label']!))).toList(),
-            onChanged: (v) => setState(() => _category = v!),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _nameController,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Your Full Name',
+              hintStyle: const TextStyle(color: Color(0xFF475569)),
+              filled: true,
+              fillColor: const Color(0xFF111C35),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'PRIMARY ROLE',
+            style: TextStyle(
+              color: Color(0xFF94A3B8),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111C35),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _category,
+                dropdownColor: const Color(0xFF111C35),
+                isExpanded: true,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                items: categories.map((c) {
+                  return DropdownMenuItem<String>(
+                    value: c['key'],
+                    child: Text(c['label']!),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _category = val);
+                },
+              ),
+            ),
           ),
         ],
 
-        const SizedBox(height: 32),
-        _buildPrimaryButton(
-          'Send OTP via WhatsApp',
-          LucideIcons.messageCircle,
-          _phoneController.text.length == 10 && !_isChecking ? _requestOtp : null,
-          false,
-        ),
-        const SizedBox(height: 16),
-        if (_phoneController.text.length == 10 && _isExistingUser != false)
-          OutlinedButton(
-            onPressed: () => setState(() => _step = AuthStep.pinFallback),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              side: const BorderSide(color: Color(0xFF34D399), width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              backgroundColor: const Color(0x0D34D399),
+        // Welcome Back Banner
+        if (clean.length == 10 && _isExistingUser == true && !_isChecking) ...[
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Row(
               children: [
-                Icon(LucideIcons.key, color: Color(0xFF34D399), size: 20),
-                SizedBox(width: 8),
-                Text('Use Fallback PIN Instead', style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 15)),
+                const Icon(LucideIcons.userCheck, color: Color(0xFF10B981), size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'WELCOME BACK',
+                        style: TextStyle(
+                          color: Color(0xFF10B981),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        _fullName.isNotEmpty ? _fullName : 'Verified User',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      Text(
+                        categories.firstWhere(
+                          (c) => c['key'] == _category,
+                          orElse: () => {'label': _category},
+                        )['label']!,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
+        ],
+
+        if (clean.length == 10 && _isChecking) ...[
+          const SizedBox(height: 12),
+          const Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Checking profile...',
+                  style: TextStyle(color: Color(0xFF10B981), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 18),
+
+        // Send OTP Button
+        ElevatedButton.icon(
+          onPressed: (clean.length != 10 || _isChecking || isVideoLocked || isLoading)
+              ? null
+              : _requestOtp,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF10B981),
+            disabledBackgroundColor: const Color(0xFF1E293B),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          icon: isVideoLocked
+              ? const Icon(LucideIcons.sparkles, color: Color(0xFFFBBF24), size: 18)
+              : const Icon(LucideIcons.messageCircle, size: 18),
+          label: Text(
+            isVideoLocked
+                ? '▶ Watching Daily Message...'
+                : 'Send OTP via WhatsApp',
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Fallback PIN Button
+        OutlinedButton.icon(
+          onPressed: (clean.length != 10 || isVideoLocked || isLoading)
+              ? null
+              : () => setState(() => _step = AuthStep.pinFallback),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF10B981),
+            side: BorderSide(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          icon: const Icon(LucideIcons.keyRound, size: 16),
+          label: Text(
+            isVideoLocked
+                ? 'Complete daily message to login'
+                : 'Use Fallback PIN Instead',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildOtpStep(bool isLoading) {
     return Column(
-      key: const ValueKey('otp'),
-      crossAxisAlignment: CrossAxisAlignment.start,
+      key: const ValueKey('otp_step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildInputLabel('6-DIGIT WHATSAPP OTP'),
-        const SizedBox(height: 12),
+        const Text(
+          '6-DIGIT WHATSAPP OTP',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: _otpController,
           keyboardType: TextInputType.number,
           maxLength: 6,
-          style: const TextStyle(fontSize: 32, letterSpacing: 12, fontWeight: FontWeight.w900, color: Colors.white),
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('òòòòòò'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 6,
+          ),
+          decoration: InputDecoration(
+            counterText: '',
+            prefixIcon: const Icon(LucideIcons.lock, color: Color(0xFF10B981), size: 18),
+            hintText: '••••••',
+            hintStyle: const TextStyle(color: Color(0xFF475569)),
+            filled: true,
+            fillColor: const Color(0xFF111C35),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFF10B981)),
+            ),
+          ),
         ),
-        const SizedBox(height: 32),
-        _buildPrimaryButton('Verify OTP & Continue', LucideIcons.shieldCheck, isLoading ? null : _verifyOtp, isLoading),
+        const SizedBox(height: 6),
+        Text(
+          "We opened WhatsApp for you. Hit send and we'll immediately reply with your OTP.",
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+        ),
         const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: isLoading || _otpController.text.length != 6 ? null : _verifyOtp,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF10B981),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text(
+                  'Verify OTP & Continue',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                ),
+        ),
         TextButton(
-          onPressed: () => setState(() => _step = AuthStep.phone), 
-          child: const Center(child: Text('? Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
-        )
+          onPressed: () => setState(() => _step = AuthStep.phone),
+          child: const Text('← Go back', style: TextStyle(color: Color(0xFF94A3B8))),
+        ),
       ],
     );
   }
 
   Widget _buildPinStep(bool isLoading) {
     return Column(
-      key: const ValueKey('pinFallback'),
-      crossAxisAlignment: CrossAxisAlignment.start,
+      key: const ValueKey('pin_step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_isExistingUser == true) _buildWelcomeBack(),
-        _buildInputLabel('4-DIGIT SECURE PIN'),
-        const SizedBox(height: 12),
+        const Text(
+          '4-DIGIT SECURE PIN',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: _pinController,
           keyboardType: TextInputType.number,
-          obscureText: true,
           maxLength: 4,
-          style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
+          obscureText: !_showPin,
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('òòòò'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 6,
+          ),
+          decoration: InputDecoration(
+            counterText: '',
+            prefixIcon: const Icon(LucideIcons.lock, color: Color(0xFFFBBF24), size: 18),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _showPin ? LucideIcons.eyeOff : LucideIcons.eye,
+                color: const Color(0xFF94A3B8),
+                size: 18,
+              ),
+              onPressed: () => setState(() => _showPin = !_showPin),
+            ),
+            hintText: '••••',
+            hintStyle: const TextStyle(color: Color(0xFF475569)),
+            filled: true,
+            fillColor: const Color(0xFF111C35),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFFFBBF24)),
+            ),
+          ),
         ),
-        const SizedBox(height: 32),
-        _buildPrimaryButton('Sign In with PIN', LucideIcons.unlock, isLoading ? null : _loginWithPin, isLoading),
+        const SizedBox(height: 6),
+        Text(
+          'Use your PIN set during registration. If forgotten, login via WhatsApp OTP.',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11),
+        ),
         const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: isLoading || _pinController.text.length != 4 ? null : _loginWithPin,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFBBF24),
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                )
+              : const Text(
+                  'Sign In with PIN',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+                ),
+        ),
         TextButton(
-          onPressed: () => setState(() => _step = AuthStep.phone), 
-          child: const Center(child: Text('? Go back', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.bold)))
-        )
+          onPressed: () => setState(() => _step = AuthStep.phone),
+          child: const Text('← Go back', style: TextStyle(color: Color(0xFF94A3B8))),
+        ),
       ],
     );
   }
 
   Widget _buildSetPinStep(bool isLoading) {
     return Column(
-      key: const ValueKey('setPin'),
-      crossAxisAlignment: CrossAxisAlignment.start,
+      key: const ValueKey('set_pin_step'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildInputLabel('SET 4-DIGIT SECURE PIN'),
-        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBBF24).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.3)),
+          ),
+          child: const Column(
+            children: [
+              Text(
+                '🔐 One Last Step!',
+                style: TextStyle(
+                  color: Color(0xFFFBBF24),
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Set a 4-digit PIN for quick future logins when WhatsApp OTP is unavailable.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'NEW 4-DIGIT PIN',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
         TextField(
           controller: _newPinController,
           keyboardType: TextInputType.number,
-          obscureText: true,
           maxLength: 4,
-          style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
+          obscureText: true,
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('òòòò'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 4,
+          ),
+          decoration: InputDecoration(
+            counterText: '',
+            prefixIcon: const Icon(LucideIcons.keyRound, color: Color(0xFFFBBF24), size: 18),
+            filled: true,
+            fillColor: const Color(0xFF111C35),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
         ),
-        const SizedBox(height: 20),
-        _buildInputLabel('CONFIRM PIN'),
         const SizedBox(height: 12),
+        const Text(
+          'CONFIRM PIN',
+          style: TextStyle(
+            color: Color(0xFF94A3B8),
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
         TextField(
           controller: _confirmPinController,
           keyboardType: TextInputType.number,
-          obscureText: true,
           maxLength: 4,
-          style: const TextStyle(fontSize: 32, letterSpacing: 16, fontWeight: FontWeight.w900, color: Colors.white),
+          obscureText: true,
           textAlign: TextAlign.center,
-          decoration: _buildInputDecoration('òòòò'),
-        ),
-        const SizedBox(height: 32),
-        _buildPrimaryButton('Save PIN & Continue', LucideIcons.save, isLoading ? null : _setPin, isLoading),
-      ],
-    );
-  }
-}
-
-class KeyboardAvoidingView extends StatelessWidget {
-  final Widget child;
-  const KeyboardAvoidingView({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(child: child),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 4,
           ),
-        );
-      },
+          decoration: InputDecoration(
+            counterText: '',
+            prefixIcon: const Icon(LucideIcons.keyRound, color: Color(0xFFFBBF24), size: 18),
+            filled: true,
+            fillColor: const Color(0xFF111C35),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton(
+          onPressed: isLoading || _newPinController.text.length != 4 ? null : _setPin,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFBBF24),
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text(
+            'Save PIN & Enter App',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+          ),
+        ),
+      ],
     );
   }
 }

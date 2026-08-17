@@ -24,6 +24,81 @@ export async function handleRideHailingBooking(
     // Exclude ride booking / transport dispatch messages from triggering automated login OTP
     const isRideRequestMessage = text.includes('rideo') || text.includes('ride request') || text.includes('start trip pin') || text.includes('start ride') || text.includes('pickup') || text.includes('estimated fare') || interactiveId.includes('ride');
 
+    // ───── 0.05 SUPRO 24-HOUR NOTIFICATION WINDOW RENEWAL & SYNC HOOK ─────
+    const isWindowSyncMessage = 
+      text.includes('window active') || 
+      text.includes('keep my 24h') || 
+      text.includes('23h keep-alive') || 
+      text.includes('keep-alive') || 
+      text.includes('notification window');
+
+    if (isWindowSyncMessage) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            last_whatsapp_inbound_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .or(`phone.ilike.%${tenDigitPhone}%,whatsapp.ilike.%${tenDigitPhone}%`);
+
+        if (contactId) {
+          await supabase
+            .from('contacts')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', contactId);
+
+          const { data: conv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('contact_id', contactId)
+            .maybeSingle();
+
+          if (conv) {
+            await supabase
+              .from('conversations')
+              .update({
+                last_message_text: '⚡ 24h Window Keep-Alive Sync',
+                last_message_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', conv.id);
+          }
+        }
+      } catch (profErr) {
+        console.warn('Profile & CRM sync timestamp error:', profErr);
+      }
+
+      // Fetch user profile to get their name and auto-saved location
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name, location, city, role, category')
+        .or(`phone.ilike.%${tenDigitPhone}%,whatsapp.ilike.%${tenDigitPhone}%`)
+        .maybeSingle();
+
+      const userName = userProfile?.full_name || 'Valued Member';
+      const userLocation = userProfile?.location || userProfile?.city || 'Auto-synced via SuprO App (Tamil Nadu)';
+
+      let phoneId = config.phone_number_id;
+      if (!phoneId) {
+        const { data: cfg } = await supabase.from('whatsapp_config').select('phone_number_id').maybeSingle();
+        phoneId = cfg?.phone_number_id || '1213113635214047';
+      }
+
+      await sendTextMessage({
+        accessToken,
+        phoneNumberId: phoneId,
+        to: senderPhone,
+        text: `⚡ SUPRO 24-HOUR WINDOW ACTIVE! ⚡\n\n` +
+          `வணக்கம் ${userName}! 🙏\n\n` +
+          `✅ Your 24-Hour WhatsApp Notification & CRM window is now ACTIVE.\n\n` +
+          `📍 Auto-Location: ${userLocation}\n` +
+          `🔔 Live Alerts: RideO, RentO Agri Machinery, Mandi Rates & AI Hub are active.\n\n` +
+          `🚀 Open your SuprO App to continue using all modules!`
+      });
+      return true;
+    }
+
     if (!isRideRequestMessage && (text.includes('login otp') || text === 'otp' || text === 'login' || text === 'code' || text === 'help')) {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -245,14 +320,15 @@ export async function handleRideHailingBooking(
 
           // 2. WhatsApp to RIDER (Contains private start-trip OTP)
           const riderWhatsappPhone = pendingRide.passenger_phone || '919123596988';
+          const dRow: any = driverRow;
           await sendTextMessage({
             accessToken,
             phoneNumberId: config.phone_number_id,
             to: riderWhatsappPhone,
             text: `🚕 DRIVER CONFIRMED YOUR RIDE! 🚕\n\n` +
-              `👨‍✈️ *Driver:* ${driverRow.name}\n` +
-              `📞 *Contact:* ${driverRow.phone || driverRow.mobile_number || senderPhone}\n` +
-              `🛺 *Vehicle:* ${driverRow.vehicle_type} (${driverRow.vehicle_registration || driverRow.vehicle_number || ''})\n` +
+              `👨‍✈️ *Driver:* ${dRow.name || 'Driver Partner'}\n` +
+              `📞 *Contact:* ${dRow.phone || dRow.mobile_number || senderPhone}\n` +
+              `🛺 *Vehicle:* ${dRow.vehicle_type || 'Vehicle'} (${dRow.vehicle_registration || dRow.vehicle_number || ''})\n` +
               `📍 *Pickup:* ${pickupAddress}\n` +
               `🏁 *Drop-off:* ${dropoffAddress}\n` +
               `💰 *Fare:* ₹${fareVal}\n\n` +

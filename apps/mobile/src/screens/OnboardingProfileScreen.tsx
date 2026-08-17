@@ -1,25 +1,133 @@
 // @ts-nocheck
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { decode } from 'base64-arraybuffer';
 import { User, CreditCard, Camera, MapPin, Navigation, RefreshCw } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { LocationContext } from '../context/LocationContext';
+import { supabase } from '../lib/supabase';
 
 export default function OnboardingProfileScreen({ navigation }: any) {
   const { user, signIn } = useContext(AppContext);
   const locationCtx = useContext(LocationContext);
   const [fullName, setFullName] = useState(user?.name || '');
   const [upiId, setUpiId] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user?.name) {
       setFullName(user.name);
     }
+    // Fetch existing profile if available
+    (async () => {
+      if (user?.phone) {
+        try {
+          const clean = user.phone.replace(/\D/g, '').slice(-10);
+          const { data } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url, upi_id')
+            .ilike('phone', `%${clean}%`)
+            .maybeSingle();
+
+          if (data) {
+            if (data.full_name && !fullName) setFullName(data.full_name);
+            if (data.avatar_url) setAvatarUrl(data.avatar_url);
+            if (data.upi_id) setUpiId(data.upi_id);
+          }
+        } catch (e) {
+          console.warn('Profile fetch warning:', e);
+        }
+      }
+    })();
   }, [user]);
 
   const handleAvatarPress = () => {
-    Alert.alert('Coming Soon', 'Avatar upload coming soon');
+    Alert.alert(
+      'Profile Photo / பயனர் படம்',
+      'Choose an option to set your avatar photo',
+      [
+        {
+          text: '📷 Take Photo (Camera)',
+          onPress: () => pickImage('camera'),
+        },
+        {
+          text: '🖼️ Choose from Gallery',
+          onPress: () => pickImage('gallery'),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const pickImage = async (mode: 'camera' | 'gallery') => {
+    try {
+      let result;
+      if (mode === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Camera permission is required to take a photo.');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+          base64: true,
+        });
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Gallery permission is required to select a photo.');
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+          base64: true,
+        });
+      }
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        setAvatarUrl(asset.uri);
+        setIsUploadingAvatar(true);
+
+        // Upload to Supabase Storage
+        if (asset.base64) {
+          const userIdentifier = user?.phone?.replace(/\D/g, '') || 'avatar';
+          const filePath = `${userIdentifier}/avatar_${Date.now()}.jpg`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, decode(asset.base64), {
+              contentType: 'image/jpeg',
+              upsert: true,
+            });
+
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+
+            if (publicUrlData?.publicUrl) {
+              setAvatarUrl(publicUrlData.publicUrl);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn('Avatar pick error:', err);
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleSave = async () => {
@@ -34,34 +142,60 @@ export default function OnboardingProfileScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      const res = await fetch('https://watscrm.vercel.app/api/profile/update', {
+      const payload = {
+        phone: user?.phone,
+        full_name: fullName,
+        upi_id: upiId,
+        avatar_url: avatarUrl || undefined,
+        location: locationCtx.locationString !== 'Detecting location...' ? locationCtx.locationString : undefined,
+        city: locationCtx.city || undefined,
+        district: locationCtx.district || undefined,
+        state: locationCtx.state || undefined,
+        pincode: locationCtx.pincode || undefined,
+        country: locationCtx.country || undefined,
+        latitude: locationCtx.latitude || undefined,
+        longitude: locationCtx.longitude || undefined,
+      };
+
+      // 1. Update Supabase profiles table directly
+      if (user?.phone) {
+        const clean = user.phone.replace(/\D/g, '').slice(-10);
+        await supabase
+          .from('profiles')
+          .update({
+            full_name: fullName,
+            upi_id: upiId || null,
+            avatar_url: avatarUrl || null,
+            location: payload.location || null,
+            latitude: payload.latitude || null,
+            longitude: payload.longitude || null,
+            updated_at: new Date().toISOString(),
+          })
+          .ilike('phone', `%${clean}%`);
+      }
+
+      // 2. Call backend profile API endpoint
+      fetch('https://watscrm.vercel.app/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          phone: user?.phone,
-          full_name: fullName,
-          upi_id: upiId,
-          location: locationCtx.locationString !== 'Detecting location...' ? locationCtx.locationString : undefined,
-          city: locationCtx.city || undefined,
-          district: locationCtx.district || undefined,
-          state: locationCtx.state || undefined,
-          pincode: locationCtx.pincode || undefined,
-          country: locationCtx.country || undefined,
-          latitude: locationCtx.latitude || undefined,
-          longitude: locationCtx.longitude || undefined,
-        })
-      });
-      
-      if (!res.ok) {
-        throw new Error('Failed to update profile');
-      }
+        body: JSON.stringify(payload)
+      }).catch(e => console.warn('Profile API update warning:', e));
 
-      // Update AppContext user name
+      // Update AppContext user
       if (user) {
-        signIn({ ...user, name: fullName });
+        signIn({ ...user, name: fullName, avatarUrl });
       }
 
-      navigation.replace('OnboardingModule');
+      await SecureStore.setItemAsync('onboarding-complete', 'true');
+      const cleanPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
+      if (cleanPhone) {
+        await supabase
+          .from('profiles')
+          .update({ onboarding_complete: true })
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
+      }
+
+      navigation.replace('Dashboard');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Something went wrong');
     } finally {
@@ -78,12 +212,19 @@ export default function OnboardingProfileScreen({ navigation }: any) {
         </View>
 
         <View style={styles.avatarSection}>
-          <TouchableOpacity style={styles.avatarCircle} onPress={handleAvatarPress}>
-            <Text style={styles.avatarText}>{fullName ? fullName.charAt(0).toUpperCase() : '?'}</Text>
+          <TouchableOpacity style={styles.avatarCircle} onPress={handleAvatarPress} disabled={isUploadingAvatar}>
+            {isUploadingAvatar ? (
+              <ActivityIndicator color="#34d399" size="large" />
+            ) : avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>{fullName ? fullName.charAt(0).toUpperCase() : '?'}</Text>
+            )}
             <View style={styles.cameraIconBadge}>
               <Camera color="#fff" size={14} />
             </View>
           </TouchableOpacity>
+          <Text style={styles.avatarHint}>Tap to change photo</Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -167,10 +308,12 @@ const styles = StyleSheet.create({
   header: { marginBottom: 30, marginTop: 40 },
   title: { fontSize: 32, fontWeight: '900', color: '#34d399', marginBottom: 8 },
   subtitle: { fontSize: 14, color: '#94a3b8' },
-  avatarSection: { alignItems: 'center', marginBottom: 40 },
-  avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#111827', borderWidth: 2, borderColor: '#34d399', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  avatarSection: { alignItems: 'center', marginBottom: 30 },
+  avatarCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#111827', borderWidth: 2, borderColor: '#34d399', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' },
+  avatarImage: { width: 96, height: 96, borderRadius: 48 },
   avatarText: { color: '#34d399', fontSize: 36, fontWeight: 'bold' },
-  cameraIconBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#10b981', width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#0a0f1e' },
+  avatarHint: { color: '#64748b', fontSize: 12, marginTop: 8 },
+  cameraIconBadge: { position: 'absolute', bottom: 0, right: 0, backgroundColor: '#10b981', width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#0a0f1e', zIndex: 10 },
   formContainer: { backgroundColor: '#111827', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: 'rgba(52,211,153,0.2)' },
   label: { color: '#94a3b8', fontSize: 12, fontWeight: 'bold', letterSpacing: 1, marginBottom: 8 },
   inputContainer: { position: 'relative', justifyContent: 'center' },

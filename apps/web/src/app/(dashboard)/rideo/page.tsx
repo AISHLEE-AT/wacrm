@@ -201,12 +201,17 @@ export default function RideOBookingPage() {
         })
         .subscribe();
 
-      // Start 30s countdown
+      // Start 300s (5:00 min) countdown with auto-expiry
+      setSearchCountdown(300);
       if (countdownRef.current) clearInterval(countdownRef.current);
       countdownRef.current = setInterval(() => {
         setSearchCountdown((prev) => {
           if (prev <= 1) {
             if (countdownRef.current) clearInterval(countdownRef.current);
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            supabase.from('rides').update({ status: 'expired' }).eq('id', rideRecord.id).then(() => {});
+            alert('Ride Request Expired (5:00 mins)\n\nNo driver accepted your request within 5 minutes. Please try again.');
+            setRideState('IDLE');
             return 0;
           }
           return prev - 1;
@@ -384,7 +389,9 @@ export default function RideOBookingPage() {
               <div className="w-16 h-16 rounded-full border-4 border-emerald-500/30 border-t-emerald-500 animate-spin"></div>
               <div>
                 <h3 className="text-xl font-bold text-white">Searching for Nearby {selectedCategory.name}...</h3>
-                <p className="text-sm text-slate-400 mt-1">Connecting with drivers • {searchCountdown}s remaining</p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Connecting with nearby drivers • <span className="text-emerald-400 font-mono font-bold">{Math.floor(searchCountdown / 60)}:{String(searchCountdown % 60).padStart(2, '0')}</span> remaining (5:00 auto-expiry)
+                </p>
               </div>
               <button
                 onClick={handleCancelRequest}

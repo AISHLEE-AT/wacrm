@@ -116,23 +116,43 @@ export default function RideOScreen({ navigation }) {
         Alert.alert('Permission denied', 'Location is required to book a ride.');
         return;
       }
-      let currentLoc = await Location.getCurrentPositionAsync({});
-      setLocation(currentLoc.coords);
-      
-      if (mapRef.current) {
-        mapRef.current.animateToRegion({
-          latitude: currentLoc.coords.latitude,
-          longitude: currentLoc.coords.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
+      try {
+        if (Platform.OS === 'android') {
+          await Location.enableNetworkProviderAsync().catch(() => {});
+        }
+      } catch {}
+
+      let currentLoc = null;
+      try {
+        currentLoc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Highest,
         });
+      } catch {
+        try {
+          currentLoc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+        } catch {
+          currentLoc = await Location.getLastKnownPositionAsync({});
+        }
       }
-      
-      reverseGeocode(currentLoc.coords.latitude, currentLoc.coords.longitude, setPickupAddress);
+
+      if (currentLoc?.coords) {
+        setLocation(currentLoc.coords);
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({
+            latitude: currentLoc.coords.latitude,
+            longitude: currentLoc.coords.longitude,
+            latitudeDelta: 0.008,
+            longitudeDelta: 0.008,
+          }, 500);
+        }
+        reverseGeocode(currentLoc.coords.latitude, currentLoc.coords.longitude, setPickupAddress);
+      }
     })();
   }, []);
 
-  // Pulse animation for SEARCHING state
+  // Pulse animation for SEARCHING state (5-minute auto-expiry)
   useEffect(() => {
     if (rideState === 'SEARCHING') {
       Animated.loop(
@@ -154,7 +174,7 @@ export default function RideOScreen({ navigation }) {
       }, 1000);
       return () => clearInterval(timer);
     } else {
-      setCountdown(60);
+      setCountdown(300); // 5 minutes = 300s
       pulseAnim.setValue(1);
     }
   }, [rideState]);
@@ -294,17 +314,14 @@ export default function RideOScreen({ navigation }) {
       let geocode = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       if (geocode && geocode.length > 0) {
         const g = geocode[0];
-        // Build address preferring readable parts, skip Plus Codes (contain '+')
+        // Build address preferring readable parts including exact landmark/name
         const parts = [
-          g.street && !g.street.includes('+') ? g.street : null,
+          g.name && !g.name.includes('+') ? g.name : null,
+          g.street && !g.street.includes('+') && g.street !== g.name ? g.street : null,
           g.district || g.subregion || null,
           g.city || g.region || null,
         ].filter(Boolean);
-        // Fallback: if street is a Plus Code, use name if it's not a Plus Code either
-        if (parts.length === 0 && g.name && !g.name.includes('+')) {
-          parts.push(g.name);
-        }
-        const address = parts.length > 0 ? parts.join(', ') : `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        const address = parts.length > 0 ? parts.join(', ') : `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         setter(address);
       }
     } catch (e) {
@@ -361,22 +378,65 @@ export default function RideOScreen({ navigation }) {
     }, 350);
   };
 
+  const handleMapPress = (e: any) => {
+    if (!e?.nativeEvent?.coordinate) return;
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    const coords = { latitude, longitude };
+
+    if (rideState === 'SELECT_PICKUP') {
+      setLocation(coords);
+      reverseGeocode(latitude, longitude, setPickupAddress);
+      mapRef.current?.animateToRegion({
+        ...coords,
+        latitudeDelta: 0.008,
+        longitudeDelta: 0.008,
+      }, 400);
+    } else if (rideState === 'SELECT_DROPOFF') {
+      setDropoffLocation(coords);
+      reverseGeocode(latitude, longitude, setDropoffAddress);
+      mapRef.current?.animateToRegion({
+        ...coords,
+        latitudeDelta: 0.008,
+        longitudeDelta: 0.008,
+      }, 400);
+    }
+  };
+
   const useMyLocation = async () => {
     try {
-      let currentLoc = await Location.getCurrentPositionAsync({});
-      const coords = { latitude: currentLoc.coords.latitude, longitude: currentLoc.coords.longitude };
-      if (rideState === 'SELECT_PICKUP') {
-        setLocation(coords);
-        reverseGeocode(coords.latitude, coords.longitude, setPickupAddress);
-      } else if (rideState === 'SELECT_DROPOFF') {
-        setDropoffLocation(coords);
-        reverseGeocode(coords.latitude, coords.longitude, setDropoffAddress);
+      if (Platform.OS === 'android') {
+        await Location.enableNetworkProviderAsync().catch(() => {});
       }
-      if (mapRef.current) {
-        mapRef.current.animateToRegion({ ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 });
+      let currentLoc = null;
+      try {
+        currentLoc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Highest,
+        });
+      } catch {
+        try {
+          currentLoc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+        } catch {
+          currentLoc = await Location.getLastKnownPositionAsync({});
+        }
+      }
+
+      if (currentLoc?.coords) {
+        const coords = { latitude: currentLoc.coords.latitude, longitude: currentLoc.coords.longitude };
+        if (rideState === 'SELECT_PICKUP') {
+          setLocation(coords);
+          reverseGeocode(coords.latitude, coords.longitude, setPickupAddress);
+        } else if (rideState === 'SELECT_DROPOFF') {
+          setDropoffLocation(coords);
+          reverseGeocode(coords.latitude, coords.longitude, setDropoffAddress);
+        }
+        if (mapRef.current) {
+          mapRef.current.animateToRegion({ ...coords, latitudeDelta: 0.008, longitudeDelta: 0.008 }, 500);
+        }
       }
     } catch (e) {
-      Alert.alert('Location Error', 'Could not get your current location.');
+      Alert.alert('Location Error', 'Could not get your exact GPS location.');
     }
   };
 
@@ -642,12 +702,16 @@ export default function RideOScreen({ navigation }) {
   };
 
   const handleSearchTimeout = async () => {
-    // If not accepted in 60s
-    if (currentRide) {
-      await supabase.from('rides').update({ status: 'cancelled' }).eq('id', currentRide.id);
+    // Auto-expired after 5 minutes
+    if (currentRide?.id) {
+      await supabase.from('rides').update({ status: 'expired' }).eq('id', currentRide.id);
     }
-    Alert.alert('No response', 'The driver did not accept in time.');
+    Alert.alert(
+      'Request Expired',
+      'No nearby driver accepted the ride within 5 minutes. You can retry or choose another driver.'
+    );
     setRideState('SHOW_DRIVERS');
+    setCurrentRide(null);
   };
 
   const cancelRide = async () => {
@@ -688,6 +752,7 @@ export default function RideOScreen({ navigation }) {
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
+        onPress={handleMapPress}
         onRegionChange={() => {
           if (rideState === 'SELECT_PICKUP' || rideState === 'SELECT_DROPOFF') {
             if (!isMapMoving) {
@@ -838,67 +903,64 @@ export default function RideOScreen({ navigation }) {
 
       {/* BOTTOM SHEETS */}
       
-      {/* 1. SELECT_PICKUP SHEET */}
+      {/* 1. SELECT_PICKUP SHEET (Compact ~20% Screen Height) */}
       {rideState === 'SELECT_PICKUP' && (
-        <View style={styles.bottomSheet}>
-          <View style={styles.idleTopRow}>
-            <TouchableOpacity style={styles.backBtnSmall} onPress={() => navigation?.goBack()}>
-              <ArrowLeft color={COLORS.text} size={22} />
-            </TouchableOpacity>
-            <Text style={styles.greetingText}>{greeting}, {user?.name || 'Rider'}!</Text>
-          </View>
-          <View style={styles.searchBox}>
-            <Search color={COLORS.textMuted} size={20} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search pickup location..."
-              placeholderTextColor={COLORS.textMuted}
-              value={pickupQuery}
-              onChangeText={setPickupQuery}
-              onSubmitEditing={handlePickupSubmit}
-              returnKeyType="search"
-            />
-            {loading && <ActivityIndicator color={COLORS.green} size="small" />}
-          </View>
-          <TouchableOpacity style={styles.useLocationRow} onPress={useMyLocation}>
-            <View style={styles.useLocationIcon}>
-              <Crosshair size={18} color={COLORS.green} />
+        <View style={styles.bottomSheetCompact}>
+          <View style={styles.compactSearchRow}>
+            <View style={styles.searchBoxCompact}>
+              <Search color={COLORS.green} size={18} />
+              <TextInput
+                style={styles.searchInputCompact}
+                placeholder="Search pickup location..."
+                placeholderTextColor={COLORS.textMuted}
+                value={pickupQuery}
+                onChangeText={setPickupQuery}
+                onSubmitEditing={handlePickupSubmit}
+                returnKeyType="search"
+              />
+              {loading ? (
+                <ActivityIndicator color={COLORS.green} size="small" />
+              ) : (
+                <TouchableOpacity onPress={useMyLocation} style={styles.inlineGpsBtn}>
+                  <Crosshair size={18} color={COLORS.green} />
+                </TouchableOpacity>
+              )}
             </View>
-            <Text style={styles.useLocationText}>Use my current location</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.primaryBtn} onPress={confirmPickup}>
-            <MapPin size={20} color="#000" />
-            <Text style={[styles.primaryBtnText, { marginLeft: 8 }]}>Confirm Pickup</Text>
+          </View>
+          <TouchableOpacity style={styles.primaryBtnCompact} onPress={confirmPickup}>
+            <MapPin size={18} color="#000" />
+            <Text style={styles.primaryBtnTextCompact}>Confirm Pickup Location</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* 2. SELECT_DROPOFF SHEET */}
+      {/* 2. SELECT_DROPOFF SHEET (Compact ~20% Screen Height) */}
       {rideState === 'SELECT_DROPOFF' && (
-        <View style={styles.bottomSheet}>
-          <Text style={styles.sheetTitle}>Where to?</Text>
-          <View style={styles.searchBox}>
-            <Search color={COLORS.textMuted} size={20} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search destination..."
-              placeholderTextColor={COLORS.textMuted}
-              value={dropoffQuery}
-              onChangeText={setDropoffQuery}
-              onSubmitEditing={handleDropoffSubmit}
-              returnKeyType="search"
-            />
-            {loading && <ActivityIndicator color={COLORS.green} size="small" />}
-          </View>
-          <TouchableOpacity style={styles.useLocationRow} onPress={useMyLocation}>
-            <View style={[styles.useLocationIcon, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
-              <Crosshair size={18} color={COLORS.red} />
+        <View style={styles.bottomSheetCompact}>
+          <View style={styles.compactSearchRow}>
+            <View style={styles.searchBoxCompact}>
+              <Search color={COLORS.red} size={18} />
+              <TextInput
+                style={styles.searchInputCompact}
+                placeholder="Where to? (Destination)..."
+                placeholderTextColor={COLORS.textMuted}
+                value={dropoffQuery}
+                onChangeText={setDropoffQuery}
+                onSubmitEditing={handleDropoffSubmit}
+                returnKeyType="search"
+              />
+              {loading ? (
+                <ActivityIndicator color={COLORS.red} size="small" />
+              ) : (
+                <TouchableOpacity onPress={useMyLocation} style={styles.inlineGpsBtn}>
+                  <Crosshair size={18} color={COLORS.red} />
+                </TouchableOpacity>
+              )}
             </View>
-            <Text style={styles.useLocationText}>Use my current location</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: COLORS.red }]} onPress={confirmDropoff}>
-            <Navigation size={20} color="#fff" />
-            <Text style={[styles.primaryBtnText, { marginLeft: 8, color: '#fff' }]}>Confirm Destination</Text>
+          </View>
+          <TouchableOpacity style={[styles.primaryBtnCompact, { backgroundColor: COLORS.red }]} onPress={confirmDropoff}>
+            <Navigation size={18} color="#fff" />
+            <Text style={[styles.primaryBtnTextCompact, { color: '#fff' }]}>Confirm Destination</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1020,8 +1082,10 @@ export default function RideOScreen({ navigation }) {
           <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]}>
             <ActivityIndicator size="large" color={COLORS.green} />
           </Animated.View>
-          <Text style={styles.searchingTitle}>Waiting for {selectedDriver?.name}...</Text>
-          <Text style={styles.countdownText}>{countdown}s remaining</Text>
+          <Text style={styles.searchingTitle}>Waiting for {selectedDriver?.name || 'Nearby Driver'}...</Text>
+          <Text style={styles.countdownText}>
+            {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')} remaining (Auto-expires in 5 mins)
+          </Text>
           <TouchableOpacity style={styles.cancelBtnOutline} onPress={cancelRide}>
             <Text style={styles.cancelBtnText}>Cancel Request</Text>
           </TouchableOpacity>
@@ -1207,41 +1271,43 @@ const styles = StyleSheet.create({
   },
   floatingAddressCard: {
     position: 'absolute',
-    top: '38%',
-    left: 24,
-    right: 24,
+    top: Platform.OS === 'ios' ? 52 : 38,
+    left: 16,
+    right: 16,
     backgroundColor: COLORS.card,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
-    zIndex: 3,
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   floatingAddressDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 10,
   },
   floatingAddressText: {
     color: COLORS.text,
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
     flex: 1,
   },
   gpsButton: {
     position: 'absolute',
     right: 16,
-    bottom: 260,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    bottom: 130,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.card,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1251,6 +1317,73 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 6,
     zIndex: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  bottomSheetCompact: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 10,
+    zIndex: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  compactSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  searchBoxCompact: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.cardLight,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 42,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  searchInputCompact: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 13,
+    marginLeft: 8,
+    paddingVertical: 0,
+  },
+  inlineGpsBtn: {
+    padding: 6,
+  },
+  primaryBtnCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.green,
+    borderRadius: 12,
+    height: 44,
+    shadowColor: COLORS.green,
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  primaryBtnTextCompact: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 6,
   },
   useLocationRow: {
     flexDirection: 'row',

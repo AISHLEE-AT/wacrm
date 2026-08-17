@@ -20,13 +20,13 @@ export function AppearanceSection({
     <View style={styles.container}>
       <View style={styles.header}>
         <Palette size={20} color={colors.primary} />
-        <Text style={styles.title}>Appearance</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Appearance</Text>
       </View>
 
-      <Text style={styles.subtitle}>Theme Mode</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Theme Mode</Text>
       <View style={styles.modeToggleContainer}>
         <TouchableOpacity
-          style={[styles.modeCard, currentMode === 'light' && styles.activeModeCard]}
+          style={[styles.modeCard, { backgroundColor: colors.card, borderColor: colors.border }, currentMode === 'light' && { borderColor: colors.primary, backgroundColor: colors.inputBg }]}
           onPress={() => onModeChange('light')}
           activeOpacity={0.7}
         >
@@ -38,11 +38,11 @@ export function AppearanceSection({
               </View>
             )}
           </View>
-          <Text style={[styles.modeText, currentMode === 'light' && styles.activeModeText]}>Light</Text>
+          <Text style={[styles.modeText, { color: colors.text }, currentMode === 'light' && { color: colors.primary }]}>Light</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.modeCard, currentMode === 'dark' && styles.activeModeCard]}
+          style={[styles.modeCard, { backgroundColor: colors.card, borderColor: colors.border }, currentMode === 'dark' && { borderColor: colors.primary, backgroundColor: colors.inputBg }]}
           onPress={() => onModeChange('dark')}
           activeOpacity={0.7}
         >
@@ -54,11 +54,11 @@ export function AppearanceSection({
               </View>
             )}
           </View>
-          <Text style={[styles.modeText, currentMode === 'dark' && styles.activeModeText]}>Dark</Text>
+          <Text style={[styles.modeText, { color: colors.text }, currentMode === 'dark' && { color: colors.primary }]}>Dark</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.subtitle}>Accent Color</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Accent Color</Text>
       <View style={styles.accentGrid}>
         {ACCENT_THEMES.map((theme) => {
           const isActive = currentAccent === theme.id;
@@ -67,6 +67,7 @@ export function AppearanceSection({
               key={theme.id}
               style={[
                 styles.accentCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
                 isActive && { borderColor: theme.swatch }
               ]}
               onPress={() => onAccentChange(theme.id)}
@@ -80,8 +81,8 @@ export function AppearanceSection({
                   </View>
                 )}
               </View>
-              <Text style={styles.accentName}>{theme.name}</Text>
-              <Text style={styles.accentTagline} numberOfLines={1}>{theme.tagline}</Text>
+              <Text style={[styles.accentName, { color: colors.text }]}>{theme.name}</Text>
+              <Text style={[styles.accentTagline, { color: colors.textSecondary }]} numberOfLines={1}>{theme.tagline}</Text>
               <View style={styles.colorBarContainer}>
                 <View style={[styles.colorBar, { backgroundColor: theme.swatch }]} />
                 <View style={[styles.colorBar, { backgroundColor: theme.swatch, opacity: 0.6 }]} />
@@ -129,10 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
   },
-  activeModeCard: {
-    borderColor: colors.primary,
-    backgroundColor: colors.inputBg,
-  },
+  activeModeCard: {},
   modeIconRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -149,13 +147,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   modeText: {
-    color: colors.text,
     fontSize: fontSize.md,
     fontWeight: '500',
   },
-  activeModeText: {
-    color: colors.primary,
-  },
+  activeModeText: {},
   accentGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -163,9 +158,7 @@ const styles = StyleSheet.create({
   },
   accentCard: {
     width: '47%',
-    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.md,
     padding: spacing.md,
   },
@@ -181,13 +174,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   accentName: {
-    color: colors.text,
     fontSize: fontSize.md,
     fontWeight: '600',
     marginBottom: 2,
   },
   accentTagline: {
-    color: colors.textSecondary,
     fontSize: fontSize.xs,
     marginBottom: spacing.sm,
   },

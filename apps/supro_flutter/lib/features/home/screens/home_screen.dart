@@ -157,8 +157,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userRole = ref.watch(currentUserProvider)?.role;
-
     final filteredCategories = categories.where((cat) {
       return true;
     }).toList();

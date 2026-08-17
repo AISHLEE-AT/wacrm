@@ -2,206 +2,117 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
-import { Store, TrendingUp, Sprout, Landmark, Newspaper, ExternalLink, Zap, Bot, Loader2 } from 'lucide-react';
-import { fetchDailyNewsForModule, DailyNewsItem, saveAiSummary } from '@/lib/daily-news';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Store, TrendingUp, Sprout, Landmark, ExternalLink, Zap, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
 import MarketPriceBoard from '@/components/news/MarketPriceBoard';
 import { useAuth } from '@/hooks/use-auth';
 
-const MANDI_RATES = [
-  { crop: 'Paddy (Ponni)', price: '₹2,150 / Quintal', change: '+₹40', trend: 'up' },
-  { crop: 'Tomato (Local)', price: '₹28 / kg', change: '-₹3', trend: 'down' },
-  { crop: 'Onion (Small)', price: '₹45 / kg', change: '+₹2', trend: 'up' },
-  { crop: 'Coconut (Large)', price: '₹14 / piece', change: 'Stable', trend: 'stable' },
-  { crop: 'Cotton (MCU-5)', price: '₹7,400 / Quintal', change: '+₹110', trend: 'up' },
-];
-
 const SEEDS_PRODUCE = [
-  { id: 1, name: 'Hybrid Paddy Seeds (CR-1009)', seller: 'Tamil Nadu Seed Corp', price: '₹65 / kg', category: 'Seeds', icon: '🌱' },
-  { id: 2, name: 'Bio-Organic Vermicompost 50kg', seller: 'Uzhavan Organic Bio Tech', price: '₹380 / bag', category: 'Fertilizers', icon: '🪴' },
-  { id: 3, name: 'Fresh Farm Guava (500kg lot)', seller: 'Farmer Karuppiah', price: '₹32 / kg', category: 'Crop Sale', icon: '🥑' },
+  { id: 1, name: 'ஹைப்ரிட் பொன்னி நெல் விதைகள் (CR-1009)', seller: 'தமிழ்நாடு விதை கழகம்', price: '₹65 / kg', category: 'Seeds', icon: '🌱' },
+  { id: 2, name: 'இயற்கை மண்புழு உரம் 50kg (Organic Vermicompost)', seller: 'உழவன் ஆர்கானிக் பயோ', price: '₹380 / bag', category: 'Fertilizers', icon: '🪴' },
+  { id: 3, name: 'பண்ணை பசுமை கொய்யா (500kg lot)', seller: 'கருப்பையா விவசாய பண்ணை', price: '₹32 / kg', category: 'Crop Sale', icon: '🥑' },
+  { id: 4, name: 'வீரிய ஒட்டு நாட்டு பருத்தி விதை (Bt Cotton)', seller: 'தஞ்சை உழவர் உற்பத்தியாளர்', price: '₹950 / pkt', category: 'Seeds', icon: '🌾' },
+  { id: 5, name: 'வேப்பம்பிண்ணாக்கு & இயற்கை பூச்சி விரட்டி', seller: 'காவேரி அக்ரோ டெக்', price: '₹420 / bag', category: 'Fertilizers', icon: '🌿' },
+  { id: 6, name: 'நாட்டு நாட்டுக்கோழி குஞ்சுகள் (100 Nos Lot)', seller: 'அன்பு பண்ணை', price: '₹45 / piece', category: 'Livestock', icon: '🐣' },
 ];
 
 export default function AgroPage() {
-  const [newsItems, setNewsItems] = useState<DailyNewsItem[]>([]);
-  const [loadingNews, setLoadingNews] = useState(true);
-  const { profile } = useAuth(); // Import useAuth to get user's district
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const generateWeeklyNews = async () => {
-    setIsGenerating(true);
-    try {
-      // 1. Fetch raw mandi data
-      const res = await fetch('/api/load-daily-news');
-      if (!res.ok) throw new Error('Failed to load mandi data');
-      
-      const allNews = await fetchDailyNewsForModule('agro');
-      const mandiData = allNews.filter(n => n.data_type === 'mandi').slice(0, 50); // limit for prompt size
-      
-      const promptData = mandiData.map(n => n.description).join('\n');
-      
-      const aiRes = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `Recent Tamil Nadu Govt Mandi Data:\n${promptData}`,
-          type: 'weekly_agro_news',
-        })
-      });
-      
-      if (!aiRes.ok) throw new Error('Failed to generate AI relay');
-      const { result } = await aiRes.json();
-      
-      // Save it as weekly_ai_news
-      await saveAiSummary('agro', 'Weekly AI Agro & Market News Relay', result);
-      
-      // Reload news
-      const updatedNews = await fetchDailyNewsForModule('agro');
-      setNewsItems(updatedNews.filter(item => item.data_type !== 'mandi'));
-    } catch (e) {
-      console.error(e);
-      alert('Failed to generate weekly news relay. Please ensure you have your Gemini API Key set in your profile.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDailyNewsForModule('agro').then(items => {
-      // Filter out mandi data from the news feed, as it's now handled by MarketPriceBoard
-      setNewsItems(items.filter(item => item.data_type !== 'mandi'));
-      setLoadingNews(false);
-    });
-  }, []);
+  const { profile } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 space-y-6">
-      <div className="flex items-center gap-3 border-b border-slate-800 pb-6">
-        <span className="text-2xl p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">🌾</span>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            AgrO & Mandi <span className="text-xs bg-emerald-500/20 text-emerald-300 font-normal px-2.5 py-0.5 rounded-full border border-emerald-500/30">உழவர் சந்தை & விதைகள்</span>
-          </h1>
-          <p className="text-sm text-slate-400">Live Mandi Crop Prices, Organic Seeds, Fertilizers & Direct Farmer Trade</p>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Top Banner Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl p-2.5 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">🌾</span>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2">
+              AgrO & Mandi <span className="text-xs bg-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">உழவர் சந்தை</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Live Mandi Crop Prices, Organic Seeds, Fertilizers & Direct Farm Trade</p>
+          </div>
         </div>
+
+        <Link
+          href="/dealo"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm rounded-xl shadow-md transition self-start md:self-auto"
+        >
+          <ShoppingBag className="w-4 h-4" />
+          DealO Trading Marketplace
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {/* Live Mandi Market Price Board */}
       <MarketPriceBoard userDistrict={profile?.district || 'All'} />
 
-      {/* Seeds & Market Listings */}
+      {/* Direct DealO CTA Card */}
+      <div className="bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold text-xs rounded-full">
+                🌾 LOCAL FARMER MARKETPLACE
+              </span>
+            </div>
+            <h3 className="text-xl font-black text-white">Sell Cattle, Paddy Bags & Grains with 1-Click</h3>
+            <p className="text-xs text-slate-300 mt-1 max-w-xl">
+              List sellable crops, livestock (cows & goats), and farm tools directly in your Pincode. Receive instant WhatsApp inquiries and direct UPI payments.
+            </p>
+          </div>
+
+          <Link
+            href="/dealo"
+            className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm rounded-xl shadow-lg transition flex items-center gap-2 shrink-0"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            Explore & List on DealO
+          </Link>
+        </div>
+      </div>
+
+      {/* Seeds, Fertilizers & Farm Supplies */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Seeds, Fertilizers & Crop Listings</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            Seeds, Organic Fertilizers & Farm Supplies
+          </h3>
+          <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5" /> Direct Farmer Sourced
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {SEEDS_PRODUCE.map((prod) => (
-            <div key={prod.id} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl p-2 bg-slate-800 rounded-xl">{prod.icon}</span>
+            <div
+              key={prod.id}
+              className="bg-card border border-border hover:border-primary/50 rounded-2xl p-4 flex flex-col justify-between space-y-3 transition shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                <span className="text-3xl p-2 bg-muted rounded-xl">{prod.icon}</span>
                 <div>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{prod.category}</span>
-                  <h4 className="font-bold text-white text-sm mt-1">{prod.name}</h4>
-                  <p className="text-xs text-slate-400">{prod.seller}</p>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    {prod.category}
+                  </span>
+                  <h4 className="font-bold text-foreground text-sm mt-1 leading-snug">{prod.name}</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">{prod.seller}</p>
                 </div>
               </div>
-              <div className="border-t border-slate-800 pt-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-emerald-400">{prod.price}</span>
-                <button onClick={() => alert(`Inquiring about ${prod.name}`)} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-semibold px-3 py-1.5 rounded-lg text-xs border border-emerald-500/30">
-                  Buy Direct
-                </button>
+              <div className="border-t border-border pt-3 flex items-center justify-between">
+                <span className="text-base font-black text-primary">{prod.price}</span>
+                <Link
+                  href={`https://wa.me/919486335870?text=${encodeURIComponent(`வணக்கம், நான் SuprO AgrO-ல் "${prod.name}" (${prod.price}) வாங்க விரும்புகிறேன்.`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition shadow-sm"
+                >
+                  Buy Direct (வாட்ஸ்அப்)
+                </Link>
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* ── TODAY'S NEWS & WEEKLY RELAY ── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <Newspaper className="w-4 h-4" /> Weekly News Relay & Insights
-          </h3>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">Updated 6 AM daily</span>
-            {profile?.role === 'admin' && (
-              <button 
-                onClick={generateWeeklyNews}
-                disabled={isGenerating}
-                className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors"
-              >
-                {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
-                Generate Weekly AI Relay
-              </button>
-            )}
-          </div>
-        </div>
-
-        {loadingNews ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400" />
-          </div>
-        ) : newsItems.length === 0 ? (
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 text-center">
-            <Newspaper className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-500 text-sm">No news loaded for today yet.</p>
-            <p className="text-slate-600 text-xs mt-1">Admin loads fresh news every morning at 6 AM.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {newsItems.map((item) => {
-              const isGovt = item.data_type !== 'rss' && item.data_type !== 'ai_summary';
-              const isAiSummary = item.data_type === 'ai_summary';
-              
-              return (
-                <a
-                  key={item.id}
-                  href={item.link || '#'}
-                  target={item.link ? '_blank' : '_self'}
-                  rel="noopener noreferrer"
-                  className={`bg-slate-900/90 border rounded-2xl overflow-hidden flex flex-col transition-colors group ${
-                    isAiSummary || item.data_type === 'weekly_ai_news' ? 'border-purple-500/50 hover:border-purple-400' :
-                    isGovt ? 'border-emerald-500/30 hover:border-emerald-500/50' : 'border-slate-800 hover:border-slate-600'
-                  }`}
-                >
-                  {item.image_url && item.data_type === 'rss' && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.image_url} alt={item.title} className="w-full h-36 object-cover" />
-                  )}
-                  
-                  {(isAiSummary || item.data_type === 'weekly_ai_news') && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 border-b border-purple-500/20">
-                      <Zap className="w-3 h-3 text-purple-400" />
-                      <span className="text-xs text-purple-400 font-bold">🤖 SuprO AI {item.data_type === 'weekly_ai_news' ? 'Weekly Relay' : 'Analysis'}</span>
-                    </div>
-                  )}
-
-                  {isGovt && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border-b border-emerald-500/20">
-                      <Landmark className="w-3 h-3 text-emerald-400" />
-                      <span className="text-xs text-emerald-400 font-bold">🏛️ data.gov.in — Government Data</span>
-                    </div>
-                  )}
-                  
-                  <div className="p-4 flex flex-col gap-2 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                        (isAiSummary || item.data_type === 'weekly_ai_news') ? 'text-purple-400 bg-purple-500/10 border-purple-500/20' :
-                        isGovt ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                      }`}>
-                        {(isAiSummary || item.data_type === 'weekly_ai_news') ? '🤖 AI Insight' : isGovt ? '🏛️ Govt' : item.source_name}
-                      </span>
-                      {item.link && <ExternalLink className="w-3 h-3 text-slate-600 group-hover:text-emerald-400 transition-colors" />}
-                    </div>
-                    <h4 className="font-bold text-white text-sm leading-snug line-clamp-2">{item.title}</h4>
-                    {item.description && (
-                      <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{item.description}</p>
-                    )}
-                    <p className="text-[10px] text-slate-600 mt-auto">{item.source_name}</p>
-                  </div>
-                </a>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -41,17 +41,23 @@ export const COLORS = {
 
 // ─── VEHICLE CATEGORIES (with pricing from web app) ───
 export const VEHICLE_CATEGORIES = [
-  { id: 'bikeo', name: 'BikeO', icon: '🏍️', emoji: '🏍️', base: 20, perKm: 8, perMin: 1, seats: 1, description: 'Quick bike ride' },
-  { id: 'autoo', name: 'AutoO', icon: '🛺', emoji: '🛺', base: 40, perKm: 15, perMin: 1.5, seats: 3, description: 'Auto rickshaw' },
-  { id: 'mini', name: 'Mini', icon: '🚗', emoji: '🚗', base: 80, perKm: 25, perMin: 2, seats: 4, description: 'Compact car' },
-  { id: 'sedan', name: 'Sedan', icon: '🚙', emoji: '🚙', base: 120, perKm: 30, perMin: 2.5, seats: 4, description: 'Comfortable sedan' },
-  { id: 'suv', name: 'SUV', icon: '🚐', emoji: '🚐', base: 150, perKm: 35, perMin: 3, seats: 6, description: 'Spacious SUV' },
-  { id: 'tata_ace', name: 'Tata Ace (Chota Hathi)', icon: '🚚', emoji: '🚚', base: 250, perKm: 18, perMin: 4, seats: 2, description: 'Mini Truck / Cargo Mandi' },
-  { id: 'bolero', name: 'Bolero Maxi Truck', icon: '🛻', emoji: '🛻', base: 400, perKm: 22, perMin: 5, seats: 2, description: 'Medium Mandi Pickup' },
-  { id: 'lorry', name: 'Heavy Lorry / Eicher', icon: '🚛', emoji: '🚛', base: 900, perKm: 38, perMin: 8, seats: 3, description: 'Heavy Goods Lorry' },
-  { id: 'bus', name: 'Bus / Tempo', icon: '🚌', emoji: '🚌', base: 1200, perKm: 42, perMin: 10, seats: 20, description: 'Tour & Group Bus' },
-  { id: 'tractor', name: 'Agri Tractor', icon: '🚜', emoji: '🚜', base: 450, perKm: 30, perMin: 6, seats: 1, description: 'Plowing & Farm Equipment' },
-  { id: 'harvester', name: 'Harvester', icon: '🌾', emoji: '🌾', base: 1800, perKm: 50, perMin: 15, seats: 1, description: 'Paddy & Field Harvester' },
+  // ─── RideO Passenger Hailing ───
+  { id: 'bikeo', name: 'BikeO', platform: 'rideo', icon: '🏍️', emoji: '🏍️', base: 20, perKm: 8, perMin: 1, seats: 1, description: 'Quick bike taxi' },
+  { id: 'autoo', name: 'AutoO', platform: 'rideo', icon: '🛺', emoji: '🛺', base: 40, perKm: 15, perMin: 1.5, seats: 3, description: 'Auto rickshaw' },
+  { id: 'mini', name: 'Mini (Hatchback)', platform: 'rideo', icon: '🚗', emoji: '🚗', base: 80, perKm: 25, perMin: 2, seats: 4, description: 'Compact car' },
+  { id: 'sedan', name: 'Prime Sedan', platform: 'rideo', icon: '🚙', emoji: '🚙', base: 120, perKm: 30, perMin: 2.5, seats: 4, description: 'Comfortable sedan' },
+  { id: 'suv', name: 'Prime SUV / XL', platform: 'both', icon: '🚐', emoji: '🚐', base: 150, perKm: 35, perMin: 3, seats: 6, description: 'Spacious SUV & Tour Taxi' },
+
+  // ─── RentO Agri Machinery & Cargo Rentals ───
+  { id: 'tractor', name: 'Agri Tractor', platform: 'rento', icon: '🚜', emoji: '🚜', base: 450, perKm: 30, perMin: 6, seats: 1, description: 'Plowing & Rotavator' },
+  { id: 'power_tiller', name: 'Power Tiller', platform: 'rento', icon: '⚙️', emoji: '⚙️', base: 350, perKm: 25, perMin: 5, seats: 1, description: 'Small Fields Tiller & Weeder' },
+  { id: 'drone', name: 'Agri Spraying Drone', platform: 'rento', icon: '🛸', emoji: '🛸', base: 500, perKm: 35, perMin: 8, seats: 1, description: 'Precision 16L Spraying Drone' },
+  { id: 'coconut_machine', name: 'Coconut Climber', platform: 'rento', icon: '🌴', emoji: '🌴', base: 150, perKm: 20, perMin: 3, seats: 1, description: 'Mechanical Harvesting Machine' },
+  { id: 'harvester', name: 'Paddy Harvester', platform: 'rento', icon: '🌾', emoji: '🌾', base: 1800, perKm: 50, perMin: 15, seats: 1, description: 'Paddy & Crop Harvester' },
+  { id: 'tata_ace', name: 'Tata Ace (Chota Hathi)', platform: 'rento', icon: '🚚', emoji: '🚚', base: 250, perKm: 18, perMin: 4, seats: 2, description: 'Mini Truck / Cargo Mandi' },
+  { id: 'bolero', name: 'Bolero Maxi Truck', platform: 'rento', icon: '🛻', emoji: '🛻', base: 400, perKm: 22, perMin: 5, seats: 2, description: 'Medium Mandi Pickup' },
+  { id: 'lorry', name: 'Heavy Lorry / Eicher', platform: 'rento', icon: '🚛', emoji: '🚛', base: 900, perKm: 38, perMin: 8, seats: 3, description: 'Heavy Goods Lorry' },
+  { id: 'bus', name: 'Tour Tempo / Bus', platform: 'both', icon: '🚌', emoji: '🚌', base: 1200, perKm: 42, perMin: 10, seats: 20, description: 'Group Tour & Rentals' },
 ];
 
 // ─── HAVERSINE DISTANCE (km) ───
@@ -226,6 +232,7 @@ export async function dispatchRideToDriverWhatsApp(rideDetails: any) {
         driver_name: rideDetails.driverName,
         driver_rating: rideDetails.driverRating || '4.9',
         vehicle_info: rideDetails.vehicleInfo || 'Standard Cab',
+        service_type: rideDetails.serviceType || 'rideo',
       }),
     });
     return res.ok;

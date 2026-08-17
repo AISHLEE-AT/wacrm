@@ -14,11 +14,32 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isEmbed = searchParams.get("embed") === "true";
+
+  const [isEmbed, setIsEmbed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      searchParams.get("embed") === "true" ||
+      sessionStorage.getItem("supro_is_embed") === "true" ||
+      document.documentElement.classList.contains("is-native-app") ||
+      document.body.classList.contains("is-native-app") ||
+      document.cookie.includes("supro_is_embed=true")
+    );
+  });
+
+  useEffect(() => {
+    if (searchParams.get("embed") === "true") {
+      setIsEmbed(true);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("supro_is_embed", "true");
+        document.cookie = "supro_is_embed=true; path=/; max-age=86400";
+      }
+    }
+  }, [searchParams]);
 
   const isAdmin = checkIsAdmin(user, profile ?? undefined);
 
   useEffect(() => {
+    // If not loading, no user, and NOT running inside mobile embed/native app, redirect to login
     if (!loading && !user && !isEmbed) {
       router.push("/login");
       return;

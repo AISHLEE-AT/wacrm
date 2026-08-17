@@ -29,6 +29,7 @@ import TestOExamScreen  from './src/screens/TestOExamScreen';
 import TestOResultScreen from './src/screens/TestOResultScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
+import DealOScreen      from './src/screens/DealOScreen';
 import FlowQuestionScreen from './src/screens/FlowQuestionScreen';
 
 import OnboardingPermissionsScreen from './src/screens/OnboardingPermissionsScreen';
@@ -51,6 +52,7 @@ const tabOpts = (title: string, Icon: any) => ({
 // ─── Admin Bottom Tabs ─────────────────────────────────────────────────────
 // Admin sees: Grid | WhatsApp CRM Inbox | Admin Dashboard | AI Assistant | Profile
 function AdminTabs() {
+  const { themeVer } = useContext(AppContext);
   return (
     <Tab.Navigator
       screenOptions={{
@@ -107,7 +109,7 @@ function AdminTabs() {
 // ─── User Bottom Tabs ──────────────────────────────────────────────────────
 // Tailors Tab 2 dynamically based on user category (Driver -> DriveO, Student -> TeachO, Farmer -> AgrO, Shopper -> DealO, etc.)
 function UserTabs() {
-  const { user, pinnedModules } = useContext(AppContext);
+  const { user, pinnedModules, themeVer } = useContext(AppContext);
   const category = (user?.category || user?.role || '').toLowerCase();
   
   const getModuleConfig = (id: string) => {
@@ -182,7 +184,7 @@ function UserTabs() {
   } else if (selectedPath === '/agro') {
     primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
   } else if (selectedPath === '/dealo') {
-    primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+    primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag, nativeComponent: DealOScreen };
   } else if (selectedPath === '/touro') {
     primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
   } else if (selectedPath === '/moneyo') {
@@ -203,8 +205,8 @@ function UserTabs() {
       primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
     } else if (category.includes('farmer') || category.includes('agri')) {
       primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
-    } else if (category.includes('shopper') || category.includes('merchant')) {
-      primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
+    } else if (category.includes('shopper') || category.includes('merchant') || category.includes('trader')) {
+      primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag, nativeComponent: DealOScreen };
     } else if (category.includes('tourist')) {
       primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
     } else if (category.includes('financier')) {
@@ -274,12 +276,12 @@ function UserTabs() {
 
 // ─── Root navigator — decides Admin vs User tabs & dedicated ModuleView ─────
 function RootNavigator() {
-  const { isAdmin, isLoading } = useContext(AppContext);
+  const { isAdmin, isLoading, themeMode, themeVer } = useContext(AppContext);
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0a0f1e', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color="#34d399" size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
@@ -288,7 +290,7 @@ function RootNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0a0f1e' },
+        contentStyle: { backgroundColor: colors.background },
         animation: 'slide_from_right',
       }}
     >
@@ -317,6 +319,8 @@ function RootNavigator() {
       <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
       <Stack.Screen name="RentOScreen" component={RentOScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DealOScreen" component={DealOScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="DealO" component={DealOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FlowQuestionScreen" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Flow" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: true, title: 'All Modules', headerStyle: { backgroundColor: colors.card }, headerTintColor: colors.text }} />
@@ -328,7 +332,7 @@ import { useNavigationContainerRef } from '@react-navigation/native';
 import { supabase } from './src/lib/supabase';
 
 function NavigationWrapper() {
-  const { user } = useContext(AppContext);
+  const { user, themeMode } = useContext(AppContext);
   const navigationRef = useNavigationContainerRef();
   const routeNameRef = useRef<string | undefined>(undefined);
 
@@ -360,6 +364,8 @@ function NavigationWrapper() {
                 modulePath = '/agro';
              } else if (currentRouteName === 'TeachOScreen') {
                 modulePath = '/teacho';
+             } else if (currentRouteName === 'DealOScreen' || currentRouteName === 'DealO') {
+                modulePath = '/dealo';
              }
 
              if (modulePath) {
@@ -369,7 +375,7 @@ function NavigationWrapper() {
         }
       }}
     >
-      <StatusBar style="light" />
+      <StatusBar style={themeMode === 'dark' ? 'light' : 'dark'} />
       <RootNavigator />
     </NavigationContainer>
   );

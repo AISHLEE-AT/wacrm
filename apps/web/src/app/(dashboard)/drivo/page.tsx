@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Truck, Phone, MessageSquare, ShieldCheck, QrCode, Power, Send, CheckCircle, Clock, Zap, Crown, Award, ExternalLink, UserPlus, Check, Compass } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
@@ -44,6 +44,7 @@ export default function DriveODashboard() {
 
   // Earnings History State
   const [earningsHistory, setEarningsHistory] = useState<any[]>([]);
+  const handledRidesRef = useRef<Set<string>>(new Set());
 
   // Driver Record & Verification State
   const [driverRecord, setDriverRecord] = useState<any>(null);
@@ -204,7 +205,14 @@ export default function DriveODashboard() {
           .order('created_at', { ascending: false })
           .limit(10);
         
-        if (data) setIncomingRequests(data);
+        if (data) {
+          const now = Date.now();
+          const valid = data.filter((r: any) => {
+            const age = now - new Date(r.created_at).getTime();
+            return age < 300000 && !handledRidesRef.current.has(r.id);
+          });
+          setIncomingRequests(valid);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -217,16 +225,24 @@ export default function DriveODashboard() {
       .channel(`public:rides:driver_${driverRecord?.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
         if (allDriverIds.includes(payload.new.driver_id)) {
-          setIncomingRequests((prev) => [payload.new, ...prev]);
+          const age = Date.now() - new Date(payload.new.created_at).getTime();
+          if (age < 300000 && !handledRidesRef.current.has(payload.new.id)) {
+            setIncomingRequests((prev) => [payload.new, ...prev.filter((r) => r.id !== payload.new.id)]);
+          }
         }
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides' }, (payload) => {
         if (!allDriverIds.includes(payload.new.driver_id)) return;
         if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
+           handledRidesRef.current.add(payload.new.id);
            setActiveOrder(payload.new);
            setIncomingRequests((prev) => prev.filter((r) => r.id !== payload.new.id));
-        } else if (payload.new.status === 'completed' || payload.new.status === 'cancelled') {
-           setActiveOrder(null);
+        } else if (payload.new.status === 'completed' || payload.new.status === 'cancelled' || payload.new.status === 'expired') {
+           handledRidesRef.current.add(payload.new.id);
+           setIncomingRequests((prev) => prev.filter((r) => r.id !== payload.new.id));
+           if (activeOrder?.id === payload.new.id) {
+             setActiveOrder(null);
+           }
         }
       })
       .subscribe();
@@ -368,6 +384,9 @@ export default function DriveODashboard() {
   };
 
   const handleAcceptRide = async (ride: any) => {
+    if (handledRidesRef.current.has(ride.id)) return;
+    handledRidesRef.current.add(ride.id);
+
     try {
       // Generate a fresh 4-digit OTP for trip verification
       const tripOtp = String(1000 + Math.floor(Math.random() * 9000));

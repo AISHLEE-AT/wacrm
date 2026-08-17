@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Smartphone, Lock, ShieldCheck, Loader2, Sparkles, MessageCircle, KeyRound, UserCheck, Eye, EyeOff } from "lucide-react";
+import DailyDeepamWebPlayer from "@/components/DailyDeepamWebPlayer";
 
 export default function LoginPage() {
   return (
@@ -19,7 +20,7 @@ export default function LoginPage() {
 }
 
 const CATEGORIES = [
-  { key: 'Admin',      label: '👑 Admin (CRM & All Modules)', route: '/crm' },
+  { key: 'Admin',      label: '👑 Admin (CRM & All Modules)', route: '/admin' },
   { key: 'Traveller',  label: '🧳 Traveller (RideO)',     route: '/rideo' },
   { key: 'Farmer',    label: '🚜 Farmer (RentO Agri)',   route: '/rento' },
   { key: 'Shopper',   label: '🛍️ Shopper (DealO)',       route: '/dealo' },
@@ -49,6 +50,12 @@ function LoginPageInner() {
   const [isChecking, setIsChecking] = useState(false);
   const [pendingSession, setPendingSession] = useState<any>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string>('/rideo');
+  const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
+
+  // Daily Deepam Video Player states
+  const [isDailyVideoRequired, setIsDailyVideoRequired] = useState(false);
+  const [dailyVideoInfo, setDailyVideoInfo] = useState<{ videoId: string; title: string } | null>(null);
+  const [isDailyVideoFinished, setIsDailyVideoFinished] = useState(false);
 
   // Steps: 'phone' → 'otp' → 'set-pin' (if no PIN set) → done
   //        'phone' → 'pin' (fallback)
@@ -98,160 +105,220 @@ function LoginPageInner() {
 
     fetch('/api/auth/otp/waba')
       .then(res => res.json())
-      .then(data => { if (data.phone) setWabaPhone(data.phone); })
-      .catch(console.error);
+      .then(data => { if (data?.phone) setWabaPhone(data.phone); })
+      .catch(() => {});
+
+    checkDailyVideo();
   }, [router, supabase]);
 
-  const handlePhoneChange = (val: string) => {
-    const clean = val.replace(/\D/g, '').slice(0, 10);
-    setPhone(clean);
-    setError(null);
-    setIsExistingUser(null);
-
-    if (clean.length === 10) {
-      setIsChecking(true);
-      fetch(`/api/auth/check?phone=${clean}`)
-        .then(res => res.json())
-        .then(data => {
-          setIsExistingUser(data.exists);
-          if (data.exists) {
-            if (data.name) setFullName(data.name);
-            if (data.category) setCategory(data.category);
-            if (data.has_pin) {
-              setStep('pin');
-            }
-          }
-        })
-        .catch(() => setIsExistingUser(false))
-        .finally(() => setIsChecking(false));
+  const checkDailyVideo = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const savedDate = typeof window !== 'undefined' ? localStorage.getItem('supro_daily_video_date') : null;
+      if (savedDate !== today) {
+        setIsDailyVideoRequired(true);
+        const res = await fetch('/api/deepam-video');
+        const data = await res.json();
+        setDailyVideoInfo(data);
+      } else {
+        setIsDailyVideoRequired(false);
+        setIsDailyVideoFinished(true);
+      }
+    } catch {
+      setIsDailyVideoFinished(true);
+      setIsDailyVideoRequired(false);
     }
   };
 
-  const requestOtp = () => {
-    if (phone.length !== 10) { setError("Please enter a valid 10-digit mobile number"); return; }
-    setError(null);
-    setStep('otp');
-    window.open(`https://wa.me/${wabaPhone}?text=Requesting OTP for Login`, '_blank');
+  const handleDailyVideoEnded = () => {
+    const today = new Date().toISOString().split('T')[0];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('supro_daily_video_date', today);
+    }
+    setIsDailyVideoFinished(true);
+    setIsDailyVideoRequired(false);
   };
 
-  // Called after OTP verified — saves session and decides next step
-  const afterOtpSuccess = async (data: any) => {
-    // Store session in Supabase client
-    await supabase.auth.setSession({
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-    });
+  const handlePhoneChange = async (val: string) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 10);
+    setPhone(cleaned);
+    setError(null);
+    setIsExistingUser(null);
 
-    const target = inviteToken
-      ? `/join/${encodeURIComponent(inviteToken)}`
-      : (data.redirect_to || '/');
+    if (cleaned.length === 10) {
+      setIsChecking(true);
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, main_category, role, pin_hash")
+          .eq("phone", cleaned)
+          .maybeSingle();
 
-    if (data.needs_pin_setup) {
-      // User has no PIN yet — force PIN setup before entering app
-      setPendingSession(data.session);
-      setPendingRedirect(target);
-      setStep('set-pin');
-    } else {
-      window.location.href = target;
+        if (profile) {
+          setIsExistingUser(true);
+          setFullName(profile.full_name || "");
+          if (profile.main_category) setCategory(profile.main_category);
+        } else {
+          setIsExistingUser(false);
+        }
+      } catch (err) {
+        console.error("Profile check error:", err);
+        setIsExistingUser(false);
+      } finally {
+        setIsChecking(false);
+      }
+    }
+  };
+
+  const requestOtp = async () => {
+    if (phone.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    if (isExistingUser === false && !fullName.trim()) {
+      setError("Please enter your full name to create an account");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, fullName: fullName.trim() || undefined, category, inviteToken }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to request OTP");
+
+      setStep("otp");
+
+      const text = encodeURIComponent(
+        `🔐 SuprO Login Verification\n\nMobile: ${phone}\nAction: Request OTP\n\nPlease send my 6-digit login OTP.`
+      );
+      window.open(`https://wa.me/${wabaPhone}?text=${text}`, "_blank");
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleOtpVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (otp.length !== 6) {
+      setError("Please enter the 6-digit OTP received on WhatsApp");
+      return;
+    }
     setError(null);
-    if (phone.length !== 10) { setError("Please enter a valid 10-digit mobile number"); return; }
-    if (otp.length !== 6) { setError("Please enter the 6-digit OTP"); return; }
-
     setLoading(true);
-    try {
-      const payload: any = { phone, otp };
-      if (!isExistingUser) {
-        payload.fullName = fullName;
-        payload.category = category;
-      }
 
-      const res = await fetch('/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+    try {
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, otp, fullName, category, inviteToken }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Authentication failed');
-      await afterOtpSuccess(data);
+      if (!res.ok) throw new Error(data.error || "Invalid or expired OTP");
+
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+      }
+
+      if (data.hasPin === false) {
+        setPendingSession(data.session);
+        setPendingRedirect(data.redirectUrl || "/rideo");
+        setStep("set-pin");
+        setLoading(false);
+        return;
+      }
+
+      router.replace(data.redirectUrl || "/rideo");
     } catch (err: any) {
-      setError(err.message || 'Login failed');
-    } finally {
+      setError(err.message || "Verification failed. Please try again.");
       setLoading(false);
     }
   };
 
   const handleSetPin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPin.length !== 4) {
+      setError("PIN must be exactly 4 digits");
+      return;
+    }
+    if (newPin !== confirmPin) {
+      setError("PINs do not match. Please re-enter.");
+      return;
+    }
     setError(null);
-    if (newPin.length !== 4) { setError("PIN must be exactly 4 digits"); return; }
-    if (newPin !== confirmPin) { setError("PINs do not match. Please re-enter."); return; }
-
     setLoading(true);
+
     try {
-      const res = await fetch('/api/auth/pin/set', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, pin: newPin, confirmPin }),
+      const res = await fetch("/api/auth/pin/set", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, pin: newPin }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save PIN');
-      // PIN saved — go to app
-      window.location.href = pendingRedirect;
+      if (!res.ok) throw new Error(data.error || "Failed to set PIN");
+
+      router.replace(pendingRedirect || "/rideo");
     } catch (err: any) {
-      setError(err.message || 'Failed to save PIN');
-    } finally {
+      setError(err.message || "Failed to save PIN");
       setLoading(false);
     }
   };
 
   const handlePinLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (phone.length !== 10) {
+      setError("Please enter your 10-digit mobile number");
+      return;
+    }
+    if (pin.length !== 4) {
+      setError("Please enter your 4-digit PIN");
+      return;
+    }
     setError(null);
-    if (phone.length !== 10) { setError("Please enter a valid 10-digit mobile number"); return; }
-    if (pin.length !== 4) { setError("Please enter your 4-digit PIN"); return; }
-
     setLoading(true);
+
     try {
-      const res = await fetch('/api/auth/pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/pin/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, pin }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Authentication failed');
-      await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
-      const target = inviteToken ? `/join/${encodeURIComponent(inviteToken)}` : (data.redirect_to || '/');
-      window.location.href = target;
+      if (!res.ok) throw new Error(data.error || "Invalid PIN. If forgotten, login via WhatsApp OTP.");
+
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+      }
+
+      router.replace(data.redirectUrl || "/rideo");
     } catch (err: any) {
-      setError(err.message || 'Login failed');
-    } finally {
+      setError(err.message || "PIN login failed");
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-green-500/10 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-[#0a0f1e] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden selection:bg-emerald-500 selection:text-white">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-10 right-10 w-72 h-72 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative z-10 w-full max-w-md"
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
       >
         <div className="bg-[#0d1526]/90 backdrop-blur-xl border border-emerald-500/20 rounded-3xl shadow-2xl shadow-emerald-500/10 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-b from-emerald-900/30 via-[#0d1526] to-[#0d1526] border-b border-emerald-500/20 px-8 py-8 text-center relative overflow-hidden">
-            {/* Background glow rings */}
+            {/* Background glow ring */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-48 h-48 rounded-full border border-emerald-500/10 animate-ping" style={{ animationDuration: '3s' }} />
             </div>
@@ -262,7 +329,7 @@ function LoginPageInner() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-2xl bg-emerald-400/20 blur-xl scale-110" />
                 <div className="relative w-20 h-20 rounded-2xl bg-[#0a0f1e] flex items-center justify-center shadow-[0_0_30px_rgba(52,211,153,0.4),0_0_60px_rgba(52,211,153,0.15)] border-2 border-emerald-500/40 overflow-hidden">
-                  <img src="/logo.png" alt="SuprO Deepam Logo" className="w-full h-full object-cover" />
+                  <img src="/supro-logo-ai.jpg" alt="SuprO Deepam Logo" className="w-full h-full object-cover" />
                 </div>
                 {/* Golden shimmer dot */}
                 <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 shadow-[0_0_8px_rgba(251,191,36,0.8)] flex items-center justify-center">
@@ -305,7 +372,7 @@ function LoginPageInner() {
                         onChange={e => handlePhoneChange(e.target.value)}
                         placeholder="10-digit mobile number"
                         maxLength={10}
-                        className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white pl-28 pr-4 py-3.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-base placeholder:text-gray-600"
+                        className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white pl-28 pr-4 py-3.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-base placeholder:text-gray-600 font-semibold"
                         required
                       />
                     </div>
@@ -320,18 +387,18 @@ function LoginPageInner() {
                         </div>
                         <div>
                           <p className="text-blue-400 text-xs font-bold uppercase tracking-wider">Create New Account</p>
-                          <p className="text-white text-sm mt-0.5">Looks like you're new! Let's set up your profile.</p>
+                          <p className="text-white text-sm mt-0.5">Looks like you&apos;re new! Let&apos;s set up your profile.</p>
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Full Name</label>
                         <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your Full Name"
-                          className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white px-4 py-3 focus:outline-none focus:border-emerald-500 placeholder:text-gray-600 text-sm" />
+                          className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white px-4 py-3 focus:outline-none focus:border-emerald-500 placeholder:text-gray-600 text-sm font-semibold" />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Primary Role</label>
                         <select value={category} onChange={e => setCategory(e.target.value)}
-                          className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white px-4 py-3 focus:outline-none focus:border-emerald-500 text-sm">
+                          className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white px-4 py-3 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
                           {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
                         </select>
                       </div>
@@ -347,7 +414,7 @@ function LoginPageInner() {
                         </div>
                         <div>
                           <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Welcome Back</p>
-                          <p className="text-white font-medium">{fullName}</p>
+                          <p className="text-white font-black">{fullName}</p>
                           <p className="text-gray-400 text-xs">{CATEGORIES.find(c => c.key === category)?.label || category}</p>
                         </div>
                       </div>
@@ -360,17 +427,37 @@ function LoginPageInner() {
                     </div>
                   )}
 
-                  <div className="space-y-3">
-                    <button type="button" onClick={requestOtp} disabled={phone.length !== 10 || isChecking}
-                      className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 text-base">
-                      {isChecking ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageCircle className="h-5 w-5" />}
-                      Send OTP via WhatsApp
-                    </button>
-                    <button type="button" onClick={() => { setError(null); setStep('pin'); }} disabled={phone.length !== 10}
-                      className="w-full bg-[#111c35] hover:bg-[#1a294d] border border-emerald-500/30 text-emerald-400 font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
-                      <KeyRound className="h-4 w-4" /> Use Fallback PIN Instead
-                    </button>
-                  </div>
+                  {/* Primary Action Button */}
+                  <button
+                    type="button"
+                    onClick={requestOtp}
+                    disabled={phone.length !== 10 || isChecking || (isDailyVideoRequired && !isDailyVideoFinished)}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 text-base"
+                  >
+                    {isChecking ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : isDailyVideoRequired && !isDailyVideoFinished ? (
+                      <Sparkles className="h-5 w-5 text-amber-300 animate-pulse" />
+                    ) : (
+                      <MessageCircle className="h-5 w-5" />
+                    )}
+                    {isDailyVideoRequired && !isDailyVideoFinished
+                      ? '▶ Watching Daily Message...'
+                      : 'Send OTP via WhatsApp'}
+                  </button>
+
+                  {/* Secondary PIN Action Button */}
+                  <button
+                    type="button"
+                    onClick={() => { setError(null); setStep('pin'); }}
+                    disabled={phone.length !== 10 || (isDailyVideoRequired && !isDailyVideoFinished)}
+                    className="w-full bg-[#111c35] border border-emerald-500/20 hover:border-emerald-500/40 text-emerald-400 font-semibold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-40"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    {isDailyVideoRequired && !isDailyVideoFinished
+                      ? 'Complete daily message to login'
+                      : 'Use Fallback PIN Instead'}
+                  </button>
                 </motion.div>
               )}
 
@@ -386,7 +473,7 @@ function LoginPageInner() {
                         className="w-full bg-[#111c35] border border-emerald-500/30 rounded-xl text-white pl-12 pr-4 py-3.5 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal"
                         required />
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">We opened WhatsApp for you. Hit send and we'll immediately reply with your OTP.</p>
+                    <p className="text-xs text-gray-500 mt-2">We opened WhatsApp for you. Hit send and we&apos;ll immediately reply with your OTP.</p>
                   </div>
                   <button type="submit" disabled={loading || otp.length !== 6}
                     className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 text-base">
@@ -417,7 +504,7 @@ function LoginPageInner() {
                         value={newPin}
                         onChange={e => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         placeholder="••••" maxLength={4}
-                        className="w-full bg-[#111c35] border border-amber-500/30 rounded-xl text-white pl-12 pr-12 py-3.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal"
+                        className="w-full bg-[#111c35] border border-amber-500/30 rounded-xl text-white pl-12 pr-12 py-3.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal font-mono"
                         required />
                       <button type="button" onClick={() => setShowPin(v => !v)} className="absolute right-4 text-gray-500 hover:text-gray-300">
                         {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -435,7 +522,7 @@ function LoginPageInner() {
                         value={confirmPin}
                         onChange={e => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         placeholder="••••" maxLength={4}
-                        className={`w-full bg-[#111c35] border rounded-xl text-white pl-12 pr-4 py-3.5 focus:outline-none transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal ${
+                        className={`w-full bg-[#111c35] border rounded-xl text-white pl-12 pr-4 py-3.5 focus:outline-none transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal font-mono ${
                           confirmPin.length === 4
                             ? confirmPin === newPin ? 'border-emerald-500 focus:ring-1 focus:ring-emerald-500/50' : 'border-red-500 focus:ring-1 focus:ring-red-500/50'
                             : 'border-amber-500/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50'
@@ -443,7 +530,7 @@ function LoginPageInner() {
                         required />
                     </div>
                     {confirmPin.length === 4 && confirmPin !== newPin && (
-                      <p className="text-red-400 text-xs mt-1">⚠ PINs don't match</p>
+                      <p className="text-red-400 text-xs mt-1">⚠ PINs don&apos;t match</p>
                     )}
                     {confirmPin.length === 4 && confirmPin === newPin && (
                       <p className="text-emerald-400 text-xs mt-1">✓ PINs match</p>
@@ -470,7 +557,7 @@ function LoginPageInner() {
                       </div>
                       <div>
                         <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Welcome Back</p>
-                        <p className="text-white font-medium">{fullName}</p>
+                        <p className="text-white font-bold">{fullName}</p>
                         <p className="text-gray-400 text-xs">{CATEGORIES.find(c => c.key === category)?.label || category}</p>
                       </div>
                     </div>
@@ -482,7 +569,7 @@ function LoginPageInner() {
                       <input type="password" value={pin}
                         onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                         placeholder="••••" maxLength={4}
-                        className="w-full bg-[#111c35] border border-amber-500/30 rounded-xl text-white pl-12 pr-4 py-3.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal"
+                        className="w-full bg-[#111c35] border border-amber-500/30 rounded-xl text-white pl-12 pr-4 py-3.5 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all text-xl font-bold tracking-[0.5rem] placeholder:text-gray-600 placeholder:tracking-normal font-mono"
                         required />
                     </div>
                     <p className="text-xs text-gray-500 mt-2">Use your PIN set during registration. If you forgot it, login via WhatsApp OTP.</p>
@@ -506,10 +593,20 @@ function LoginPageInner() {
               </motion.p>
             )}
 
-            <div className="pt-4 border-t border-emerald-500/10 text-center">
-              <p className="text-gray-500 text-xs">Authentication verified by SuprO Engine</p>
-              <p className="text-gray-600 text-xs mt-1">வாழ்க • வளர்க • வெல்க 🌿</p>
-            </div>
+            {/* Daily Deepam Video Player Broadcast Footer */}
+            {isDailyVideoRequired && dailyVideoInfo ? (
+              <DailyDeepamWebPlayer
+                videoId={dailyVideoInfo.videoId}
+                videoTitle={dailyVideoInfo.title}
+                onVideoEnded={handleDailyVideoEnded}
+              />
+            ) : (
+              <div className="pt-4 border-t border-emerald-500/10 text-center">
+                <p className="text-amber-400 font-bold text-[10px] tracking-widest uppercase">✦ SUPRO DEEPAM ENGINE ✦</p>
+                <p className="text-gray-500 text-xs mt-0.5">Authentication verified by SuprO Engine</p>
+                <p className="text-gray-600 text-xs mt-1">வாழ்க • வளர்க • வெல்க 🌿</p>
+              </div>
+            )}
           </div>
         </div>
       </motion.div>

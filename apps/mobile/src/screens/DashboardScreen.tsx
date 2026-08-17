@@ -20,6 +20,7 @@ import { colors, spacing, radius, fontSize } from '../lib/theme';
 // ─── Profile Section Components ───
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { ContactInfoCard } from '../components/profile/ContactInfoCard';
+import { WhatsAppWindowCard } from '../components/profile/WhatsAppWindowCard';
 import { UpiQrCard } from '../components/profile/UpiQrCard';
 import { DigitalIdCard } from '../components/profile/DigitalIdCard';
 import { DriverStatusCard } from '../components/profile/DriverStatusCard';
@@ -41,6 +42,7 @@ export default function DashboardScreen({ navigation }: any) {
     updateGeminiKey,
     themeMode,
     themeAccent,
+    themeVer,
     setThemeMode,
     setThemeAccent,
   } = useContext(AppContext);
@@ -91,16 +93,30 @@ export default function DashboardScreen({ navigation }: any) {
           .limit(1);
 
         if (profileData && profileData.length > 0) {
-          setDbProfile(profileData[0]);
+          const prof = { ...profileData[0] };
+          if (!prof.upi_id || prof.upi_id.trim() === '') {
+            const defaultUpi = `${cleanPhone}@upi`;
+            prof.upi_id = defaultUpi;
+            supabase
+              .from('profiles')
+              .update({ upi_id: defaultUpi })
+              .eq('id', prof.id)
+              .then(
+                () => {},
+                (err: any) => console.warn('Auto UPI DB update warning:', err)
+              );
+          }
+
+          setDbProfile(prof);
 
           // Set up Realtime subscription for live profile updates
           channel = supabase
-            .channel(`mobile:profiles:${profileData[0].id}`)
+            .channel(`mobile:profiles:${prof.id}`)
             .on(
               'postgres_changes',
               { event: '*', schema: 'public', table: 'profiles' },
               (payload: any) => {
-                if (payload.new && payload.new.id === profileData[0].id) {
+                if (payload.new && payload.new.id === prof.id) {
                   setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
                 }
               }
@@ -190,9 +206,9 @@ export default function DashboardScreen({ navigation }: any) {
   // ─── Loading State ───
   if (isLoadingProfile) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={styles.loadingText}>Loading Profile...</Text>
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading Profile...</Text>
       </View>
     );
   }
@@ -201,7 +217,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
@@ -223,6 +239,9 @@ export default function DashboardScreen({ navigation }: any) {
         onProfileUpdate={handleProfileUpdate}
       />
 
+      {/* ──── 2.5 WhatsApp 24h Live Window & Alert Status Card ──── */}
+      <WhatsAppWindowCard />
+
       {/* ──── 3. Setup Checklist ──── */}
       <SetupChecklist
         profile={dbProfile}
@@ -233,7 +252,7 @@ export default function DashboardScreen({ navigation }: any) {
 
       {/* ──── 3.5 App Navigation Settings ──── */}
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>App Navigation</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>App Navigation</Text>
 
         <TouchableOpacity
           style={[styles.deviceButton, { backgroundColor: colors.primary }]}
@@ -247,7 +266,7 @@ export default function DashboardScreen({ navigation }: any) {
 
       {/* ──── 4. Device Settings (GPS + Push Notifications) ──── */}
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Device Settings</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Device Settings</Text>
 
         <TouchableOpacity
           style={[styles.deviceButton, styles.trackButton, isTracking && styles.trackButtonActive]}
@@ -284,7 +303,7 @@ export default function DashboardScreen({ navigation }: any) {
       {/* ──── 7. UPI QR Code ──── */}
       <UpiQrCard
         upiId={dbProfile?.upi_id || ''}
-        fullName={dbProfile?.full_name || user?.name || 'FAGO Partner'}
+        fullName={dbProfile?.full_name || user?.name || 'SuprO Partner'}
         phone={(phone || '').replace(/\D/g, '')}
       />
 
@@ -302,7 +321,7 @@ export default function DashboardScreen({ navigation }: any) {
         navigation={navigation}
       />
 
-      {/* ──── 10. Support FAGO ──── */}
+      {/* ──── 10. Support SuprO ──── */}
       <SupportCard />
 
       {/* ──── 11. Sign Out ──── */}
@@ -324,7 +343,6 @@ export default function DashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   contentContainer: {
     padding: spacing.xl,
@@ -333,13 +351,11 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 12,
   },
   loadingText: {
-    color: colors.textSecondary,
     fontSize: fontSize.md,
     fontWeight: '600',
   },
@@ -350,7 +366,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.lg,
-    color: colors.text,
     fontWeight: 'bold',
     marginBottom: spacing.md,
   },

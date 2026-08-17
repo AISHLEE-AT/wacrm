@@ -66,14 +66,12 @@ class RideScreen extends ConsumerStatefulWidget {
 
 class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProviderStateMixin {
   final Completer<GoogleMapController> _controller = Completer<GoogleMapController>();
-  
-  Position? _currentLocation;
+
   LocationPoint? _pickup;
   LocationPoint? _dropoff;
-  
+
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
-  String? _errorMsg;
 
   VehicleCategory _selectedCategory = VEHICLE_CATEGORIES[0];
   double _distanceKm = 2.5;
@@ -85,7 +83,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
   Map<String, dynamic>? _driverInfo;
   Timer? _pollingTimer;
   RealtimeChannel? _rideChannel;
-  int _searchCountdown = 30;
+  int _searchCountdown = 300;
   Timer? _countdownTimer;
 
   // Map Polyline & Markers
@@ -122,7 +120,11 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() => _errorMsg = 'Location services are disabled.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are disabled.')),
+          );
+        }
         return;
       }
 
@@ -130,15 +132,18 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() => _errorMsg = 'Location permission is denied.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission is denied.')),
+            );
+          }
           return;
         }
       }
       
-      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      setState(() {
-        _currentLocation = position;
-      });
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
 
       List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
         position.latitude,
@@ -345,7 +350,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
 
     setState(() {
       _rideState = RideState.searching;
-      _searchCountdown = 30;
+      _searchCountdown = 300;
     });
 
     final ridePayload = {
@@ -374,7 +379,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
       // Start active 1.5s polling loop
       _startPollingRideStatus(inserted['id']);
 
-      // Start 30s countdown timer
+      // Start 300s (5:00 min) countdown timer with auto-expiry
       _startCountdownTimer();
 
       // Dispatch webhook notification
@@ -408,7 +413,14 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
       if (_searchCountdown <= 1) {
         timer.cancel();
         if (_rideState == RideState.searching && mounted) {
-          _cancelSearching('No nearby driver accepted. Please retry or contact direct dispatch.');
+          if (_currentRide != null && _currentRide!['id'] != null) {
+            Supabase.instance.client
+                .from('rides')
+                .update({'status': 'expired'})
+                .eq('id', _currentRide!['id'])
+                .catchError((_) => null);
+          }
+          _cancelSearching('Ride Request Expired (5:00 mins)\n\nNo driver accepted your request within 5 minutes. Please try again.');
         }
       } else {
         setState(() => _searchCountdown--);
@@ -753,7 +765,10 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
           const SizedBox(height: 16),
           Text('Searching Nearby ${_selectedCategory.name}...', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
-          Text('Connecting with active drivers • $_searchCountdown s remaining', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14)),
+          Text(
+            'Connecting with active drivers • ${(_searchCountdown ~/ 60)}:${(_searchCountdown % 60).toString().padLeft(2, '0')} remaining (5:00 auto-expiry)',
+            style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,

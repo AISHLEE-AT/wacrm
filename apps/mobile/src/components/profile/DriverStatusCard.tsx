@@ -58,14 +58,14 @@ export const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
     if (!driverProfile) {
       return (
         <View style={styles.stateContainer}>
-          <Text style={styles.descriptionText}>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
             You are not registered as a DriveO vehicle operator yet.
           </Text>
           <TouchableOpacity
-            style={styles.enrollButton}
+            style={[styles.enrollButton, { backgroundColor: colors.emerald }]}
             onPress={() => navigation.navigate('DriveOScreen')}
           >
-            <Text style={styles.buttonText}>Enroll as Driver Partner</Text>
+            <Text style={[styles.buttonText, { color: colors.background }]}>Enroll as Driver Partner</Text>
           </TouchableOpacity>
         </View>
       );
@@ -78,26 +78,26 @@ export const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
             <Animated.View style={{ opacity: pulseAnim }}>
               <Clock color={colors.amber} size={16} />
             </Animated.View>
-            <Text style={styles.amberBadgeText}>Pending Admin Verification</Text>
+            <Text style={[styles.amberBadgeText, { color: colors.amber }]}>Pending Admin Verification</Text>
           </View>
 
           {driverProfile.vehicle_number && (
-            <Text style={styles.vehicleNumber}>
+            <Text style={[styles.vehicleNumber, { color: colors.textMuted }]}>
               Vehicle: {driverProfile.vehicle_number}
             </Text>
           )}
 
-          <Text style={styles.descriptionText}>
+          <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>
             Your documents are currently being verified by the administration.
             This process usually takes 24-48 hours.
           </Text>
 
           <TouchableOpacity
-            style={styles.whatsappButton}
+            style={[styles.whatsappButton, { backgroundColor: colors.whatsapp }]}
             onPress={handleWhatsAppVerification}
           >
             <MessageCircle color={colors.background} size={20} style={styles.buttonIcon} />
-            <Text style={styles.whatsappButtonText}>
+            <Text style={[styles.whatsappButtonText, { color: colors.background }]}>
               Request Admin Verification via WhatsApp
             </Text>
           </TouchableOpacity>
@@ -110,17 +110,17 @@ export const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
       <View style={styles.stateContainer}>
         <View style={styles.greenBadge}>
           <CheckCircle color={colors.emerald} size={16} />
-          <Text style={styles.greenBadgeText}>Verified & Active Driver Partner</Text>
+          <Text style={[styles.greenBadgeText, { color: colors.emerald }]}>Verified & Active Driver Partner</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
       <View style={styles.header}>
         <Truck color={colors.emerald} size={18} />
-        <Text style={styles.headerTitle}>DriveO Partner Registration Status</Text>
+        <Text style={[styles.headerTitle, { color: colors.textMuted }]}>DriveO Partner Registration Status</Text>
       </View>
       {renderContent()}
     </View>
@@ -129,8 +129,6 @@ export const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderColor: colors.cardBorder,
     borderWidth: 1,
     borderRadius: radius.lg,
     padding: spacing.xl,
@@ -144,7 +142,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: fontSize.xs,
     fontWeight: 'bold',
-    color: colors.textMuted,
     textTransform: 'uppercase',
     marginLeft: spacing.sm,
   },
@@ -152,13 +149,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   descriptionText: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.md,
     lineHeight: 20,
   },
   enrollButton: {
-    backgroundColor: colors.emerald,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
@@ -166,7 +161,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   buttonText: {
-    color: colors.background,
     fontSize: fontSize.md,
     fontWeight: 'bold',
   },
@@ -181,19 +175,16 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   amberBadgeText: {
-    color: colors.amber,
     fontSize: fontSize.sm,
     fontWeight: 'bold',
     marginLeft: spacing.sm,
   },
   vehicleNumber: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    color: colors.textMuted,
     fontSize: fontSize.md,
     marginBottom: spacing.md,
   },
   whatsappButton: {
-    backgroundColor: colors.whatsapp,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -203,7 +194,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   whatsappButtonText: {
-    color: colors.background,
     fontSize: fontSize.sm,
     fontWeight: 'bold',
     marginLeft: spacing.sm,
@@ -222,7 +212,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   greenBadgeText: {
-    color: colors.emerald,
     fontSize: fontSize.sm,
     fontWeight: 'bold',
     marginLeft: spacing.sm,

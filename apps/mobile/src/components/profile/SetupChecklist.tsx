@@ -32,13 +32,13 @@ export function SetupChecklist({
   const progressPercent = Math.round((completedCount / checks.length) * 100);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Setup Checklist</Text>
-        <Text style={styles.progressText}>{progressPercent}%</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Setup Checklist</Text>
+        <Text style={[styles.progressText, { color: colors.primary }]}>{progressPercent}%</Text>
       </View>
       
-      <View style={styles.progressContainer}>
+      <View style={[styles.progressContainer, { backgroundColor: colors.inputBg }]}>
         <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
       </View>
 
@@ -51,12 +51,12 @@ export function SetupChecklist({
               ) : (
                 <XCircle size={20} color={colors.textSecondary} />
               )}
-              <Text style={[styles.itemLabel, check.isComplete && styles.itemLabelComplete]}>
+              <Text style={[styles.itemLabel, check.isComplete && styles.itemLabelComplete, { color: colors.textSecondary }, { color: colors.text }]}>
                 {check.label}
               </Text>
             </View>
             {!check.isComplete && (
-              <Text style={styles.setupAction}>Set up →</Text>
+              <Text style={[styles.setupAction, { color: colors.primary }]}>Set up →</Text>
             )}
           </View>
         ))}
@@ -67,12 +67,10 @@ export function SetupChecklist({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -82,24 +80,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: fontSize.lg,
-    color: colors.text,
     fontWeight: '600',
   },
   progressText: {
     fontSize: fontSize.md,
-    color: colors.primary,
     fontWeight: '600',
   },
   progressContainer: {
     height: 6,
-    backgroundColor: colors.inputBg,
     borderRadius: 3,
     marginBottom: spacing.md,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: colors.primary,
     borderRadius: 3,
   },
   list: {
@@ -117,14 +111,11 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     marginLeft: spacing.sm,
-    color: colors.textSecondary,
     fontSize: fontSize.md,
   },
   itemLabelComplete: {
-    color: colors.text,
   },
   setupAction: {
-    color: colors.primary,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },

@@ -11,33 +11,37 @@ interface UpiQrCardProps {
 }
 
 export const UpiQrCard: React.FC<UpiQrCardProps> = ({ upiId, fullName, phone }) => {
-  const actualUpiId = upiId || `${phone}@upi`;
+  const cleanPhone = (phone || '').replace(/\D/g, '').slice(-10);
+  const actualUpiId = upiId || (cleanPhone ? `${cleanPhone}@upi` : '');
   const qrData = `upi://pay?pa=${actualUpiId}&pn=${encodeURIComponent(fullName)}`;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.primary }]}>
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <QrCode color={colors.primary} size={24} />
-          <Text style={styles.title}>Merchant & Driver UPI QR</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Merchant & Driver UPI QR</Text>
         </View>
-        <View style={styles.badge}>
+        <View style={[styles.badge, { backgroundColor: colors.emerald }]}>
           <BadgeCheck color={colors.text} size={14} />
-          <Text style={styles.badgeText}>Verified P2P Pay</Text>
+          <Text style={[styles.badgeText, { color: colors.text }]}>Verified P2P Pay</Text>
         </View>
       </View>
       
-      <Text style={styles.description}>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>
         0-commission instant payment directly to your bank account.
       </Text>
 
       <View style={styles.qrContainerRow}>
         <View style={styles.qrWrapper}>
           <QRCode value={qrData} size={140} backgroundColor="#FFFFFF" />
+          {actualUpiId ? (
+            <Text style={[styles.upiIdBadge, { color: colors.primary }]}>{actualUpiId}</Text>
+          ) : null}
         </View>
         <View style={styles.rightInfo}>
-          <Text style={styles.instantText}>📲 Instant Scan & Pay</Text>
-          <Text style={styles.subText}>
+          <Text style={[styles.instantText, { color: colors.text }]}>📲 Instant Scan & Pay</Text>
+          <Text style={[styles.subText, { color: colors.textMuted }]}>
             Accept payments from any UPI app including PhonePe, Google Pay, and Paytm directly to your verified account.
           </Text>
         </View>
@@ -48,8 +52,6 @@ export const UpiQrCard: React.FC<UpiQrCardProps> = ({ upiId, fullName, phone }) 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderColor: colors.primary,
     borderWidth: 1,
     borderRadius: radius.xl,
     padding: spacing.lg,
@@ -67,12 +69,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   title: {
-    color: colors.text,
     fontSize: fontSize.md,
     fontWeight: 'bold',
   },
   badge: {
-    backgroundColor: colors.emerald,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
@@ -81,12 +81,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   badgeText: {
-    color: colors.text,
     fontSize: fontSize.xs,
     fontWeight: 'bold',
   },
   description: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.lg,
   },
@@ -109,14 +107,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   instantText: {
-    color: colors.text,
     fontSize: fontSize.md,
     fontWeight: 'bold',
     marginBottom: spacing.sm,
   },
   subText: {
-    color: colors.textMuted,
     fontSize: fontSize.sm,
     lineHeight: 20,
+  },
+  upiIdBadge: {
+    marginTop: 6,
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

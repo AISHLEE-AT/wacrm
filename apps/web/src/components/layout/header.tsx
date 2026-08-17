@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut, LayoutGrid, MapPin, Sparkles, User, Settings, Shield, CreditCard } from "lucide-react";
 import {
@@ -41,6 +41,7 @@ const MODULE_TITLES: Record<string, { name: string; tamil: string; icon: string 
 
 export function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile, signOut } = useAuth();
   const [isLauncherOpen, setIsLauncherOpen] = useState(false);
 
@@ -127,25 +128,19 @@ export function Header({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
                 )}
               </div>
 
-              <DropdownMenuItem asChild className="rounded-xl mt-1">
-                <Link href="/profile" className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-                  <User className="w-4 h-4 text-primary" />
-                  <span>My Profile & Location</span>
-                </Link>
+              <DropdownMenuItem onClick={() => router.push('/profile')} className="rounded-xl mt-1 flex items-center gap-2 text-xs font-medium cursor-pointer">
+                <User className="w-4 h-4 text-primary" />
+                <span>My Profile & Location</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem asChild className="rounded-xl">
-                <Link href="/wallet" className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-                  <CreditCard className="w-4 h-4 text-amber-400" />
-                  <span>Wallet & Payments</span>
-                </Link>
+              <DropdownMenuItem onClick={() => router.push('/wallet')} className="rounded-xl flex items-center gap-2 text-xs font-medium cursor-pointer">
+                <CreditCard className="w-4 h-4 text-amber-400" />
+                <span>Wallet & Payments</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem asChild className="rounded-xl">
-                <Link href="/admin" className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-                  <Shield className="w-4 h-4 text-indigo-400" />
-                  <span>Admin Hub</span>
-                </Link>
+              <DropdownMenuItem onClick={() => router.push('/admin')} className="rounded-xl flex items-center gap-2 text-xs font-medium cursor-pointer">
+                <Shield className="w-4 h-4 text-indigo-400" />
+                <span>Admin Hub</span>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator className="my-1 bg-border/50" />

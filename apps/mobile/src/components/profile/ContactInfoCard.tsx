@@ -4,6 +4,8 @@ import { Smartphone, MapPin, CreditCard, Sparkles, Check, X, ExternalLink, Navig
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
 import { LocationContext } from '../../context/LocationContext';
 
+import { AppContext } from '../../context/AppContext';
+
 interface ContactInfoCardProps {
   profile: any;
   userId: string;
@@ -13,6 +15,7 @@ interface ContactInfoCardProps {
 
 export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userId, phone, onProfileUpdate }) => {
   const locationCtx = useContext(LocationContext);
+  const appContext = useContext(AppContext);
   const [editingField, setEditingField] = useState<'location' | 'upi_id' | 'gemini_api_key' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -43,17 +46,20 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
       const payload: any = { userId, phone };
       payload[editingField] = editValue;
 
-      const response = await fetch('https://watscrm.vercel.app/api/profile/update', {
+      // Update in AppContext immediately for realtime UI sync
+      if (editingField === 'upi_id') {
+        appContext?.updateUserProfile?.({ upiId: editValue.trim() });
+      } else if (editingField === 'location') {
+        appContext?.updateUserProfile?.({ location: editValue.trim() });
+      }
+
+      fetch('https://watscrm.vercel.app/api/profile/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update profile');
-      }
+      }).catch(e => console.warn('Profile API update warning:', e));
       
       const updatedProfile = { ...profile, [editingField]: editValue };
       onProfileUpdate(updatedProfile);
@@ -72,31 +78,31 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
       {/* Row 1: WhatsApp Phone */}
-      <View style={styles.row}>
+      <View style={[styles.row, { borderBottomColor: colors.border }]}>
         <View style={styles.leftContent}>
           <View style={styles.iconContainer}>
             <Smartphone size={20} color={colors.primary} />
           </View>
           <View style={styles.contentContainer}>
-            <Text style={styles.label}>WhatsApp Phone</Text>
-            <Text style={styles.value}>{formatPhone(phone)}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>WhatsApp Phone</Text>
+            <Text style={[styles.value, { color: colors.text }]}>{formatPhone(phone)}</Text>
           </View>
         </View>
       </View>
 
       {/* Row 2: Location */}
-      <View style={styles.row}>
+      <View style={[styles.row, { borderBottomColor: colors.border }]}>
         <View style={styles.leftContent}>
           <View style={styles.iconContainer}>
             <MapPin size={20} color={colors.primary} />
           </View>
           <View style={styles.contentContainer}>
-            <Text style={styles.label}>Location</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>Location</Text>
             {editingField === 'location' ? (
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                 value={editValue}
                 onChangeText={setEditValue}
                 placeholder="e.g. Chennai, Tamil Nadu, India"
@@ -105,13 +111,13 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
               />
             ) : (
               <View>
-                <Text style={styles.value}>
+                <Text style={[styles.value, { color: colors.text }]}>
                   {locationCtx.isLoading
                     ? 'Detecting...'
                     : profile?.location || locationCtx.locationString || 'Tap Detect to set location'}
                 </Text>
                 {locationCtx.city && !locationCtx.isLoading && (
-                  <Text style={styles.locationDetail}>
+                  <Text style={[styles.locationDetail, { color: colors.textMuted }]}>
                     {[locationCtx.city, locationCtx.district, locationCtx.pincode].filter(Boolean).join(' · ')}
                   </Text>
                 )}
@@ -138,13 +144,13 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
               {locationCtx.isLoading ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
-                <TouchableOpacity onPress={locationCtx.refreshLocation} style={styles.detectBtn}>
+                <TouchableOpacity onPress={locationCtx.refreshLocation} style={[styles.detectBtn, { backgroundColor: colors.accentLight }]}>
                   <Navigation size={14} color={colors.accent} />
-                  <Text style={styles.detectBtnText}>Detect</Text>
+                  <Text style={[styles.detectBtnText, { color: colors.accent }]}>Detect</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity onPress={() => handleEdit('location', profile?.location || locationCtx.locationString || '')}>
-                <Text style={styles.editBtnText}>Edit</Text>
+                <Text style={[styles.editBtnText, { color: colors.primary }]}>Edit</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -152,16 +158,16 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
       </View>
 
       {/* Row 3: UPI ID */}
-      <View style={styles.row}>
+      <View style={[styles.row, { borderBottomColor: colors.border }]}>
         <View style={styles.leftContent}>
           <View style={styles.iconContainer}>
             <CreditCard size={20} color={colors.primary} />
           </View>
           <View style={styles.contentContainer}>
-            <Text style={styles.label}>UPI ID (For Driver/Ride Settlements)</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>UPI ID (For Driver/Ride Settlements)</Text>
             {editingField === 'upi_id' ? (
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                 value={editValue}
                 onChangeText={setEditValue}
                 placeholder="e.g. 9876543210@upi"
@@ -169,7 +175,9 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
                 autoFocus
               />
             ) : (
-              <Text style={styles.value}>{profile?.upi_id || 'Not provided'}</Text>
+              <Text style={[styles.value, { color: colors.text }]}>
+                {profile?.upi_id || ((phone || '').replace(/\D/g, '').slice(-10) ? `${(phone || '').replace(/\D/g, '').slice(-10)}@upi` : 'Not provided')}
+              </Text>
             )}
           </View>
         </View>
@@ -188,25 +196,25 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
               </View>
             )
           ) : (
-            <TouchableOpacity onPress={() => handleEdit('upi_id', profile?.upi_id || '')}>
-              <Text style={styles.editBtnText}>Edit</Text>
+            <TouchableOpacity onPress={() => handleEdit('upi_id', profile?.upi_id || ((phone || '').replace(/\D/g, '').slice(-10) ? `${(phone || '').replace(/\D/g, '').slice(-10)}@upi` : ''))}>
+              <Text style={[styles.editBtnText, { color: colors.primary }]}>Edit</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* Row 4: Gemini API Key */}
-      <View style={[styles.row, styles.lastRow]}>
+      <View style={[styles.row, styles.lastRow, { borderBottomColor: colors.border }]}>
         <View style={styles.leftContent}>
           <View style={styles.iconContainer}>
             <Sparkles size={20} color={colors.primary} />
           </View>
           <View style={styles.contentContainer}>
-            <Text style={styles.label}>GEMINI API KEY (AI FEATURES)</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>GEMINI API KEY (AI FEATURES)</Text>
             {editingField === 'gemini_api_key' ? (
               <View>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                   value={editValue}
                   onChangeText={setEditValue}
                   placeholder="AIzaSy..."
@@ -216,11 +224,11 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
                 />
                 <TouchableOpacity style={styles.linkContainer} onPress={openGeminiLink}>
                   <ExternalLink size={14} color={colors.accent} />
-                  <Text style={styles.linkText}>Get API Key</Text>
+                  <Text style={[styles.linkText, { color: colors.accent }]}>Get API Key</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              <Text style={styles.value}>
+              <Text style={[styles.value, { color: colors.text }]}>
                 {profile?.gemini_api_key ? '••••••••••••••••' : 'Not provided'}
               </Text>
             )}
@@ -242,7 +250,7 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
             )
           ) : (
             <TouchableOpacity onPress={() => handleEdit('gemini_api_key', profile?.gemini_api_key || '')}>
-              <Text style={styles.editBtnText}>Edit</Text>
+              <Text style={[styles.editBtnText, { color: colors.primary }]}>Edit</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -253,10 +261,8 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
     padding: spacing.xl,
   },
   row: {
@@ -265,7 +271,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   lastRow: {
     borderBottomWidth: 0,
@@ -291,20 +296,15 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: fontSize.xs,
-    color: colors.textMuted,
     textTransform: 'uppercase',
     fontWeight: 'bold',
     marginBottom: spacing.xs,
   },
   value: {
     fontSize: fontSize.md,
-    color: colors.text,
   },
   input: {
-    backgroundColor: colors.inputBg,
-    color: colors.text,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -316,7 +316,6 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   editBtnText: {
-    color: colors.primary,
     fontSize: fontSize.sm,
     fontWeight: 'bold',
   },
@@ -334,28 +333,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   linkText: {
-    color: colors.accent,
     fontSize: fontSize.xs,
     marginLeft: spacing.xs,
   },
   detectBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.accentLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: radius.sm,
     marginRight: spacing.sm,
   },
   detectBtnText: {
-    color: colors.accent,
     fontSize: fontSize.xs,
     fontWeight: 'bold',
     marginLeft: 4,
   },
   locationDetail: {
     fontSize: fontSize.xs,
-    color: colors.textMuted,
     marginTop: 2,
   },
 });

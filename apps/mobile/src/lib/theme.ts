@@ -3,6 +3,48 @@
  * All new components should import from here instead of hardcoding colors.
  */
 
+/** Dark mode palette (default) */
+const DARK_COLORS = {
+  background: '#0a0f1e',
+  card: '#111827',
+  cardBorder: 'rgba(52, 211, 153, 0.2)',
+  inputBg: '#0f172a',
+  text: '#f8fafc',
+  textSecondary: '#94a3b8',
+  textMuted: '#475569',
+  border: '#334155',
+  borderLight: 'rgba(51, 65, 85, 0.5)',
+  destructiveLight: 'rgba(239, 68, 68, 0.1)',
+  destructiveBorder: 'rgba(239, 68, 68, 0.3)',
+  amberLight: 'rgba(234, 179, 8, 0.1)',
+  amberBorder: 'rgba(234, 179, 8, 0.3)',
+  purpleLight: 'rgba(139, 92, 246, 0.1)',
+  emeraldLight: 'rgba(16, 185, 129, 0.1)',
+  emeraldBorder: 'rgba(16, 185, 129, 0.3)',
+  roseLight: 'rgba(244, 63, 94, 0.1)',
+};
+
+/** Light mode palette */
+const LIGHT_COLORS = {
+  background: '#f8fafc',
+  card: '#ffffff',
+  cardBorder: 'rgba(52, 211, 153, 0.15)',
+  inputBg: '#f1f5f9',
+  text: '#0f172a',
+  textSecondary: '#64748b',
+  textMuted: '#94a3b8',
+  border: '#e2e8f0',
+  borderLight: 'rgba(226, 232, 240, 0.7)',
+  destructiveLight: 'rgba(239, 68, 68, 0.08)',
+  destructiveBorder: 'rgba(239, 68, 68, 0.2)',
+  amberLight: 'rgba(234, 179, 8, 0.08)',
+  amberBorder: 'rgba(234, 179, 8, 0.2)',
+  purpleLight: 'rgba(139, 92, 246, 0.08)',
+  emeraldLight: 'rgba(16, 185, 129, 0.08)',
+  emeraldBorder: 'rgba(16, 185, 129, 0.2)',
+  roseLight: 'rgba(244, 63, 94, 0.08)',
+};
+
 export const colors = {
   // Backgrounds
   background: '#0a0f1e',
@@ -49,6 +91,16 @@ export const colors = {
   border: '#334155',
   borderLight: 'rgba(51, 65, 85, 0.5)',
 };
+
+/**
+ * Monotonically incrementing version — bumped on every theme mutation.
+ * Components that read this via context will re-render when it changes,
+ * picking up the freshly-mutated `colors` values.
+ */
+export let themeVersion = 0;
+
+/** Tracks current mode so accent re-application knows the right palette. */
+let _currentMode: ThemeMode = 'dark';
 
 export const spacing = {
   xs: 4,
@@ -97,6 +149,17 @@ export const ACCENT_THEMES = [
 export type AccentThemeId = typeof ACCENT_THEMES[number]['id'];
 export type ThemeMode = 'light' | 'dark';
 
+/**
+ * Swap all mode-dependent color tokens on the mutable `colors` object.
+ * Call this whenever theme mode changes.
+ */
+export const applyModeToGlobalColors = (mode: ThemeMode) => {
+  _currentMode = mode;
+  const palette = mode === 'light' ? LIGHT_COLORS : DARK_COLORS;
+  Object.assign(colors, palette);
+  themeVersion++;
+};
+
 export const applyThemeToGlobalColors = (accentId: string) => {
   const theme = ACCENT_THEMES.find((t) => t.id === accentId) || ACCENT_THEMES[0];
   
@@ -107,8 +170,13 @@ export const applyThemeToGlobalColors = (accentId: string) => {
   const r = parseInt(hex.substring(0, 2), 16);
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
-  
-  colors.primaryLight = `rgba(${r}, ${g}, ${b}, 0.1)`;
-  colors.primaryBorder = `rgba(${r}, ${g}, ${b}, 0.3)`;
-  colors.accentLight = `rgba(${r}, ${g}, ${b}, 0.1)`;
+
+  const lightOpacity = _currentMode === 'light' ? 0.08 : 0.1;
+  const borderOpacity = _currentMode === 'light' ? 0.2 : 0.3;
+
+  colors.primaryLight = `rgba(${r}, ${g}, ${b}, ${lightOpacity})`;
+  colors.primaryBorder = `rgba(${r}, ${g}, ${b}, ${borderOpacity})`;
+  colors.accentLight = `rgba(${r}, ${g}, ${b}, ${lightOpacity})`;
+  colors.cardBorder = `rgba(${r}, ${g}, ${b}, ${_currentMode === 'light' ? 0.15 : 0.2})`;
+  themeVersion++;
 };

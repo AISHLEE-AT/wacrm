@@ -85,35 +85,35 @@ export const SecuritySection: React.FC<SecuritySectionProps> = ({ phone }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.header}>
           <KeyRound color={colors.amber} size={24} />
           <View style={styles.headerTextContainer}>
-            <Text style={styles.title}>Change Login PIN</Text>
-            <Text style={styles.subtitle}>Update your 4-digit quick login PIN</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Change Login PIN</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Update your 4-digit quick login PIN</Text>
           </View>
         </View>
 
         {error && (
           <View style={styles.errorCard}>
             <AlertTriangle color={colors.destructive} size={20} />
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>
           </View>
         )}
 
         {success && (
           <View style={styles.successCard}>
             <ShieldCheck color={colors.emerald} size={20} />
-            <Text style={styles.successText}>{success}</Text>
+            <Text style={[styles.successText, { color: colors.emerald }]}>{success}</Text>
           </View>
         )}
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>New PIN</Text>
-          <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>New PIN</Text>
+          <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
             <KeyRound color={colors.textMuted} size={20} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.text }]}
               value={pin}
               onChangeText={(text) => setPin(text.replace(/[^0-9]/g, '').slice(0, 4))}
               keyboardType="number-pad"
@@ -133,11 +133,11 @@ export const SecuritySection: React.FC<SecuritySectionProps> = ({ phone }) => {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Confirm New PIN</Text>
-          <View style={styles.inputContainer}>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Confirm New PIN</Text>
+          <View style={[styles.inputContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
             <KeyRound color={colors.textMuted} size={20} style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.text }]}
               value={confirmPin}
               onChangeText={(text) => setConfirmPin(text.replace(/[^0-9]/g, '').slice(0, 4))}
               keyboardType="number-pad"
@@ -159,12 +159,12 @@ export const SecuritySection: React.FC<SecuritySectionProps> = ({ phone }) => {
               {isMatch ? (
                 <>
                   <Check color={colors.emerald} size={14} />
-                  <Text style={styles.matchTextSuccess}> ✓ PINs match</Text>
+                  <Text style={[styles.matchTextSuccess, { color: colors.emerald }]}> ✓ PINs match</Text>
                 </>
               ) : (
                 <>
                   <AlertTriangle color={colors.destructive} size={14} />
-                  <Text style={styles.matchTextError}> ⚠ PINs don't match</Text>
+                  <Text style={[styles.matchTextError, { color: colors.destructive }]}> ⚠ PINs don't match</Text>
                 </>
               )}
             </View>
@@ -172,21 +172,21 @@ export const SecuritySection: React.FC<SecuritySectionProps> = ({ phone }) => {
         </View>
 
         <TouchableOpacity
-          style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
+          style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled, { backgroundColor: colors.amber }]}
           onPress={handleUpdatePin}
           disabled={!canSubmit}
         >
           {loading ? (
             <ActivityIndicator color={colors.background} size="small" />
           ) : (
-            <Text style={styles.submitButtonText}>Update PIN</Text>
+            <Text style={[styles.submitButtonText, { color: colors.background }]}>Update PIN</Text>
           )}
         </TouchableOpacity>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         <TouchableOpacity style={styles.signOutAllButton} onPress={handleSignOutAll}>
-          <Text style={styles.signOutAllText}>Sign out all devices</Text>
+          <Text style={[styles.signOutAllText, { color: colors.destructive }]}>Sign out all devices</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -198,11 +198,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   card: {
-    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -215,11 +213,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.lg,
     fontWeight: 'bold',
-    color: colors.text,
   },
   subtitle: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   inputGroup: {
@@ -227,16 +223,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
     marginBottom: spacing.xs,
     fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     height: 48,
@@ -246,7 +239,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: colors.text,
     fontSize: fontSize.lg,
     letterSpacing: 4,
     height: '100%',
@@ -260,17 +252,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   matchTextSuccess: {
-    color: colors.emerald,
     fontSize: fontSize.sm,
     marginLeft: 4,
   },
   matchTextError: {
-    color: colors.destructive,
     fontSize: fontSize.sm,
     marginLeft: 4,
   },
   submitButton: {
-    backgroundColor: colors.amber,
     borderRadius: radius.md,
     height: 48,
     alignItems: 'center',
@@ -281,13 +270,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   submitButtonText: {
-    color: colors.background,
     fontSize: fontSize.md,
     fontWeight: 'bold',
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
     marginVertical: spacing.lg,
   },
   signOutAllButton: {
@@ -295,7 +282,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   signOutAllText: {
-    color: colors.destructive,
     fontSize: fontSize.md,
     fontWeight: '600',
   },
@@ -308,7 +294,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   errorText: {
-    color: colors.destructive,
     fontSize: fontSize.sm,
     marginLeft: spacing.sm,
     flex: 1,
@@ -322,7 +307,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   successText: {
-    color: colors.emerald,
     fontSize: fontSize.sm,
     marginLeft: spacing.sm,
     flex: 1,

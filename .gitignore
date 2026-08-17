@@ -85,3 +85,6 @@ next-env.d.ts
 apps/supro_flutter/build
 apps/supro_flutter/.dart_tool
 java/
+screen_*.png
+*.log
+scratch/

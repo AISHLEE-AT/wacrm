@@ -16,11 +16,13 @@ const defaultCenter = {
 interface MapProps {
   pickup: [number, number] | null;
   dropoff: [number, number] | null;
-  setDropoff: (loc: [number, number]) => void;
+  setDropoff?: (loc: [number, number]) => void;
   driverLocation?: [number, number] | null;
+  liveDriver?: any;
+  routeCoordinates?: any[];
 }
 
-export default function GoogleRideMap({ pickup, dropoff, setDropoff, driverLocation }: MapProps) {
+export default function GoogleRideMap({ pickup, dropoff, setDropoff, driverLocation, liveDriver, routeCoordinates }: MapProps) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -45,7 +47,7 @@ export default function GoogleRideMap({ pickup, dropoff, setDropoff, driverLocat
   }, []);
 
   const onClick = (e: google.maps.MapMouseEvent) => {
-    if (e.latLng) {
+    if (e.latLng && setDropoff) {
       setDropoff([e.latLng.lat(), e.latLng.lng()]);
     }
   };

@@ -58,9 +58,25 @@ export default function EcosystemWebView({ route, navigation }: Props) {
   const INJECTED_JS = `
     (function() {
       try {
-        // Mark as native so web can hide its own nav/header
+        // Mark as native so web can hide its own nav/header and recognize mobile container
         document.documentElement.classList.add('is-native-app');
         document.body.classList.add('is-native-app');
+        document.cookie = "supro_is_embed=true; path=/; max-age=86400; SameSite=Lax";
+        try { sessionStorage.setItem('supro_is_embed', 'true'); } catch(e) {}
+
+        // Rewrite internal links so they preserve ?embed=true seamlessly
+        document.addEventListener('click', function(e) {
+          try {
+            var a = e.target && e.target.closest ? e.target.closest('a') : null;
+            if (a && a.getAttribute) {
+              var href = a.getAttribute('href');
+              if (href && href.startsWith('/') && !href.startsWith('//') && !href.includes('embed=true')) {
+                var sep = href.includes('?') ? '&' : '?';
+                a.setAttribute('href', href + sep + 'embed=true');
+              }
+            }
+          } catch(err) {}
+        }, true);
 
         // Inject Supabase session so user doesn't get redirected to login
         if ("${accessToken}") {
@@ -116,12 +132,11 @@ export default function EcosystemWebView({ route, navigation }: Props) {
               user: { id: "${user?.id || ''}", phone: "${userPhone || ''}", email: "${user?.email || ''}" }
             }, "*");
             
-            // If we are currently on the login page, the token injection was successful but Next.js middleware 
-            // already redirected us here. Redirect back to the intended module path!
+            // If we are currently on the login page, redirect to the target module with embed=true
             if (window.location.pathname === '/login' || window.location.pathname.startsWith('/login')) {
               window.location.href = "${path}?embed=true";
             }
-          }, 500);
+          }, 300);
         }
 
         // Expose native user info to the web app
@@ -133,12 +148,16 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           isNative: true
         };
 
-        // If web tries to redirect to /login, intercept and tell native
+        // If web tries to redirect to /login, intercept and stay within module
         var _push = history.pushState;
         history.pushState = function(state, title, url) {
           if (url && (url === '/login' || url.startsWith('/login?'))) {
+            if (window.location.pathname !== '/login') {
+              return;
+            }
             window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'AUTH_REQUIRED', url: url
+              type: 'NAVIGATE',
+              screen: 'Login'
             }));
             return;
           }

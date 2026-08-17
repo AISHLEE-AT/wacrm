@@ -53,25 +53,70 @@ export async function POST(request: Request) {
     const cleanPhone = driverPhone.replace(/\D/g, '');
     const whatsappPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
+    // 1. Update database record with service role permissions
+    if (action === 'arrived') {
+      await supabase
+        .from('rides')
+        .update({
+          status: 'driver_arrived',
+          arrived_at: new Date().toISOString(),
+        })
+        .eq('id', ride_id);
+    } else if (action === 'start_trip') {
+      await supabase
+        .from('rides')
+        .update({
+          status: 'in_progress',
+          started_at: new Date().toISOString(),
+        })
+        .eq('id', ride_id);
+    } else if (action === 'accepted') {
+      await supabase
+        .from('rides')
+        .update({
+          status: 'accepted',
+          driver_id: driver_id,
+          accepted_at: new Date().toISOString(),
+        })
+        .eq('id', ride_id);
+    } else if (action === 'cancelled') {
+      await supabase
+        .from('rides')
+        .update({
+          status: 'cancelled',
+          cancelled_by: 'driver',
+        })
+        .eq('id', ride_id);
+    }
+
+    // 2. Send optional WhatsApp notifications
     let text = '';
     if (action === 'accepted') {
       text = '✅ You have accepted this ride on the SuprO App. Please navigate to the pickup location using the app.';
+    } else if (action === 'arrived') {
+      text = '📍 You have marked arrival at the pickup point. Please ask rider for their 4-digit PIN.';
+    } else if (action === 'start_trip') {
+      text = '🚗 Trip started! Safe journey.';
     } else if (action === 'cancelled') {
       text = '❌ You have cancelled this ride via the SuprO App.';
-    } else {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
-    await sendTextMessage({
-      phoneNumberId,
-      accessToken,
-      to: whatsappPhone,
-      text
-    });
+    if (accessToken && text) {
+      try {
+        await sendTextMessage({
+          phoneNumberId,
+          accessToken,
+          to: whatsappPhone,
+          text,
+        });
+      } catch (waErr) {
+        console.warn('WhatsApp text send error:', waErr);
+      }
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, action });
   } catch (err: any) {
-    console.error('Failed to notify driver via WhatsApp:', err);
+    console.error('Driver action handler error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

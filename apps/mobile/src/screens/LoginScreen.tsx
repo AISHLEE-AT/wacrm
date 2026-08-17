@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Linking, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image, Animated } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { Smartphone, Lock, ShieldCheck, MessageCircle, KeyRound, UserCheck, Eye, EyeOff, Sparkles } from 'lucide-react-native';
+import { Smartphone, Lock, ShieldCheck, MessageCircle, KeyRound, UserCheck, Eye, EyeOff, Sparkles, Zap } from 'lucide-react-native';
 import { API } from '../utils/api';
 import { AppContext } from '../context/AppContext';
+import { aishleeChannelService, AishleeVideoInfo } from '../services/aishleeChannelService';
+import { DailyDeepamVideoPlayer } from '../components/login/DailyDeepamVideoPlayer';
 
 const CATEGORIES = [
   { key: 'Admin',      label: '👑 Admin (CRM & All Modules)' },
@@ -20,7 +22,7 @@ const CATEGORIES = [
 ];
 
 export default function LoginScreen({ navigation }: any) {
-  const { signIn } = React.useContext(AppContext);
+  const { signIn, recordWhatsAppSync } = React.useContext(AppContext);
   const [step, setStep] = useState<'phone' | 'otp' | 'set-pin' | 'pin'>('phone');
   
   const [phone, setPhone] = useState('');
@@ -39,12 +41,42 @@ export default function LoginScreen({ navigation }: any) {
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [wabaPhone, setWabaPhone] = useState('916381029380');
+  const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
+
+  // Daily Deepam Video Player states
+  const [isDailyVideoRequired, setIsDailyVideoRequired] = useState(false);
+  const [dailyVideoInfo, setDailyVideoInfo] = useState<AishleeVideoInfo | null>(null);
+  const [isDailyVideoFinished, setIsDailyVideoFinished] = useState(false);
 
   useEffect(() => {
     // Wrap in try/catch so any startup failure doesn't crash the screen
     checkBiometrics().catch(() => {});
     fetchWaba().catch(() => {});
+    checkDailyVideo().catch(() => {});
   }, []);
+
+  const checkDailyVideo = async () => {
+    try {
+      const watched = await aishleeChannelService.isDailyVideoWatchedToday();
+      if (!watched) {
+        setIsDailyVideoRequired(true);
+        const video = await aishleeChannelService.getLatestVideo();
+        setDailyVideoInfo(video);
+      } else {
+        setIsDailyVideoRequired(false);
+        setIsDailyVideoFinished(true);
+      }
+    } catch {
+      setIsDailyVideoFinished(true);
+      setIsDailyVideoRequired(false);
+    }
+  };
+
+  const handleDailyVideoEnded = async () => {
+    await aishleeChannelService.markDailyVideoWatched();
+    setIsDailyVideoFinished(true);
+    setIsDailyVideoRequired(false);
+  };
 
   const fetchWaba = async () => {
     try {
@@ -59,8 +91,13 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const savedToken = await SecureStore.getItemAsync('sb-access-token');
       const savedPhone = await SecureStore.getItemAsync('user-phone');
+      const savedSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
 
       if (savedToken && savedPhone) {
+        const cleanSavedPhone = savedPhone.replace(/\D/g, '').slice(-10);
+        setPhone(cleanSavedPhone);
+
+        // Allow fast biometric authentication if available
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
@@ -71,14 +108,32 @@ export default function LoginScreen({ navigation }: any) {
           });
 
           if (result.success) {
-            const onboardingDone = await SecureStore.getItemAsync('onboarding-complete');
-            if (onboardingDone === 'true') {
-              navigation.replace('Dashboard');
+            // Check if 24h WhatsApp session is still active before allowing fast login
+            const lastSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
+            const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
+            const isWindowExpired = !lastSync || (Date.now() - lastSyncTime) > 23 * 60 * 60 * 1000;
+
+            if (isWindowExpired) {
+              // Session expired — cannot auto-login via biometrics
+              // User must go through WhatsApp OTP to renew the 24h Meta window
+              setIs23hSyncRequired(true);
+              // Fall through to show the login screen with sync banner
             } else {
-              navigation.replace('OnboardingPermissions');
+              // Session still active — allow biometric fast login
+              await SecureStore.setItemAsync('onboarding-complete', 'true');
+              navigation.replace('Dashboard');
+              return;
             }
           }
         }
+
+        // If biometrics not used/failed, check 23h window
+        const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
+        const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 23 * 60 * 60 * 1000;
+        if (isWindowExpired) {
+          setIs23hSyncRequired(true);
+        }
+        handlePhoneChange(cleanSavedPhone);
       }
     } catch {
       // SecureStore not available on first cold launch — safe to ignore
@@ -132,6 +187,46 @@ export default function LoginScreen({ navigation }: any) {
     });
   };
 
+  const handleOneTapSync = async () => {
+    if (phone.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
+      return;
+    }
+    setError(null);
+
+    const syncMsg = `SuprO 23h Keep-Alive & Sync for +91${phone} 🔔`;
+    const waUrl = `whatsapp://send?phone=${wabaPhone}&text=${encodeURIComponent(syncMsg)}`;
+    const webUrl = `https://wa.me/${wabaPhone}?text=${encodeURIComponent(syncMsg)}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(waUrl);
+      if (canOpen) {
+        await Linking.openURL(waUrl);
+      } else {
+        await Linking.openURL(webUrl);
+      }
+    } catch {
+      await Linking.openURL(webUrl);
+    }
+
+    // Instantly update the 24-hour sync timestamp in SecureStore and Supabase
+    await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
+    if (recordWhatsAppSync) {
+      await recordWhatsAppSync(Date.now());
+    }
+
+    // If user has saved session token, fast-track directly into the app
+    const savedToken = await SecureStore.getItemAsync('sb-access-token');
+    if (savedToken && isExistingUser) {
+      setTimeout(async () => {
+        await SecureStore.setItemAsync('onboarding-complete', 'true');
+        navigation.replace('Dashboard');
+      }, 200);
+    } else {
+      setStep('otp');
+    }
+  };
+
   const handleOtpVerify = async () => {
     setError(null);
     if (phone.length !== 10) { setError("Please enter a valid 10-digit mobile number"); return; }
@@ -151,6 +246,11 @@ export default function LoginScreen({ navigation }: any) {
         await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
       }
       await SecureStore.setItemAsync('user-phone', phone);
+      await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
+      await SecureStore.setItemAsync('onboarding-complete', 'true');
+      if (recordWhatsAppSync) {
+        await recordWhatsAppSync(Date.now());
+      }
 
       if (data.user) {
         await SecureStore.setItemAsync('user-name', data.user.fullName);
@@ -170,12 +270,7 @@ export default function LoginScreen({ navigation }: any) {
         setStep('set-pin');
       } else {
         setTimeout(async () => {
-          const onboardingDone = await SecureStore.getItemAsync('onboarding-complete');
-          if (onboardingDone === 'true') {
-            navigation.replace('Dashboard');
-          } else {
-            navigation.replace('OnboardingPermissions');
-          }
+          navigation.replace('Dashboard');
         }, 100);
       }
     } catch (err: any) {
@@ -193,13 +288,9 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await API.setPin(phone, newPin, confirmPin);
+      await SecureStore.setItemAsync('onboarding-complete', 'true');
       setTimeout(async () => {
-        const onboardingDone = await SecureStore.getItemAsync('onboarding-complete');
-        if (onboardingDone === 'true') {
-          navigation.replace('Dashboard');
-        } else {
-          navigation.replace('OnboardingPermissions');
-        }
+        navigation.replace('Dashboard');
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Failed to save PIN');
@@ -213,6 +304,19 @@ export default function LoginScreen({ navigation }: any) {
     if (phone.length !== 10) { setError("Please enter a valid 10-digit mobile number"); return; }
     if (pin.length !== 4) { setError("Please enter your 4-digit PIN"); return; }
 
+    // ─── Gate: Block PIN login when 24h WhatsApp session is expired ───
+    // The user MUST login via WhatsApp OTP to renew the Meta messaging window.
+    const savedSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
+    const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
+    const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 23 * 60 * 60 * 1000;
+
+    if (isWindowExpired) {
+      setError('⏰ Your 24-hour WhatsApp session has expired. Please login via WhatsApp OTP to renew your messaging window.');
+      setIs23hSyncRequired(true);
+      setStep('phone');
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await API.loginWithPin(phone, pin);
@@ -221,6 +325,10 @@ export default function LoginScreen({ navigation }: any) {
         await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
       }
       await SecureStore.setItemAsync('user-phone', phone);
+      // NOTE: Do NOT reset last-whatsapp-sync-timestamp here.
+      // PIN login does not involve a real WhatsApp interaction,
+      // so the 24h window should NOT be faked as renewed.
+      await SecureStore.setItemAsync('onboarding-complete', 'true');
 
       if (data.user) {
         await SecureStore.setItemAsync('user-name', data.user.fullName);
@@ -236,14 +344,9 @@ export default function LoginScreen({ navigation }: any) {
         });
       }
 
-      // Delay navigation to ensure AppContext is updated and EcosystemWebView gets the token
+      // Direct navigation to Dashboard
       setTimeout(async () => {
-        const onboardingDone = await SecureStore.getItemAsync('onboarding-complete');
-        if (onboardingDone === 'true') {
-          navigation.replace('Dashboard');
-        } else {
-          navigation.replace('OnboardingPermissions');
-        }
+        navigation.replace('Dashboard');
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Login failed');
@@ -291,6 +394,21 @@ export default function LoginScreen({ navigation }: any) {
           {/* STEP: PHONE */}
           {step === 'phone' && (
             <View style={styles.stepContainer}>
+              {/* 23-Hour WhatsApp Sync Notice */}
+              {is23hSyncRequired && (
+                <View style={styles.sync23hCard}>
+                  <View style={styles.sync23hIcon}>
+                    <MessageCircle color="#34d399" size={22} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sync23hTitle}>⚡ 23-HOUR WHATSAPP SYNC</Text>
+                    <Text style={styles.sync23hText}>
+                      Daily verification required to renew your 24h WhatsApp notification window & live alerts.
+                    </Text>
+                  </View>
+                </View>
+              )}
+
               <Text style={styles.label}>MOBILE NUMBER</Text>
               <View style={styles.inputContainer}>
                 <View style={styles.inputLeftIcon}>
@@ -366,22 +484,45 @@ export default function LoginScreen({ navigation }: any) {
                 </View>
               )}
 
+              {/* Primary Action: Send OTP via WhatsApp */}
               <TouchableOpacity 
-                style={[styles.primaryButton, (phone.length !== 10 || isChecking) && styles.disabledButton]} 
+                style={[
+                  styles.primaryButton,
+                  (phone.length !== 10 || isChecking || (isDailyVideoRequired && !isDailyVideoFinished)) && styles.disabledButton
+                ]} 
                 onPress={requestOtp}
-                disabled={phone.length !== 10 || isChecking}
+                disabled={phone.length !== 10 || isChecking || (isDailyVideoRequired && !isDailyVideoFinished)}
               >
-                {isChecking ? <ActivityIndicator color="#fff" /> : <MessageCircle color="#fff" size={20} />}
-                <Text style={styles.primaryButtonText}>Send OTP via WhatsApp</Text>
+                {isChecking ? (
+                  <ActivityIndicator color="#fff" />
+                ) : isDailyVideoRequired && !isDailyVideoFinished ? (
+                  <Sparkles color="#fbbf24" size={20} />
+                ) : (
+                  <MessageCircle color="#fff" size={20} />
+                )}
+                <Text style={styles.primaryButtonText}>
+                  {isDailyVideoRequired && !isDailyVideoFinished
+                    ? '▶ Watching Daily Message...'
+                    : 'Send OTP via WhatsApp'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
-                style={[styles.secondaryButton, phone.length !== 10 && styles.disabledButton]} 
+                style={[
+                  styles.secondaryButton,
+                  (phone.length !== 10 || is23hSyncRequired || (isDailyVideoRequired && !isDailyVideoFinished)) && styles.disabledButton
+                ]} 
                 onPress={() => { setError(null); setStep('pin'); }}
-                disabled={phone.length !== 10}
+                disabled={phone.length !== 10 || is23hSyncRequired || (isDailyVideoRequired && !isDailyVideoFinished)}
               >
-                <KeyRound color="#34d399" size={16} />
-                <Text style={styles.secondaryButtonText}>Use Fallback PIN Instead</Text>
+                <KeyRound color={is23hSyncRequired ? '#475569' : '#34d399'} size={16} />
+                <Text style={[styles.secondaryButtonText, (is23hSyncRequired || (isDailyVideoRequired && !isDailyVideoFinished)) && { color: '#475569' }]}>
+                  {isDailyVideoRequired && !isDailyVideoFinished
+                    ? 'Complete daily message to login'
+                    : is23hSyncRequired
+                    ? 'PIN disabled — OTP required to renew session'
+                    : 'Use Fallback PIN Instead'}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -511,9 +652,13 @@ export default function LoginScreen({ navigation }: any) {
               <Text style={styles.hint}>Use your PIN set during registration. If you forgot it, login via WhatsApp OTP.</Text>
 
               <TouchableOpacity 
-                style={[styles.primaryButton, { backgroundColor: '#f59e0b' }, (loading || pin.length !== 4) && styles.disabledButton]} 
+                style={[
+                  styles.primaryButton,
+                  { backgroundColor: '#f59e0b' },
+                  (loading || pin.length !== 4 || (isDailyVideoRequired && !isDailyVideoFinished)) && styles.disabledButton
+                ]} 
                 onPress={handlePinLogin}
-                disabled={loading || pin.length !== 4}
+                disabled={loading || pin.length !== 4 || (isDailyVideoRequired && !isDailyVideoFinished)}
               >
                 {loading ? <ActivityIndicator color="#fff" /> : <ShieldCheck color="#fff" size={20} />}
                 <Text style={styles.primaryButtonText}>Sign In with PIN</Text>
@@ -531,11 +676,20 @@ export default function LoginScreen({ navigation }: any) {
             </View>
           )}
 
-          <View style={styles.footer}>
-            <Text style={styles.footerBrand}>✦ SUPRO DEEPAM ENGINE ✦</Text>
-            <Text style={styles.footerText}>Authentication verified by SuprO Engine</Text>
-            <Text style={styles.footerTamil}>வாழ்க • வளர்க • வெல்க 🌿</Text>
-          </View>
+          {/* Deepam Engine / Daily Video Broadcast Footer */}
+          {isDailyVideoRequired && dailyVideoInfo ? (
+            <DailyDeepamVideoPlayer
+              videoId={dailyVideoInfo.videoId}
+              videoTitle={dailyVideoInfo.title}
+              onVideoEnded={handleDailyVideoEnded}
+            />
+          ) : (
+            <View style={styles.footer}>
+              <Text style={styles.footerBrand}>✦ SUPRO DEEPAM ENGINE ✦</Text>
+              <Text style={styles.footerText}>Authentication verified by SuprO Engine</Text>
+              <Text style={styles.footerTamil}>வாழ்க • வளர்க • வெல்க 🌿</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -624,6 +778,10 @@ const styles = StyleSheet.create({
   categoryBtnActive: { backgroundColor: 'rgba(52,211,153,0.2)', borderColor: '#34d399' },
   categoryBtnText: { color: '#94a3b8', fontSize: 13, fontWeight: 'bold' },
   categoryBtnTextActive: { color: '#34d399' },
+  sync23hCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16,185,129,0.12)', padding: 14, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(16,185,129,0.35)', marginBottom: 4 },
+  sync23hIcon: { backgroundColor: 'rgba(16,185,129,0.2)', padding: 8, borderRadius: 10, marginRight: 4 },
+  sync23hTitle: { color: '#34d399', fontSize: 11, fontWeight: 'bold', letterSpacing: 1 },
+  sync23hText: { color: '#e2e8f0', fontSize: 12, marginTop: 2, lineHeight: 16 },
   newAccountCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(59,130,246,0.1)', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)', marginBottom: 8 },
   newAccountIconContainer: { backgroundColor: 'rgba(59,130,246,0.2)', padding: 10, borderRadius: 12 },
   newAccountTitle: { color: '#60A5FA', fontSize: 10, fontWeight: 'bold', letterSpacing: 1.5 },

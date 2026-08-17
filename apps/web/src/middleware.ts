@@ -183,7 +183,14 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   )
 
-  const isEmbed = request.nextUrl.searchParams.get('embed') === 'true';
+  const isEmbed = 
+    request.nextUrl.searchParams.get('embed') === 'true' || 
+    request.cookies.get('supro_is_embed')?.value === 'true' ||
+    request.headers.get('x-supro-embed') === 'true';
+
+  if (request.nextUrl.searchParams.get('embed') === 'true') {
+    supabaseResponse.cookies.set('supro_is_embed', 'true', { maxAge: 86400, path: '/' });
+  }
 
   // Enforce login wall only for protected paths when not requested in embed/mobile mode
   if (!user && isProtectedPath && !isEmbed) {

@@ -34,6 +34,8 @@ interface Profile {
   /** WhatsApp phone — used by FAGO for buyer contact */
   phone: string | null;
   district?: string | null;
+  location?: string | null;
+  upi_id?: string | null;
   gemini_api_key?: string | null;
   category?: string | null;
   default_module?: string | null;

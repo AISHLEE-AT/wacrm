@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       driver_name, 
       driver_rating,
       vehicle_info,
+      service_type,
       pickup_lat,
       pickup_lng,
       dropoff_lat,
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
         .select('full_name')
         .ilike('phone', `%${cleanRiderPhone}%`)
         .maybeSingle();
-      finalPassengerName = prof?.full_name || 'Passenger';
+      finalPassengerName = prof?.full_name || 'Customer';
     }
 
     // Fetch WhatsApp config
@@ -80,20 +81,35 @@ export async function POST(request: Request) {
     // Clean up addresses
     const cleanPickup = (pickup_address || 'Current Location').replace(/^Unnamed Road,\s*/i, '');
     const cleanDropoff = (dropoff_address || 'Destination').replace(/^Unnamed Road,\s*/i, '');
-    const riderDisplayPhone = passenger_phone ? `(📞 ${passenger_phone.replace(/\D/g, '').slice(-10)})` : '';
+    const isLocalService = !dropoff_address || dropoff_address === 'Local Mandi / Market' || dropoff_address === cleanPickup;
+    const riderDisplayPhone = passenger_phone ? `(📞 +91 ${passenger_phone.replace(/\D/g, '').slice(-10)})` : '';
 
-    // Construct the interactive message body (No OTP exposed to driver)
-    const messageText = `🚨 *NEW RIDEO BOOKING REQUEST* 🚨\n\n` +
-      `👤 *Passenger:* ${finalPassengerName || 'Customer'} ${riderDisplayPhone}\n` +
-      `📍 *Pickup:* ${cleanPickup}\n` +
-      `🏁 *Drop-off:* ${cleanDropoff}\n` +
-      `🚗 *Vehicle:* ${vehicle_info || 'Standard Vehicle'}\n` +
-      `📏 *Distance:* ${distance_km} km\n` +
+    const isRento = service_type === 'rento' || /tractor|tiller|drone|harvester|coconut|ace|truck|cargo|plow/i.test(vehicle_info || '');
+
+    const pickupMap = (pickup_lat && pickup_lng) ? `🗺️ *Field / Location Map:* https://maps.google.com/?q=${pickup_lat},${pickup_lng}\n` : '';
+    const dropMap = (!isLocalService && dropoff_lat && dropoff_lng) ? `🏁 *Destination Map:* https://maps.google.com/?q=${dropoff_lat},${dropoff_lng}\n\n` : '\n';
+
+    // Construct the interactive message body
+    const headerTitle = isRento 
+      ? `🚜 *NEW SUPRO RENTO (AGRI / CARGO) REQUEST* 🚜` 
+      : `🚨 *NEW SUPRO RIDEO BOOKING REQUEST* 🚨`;
+
+    const serviceLabel = isRento ? `🌾 *Service / Equipment:*` : `🚗 *Vehicle:*`;
+    const locLabel = isRento ? `📍 *Farm / Field Location:*` : `📍 *Pickup Location:*`;
+
+    const messageText = `${headerTitle}\n\n` +
+      `👤 *Customer:* ${finalPassengerName || 'Customer'} ${riderDisplayPhone}\n` +
+      `${serviceLabel} ${vehicle_info || (isRento ? 'Agri Machinery' : 'Standard Vehicle')}\n` +
+      `${locLabel} ${cleanPickup}\n` +
+      (!isLocalService ? `🏁 *Destination / Mandi:* ${cleanDropoff}\n` : '') +
+      (distance_km && parseFloat(distance_km) > 0 ? `📏 *Distance:* ${distance_km} km\n` : '') +
       `💰 *Estimated Fare:* ₹${estimated_fare}\n\n` +
-      `🔢 *Trip OTP:* (Ask passenger for the 4-digit OTP upon arrival to verify & start trip)\n\n` +
+      `⚡ *Action Required:*\n` +
+      `👉 *Open your SuprO App -> DriveO page to Accept & Confirm or Contact the Customer immediately.*\n` +
+      `🔢 *Trip PIN (OTP):* (Customer will share the 4-digit PIN upon arrival to start work)\n\n` +
       pickupMap +
       dropMap +
-      `Please accept or decline this ride below:`;
+      `Please accept or decline this request below:`;
 
     // Dispatch Interactive Buttons via Meta API
     await sendInteractiveButtons({
@@ -102,7 +118,7 @@ export async function POST(request: Request) {
       to: whatsappPhone,
       bodyText: messageText,
       buttons: [
-        { id: `accept_ride_${ride_id}`, title: '✅ Accept Ride' },
+        { id: `accept_ride_${ride_id}`, title: isRento ? '✅ Accept on DriveO' : '✅ Accept Ride' },
         { id: `decline_ride_${ride_id}`, title: '❌ Decline' }
       ]
     });

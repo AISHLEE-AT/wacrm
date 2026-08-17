@@ -77,6 +77,7 @@ export default function DriveOScreen() {
   const [regStep, setRegStep] = useState(1);
   const [regName, setRegName] = useState(user?.name || '');
   const [regAadhar, setRegAadhar] = useState('');
+  const [regPlatform, setRegPlatform] = useState('both'); // 'rideo' | 'rento' | 'both'
   const [regVehicleType, setRegVehicleType] = useState('bikeo');
   const [regVehicleModel, setRegVehicleModel] = useState('');
   const [regVehicleNumber, setRegVehicleNumber] = useState('');
@@ -92,10 +93,23 @@ export default function DriveOScreen() {
   // Ride States
   const [incomingRide, setIncomingRide] = useState(null);
   const [activeRide, setActiveRide] = useState(null);
+  const [hasArrivedLocally, setHasArrivedLocally] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
   const [otp, setOtp] = useState(['', '', '', '']);
   const otpInputs = useRef([]);
   const [skippedCount, setSkippedCount] = useState(0);
+  const dismissedRidesRef = useRef(new Set());
+  const handledRidesRef = useRef(new Set());
+  const activeRideRef = useRef(null);
+  const incomingRideRef = useRef(null);
+
+  useEffect(() => {
+    activeRideRef.current = activeRide;
+  }, [activeRide]);
+
+  useEffect(() => {
+    incomingRideRef.current = incomingRide;
+  }, [incomingRide]);
 
   // Earnings States
   const [earnings, setEarnings] = useState({
@@ -111,6 +125,15 @@ export default function DriveOScreen() {
   const mapRef = useRef(null);
 
   // ─── LIFECYCLE HOOKS ───
+  useEffect(() => {
+    if (user?.name && !regName) {
+      setRegName(user.name);
+    }
+    if (user?.upiId && !regUpiId) {
+      setRegUpiId(user.upiId);
+    }
+  }, [user?.name, user?.upiId]);
+
   useEffect(() => {
     if (phone) {
       fetchDriverProfile();
@@ -149,8 +172,8 @@ export default function DriveOScreen() {
       } else if (activeRide.status === RIDE_STATUS.IN_PROGRESS) {
         startLat = currentLocation?.latitude || activeRide?.pickup_location?.lat;
         startLng = currentLocation?.longitude || activeRide?.pickup_location?.lng;
-        endLat = activeRide?.drop_location?.lat;
-        endLng = activeRide?.drop_location?.lng;
+        endLat = activeRide?.dropoff_location?.lat;
+        endLng = activeRide?.dropoff_location?.lng;
       } else {
         setRouteCoordinates([]);
         return;
@@ -163,32 +186,62 @@ export default function DriveOScreen() {
     };
     
     fetchRoute();
-  }, [activeRide?.status, activeRide?.pickup_latitude, activeRide?.dropoff_latitude, currentLocation]);
+  }, [activeRide?.status, activeRide?.pickup_location, activeRide?.dropoff_location, currentLocation]);
 
-  // ─── MAP FIT TO MARKERS ───
-  useEffect(() => {
-    if (activeRide && mapRef.current) {
-      const markers = [];
-      if (currentLocation) {
-        markers.push({ latitude: currentLocation.latitude, longitude: currentLocation.longitude });
+  // ─── LOCATION TRACKING ───
+  const startLocationTracking = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Location permission is required for driver mode.');
+        setIsOnline(false);
+        return;
       }
-      if (activeRide?.pickup_location?.lat) {
-        markers.push({ latitude: activeRide?.pickup_location?.lat, longitude: activeRide?.pickup_location?.lng });
-      }
-      if (activeRide?.drop_location?.lat) {
-        markers.push({ latitude: activeRide?.drop_location?.lat, longitude: activeRide?.drop_location?.lng });
-      }
-      
-      if (markers.length > 1) {
-        setTimeout(() => {
-          mapRef.current?.fitToCoordinates(markers, {
-            edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
-            animated: true
-          });
-        }, 500);
-      }
+
+      // Initial quick fetch
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      setCurrentLocation(loc.coords);
+      updateDriverLocationInDB(loc.coords.latitude, loc.coords.longitude);
+
+      // Watch continuously
+      locationSubRef.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,
+          distanceInterval: 10,
+        },
+        (locationData) => {
+          setCurrentLocation(locationData.coords);
+          updateDriverLocationInDB(locationData.coords.latitude, locationData.coords.longitude);
+        }
+      );
+    } catch (err) {
+      console.error('Location tracking error:', err);
     }
-  }, [activeRide, currentLocation]);
+  };
+
+  const stopLocationTracking = () => {
+    if (locationSubRef.current) {
+      locationSubRef.current.remove();
+      locationSubRef.current = null;
+    }
+  };
+
+  const updateDriverLocationInDB = async (lat, lng) => {
+    if (!driver?.id) return;
+    try {
+      await supabase
+        .from('drivers')
+        .update({
+          latitude: lat,
+          longitude: lng,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', driver.id);
+    } catch (err) {
+      console.error('Error updating driver location:', err);
+    }
+  };
 
   // ─── DRIVER PROFILE ───
   const fetchDriverProfile = async () => {
@@ -215,6 +268,18 @@ export default function DriveOScreen() {
         setIsOnline(data[0].status === 'online');
       } else {
         setDriver(null);
+        // Preload name and upi from profiles table if needed
+        try {
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('*')
+            .or(`phone.ilike.%${tenDigit}%,whatsapp.ilike.%${tenDigit}%`)
+            .maybeSingle();
+          if (prof) {
+            if (prof.full_name || prof.name) setRegName(prof.full_name || prof.name);
+            if (prof.upi_id) setRegUpiId(prof.upi_id);
+          }
+        } catch (_) {}
       }
     } catch (err) {
       console.error('Error fetching driver:', err);
@@ -232,19 +297,20 @@ export default function DriveOScreen() {
     try {
       setIsLoading(true);
       const newDriver = {
-        name: regName || 'Driver',
+        name: regName || user?.name || 'Driver',
         mobile_number: phone,
         whatsapp_number: phone,
         phone: phone,
         aadhar_number: regAadhar,
+        service_type: regPlatform,
+        platform: regPlatform,
         vehicle_type: regVehicleType,
         vehicle_model: regVehicleModel,
         vehicle_number: regVehicleNumber,
-        upi_id: regUpiId,
+        upi_id: regUpiId || user?.upiId || '',
         driving_license: regLicense,
         status: 'offline',
         wallet_balance: 0,
-        pending_commission: 0,
         created_at: new Date().toISOString(),
       };
 
@@ -336,32 +402,49 @@ export default function DriveOScreen() {
           const rowDriverPhone = (row.driver_phone || '').replace(/\D/g, '');
           const isAssignedToMe = row.driver_id === driver.id || (rowDriverPhone && (rowDriverPhone.includes(tenDigit) || cleanPhone.includes(rowDriverPhone.slice(-10)))) || !row.driver_id;
 
-          // New ride request
+          // If already handled/accepted or dismissed, do not re-trigger popup
+          if (handledRidesRef.current.has(row.id) || dismissedRidesRef.current.has(row.id)) {
+            return;
+          }
+
+          // New ride request (fresh within last 5 minutes)
           if (payload.eventType === 'INSERT' && 
               (row.status === RIDE_STATUS.PENDING || row.status === RIDE_STATUS.REQUESTED)) {
-            if (isAssignedToMe) {
+            const isFresh = row.created_at && (Date.now() - new Date(row.created_at).getTime() < 5 * 60 * 1000);
+            if (isAssignedToMe && isFresh && !activeRideRef.current && !incomingRideRef.current) {
               handleNewRide(row);
             }
           }
           
           // Ride updates
           if (payload.eventType === 'UPDATE') {
-            if (row.status === RIDE_STATUS.CANCELLED) {
-              if (activeRide?.id === row.id || incomingRide?.id === row.id) {
-                Alert.alert('Ride Cancelled', 'The customer cancelled the ride.');
+            if (row.status === RIDE_STATUS.CANCELLED || row.status === 'expired') {
+              if (activeRideRef.current?.id === row.id || incomingRideRef.current?.id === row.id) {
+                Alert.alert('Ride Notice', 'The customer or system closed this ride request.');
                 setActiveRide(null);
+                activeRideRef.current = null;
+                setHasArrivedLocally(false);
                 setIncomingRide(null);
+                incomingRideRef.current = null;
                 clearInterval(timerRef.current);
               }
             } else if (isAssignedToMe && [RIDE_STATUS.ACCEPTED, RIDE_STATUS.DRIVER_ARRIVED, RIDE_STATUS.IN_PROGRESS].includes(row.status)) {
-              setActiveRide(row);
-              setIncomingRide(null);
+              if (row.driver_id === driver.id) {
+                handledRidesRef.current.add(row.id);
+                setActiveRide(row);
+                activeRideRef.current = row;
+                setIncomingRide(null);
+                incomingRideRef.current = null;
+              }
             } else if (row.status === RIDE_STATUS.COMPLETED && row.driver_id === driver.id) {
               setActiveRide(null);
+              activeRideRef.current = null;
+              setHasArrivedLocally(false);
               fetchEarnings();
             } else if (row.status === RIDE_STATUS.ACCEPTED && row.driver_id !== driver.id) {
-              if (incomingRide?.id === row.id) {
+              if (incomingRideRef.current?.id === row.id) {
                 setIncomingRide(null);
+                incomingRideRef.current = null;
                 clearInterval(timerRef.current);
               }
             }
@@ -371,33 +454,40 @@ export default function DriveOScreen() {
       .subscribe();
   };
 
-  // Active polling fallback for incoming rides and active ride status (every 2s)
+  // Active polling fallback for incoming rides (every 2s when idle — only fresh < 5 min requests)
   useEffect(() => {
-    if (!driver?.id || !isOnline || activeRide) return;
+    if (!driver?.id || !isOnline) return;
 
     const cleanPhone = (phone || driver.phone || driver.mobile_number || driver.whatsapp_number || '').replace(/\D/g, '');
     const tenDigit = cleanPhone.slice(-10);
 
     const pollPendingRides = async () => {
       try {
-        if (incomingRide) return;
+        if (activeRideRef.current || incomingRideRef.current) return;
+
+        // Only query fresh requests created in the last 5 minutes
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
         const { data: pendingList, error } = await supabase
           .from('rides')
           .select('*')
           .in('status', [RIDE_STATUS.PENDING, RIDE_STATUS.REQUESTED])
+          .gte('created_at', fiveMinutesAgo)
           .order('created_at', { ascending: false })
           .limit(5);
 
         if (!error && pendingList && pendingList.length > 0) {
-          const matchedRide = pendingList.find(r => {
+          const matchedRide = pendingList.find((r: any) => {
+            if (handledRidesRef.current.has(r.id) || dismissedRidesRef.current.has(r.id)) return false;
+            if (r.created_at && (Date.now() - new Date(r.created_at).getTime() > 5 * 60 * 1000)) return false;
+
             const rDriverPhone = (r.driver_phone || '').replace(/\D/g, '');
             return r.driver_id === driver.id ||
                    (rDriverPhone && (rDriverPhone.includes(tenDigit) || cleanPhone.includes(rDriverPhone.slice(-10)))) ||
                    !r.driver_id;
           });
 
-          if (matchedRide && !incomingRide) {
+          if (matchedRide && !incomingRideRef.current && !activeRideRef.current) {
             handleNewRide(matchedRide);
           }
         }
@@ -409,14 +499,64 @@ export default function DriveOScreen() {
     pollPendingRides();
     const interval = setInterval(pollPendingRides, 2000);
     return () => clearInterval(interval);
-  }, [driver?.id, isOnline, activeRide, incomingRide, phone]);
+  }, [driver?.id, isOnline, phone]);
+
+  // ─── ACTIVE RIDE LIVE SESSION WATCHER (Rapido/Uber style bidirectional sync) ───
+  useEffect(() => {
+    if (!activeRide?.id) return;
+
+    const pollActiveRideLive = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('rides')
+          .select('*')
+          .eq('id', activeRide.id)
+          .maybeSingle();
+
+        if (error) return;
+
+        if (!data || data.status === RIDE_STATUS.CANCELLED || data.status === 'cancelled' || data.status === 'expired') {
+          Vibration.vibrate([200, 200]);
+          Alert.alert('Ride Notice', 'This ride request has been closed or cancelled.');
+          setActiveRide(null);
+          activeRideRef.current = null;
+          setIncomingRide(null);
+          incomingRideRef.current = null;
+          setHasArrivedLocally(false);
+          setOtp(['', '', '', '']);
+        } else if (data.status === RIDE_STATUS.COMPLETED || data.status === 'completed') {
+          Alert.alert('Ride Completed! 🎉', `Trip finished. Fare: ₹${data.fare || data.total_fare || 0}`);
+          setActiveRide(null);
+          activeRideRef.current = null;
+          setHasArrivedLocally(false);
+          setOtp(['', '', '', '']);
+          fetchEarnings();
+        } else if (data.status !== activeRide.status) {
+          // If we locally marked arrived, don't allow lagging 'accepted' DB response to revert the UI
+          if (hasArrivedLocally && (data.status === RIDE_STATUS.ACCEPTED || data.status === 'accepted')) {
+            // Keep local arrived state
+          } else {
+            setActiveRide((prev: any) => ({ ...prev, ...data }));
+            activeRideRef.current = { ...activeRideRef.current, ...data };
+          }
+        }
+      } catch (e) {
+        console.warn('DriveO active ride live poll error:', e);
+      }
+    };
+
+    pollActiveRideLive();
+    const interval = setInterval(pollActiveRideLive, 1500);
+    return () => clearInterval(interval);
+  }, [activeRide?.id, activeRide?.status, hasArrivedLocally]);
 
   // ─── INCOMING RIDE HANDLER ───
   const handleNewRide = async (ride) => {
     if (!isOnline) return;
-    if (activeRide) return;
+    if (activeRideRef.current) return;
     
     setIncomingRide(ride);
+    incomingRideRef.current = ride;
     Vibration.vibrate([500, 500, 500]);
     startCountdown();
   };
@@ -438,7 +578,11 @@ export default function DriveOScreen() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
+          if (incomingRideRef.current?.id) {
+            dismissedRidesRef.current.add(incomingRideRef.current.id);
+          }
           setIncomingRide(null);
+          incomingRideRef.current = null;
           return 0;
         }
         return prev - 1;
@@ -446,13 +590,28 @@ export default function DriveOScreen() {
     }, 1000);
   };
 
-  // ─── ACCEPT RIDE (FIX: handles both 'pending' and 'requested' status) ───
+  // ─── ACCEPT RIDE (FIX: handles both 'pending' and 'requested' status with optimistic lock) ───
   const handleAcceptRide = async () => {
     if (!incomingRide) return;
     clearInterval(timerRef.current);
     const rideId = incomingRide.id;
-    setIncomingRide(null);
+    const rideCopy = { ...incomingRide };
     
+    // Mark as handled immediately to prevent any re-trigger loop
+    handledRidesRef.current.add(rideId);
+    dismissedRidesRef.current.add(rideId);
+    setIncomingRide(null);
+    incomingRideRef.current = null;
+
+    const optimisticRide = {
+      ...rideCopy,
+      status: RIDE_STATUS.ACCEPTED,
+      driver_id: driver.id,
+      accepted_at: new Date().toISOString()
+    };
+    activeRideRef.current = optimisticRide;
+    setActiveRide(optimisticRide);
+
     try {
       const { data, error } = await supabase
         .from('rides')
@@ -467,8 +626,9 @@ export default function DriveOScreen() {
         
       if (error) throw error;
       
-      if (!data || data.length === 0) {
-        throw new Error('Ride already accepted by another driver or cancelled.');
+      if (data && data.length > 0) {
+        activeRideRef.current = data[0];
+        setActiveRide(data[0]);
       }
       
       try {
@@ -481,15 +641,17 @@ export default function DriveOScreen() {
         console.warn('Failed to notify WhatsApp:', err);
       }
       
-      Alert.alert('Ride Accepted!', 'Please navigate to pickup. Ask the rider for their 4-digit OTP upon arrival.');
-      fetchActiveRide();
+      Alert.alert('Ride Accepted! 🚗', 'Please navigate to pickup. Ask the rider for their 4-digit OTP upon arrival.');
     } catch (err) {
-      Alert.alert('Error', err.message || 'Could not accept ride');
+      console.warn('Accept ride notice:', err);
     }
   };
 
   // ─── SKIP RIDE ───
   const handleSkipRide = () => {
+    if (incomingRide?.id) {
+      dismissedRidesRef.current.add(incomingRide.id);
+    }
     clearInterval(timerRef.current);
     setIncomingRide(null);
     setSkippedCount(prev => {
@@ -544,6 +706,7 @@ export default function DriveOScreen() {
       await supabase.from('rides').update({ status: RIDE_STATUS.CANCELLED }).eq('id', activeRide.id);
       Alert.alert('Ride Cancelled');
       setActiveRide(null);
+      setHasArrivedLocally(false);
       
       try {
         await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
@@ -569,7 +732,15 @@ export default function DriveOScreen() {
       }
       
       try {
-        const loc = await Location.getCurrentPositionAsync({});
+        if (Platform.OS === 'android') {
+          await Location.enableNetworkProviderAsync().catch(() => {});
+        }
+        let loc = null;
+        try {
+          loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+        } catch {
+          loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        }
         setCurrentLocation(loc.coords);
         
         await supabase.from('drivers').update({
@@ -582,7 +753,7 @@ export default function DriveOScreen() {
         setIsOnline(true);
         startLocationTracking();
       } catch (err) {
-        Alert.alert('Error', 'Could not get location.');
+        Alert.alert('Error', 'Could not get exact GPS location.');
       }
     } else {
       await supabase.from('drivers').update({ status: 'offline', updated_at: new Date().toISOString() }).eq('id', driver.id);
@@ -591,42 +762,30 @@ export default function DriveOScreen() {
     }
   };
 
-  // ─── LOCATION TRACKING ───
-  const startLocationTracking = async () => {
-    stopLocationTracking();
-    locationSubRef.current = await Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 10 },
-      async (location) => {
-        setCurrentLocation(location.coords);
-        if (driver?.id) {
-          await supabase.from('drivers').update({
-            pickup_latitude: location.coords.latitude,
-            pickup_longitude: location.coords.longitude,
-            updated_at: new Date().toISOString()
-          }).eq('id', driver.id);
-        }
-      }
-    );
-  };
-
-  const stopLocationTracking = () => {
-    if (locationSubRef.current) {
-      locationSubRef.current.remove();
-      locationSubRef.current = null;
-    }
-  };
-
-  // ─── OTP VERIFICATION (FIX: removed dev bypass) ───
+  // ─── OTP VERIFICATION (Arrived & Trip Start) ───
   const handleDriverArrived = async () => {
     if (!activeRide) return;
     Vibration.vibrate([100, 100, 200]);
     // Instantly transition UI to OTP input section
+    setHasArrivedLocally(true);
     setActiveRide((prev: any) => ({
       ...prev,
       status: RIDE_STATUS.DRIVER_ARRIVED,
     }));
 
     try {
+      // 1. Service role API
+      await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ride_id: activeRide.id,
+          driver_id: driver?.id,
+          action: 'arrived'
+        })
+      }).catch((err) => console.warn('API arrival error:', err));
+
+      // 2. Direct Supabase update
       await supabase
         .from('rides')
         .update({
@@ -634,20 +793,6 @@ export default function DriveOScreen() {
           arrived_at: new Date().toISOString()
         })
         .eq('id', activeRide.id);
-
-      try {
-        await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ride_id: activeRide.id,
-            driver_id: driver?.id,
-            action: 'arrived'
-          })
-        });
-      } catch (err) {
-        console.warn('WhatsApp notify arrival error:', err);
-      }
     } catch (e) {
       console.warn('DB update arrival error:', e);
     }
@@ -667,11 +812,25 @@ export default function DriveOScreen() {
     if (fullOtp.length !== 4) return;
     
     try {
-      const expectedOtp = String(activeRide?.otp || '').trim();
+      const expectedOtp = String(activeRide?.otp || activeRide?.otp_code || '').trim();
       const isMatch = !expectedOtp || expectedOtp === fullOtp || fullOtp === '1234';
 
       if (isMatch) {
         Vibration.vibrate(200);
+        setHasArrivedLocally(false);
+
+        // 1. Service role API
+        await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ride_id: activeRide.id,
+            driver_id: driver?.id,
+            action: 'start_trip'
+          })
+        }).catch((err) => console.warn('API start trip notify error:', err));
+
+        // 2. Direct Supabase update
         const { error } = await supabase
           .from('rides')
           .update({
@@ -681,20 +840,6 @@ export default function DriveOScreen() {
           .eq('id', activeRide.id);
           
         if (error) console.warn('Supabase start trip error:', error);
-        
-        try {
-          await fetch(`${API_BASE_URL}/api/ride/driver-action`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ride_id: activeRide.id,
-              driver_id: driver?.id,
-              action: 'start_trip'
-            })
-          });
-        } catch (e) {
-          console.warn('API start trip notify error:', e);
-        }
 
         Alert.alert('Trip Started! 🚗', 'Navigate to the drop-off destination.');
         setActiveRide((prev: any) => ({
@@ -827,29 +972,107 @@ export default function DriveOScreen() {
 
           {regStep === 2 && (
             <>
+              {/* 1. SERVICE PLATFORM SELECTOR */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Vehicle Type *</Text>
+                <Text style={styles.label}>Choose Operating Platform *</Text>
+                <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.platformTabBtn,
+                      regPlatform === 'rideo' && styles.platformTabBtnActive,
+                    ]}
+                    onPress={() => {
+                      setRegPlatform('rideo');
+                      if (!['bikeo', 'autoo', 'mini', 'sedan', 'suv'].includes(regVehicleType)) {
+                        setRegVehicleType('bikeo');
+                      }
+                    }}
+                  >
+                    <Text style={{ fontSize: 18 }}>🚗</Text>
+                    <Text style={[styles.platformTabText, regPlatform === 'rideo' && styles.platformTabTextActive]}>
+                      RideO Only
+                    </Text>
+                    <Text style={styles.platformTabSub}>Passenger Taxi</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.platformTabBtn,
+                      regPlatform === 'rento' && styles.platformTabBtnActive,
+                    ]}
+                    onPress={() => {
+                      setRegPlatform('rento');
+                      if (!['tractor', 'power_tiller', 'drone', 'coconut_machine', 'harvester', 'tata_ace', 'bolero', 'lorry', 'bus'].includes(regVehicleType)) {
+                        setRegVehicleType('tractor');
+                      }
+                    }}
+                  >
+                    <Text style={{ fontSize: 18 }}>🚜</Text>
+                    <Text style={[styles.platformTabText, regPlatform === 'rento' && styles.platformTabTextActive]}>
+                      RentO Only
+                    </Text>
+                    <Text style={styles.platformTabSub}>Agri & Cargo</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.platformTabBtn,
+                      regPlatform === 'both' && styles.platformTabBtnActive,
+                    ]}
+                    onPress={() => setRegPlatform('both')}
+                  >
+                    <Text style={{ fontSize: 18 }}>⚡</Text>
+                    <Text style={[styles.platformTabText, regPlatform === 'both' && styles.platformTabTextActive]}>
+                      Both
+                    </Text>
+                    <Text style={styles.platformTabSub}>Dual Partner</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* 2. VEHICLE CATEGORIES LIST */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Select Vehicle / Machinery Category *</Text>
                 <View style={styles.vehicleTypeRow}>
-                  {VEHICLE_CATEGORIES.map((v) => (
+                  {VEHICLE_CATEGORIES.filter((v) => {
+                    if (regPlatform === 'rideo') return v.platform === 'rideo' || v.platform === 'both';
+                    if (regPlatform === 'rento') return v.platform === 'rento' || v.platform === 'both';
+                    return true;
+                  }).map((v) => (
                     <TouchableOpacity
                       key={v.id}
                       style={[styles.vehicleTypeBtn, regVehicleType === v.id && styles.vehicleTypeBtnActive]}
                       onPress={() => setRegVehicleType(v.id)}
                     >
-                      <Text style={{ fontSize: 20, textAlign: 'center' }}>{v.emoji}</Text>
-                      <Text style={[styles.vehicleTypeText, regVehicleType === v.id && styles.vehicleTypeTextActive]}>{v.name}</Text>
+                      <Text style={{ fontSize: 22, textAlign: 'center' }}>{v.emoji}</Text>
+                      <Text style={[styles.vehicleTypeText, regVehicleType === v.id && styles.vehicleTypeTextActive]}>
+                        {v.name}
+                      </Text>
+                      <Text style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' }}>
+                        {v.platform === 'rideo' ? 'RideO' : v.platform === 'rento' ? 'RentO' : 'RideO + RentO'}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Vehicle Model</Text>
+                <Text style={styles.label}>Vehicle / Machinery Model</Text>
                 <TextInput
                   style={styles.input}
                   value={regVehicleModel}
                   onChangeText={setRegVehicleModel}
-                  placeholder="e.g. Honda Activa 125"
+                  placeholder={
+                    regVehicleType === 'tractor'
+                      ? 'e.g. Mahindra 575 DI / Swaraj 744 FE'
+                      : regVehicleType === 'tata_ace'
+                      ? 'e.g. Tata Ace Gold / Chota Hathi'
+                      : regVehicleType === 'drone'
+                      ? 'e.g. Garuda / Kaveri 16L Spraying Drone'
+                      : regVehicleType === 'power_tiller'
+                      ? 'e.g. VST Shakti 130 DI Power Tiller'
+                      : 'e.g. Honda Activa / Maruti Swift / Dzire'
+                  }
                   placeholderTextColor={COLORS.textMuted}
                 />
               </View>
@@ -953,8 +1176,17 @@ export default function DriveOScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>SuprO Driver</Text>
-          <Text style={styles.headerSubtitle}>{driver.name} • {driver.vehicle_number || driver.vehicle_registration}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={styles.headerTitle}>SuprO Partner</Text>
+            <View style={{ backgroundColor: `${COLORS.green}20`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+              <Text style={{ color: COLORS.green, fontSize: 10, fontWeight: 'bold' }}>
+                {driver.service_type === 'rento' ? '🚜 RentO' : driver.service_type === 'rideo' ? '🚗 RideO' : '⚡ RideO + RentO'}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.headerSubtitle}>
+            {driver.name} • {driver.vehicle_model || driver.vehicle_type || 'Vehicle'} ({driver.vehicle_number || driver.vehicle_registration || 'TN'})
+          </Text>
         </View>
         <TouchableOpacity
           style={[styles.toggleBtn, isOnline ? styles.toggleOn : styles.toggleOff]}
@@ -1113,7 +1345,7 @@ export default function DriveOScreen() {
             )}
 
             {/* Status-specific Actions */}
-            {([RIDE_STATUS.ACCEPTED, 'accepted', 'driver_assigned'].includes(activeRide.status)) && (
+            {(!hasArrivedLocally && [RIDE_STATUS.ACCEPTED, 'accepted', 'driver_assigned'].includes(activeRide.status)) && (
               <TouchableOpacity
                 style={[styles.primaryBtn, { marginTop: 8 }]}
                 onPress={handleDriverArrived}
@@ -1122,7 +1354,7 @@ export default function DriveOScreen() {
               </TouchableOpacity>
             )}
 
-            {([RIDE_STATUS.DRIVER_ARRIVED, 'driver_arrived', 'arrived'].includes(activeRide.status)) && (
+            {(hasArrivedLocally || [RIDE_STATUS.DRIVER_ARRIVED, 'driver_arrived', 'arrived'].includes(activeRide.status)) && (
               <View style={styles.otpSection}>
                 <Text style={styles.otpLabel}>Enter rider's 4-digit PIN to start trip</Text>
                 <View style={styles.otpRow}>
@@ -1215,7 +1447,7 @@ export default function DriveOScreen() {
             </View>
 
             {/* Subscription Dues */}
-            {driver.pending_commission > 0 && (
+            {((driver.pending_commission || 0) > 0) && (
               <View style={styles.card}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                   <Wallet size={20} color={COLORS.yellow} />
@@ -1413,6 +1645,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  platformTabBtn: {
+    flex: 1,
+    backgroundColor: COLORS.cardLight,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  platformTabBtnActive: {
+    borderColor: COLORS.green,
+    backgroundColor: `${COLORS.green}18`,
+  },
+  platformTabText: {
+    color: COLORS.textMuted,
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  platformTabTextActive: {
+    color: COLORS.green,
+  },
+  platformTabSub: {
+    color: COLORS.textMuted,
+    fontSize: 9,
+    marginTop: 2,
   },
   header: {
     flexDirection: 'row',

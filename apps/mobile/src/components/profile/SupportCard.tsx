@@ -28,25 +28,27 @@ export function SupportCard() {
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(upiId);
-    Alert.alert('Copied', 'UPI ID copied to clipboard');
+    Alert.alert('Copied to Clipboard', `UPI ID: ${upiId}\nYou can paste it in Google Pay, PhonePe, or Paytm.`);
   };
 
   const handleContribute = async () => {
-    const url = 'upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR';
+    const url = `upi://pay?pa=${upiId}&pn=Aishlee%20Technology&tn=SuprO%20Good%20Cause%20Contribution&cu=INR`;
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        Alert.alert('Error', 'No UPI app found on this device. Please copy the UPI ID instead.');
-      }
+      // Try opening directly
+      await Linking.openURL(url);
     } catch (error) {
-      Alert.alert('Error', 'Could not open UPI app.');
+      // Fallback if no UPI app responds: Copy to clipboard and inform user
+      await Clipboard.setStringAsync(upiId);
+      Alert.alert(
+        'UPI ID Copied to Clipboard',
+        `UPI ID: ${upiId}\n\nPlease paste it in Google Pay, PhonePe, or Paytm to complete your contribution.`,
+        [{ text: 'OK' }]
+      );
     }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.bgGradients}>
         <View style={[styles.gradientBlob, { backgroundColor: 'rgba(244, 63, 94, 0.15)', top: -20, left: -20 }]} />
         <View style={[styles.gradientBlob, { backgroundColor: 'rgba(168, 85, 247, 0.15)', bottom: -20, right: -20 }]} />
@@ -63,19 +65,19 @@ export function SupportCard() {
           </View>
         </View>
 
-        <Text style={styles.title}>Support FAGO Good Cause</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Support SuprO Good Cause</Text>
         <Text style={styles.subtitle}>Empowering Farmers, Drivers, Tutors & Local Buyers with 0% Commission</Text>
-        <Text style={styles.description}>
-          FAGO is building a community-first ecosystem where local creators and providers keep 100% of their earnings. Your contribution helps us keep the platform free and accessible for everyone.
+        <Text style={[styles.description, { color: colors.textSecondary }]}>
+          SuprO is building a community-first ecosystem where local creators and providers keep 100% of their earnings. Your contribution helps us keep the platform free and accessible for everyone.
         </Text>
 
-        <View style={styles.upiContainer}>
+        <View style={[styles.upiContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <View style={styles.upiRow}>
             <View style={styles.upiBadge}>
-              <Text style={styles.upiBadgeText}>Official UPI ID</Text>
+              <Text style={[styles.upiBadgeText, { color: colors.amber }]}>Official UPI ID</Text>
             </View>
             <TouchableOpacity style={styles.copyButton} onPress={handleCopy}>
-              <Text style={styles.upiText}>{upiId}</Text>
+              <Text style={[styles.upiText, { color: colors.text }]}>{upiId}</Text>
               <Copy size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -91,12 +93,10 @@ export function SupportCard() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.card,
     borderRadius: radius.md,
     marginBottom: spacing.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.border,
   },
   bgGradients: {
     ...(StyleSheet.absoluteFill as any),
@@ -133,7 +133,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: fontSize.xl,
     fontWeight: 'bold',
-    color: colors.text,
     marginBottom: spacing.xs,
   },
   subtitle: {
@@ -144,17 +143,14 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
     lineHeight: 20,
     marginBottom: spacing.md,
   },
   upiContainer: {
-    backgroundColor: colors.inputBg,
     borderRadius: radius.sm,
     padding: spacing.sm,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   upiRow: {
     flexDirection: 'row',
@@ -168,7 +164,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   upiBadgeText: {
-    color: colors.amber,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
@@ -178,7 +173,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   upiText: {
-    color: colors.text,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     fontWeight: 'bold',
     fontSize: fontSize.sm,

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -27,6 +26,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
   // Active & Incoming Ride States
   Map<String, dynamic>? _incomingRide;
   Map<String, dynamic>? _activeRide;
+  final Set<String> _handledRides = {};
   Timer? _pollingTimer;
   Timer? _countdownTimer;
   int _countdownSeconds = 15;
@@ -108,6 +108,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
         setState(() {
           _driverRecord = data;
           _isOnline = data['status'] == 'online';
+          _operatorCategory = data['category'] ?? 'cab_driver';
         });
       }
     } catch (e) {
@@ -204,15 +205,16 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
             final row = payload.newRecord;
             if (row.isEmpty) return;
             final status = row['status'];
+            final rideId = row['id']?.toString() ?? '';
 
-            if ((status == 'pending' || status == 'requested') && _isOnline && _activeRide == null && _incomingRide == null) {
+            if ((status == 'pending' || status == 'requested') && _isOnline && _activeRide == null && _incomingRide == null && !_handledRides.contains(rideId)) {
               if (row['driver_id'] == _driverRecord!['id'] || row['driver_id'] == null) {
                 _triggerIncomingRide(row);
               }
             } else if (row['id'] == _activeRide?['id']) {
-              if (status == 'cancelled') {
+              if (status == 'cancelled' || status == 'expired') {
                 setState(() => _activeRide = null);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride was cancelled by rider.')));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ride was $status.')));
               } else {
                 setState(() => _activeRide = row);
               }
@@ -228,22 +230,43 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
       if (!_isOnline || _activeRide != null || _incomingRide != null || _driverRecord == null) return;
 
       try {
+        final fiveMinsAgo = DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String();
         final data = await _supabase
             .from('rides')
             .select('*')
             .inFilter('status', ['pending', 'requested'])
+            .gte('created_at', fiveMinsAgo)
             .order('created_at', ascending: false)
             .limit(3);
 
         if (data != null && (data as List).isNotEmpty && mounted) {
-          final ride = data.first;
-          _triggerIncomingRide(ride);
+          for (final ride in data) {
+            final id = ride['id']?.toString() ?? '';
+            if (!_handledRides.contains(id)) {
+              _triggerIncomingRide(ride);
+              break;
+            }
+          }
         }
       } catch (_) {}
     });
   }
 
   void _triggerIncomingRide(Map<String, dynamic> ride) {
+    final id = ride['id']?.toString() ?? '';
+    if (_handledRides.contains(id)) return;
+
+    // Check if ride created > 5 mins ago
+    if (ride['created_at'] != null) {
+      try {
+        final createdTime = DateTime.parse(ride['created_at']);
+        if (DateTime.now().difference(createdTime).inMinutes >= 5) {
+          _handledRides.add(id);
+          return;
+        }
+      } catch (_) {}
+    }
+
     setState(() {
       _incomingRide = ride;
       _countdownSeconds = 15;
@@ -253,7 +276,10 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (_countdownSeconds <= 1) {
         t.cancel();
-        if (mounted) setState(() => _incomingRide = null);
+        if (mounted) {
+          _handledRides.add(id);
+          setState(() => _incomingRide = null);
+        }
       } else {
         setState(() => _countdownSeconds--);
       }
@@ -265,6 +291,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     if (_incomingRide == null || _driverRecord == null) return;
     _countdownTimer?.cancel();
     final rideId = _incomingRide!['id'];
+    _handledRides.add(rideId.toString());
 
     try {
       final updated = await _supabase
@@ -300,6 +327,9 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
 
   void _rejectIncomingRide() {
     _countdownTimer?.cancel();
+    if (_incomingRide != null && _incomingRide!['id'] != null) {
+      _handledRides.add(_incomingRide!['id'].toString());
+    }
     setState(() => _incomingRide = null);
   }
 

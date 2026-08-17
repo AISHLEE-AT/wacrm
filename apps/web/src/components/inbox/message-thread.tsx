@@ -228,11 +228,26 @@ export function MessageThread({
     const lastInbound = messages
       .filter((m) => m.sender_type === "customer")
       .at(-1);
-    if (!lastInbound) {
-      // No inbound message yet — window not open, force template.
+
+    let lastActiveTime: number | null = null;
+    if (lastInbound) {
+      lastActiveTime = new Date(lastInbound.created_at).getTime();
+    } else {
+      const lastMsg = messages.at(-1);
+      if (lastMsg) {
+        lastActiveTime = new Date(lastMsg.created_at).getTime();
+      } else if (conversation?.last_message_at) {
+        lastActiveTime = new Date(conversation.last_message_at).getTime();
+      } else if (conversation?.updated_at) {
+        lastActiveTime = new Date(conversation.updated_at).getTime();
+      }
+    }
+
+    if (!lastActiveTime || isNaN(lastActiveTime)) {
       return { expired: true, remaining: "No session" };
     }
-    const elapsed = Date.now() - new Date(lastInbound.created_at).getTime();
+
+    const elapsed = Date.now() - lastActiveTime;
     const remaining = 24 * 60 * 60 * 1000 - elapsed; // ms left
     if (remaining <= 0) {
       return { expired: true, remaining: "Session expired" };
@@ -243,7 +258,7 @@ export function MessageThread({
       expired: false,
       remaining: hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`,
     };
-  }, [messages]);
+  }, [messages, conversation?.last_message_at, conversation?.updated_at]);
 
   // Store latest callback in a ref so fetchMessages doesn't need to
   // depend on `onMessagesLoaded` — otherwise parent re-renders cause

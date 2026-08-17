@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // Admin phone numbers (same as web app)
@@ -31,28 +32,38 @@ export interface AppUser {
 export const AppContext = createContext<any>(null);
 
 import { supabase } from '../lib/supabase';
-import { applyThemeToGlobalColors } from '../lib/theme';
+import { applyThemeToGlobalColors, applyModeToGlobalColors, themeVersion as _themeVersion } from '../lib/theme';
 
 export const AppProvider = ({ children }: any) => {
   const [recentModules, setRecentModules] = useState<string[]>(['Map']);
   const [pinnedModules, setPinnedModules] = useState<string[]>([]);
   const [user, setUser] = useState<AppUser | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState<string>('');
+  const [lastWhatsAppSync, setLastWhatsAppSync] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean>(false);
 
   // Theme state
   const [themeMode, setThemeModeState] = useState<'light'|'dark'>('dark');
   const [themeAccent, setThemeAccentState] = useState<string>('Teal');
+  const [themeVer, setThemeVer] = useState(0);
 
   const setThemeMode = useCallback(async (mode: 'light'|'dark') => {
     setThemeModeState(mode);
+    applyModeToGlobalColors(mode);
+    // Re-apply accent so primary/accent opacities are recalculated for the new mode
+    setThemeAccentState(prev => {
+      applyThemeToGlobalColors(prev);
+      return prev;
+    });
+    setThemeVer(v => v + 1);
     await SecureStore.setItemAsync('theme-mode', mode);
   }, []);
 
   const setThemeAccent = useCallback(async (accent: string) => {
     setThemeAccentState(accent);
     applyThemeToGlobalColors(accent);
+    setThemeVer(v => v + 1);
     await SecureStore.setItemAsync('theme-accent', accent);
   }, []);
 
@@ -70,13 +81,17 @@ export const AppProvider = ({ children }: any) => {
         if (savedPinned) setPinnedModules(JSON.parse(savedPinned));
 
         const savedThemeMode = await SecureStore.getItemAsync('theme-mode');
-        if (savedThemeMode === 'light' || savedThemeMode === 'dark') setThemeModeState(savedThemeMode);
+        if (savedThemeMode === 'light' || savedThemeMode === 'dark') {
+          setThemeModeState(savedThemeMode);
+          applyModeToGlobalColors(savedThemeMode);
+        }
 
         const savedThemeAccent = await SecureStore.getItemAsync('theme-accent');
         if (savedThemeAccent) {
           setThemeAccentState(savedThemeAccent);
           applyThemeToGlobalColors(savedThemeAccent);
         }
+        setThemeVer(v => v + 1);
 
         const phone = await SecureStore.getItemAsync('user-phone');
         let name = await SecureStore.getItemAsync('user-name');
@@ -116,14 +131,28 @@ export const AppProvider = ({ children }: any) => {
               .limit(1)
               .maybeSingle();
 
+            let serverSyncTime = 0;
             if (prof) {
               if (prof.full_name) {
                 name = prof.full_name;
                 await SecureStore.setItemAsync('user-name', prof.full_name);
               }
+              const clean10 = (phone || '').replace(/\D/g, '').slice(-10);
+              const defaultUpi = clean10 ? `${clean10}@upi` : '';
               if (prof.upi_id) {
                 upiId = prof.upi_id;
                 await SecureStore.setItemAsync('user-upi-id', prof.upi_id);
+              } else if (defaultUpi) {
+                upiId = defaultUpi;
+                await SecureStore.setItemAsync('user-upi-id', defaultUpi);
+                supabase
+                  .from('profiles')
+                  .update({ upi_id: defaultUpi })
+                  .eq('id', prof.id)
+                  .then(
+                    () => {},
+                    () => {}
+                  );
               }
               if (prof.avatar_url) {
                 avatarUrl = prof.avatar_url;
@@ -145,7 +174,28 @@ export const AppProvider = ({ children }: any) => {
                 defaultModule = prof.default_module;
                 await SecureStore.setItemAsync('user-default-module', defaultModule);
               }
+              if (prof.last_whatsapp_inbound_at) {
+                const parsed = new Date(prof.last_whatsapp_inbound_at).getTime();
+                if (!isNaN(parsed) && parsed > 0) {
+                  serverSyncTime = parsed;
+                }
+              }
             }
+
+            // Sync 24-Hour WhatsApp CRM Session Timestamp
+            const savedSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
+            let finalSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
+            if (serverSyncTime > finalSyncTime) {
+              finalSyncTime = serverSyncTime;
+            }
+
+            // If user has a valid login session and no sync time recorded yet, initialize fresh 24h window
+            if (finalSyncTime <= 0) {
+              finalSyncTime = Date.now();
+            }
+
+            setLastWhatsAppSync(finalSyncTime);
+            await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', finalSyncTime.toString());
           } catch(e) {}
 
           setUser({
@@ -178,6 +228,11 @@ export const AppProvider = ({ children }: any) => {
             .catch(() => {});
         }
         if (apiKey) setGeminiApiKey(apiKey);
+
+        const savedSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
+        if (savedSync && !lastWhatsAppSync) {
+          setLastWhatsAppSync(parseInt(savedSync, 10));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -211,7 +266,22 @@ export const AppProvider = ({ children }: any) => {
 
     setUser(fullUser);
 
-    // Persist
+    // ─── 24h WhatsApp Window: Do NOT blindly reset on every login ───
+    // Only preserve existing sync time. The 24h window should only be
+    // renewed by real WhatsApp interactions (OTP login, keep-alive ping),
+    // NOT by biometric or PIN logins.
+    const savedSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
+    const existingSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
+    if (existingSyncTime > 0) {
+      // Preserve existing window timestamp — don't fake a fresh one
+      setLastWhatsAppSync(existingSyncTime);
+    } else {
+      // First-ever login with no prior sync — initialize fresh window
+      const now = Date.now();
+      setLastWhatsAppSync(now);
+      await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', now.toString());
+    }
+
     await SecureStore.setItemAsync('user-phone', phone);
     await SecureStore.setItemAsync('user-name', fullUser.name);
     await SecureStore.setItemAsync('user-role', fullUser.role);
@@ -221,6 +291,11 @@ export const AppProvider = ({ children }: any) => {
     if (fullUser.location) await SecureStore.setItemAsync('user-location', fullUser.location);
     if (fullUser.latitude) await SecureStore.setItemAsync('user-latitude', String(fullUser.latitude));
     if (fullUser.longitude) await SecureStore.setItemAsync('user-longitude', String(fullUser.longitude));
+
+    // Note: Supabase profile last_whatsapp_inbound_at is NOT updated here.
+    // It is only updated via recordWhatsAppSync() when a real WhatsApp
+    // interaction occurs (OTP login or keep-alive ping), keeping the DB
+    // in sync with what the admin CRM shows.
     if (fullUser.accessToken) {
       await SecureStore.setItemAsync('sb-access-token', fullUser.accessToken);
     }
@@ -294,6 +369,173 @@ export const AppProvider = ({ children }: any) => {
     });
   }, []);
 
+  // Realtime subscription for Profile & UPI sync across the entire app
+  useEffect(() => {
+    if (!user?.phone) return;
+    const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+    
+    const profileChannel = supabase
+      .channel(`profile-realtime-${cleanPhone}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload: any) => {
+          const updated = payload.new;
+          if (!updated) return;
+          const updatedPhone = (updated.phone || updated.whatsapp || '').replace(/\D/g, '').slice(-10);
+          if (updatedPhone === cleanPhone || (user.id && updated.id === user.id)) {
+            setUser(prev => {
+              if (!prev) return null;
+              const nextName = updated.full_name || updated.name || prev.name;
+              const nextUpi = updated.upi_id !== undefined ? updated.upi_id : prev.upiId;
+              const nextAvatar = updated.avatar_url || prev.avatarUrl;
+              const nextLocation = updated.location || prev.location;
+              
+              if (nextUpi) SecureStore.setItemAsync('user-upi-id', nextUpi);
+              if (nextName) SecureStore.setItemAsync('user-name', nextName);
+              if (nextAvatar) SecureStore.setItemAsync('user-avatar-url', nextAvatar);
+              if (nextLocation) SecureStore.setItemAsync('user-location', nextLocation);
+              
+              return {
+                ...prev,
+                name: nextName,
+                upiId: nextUpi || '',
+                avatarUrl: nextAvatar || '',
+                location: nextLocation || '',
+              };
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [user?.phone, user?.id]);
+
+  const updateUserProfile = useCallback(async (updates: Partial<AppUser>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      return { ...prev, ...updates };
+    });
+
+    if (updates.upiId !== undefined) {
+      await SecureStore.setItemAsync('user-upi-id', updates.upiId || '');
+    }
+    if (updates.name !== undefined) {
+      await SecureStore.setItemAsync('user-name', updates.name || '');
+    }
+    if (updates.avatarUrl !== undefined) {
+      await SecureStore.setItemAsync('user-avatar-url', updates.avatarUrl || '');
+    }
+    if (updates.location !== undefined) {
+      await SecureStore.setItemAsync('user-location', updates.location || '');
+    }
+
+    if (user?.phone) {
+      const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+      try {
+        const dbPayload: any = {};
+        if (updates.upiId !== undefined) dbPayload.upi_id = updates.upiId;
+        if (updates.name !== undefined) dbPayload.full_name = updates.name;
+        if (updates.location !== undefined) dbPayload.location = updates.location;
+        if (updates.avatarUrl !== undefined) dbPayload.avatar_url = updates.avatarUrl;
+
+        await supabase
+          .from('profiles')
+          .update(dbPayload)
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
+      } catch (err) {
+        console.warn('Background Supabase profile update error:', err);
+      }
+    }
+  }, [user?.phone]);
+
+  // ─── 23-Hour WhatsApp CRM Session & Notification Sync Methods ───
+
+  const recordWhatsAppSync = useCallback(async (timestamp?: number) => {
+    const ts = timestamp || Date.now();
+    setLastWhatsAppSync(ts);
+    await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', ts.toString());
+    try {
+      const p = user?.phone;
+      if (p) {
+        const cleanPhone = p.replace(/\D/g, '').slice(-10);
+        await supabase
+          .from('profiles')
+          .update({
+            last_whatsapp_inbound_at: new Date(ts).toISOString(),
+            updated_at: new Date(ts).toISOString(),
+          })
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
+
+        await supabase
+          .from('contacts')
+          .update({
+            updated_at: new Date(ts).toISOString(),
+          })
+          .ilike('phone', `%${cleanPhone}%`);
+      }
+    } catch (e) {}
+  }, [user?.phone]);
+
+  const isWhatsAppSyncExpired = useCallback((thresholdHours: number = 23) => {
+    if (!lastWhatsAppSync) return true;
+    const elapsed = Date.now() - lastWhatsAppSync;
+    return elapsed > thresholdHours * 60 * 60 * 1000;
+  }, [lastWhatsAppSync]);
+
+  const getWhatsAppWindowRemaining = useCallback(() => {
+    if (!lastWhatsAppSync) {
+      return { isExpired: true, hours: 0, minutes: 0, formatted: 'Expired', percentage: 0 };
+    }
+    const windowDurationMs = 24 * 60 * 60 * 1000;
+    const elapsedMs = Date.now() - lastWhatsAppSync;
+    const remainingMs = windowDurationMs - elapsedMs;
+
+    if (remainingMs <= 0) {
+      return { isExpired: true, hours: 0, minutes: 0, formatted: 'Expired (Tap to Renew)', percentage: 0 };
+    }
+
+    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+    const percentage = Math.max(0, Math.min(100, Math.round((remainingMs / windowDurationMs) * 100)));
+
+    return {
+      isExpired: false,
+      hours,
+      minutes,
+      formatted: `${hours}h ${minutes}m remaining`,
+      percentage,
+    };
+  }, [lastWhatsAppSync]);
+
+  const renewWhatsAppWindow = useCallback(async (customMsg?: string) => {
+    const waba = '916381029380';
+    const locSnippet = user?.location ? ` (Location: ${user.location})` : '';
+    const msg = customMsg || `Hi SuprO, keep my 24h WhatsApp notification window active 🔔${locSnippet}`;
+    const url = `whatsapp://send?phone=${waba}&text=${encodeURIComponent(msg)}`;
+    const fallbackUrl = `https://wa.me/${waba}?text=${encodeURIComponent(msg)}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        await Linking.openURL(fallbackUrl);
+      }
+      await recordWhatsAppSync();
+    } catch (e) {
+      await Linking.openURL(fallbackUrl);
+      await recordWhatsAppSync();
+    }
+  }, [recordWhatsAppSync, user?.location]);
+
   return (
     <AppContext.Provider value={{
       user,
@@ -302,6 +544,7 @@ export const AppProvider = ({ children }: any) => {
       isLoading,
       signIn,
       signOut,
+      updateUserProfile,
       recentModules,
       addRecentModule,
       geminiApiKey,
@@ -312,8 +555,15 @@ export const AppProvider = ({ children }: any) => {
       togglePinnedModule,
       themeMode,
       themeAccent,
+      themeVer,
       setThemeMode,
       setThemeAccent,
+      // 23h WhatsApp CRM Window Sync
+      lastWhatsAppSync,
+      recordWhatsAppSync,
+      isWhatsAppSyncExpired,
+      getWhatsAppWindowRemaining,
+      renewWhatsAppWindow,
       // Legacy compat
       setUserRole: (role: string) => setUser(prev => prev ? { ...prev, role } : null),
     }}>
@@ -321,3 +571,4 @@ export const AppProvider = ({ children }: any) => {
     </AppContext.Provider>
   );
 };
+

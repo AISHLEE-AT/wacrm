@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
 import { AppContext } from './AppContext';
@@ -87,10 +88,9 @@ export const LocationProvider = ({ children }: { children: React.ReactNode }) =>
   // ─── Core: detect current GPS + reverse geocode ───
   const detectLocation = useCallback(async (): Promise<LocationData> => {
     try {
-      // Check permission first (don't request — that's done in onboarding)
+      // Check and request permission
       let { status } = await Location.getForegroundPermissionsAsync();
       if (status !== 'granted') {
-        // Request permission if not already granted
         const permResult = await Location.requestForegroundPermissionsAsync();
         status = permResult.status;
       }
@@ -103,10 +103,38 @@ export const LocationProvider = ({ children }: { children: React.ReactNode }) =>
         };
       }
 
-      // Get current position
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      // Check if location services are on and prompt if needed on Android
+      try {
+        const isServicesEnabled = await Location.hasServicesEnabledAsync();
+        if (!isServicesEnabled && Platform.OS === 'android') {
+          await Location.enableNetworkProviderAsync().catch(() => {});
+        }
+      } catch {}
+
+      // Get high-accuracy GPS position with fallback
+      let position = null;
+      try {
+        position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Highest,
+        });
+      } catch {
+        try {
+          position = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+        } catch {
+          position = await Location.getLastKnownPositionAsync({});
+        }
+      }
+
+      if (!position || !position.coords) {
+        return {
+          ...DEFAULT_LOCATION,
+          isLoading: false,
+          locationString: 'Could not detect location',
+          error: 'Unable to acquire GPS fix',
+        };
+      }
 
       const { latitude, longitude } = position.coords;
 
@@ -124,7 +152,7 @@ export const LocationProvider = ({ children }: { children: React.ReactNode }) =>
           country: null,
           street: null,
           fullAddress: null,
-          locationString: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          locationString: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
           isLoading: false,
           error: null,
         };
@@ -203,7 +231,11 @@ export const LocationProvider = ({ children }: { children: React.ReactNode }) =>
     }
   }, [detectLocation, saveLocationToProfile]);
 
-  // ─── Auto-detect on every app launch (when user is logged in) ───
+  // ─── Auto-detect on every app launch for every user ───
+  useEffect(() => {
+    refreshLocation();
+  }, []);
+
   useEffect(() => {
     if (user?.phone) {
       refreshLocation();

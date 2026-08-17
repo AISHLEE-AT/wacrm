@@ -119,7 +119,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity 
-        style={styles.avatarContainer} 
+        style={[styles.avatarContainer, { borderColor: colors.primary }]} 
         onPress={handlePickAvatar} 
         disabled={isUploading}
       >
@@ -130,7 +130,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <UserCircle size={40} color={colors.primary} />
           </View>
         )}
-        <View style={styles.cameraOverlay}>
+        <View style={[styles.cameraOverlay, { backgroundColor: colors.card, borderColor: colors.background }]}>
           <Camera size={12} color={colors.text} />
         </View>
         {isUploading && (
@@ -144,7 +144,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {isEditingName ? (
           <View style={styles.editNameContainer}>
             <TextInput
-              style={styles.nameInput}
+              style={[styles.nameInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
               value={editNameValue}
               onChangeText={setEditNameValue}
               placeholder="Enter name"
@@ -152,22 +152,22 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               autoFocus
             />
             <View style={styles.editActions}>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSaveName} disabled={isSavingName}>
+              <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.primary }]} onPress={handleSaveName} disabled={isSavingName}>
                 {isSavingName ? (
                   <ActivityIndicator size="small" color={colors.background} />
                 ) : (
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={[styles.saveButtonText, { color: colors.background }]}>Save</Text>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditingName(false)} disabled={isSavingName}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+              <TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.border }]} onPress={() => setIsEditingName(false)} disabled={isSavingName}>
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
           <View style={styles.nameContainer}>
-            <Text style={styles.nameText}>{profile?.full_name || 'User'}</Text>
-            <TouchableOpacity style={styles.editButton} onPress={() => {
+            <Text style={[styles.nameText, { color: colors.text }]}>{profile?.full_name || 'User'}</Text>
+            <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.border }]} onPress={() => {
               setEditNameValue(profile?.full_name || '');
               setIsEditingName(true);
             }}>
@@ -177,7 +177,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         )}
         
         {!isEditingName && (
-          <Text style={styles.roleText}>{roleText}</Text>
+          <Text style={[styles.roleText, { color: colors.primary }]}>{roleText}</Text>
         )}
       </View>
     </View>
@@ -197,7 +197,6 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 2,
-    borderColor: colors.primary,
   },
   avatarImage: {
     width: '100%',
@@ -216,11 +215,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 4,
     borderWidth: 2,
-    borderColor: colors.background,
   },
   uploadingOverlay: {
     position: 'absolute',
@@ -244,17 +241,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   nameText: {
-    color: colors.text,
     fontSize: 24,
     fontWeight: 'bold',
   },
   editButton: {
-    backgroundColor: colors.border,
     padding: 6,
     borderRadius: radius.md || 8,
   },
   roleText: {
-    color: colors.primary,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -264,20 +258,16 @@ const styles = StyleSheet.create({
     gap: spacing.sm || 8,
   },
   nameInput: {
-    backgroundColor: colors.inputBg,
-    color: colors.text,
     borderRadius: radius.md || 8,
     padding: spacing.md || 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   editActions: {
     flexDirection: 'row',
     gap: spacing.sm || 8,
   },
   saveButton: {
-    backgroundColor: colors.primary,
     paddingVertical: spacing.sm || 8,
     paddingHorizontal: spacing.md || 12,
     borderRadius: radius.md || 8,
@@ -285,12 +275,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   saveButtonText: {
-    color: colors.background,
     fontWeight: '600',
     fontSize: 14,
   },
   cancelButton: {
-    backgroundColor: colors.border,
     paddingVertical: spacing.sm || 8,
     paddingHorizontal: spacing.md || 12,
     borderRadius: radius.md || 8,
@@ -298,7 +286,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cancelButtonText: {
-    color: colors.text,
     fontWeight: '600',
     fontSize: 14,
   },

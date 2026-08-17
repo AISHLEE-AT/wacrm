@@ -35,15 +35,15 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({ profile, isAdmin, 
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.primary, shadowColor: colors.primary }]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>SuprO DIGITAL ID</Text>
-          <Text style={styles.subtitle}>SuprO Ecosystem Pass</Text>
+          <Text style={[styles.title, { color: colors.primary }]}>SuprO DIGITAL ID</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>SuprO Ecosystem Pass</Text>
         </View>
-        <View style={styles.badge}>
+        <View style={[styles.badge, { backgroundColor: colors.emerald }]}>
           <CheckCircle color={colors.text} size={14} />
-          <Text style={styles.badgeText}>VERIFIED</Text>
+          <Text style={[styles.badgeText, { color: colors.text }]}>VERIFIED</Text>
         </View>
       </View>
 
@@ -51,18 +51,18 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({ profile, isAdmin, 
         <View style={styles.qrWrapper}>
           <QRCode value={qrData} size={180} backgroundColor="#FFFFFF" />
         </View>
-        <Text style={styles.userName}>{fullName}</Text>
-        <Text style={styles.role}>{role}</Text>
-        <Text style={styles.phone}>{phone}</Text>
+        <Text style={[styles.userName, { color: colors.text }]}>{fullName}</Text>
+        <Text style={[styles.role, { color: colors.primary }]}>{role}</Text>
+        <Text style={[styles.phone, { color: colors.textSecondary }]}>{phone}</Text>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleCopyId}>
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.border }]} onPress={handleCopyId}>
             <Copy color={colors.text} size={16} />
-            <Text style={styles.actionText}>Copy ID</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>Copy ID</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.shareButton]} onPress={handleShare}>
+          <TouchableOpacity style={[styles.actionButton, styles.shareButton, { backgroundColor: colors.border }, { backgroundColor: colors.primary }]} onPress={handleShare}>
             <Share2 color={colors.text} size={16} />
-            <Text style={styles.actionText}>Share</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>Share</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -72,13 +72,10 @@ export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({ profile, isAdmin, 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderColor: colors.primary,
     borderWidth: 1,
     borderRadius: radius.xxl,
     padding: spacing.xl,
     marginVertical: spacing.md,
-    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 15,
@@ -91,18 +88,15 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   title: {
-    color: colors.primary,
     fontSize: fontSize.xl,
     fontWeight: 'bold',
   },
   subtitle: {
-    color: colors.textMuted,
     fontSize: fontSize.xs,
     fontFamily: 'monospace',
     marginTop: 2,
   },
   badge: {
-    backgroundColor: colors.emerald,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
@@ -111,7 +105,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   badgeText: {
-    color: colors.text,
     fontSize: fontSize.xs,
     fontWeight: 'bold',
   },
@@ -125,21 +118,18 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   userName: {
-    color: colors.text,
     fontSize: fontSize.xl,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   role: {
-    color: colors.primary,
     fontSize: fontSize.xs,
     textTransform: 'uppercase',
     fontWeight: 'bold',
     marginBottom: 4,
   },
   phone: {
-    color: colors.textSecondary,
     fontSize: fontSize.sm,
     marginBottom: spacing.lg,
   },
@@ -150,7 +140,6 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.border,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -159,10 +148,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   shareButton: {
-    backgroundColor: colors.primary,
   },
   actionText: {
-    color: colors.text,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
