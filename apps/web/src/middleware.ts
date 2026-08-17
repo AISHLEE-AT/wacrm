@@ -146,7 +146,7 @@ export async function middleware(request: NextRequest) {
         }
 
         if (isAdmin) {
-          defaultModule = '/crm'
+          defaultModule = '/admin'
         } else if (isDriver) {
           defaultModule = '/drivo'
         } else {
@@ -174,7 +174,7 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = [
     '/dashboard', '/inbox', '/contacts', '/pipelines', '/broadcasts',
     '/automations', '/flows', '/settings', '/drivo',
-    '/admin', '/profile', '/wallet', '/crm',
+    '/admin', '/profile', '/wallet',
     '/rideo', '/moneyo', '/mandi', '/agro', '/rento', '/dealo',
     '/touro', '/tasko', '/gameo', '/tvo', '/tradeo', '/toolso',
     '/ai-assistant', '/teacho', '/testo',

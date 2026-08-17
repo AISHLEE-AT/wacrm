@@ -70,6 +70,9 @@ function LoginPageInner() {
         const phone = session.user?.phone || session.user?.email || '';
         const cleanPhone = phone.replace(/\D/g, '').slice(-10);
         let isDriver = false;
+        let isAdmin = false;
+
+        const isBootstrapAdmin = ['6381029380', '9486335870', '9876543210'].some(num => cleanPhone.includes(num));
 
         if (cleanPhone) {
           const { data: driverData } = await supabase
@@ -81,24 +84,27 @@ function LoginPageInner() {
           if (driverData) isDriver = true;
         }
 
-        if (!isDriver) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role, main_category')
-            .eq('id', session.user.id)
-            .maybeSingle();
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role, main_category, default_module')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-          const role = (profileData?.role || '').toLowerCase();
-          const cat = (profileData?.main_category || '').toLowerCase();
-          if (role.includes('driver') || cat.includes('driver')) {
-            isDriver = true;
-          }
+        const role = (profileData?.role || '').toLowerCase();
+        const cat = (profileData?.main_category || '').toLowerCase();
+        if (role === 'admin' || isBootstrapAdmin) {
+          isAdmin = true;
+        }
+        if (role.includes('driver') || cat.includes('driver')) {
+          isDriver = true;
         }
 
-        if (isDriver) {
+        if (isAdmin) {
+          router.replace('/admin');
+        } else if (isDriver) {
           router.replace('/drivo');
         } else {
-          router.replace('/rideo');
+          router.replace(profileData?.default_module || '/rideo');
         }
       }
     });

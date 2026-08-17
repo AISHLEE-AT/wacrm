@@ -97,6 +97,17 @@ export default function LoginScreen({ navigation }: any) {
         const cleanSavedPhone = savedPhone.replace(/\D/g, '').slice(-10);
         setPhone(cleanSavedPhone);
 
+        // Check if 24h active session is still valid
+        const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
+        const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 24 * 60 * 60 * 1000;
+
+        if (!isWindowExpired) {
+          // Active 24h session is valid — auto-login directly to Dashboard without asking for login
+          await SecureStore.setItemAsync('onboarding-complete', 'true');
+          navigation.replace('Dashboard');
+          return;
+        }
+
         // Allow fast biometric authentication if available
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -108,28 +119,13 @@ export default function LoginScreen({ navigation }: any) {
           });
 
           if (result.success) {
-            // Check if 24h WhatsApp session is still active before allowing fast login
-            const lastSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
-            const lastSyncTime = lastSync ? parseInt(lastSync, 10) : 0;
-            const isWindowExpired = !lastSync || (Date.now() - lastSyncTime) > 23 * 60 * 60 * 1000;
-
-            if (isWindowExpired) {
-              // Session expired — cannot auto-login via biometrics
-              // User must go through WhatsApp OTP to renew the 24h Meta window
-              setIs23hSyncRequired(true);
-              // Fall through to show the login screen with sync banner
-            } else {
-              // Session still active — allow biometric fast login
-              await SecureStore.setItemAsync('onboarding-complete', 'true');
-              navigation.replace('Dashboard');
-              return;
-            }
+            await SecureStore.setItemAsync('onboarding-complete', 'true');
+            navigation.replace('Dashboard');
+            return;
           }
         }
 
-        // If biometrics not used/failed, check 23h window
-        const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
-        const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 23 * 60 * 60 * 1000;
+        // If window expired, prompt sync via WhatsApp
         if (isWindowExpired) {
           setIs23hSyncRequired(true);
         }

@@ -276,7 +276,7 @@ function UserTabs() {
 
 // ─── Root navigator — decides Admin vs User tabs & dedicated ModuleView ─────
 function RootNavigator() {
-  const { isAdmin, isLoading, themeMode, themeVer } = useContext(AppContext);
+  const { user, isAdmin, isLoading, themeMode, themeVer } = useContext(AppContext);
 
   if (isLoading) {
     return (
@@ -286,8 +286,11 @@ function RootNavigator() {
     );
   }
 
+  const initialRoute = user?.phone ? 'Dashboard' : 'Login';
+
   return (
     <Stack.Navigator
+      initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
