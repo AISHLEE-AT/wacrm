@@ -88,11 +88,17 @@ export default function DailyDeepamWebPlayer({
     // Global listener to immediately unlock and enable audio on any user interaction with the page
     const handleGlobalInteraction = () => {
       attemptUnmute();
+      if (playerRef.current) {
+        try {
+          playerRef.current.playVideo();
+        } catch (_) {}
+      }
     };
 
     window.addEventListener('click', handleGlobalInteraction, { passive: true });
     window.addEventListener('touchstart', handleGlobalInteraction, { passive: true });
     window.addEventListener('pointerdown', handleGlobalInteraction, { passive: true });
+    window.addEventListener('mousemove', handleGlobalInteraction, { passive: true, once: true });
     window.addEventListener('keydown', handleGlobalInteraction, { passive: true });
 
     const checkVideoProgress = () => {
@@ -115,7 +121,7 @@ export default function DailyDeepamWebPlayer({
           videoId: videoId,
           playerVars: {
             autoplay: 1,
-            mute: 0, // Request audio autoplay
+            mute: 1, // Start muted for 100% browser autoplay guarantee
             controls: 0,
             rel: 0,
             modestbranding: 1,
@@ -125,35 +131,20 @@ export default function DailyDeepamWebPlayer({
             disablekb: 1,
             autohide: 1,
             showinfo: 0,
-            origin: typeof window !== 'undefined' ? window.location.origin : 'https://www.youtube.com',
+            origin: typeof window !== 'undefined' ? window.location.origin : 'https://watscrm.vercel.app',
           },
           events: {
             onReady: (e: any) => {
               setIsLoading(false);
+              setIsPlaying(true);
               try {
-                // Try playing unmuted first
+                e.target.playVideo();
+                // Attempt unmute immediately
                 e.target.unMute();
                 e.target.setVolume(100);
-                const playPromise = e.target.playVideo();
-                setIsPlaying(true);
-                setIsMuted(false);
-
-                // If browser blocks unmuted autoplay, fallback to muted autoplay and unmute on first gesture
-                if (playPromise && typeof playPromise.catch === 'function') {
-                  playPromise.catch(() => {
-                    try {
-                      e.target.mute();
-                      e.target.playVideo();
-                      setIsMuted(true);
-                    } catch (_) {}
-                  });
-                }
+                setIsMuted(e.target.isMuted ? e.target.isMuted() : false);
               } catch (_) {
-                try {
-                  e.target.mute();
-                  e.target.playVideo();
-                  setIsMuted(true);
-                } catch (_) {}
+                setIsMuted(true);
               }
             },
             onStateChange: (e: any) => {
@@ -165,7 +156,7 @@ export default function DailyDeepamWebPlayer({
                 try {
                   e.target.unMute();
                   e.target.setVolume(100);
-                  if (!e.target.isMuted()) {
+                  if (e.target.isMuted && !e.target.isMuted()) {
                     setIsMuted(false);
                   }
                 } catch (_) {}
@@ -183,6 +174,10 @@ export default function DailyDeepamWebPlayer({
             },
             onError: () => {
               setIsLoading(false);
+              // In case of any playback error, smoothly proceed to login
+              setTimeout(() => {
+                triggerFinish();
+              }, 1500);
             },
           },
         });

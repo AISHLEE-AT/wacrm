@@ -126,7 +126,7 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
         <div class="video-wrapper">
           <iframe
             id="ytplayer"
-            src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=https://www.youtube.com"
+            src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=https://watscrm.vercel.app"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen>
           </iframe>
@@ -172,7 +172,12 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
                       e.target.unMute();
                       e.target.setVolume(100);
                       e.target.playVideo();
-                    } catch(err) {}
+                    } catch(err) {
+                      try {
+                        e.target.mute();
+                        e.target.playVideo();
+                      } catch(_) {}
+                    }
                     notifyApp({ type: 'READY' });
                   },
                   'onStateChange': function(e) {
@@ -198,7 +203,9 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
                   }
                 }
               });
-            } catch(err) {}
+            } catch(err) {
+              notifyApp({ type: 'ERROR' });
+            }
           }
         </script>
       </body>
@@ -233,7 +240,7 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
 
         <WebView
           ref={webViewRef}
-          source={{ html: htmlContent, baseUrl: 'https://www.youtube.com' }}
+          source={{ html: htmlContent, baseUrl: 'https://watscrm.vercel.app' }}
           userAgent="Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
           style={styles.webview}
           originWhitelist={['*']}

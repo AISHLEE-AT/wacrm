@@ -102,7 +102,7 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
           <div class="video-wrapper">
             <iframe
               id="ytplayer"
-              src="https://www.youtube.com/embed/${widget.videoId}?autoplay=1&mute=0&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=https://www.youtube.com"
+              src="https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=https://watscrm.vercel.app"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowfullscreen>
             </iframe>
@@ -213,6 +213,10 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
               if (mounted) setState(() => _isLoading = false);
             } else if (type == 'ERROR') {
               if (mounted) setState(() => _isLoading = false);
+              // If video has embed restrictions, don't trap the user — auto finish
+              Future.delayed(const Duration(seconds: 2), () {
+                if (mounted) _triggerFinish();
+              });
             }
           } catch (_) {
             if (mounted) setState(() => _isLoading = false);
@@ -226,7 +230,7 @@ class _DailyDeepamVideoPlayerState extends State<DailyDeepamVideoPlayer>
           },
         ),
       )
-      ..loadHtmlString(htmlContent, baseUrl: 'https://www.youtube.com');
+      ..loadHtmlString(htmlContent, baseUrl: 'https://watscrm.vercel.app');
   }
 
   void _triggerFinish() {
