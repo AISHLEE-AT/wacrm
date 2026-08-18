@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,11 @@ import {
   ActivityIndicator,
   TextInput,
   Share,
+  Alert,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import {
   PlayCircle,
   ChevronDown,
@@ -120,6 +123,47 @@ export default function TeachOCourseScreen() {
       setAiResponse(`Error generating explanation: ${e.message || e}`);
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const generateAndSharePDF = async (title: string, content: string) => {
+    try {
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 24px; color: #1e293b; line-height: 1.6; }
+            .header { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 20px; }
+            .badge { display: inline-block; background: #ecfdf5; color: #059669; font-weight: bold; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #10b981; text-transform: uppercase; margin-bottom: 6px; }
+            h1 { color: #0f172a; margin: 0; font-size: 20px; }
+            .meta { color: #64748b; font-size: 12px; margin-top: 4px; }
+            .content { white-space: pre-wrap; font-size: 13px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-top: 15px; }
+            .footer { margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 11px; color: #94a3b8; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <span class="badge">EduVerse AI Verified Study Document</span>
+            <h1>${title}</h1>
+            <div class="meta">Course: ${course.title_name} • Date: ${new Date().toLocaleDateString()}</div>
+          </div>
+          <div class="content">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          <div class="footer">
+            Generated via SuprO TeachO LMS • Digital Learning Platform
+          </div>
+        </body>
+        </html>
+      `;
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      } else {
+        Share.share({ message: `${title}\n\n${content}` });
+      }
+    } catch (e: any) {
+      Share.share({ message: `${title}\n\n${content}` });
     }
   };
 
@@ -512,6 +556,24 @@ Provide a concise, helpful, and encouraging educational response in Tamil and En
                   <Text style={styles.modalResponseText}>{aiResponse}</Text>
                 )}
               </ScrollView>
+
+              {!aiLoading && aiResponse ? (
+                <View style={{ flexDirection: 'row', padding: 16, backgroundColor: '#111827', borderTopWidth: 1, borderTopColor: '#1e293b', gap: 10 }}>
+                  <TouchableOpacity
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#10b981', paddingVertical: 12, borderRadius: 12 }}
+                    onPress={() => generateAndSharePDF(aiPromptTitle || course.title_name, aiResponse)}
+                  >
+                    <Download size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
+                    <Text style={{ color: '#0a0f1e', fontWeight: 'bold', fontSize: 13 }}>Export PDF Document</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#334155' }}
+                    onPress={() => Share.share({ message: `${aiPromptTitle}\n\n${aiResponse}` })}
+                  >
+                    <Share2 size={16} color="#38bdf8" />
+                  </TouchableOpacity>
+                </View>
+              ) : null}
             </View>
           </View>
         </Modal>

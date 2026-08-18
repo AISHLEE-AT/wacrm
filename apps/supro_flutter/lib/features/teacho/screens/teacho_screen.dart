@@ -125,6 +125,64 @@ class _TeachoScreenState extends State<TeachoScreen> {
     );
   }
 
+  void _openVoiceSearchDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF111827),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Voice Search • குரல் தேடல்', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: 70,
+              height: 70,
+              decoration: const BoxDecoration(
+                color: Color(0xFF10B981),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(LucideIcons.mic, color: Color(0xFF0A0F1E), size: 36),
+            ),
+            const SizedBox(height: 12),
+            const Text('Listening or select quick voice topic below:', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                'NEET UG Physics',
+                'TNPSC பொதுத்தமிழ்',
+                'JEE Main Maths',
+                'Class 10 Science',
+                'Python Programming',
+                'Banking Aptitude',
+              ].map((q) => ActionChip(
+                backgroundColor: const Color(0xFF1E293B),
+                label: Text(q, style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 12)),
+                onPressed: () {
+                  setState(() => _searchQuery = q);
+                  Navigator.pop(ctx);
+                },
+              )).toList(),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final recentCourse = _courses.isNotEmpty ? _courses[0] : null;
@@ -219,7 +277,7 @@ class _TeachoScreenState extends State<TeachoScreen> {
                           const Text('School, Higher Ed, Competitive & Skills', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
                           const SizedBox(height: 14),
 
-                          // Search Bar
+                          // Search Bar with Voice Mic Button
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             decoration: BoxDecoration(
@@ -241,6 +299,12 @@ class _TeachoScreenState extends State<TeachoScreen> {
                                     ),
                                     onChanged: (v) => setState(() => _searchQuery = v),
                                   ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.mic, color: Color(0xFF10B981), size: 18),
+                                  onPressed: () => _openVoiceSearchDialog(context),
+                                  constraints: const BoxConstraints(),
+                                  padding: EdgeInsets.zero,
                                 ),
                               ],
                             ),

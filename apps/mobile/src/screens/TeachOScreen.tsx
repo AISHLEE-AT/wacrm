@@ -11,6 +11,7 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
+  Modal,
 } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
@@ -30,6 +31,9 @@ import {
   Zap,
   Layers,
   Briefcase,
+  Mic,
+  MicOff,
+  X,
 } from 'lucide-react-native';
 
 const CATEGORIES = [
@@ -99,6 +103,8 @@ export default function TeachOScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [streakDays] = useState(5);
   const [xpPoints] = useState(480);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const navigation = useNavigation<any>();
 
   useEffect(() => {
@@ -395,7 +401,7 @@ export default function TeachOScreen() {
           </View>
         </View>
 
-        {/* Search Bar */}
+        {/* Search Bar with Mic Voice Button */}
         <View style={styles.searchBar}>
           <Search size={18} color="#94a3b8" style={{ marginRight: 8 }} />
           <TextInput
@@ -407,6 +413,12 @@ export default function TeachOScreen() {
             autoCorrect={false}
             clearButtonMode="while-editing"
           />
+          <TouchableOpacity
+            style={styles.micBtn}
+            onPress={() => setIsVoiceModalOpen(true)}
+          >
+            <Mic size={18} color="#10b981" />
+          </TouchableOpacity>
         </View>
 
         {/* Category Tabs */}
@@ -454,6 +466,65 @@ export default function TeachOScreen() {
           </View>
         }
       />
+
+      {/* Voice Search Modal */}
+      <Modal
+        visible={isVoiceModalOpen}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsVoiceModalOpen(false)}
+      >
+        <View style={styles.voiceModalOverlay}>
+          <View style={styles.voiceModalContent}>
+            <View style={styles.voiceModalTop}>
+              <Text style={styles.voiceModalTitle}>Voice Search • குரல் தேடல்</Text>
+              <TouchableOpacity onPress={() => setIsVoiceModalOpen(false)} style={styles.voiceCloseBtn}>
+                <X size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.voiceAnimationBox}>
+              <View style={styles.voiceWaveRing}>
+                <TouchableOpacity
+                  style={styles.voiceMicCenter}
+                  onPress={() => setIsListening(!isListening)}
+                >
+                  <Mic size={32} color="#0a0f1e" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.voiceStatusText}>
+                {isListening ? 'Listening in Tamil & English...' : 'Tap Mic or Select a Quick Search below'}
+              </Text>
+            </View>
+
+            <Text style={styles.voiceQuickTitle}>Quick Voice Suggestions:</Text>
+            <View style={styles.voiceSuggestionsWrap}>
+              {[
+                'NEET UG Physics',
+                'TNPSC பொதுத்தமிழ்',
+                'JEE Main Maths',
+                '10th Science',
+                'Python Programming',
+                'Banking Aptitude',
+                'Full Stack React',
+                'Generative AI',
+              ].map((query, qIdx) => (
+                <TouchableOpacity
+                  key={qIdx}
+                  style={styles.voiceChip}
+                  onPress={() => {
+                    setSearchQuery(query);
+                    setIsVoiceModalOpen(false);
+                  }}
+                >
+                  <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
+                  <Text style={styles.voiceChipText}>{query}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -868,6 +939,93 @@ const styles = StyleSheet.create({
   emptySub: {
     color: '#64748b',
     fontSize: 13,
+  },
+  micBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#10b98120',
+  },
+  voiceModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'flex-end',
+  },
+  voiceModalContent: {
+    backgroundColor: '#111827',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#1e293b',
+  },
+  voiceModalTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  voiceModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  voiceCloseBtn: {
+    padding: 4,
+  },
+  voiceAnimationBox: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  voiceWaveRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#10b98130',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  voiceMicCenter: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#10b981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceStatusText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  voiceQuickTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  voiceSuggestionsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  voiceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  voiceChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#e2e8f0',
   },
 });
 

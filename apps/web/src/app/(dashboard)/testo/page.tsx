@@ -19,6 +19,10 @@ import {
   BookOpen,
   Share2,
   X,
+  Mic,
+  MicOff,
+  Printer,
+  ShieldAlert,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -202,6 +206,109 @@ export default function TestoWebPage() {
     return { score: correct * 4 - wrong * 1, total: total * 4, accuracy, correct, wrong };
   }, [mockQuestions, userAnswers]);
 
+  // Anti-cheat Focus/Tab blur listener
+  const [blurCount, setBlurCount] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+
+  useEffect(() => {
+    if (!activeTest || isExamCompleted) return;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setBlurCount(prev => prev + 1);
+        alert('⚠️ Anti-Cheat Warning: Tab switching is monitored during live mock exams. Please remain on the examination screen.');
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [activeTest, isExamCompleted]);
+
+  const startVoiceSearch = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice speech recognition is supported in Google Chrome, Microsoft Edge, and modern browsers.');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = false;
+      setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setSearchQuery(transcript);
+        }
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
+  const printScorecard = () => {
+    if (typeof window === 'undefined' || !activeTest) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Scorecard - ${activeTest.title_name}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; text-align: center; }
+          .cert-box { border: 4px double #8b5cf6; padding: 40px; border-radius: 20px; background: #faf5ff; }
+          .badge { display: inline-block; background: #8b5cf6; color: #ffffff; font-weight: bold; font-size: 12px; padding: 6px 14px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+          h1 { color: #581c87; margin: 10px 0; font-size: 26px; }
+          .score-grid { display: flex; justify-content: center; gap: 20px; margin: 30px 0; }
+          .score-card { background: #ffffff; border: 1px solid #e9d5ff; padding: 16px 24px; border-radius: 12px; min-width: 120px; }
+          .score-val { font-size: 24px; font-weight: 900; color: #7c3aed; }
+          .score-lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: bold; }
+          .footer { margin-top: 30px; font-size: 11px; color: #9ca3af; }
+        </style>
+      </head>
+      <body>
+        <div class="cert-box">
+          <span class="badge">Official TestO Examination Scorecard</span>
+          <h1>${activeTest.title_name}</h1>
+          <p style="color: #6b7280; font-size: 13px;">Date: ${new Date().toLocaleDateString()} • SuprO National Testing Engine</p>
+          <div class="score-grid">
+            <div class="score-card">
+              <div class="score-val">${calculatedScore.score} / ${calculatedScore.total}</div>
+              <div class="score-lbl">Total Score</div>
+            </div>
+            <div class="score-card">
+              <div class="score-val">${calculatedScore.accuracy}%</div>
+              <div class="score-lbl">Accuracy</div>
+            </div>
+            <div class="score-card">
+              <div class="score-val">${calculatedScore.correct}</div>
+              <div class="score-lbl">Correct (+4)</div>
+            </div>
+            <div class="score-card">
+              <div class="score-val">${calculatedScore.wrong}</div>
+              <div class="score-lbl">Wrong (-1)</div>
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #4b5563;">Performance Status: <strong>${calculatedScore.accuracy >= 70 ? 'Distinction Qualified' : 'Eligible for Retest'}</strong></p>
+          <div class="footer">
+            Verified by EduVerse AI Examination Authority • SuprO Platform
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 400);
+  };
+
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-slate-100 p-6">
       {/* Top Header Bar */}
@@ -220,7 +327,7 @@ export default function TestoWebPage() {
       </div>
 
       <div className="max-w-7xl mx-auto mt-6">
-        {/* Search */}
+        {/* Search with Voice */}
         <div className="relative mb-6">
           <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
           <input
@@ -228,8 +335,20 @@ export default function TestoWebPage() {
             placeholder="Search mock exams, NEET practice tests, TNPSC question sets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-[#111827] border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
+            className="w-full pl-12 pr-12 py-3 bg-[#111827] border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
           />
+          <button
+            type="button"
+            onClick={startVoiceSearch}
+            title="Voice Search"
+            className={`absolute right-3.5 top-2.5 p-2 rounded-xl transition ${
+              isListening
+                ? 'bg-red-500/20 text-red-400 animate-pulse border border-red-500/40'
+                : 'text-slate-400 hover:text-purple-400 hover:bg-slate-800'
+            }`}
+          >
+            <Mic className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Category Pills */}
@@ -459,6 +578,12 @@ export default function TestoWebPage() {
                 </div>
 
                 <div className="flex gap-3">
+                  <button
+                    onClick={printScorecard}
+                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-emerald-500/20"
+                  >
+                    <Printer className="w-4 h-4" /> Print Certificate (PDF)
+                  </button>
                   <button
                     onClick={() => handleStartExam(activeTest)}
                     className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition"

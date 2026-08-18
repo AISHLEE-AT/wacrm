@@ -23,6 +23,11 @@ import {
   X,
   ExternalLink,
   Send,
+  Mic,
+  MicOff,
+  Printer,
+  Download,
+  Share2,
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -75,6 +80,74 @@ export default function TeachoWebPage() {
   const [aiTitle, setAiTitle] = useState('');
   const [aiContent, setAiContent] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceSearch = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice speech recognition is supported in Google Chrome, Microsoft Edge, and modern browsers.');
+      return;
+    }
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = false;
+      setIsListening(true);
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setSearchQuery(transcript);
+        }
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } catch {
+      setIsListening(false);
+    }
+  };
+
+  const printStudyNotes = (title: string, content: string) => {
+    if (typeof window === 'undefined') return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${title} - EduVerse Study Notes</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #0f172a; line-height: 1.6; }
+          .header { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 24px; }
+          .badge { display: inline-block; background: #ecfdf5; color: #059669; font-weight: bold; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #10b981; text-transform: uppercase; margin-bottom: 8px; }
+          h1 { color: #0f172a; margin: 0; font-size: 22px; }
+          .meta { color: #64748b; font-size: 12px; margin-top: 4px; }
+          .content { white-space: pre-wrap; font-size: 14px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 10px; margin-top: 20px; }
+          .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; font-size: 11px; color: #94a3b8; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <span class="badge">SuprO TeachO LMS • Verified Document</span>
+          <h1>${title}</h1>
+          <div class="meta">Generated on ${new Date().toLocaleDateString()} • SuprO Digital Platform</div>
+        </div>
+        <div class="content">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        <div class="footer">
+          EduVerse AI Learning Hub • For Student Revision & Academic Use Only
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 400);
+  };
 
   // Career Hub Modal
   const [careerHubOpen, setCareerHubOpen] = useState(false);
@@ -238,7 +311,7 @@ export default function TeachoWebPage() {
       </div>
 
       <div className="max-w-7xl mx-auto mt-6">
-        {/* Search Bar */}
+        {/* Search Bar with Voice Recognition */}
         <div className="relative mb-6">
           <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
           <input
@@ -246,8 +319,20 @@ export default function TeachoWebPage() {
             placeholder="Search courses, NEET/JEE units, TNPSC topics, CBSE syllabus, tests..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-[#111827] border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+            className="w-full pl-12 pr-12 py-3 bg-[#111827] border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
           />
+          <button
+            type="button"
+            onClick={startVoiceSearch}
+            title="Voice Search"
+            className={`absolute right-3.5 top-2.5 p-2 rounded-xl transition ${
+              isListening
+                ? 'bg-red-500/20 text-red-400 animate-pulse border border-red-500/40'
+                : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+            }`}
+          >
+            <Mic className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Category Pills */}
@@ -578,6 +663,18 @@ export default function TeachoWebPage() {
                 aiContent
               )}
             </div>
+            {!aiLoading && aiContent && (
+              <div className="p-4 bg-[#0c1322] border-t border-slate-800 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => printStudyNotes(aiTitle || 'EduVerse AI Notes', aiContent)}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print / Save as PDF</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
