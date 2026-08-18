@@ -47,6 +47,7 @@ export default function TeachOCourseScreen() {
   const getCourseSyllabus = (courseTitle: string, category: string = '') => {
     const cleanTitle = courseTitle || 'Course';
     const t = cleanTitle.toLowerCase();
+    const isWeb = t.includes('web') || t.includes('full stack') || t.includes('frontend') || t.includes('backend') || t.includes('react') || t.includes('node') || t.includes('javascript') || t.includes('typescript');
     const isLkg = t.includes('lkg') || t.includes('lower kindergarten');
     const isUkg = t.includes('ukg') || t.includes('upper kindergarten');
     const isC1 = t.includes('class 1') || t.includes('1st standard') || t.includes('1-ஆம் வகுப்பு');
@@ -57,6 +58,31 @@ export default function TeachOCourseScreen() {
     const is12th = t.includes('class 12') || t.includes('12th') || t.includes('plus two') || t.includes('hsc');
     const isNeet = t.includes('neet') || t.includes('jee') || t.includes('iit');
     const isTnpsc = t.includes('tnpsc') || t.includes('group') || t.includes('vao') || t.includes('police');
+
+    if (isWeb) {
+      return [
+        {
+          id: 'web_u1',
+          subjectName: 'Frontend (HTML5, Tailwind & React 19)',
+          unitNumber: 'Unit 1 & 2',
+          title: 'Modern UI/UX, Flexbox/Grid, TypeScript & Next.js App Router',
+          chapters: [
+            { id: 'web_c1', title: 'Semantic Layouts, Tailwind CSS & V8 Event Loop', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'CSS Grid & Microtasks', microTopics: [{ title: 'Flexbox vs Grid matrix layouts', pyq: 'Very High' }, { title: 'Event Loop Microtask drain priority', pyq: 'Very High' }] }] },
+            { id: 'web_c2', title: 'React Server Components & Next.js Server Actions', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'SSR & State Stores', microTopics: [{ title: 'Server Components vs Client Components ("use client")', pyq: 'Very High' }, { title: 'Zustand Immutable Store Architecture', pyq: 'High' }] }] },
+          ]
+        },
+        {
+          id: 'web_u2',
+          subjectName: 'Backend & Cloud (Node.js, PostgreSQL, Docker)',
+          unitNumber: 'Unit 3 & 4',
+          title: 'REST/GraphQL APIs, JWT Auth, Database Indexing & Docker',
+          chapters: [
+            { id: 'web_c3', title: 'Express Middleware & JWT Token Rotation', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'API Security', microTopics: [{ title: 'Access & HttpOnly Refresh Token Rotation', pyq: 'Very High' }] }] },
+            { id: 'web_c4', title: 'PostgreSQL Indexing, Prisma ORM & Docker Multi-Stage', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'DevOps & Databases', microTopics: [{ title: 'B-Tree Foreign Key indexing O(log N)', pyq: 'Very High' }, { title: 'Alpine Docker Multi-Stage Optimization', pyq: 'High' }] }] },
+          ]
+        }
+      ];
+    }
 
     if (isLkg || isUkg) {
       return [

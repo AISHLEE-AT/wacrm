@@ -1141,6 +1141,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   List<Map<String, dynamic>> _getCourseUnits(String title) {
     final cleanTitle = title.toLowerCase();
+    final isWeb = cleanTitle.contains('web') || cleanTitle.contains('full stack') || cleanTitle.contains('frontend') || cleanTitle.contains('backend') || cleanTitle.contains('react') || cleanTitle.contains('node') || cleanTitle.contains('javascript') || cleanTitle.contains('typescript');
     final isLkg = cleanTitle.contains('lkg') || cleanTitle.contains('lower kindergarten');
     final isUkg = cleanTitle.contains('ukg') || cleanTitle.contains('upper kindergarten');
     final isC1 = cleanTitle.contains('class 1') || cleanTitle.contains('1st standard') || cleanTitle.contains('1-ஆம் வகுப்பு');
@@ -1151,6 +1152,45 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final is12th = cleanTitle.contains('class 12') || cleanTitle.contains('12th') || cleanTitle.contains('plus two') || cleanTitle.contains('hsc');
     final isNeet = cleanTitle.contains('neet') || cleanTitle.contains('jee') || cleanTitle.contains('iit');
     final isTnpsc = cleanTitle.contains('tnpsc') || cleanTitle.contains('group') || cleanTitle.contains('vao') || cleanTitle.contains('police');
+
+    if (isWeb) {
+      return [
+        {
+          'subject': 'Frontend (HTML5, Tailwind & React 19)',
+          'unit': 'Unit 1 & 2',
+          'title': 'Modern UI/UX, Flexbox/Grid, TypeScript & Next.js App Router',
+          'chapters': [
+            {
+              'title': 'Semantic Layouts, Tailwind CSS & V8 Event Loop',
+              'tamil': 'வலை வடிவமைப்பு & ஜாவாஸ்கிரிப்ட்',
+              'micros': ['Flexbox vs Grid matrix layouts', 'V8 Event Loop microtask priority', 'Tailwind CSS utility styling']
+            },
+            {
+              'title': 'React Server Components & Next.js Server Actions',
+              'tamil': 'ரியாக்ட் & நெக்ஸ்ட் ஜேஎஸ்',
+              'micros': ['Server Components vs Client ("use client")', 'Zustand immutable state store', 'Next.js App Router streaming']
+            }
+          ]
+        },
+        {
+          'subject': 'Backend & Cloud (Node.js, PostgreSQL, Docker)',
+          'unit': 'Unit 3 & 4',
+          'title': 'REST/GraphQL APIs, JWT Auth, Database Indexing & Docker',
+          'chapters': [
+            {
+              'title': 'Express Middleware & JWT Token Rotation',
+              'tamil': 'ஏபிஐ கட்டமைப்பு & பாதுகாப்பு',
+              'micros': ['Access & HttpOnly Refresh Token Rotation', 'Stateless JWT Authentication', 'Input validation & Rate limiting']
+            },
+            {
+              'title': 'PostgreSQL Indexing, Prisma ORM & Docker Multi-Stage',
+              'tamil': 'டேட்டாபேஸ் & டாக்கர்',
+              'micros': ['PostgreSQL B-Tree foreign key indexing', 'Prisma ORM migrations', 'Docker Alpine multi-stage builds']
+            }
+          ]
+        }
+      ];
+    }
 
     if (isLkg || isUkg) {
       return [
