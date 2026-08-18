@@ -12,6 +12,7 @@ import {
   Share,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import {
   ChevronLeft,
@@ -31,6 +32,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
 export default function TestOResultScreen() {
+  const insets = useSafeAreaInsets();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const {
@@ -120,11 +122,22 @@ export default function TestOResultScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header (Safe below punch hole / status bar) */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('TeachOScreen')}>
           <ChevronLeft color="#fff" size={24} />
         </TouchableOpacity>
@@ -331,7 +344,7 @@ export default function TestOResultScreen() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -391,7 +404,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 80,
   },
   scoreHero: {
     backgroundColor: '#111827',

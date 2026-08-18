@@ -7,7 +7,10 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
@@ -35,6 +38,7 @@ const endpoints = {
 };
 
 export default function DashboardScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const {
     user,
     userRole,
@@ -193,7 +197,17 @@ export default function DashboardScreen({ navigation }: any) {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.contentContainer}
+      contentContainerStyle={[
+        styles.contentContainer,
+        {
+          paddingTop:
+            Math.max(
+              insets.top,
+              Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+            ) + 16,
+          paddingBottom: Math.max(insets.bottom, 16) + 120,
+        },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       {/* ──── 1. Profile Header (Avatar, Name, Role) ──── */}
@@ -277,6 +291,16 @@ export default function DashboardScreen({ navigation }: any) {
         <LogOut color={colors.destructive} size={20} style={{ marginRight: 8 }} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
+
+      {/* ──── 12. App Version Info ──── */}
+      <View style={{ alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
+        <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '700', letterSpacing: 0.5 }}>
+          SuprO SuperApp • v3.2.1 Beta SuprO
+        </Text>
+        <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 2, opacity: 0.7 }}>
+          Build 4 • Tamil Nadu Ecosystem
+        </Text>
+      </View>
 
       {/* Bottom spacing */}
       <View style={{ height: 40 }} />

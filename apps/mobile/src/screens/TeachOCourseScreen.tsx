@@ -582,11 +582,22 @@ export default function TeachOCourseScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* Top Navbar */}
-      <View style={styles.navbar}>
+      {/* Top Navbar (Safe below punch hole / status bar) */}
+      <View
+        style={[
+          styles.navbar,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color="#ffffff" size={24} />
         </TouchableOpacity>
@@ -1136,7 +1147,7 @@ export default function TeachOCourseScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

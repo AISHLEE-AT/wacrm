@@ -20,6 +20,8 @@ import {
 } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import NativeSpeech from '../lib/NativeSpeech';
 import VoiceSpeechBridge, { VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
 import {
   PlayCircle,
@@ -118,6 +120,7 @@ export default function TeachOScreen() {
   const voiceBridgeRef = useRef<VoiceSpeechBridgeRef>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
 
   // ─── Pulse Animation for Voice Mic ───
   useEffect(() => {
@@ -179,12 +182,48 @@ export default function TeachOScreen() {
         ? 'தமிழில் பேசவும் (Listening in Tamil)...'
         : 'Speak now (Listening in English)...'
     );
+
+    // 1. Try Native Android Speech Recognizer first
+    try {
+      const isAvail = await NativeSpeech.isAvailable();
+      if (isAvail) {
+        await NativeSpeech.startListening(lang, {
+          onStart: () => {
+            setIsListening(true);
+            setVoiceStatus(lang === 'ta-IN' ? 'தமிழில் பேசவும்...' : 'Listening now...');
+          },
+          onResult: (text, isFinal) => {
+            setVoiceTranscript(text);
+            setVoiceStatus(`Recognized: "${text}"`);
+            if (isFinal && text.trim().length > 0) {
+              setTimeout(() => {
+                setSearchQuery(text.trim());
+                handleVoiceModalClose();
+              }, 600);
+            }
+          },
+          onEnd: () => {
+            setIsListening(false);
+          },
+          onError: (err) => {
+            setIsListening(false);
+            setVoiceStatus(err);
+          },
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn('NativeSpeech fallback to bridge:', e);
+    }
+
+    // Fallback: Voice Bridge
     voiceBridgeRef.current?.startListening(lang);
   }, [voiceLang, requestMicPermission]);
 
   const stopVoiceListening = useCallback(() => {
     setIsListening(false);
     setVoiceStatus('Voice search stopped. Tap Mic to speak.');
+    NativeSpeech.stopListening().catch(() => {});
     voiceBridgeRef.current?.stopListening();
   }, []);
 
@@ -463,22 +502,33 @@ export default function TeachOScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#10b981" />
           <Text style={styles.loadingText}>Loading EduVerse Learning Hub...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* FIXED TOP HEADER & SEARCH (Never unmounts or loses focus) */}
-      <View style={styles.headerContainer}>
+      {/* FIXED TOP HEADER & SEARCH (Positioned cleanly below status bar / camera notch) */}
+      <View
+        style={[
+          styles.headerContainer,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         {/* Top Title & Gamification Bar */}
         <View style={styles.topBar}>
           <View>
@@ -560,7 +610,10 @@ export default function TeachOScreen() {
         keyExtractor={item => item.id}
         renderItem={renderItem}
         ListHeaderComponent={renderListHeader}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+        ]}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -699,7 +752,7 @@ export default function TeachOScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

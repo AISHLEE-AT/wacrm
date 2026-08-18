@@ -15,6 +15,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Leaf,
   Tv,
@@ -60,6 +61,7 @@ type AIToolSubMode = 'doctor' | 'fertilizer' | 'irrigation' | 'general';
 
 export default function AgrOScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { geminiApiKey, themeMode } = useContext(AppContext);
 
   const [activeTab, setActiveTab] = useState<TabType>('tv');
@@ -259,8 +261,21 @@ Provide clear, actionable, encouraging advice in simple Tamil for rural farmers.
         backgroundColor={colors.background}
       />
 
-      {/* ─── Top Header ─── */}
-      <View style={[styles.headerContainer, { backgroundColor: colors.card, borderBottomColor: colors.borderLight }]}>
+      {/* ─── Top Header (Safe above punch hole / status bar) ─── */}
+      <View
+        style={[
+          styles.headerContainer,
+          {
+            backgroundColor: colors.card,
+            borderBottomColor: colors.borderLight,
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <View style={styles.headerTopRow}>
           <View>
             <View style={styles.brandRow}>
@@ -1125,7 +1140,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 130,
   },
   filterRow: {
     flexDirection: 'row',

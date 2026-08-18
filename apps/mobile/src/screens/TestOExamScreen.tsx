@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, 
   ScrollView, SafeAreaView, Alert, Dimensions, Modal, Platform, StatusBar
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Clock, Menu, X, ChevronLeft, ChevronRight, WifiOff } from 'lucide-react-native';
@@ -22,6 +23,7 @@ const STATUS_COLORS = {
 export default function TestOExamScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { testId, title } = route.params;
 
   const [loading, setLoading] = useState(true);
@@ -249,11 +251,22 @@ export default function TestOExamScreen() {
   const currentQ = questions[currentIdx];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* HEADER */}
-      <View style={styles.header}>
+      {/* HEADER (Safe below punch hole / status bar) */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => {
@@ -331,8 +344,8 @@ export default function TestOExamScreen() {
         </View>
       </ScrollView>
 
-      {/* FOOTER ACTIONS */}
-      <View style={styles.footer}>
+      {/* FOOTER ACTIONS (Safe above home gesture bar) */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
         <View style={styles.footerRow}>
           <TouchableOpacity
             style={styles.reviewBtn}
@@ -405,7 +418,7 @@ export default function TestOExamScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

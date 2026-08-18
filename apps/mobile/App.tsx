@@ -343,6 +343,8 @@ function NavigationWrapper() {
   );
 }
 
+import AppStartupPermissionModal from './src/components/AppStartupPermissionModal';
+
 // ─── App root ──────────────────────────────────────────────────────────────
 export default function App() {
   return (
@@ -350,6 +352,7 @@ export default function App() {
       <AppProvider>
         <LocationProvider>
           <NavigationWrapper />
+          <AppStartupPermissionModal />
         </LocationProvider>
       </AppProvider>
     </SafeAreaProvider>

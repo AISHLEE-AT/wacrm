@@ -16,7 +16,9 @@ import {
   Share,
   Platform,
   Dimensions,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Bot,
   FileText,
@@ -60,6 +62,7 @@ import { colors } from '../lib/theme';
 import { geminiToolsService, GEMINI_MODELS } from '../services/geminiToolsService';
 import { historyService, HistoryItem } from '../services/historyService';
 import { aishleeSupabase } from '../services/aishleeSupabase';
+import NativeSpeech from '../lib/NativeSpeech';
 import { VoiceSpeechBridge, VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
 
 const { width } = Dimensions.get('window');
@@ -327,6 +330,7 @@ const TOOL_CONFIGS: Record<string, {
 };
 
 export default function AishleeToolsScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
   const { geminiApiKey: contextKey, setGeminiApiKey, user, themeMode, themeVer } = useContext(AppContext);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const [activeTool, setActiveTool] = useState(CATEGORIES[0].tools[0]);
@@ -406,7 +410,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
   };
 
   // ─── VOICE RECOGNITION HANDLERS ───
-  const handleStartListening = (targetLang?: 'ta-IN' | 'en-IN') => {
+  const handleStartListening = async (targetLang?: 'ta-IN' | 'en-IN') => {
     const langToUse = targetLang || voiceLang;
     setVoiceError(null);
     setLiveTranscript('');
@@ -415,10 +419,39 @@ export default function AishleeToolsScreen({ navigation }: any) {
       voiceBridgeRef.current?.stopSpeaking();
       setIsTtsPlaying(false);
     }
+
+    try {
+      const isAvail = await NativeSpeech.isAvailable();
+      if (isAvail) {
+        await NativeSpeech.startListening(langToUse, {
+          onStart: () => {
+            setIsListening(true);
+          },
+          onResult: (text, isFinal) => {
+            setLiveTranscript(text);
+            setVoiceQuery(text);
+          },
+          onEnd: () => {
+            setIsListening(false);
+          },
+          onError: (err) => {
+            setIsListening(false);
+            if (err && !err.includes('no-speech')) {
+              setVoiceError(err);
+            }
+          },
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn('NativeSpeech fallback in AishleeTools:', e);
+    }
+
     voiceBridgeRef.current?.startListening(langToUse);
   };
 
   const handleStopListening = () => {
+    NativeSpeech.stopListening().catch(() => {});
     voiceBridgeRef.current?.stopListening();
     setIsListening(false);
   };
@@ -1229,9 +1262,22 @@ export default function AishleeToolsScreen({ navigation }: any) {
   const detectedInfo = (voiceQuery || liveTranscript) ? detectToolFromQuery(voiceQuery || liveTranscript) : null;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* ─── HEADER BAR ─── */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'} backgroundColor="#0a0f1e" />
+      {/* ─── HEADER BAR (Safe above punch hole / status bar) ─── */}
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: colors.border,
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Bot color={colors.primary} size={28} />
           <View>
@@ -1261,7 +1307,10 @@ export default function AishleeToolsScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 120 }}
+      >
         {/* ─── CATEGORIES HORIZONTAL SCROLL ─── */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
           {CATEGORIES.map((cat) => {
@@ -1759,7 +1808,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
         onTtsStart={() => setIsTtsPlaying(true)}
         onTtsEnd={() => setIsTtsPlaying(false)}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -16,7 +16,9 @@ import {
   Platform,
   Animated,
   Easing,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import {
@@ -330,6 +332,7 @@ const TN_MANDIS = [
 ];
 
 export default function RentOScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const mapRef = useRef(null);
   const { user } = useContext(AppContext);
   const { location: globalLoc } = useContext(LocationContext);
@@ -985,8 +988,21 @@ export default function RentOScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* ─── HEADER BAR ─── */}
-      <View style={styles.header}>
+      <StatusBar barStyle="light-content" backgroundColor="#070C18" />
+
+      {/* ─── HEADER BAR (Safe below punch hole / status bar) ─── */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation?.goBack()}>
           <ArrowLeft color="#fff" size={24} />
         </TouchableOpacity>

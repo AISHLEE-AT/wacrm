@@ -13,8 +13,10 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
-  Dimensions
+  Dimensions,
+  StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { supabase } from '../lib/supabase';
 import { AppContext } from '../context/AppContext';
@@ -67,6 +69,7 @@ const formatCurrency = (amount) => {
 };
 
 export default function DriveOScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useContext(AppContext);
   const phone = user?.phone || '';
 
@@ -1187,8 +1190,21 @@ export default function DriveOScreen() {
   // ══════════════════════════════════════════════
   return (
     <View style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.header}>
+      <StatusBar barStyle="light-content" backgroundColor="#070C18" />
+
+      {/* HEADER (Safe below punch hole / status bar) */}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <View style={styles.headerLeft}>
           <View style={styles.headerTitleRow}>
             <Text style={styles.headerTitle} numberOfLines={1}>SuprO Partner</Text>
@@ -1213,7 +1229,12 @@ export default function DriveOScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+        ]}
+      >
         {/* STATUS INDICATOR */}
         <View style={styles.statusIndicator}>
           <View style={[styles.statusDot, isOnline ? { backgroundColor: COLORS.green } : { backgroundColor: COLORS.red }]} />

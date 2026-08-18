@@ -18,6 +18,8 @@ import {
 } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import NativeSpeech from '../lib/NativeSpeech';
 import VoiceSpeechBridge, { VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
 import {
   ChevronLeft,
@@ -45,6 +47,7 @@ export default function TestOHubScreen() {
   const voiceBridgeRef = useRef<VoiceSpeechBridgeRef>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
 
   // ─── Pulse Animation for Voice Mic ───
   useEffect(() => {
@@ -106,12 +109,48 @@ export default function TestOHubScreen() {
         ? 'தமிழில் பேசவும் (Listening in Tamil)...'
         : 'Speak now (Listening in English)...'
     );
+
+    // 1. Try Native Android Speech Recognizer first
+    try {
+      const isAvail = await NativeSpeech.isAvailable();
+      if (isAvail) {
+        await NativeSpeech.startListening(lang, {
+          onStart: () => {
+            setIsListening(true);
+            setVoiceStatus(lang === 'ta-IN' ? 'தமிழில் பேசவும்...' : 'Listening now...');
+          },
+          onResult: (text, isFinal) => {
+            setVoiceTranscript(text);
+            setVoiceStatus(`Recognized: "${text}"`);
+            if (isFinal && text.trim().length > 0) {
+              setTimeout(() => {
+                setSearchQuery(text.trim());
+                handleVoiceModalClose();
+              }, 600);
+            }
+          },
+          onEnd: () => {
+            setIsListening(false);
+          },
+          onError: (err) => {
+            setIsListening(false);
+            setVoiceStatus(err);
+          },
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn('NativeSpeech fallback to bridge in TestO:', e);
+    }
+
+    // Fallback: Voice Bridge
     voiceBridgeRef.current?.startListening(lang);
   }, [voiceLang, requestMicPermission]);
 
   const stopVoiceListening = useCallback(() => {
     setIsListening(false);
     setVoiceStatus('Voice search stopped. Tap Mic to speak.');
+    NativeSpeech.stopListening().catch(() => {});
     voiceBridgeRef.current?.stopListening();
   }, []);
 
@@ -271,22 +310,33 @@ export default function TestOHubScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
         <View style={styles.loaderContainer}>
           <ActivityIndicator size="large" color="#10b981" />
           <Text style={styles.loadingText}>Loading TestO Exam Hub...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* Navigation Header */}
-      <View style={styles.navBar}>
+      {/* Navigation Header (Positioned cleanly below status bar / punch hole camera) */}
+      <View
+        style={[
+          styles.navBar,
+          {
+            paddingTop:
+              Math.max(
+                insets.top,
+                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
+              ) + 8,
+          },
+        ]}
+      >
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color="#ffffff" />
         </TouchableOpacity>
@@ -325,7 +375,10 @@ export default function TestOHubScreen() {
         keyExtractor={item => item.id}
         renderItem={renderTestCard}
         renderSectionHeader={renderSectionHeader}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+        ]}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <FileCheck2 size={44} color="#334155" style={{ marginBottom: 10 }} />
@@ -460,7 +513,7 @@ export default function TestOHubScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
