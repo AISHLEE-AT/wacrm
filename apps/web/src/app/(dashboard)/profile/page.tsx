@@ -128,6 +128,19 @@ export default function UnifiedProfilePage() {
   );
 }
 
+// ───── Module-Linked User Categories ─────
+const USER_CATEGORIES = [
+  { key: 'Driver', label: 'Driver Partner', badge: '🚖 DriveO', desc: 'Accept rides & auto fleet management', path: '/drivo', color: 'border-blue-500/30 bg-blue-500/10 text-blue-400' },
+  { key: 'Partner', label: 'Delivery / Partner', badge: '🤝 DealO', desc: 'Local business, logistics & products', path: '/dealo', color: 'border-orange-500/30 bg-orange-500/10 text-orange-400' },
+  { key: 'Farmer', label: 'Farmer / Agri Expert', badge: '🌾 AgrO', desc: 'Tamil Nadu Agri TV, daily tasks & AI crop doctor', path: '/agro', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' },
+  { key: 'Student', label: 'Student / Candidate', badge: '🎓 TeachO & TestO', desc: 'Mock exams, courses & study material', path: '/teacho', color: 'border-purple-500/30 bg-purple-500/10 text-purple-400' },
+  { key: 'Teacher', label: 'Teacher / Tutor', badge: '👨‍🏫 TeachO', desc: 'Publish masterclasses & tests', path: '/teacho', color: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' },
+  { key: 'Traveller', label: 'Traveller / Passenger', badge: '🧳 RideO & TourO', desc: 'Book taxis & pilgrimage trips', path: '/rideo', color: 'border-teal-500/30 bg-teal-500/10 text-teal-400' },
+  { key: 'Shopper', label: 'Merchant / Shopper', badge: '🛍️ DealO', desc: 'Hyperlocal marketplace deals', path: '/dealo', color: 'border-amber-500/30 bg-amber-500/10 text-amber-400' },
+  { key: 'Financier', label: 'Financier / Lender', badge: '💰 MoneyO', desc: 'Micro loans & finance manager', path: '/moneyo', color: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400' },
+  { key: 'Admin', label: 'Admin / Master', badge: '👑 Admin CRM', desc: 'Ecosystem & fleet control', path: '/admin', color: 'border-rose-500/30 bg-rose-500/10 text-rose-400' },
+];
+
 function ProfilePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -155,8 +168,40 @@ function ProfilePageInner() {
   const [geminiState, setGeminiState] = useState('');
   const [driverProfile, setDriverProfile] = useState<any>(null);
   const [savingField, setSavingField] = useState<string | null>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const activeProfile = dbProfile || profile;
+
+  const currentCategoryKey = activeProfile?.main_category || activeProfile?.role || 'Traveller';
+  const currentCategory = USER_CATEGORIES.find(c => c.key.toLowerCase() === currentCategoryKey.toLowerCase()) || USER_CATEGORIES[5];
+
+  const handleSelectCategory = async (newKey: string) => {
+    setSavingCategory(true);
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      if (user?.id) {
+        await supabase.from('profiles').update({ main_category: newKey }).eq('id', user.id);
+        fetch('/api/profile/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            phone: user.phone || activeProfile?.phone,
+            main_category: newKey,
+            category: newKey,
+          }),
+        }).catch(() => {});
+      }
+      setDbProfile((prev: any) => ({ ...(prev || activeProfile), main_category: newKey }));
+      setCategoryModalOpen(false);
+    } catch (e) {
+      console.error('Failed to update category:', e);
+    } finally {
+      setSavingCategory(false);
+    }
+  };
 
   const isAdmin = Boolean(
     activeProfile?.email?.includes("aishleetechnology@gmail.com") ||
@@ -358,6 +403,71 @@ function ProfilePageInner() {
             {isAdmin ? 'Admin / Owner' : driverProfile ? 'Driver Partner' : 'User'}
           </p>
         </div>
+      </div>
+
+      {/* ─── Module-Based User Category Card & Selector ─── */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl p-2.5 bg-primary/10 rounded-xl">👤</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Active User Role</p>
+                <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${currentCategory.color}`}>
+                  {currentCategory.badge}
+                </span>
+              </div>
+              <h3 className="text-base font-extrabold text-foreground mt-0.5">{currentCategory.label}</h3>
+              <p className="text-xs text-muted-foreground">{currentCategory.desc}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <Link
+              href={currentCategory.path}
+              className="px-3.5 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs rounded-xl border border-primary/30 transition flex items-center gap-1"
+            >
+              Launch Module <ExternalLink className="w-3 h-3" />
+            </Link>
+
+            <button
+              onClick={() => setCategoryModalOpen(!categoryModalOpen)}
+              className="px-3.5 py-1.5 bg-muted hover:bg-muted/80 text-foreground font-bold text-xs rounded-xl border border-border transition"
+            >
+              {categoryModalOpen ? 'Close' : 'Change Role ▾'}
+            </button>
+          </div>
+        </div>
+
+        {/* Dropdown Grid */}
+        {categoryModalOpen && (
+          <div className="border-t border-border pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {USER_CATEGORIES.map((cat) => {
+              const isSelected = cat.key.toLowerCase() === currentCategoryKey.toLowerCase();
+              return (
+                <button
+                  key={cat.key}
+                  onClick={() => handleSelectCategory(cat.key)}
+                  disabled={savingCategory}
+                  className={`p-3 rounded-xl border text-left transition flex items-start justify-between gap-2 ${
+                    isSelected
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border hover:border-primary/40 bg-card/60'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-foreground">{cat.label}</span>
+                      <span className="text-[10px] font-bold text-primary">{cat.badge}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">{cat.desc}</p>
+                  </div>
+                  {isSelected && <CheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">

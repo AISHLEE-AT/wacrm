@@ -106,29 +106,17 @@ export const ALL_MODULES: ModuleItem[] = [
     description: "Interactive mock exams with timed scoring"
   },
 
-  // Entertainment & Rural Commerce
-  {
-    id: "gameo",
-    href: "/gameo",
-    name: "GameO",
-    tamilName: "வினாடி வினா & விளையாட்டுகள்",
-    category: "commerce",
-    icon: Gamepad2,
-    color: "text-rose-400",
-    bgGradient: "from-rose-500/20 to-red-500/10 border-rose-500/30",
-    badge: "Daily Coins",
-    description: "Fun brain games & community leaderboards"
-  },
   {
     id: "agro",
     href: "/agro",
-    name: "AgriO",
-    tamilName: "மண்டி விலை & விவசாயம்",
+    name: "AgrO",
+    tamilName: "தமிழ்நாடு உழவர் உலகம் & வேளாண் டிவி",
     category: "commerce",
     icon: Tractor,
-    color: "text-green-400",
-    bgGradient: "from-green-500/20 to-emerald-500/10 border-green-500/30",
-    description: "Live daily Mandi crop prices & farm inputs"
+    color: "text-emerald-400",
+    bgGradient: "from-emerald-500/20 to-teal-500/10 border-emerald-500/30",
+    badge: "Agri TV & AI Hub",
+    description: "Daily farm tasks, modern crops, Agri TV & AI crop doctor"
   },
   {
     id: "dealo",
@@ -151,17 +139,6 @@ export const ALL_MODULES: ModuleItem[] = [
     color: "text-sky-400",
     bgGradient: "from-sky-500/20 to-indigo-500/10 border-sky-500/30",
     description: "Temple, heritage & vacation tour packages"
-  },
-  {
-    id: "tvo",
-    href: "/tvo",
-    name: "TvO",
-    tamilName: "உள்ளூர் நேரலை டிவி",
-    category: "commerce",
-    icon: Tv,
-    color: "text-pink-400",
-    bgGradient: "from-pink-500/20 to-rose-500/10 border-pink-500/30",
-    description: "Live local broadcasts & spiritual events"
   },
 
   // CRM & Business

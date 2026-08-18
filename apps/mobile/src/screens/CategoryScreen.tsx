@@ -83,10 +83,10 @@ const CATEGORIES: CategoryItem[] = [
   },
   {
     id: 'agro',
-    title: 'AgrO & Mandi',
-    desc: 'Live Crop Prices & Farm Advisory',
+    title: 'AgrO',
+    desc: 'தமிழ்நாடு உழவர் உலகம் & வேளாண் டிவி',
     categoryGroup: 'agri',
-    tag: '🌾 Live Rates',
+    tag: '🌾 உழவர் களம்',
     tagColor: '#10b981',
     icon: Wrench,
     iconName: 'Wrench',
@@ -148,19 +148,6 @@ const CATEGORIES: CategoryItem[] = [
     path: '/testo',
   },
   {
-    id: 'tvo',
-    title: 'TvO',
-    desc: 'Live Tamil Channels & Streams',
-    categoryGroup: 'education',
-    tag: '📺 Live TV',
-    tagColor: '#ec4899',
-    icon: MonitorPlay,
-    iconName: 'MonitorPlay',
-    color: '#ec4899',
-    bg: 'rgba(236, 72, 153, 0.15)',
-    path: '/tvo',
-  },
-  {
     id: 'touro',
     title: 'TourO',
     desc: 'Temple Trails & Village Tours',
@@ -185,19 +172,6 @@ const CATEGORIES: CategoryItem[] = [
     color: '#14b8a6',
     bg: 'rgba(20, 184, 166, 0.15)',
     path: '/moneyo',
-  },
-  {
-    id: 'gameo',
-    title: 'GameO',
-    desc: 'MapRacer & Walk-to-Earn',
-    categoryGroup: 'finance',
-    tag: '🎮 Rewards',
-    tagColor: '#a855f7',
-    icon: Gamepad2,
-    iconName: 'Gamepad2',
-    color: '#a855f7',
-    bg: 'rgba(168, 85, 247, 0.15)',
-    path: '/gameo',
   },
   {
     id: 'admin',
@@ -245,9 +219,7 @@ export default function CategoryScreen() {
       iconName: cat.iconName || 'Map',
     });
 
-    if (cat.path === '/gameo') {
-      navigation.navigate('GameOScreen');
-    } else if (cat.path === '/drivo') {
+    if (cat.path === '/drivo') {
       navigation.navigate('DriveOScreen');
     } else if (cat.path === '/rideo') {
       navigation.navigate('RideOScreen');
@@ -255,7 +227,7 @@ export default function CategoryScreen() {
       navigation.navigate('TeachOScreen');
     } else if (cat.path === '/testo') {
       navigation.navigate('TestOHubScreen');
-    } else if (cat.path === '/agro') {
+    } else if (cat.path === '/agro' || cat.path === '/tvo') {
       navigation.navigate('AgrOScreen');
     } else if (cat.path === '/rento') {
       navigation.navigate('RentOScreen');

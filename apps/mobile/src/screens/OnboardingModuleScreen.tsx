@@ -15,7 +15,6 @@ const MODULES = [
   { id: '/agro', name: 'AgrO' },
   { id: '/touro', name: 'TourO' },
   { id: '/testo', name: 'TestO' },
-  { id: '/tvo', name: 'TvO' },
   { id: '/moneyo', name: 'MoneyO' },
   { id: '/gameo', name: 'GameO' }
 ];

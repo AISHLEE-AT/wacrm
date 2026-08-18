@@ -115,21 +115,32 @@ export const AppProvider = ({ children }: any) => {
           const adminStatus = ADMIN_PHONES.includes(phone);
           const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
-          // Fetch the full profile from Supabase to sync across all devices
+          // Fetch the full profile from Supabase to sync across all devices with 2s safety timeout
           try {
             if (accessToken) {
-              await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken || '',
-              });
+              await Promise.race([
+                supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken || '',
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+              ]).catch(() => {});
             }
-            const { data: prof } = await supabase
+
+            const fetchProfilePromise = supabase
               .from('profiles')
               .select('*')
               .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle();
+
+            const profileRes: any = await Promise.race([
+              fetchProfilePromise,
+              new Promise((resolve) => setTimeout(() => resolve({ data: null, error: null }), 2000))
+            ]).catch(() => ({ data: null, error: null }));
+
+            const prof = profileRes?.data;
 
             let serverSyncTime = 0;
             if (prof) {
@@ -445,18 +456,21 @@ export const AppProvider = ({ children }: any) => {
             setUser(prev => {
               if (!prev) return null;
               const nextName = updated.full_name || updated.name || prev.name;
+              const nextCategory = updated.main_category || updated.category || prev.category;
               const nextUpi = updated.upi_id !== undefined ? updated.upi_id : prev.upiId;
               const nextAvatar = updated.avatar_url || prev.avatarUrl;
               const nextLocation = updated.location || prev.location;
               
               if (nextUpi) SecureStore.setItemAsync('user-upi-id', nextUpi);
               if (nextName) SecureStore.setItemAsync('user-name', nextName);
+              if (nextCategory) SecureStore.setItemAsync('user-category', nextCategory);
               if (nextAvatar) SecureStore.setItemAsync('user-avatar-url', nextAvatar);
               if (nextLocation) SecureStore.setItemAsync('user-location', nextLocation);
               
               return {
                 ...prev,
                 name: nextName,
+                category: nextCategory,
                 upiId: nextUpi || '',
                 avatarUrl: nextAvatar || '',
                 location: nextLocation || '',
@@ -512,6 +526,9 @@ export const AppProvider = ({ children }: any) => {
     if (updates.name !== undefined) {
       await SecureStore.setItemAsync('user-name', updates.name || '');
     }
+    if (updates.category !== undefined) {
+      await SecureStore.setItemAsync('user-category', updates.category || '');
+    }
     if (updates.avatarUrl !== undefined) {
       await SecureStore.setItemAsync('user-avatar-url', updates.avatarUrl || '');
     }
@@ -525,6 +542,7 @@ export const AppProvider = ({ children }: any) => {
         const dbPayload: any = {};
         if (updates.upiId !== undefined) dbPayload.upi_id = updates.upiId;
         if (updates.name !== undefined) dbPayload.full_name = updates.name;
+        if (updates.category !== undefined) dbPayload.main_category = updates.category;
         if (updates.location !== undefined) dbPayload.location = updates.location;
         if (updates.avatarUrl !== undefined) dbPayload.avatar_url = updates.avatarUrl;
 

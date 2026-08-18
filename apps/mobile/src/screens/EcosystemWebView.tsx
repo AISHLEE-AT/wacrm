@@ -192,7 +192,6 @@ export default function EcosystemWebView({ route, navigation }: Props) {
   };
 
   const MODULE_COLORS: Record<string, string> = {
-    TvO:    '#ec4899',
     TestO:  '#8b5cf6',
     TeachO: '#f59e0b',
     MoneyO: '#14b8a6',
@@ -201,7 +200,6 @@ export default function EcosystemWebView({ route, navigation }: Props) {
     DealO:  '#f97316',
     TourO:  '#06b6d4',
     RideO:  '#10b981',
-    GameO:  '#8b5cf6',
   };
   const accentColor = MODULE_COLORS[moduleName] ?? '#34d399';
   const insets = useSafeAreaInsets();

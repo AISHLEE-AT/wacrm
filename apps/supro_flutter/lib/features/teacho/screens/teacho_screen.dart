@@ -317,7 +317,7 @@ class _TeachoScreenState extends State<TeachoScreen> {
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: _categories.length,
-                              separatorBuilder: (_, __) => const SizedBox(width: 8),
+                              separatorBuilder: (_, _) => const SizedBox(width: 8),
                               itemBuilder: (context, index) {
                                 final cat = _categories[index];
                                 final isSelected = _selectedCategory == cat['id'];
@@ -669,7 +669,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     }
   }
 
-  void _openKindleBook(String topicTitle, String initialTab) {
+  void _openCoursePlayer(String topicTitle, String initialTab) {
     int selectedTab = initialTab == 'tamil'
         ? 1
         : initialTab == 'vsaq'
@@ -715,7 +715,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('KINDLE BOOK EDITION • 6 MIN READ', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                          const Text('COURSE PLAYER EDITION • 6 MIN READ', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
                           Text(topicTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -736,12 +736,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   children: [
-                    _kindleTabBtn('📖 Theory', 0, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
-                    _kindleTabBtn('🗣️ தமிழ் விளக்கம்', 1, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
-                    _kindleTabBtn('⚡ 1-Line Q&A', 2, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
-                    _kindleTabBtn('📝 2-Mark & 5-Mark', 3, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
-                    _kindleTabBtn('🎯 5 MCQs', 4, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
-                    _kindleTabBtn('📐 Formulas', 5, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _playerTabBtn('📖 Theory', 0, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _playerTabBtn('🗣️ தமிழ் விளக்கம்', 1, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _playerTabBtn('⚡ 1-Line Q&A', 2, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _playerTabBtn('📝 2-Mark & 5-Mark', 3, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _playerTabBtn('🎯 5 MCQs', 4, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _playerTabBtn('📐 Formulas', 5, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
                   ],
                 ),
               ),
@@ -757,7 +757,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(color: const Color(0x1A10B981), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0x3310B981))),
-                              child: Text('In this comprehensive Kindle lesson on "$topicTitle", we explore fundamental principles, mathematical formulations, and high-yield examination problem-solving techniques.',
+                              child: Text('In this interactive Course Player lesson on "$topicTitle", we explore fundamental principles, mathematical formulations, and high-yield examination problem-solving techniques.',
                                   style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13, height: 1.5)),
                             ),
                             const SizedBox(height: 14),
@@ -853,7 +853,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 
-  Widget _kindleTabBtn(String label, int index, int current, Function(int) onTap) {
+  Widget _playerTabBtn(String label, int index, int current, Function(int) onTap) {
     final active = index == current;
     return GestureDetector(
       onTap: () => onTap(index),
@@ -1023,7 +1023,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   void _askAi(String promptType) {
     final title = widget.course['title_name'] ?? 'Topic';
-    _openKindleBook(title, promptType);
+    _openCoursePlayer(title, promptType);
   }
 
   void _postForumQuestion() async {
@@ -1706,14 +1706,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () => _openKindleBook(uTitle, 'theory'),
+                        onPressed: () => _openCoursePlayer(uTitle, 'theory'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
                           foregroundColor: const Color(0xFF0A0F1E),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           minimumSize: const Size(60, 30),
                         ),
-                        child: const Text('📖 Book', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: const Text('📱 Player', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -1744,16 +1744,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                             Row(
                               children: [
                                 InkWell(
-                                  onTap: () => _openKindleBook(cTitle, 'theory'),
+                                  onTap: () => _openCoursePlayer(cTitle, 'theory'),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(6)),
-                                    child: const Text('Kindle', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold)),
+                                    child: const Text('Player', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 InkWell(
-                                  onTap: () => _openKindleBook(cTitle, 'tamil'),
+                                  onTap: () => _openCoursePlayer(cTitle, 'tamil'),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(color: const Color(0x2610B981), borderRadius: BorderRadius.circular(6)),
@@ -1767,7 +1767,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         if (micros.isNotEmpty) ...[
                           const SizedBox(height: 8),
                           ...micros.map((m) => InkWell(
-                            onTap: () => _openKindleBook(m.toString(), 'theory'),
+                            onTap: () => _openCoursePlayer(m.toString(), 'theory'),
                             child: Container(
                               margin: const EdgeInsets.only(top: 4),
                               padding: const EdgeInsets.all(8),
@@ -1865,14 +1865,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         child: Text(cTitle, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                       ElevatedButton(
-                        onPressed: () => _openKindleBook(cTitle, 'theory'),
+                        onPressed: () => _openCoursePlayer(cTitle, 'theory'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
                           foregroundColor: const Color(0xFF0A0F1E),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           minimumSize: const Size(60, 30),
                         ),
-                        child: const Text('Kindle PDF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                        child: const Text('Player PDF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -1880,11 +1880,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               }),
               const SizedBox(height: 10),
             ],
-          );
-        }),
-      ],
-    );
-  }
           );
         }),
       ],

@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   listContainer: {
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   scrollHeader: {
     paddingHorizontal: 16,

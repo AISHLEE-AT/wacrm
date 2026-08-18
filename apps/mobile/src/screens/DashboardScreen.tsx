@@ -11,7 +11,7 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/LocationService';
 import { NotificationService } from '../services/NotificationService';
-import { MapPin, Bell, LogOut, LayoutGrid } from 'lucide-react-native';
+import { LogOut } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { LocationContext } from '../context/LocationContext';
 import { supabase } from '../lib/supabase';
@@ -27,6 +27,7 @@ import { DriverStatusCard } from '../components/profile/DriverStatusCard';
 import { SecuritySection } from '../components/profile/SecuritySection';
 import { AppearanceSection } from '../components/profile/AppearanceSection';
 import { SetupChecklist } from '../components/profile/SetupChecklist';
+import { UserCategoryCard } from '../components/profile/UserCategoryCard';
 import { SupportCard } from '../components/profile/SupportCard';
 
 const endpoints = {
@@ -51,7 +52,6 @@ export default function DashboardScreen({ navigation }: any) {
   const [dbProfile, setDbProfile] = useState<any>(null);
   const [driverProfile, setDriverProfile] = useState<any>(null);
   const [isDriver, setIsDriver] = useState(false);
-  const [isTracking, setIsTracking] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
@@ -168,31 +168,6 @@ export default function DashboardScreen({ navigation }: any) {
     }
   }, []);
 
-  // ─── GPS Tracking ───
-  const toggleTracking = async () => {
-    if (isTracking) {
-      await LocationService.stopTracking();
-      setIsTracking(false);
-      Alert.alert('Tracking Stopped', 'GPS background tracking paused.');
-    } else {
-      const started = await LocationService.requestPermissionsAndStart();
-      if (started) {
-        setIsTracking(true);
-        Alert.alert('Tracking Started', 'Your location is now updating in the background.');
-      }
-    }
-  };
-
-  // ─── Push Notification Test ───
-  const handleTestNotification = async () => {
-    if (pushToken) {
-      await NotificationService.sendTestNotification(pushToken);
-      Alert.alert('Sent!', 'Check your notification center.');
-    } else {
-      Alert.alert('No Token', 'Push notifications are not configured properly on this device.');
-    }
-  };
-
   // ─── Logout ───
   const handleLogout = async () => {
     await LocationService.stopTracking();
@@ -250,44 +225,13 @@ export default function DashboardScreen({ navigation }: any) {
         pushToken={pushToken}
       />
 
-      {/* ──── 3.5 App Navigation Settings ──── */}
-      <View style={styles.sectionContainer}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>App Navigation</Text>
-
-        <TouchableOpacity
-          style={[styles.deviceButton, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('CategoryScreen')}
-          activeOpacity={0.8}
-        >
-          <LayoutGrid color="#fff" size={20} style={{ marginRight: 8 }} />
-          <Text style={styles.buttonText}>Open Full Module Grid (Setup)</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ──── 4. Device Settings (GPS + Push Notifications) ──── */}
-      <View style={styles.sectionContainer}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Device Settings</Text>
-
-        <TouchableOpacity
-          style={[styles.deviceButton, styles.trackButton, isTracking && styles.trackButtonActive]}
-          onPress={toggleTracking}
-          activeOpacity={0.8}
-        >
-          <MapPin color="#fff" size={20} style={{ marginRight: 8 }} />
-          <Text style={styles.buttonText}>
-            {isTracking ? 'Stop GPS Tracking' : 'Start Background GPS Tracking'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.deviceButton, styles.notifyButton]}
-          onPress={handleTestNotification}
-          activeOpacity={0.8}
-        >
-          <Bell color="#fff" size={20} style={{ marginRight: 8 }} />
-          <Text style={styles.buttonText}>Test Push Notification</Text>
-        </TouchableOpacity>
-      </View>
+      {/* ──── 3.5 User Type & Module Category Selection ──── */}
+      <UserCategoryCard
+        profile={dbProfile}
+        phone={phone || ''}
+        navigation={navigation}
+        onProfileUpdate={handleProfileUpdate}
+      />
 
       {/* ──── 5. Security (PIN Change) ──── */}
       <SecuritySection phone={phone || ''} />
@@ -358,38 +302,6 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: fontSize.md,
     fontWeight: '600',
-  },
-
-  // ─── Device Settings Section ───
-  sectionContainer: {
-    marginBottom: spacing.xxxl,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: 'bold',
-    marginBottom: spacing.md,
-  },
-  deviceButton: {
-    flexDirection: 'row',
-    padding: spacing.lg,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  trackButton: {
-    backgroundColor: colors.accent,
-  },
-  trackButtonActive: {
-    backgroundColor: colors.amber,
-  },
-  notifyButton: {
-    backgroundColor: colors.purple,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: fontSize.md + 1,
-    fontWeight: 'bold',
   },
 
   // ─── Sign Out ───

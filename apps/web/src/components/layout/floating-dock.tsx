@@ -25,7 +25,7 @@ const PRIMARY_DOCK_ITEMS = [
   { href: "/teacho", label: "TeachO", tamil: "கல்வி", icon: GraduationCap, color: "text-indigo-400" },
   { href: "/testo", label: "TestO", tamil: "தேர்வு", icon: FileCheck, color: "text-purple-400" },
   { href: "/inbox", label: "CRM", tamil: "இன்பாக்ஸ்", icon: MessageSquare, color: "text-emerald-400" },
-  { href: "/gameo", label: "GameO", tamil: "விளையாட்டு", icon: Gamepad2, color: "text-rose-400" },
+  { href: "/agro", label: "AgrO", tamil: "உழவர்", icon: Tractor, color: "text-emerald-400" },
   { href: "/profile", label: "Profile", tamil: "சுயவிவரம்", icon: Settings, color: "text-zinc-300" },
 ];
 

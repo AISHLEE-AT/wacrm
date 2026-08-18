@@ -37,6 +37,7 @@ import {
   Tv,
 } from 'lucide-react';
 import { generateKindleBook, KindleTopicBook } from '@/lib/kindleContentEngine';
+import { generateKindleBookAI } from '@/lib/kindleAIEngine';
 import { getCourseSyllabus, SyllabusUnit } from '@/lib/courseCatalogMaster';
 
 const CATEGORIES = [
@@ -241,18 +242,42 @@ export default function TeachoWebPage() {
   const [kindleFontSize, setKindleFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>('base');
   const [userMcqAnswers, setUserMcqAnswers] = useState<Record<number, number>>({});
   const [revealedVsaq, setRevealedVsaq] = useState<Record<number, boolean>>({});
+  const [kindleLoading, setKindleLoading] = useState(false);
+  const [kindleSource, setKindleSource] = useState<'ai' | 'cache' | 'session-cache' | 'fallback'>('fallback');
 
-  const openKindleBook = (
+  const openKindleBook = async (
     topic: string,
     initialTab: 'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas' = 'theory'
   ) => {
     const courseTitle = selectedCourse?.title_name || 'Masterclass Course';
     const cat = selectedCourse?.category || '';
-    const book = generateKindleBook(topic, courseTitle, cat);
-    setKindleBook(book);
+
+    // Reset state immediately
     setKindleTab(initialTab);
     setUserMcqAnswers({});
     setRevealedVsaq({});
+    setKindleLoading(true);
+    setKindleBook(null);
+
+    try {
+      // Try AI-powered generation first
+      const result = await generateKindleBookAI({
+        topicTitle: topic,
+        courseTitle,
+        category: cat,
+        board: cat === 'school' ? 'TN State Board' : 'General',
+        timeoutMs: 15000,
+      });
+      setKindleBook(result.book);
+      setKindleSource(result.source);
+    } catch {
+      // Ultimate fallback to keyword engine
+      const book = generateKindleBook(topic, courseTitle, cat);
+      setKindleBook(book);
+      setKindleSource('fallback');
+    } finally {
+      setKindleLoading(false);
+    }
   };
 
   const printKindleBook = (book: KindleTopicBook) => {
@@ -414,6 +439,9 @@ export default function TeachoWebPage() {
 
   const courseUnits: SyllabusUnit[] = useMemo(() => {
     if (!selectedCourse) return [];
+    if (selectedCourse.metadata?.syllabus && Array.isArray(selectedCourse.metadata.syllabus) && selectedCourse.metadata.syllabus.length > 0) {
+      return selectedCourse.metadata.syllabus;
+    }
     return getCourseSyllabus(selectedCourse.title_name, selectedCourse.category);
   }, [selectedCourse]);
 
@@ -868,6 +896,29 @@ export default function TeachoWebPage() {
         </div>
       )}
 
+      {/* 🔄 Kindle AI Generation Loading Overlay */}
+      {kindleLoading && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex flex-col items-center justify-center gap-6">
+          <div className="relative">
+            <div className="w-20 h-20 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <BookMarked className="w-8 h-8 text-emerald-400 animate-pulse" />
+            </div>
+          </div>
+          <div className="text-center">
+            <h3 className="text-lg font-bold text-white">🤖 AI Generating Unique Content...</h3>
+            <p className="text-sm text-slate-400 mt-2 max-w-sm">
+              Creating deeply specific study material for this micro-topic using Gemini AI
+            </p>
+            <div className="mt-4 flex items-center gap-2 justify-center">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 📖 Kindle-Style Micro-Topic Interactive Book Player Modal */}
       {kindleBook && (
         <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6">
@@ -899,6 +950,14 @@ export default function TeachoWebPage() {
                     <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
                       Kindle Book Edition
                     </span>
+                    {kindleSource !== 'fallback' && (
+                      <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded border ${
+                        kindleSource === 'ai' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+                        : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                      }`}>
+                        {kindleSource === 'ai' ? '🤖 AI Generated' : '⚡ Cached'}
+                      </span>
+                    )}
                     <span className="text-[11px] opacity-70">⏱️ {kindleBook.readingTime}</span>
                   </div>
                   <h3 className="text-base font-bold truncate max-w-md mt-0.5">{kindleBook.topicTitle}</h3>

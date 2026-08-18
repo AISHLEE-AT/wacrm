@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   BookOpen, MonitorPlay, Wallet, Map,
   MessageSquare, LayoutGrid, User, Bot,
@@ -19,9 +20,6 @@ import EcosystemWebView from './src/screens/EcosystemWebView';
 import DriveOScreen     from './src/screens/DriveOScreen';
 import RideOScreen      from './src/screens/RideOScreen';
 import AishleeToolsScreen from './src/screens/AishleeToolsScreen';
-import GameOScreen      from './src/screens/GameOScreen';
-import GamingHubScreen  from './src/screens/GamingHubScreen';
-import RewardsScreen    from './src/screens/RewardsScreen';
 import TeachOScreen     from './src/screens/TeachOScreen';
 import TeachOCourseScreen from './src/screens/TeachOCourseScreen';
 import TestOHubScreen   from './src/screens/TestOHubScreen';
@@ -108,115 +106,100 @@ function AdminTabs() {
 }
 
 // ─── User Bottom Tabs ──────────────────────────────────────────────────────
-// Tailors Tab 2 dynamically based on user category (Driver -> DriveO, Student -> TeachO, Farmer -> AgrO, Shopper -> DealO, etc.)
+// Dynamically tailors bottom tabs based on user category (e.g. Driver -> DriveO + RideO, Farmer -> AgrO + RentO, Student -> TeachO + TestO, etc.)
 function UserTabs() {
   const { user, pinnedModules, themeVer } = useContext(AppContext);
-  const category = (user?.category || user?.role || '').toLowerCase();
-  
+  const category = (user?.category || user?.role || 'Traveller').toLowerCase();
+
   const getModuleConfig = (id: string) => {
     switch (id) {
-      case 'driveo': return { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
-      case 'rideo': return { name: 'RideO', path: '/rideo', label: 'RideO', icon: Car, nativeComponent: RideOScreen };
-      case 'teacho': return { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
-      case 'agro': return { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
-      case 'dealo': return { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag };
-      case 'touro': return { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
-      case 'moneyo': return { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
-      case 'gameo': return { name: 'GameO', path: '/gameo', label: 'GameO', icon: Gamepad2, nativeComponent: GameOScreen }; 
-      case 'rento': return { name: 'RentO', path: '/rento', label: 'RentO', icon: Wrench, nativeComponent: RentOScreen };
-      case 'testo': return { name: 'TestO', path: '/testo', label: 'TestO', icon: Award, nativeComponent: TestOHubScreen };
-      case 'tvo': return { name: 'TvO', path: '/tvo', label: 'TvO', icon: MonitorPlay };
+      case 'driveo': return { name: 'DriveOTab', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
+      case 'rideo': return { name: 'RideOTab', path: '/rideo', label: 'RideO', icon: Car, nativeComponent: RideOScreen };
+      case 'teacho': return { name: 'TeachOTab', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
+      case 'agro': return { name: 'AgrOTab', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
+      case 'dealo': return { name: 'DealOTab', path: '/dealo', label: 'DealO', icon: ShoppingBag, nativeComponent: DealOScreen };
+      case 'touro': return { name: 'TourOTab', path: '/touro', label: 'TourO', icon: Compass };
+      case 'moneyo': return { name: 'MoneyOTab', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+      case 'rento': return { name: 'RentOTab', path: '/rento', label: 'RentO', icon: Wrench, nativeComponent: RentOScreen };
+      case 'testo': return { name: 'TestOTab', path: '/testo', label: 'TestO', icon: Award, nativeComponent: TestOHubScreen };
       default: return null;
     }
   };
 
-  if (pinnedModules && pinnedModules.length > 0) {
-    const mod1 = getModuleConfig(pinnedModules[0]);
-    const mod2 = pinnedModules.length > 1 ? getModuleConfig(pinnedModules[1]) : null;
+  const renderModScreen = (mod: any) => {
+    if (!mod) return null;
+    const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(mod.path);
+    const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${mod.path}` : undefined;
 
-    const renderMod = (mod: any) => {
-      if (!mod) return null;
-      const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(mod.path);
-      const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${mod.path}` : undefined;
-
-      if (mod.nativeComponent) {
-        return <Tab.Screen key={mod.name} name={mod.name} component={mod.nativeComponent} options={tabOpts(mod.label, mod.icon)} />;
-      }
+    if (mod.nativeComponent) {
       return (
-        <Tab.Screen key={mod.name} name={mod.name} component={EcosystemWebView}
-          initialParams={{ path: mod.path, moduleName: mod.label, ...(aishleeUrl ? { url: aishleeUrl } : {}) }}
+        <Tab.Screen
+          key={mod.name}
+          name={mod.name}
+          component={mod.nativeComponent}
           options={tabOpts(mod.label, mod.icon)}
         />
       );
-    };
-
+    }
     return (
-      <Tab.Navigator screenOptions={{ headerShown: false, tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border, borderTopWidth: 1 }, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.textSecondary }}>
-        {renderMod(mod1)}
-        {renderMod(mod2)}
-        <Tab.Screen name="AIBot" component={AishleeToolsScreen} options={tabOpts('AI Hub', Bot)} />
-        <Tab.Screen name="DashboardTab" component={DashboardScreen} options={tabOpts('Profile', User)} />
-      </Tab.Navigator>
+      <Tab.Screen
+        key={mod.name}
+        name={mod.name}
+        component={EcosystemWebView}
+        initialParams={{
+          path: mod.path,
+          moduleName: mod.label,
+          ...(aishleeUrl ? { url: aishleeUrl } : {}),
+        }}
+        options={tabOpts(mod.label, mod.icon)}
+      />
     );
-  }
-  const defaultModulePath = user?.defaultModule;
-
-  let primaryModule: {
-    name: string;
-    path: string;
-    label: string;
-    icon: any;
-    nativeComponent?: any;
-  } = {
-    name: 'PrimaryModule',
-    path: '/rideo',
-    label: 'RideO',
-    icon: Map,
-    nativeComponent: RideOScreen,
   };
 
-  const selectedPath = user?.selectedModule || defaultModulePath;
+  // Determine category-specific primary and related module
+  let primaryModId = 'rideo';
+  let relatedModId = 'touro';
 
-  // First try to match selectedModule / defaultModule if available
-  if (selectedPath === '/drivo') {
-    primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
-  } else if (selectedPath === '/teacho') {
-    primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
-  } else if (selectedPath === '/agro') {
-    primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
-  } else if (selectedPath === '/dealo') {
-    primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag, nativeComponent: DealOScreen };
-  } else if (selectedPath === '/touro') {
-    primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
-  } else if (selectedPath === '/moneyo') {
-    primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
-  } else if (selectedPath === '/gameo') {
-    primaryModule = { name: 'GameO', path: '/gameo', label: 'GameO', icon: Map, nativeComponent: GameOScreen }; 
-  } else if (selectedPath === '/rento') {
-    primaryModule = { name: 'RentO', path: '/rento', label: 'RentO', icon: Wrench, nativeComponent: RentOScreen };
-  } else if (selectedPath === '/testo') {
-    primaryModule = { name: 'TestO', path: '/testo', label: 'TestO', icon: GraduationCap, nativeComponent: TestOHubScreen }; // fallback icon
-  } else if (selectedPath === '/tvo') {
-    primaryModule = { name: 'TvO', path: '/tvo', label: 'TvO', icon: Tv }; 
+  if (category.includes('driver')) {
+    primaryModId = 'driveo';
+    relatedModId = 'rideo';
+  } else if (category.includes('partner')) {
+    primaryModId = 'dealo';
+    relatedModId = 'rento';
+  } else if (category.includes('farmer') || category.includes('agri')) {
+    primaryModId = 'agro';
+    relatedModId = 'rento';
+  } else if (category.includes('student') || category.includes('learner') || category.includes('candidate')) {
+    primaryModId = 'teacho';
+    relatedModId = 'testo';
+  } else if (category.includes('teacher') || category.includes('tutor')) {
+    primaryModId = 'teacho';
+    relatedModId = 'testo';
+  } else if (category.includes('shopper') || category.includes('merchant')) {
+    primaryModId = 'dealo';
+    relatedModId = 'moneyo';
+  } else if (category.includes('financier')) {
+    primaryModId = 'moneyo';
+    relatedModId = 'dealo';
+  } else if (category.includes('tourist')) {
+    primaryModId = 'touro';
+    relatedModId = 'rideo';
   } else {
-    // Fallback to category-based logic
-    if (category.includes('driver')) {
-      primaryModule = { name: 'DriveO', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
-    } else if (category.includes('student') || category.includes('teacher') || category.includes('jobseeker')) {
-      primaryModule = { name: 'TeachO', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
-    } else if (category.includes('farmer') || category.includes('agri')) {
-      primaryModule = { name: 'AgrO', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
-    } else if (category.includes('shopper') || category.includes('merchant') || category.includes('trader')) {
-      primaryModule = { name: 'DealO', path: '/dealo', label: 'DealO', icon: ShoppingBag, nativeComponent: DealOScreen };
-    } else if (category.includes('tourist')) {
-      primaryModule = { name: 'TourO', path: '/touro', label: 'TourO', icon: Compass };
-    } else if (category.includes('financier')) {
-      primaryModule = { name: 'MoneyO', path: '/moneyo', label: 'MoneyO', icon: Wallet };
+    // Default Traveller
+    primaryModId = 'rideo';
+    relatedModId = 'touro';
+  }
+
+  // If user has pinned specific modules, respect them
+  if (pinnedModules && pinnedModules.length > 0) {
+    primaryModId = pinnedModules[0];
+    if (pinnedModules.length > 1) {
+      relatedModId = pinnedModules[1];
     }
   }
 
-  const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(primaryModule.path);
-  const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${primaryModule.path}` : undefined;
+  const primaryMod = getModuleConfig(primaryModId);
+  const relatedMod = getModuleConfig(relatedModId);
 
   return (
     <Tab.Navigator
@@ -231,41 +214,20 @@ function UserTabs() {
         tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
-      {/* 1. Grid — always first */}
-      <Tab.Screen
-        name="Category"
-        component={CategoryScreen}
-        options={tabOpts('Grid', LayoutGrid)}
-      />
+      {/* 1. Primary Module for Category */}
+      {renderModScreen(primaryMod)}
 
-      {/* 2. User's Tailored Primary Module */}
-      {primaryModule.nativeComponent ? (
-        <Tab.Screen
-          name={primaryModule.name}
-          component={primaryModule.nativeComponent}
-          options={tabOpts(primaryModule.label, primaryModule.icon)}
-        />
-      ) : (
-        <Tab.Screen
-          name={primaryModule.name}
-          component={EcosystemWebView}
-          initialParams={{ 
-            path: primaryModule.path, 
-            moduleName: primaryModule.label,
-            ...(aishleeUrl ? { url: aishleeUrl } : {})
-          }}
-          options={tabOpts(primaryModule.label, primaryModule.icon)}
-        />
-      )}
+      {/* 2. Related Module for Category */}
+      {renderModScreen(relatedMod)}
 
-      {/* 3. AI Assistant */}
+      {/* 3. AI Assistant Tools Hub */}
       <Tab.Screen
         name="AIBot"
         component={AishleeToolsScreen}
         options={tabOpts('AI Hub', Bot)}
       />
 
-      {/* 4. Profile */}
+      {/* 4. Profile — user settings & category selector */}
       <Tab.Screen
         name="DashboardTab"
         component={DashboardScreen}
@@ -313,9 +275,6 @@ function RootNavigator() {
       />
       <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
       <Stack.Screen name="RideOScreen" component={RideOScreen} />
-      <Stack.Screen name="GameOScreen" component={GameOScreen} />
-      <Stack.Screen name="GamingHubScreen" component={GamingHubScreen} />
-      <Stack.Screen name="RewardsScreen" component={RewardsScreen} />
       <Stack.Screen name="TeachOScreen" component={TeachOScreen} />
       <Stack.Screen name="TeachOCourseScreen" component={TeachOCourseScreen} />
       <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />
@@ -359,12 +318,10 @@ function NavigationWrapper() {
              let modulePath = null;
              if (currentRouteName === 'ModuleView' && currentRoute.params?.path) {
                 modulePath = currentRoute.params.path;
-             } else if (currentRouteName === 'DriveO' || currentRouteName === 'TeachO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO' || currentRouteName === 'GameO') {
+             } else if (currentRouteName === 'DriveO' || currentRouteName === 'TeachO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO') {
                 // If they navigated via Bottom Tabs directly
                 const routeParams = currentRoute.params as any;
                 if (routeParams?.path) modulePath = routeParams.path;
-             } else if (currentRouteName === 'GameOScreen') {
-                modulePath = '/gameo';
              } else if (currentRouteName === 'AgrOScreen') {
                 modulePath = '/agro';
              } else if (currentRouteName === 'TeachOScreen') {
@@ -389,10 +346,12 @@ function NavigationWrapper() {
 // ─── App root ──────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <AppProvider>
-      <LocationProvider>
-        <NavigationWrapper />
-      </LocationProvider>
-    </AppProvider>
+    <SafeAreaProvider>
+      <AppProvider>
+        <LocationProvider>
+          <NavigationWrapper />
+        </LocationProvider>
+      </AppProvider>
+    </SafeAreaProvider>
   );
 }

@@ -178,17 +178,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const mobilityItems: NavItem[] = [
     { href: "/rideo", label: "RideO (பயணி / Taxi)", icon: Car },
     { href: "/rento", label: "RentO (விவசாயக் கருவிகள் வாடகை)", icon: Tractor },
-    { href: "/agro", label: "AgrO (உழவர் சந்தை & விதைகள்)", icon: Store },
+    { href: "/agro", label: "AgrO (தமிழ்நாடு உழவர் உலகம் & வேளாண் டிவி)", icon: Tractor },
     { href: "/dealo", label: "DealO (வியாபாரம் / Deals)", icon: ShoppingBag },
     { href: "/touro", label: "TourO (ஆன்மீகம் & சுற்றுலா)", icon: Compass },
     { href: "/teacho", label: "TeachO (கல்வி & திறன்)", icon: GraduationCap },
     { href: "/testo", label: "TestO (பயிற்சி & தேர்வு)", icon: FileCheck },
-    { href: "/tvo", label: "TvO (தமிழ் டிவி & நேரலை)", icon: Tv },
     { href: "/moneyo", label: "MoneyO (பணம் & பரிசுகள்)", icon: Zap },
     { href: "/tasko", label: "TaskO (பணிகள் & படிவம்)", icon: Globe },
     { href: "/tradeo", label: "TradeO (மொத்த வர்த்தகம்)", icon: Share2 },
     { href: "/toolso", label: "ToolsO (செயற்கை நுண்ணறிவு & கருவிகள்)", icon: Bot },
-    { href: "/gameo", label: "GameO (விளையாட்டு & ஓட்டம்)", icon: Gamepad2 },
     ...(isAdmin || isRegisteredDriver
       ? [{ href: "/drivo", label: "DriveO (ஓட்டுநர் சேவை)", icon: Gauge }]
       : []),
