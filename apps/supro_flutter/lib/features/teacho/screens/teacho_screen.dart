@@ -1139,7 +1139,199 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 
+  List<Map<String, dynamic>> _getCourseUnits(String title) {
+    final cleanTitle = title.toLowerCase();
+    final is10th = cleanTitle.contains('10th') || cleanTitle.contains('sslc') || cleanTitle.contains('samacheer');
+    final isNeet = cleanTitle.contains('neet') || cleanTitle.contains('jee');
+    final isTnpsc = cleanTitle.contains('tnpsc') || cleanTitle.contains('group');
+
+    if (is10th) {
+      return [
+        {
+          'subject': 'தமிழ் (Tamil)',
+          'unit': 'இயல் 1',
+          'title': 'மொழி: அன்னை மொழியே & தமிழ்ச்சொல் வளம்',
+          'chapters': [
+            {
+              'title': 'அன்னை மொழியே (செய்யுள்)',
+              'tamil': 'பாவலரேறு பெருஞ்சித்திரனார்',
+              'micros': ['கணிச்சாறு பாடல் நயம்', 'தமிழ் தொன்மை', 'எட்டுக் கொத்து & பத்துப்பாட்டு நயம்']
+            },
+            {
+              'title': 'தமிழ்ச்சொல் வளம் (உரைநடை)',
+              'tamil': 'தேவநேயப் பாவாணர்',
+              'micros': ['அடிவகை & கிளைப் பிரிவுகள்', 'இலை, கொழுந்து வகைகள்', 'பிஞ்சு & குலை வகைகள்']
+            },
+            {
+              'title': 'எழுத்து, சொல் இலக்கணம்',
+              'tamil': 'கற்கண்டு',
+              'micros': ['உயிரளபெடை & ஒற்றளபெடை', 'தனிமொழி, தொடர்மொழி, பொதுமொழி', 'தொழிற்பெயர் வகைகள்']
+            }
+          ]
+        },
+        {
+          'subject': 'English',
+          'unit': 'Unit 1',
+          'title': 'His First Flight | Poem: Life | Active & Passive Voice',
+          'chapters': [
+            {
+              'title': 'Prose: His First Flight',
+              'tamil': 'முதல் பறத்தல் - Liam O’Flaherty',
+              'micros': ['Young Seagull Flight Ledge', 'Parental Motivation & Fish bait', 'Overcoming Fear']
+            },
+            {
+              'title': 'Poem: Life & Active/Passive Voice',
+              'tamil': 'Henry Van Dyke & Grammar Rules',
+              'micros': ['Rhyme Scheme & Figures of Speech', 'Active to Passive Conversion', 'Modal Verbs in Passive']
+            }
+          ]
+        },
+        {
+          'subject': 'Mathematics (கணிதம்)',
+          'unit': 'Unit 1 & 2',
+          'title': 'Relations, Functions, Numbers & Sequences',
+          'chapters': [
+            {
+              'title': 'Relations & Functions (உறவுகளும் சார்புகளும்)',
+              'tamil': 'கார்டீசியன் பெருக்கல்',
+              'micros': ['Cartesian Product n(AxB)=n(A)n(B)', 'Representation of Functions', 'Types of Functions (One-one, Onto)']
+            },
+            {
+              'title': 'Numbers & Sequences (எண்களும் தொடர்வரிசைகளும்)',
+              'tamil': 'யூக்ளிடின் வகுத்தல் முறை & கூட்டுத்தொடர்',
+              'micros': ['Euclid Division Lemma a=bq+r', 'AP nth Term tn=a+(n-1)d', 'GP Sum & Special Series']
+            }
+          ]
+        },
+        {
+          'subject': 'Science (அறிவியல்)',
+          'unit': 'Unit 1 & 2',
+          'title': 'Laws of Motion, Optics, Atoms & Molecules',
+          'chapters': [
+            {
+              'title': 'Laws of Motion (இயக்க விதிகள்)',
+              'tamil': 'நியூட்டனின் விதிகள் & உந்தம்',
+              'micros': ['Inertia Types & Momentum p=mv', 'Newton II Law F=ma', 'Principle of Conservation of Momentum']
+            },
+            {
+              'title': 'Optics & Human Eye (ஒளியியல்)',
+              'tamil': 'ஒளிவிலகல் & லென்ஸ்கள்',
+              'micros': ['Refraction Laws & Snell Law', 'Lens Formula 1/f = 1/v - 1/u', 'Myopia, Hypermetropia & Correction']
+            }
+          ]
+        },
+        {
+          'subject': 'Social Science (சமூக அறிவியல்)',
+          'unit': 'Unit 1 & 2',
+          'title': 'World War Era, TN Freedom Struggle & Constitution',
+          'chapters': [
+            {
+              'title': 'WWI & Freedom Struggle in Tamil Nadu',
+              'tamil': 'சுதேசிக் கப்பல் & வேதாரண்யம் உப்பு சத்தியாகிரகம்',
+              'micros': ['VOC Swadeshi Steam Navigation', 'Rajaji Vedaranyam Salt March', 'Non-Cooperation Movement in TN']
+            },
+            {
+              'title': 'Indian Constitution & Economic Development',
+              'tamil': 'இந்திய அரசியலமைப்பு & உரிமைகள்',
+              'micros': ['Fundamental Rights (Articles 12-35)', 'Directive Principles of State Policy', 'Gross Domestic Product (GDP)']
+            }
+          ]
+        }
+      ];
+    }
+
+    if (isNeet) {
+      return [
+        {
+          'subject': 'NEET Physics',
+          'unit': 'Unit 1: Mechanics',
+          'title': 'Kinematics, Newton’s Laws & Work-Energy',
+          'chapters': [
+            {
+              'title': 'Projectile Motion & Vectors',
+              'tamil': 'எறிபொருள் இயக்கம்',
+              'micros': ['Trajectory Equation y = x tanθ - gx^2/2u^2cos^2θ', 'Maximum Range at 45°', 'Relative Velocity in 2D']
+            },
+            {
+              'title': 'Rotational Motion & Moment of Inertia',
+              'tamil': 'சுழற்சி இயக்கம்',
+              'micros': ['Torque & Angular Momentum Conservation', 'Parallel Axis Theorem I = Icm + Md^2', 'Rolling Without Slipping']
+            }
+          ]
+        },
+        {
+          'subject': 'NEET Physics',
+          'unit': 'Unit 2: Electrodynamics',
+          'title': 'Current Electricity & Photoelectric Effect',
+          'chapters': [
+            {
+              'title': 'Current Electricity & Circuits',
+              'tamil': 'மின்னோட்டவியல் & சுற்றுகள்',
+              'micros': ['Drift Velocity I = n e A vd', 'Kirchhoff Laws & Wheatstone Bridge', 'Potentiometer Comparison']
+            }
+          ]
+        }
+      ];
+    }
+
+    if (isTnpsc) {
+      return [
+        {
+          'subject': 'பொதுத்தமிழ்',
+          'unit': 'பகுதி (அ)',
+          'title': 'இலக்கணம்: வேர்ச்சொல், அகரவரிசை & திருக்குறள்',
+          'chapters': [
+            {
+              'title': 'வேர்ச்சொல் & அகரவரிசைப்படுத்துதல்',
+              'tamil': 'இலக்கணக் குறிப்புகள்',
+              'micros': ['வல்லினம் மிகும் / மிகா இடங்கள்', 'அகரவரிசை விதிகளும் பயிற்சிகளும்', 'வேர்ச்சொல்லிலிருந்து வினைமுற்று அமைத்தல்']
+            },
+            {
+              'title': 'திருக்குறள் 25 அதிகாரங்கள்',
+              'tamil': 'அறத்துப்பால் குறட்பாக்கள்',
+              'micros': ['அன்புடைமை & இனியவை கூறல்', 'பண்புடைமை & காலமறிதல்', 'பொருட்பால் முக்கிய குறள்கள்']
+            }
+          ]
+        },
+        {
+          'subject': 'பொது அறிவு (GS)',
+          'unit': 'Unit 8 & 9',
+          'title': 'தமிழ்நாடு வரலாறு, கீழடி அகழாய்வு & திராவிட இயக்கம்',
+          'chapters': [
+            {
+              'title': 'கீழடி, கொடுமணல் தொல்லியல் ஆய்வுகள்',
+              'tamil': 'சங்க கால நகர நாகரிகம்',
+              'micros': ['வைகை நதிக்கரை அகழாய்வுகள்', 'தமிழி (தமிழ்-பிராமி) எழுத்துப் பொறிப்புகள்', 'சங்க கால கடல்வழி வணிகம்']
+            }
+          ]
+        }
+      ];
+    }
+
+    return [
+      {
+        'subject': 'Core Foundations',
+        'unit': 'Unit 1',
+        'title': '$title — Core Principles & Formulations',
+        'chapters': [
+          {
+            'title': '$title — Fundamentals & Theory',
+            'tamil': 'அடிப்படை விதிகள்',
+            'micros': ['Governing Axioms & Rules', 'Standard Formula Derivations', 'Conceptual Foundations']
+          },
+          {
+            'title': '$title — Problem Solving & MCQs',
+            'tamil': 'வினா-விடை தீர்வுகள்',
+            'micros': ['High-Yield MCQ Patterns', 'Option Elimination Techniques', 'Previous Year Questions (PYQs)']
+          }
+        ]
+      }
+    ];
+  }
+
   Widget _buildCurriculumTab(String title, String cat, String desc) {
+    final units = _getCourseUnits(title);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1152,12 +1344,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFF1E293B)),
           ),
-          child: Center(
-            child: IconButton(
-              iconSize: 56,
-              icon: const Icon(LucideIcons.playCircle, color: Color(0xFF10B981)),
-              onPressed: _launchVideo,
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                iconSize: 52,
+                icon: const Icon(LucideIcons.playCircle, color: Color(0xFF10B981)),
+                onPressed: _launchVideo,
+              ),
+              const Text('Play In-App Video Lecture (Full HD)', style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -1171,7 +1367,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () => _askAi('explain'),
+                onPressed: () => _askAi('tamil'),
                 icon: const Icon(LucideIcons.sparkles, size: 13),
                 label: const Text('தமிழில் விளக்கம்', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
@@ -1209,32 +1405,158 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
-
-        const Text('Course Overview & Syllabus', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 6),
-        Text(desc, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, height: 1.5)),
         const SizedBox(height: 20),
 
-        SizedBox(
-          width: double.infinity,
-          height: 46,
-          child: ElevatedButton.icon(
-            onPressed: _launchVideo,
-            icon: const Icon(LucideIcons.play, size: 16),
-            label: const Text('Watch Video Lectures', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF10B981),
-              foregroundColor: const Color(0xFF0A0F1E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        const Text('Comprehensive Syllabus & Micro-Topics', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+
+        ...units.map((u) {
+          final subject = u['subject'] as String;
+          final unitNum = u['unit'] as String;
+          final uTitle = u['title'] as String;
+          final chapters = u['chapters'] as List<dynamic>;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF1E293B)),
             ),
-          ),
-        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F172A),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x2610B981),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(subject, style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(unitNum, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(uTitle, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => _openKindleBook(uTitle, 'theory'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: const Color(0xFF0A0F1E),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          minimumSize: const Size(60, 30),
+                        ),
+                        child: const Text('📖 Book', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                ...chapters.map((chap) {
+                  final cTitle = chap['title'] as String;
+                  final cTamil = chap['tamil'] as String?;
+                  final micros = (chap['micros'] as List<dynamic>?) ?? [];
+
+                  return Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(cTitle, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                                  if (cTamil != null)
+                                    Text(cTamil, style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11)),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                InkWell(
+                                  onTap: () => _openKindleBook(cTitle, 'theory'),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(6)),
+                                    child: const Text('Kindle', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                InkWell(
+                                  onTap: () => _openKindleBook(cTitle, 'tamil'),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(color: const Color(0x2610B981), borderRadius: BorderRadius.circular(6)),
+                                    child: const Text('தமிழ்', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (micros.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          ...micros.map((m) => InkWell(
+                            onTap: () => _openKindleBook(m.toString(), 'theory'),
+                            child: Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F172A),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF1E293B)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text('• ${m.toString()}', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+                                  ),
+                                  const Text('PYQ', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 9, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                          )),
+                        ],
+                        const Divider(color: Color(0xFF1E293B), height: 16),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
 
   Widget _buildNotesTab(String title) {
+    final units = _getCourseUnits(title);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -1260,64 +1582,62 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        ...List.generate(3, (idx) {
-          final chapName = idx == 0 ? 'Chapter 1: Core Fundamentals & Axioms' : idx == 1 ? 'Chapter 2: Formulas & Problem Techniques' : 'Chapter 3: Previous Year Exam Solutions (PYQ)';
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF111827),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF1E293B)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
+        const SizedBox(height: 14),
+        ...units.map((u) {
+          final subject = u['subject'] as String;
+          final unitNum = u['unit'] as String;
+          final chapters = u['chapters'] as List<dynamic>;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$subject — $unitNum', style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 6),
+              ...chapters.map((chap) {
+                final cTitle = chap['title'] as String;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0x2638BDF8),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(LucideIcons.fileText, color: Color(0xFF38BDF8), size: 16),
                       ),
-                      child: const Icon(LucideIcons.fileText, color: Color(0xFF38BDF8), size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(chapName, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 2),
-                          const Text('PDF Document • Formulas & Theory', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
-                        ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(cTitle, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => _askAi('summary'),
-                      icon: const Icon(LucideIcons.sparkles, size: 12, color: Color(0xFF10B981)),
-                      label: const Text('Instant Summary', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () => _askAi('explain'),
-                      icon: const Icon(LucideIcons.download, size: 12, color: Color(0xFF0A0F1E)),
-                      label: const Text('Download Notes', style: TextStyle(color: Color(0xFF0A0F1E), fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                      ElevatedButton(
+                        onPressed: () => _openKindleBook(cTitle, 'theory'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF10B981),
+                          foregroundColor: const Color(0xFF0A0F1E),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          minimumSize: const Size(60, 30),
+                        ),
+                        child: const Text('Kindle PDF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 10),
+            ],
+          );
+        }),
+      ],
+    );
+  }
           );
         }),
       ],

@@ -34,8 +34,10 @@ import {
   Coffee,
   Check,
   HelpCircle,
+  Tv,
 } from 'lucide-react';
 import { generateKindleBook, KindleTopicBook } from '@/lib/kindleContentEngine';
+import { getCourseSyllabus, SyllabusUnit } from '@/lib/courseCatalogMaster';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Courses', icon: BookOpen },
@@ -408,14 +410,21 @@ export default function TeachoWebPage() {
     ]);
   };
 
-  let curriculum: any[] = [];
-  if (selectedCourse) {
-    try {
-      let ai = selectedCourse.additional_info;
-      if (typeof ai === 'string') ai = JSON.parse(ai);
-      if (ai && ai.curriculum) curriculum = ai.curriculum;
-    } catch {}
-  }
+  const [activeVideo, setActiveVideo] = useState<{ title: string; videoUrl?: string; youtubeId?: string } | null>(null);
+
+  const courseUnits: SyllabusUnit[] = useMemo(() => {
+    if (!selectedCourse) return [];
+    return getCourseSyllabus(selectedCourse.title_name, selectedCourse.category);
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    if (selectedCourse) {
+      setActiveVideo({
+        title: selectedCourse.title_name,
+        youtubeId: 'dQw4w9WgXcQ',
+      });
+    }
+  }, [selectedCourse]);
 
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-slate-100 p-6">
@@ -634,67 +643,129 @@ export default function TeachoWebPage() {
 
             <div className="flex-1 overflow-y-auto p-6">
               {activeCourseTab === 'curriculum' && (
-                <div className="space-y-4">
-                  {curriculum.length === 0 ? (
-                    <p className="text-slate-500 text-center py-10">No modules uploaded yet.</p>
-                  ) : (
-                    curriculum.map((mod: any, mIdx: number) => {
-                      const isExpanded = !!expandedModules[mIdx];
-                      return (
-                        <div key={mIdx} className="bg-[#0c1322] border border-slate-800 rounded-2xl overflow-hidden">
-                          <button
-                            onClick={() => setExpandedModules(prev => ({ ...prev, [mIdx]: !prev[mIdx] }))}
-                            className="w-full flex justify-between items-center p-4 text-left hover:bg-slate-800/40 transition"
-                          >
-                            <div>
-                              <span className="text-[10px] font-bold text-emerald-400 tracking-wider uppercase">CHAPTER {mIdx + 1}</span>
-                              <h4 className="text-sm font-bold text-white">{mod.title}</h4>
+                <div className="space-y-6">
+                  {/* 📺 Embedded In-App YouTube Video Lecture Player */}
+                  <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#070b14] shadow-xl">
+                    <div className="p-3 bg-[#0c1322] border-b border-slate-800 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Tv className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-bold text-white">In-App Video Lecture Player</span>
+                        <span className="text-[10px] text-slate-400">• {activeVideo?.title || selectedCourse.title_name}</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/30">
+                        Full HD Streaming
+                      </span>
+                    </div>
+                    <div className="relative aspect-video w-full bg-black">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${activeVideo?.youtubeId || 'dQw4w9WgXcQ'}?autoplay=0&rel=0`}
+                        title={activeVideo?.title || selectedCourse.title_name}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        className="w-full h-full border-0"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 5-Level Syllabus Units & Chapters */}
+                  <div className="space-y-4">
+                    {courseUnits.map((unit, uIdx) => (
+                      <div key={unit.id || uIdx} className="bg-[#0c1322] border border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="p-4 bg-[#111827] border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                                {unit.subjectName}
+                              </span>
+                              <span className="text-xs font-bold text-slate-300">{unit.unitNumber}</span>
                             </div>
-                            <span className="text-xs text-slate-500 font-bold">{isExpanded ? '▲' : '▼'}</span>
+                            <h4 className="text-sm font-bold text-white mt-1">{unit.title}</h4>
+                          </div>
+                          <button
+                            onClick={() => openKindleBook(unit.title, 'theory')}
+                            className="self-start md:self-auto px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition shadow-md shadow-emerald-500/10"
+                          >
+                            📖 Unit Kindle Book
                           </button>
-                          {isExpanded && (
-                            <div className="p-4 border-t border-slate-800 space-y-2 bg-[#111827]/50">
-                              {(mod.videos || []).map((v: any, vIdx: number) => (
-                                <div
-                                  key={vIdx}
-                                  onClick={() => openKindleBook(v.title, 'theory')}
-                                  className="flex justify-between items-center p-3 rounded-xl bg-[#111827] border border-slate-800/60 hover:border-emerald-500/40 cursor-pointer transition"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    <PlayCircle className="w-5 h-5 text-emerald-400" />
-                                    <div>
-                                      <p className="text-xs font-semibold text-white group-hover:text-emerald-400">{v.title}</p>
-                                      <p className="text-[10px] text-slate-500">Kindle Book • Video & Theory Lesson</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openKindleBook(v.title, 'tamil');
-                                      }}
-                                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold"
-                                    >
-                                      தமிழ்
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openKindleBook(v.title, 'mcq');
-                                      }}
-                                      className="px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-bold"
-                                    >
-                                      5 MCQs
-                                    </button>
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                          {unit.chapters.map((chap, cIdx) => (
+                            <div key={chap.id || cIdx} className="p-3.5 bg-[#111827]/80 rounded-xl border border-slate-800/80 space-y-3">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                  <button
+                                    onClick={() => setActiveVideo({ title: chap.title, youtubeId: chap.youtubeId || 'dQw4w9WgXcQ' })}
+                                    className="mt-0.5 p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg transition"
+                                    title="Watch Video Lecture"
+                                  >
+                                    <PlayCircle className="w-4 h-4" />
+                                  </button>
+                                  <div>
+                                    <p className="text-xs font-bold text-white">{chap.title}</p>
+                                    {chap.tamilTitle && <p className="text-[11px] text-amber-400/90 font-medium mt-0.5">{chap.tamilTitle}</p>}
                                   </div>
                                 </div>
-                              ))}
+
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <button
+                                    onClick={() => openKindleBook(chap.title, 'theory')}
+                                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition"
+                                  >
+                                    📖 Theory
+                                  </button>
+                                  <button
+                                    onClick={() => openKindleBook(chap.title, 'tamil')}
+                                    className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition"
+                                  >
+                                    தமிழ்
+                                  </button>
+                                  <button
+                                    onClick={() => openKindleBook(chap.title, 'mcq')}
+                                    className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition"
+                                  >
+                                    5 MCQs
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Micro-topics list */}
+                              {chap.subtopics && chap.subtopics.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-slate-800/60 pl-2 space-y-2">
+                                  {chap.subtopics.map(st => (
+                                    <div key={st.id} className="space-y-1.5">
+                                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Subtopic: {st.title}</span>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                                        {st.microTopics.map(mt => (
+                                          <div
+                                            key={mt.id}
+                                            onClick={() => openKindleBook(mt.title, 'theory')}
+                                            className="p-2.5 rounded-lg bg-[#0c1322] border border-slate-800/80 hover:border-emerald-500/40 cursor-pointer transition flex justify-between items-center group"
+                                          >
+                                            <div className="flex-1 pr-2">
+                                              <p className="text-[11px] font-medium text-slate-300 group-hover:text-emerald-400 line-clamp-1">
+                                                • {mt.title}
+                                              </p>
+                                              <p className="text-[9px] text-slate-500 line-clamp-1 mt-0.5">{mt.keyAxiom}</p>
+                                            </div>
+                                            {mt.pyqFrequency && (
+                                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                                                {mt.pyqFrequency} PYQ
+                                              </span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          ))}
                         </div>
-                      );
-                    })
-                  )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -705,26 +776,31 @@ export default function TeachoWebPage() {
                     <h4 className="text-sm font-bold text-white">Verified Kindle Chapter Notes & Formula PDFs</h4>
                     <p className="text-xs text-slate-400">High-yield revision notes, Tamil explanations and formulas for instant download.</p>
                   </div>
-                  {curriculum.map((chap: any, idx: number) => (
-                    <div key={idx} className="flex justify-between items-center p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
-                      <div>
-                        <p className="text-sm font-bold text-white">{chap.title}</p>
-                        <p className="text-xs text-slate-500">Kindle Book Chapter • Complete Notes & Solutions</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openKindleBook(chap.title, 'theory')}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg text-slate-300 transition"
-                        >
-                          Kindle Book
-                        </button>
-                        <button
-                          onClick={() => openKindleBook(chap.title, 'tamil')}
-                          className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-xs font-bold rounded-lg text-slate-950 transition"
-                        >
-                          தமிழில் குறிப்புகள்
-                        </button>
-                      </div>
+                  {courseUnits.map((unit, uIdx) => (
+                    <div key={uIdx} className="space-y-2">
+                      <span className="text-xs font-bold text-emerald-400">{unit.subjectName} — {unit.unitNumber}</span>
+                      {unit.chapters.map((chap, cIdx) => (
+                        <div key={cIdx} className="flex justify-between items-center p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
+                          <div>
+                            <p className="text-sm font-bold text-white">{chap.title}</p>
+                            <p className="text-xs text-slate-500">Kindle Book Chapter • Complete Notes & Solutions</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => openKindleBook(chap.title, 'theory')}
+                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg text-slate-300 transition"
+                            >
+                              Kindle Book
+                            </button>
+                            <button
+                              onClick={() => openKindleBook(chap.title, 'tamil')}
+                              className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-xs font-bold rounded-lg text-slate-950 transition"
+                            >
+                              தமிழில் குறிப்புகள்
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>
@@ -738,38 +814,17 @@ export default function TeachoWebPage() {
                     <p className="text-xs text-slate-400">Click any branch below to open the Kindle Book chapter player.</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div
-                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Key Principles', 'theory')}
-                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-sky-500/40 rounded-xl cursor-pointer transition"
-                    >
-                      <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded">BRANCH 1</span>
-                      <h5 className="text-xs font-bold text-white mt-2">Key Principles & Axioms</h5>
-                      <p className="text-xs text-slate-400 mt-1">Fundamental definitions, governing laws, and structural foundations.</p>
-                    </div>
-                    <div
-                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Formulas & Shortcuts', 'formulas')}
-                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-emerald-500/40 rounded-xl cursor-pointer transition"
-                    >
-                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">BRANCH 2</span>
-                      <h5 className="text-xs font-bold text-white mt-2">Formulas & Shortcuts</h5>
-                      <p className="text-xs text-slate-400 mt-1">Standard derivations, SI unit checks, and fast-solving equations.</p>
-                    </div>
-                    <div
-                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Problem Patterns & PYQs', 'solutions')}
-                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-amber-500/40 rounded-xl cursor-pointer transition"
-                    >
-                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">BRANCH 3</span>
-                      <h5 className="text-xs font-bold text-white mt-2">2-Mark & 5-Mark Question Solutions</h5>
-                      <p className="text-xs text-slate-400 mt-1">Step-by-step scoring methods and high-yield question types.</p>
-                    </div>
-                    <div
-                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Self Assessment MCQs', 'mcq')}
-                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-purple-500/40 rounded-xl cursor-pointer transition"
-                    >
-                      <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">BRANCH 4</span>
-                      <h5 className="text-xs font-bold text-white mt-2">Interactive 5 Practice MCQs</h5>
-                      <p className="text-xs text-slate-400 mt-1">Real-time instant option feedback with full answer explanations.</p>
-                    </div>
+                    {courseUnits.map((unit, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => openKindleBook(unit.title, 'theory')}
+                        className="p-4 bg-[#0c1322] border border-slate-800 hover:border-emerald-500/40 rounded-xl cursor-pointer transition"
+                      >
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">{unit.subjectName}</span>
+                        <h5 className="text-xs font-bold text-white mt-2">{unit.title}</h5>
+                        <p className="text-xs text-slate-400 mt-1">{unit.chapters.length} Verified Chapters • Microtopic Flashcards & MCQs</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
