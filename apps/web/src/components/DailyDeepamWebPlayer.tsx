@@ -31,11 +31,12 @@ export default function DailyDeepamWebPlayer({
   const playerRef = useRef<any>(null);
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const sendCommand = (func: string, args: any = '') => {
+  const sendCommand = (func: string, args: any = []) => {
     try {
       const iframe = document.getElementById('deepam-web-player') as HTMLIFrameElement;
       if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+        const payloadArgs = Array.isArray(args) ? args : [args];
+        iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: payloadArgs }), '*');
       }
     } catch (_) {}
   };
@@ -53,32 +54,23 @@ export default function DailyDeepamWebPlayer({
   };
 
   const attemptUnmute = () => {
-    sendCommand('unMute');
+    sendCommand('unMute', []);
     sendCommand('setVolume', [100]);
     if (playerRef.current) {
       try {
         playerRef.current.unMute();
         playerRef.current.setVolume(100);
-        if (!playerRef.current.isMuted()) {
-          setIsMuted(false);
-        }
+        setIsMuted(false);
       } catch (_) {}
     }
+    setIsMuted(false);
   };
 
   const toggleSound = () => {
     if (isMuted) {
-      sendCommand('unMute');
-      sendCommand('setVolume', [100]);
-      if (playerRef.current) {
-        try {
-          playerRef.current.unMute();
-          playerRef.current.setVolume(100);
-        } catch (_) {}
-      }
-      setIsMuted(false);
+      attemptUnmute();
     } else {
-      sendCommand('mute');
+      sendCommand('mute', []);
       if (playerRef.current) {
         try {
           playerRef.current.mute();
@@ -89,9 +81,8 @@ export default function DailyDeepamWebPlayer({
   };
 
   const resumePlay = () => {
-    sendCommand('playVideo');
-    sendCommand('unMute');
-    sendCommand('setVolume', [100]);
+    sendCommand('playVideo', []);
+    attemptUnmute();
     if (playerRef.current) {
       try {
         playerRef.current.playVideo();
@@ -109,13 +100,20 @@ export default function DailyDeepamWebPlayer({
       setCanSkip(true);
     }, 3000);
 
+    // Try unmuting immediately on load (if browser policy allows)
+    const initialUnmuteTimer = setTimeout(() => {
+      attemptUnmute();
+    }, 600);
+
     // Global listener to immediately unlock and enable audio on any user interaction with the page
     const handleGlobalInteraction = () => {
       attemptUnmute();
-      sendCommand('playVideo');
+      sendCommand('playVideo', []);
       if (playerRef.current) {
         try {
           playerRef.current.playVideo();
+          playerRef.current.unMute();
+          playerRef.current.setVolume(100);
         } catch (_) {}
       }
     };
@@ -125,6 +123,7 @@ export default function DailyDeepamWebPlayer({
     window.addEventListener('pointerdown', handleGlobalInteraction, { passive: true });
     window.addEventListener('mousemove', handleGlobalInteraction, { passive: true, once: true });
     window.addEventListener('keydown', handleGlobalInteraction, { passive: true });
+    window.addEventListener('scroll', handleGlobalInteraction, { passive: true, once: true });
 
     // Listen to direct postMessage from YouTube Iframe
     const handleWindowMessage = (event: MessageEvent) => {
