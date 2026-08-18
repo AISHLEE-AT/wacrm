@@ -27,6 +27,9 @@ import {
   BookOpen,
 } from 'lucide-react-native';
 
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+
 export default function TestOResultScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
@@ -54,14 +57,66 @@ export default function TestOResultScreen() {
     year: 'numeric',
   });
 
-  const handleShareCertificate = async () => {
+  const downloadCertificatePDF = async () => {
     try {
-      await Share.share({
-        message: `🏆 I scored ${score}/${totalQuestions} (${accuracy}%) in ${testTitle} on EduVerse AI - TeachO! Check out my verified score: ID ${certId}`,
-      });
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #0f172a; text-align: center; }
+            .cert-box { border: 4px double #10b981; padding: 36px; border-radius: 20px; background: #f0fdf4; }
+            .badge { display: inline-block; background: #10b981; color: #0a0f1e; font-weight: bold; font-size: 11px; padding: 6px 14px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
+            h1 { color: #064e3b; margin: 10px 0; font-size: 24px; }
+            .meta { color: #047857; font-size: 13px; font-weight: bold; margin-bottom: 20px; }
+            .score-grid { display: flex; justify-content: center; gap: 16px; margin: 24px 0; }
+            .score-card { background: #ffffff; border: 1px solid #a7f3d0; padding: 14px 20px; border-radius: 12px; min-width: 100px; }
+            .score-val { font-size: 22px; font-weight: 900; color: #059669; }
+            .score-lbl { font-size: 10px; color: #6b7280; text-transform: uppercase; font-weight: bold; }
+            .footer { margin-top: 24px; font-size: 11px; color: #6ee7b7; border-top: 1px solid #d1fae5; padding-top: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="cert-box">
+            <span class="badge">Official Certificate of Achievement</span>
+            <h1>${testTitle}</h1>
+            <div class="meta">Certificate ID: ${certId} • Issued on ${issueDate}</div>
+            <div class="score-grid">
+              <div class="score-card">
+                <div class="score-val">${score} / ${totalQuestions}</div>
+                <div class="score-lbl">Total Score</div>
+              </div>
+              <div class="score-card">
+                <div class="score-val">${accuracy}%</div>
+                <div class="score-lbl">Accuracy</div>
+              </div>
+              <div class="score-card">
+                <div class="score-val">${grade}</div>
+                <div class="score-lbl">Grade</div>
+              </div>
+            </div>
+            <p style="font-size: 13px; color: #065f46; font-weight: 500;">Status: <strong>${isPassed ? 'Passed with Distinction' : 'Completed'}</strong></p>
+            <div class="footer">
+              EduVerse AI Testing Authority • SuprO National Learning Ledger
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      } else {
+        Share.share({ message: `EduVerse Certificate ID: ${certId} - Scored ${score}/${totalQuestions} in ${testTitle}` });
+      }
     } catch (e) {
-      console.error(e);
+      Share.share({ message: `EduVerse Certificate ID: ${certId} - Scored ${score}/${totalQuestions} in ${testTitle}` });
     }
+  };
+
+  const handleShareCertificate = async () => {
+    downloadCertificatePDF();
   };
 
   return (
