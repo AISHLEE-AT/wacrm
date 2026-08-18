@@ -245,7 +245,8 @@ export default function DailyDeepamWebPlayer({
   }, [videoId]);
 
   const originUrl = typeof window !== 'undefined' ? window.location.origin : 'https://watscrm.vercel.app';
-  const iframeSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${originUrl}`;
+  // Note: Modern browsers require mute=1 for guaranteed autoplay without blocking
+  const iframeSrc = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=${originUrl}`;
 
   return (
     <div className="bg-[#0e1628] border border-emerald-500/30 rounded-2xl p-4 shadow-2xl overflow-hidden space-y-3">
