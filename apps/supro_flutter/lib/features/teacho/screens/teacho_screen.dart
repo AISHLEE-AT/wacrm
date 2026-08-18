@@ -1141,9 +1141,216 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   List<Map<String, dynamic>> _getCourseUnits(String title) {
     final cleanTitle = title.toLowerCase();
-    final is10th = cleanTitle.contains('10th') || cleanTitle.contains('sslc') || cleanTitle.contains('samacheer');
-    final isNeet = cleanTitle.contains('neet') || cleanTitle.contains('jee');
-    final isTnpsc = cleanTitle.contains('tnpsc') || cleanTitle.contains('group');
+    final isLkg = cleanTitle.contains('lkg') || cleanTitle.contains('lower kindergarten');
+    final isUkg = cleanTitle.contains('ukg') || cleanTitle.contains('upper kindergarten');
+    final isC1 = cleanTitle.contains('class 1') || cleanTitle.contains('1st standard') || cleanTitle.contains('1-ஆம் வகுப்பு');
+    final isC2to5 = cleanTitle.contains('class 2') || cleanTitle.contains('2nd') || cleanTitle.contains('class 3') || cleanTitle.contains('3rd') || cleanTitle.contains('class 4') || cleanTitle.contains('4th') || cleanTitle.contains('class 5') || cleanTitle.contains('5th');
+    final isC6to9 = cleanTitle.contains('class 6') || cleanTitle.contains('6th') || cleanTitle.contains('class 7') || cleanTitle.contains('7th') || cleanTitle.contains('class 8') || cleanTitle.contains('8th') || cleanTitle.contains('class 9') || cleanTitle.contains('9th');
+    final is10th = cleanTitle.contains('10th') || cleanTitle.contains('sslc') || cleanTitle.contains('10-ஆம் வகுப்பு');
+    final is11th = cleanTitle.contains('class 11') || cleanTitle.contains('11th') || cleanTitle.contains('plus one');
+    final is12th = cleanTitle.contains('class 12') || cleanTitle.contains('12th') || cleanTitle.contains('plus two') || cleanTitle.contains('hsc');
+    final isNeet = cleanTitle.contains('neet') || cleanTitle.contains('jee') || cleanTitle.contains('iit');
+    final isTnpsc = cleanTitle.contains('tnpsc') || cleanTitle.contains('group') || cleanTitle.contains('vao') || cleanTitle.contains('police');
+
+    if (isLkg || isUkg) {
+      return [
+        {
+          'subject': 'தமிழ் (Tamil Early)',
+          'unit': 'பகுதி 1',
+          'title': isLkg ? 'உயிர் எழுத்துக்கள் (12) & எளிய பாட்டு' : 'மெய் எழுத்துக்கள் (18) & சொல் வளம்',
+          'chapters': [
+            {
+              'title': isLkg ? 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள்' : 'க் முதல் ன் வரை மெய் எழுத்துக்கள்',
+              'tamil': 'எழுத்துப் பாடல்',
+              'micros': [isLkg ? 'அ - அம்மா, ஆ - ஆடு படங்கள்' : 'க் - கொக்கு, ச் - சக்கரம் படங்கள்', 'ஒலி உச்சரிப்பு']
+            }
+          ]
+        },
+        {
+          'subject': 'English (Phonics & ABC)',
+          'unit': 'Unit 2',
+          'title': isLkg ? 'Alphabet Phonics A to Z' : 'Sight Words & 3-Letter CVC Words',
+          'chapters': [
+            {
+              'title': isLkg ? 'Letter sounds and picture tracing' : 'Cat, Dog, Sun word blending',
+              'tamil': 'Phonics & Words',
+              'micros': ['Phonic sounds A-Z', 'Rhyming sight words']
+            }
+          ]
+        },
+        {
+          'subject': 'Mathematics',
+          'unit': 'Unit 3',
+          'title': isLkg ? 'Numbers 1 to 20 & Shapes' : 'Numbers 1 to 50 & Simple Addition',
+          'chapters': [
+            {
+              'title': isLkg ? 'Counting 1 to 20 & Circle/Square' : 'Addition facts up to 10 (+)',
+              'tamil': 'எண்கள் & வடிவங்கள்',
+              'micros': ['Counting objects 1-20', 'Big vs Small comparison']
+            }
+          ]
+        }
+      ];
+    }
+
+    if (isC1 || isC2to5) {
+      return [
+        {
+          'subject': 'தமிழ் (Tamil)',
+          'unit': 'பகுதி 1',
+          'title': 'செய்யுள், உரைநடை, நீதிநூல்கள் & எளிய இலக்கணம்',
+          'chapters': [
+            {
+              'title': 'ஆத்திசூடி, கொன்றை வேந்தன் & நல்வழிப் பாடல்கள்',
+              'tamil': 'நீதி இலக்கியம்',
+              'micros': ['உயிர்மெய் எழுத்துக்கள் 216', 'பெயர்ச்சொல் & வினைச்சொல்']
+            }
+          ]
+        },
+        {
+          'subject': 'English',
+          'unit': 'Unit 2',
+          'title': 'Grammar, Tenses, Nouns, Verbs & Comprehension',
+          'chapters': [
+            {
+              'title': 'Action words, Tenses & Paragraph Writing',
+              'tamil': 'Grammar Mechanics',
+              'micros': ['Past/Present/Future tenses', 'Subject-Verb agreement']
+            }
+          ]
+        },
+        {
+          'subject': 'Mathematics',
+          'unit': 'Unit 3',
+          'title': 'Numbers, Operations, Multiplication Tables & Fractions',
+          'chapters': [
+            {
+              'title': 'Multiplication Tables, Long Division & Area/Perimeter',
+              'tamil': 'கணித அடிப்படைகள்',
+              'micros': ['Multiplication Tables 1-12', 'Dividend = Divisor x Quotient + Remainder']
+            }
+          ]
+        },
+        {
+          'subject': 'Science / EVS',
+          'unit': 'Unit 4',
+          'title': 'Human Body Systems, Living Things & Solar System',
+          'chapters': [
+            {
+              'title': 'Sense Organs, Food & Digestion, Circulatory System',
+              'tamil': 'அறிவியல் அடிப்படைகள்',
+              'micros': ['Heart & Lungs function', 'Photosynthesis in Plants']
+            }
+          ]
+        }
+      ];
+    }
+
+    if (isC6to9) {
+      return [
+        {
+          'subject': 'தமிழ் (Tamil)',
+          'unit': 'இயல் 1 & 2',
+          'title': 'இன்பத்தமிழ், திராவிட மொழிக்குடும்பம் & இலக்கணம்',
+          'chapters': [
+            {
+              'title': 'செய்யுள் நயம், உரைநடை உலகம் & தொடர் இலக்கணம்',
+              'tamil': 'மொழி வளர்ச்சி',
+              'micros': ['திராவிட மொழிக் குடும்பம்', 'சார்பெழுத்துக்கள் & வல்லினம் மிகும் இடங்கள்']
+            }
+          ]
+        },
+        {
+          'subject': 'English',
+          'unit': 'Unit 1 & 2',
+          'title': 'Prose, Poetry Devices, Voices & Clauses',
+          'chapters': [
+            {
+              'title': 'Transformational Grammar & Direct/Indirect Speech',
+              'tamil': 'English Grammar',
+              'micros': ['Active to Passive Voice', 'Clauses (Noun, Adverb Clauses)']
+            }
+          ]
+        },
+        {
+          'subject': 'Mathematics',
+          'unit': 'Unit 1 & 2',
+          'title': 'Real Numbers, Polynomials, Geometry & Statistics',
+          'chapters': [
+            {
+              'title': 'Algebraic Identities & Coordinate Distance Formula',
+              'tamil': 'இயற்கணிதம் & வடிவியல்',
+              'micros': ['Distance formula d = sqrt((x2-x1)^2 + (y2-y1)^2)', 'Identities (a+b)^2, a^2-b^2']
+            }
+          ]
+        },
+        {
+          'subject': 'Science',
+          'unit': 'Unit 1 & 2',
+          'title': 'Laws of Motion, Atomic Structure & Tissues',
+          'chapters': [
+            {
+              'title': 'Equations of Motion (v=u+at) & Bohr Model',
+              'tamil': 'இயற்பியல் & வேதியியல்',
+              'micros': ['v^2 = u^2 + 2as', 'Bohr Atom 2n^2 electron capacity']
+            }
+          ]
+        }
+      ];
+    }
+
+    if (is11th || is12th) {
+      return [
+        {
+          'subject': 'Physics (இயற்பியல்)',
+          'unit': 'Unit 1: Physics',
+          'title': is11th ? 'Kinematics, Newton’s Laws & Thermodynamics' : 'Electrostatics, Current Electricity & Optics',
+          'chapters': [
+            {
+              'title': is11th ? '2D Projectiles & Work-Energy Theorem' : 'Coulomb’s Law, Gauss’s Law & Wheatstone Bridge',
+              'tamil': 'இயற்பியல் விதிகள்',
+              'micros': [is11th ? 'R_max = u^2/g at 45°' : 'F = k*q1*q2/r^2', is11th ? 'W_net = Delta K' : 'P/Q = R/S']
+            }
+          ]
+        },
+        {
+          'subject': 'Chemistry (வேதியியல்)',
+          'unit': 'Unit 2: Chemistry',
+          'title': is11th ? 'Atomic Structure & Chemical Bonding' : 'Electrochemistry, Chemical Kinetics & Organic',
+          'chapters': [
+            {
+              'title': is11th ? 'Quantum Numbers & Aufbau Principle' : 'Nernst Equation & First Order Kinetics',
+              'tamil': 'வேதியியல் சமன்பாடுகள்',
+              'micros': [is11th ? 'Pauli exclusion & Hund rule' : 't_1/2 = 0.693/k', is11th ? 'Hybridization sp3, sp2' : 'E_cell = E0 - (0.0591/n)log Q']
+            }
+          ]
+        },
+        {
+          'subject': 'Mathematics (கணிதம்)',
+          'unit': 'Unit 3: Mathematics',
+          'title': is11th ? 'Trigonometry & Differential Calculus' : 'Matrices, Integral Calculus & Differential Equations',
+          'chapters': [
+            {
+              'title': is11th ? 'Product/Quotient Rules of Differentiation' : 'Matrix Inverses & Integration by Parts',
+              'tamil': 'நுண்கணிதம் & அணிகள்',
+              'micros': [is11th ? 'd/dx(x^n) = n*x^(n-1)' : 'A^-1 = (1/|A|) adj(A)', is11th ? 'Trig identities' : 'integral u dv = uv - integral v du']
+            }
+          ]
+        },
+        {
+          'subject': 'Biology / Computer Science',
+          'unit': 'Unit 4: Biology/CS',
+          'title': is11th ? 'Cell Cycle, Photosynthesis & Python Loops' : 'Molecular Genetics & Relational SQL Databases',
+          'chapters': [
+            {
+              'title': is11th ? 'Mitosis/Meiosis & Python Functions' : 'DNA Double Helix & SQL Joins/Aggregates',
+              'tamil': 'உயிரியல் & கணினி',
+              'micros': [is11th ? 'Calvin Cycle & Photosystems' : 'DNA Polymerase replication', is11th ? 'Python lists and dicts' : 'SQL SELECT JOIN GROUP BY']
+            }
+          ]
+        }
+      ];
+    }
 
     if (is10th) {
       return [

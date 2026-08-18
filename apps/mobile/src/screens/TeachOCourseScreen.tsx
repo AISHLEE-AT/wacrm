@@ -46,9 +46,199 @@ export default function TeachOCourseScreen() {
 
   const getCourseSyllabus = (courseTitle: string, category: string = '') => {
     const cleanTitle = courseTitle || 'Course';
-    const is10th = /10th|sslc|samacheer/i.test(cleanTitle);
-    const isNeet = /neet|jee/i.test(cleanTitle);
-    const isTnpsc = /tnpsc|group|vao/i.test(cleanTitle);
+    const t = cleanTitle.toLowerCase();
+    const isLkg = t.includes('lkg') || t.includes('lower kindergarten');
+    const isUkg = t.includes('ukg') || t.includes('upper kindergarten');
+    const isC1 = t.includes('class 1') || t.includes('1st standard') || t.includes('1-ஆம் வகுப்பு');
+    const isC2to5 = t.includes('class 2') || t.includes('2nd') || t.includes('class 3') || t.includes('3rd') || t.includes('class 4') || t.includes('4th') || t.includes('class 5') || t.includes('5th');
+    const isC6to9 = t.includes('class 6') || t.includes('6th') || t.includes('class 7') || t.includes('7th') || t.includes('class 8') || t.includes('8th') || t.includes('class 9') || t.includes('9th');
+    const is10th = t.includes('10th') || t.includes('sslc') || t.includes('10-ஆம் வகுப்பு');
+    const is11th = t.includes('class 11') || t.includes('11th') || t.includes('plus one');
+    const is12th = t.includes('class 12') || t.includes('12th') || t.includes('plus two') || t.includes('hsc');
+    const isNeet = t.includes('neet') || t.includes('jee') || t.includes('iit');
+    const isTnpsc = t.includes('tnpsc') || t.includes('group') || t.includes('vao') || t.includes('police');
+
+    if (isLkg || isUkg) {
+      return [
+        {
+          id: 'kg_tam',
+          subjectName: 'தமிழ் (Tamil Early)',
+          unitNumber: 'பகுதி 1',
+          title: isLkg ? 'உயிர் எழுத்துக்கள் (12) & எளிய பாட்டு' : 'மெய் எழுத்துக்கள் (18) & சொல் வளம்',
+          chapters: [
+            { id: 'kg_tam_c1', title: isLkg ? 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள்' : 'க் முதல் ன் வரை மெய் எழுத்துக்கள்', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'எழுத்து பயிற்சி & பட விளக்கம்', microTopics: [{ title: isLkg ? 'அ - அம்மா, ஆ - ஆடு படங்கள்' : 'க் - கொக்கு, ச் - சக்கரம் படங்கள்', pyq: 'High' }] }] }
+          ]
+        },
+        {
+          id: 'kg_eng',
+          subjectName: 'English (Phonics & ABC)',
+          unitNumber: 'Unit 2',
+          title: isLkg ? 'Alphabet Phonics A to Z' : 'Sight Words & 3-Letter CVC Words',
+          chapters: [
+            { id: 'kg_eng_c1', title: isLkg ? 'Letter sounds and picture tracing' : 'Cat, Dog, Sun word blending', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Phonics and reading fluency', microTopics: [{ title: 'Sound blending and simple rhymes', pyq: 'High' }] }] }
+          ]
+        },
+        {
+          id: 'kg_math',
+          subjectName: 'Mathematics',
+          unitNumber: 'Unit 3',
+          title: isLkg ? 'Numbers 1 to 20 & Shapes' : 'Numbers 1 to 50 & Simple Addition',
+          chapters: [
+            { id: 'kg_mat_c1', title: isLkg ? 'Counting 1 to 20 & Circle/Square/Triangle' : 'Addition facts up to 10 (+)', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Number concepts and comparisons', microTopics: [{ title: 'Big vs Small and counting objects', pyq: 'High' }] }] }
+          ]
+        },
+        {
+          id: 'kg_evs',
+          subjectName: 'General Awareness / EVS',
+          unitNumber: 'Unit 4',
+          title: 'My Family, Animals, Fruits & Good Habits',
+          chapters: [
+            { id: 'kg_evs_c1', title: 'Community Helpers, Colors & Personal Hygiene', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Good manners and nature appreciation', microTopics: [{ title: 'Cleanliness rules and identifying animals', pyq: 'Medium' }] }] }
+          ]
+        }
+      ];
+    }
+
+    if (isC1 || isC2to5) {
+      return [
+        {
+          id: 'prim_tam',
+          subjectName: 'தமிழ் (Tamil)',
+          unitNumber: 'பகுதி 1',
+          title: 'செய்யுள், உரைநடை, நீதிநூல்கள் & எளிய இலக்கணம்',
+          chapters: [
+            { id: 'prim_tam_c1', title: 'ஆத்திசூடி, கொன்றை வேந்தன் & நல்வழிப் பாடல்கள்', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'பெயர்ச்சொல் & வினைச்சொல் அறிமுகம்', microTopics: [{ title: 'உயிர்மெய் எழுத்துக்கள் & பாடல் நயம்', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'prim_eng',
+          subjectName: 'English',
+          unitNumber: 'Unit 2',
+          title: 'Grammar, Tenses, Nouns, Verbs & Comprehension',
+          chapters: [
+            { id: 'prim_eng_c1', title: 'Action words, Tenses & Paragraph Writing', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Grammar Mechanics', microTopics: [{ title: 'Past/Present/Future verb forms', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'prim_mat',
+          subjectName: 'Mathematics',
+          unitNumber: 'Unit 3',
+          title: 'Numbers, Operations, Multiplication Tables & Fractions',
+          chapters: [
+            { id: 'prim_mat_c1', title: 'Multiplication Tables, Long Division & Area/Perimeter', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Arithmetic Operations', microTopics: [{ title: 'Dividend = (Divisor x Quotient) + Remainder', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'prim_sci',
+          subjectName: 'Science / EVS',
+          unitNumber: 'Unit 4',
+          title: 'Human Body Systems, Living Things & Solar System',
+          chapters: [
+            { id: 'prim_sci_c1', title: 'Sense Organs, Food & Digestion, Circulatory System', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Biological Systems', microTopics: [{ title: 'Heart, Lungs & Photosynthesis in Plants', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'prim_soc',
+          subjectName: 'Social Science',
+          unitNumber: 'Unit 5',
+          title: 'Tamil Nadu Landscapes, Heritage Forts & Local Governance',
+          chapters: [
+            { id: 'prim_soc_c1', title: 'Kurinji, Mullai, Marutham & Freedom Movement', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Civic Responsibilities & Heritage', microTopics: [{ title: 'Ancient Tamil landscapes & National Symbols', pyq: 'High' }] }] }
+          ]
+        }
+      ];
+    }
+
+    if (isC6to9) {
+      return [
+        {
+          id: 'mid_tam',
+          subjectName: 'தமிழ் (Tamil)',
+          unitNumber: 'இயல் 1 & 2',
+          title: 'இன்பத்தமிழ், திராவிட மொழிக்குடும்பம் & இலக்கணம்',
+          chapters: [
+            { id: 'mid_tam_c1', title: 'செய்யுள் நயம், உரைநடை உலகம் & தொடர் இலக்கணம்', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'சார்பெழுத்துக்கள் & வல்லினம் மிகும் இடங்கள்', microTopics: [{ title: 'தொல்காப்பிய மரபுகள் & மொழிச் சிறப்புகள்', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'mid_eng',
+          subjectName: 'English',
+          unitNumber: 'Unit 1 & 2',
+          title: 'Prose, Poetry Devices, Voices & Clauses',
+          chapters: [
+            { id: 'mid_eng_c1', title: 'Transformational Grammar & Direct/Indirect Speech', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Grammar and Syntax', microTopics: [{ title: 'Active to Passive Voice transformation', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'mid_mat',
+          subjectName: 'Mathematics',
+          unitNumber: 'Unit 1 & 2',
+          title: 'Real Numbers, Polynomials, Geometry & Statistics',
+          chapters: [
+            { id: 'mid_mat_c1', title: 'Algebraic Identities & Coordinate Distance Formula', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Distance & Identities', microTopics: [{ title: 'd = sqrt((x2-x1)^2 + (y2-y1)^2)', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'mid_sci',
+          subjectName: 'Science',
+          unitNumber: 'Unit 1 & 2',
+          title: 'Laws of Motion, Atomic Structure & Tissues',
+          chapters: [
+            { id: 'mid_sci_c1', title: 'Equations of Motion (v=u+at) & Bohr Model', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Physics & Chemistry Core', microTopics: [{ title: 'v^2 = u^2 + 2as & 2n^2 electron capacity', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'mid_soc',
+          subjectName: 'Social Science',
+          unitNumber: 'Unit 1 & 2',
+          title: 'Indus Valley Civilisation, Medieval Cholas & Constitution',
+          chapters: [
+            { id: 'mid_soc_c1', title: 'Harappan Town Planning & Indian Democratic Governance', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Historical Archaeology', microTopics: [{ title: 'Keeladi excavations & Fundamental Rights', pyq: 'Very High' }] }] }
+          ]
+        }
+      ];
+    }
+
+    if (is11th || is12th) {
+      return [
+        {
+          id: 'hsc_phy',
+          subjectName: 'Physics (இயற்பியல்)',
+          unitNumber: 'Unit 1: Physics',
+          title: is11th ? 'Kinematics, Newton’s Laws & Thermodynamics' : 'Electrostatics, Current Electricity & Optics',
+          chapters: [
+            { id: 'hsc_phy_c1', title: is11th ? '2D Projectiles & Work-Energy Theorem' : 'Coulomb’s Law, Gauss’s Law & Wheatstone Bridge', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Derivations and Problem Solving', microTopics: [{ title: is11th ? 'R_max = u^2/g at 45 degrees' : 'F = k*q1*q2/r^2 & P/Q = R/S', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'hsc_chem',
+          subjectName: 'Chemistry (வேதியியல்)',
+          unitNumber: 'Unit 2: Chemistry',
+          title: is11th ? 'Atomic Structure & Chemical Bonding' : 'Electrochemistry, Chemical Kinetics & Organic',
+          chapters: [
+            { id: 'hsc_ch_c1', title: is11th ? 'Quantum Numbers & Aufbau Principle' : 'Nernst Equation & First Order Kinetics (t_1/2=0.693/k)', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Theoretical Principles', microTopics: [{ title: is11th ? 'Pauli exclusion & Hund rule' : 'E_cell = E0 - (0.0591/n)log Q', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'hsc_mat',
+          subjectName: 'Mathematics (கணிதம்)',
+          unitNumber: 'Unit 3: Mathematics',
+          title: is11th ? 'Trigonometry & Differential Calculus' : 'Matrices, Integral Calculus & Differential Equations',
+          chapters: [
+            { id: 'hsc_mat_c1', title: is11th ? 'Product/Quotient Rules of Differentiation' : 'Matrix Inverses & Integration by Parts', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Calculus Theorems', microTopics: [{ title: is11th ? 'd/dx(x^n) = n*x^(n-1)' : 'A^-1 = (1/|A|) adj(A)', pyq: 'Very High' }] }] }
+          ]
+        },
+        {
+          id: 'hsc_bio',
+          subjectName: 'Biology / Computer Science',
+          unitNumber: 'Unit 4: Biology/CS',
+          title: is11th ? 'Cell Cycle, Photosynthesis & Python Loops' : 'Molecular Genetics & Relational SQL Databases',
+          chapters: [
+            { id: 'hsc_bio_c1', title: is11th ? 'Mitosis/Meiosis & Python Functions' : 'DNA Double Helix & SQL Joins/Aggregates', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', subtopics: [{ title: 'Genetics and Code', microTopics: [{ title: is11th ? 'Calvin Cycle & Python OOP' : 'DNA Replication & Database normalization', pyq: 'Very High' }] }] }
+          ]
+        }
+      ];
+    }
 
     if (is10th) {
       return [
