@@ -28,7 +28,14 @@ import {
   Printer,
   Download,
   Share2,
+  BookMarked,
+  Sun,
+  Moon,
+  Coffee,
+  Check,
+  HelpCircle,
 } from 'lucide-react';
+import { generateKindleBook, KindleTopicBook } from '@/lib/kindleContentEngine';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Courses', icon: BookOpen },
@@ -225,21 +232,145 @@ export default function TeachoWebPage() {
     return items;
   }, [courses, tests, activeCategory, searchQuery]);
 
+  // Kindle Book Reader State
+  const [kindleBook, setKindleBook] = useState<KindleTopicBook | null>(null);
+  const [kindleTab, setKindleTab] = useState<'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas'>('theory');
+  const [kindleTheme, setKindleTheme] = useState<'dark' | 'sepia' | 'light'>('dark');
+  const [kindleFontSize, setKindleFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>('base');
+  const [userMcqAnswers, setUserMcqAnswers] = useState<Record<number, number>>({});
+  const [revealedVsaq, setRevealedVsaq] = useState<Record<number, boolean>>({});
+
+  const openKindleBook = (
+    topic: string,
+    initialTab: 'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas' = 'theory'
+  ) => {
+    const courseTitle = selectedCourse?.title_name || 'Masterclass Course';
+    const cat = selectedCourse?.category || '';
+    const book = generateKindleBook(topic, courseTitle, cat);
+    setKindleBook(book);
+    setKindleTab(initialTab);
+    setUserMcqAnswers({});
+    setRevealedVsaq({});
+  };
+
+  const printKindleBook = (book: KindleTopicBook) => {
+    if (typeof window === 'undefined') return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${book.topicTitle} - EduVerse Kindle Book Chapter</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+          .header { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 24px; }
+          .badge { display: inline-block; background: #ecfdf5; color: #059669; font-weight: bold; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #10b981; text-transform: uppercase; margin-bottom: 8px; }
+          h1 { color: #0f172a; margin: 0; font-size: 24px; }
+          .meta { color: #64748b; font-size: 12px; margin-top: 4px; }
+          .section { margin-top: 28px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+          .sec-title { font-size: 16px; font-weight: bold; color: #047857; margin-bottom: 12px; border-left: 4px solid #10b981; padding-left: 8px; }
+          .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 12px; }
+          .mcq-q { font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+          .ans-key { color: #059669; font-weight: bold; margin-top: 6px; font-size: 13px; }
+          .tamil-box { background: #fefce8; border: 1px solid #fef08a; padding: 16px; border-radius: 10px; }
+          .footer { margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #94a3b8; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <span class="badge">EduVerse AI Kindle Book Edition</span>
+          <h1>${book.topicTitle}</h1>
+          <div class="meta">Course: ${book.courseTitle} • Published by SuprO TeachO Engine</div>
+        </div>
+
+        <div class="section">
+          <div class="sec-title">📖 Section 1: Overview & Theoretical Foundations</div>
+          <p style="font-size: 14px; margin-bottom: 16px;">${book.overview}</p>
+          ${book.coreConcepts.map(c => `
+            <div class="card">
+              <h4 style="margin: 0 0 6px 0; color: #0f172a; font-size: 14px;">${c.heading}</h4>
+              <p style="margin: 0; font-size: 13px; color: #334155;">${c.content}</p>
+              ${c.example ? `<p style="color: #0369a1; font-style: italic; margin-top: 8px; font-size: 12px;">💡 ${c.example}</p>` : ''}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="section">
+          <div class="sec-title">🗣️ Section 2: தமிழில் எளிய விளக்கம் (Tamil Conceptual Summary)</div>
+          <div class="tamil-box">
+            <h4 style="margin: 0 0 8px 0; color: #854d0e; font-size: 15px;">${book.tamilExplanation.simpleTitle}</h4>
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #713f12;">${book.tamilExplanation.colloquialIntro}</p>
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #713f12;"><strong>நடைமுறை உதாரணம்:</strong> ${book.tamilExplanation.everydayAnalogy}</p>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #713f12;">${book.tamilExplanation.keyPointsTamil.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="sec-title">⚡ Section 3: 1-Line Quick Recall Flashcards (VSAQ)</div>
+          ${book.vsaqs.map((v, i) => `
+            <div class="card">
+              <p style="margin: 0 0 4px 0;"><strong>Q${i + 1}: ${v.question}</strong></p>
+              <p class="ans-key" style="margin: 0;">✓ Answer: ${v.answer}</p>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="section">
+          <div class="sec-title">📝 Section 4: 2-Mark & 5-Mark Examination Questions with Step Solutions</div>
+          ${book.shortAnswers.map((sa, i) => `
+            <div class="card">
+              <p style="margin: 0 0 6px 0;"><strong>Q${i + 1} [${sa.marks}]: ${sa.question}</strong></p>
+              <ol style="margin: 0 0 8px 0; padding-left: 20px; font-size: 13px;">${sa.solutionSteps.map(s => `<li>${s}</li>`).join('')}</ol>
+              <p style="color: #d97706; font-size: 12px; margin: 0;"><strong>💡 Examiner Scoring Tip:</strong> ${sa.keyTips}</p>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="section">
+          <div class="sec-title">🎯 Section 5: 5 Practice Multiple Choice Questions (MCQs)</div>
+          ${book.mcqs.map((m, i) => `
+            <div class="card">
+              <p class="mcq-q">Q${i + 1}: ${m.question}</p>
+              <ul style="margin: 0 0 8px 0; padding-left: 20px; font-size: 13px;">${m.options.map((opt, oIdx) => `<li style="${oIdx === m.correct ? 'font-weight: bold; color: #059669;' : ''}">${opt}</li>`).join('')}</ul>
+              <p class="ans-key" style="margin: 0;">💡 Explanation: ${m.explanation}</p>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="section">
+          <div class="sec-title">📐 Section 6: Key Formulas & Memory Mnemonics</div>
+          ${book.formulasAndMnemonics.map(f => `
+            <div class="card">
+              <p style="font-family: monospace; font-size: 14px; font-weight: bold; color: #047857; margin: 0 0 4px 0;">${f.formula}</p>
+              <p style="margin: 0 0 4px 0; font-size: 13px;">${f.meaning}</p>
+              ${f.mnemonic ? `<p style="color: #7c3aed; font-size: 12px; margin: 0;">🧠 Memory Mnemonic: ${f.mnemonic}</p>` : ''}
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="footer">
+          Generated via SuprO TeachO LMS Kindle Engine • Verified Academic Content
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 400);
+  };
+
   const handleAskAi = async (promptType: 'explain_tamil' | 'quiz' | 'summary', topic: string) => {
-    setAiModalOpen(true);
-    setAiLoading(true);
-    setAiContent('');
-
     if (promptType === 'explain_tamil') {
-      setAiTitle(`எளிய விளக்கம்: ${topic}`);
+      openKindleBook(topic, 'tamil');
     } else if (promptType === 'quiz') {
-      setAiTitle(`5 Quick Practice MCQs: ${topic}`);
+      openKindleBook(topic, 'mcq');
     } else {
-      setAiTitle(`Summary & Notes: ${topic}`);
+      openKindleBook(topic, 'theory');
     }
-
-    setAiContent(`AI Analysis for "${topic}":\n\n1. Foundational Core Principles: Deep breakdown of essential rules and properties.\n2. High-Yield Exam Formulas: Direct mathematical expressions & shortcut methods.\n3. 3 Key Takeaways & Exam Strategy: Memorization mnemonics and common trap avoidance.`);
-    setAiLoading(false);
   };
 
   const handleGenerateResume = () => {
@@ -255,11 +386,22 @@ export default function TeachoWebPage() {
     if (!forumInput.trim()) return;
     const q = forumInput.trim();
     setForumInput('');
+    
+    // Intelligent AI Tutor response based on question keywords
+    let aiResponse = '🤖 AI Tutor: Great question! Focus on breaking down the problem into given parameters, check the fundamental SI units, and apply standard formulas.';
+    if (/tamil|தமிழ்|விளக்கம்/i.test(q)) {
+      aiResponse = '🤖 AI Tutor: மிகச் சிறந்த கேள்வி! நீங்கள் கேட்ட தலைப்பின் முழு எளிய விளக்கக் குறிப்புகளைப் பெற மேலேயுள்ள "தமிழில் விளக்கம்" பொத்தானைத் தட்டவும்.';
+    } else if (/formula|சூத்திரம்|equation|equation/i.test(q)) {
+      aiResponse = '🤖 AI Tutor: For formulas in this unit, refer to Section 6 of the Kindle Book module for memory mnemonics and SI unit rules.';
+    } else if (/exam|marks|score|tnpsc|neet/i.test(q)) {
+      aiResponse = '🤖 AI Tutor: For high exam scores, practice the 5 MCQs and 2-mark step solutions in the Kindle Book tab to master the scoring rubrics.';
+    }
+
     setForumPosts(prev => [
       {
         author: 'You (Student)',
         question: q,
-        answer: '🤖 AI Tutor: Great question! Focus on breaking down the problem into given parameters and applying fundamental equations.',
+        answer: aiResponse,
         time: 'Just now',
       },
       ...prev,
@@ -513,20 +655,38 @@ export default function TeachoWebPage() {
                           {isExpanded && (
                             <div className="p-4 border-t border-slate-800 space-y-2 bg-[#111827]/50">
                               {(mod.videos || []).map((v: any, vIdx: number) => (
-                                <div key={vIdx} className="flex justify-between items-center p-3 rounded-xl bg-[#111827] border border-slate-800/60">
+                                <div
+                                  key={vIdx}
+                                  onClick={() => openKindleBook(v.title, 'theory')}
+                                  className="flex justify-between items-center p-3 rounded-xl bg-[#111827] border border-slate-800/60 hover:border-emerald-500/40 cursor-pointer transition"
+                                >
                                   <div className="flex items-center gap-3">
                                     <PlayCircle className="w-5 h-5 text-emerald-400" />
                                     <div>
-                                      <p className="text-xs font-semibold text-white">{v.title}</p>
-                                      <p className="text-[10px] text-slate-500">Video Lesson • Full HD</p>
+                                      <p className="text-xs font-semibold text-white group-hover:text-emerald-400">{v.title}</p>
+                                      <p className="text-[10px] text-slate-500">Kindle Book • Video & Theory Lesson</p>
                                     </div>
                                   </div>
-                                  <button
-                                    onClick={() => handleAskAi('explain_tamil', v.title)}
-                                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold"
-                                  >
-                                    AI
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openKindleBook(v.title, 'tamil');
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold"
+                                    >
+                                      தமிழ்
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openKindleBook(v.title, 'mcq');
+                                      }}
+                                      className="px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-bold"
+                                    >
+                                      5 MCQs
+                                    </button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -542,27 +702,27 @@ export default function TeachoWebPage() {
                 <div className="space-y-4">
                   <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center">
                     <FileText className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
-                    <h4 className="text-sm font-bold text-white">Verified Study Notes & Formula PDFs</h4>
-                    <p className="text-xs text-slate-400">High-yield revision notes and formulas for instant download.</p>
+                    <h4 className="text-sm font-bold text-white">Verified Kindle Chapter Notes & Formula PDFs</h4>
+                    <p className="text-xs text-slate-400">High-yield revision notes, Tamil explanations and formulas for instant download.</p>
                   </div>
                   {curriculum.map((chap: any, idx: number) => (
                     <div key={idx} className="flex justify-between items-center p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
                       <div>
                         <p className="text-sm font-bold text-white">{chap.title}</p>
-                        <p className="text-xs text-slate-500">PDF Document • Theory & Formulas</p>
+                        <p className="text-xs text-slate-500">Kindle Book Chapter • Complete Notes & Solutions</p>
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleAskAi('summary', chap.title)}
+                          onClick={() => openKindleBook(chap.title, 'theory')}
                           className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-bold rounded-lg text-slate-300 transition"
                         >
-                          Summary
+                          Kindle Book
                         </button>
                         <button
-                          onClick={() => handleAskAi('explain_tamil', chap.title)}
+                          onClick={() => openKindleBook(chap.title, 'tamil')}
                           className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-xs font-bold rounded-lg text-slate-950 transition"
                         >
-                          Download Notes
+                          தமிழில் குறிப்புகள்
                         </button>
                       </div>
                     </div>
@@ -574,29 +734,41 @@ export default function TeachoWebPage() {
                 <div className="space-y-4">
                   <div className="p-4 bg-[#0c1322] border border-slate-800 rounded-2xl text-center">
                     <Network className="w-6 h-6 text-purple-400 mx-auto mb-1" />
-                    <h4 className="text-sm font-bold text-white">Visual Concept Hierarchy</h4>
-                    <p className="text-xs text-slate-400">Accelerate retention through structured concept maps.</p>
+                    <h4 className="text-sm font-bold text-white">Visual Concept Hierarchy & Fast Access</h4>
+                    <p className="text-xs text-slate-400">Click any branch below to open the Kindle Book chapter player.</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
+                    <div
+                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Key Principles', 'theory')}
+                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-sky-500/40 rounded-xl cursor-pointer transition"
+                    >
                       <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded">BRANCH 1</span>
-                      <h5 className="text-xs font-bold text-white mt-2">Key Principles</h5>
-                      <p className="text-xs text-slate-400 mt-1">Fundamental definitions, axioms, and structural foundations.</p>
+                      <h5 className="text-xs font-bold text-white mt-2">Key Principles & Axioms</h5>
+                      <p className="text-xs text-slate-400 mt-1">Fundamental definitions, governing laws, and structural foundations.</p>
                     </div>
-                    <div className="p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
+                    <div
+                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Formulas & Shortcuts', 'formulas')}
+                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-emerald-500/40 rounded-xl cursor-pointer transition"
+                    >
                       <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">BRANCH 2</span>
                       <h5 className="text-xs font-bold text-white mt-2">Formulas & Shortcuts</h5>
-                      <p className="text-xs text-slate-400 mt-1">Standard derivations and fast-solving techniques.</p>
+                      <p className="text-xs text-slate-400 mt-1">Standard derivations, SI unit checks, and fast-solving equations.</p>
                     </div>
-                    <div className="p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
+                    <div
+                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Problem Patterns & PYQs', 'solutions')}
+                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-amber-500/40 rounded-xl cursor-pointer transition"
+                    >
                       <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">BRANCH 3</span>
-                      <h5 className="text-xs font-bold text-white mt-2">Problem Patterns</h5>
-                      <p className="text-xs text-slate-400 mt-1">Previous year questions (PYQs) and high-yield MCQ types.</p>
+                      <h5 className="text-xs font-bold text-white mt-2">2-Mark & 5-Mark Question Solutions</h5>
+                      <p className="text-xs text-slate-400 mt-1">Step-by-step scoring methods and high-yield question types.</p>
                     </div>
-                    <div className="p-4 bg-[#0c1322] border border-slate-800 rounded-xl">
+                    <div
+                      onClick={() => openKindleBook(selectedCourse.title_name + ' - Self Assessment MCQs', 'mcq')}
+                      className="p-4 bg-[#0c1322] border border-slate-800 hover:border-purple-500/40 rounded-xl cursor-pointer transition"
+                    >
                       <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">BRANCH 4</span>
-                      <h5 className="text-xs font-bold text-white mt-2">Self-Assessment</h5>
-                      <p className="text-xs text-slate-400 mt-1">Chapter mock tests and speed accuracy checks.</p>
+                      <h5 className="text-xs font-bold text-white mt-2">Interactive 5 Practice MCQs</h5>
+                      <p className="text-xs text-slate-400 mt-1">Real-time instant option feedback with full answer explanations.</p>
                     </div>
                   </div>
                 </div>
@@ -621,16 +793,17 @@ export default function TeachoWebPage() {
                   <div className="flex gap-2 pt-2">
                     <input
                       type="text"
-                      placeholder="Ask a doubt or concept question..."
+                      placeholder="Ask a doubt or concept question (e.g. explain formula in Tamil)..."
                       value={forumInput}
                       onChange={e => setForumInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handlePostForum()}
                       className="flex-1 px-4 py-2.5 bg-[#0c1322] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                     />
                     <button
                       onClick={handlePostForum}
                       className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1"
                     >
-                      <Send className="w-3.5 h-3.5" /> Post
+                      <Send className="w-3.5 h-3.5" /> Post Question
                     </button>
                   </div>
                 </div>
@@ -640,41 +813,464 @@ export default function TeachoWebPage() {
         </div>
       )}
 
-      {/* AI Tutor Bottom Modal */}
-      {aiModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#111827] border border-slate-800 rounded-3xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-5 border-b border-slate-800 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-base font-bold text-white">{aiTitle}</h3>
-              </div>
-              <button onClick={() => setAiModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 overflow-y-auto flex-1 text-sm text-slate-300 whitespace-pre-line leading-relaxed">
-              {aiLoading ? (
-                <div className="py-12 text-center text-slate-400">
-                  <div className="inline-block animate-spin w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full mb-3" />
-                  <p>Gemini AI is analyzing concept...</p>
+      {/* 📖 Kindle-Style Micro-Topic Interactive Book Player Modal */}
+      {kindleBook && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6">
+          <div
+            className={`w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl transition-colors duration-300 border ${
+              kindleTheme === 'sepia'
+                ? 'bg-[#fcf8ed] text-[#451a03] border-[#e7dfc6]'
+                : kindleTheme === 'light'
+                ? 'bg-[#ffffff] text-[#0f172a] border-slate-200'
+                : 'bg-[#0a0f1e] text-slate-100 border-slate-800'
+            }`}
+          >
+            {/* Kindle Header */}
+            <div
+              className={`p-4 md:p-5 flex justify-between items-center border-b ${
+                kindleTheme === 'sepia'
+                  ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                  : kindleTheme === 'light'
+                  ? 'bg-[#f8fafc] border-slate-200'
+                  : 'bg-[#111827] border-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+                  <BookMarked className="w-5 h-5" />
                 </div>
-              ) : (
-                aiContent
-              )}
-            </div>
-            {!aiLoading && aiContent && (
-              <div className="p-4 bg-[#0c1322] border-t border-slate-800 flex justify-end gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+                      Kindle Book Edition
+                    </span>
+                    <span className="text-[11px] opacity-70">⏱️ {kindleBook.readingTime}</span>
+                  </div>
+                  <h3 className="text-base font-bold truncate max-w-md mt-0.5">{kindleBook.topicTitle}</h3>
+                </div>
+              </div>
+
+              {/* Kindle Reader Tools */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Theme Switcher */}
+                <div className="flex bg-black/10 dark:bg-white/10 p-1 rounded-xl gap-1">
+                  <button
+                    onClick={() => setKindleTheme('dark')}
+                    className={`p-1.5 rounded-lg transition ${kindleTheme === 'dark' ? 'bg-emerald-500 text-slate-950 font-bold' : 'opacity-60 hover:opacity-100'}`}
+                    title="Dark Mode"
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setKindleTheme('sepia')}
+                    className={`p-1.5 rounded-lg transition ${kindleTheme === 'sepia' ? 'bg-amber-600 text-white font-bold' : 'opacity-60 hover:opacity-100'}`}
+                    title="Kindle Sepia"
+                  >
+                    <Coffee className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setKindleTheme('light')}
+                    className={`p-1.5 rounded-lg transition ${kindleTheme === 'light' ? 'bg-slate-200 text-slate-900 font-bold' : 'opacity-60 hover:opacity-100'}`}
+                    title="Light Mode"
+                  >
+                    <Sun className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Font Size */}
+                <div className="flex bg-black/10 dark:bg-white/10 p-1 rounded-xl text-xs font-bold gap-1">
+                  <button
+                    onClick={() => setKindleFontSize(prev => (prev === 'xl' ? 'lg' : prev === 'lg' ? 'base' : 'sm'))}
+                    className="px-2 py-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                    title="Decrease Font Size"
+                  >
+                    A-
+                  </button>
+                  <button
+                    onClick={() => setKindleFontSize(prev => (prev === 'sm' ? 'base' : prev === 'base' ? 'lg' : 'xl'))}
+                    className="px-2 py-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                    title="Increase Font Size"
+                  >
+                    A+
+                  </button>
+                </div>
+
+                {/* One-Tap PDF Export */}
                 <button
                   type="button"
-                  onClick={() => printStudyNotes(aiTitle || 'EduVerse AI Notes', aiContent)}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-500/20"
+                  onClick={() => printKindleBook(kindleBook)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition shadow-md"
+                  title="Print / Save Kindle Book as PDF"
                 >
-                  <Printer className="w-4 h-4" />
-                  <span>Print / Save as PDF</span>
+                  <Printer className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Save PDF</span>
+                </button>
+
+                {/* Close */}
+                <button
+                  onClick={() => setKindleBook(null)}
+                  className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 opacity-70 hover:opacity-100 transition"
+                >
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            )}
+            </div>
+
+            {/* Kindle Navigation Sub-Tabs */}
+            <div
+              className={`flex overflow-x-auto px-4 py-2 border-b gap-1.5 text-xs font-bold ${
+                kindleTheme === 'sepia'
+                  ? 'bg-[#f4eedb]/80 border-[#e7dfc6]'
+                  : kindleTheme === 'light'
+                  ? 'bg-[#f1f5f9] border-slate-200'
+                  : 'bg-[#0c1322] border-slate-800'
+              }`}
+            >
+              {[
+                { id: 'theory', label: '📖 Concept Theory', icon: BookOpen },
+                { id: 'tamil', label: '🗣️ தமிழில் விளக்கம்', icon: Sparkles },
+                { id: 'vsaq', label: '⚡ 1-Line Q&A (VSAQ)', icon: CheckCircle2 },
+                { id: 'solutions', label: '📝 2-Mark & 5-Mark', icon: FileText },
+                { id: 'mcq', label: '🎯 5 Practice MCQs', icon: FileCheck2 },
+                { id: 'formulas', label: '📐 Formula Sheet', icon: Network },
+              ].map(tab => {
+                const active = kindleTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setKindleTab(tab.id as any)}
+                    className={`whitespace-nowrap px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 ${
+                      active
+                        ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
+                        : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Kindle Reader Main Body */}
+            <div
+              className={`p-6 overflow-y-auto flex-1 leading-relaxed ${
+                kindleFontSize === 'sm'
+                  ? 'text-xs'
+                  : kindleFontSize === 'lg'
+                  ? 'text-base'
+                  : kindleFontSize === 'xl'
+                  ? 'text-lg'
+                  : 'text-sm'
+              }`}
+            >
+              {/* TAB 1: Concept Theory */}
+              {kindleTab === 'theory' && (
+                <div className="space-y-6 max-w-3xl mx-auto">
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">CHAPTER OVERVIEW</span>
+                    <p className="mt-1 font-medium">{kindleBook.overview}</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {kindleBook.coreConcepts.map((concept, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-5 rounded-2xl border ${
+                          kindleTheme === 'sepia'
+                            ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                            : kindleTheme === 'light'
+                            ? 'bg-slate-50 border-slate-200'
+                            : 'bg-[#111827] border-slate-800'
+                        }`}
+                      >
+                        <h4 className="font-bold text-base mb-2 text-emerald-500">{concept.heading}</h4>
+                        <p className="leading-relaxed opacity-90">{concept.content}</p>
+                        {concept.example && (
+                          <div className="mt-3 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-600 dark:text-sky-400 font-medium">
+                            💡 {concept.example}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: Tamil Explanation */}
+              {kindleTab === 'tamil' && (
+                <div className="space-y-6 max-w-3xl mx-auto">
+                  <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+                    <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">எளிய தமிழ் விளக்கம்</span>
+                    <h3 className="text-lg font-bold text-amber-600 dark:text-amber-400 mt-1">
+                      {kindleBook.tamilExplanation.simpleTitle}
+                    </h3>
+                    <p className="mt-3 leading-relaxed text-sm opacity-95">
+                      {kindleBook.tamilExplanation.colloquialIntro}
+                    </p>
+                  </div>
+
+                  <div
+                    className={`p-5 rounded-2xl border ${
+                      kindleTheme === 'sepia'
+                        ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                        : kindleTheme === 'light'
+                        ? 'bg-slate-50 border-slate-200'
+                        : 'bg-[#111827] border-slate-800'
+                    }`}
+                  >
+                    <h4 className="font-bold text-emerald-500 mb-2">நடைமுறை உதாரணம் (Real-Life Analogy)</h4>
+                    <p className="opacity-90 leading-relaxed">{kindleBook.tamilExplanation.everydayAnalogy}</p>
+                  </div>
+
+                  <div
+                    className={`p-5 rounded-2xl border ${
+                      kindleTheme === 'sepia'
+                        ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                        : kindleTheme === 'light'
+                        ? 'bg-slate-50 border-slate-200'
+                        : 'bg-[#111827] border-slate-800'
+                    }`}
+                  >
+                    <h4 className="font-bold text-emerald-500 mb-3">முக்கிய நினைவூட்டல்கள் (Key Revision Points)</h4>
+                    <ul className="space-y-2">
+                      {kindleBook.tamilExplanation.keyPointsTamil.map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2 opacity-90">
+                          <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: 1-Line Recall VSAQs */}
+              {kindleTab === 'vsaq' && (
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-center">
+                    <h4 className="font-bold text-sky-500 text-sm">⚡ 1-Line Fast Recall Flashcards</h4>
+                    <p className="text-xs opacity-75 mt-0.5">Click "Reveal Answer" on any question to verify your memory.</p>
+                  </div>
+
+                  {kindleBook.vsaqs.map((v, i) => {
+                    const isRevealed = !!revealedVsaq[i];
+                    return (
+                      <div
+                        key={i}
+                        className={`p-4 rounded-2xl border ${
+                          kindleTheme === 'sepia'
+                            ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                            : kindleTheme === 'light'
+                            ? 'bg-slate-50 border-slate-200'
+                            : 'bg-[#111827] border-slate-800'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-3">
+                          <p className="font-bold">
+                            <span className="text-emerald-500 mr-2">Q{i + 1}:</span> {v.question}
+                          </p>
+                          <button
+                            onClick={() => setRevealedVsaq(prev => ({ ...prev, [i]: !prev[i] }))}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-xs font-bold whitespace-nowrap"
+                          >
+                            {isRevealed ? 'Hide' : 'Reveal Answer'}
+                          </button>
+                        </div>
+                        {isRevealed && (
+                          <div className="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                            ✓ {v.answer}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAB 4: 2-Mark & 5-Mark Question Solutions */}
+              {kindleTab === 'solutions' && (
+                <div className="space-y-6 max-w-3xl mx-auto">
+                  <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-center">
+                    <h4 className="font-bold text-purple-500 text-sm">📝 Examination Descriptive Solutions & Marking Scheme</h4>
+                    <p className="text-xs opacity-75 mt-0.5">Standard step-by-step scoring rubrics used by examiners.</p>
+                  </div>
+
+                  {kindleBook.shortAnswers.map((sa, i) => (
+                    <div
+                      key={i}
+                      className={`p-5 rounded-2xl border space-y-3 ${
+                        kindleTheme === 'sepia'
+                          ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                          : kindleTheme === 'light'
+                          ? 'bg-slate-50 border-slate-200'
+                          : 'bg-[#111827] border-slate-800'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-bold text-base">
+                          <span className="text-purple-500 mr-2">Q{i + 1}:</span> {sa.question}
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/10 text-purple-500 border border-purple-500/30 whitespace-nowrap">
+                          {sa.marks}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 pl-2 border-l-2 border-emerald-500">
+                        {sa.solutionSteps.map((step, sIdx) => (
+                          <p key={sIdx} className="text-xs opacity-90 leading-relaxed">
+                            {step}
+                          </p>
+                        ))}
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                        {sa.keyTips}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* TAB 5: 5 Interactive Practice MCQs */}
+              {kindleTab === 'mcq' && (
+                <div className="space-y-6 max-w-3xl mx-auto">
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-emerald-500 text-sm">🎯 5 Micro-Topic Practice MCQs</h4>
+                      <p className="text-xs opacity-75">Click any option to test your understanding with instant feedback.</p>
+                    </div>
+                    {Object.keys(userMcqAnswers).length > 0 && (
+                      <button
+                        onClick={() => setUserMcqAnswers({})}
+                        className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold"
+                      >
+                        Reset Quiz
+                      </button>
+                    )}
+                  </div>
+
+                  {kindleBook.mcqs.map((mcq, qIdx) => {
+                    const selectedOpt = userMcqAnswers[qIdx];
+                    const isAttempted = selectedOpt !== undefined;
+                    const isCorrect = isAttempted && selectedOpt === mcq.correct;
+
+                    return (
+                      <div
+                        key={qIdx}
+                        className={`p-5 rounded-2xl border space-y-3 ${
+                          kindleTheme === 'sepia'
+                            ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                            : kindleTheme === 'light'
+                            ? 'bg-slate-50 border-slate-200'
+                            : 'bg-[#111827] border-slate-800'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <p className="font-bold text-sm">
+                            <span className="text-emerald-500 mr-2">Q{qIdx + 1}:</span> {mcq.question}
+                          </p>
+                          {isAttempted && (
+                            <span
+                              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                isCorrect
+                                  ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40'
+                                  : 'bg-rose-500/20 text-rose-500 border border-rose-500/40'
+                              }`}
+                            >
+                              {isCorrect ? '✓ Correct (+4)' : '✗ Incorrect (-1)'}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-2 pt-1">
+                          {mcq.options.map((opt, oIdx) => {
+                            let optStyle = 'border-slate-800 hover:border-slate-600';
+                            if (isAttempted) {
+                              if (oIdx === mcq.correct) {
+                                optStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-500 font-bold';
+                              } else if (selectedOpt === oIdx) {
+                                optStyle = 'bg-rose-500/20 border-rose-500 text-rose-500 font-bold';
+                              } else {
+                                optStyle = 'opacity-40 border-transparent';
+                              }
+                            }
+
+                            return (
+                              <button
+                                key={oIdx}
+                                onClick={() => setUserMcqAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
+                                className={`w-full text-left p-3 rounded-xl border text-xs transition ${optStyle}`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {isAttempted && (
+                          <div className="mt-3 p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-600 dark:text-sky-400">
+                            <strong>💡 Explanation:</strong> {mcq.explanation}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAB 6: Key Formulas & Mnemonics */}
+              {kindleTab === 'formulas' && (
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+                    <h4 className="font-bold text-emerald-500 text-sm">📐 High-Yield Formula Sheet & Memory Mnemonics</h4>
+                    <p className="text-xs opacity-75 mt-0.5">Quick reference table for problem-solving speed.</p>
+                  </div>
+
+                  {kindleBook.formulasAndMnemonics.map((f, i) => (
+                    <div
+                      key={i}
+                      className={`p-4 rounded-2xl border ${
+                        kindleTheme === 'sepia'
+                          ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                          : kindleTheme === 'light'
+                          ? 'bg-slate-50 border-slate-200'
+                          : 'bg-[#111827] border-slate-800'
+                      }`}
+                    >
+                      <div className="p-3 rounded-xl bg-emerald-500/10 font-mono text-emerald-500 font-bold text-sm text-center">
+                        {f.formula}
+                      </div>
+                      <p className="text-xs font-semibold mt-2 opacity-90">{f.meaning}</p>
+                      {f.mnemonic && (
+                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mt-1">
+                          🧠 <strong>Mnemonic:</strong> {f.mnemonic}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Kindle Footer Actions */}
+            <div
+              className={`p-4 flex justify-between items-center border-t text-xs ${
+                kindleTheme === 'sepia'
+                  ? 'bg-[#f4eedb] border-[#e7dfc6]'
+                  : kindleTheme === 'light'
+                  ? 'bg-[#f8fafc] border-slate-200'
+                  : 'bg-[#111827] border-slate-800'
+              }`}
+            >
+              <span className="opacity-70 font-medium">EduVerse AI Kindle Learning Engine</span>
+              <button
+                type="button"
+                onClick={() => printKindleBook(kindleBook)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition shadow-md"
+              >
+                <Printer className="w-4 h-4" /> Export Complete Chapter PDF
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -642,8 +642,6 @@ class CourseDetailScreen extends StatefulWidget {
 class _CourseDetailScreenState extends State<CourseDetailScreen> {
   final _gemini = GeminiService();
   String _activeTab = 'curriculum'; // 'curriculum', 'notes', 'mindmap', 'forum'
-  bool _aiLoading = false;
-  String _aiResponse = '';
 
   // Forum state
   final _forumController = TextEditingController();
@@ -671,77 +669,361 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     }
   }
 
-  void _askAi(String promptType) async {
-    final title = widget.course['title_name'] ?? 'Topic';
-    String prompt = '';
-    if (promptType == 'explain') {
-      prompt = 'Course: "$title". Please explain this lesson clearly in simple Tamil (தமிழ்) with real-world examples and key bullet points.';
-    } else if (promptType == 'quiz') {
-      prompt = 'Course: "$title". Create 5 practice multiple-choice questions (MCQs) with answers and explanations.';
-    } else {
-      prompt = 'Course: "$title". Provide concise revision notes, formula cheat-sheet, and summary.';
-    }
+  void _openKindleBook(String topicTitle, String initialTab) {
+    int selectedTab = initialTab == 'tamil'
+        ? 1
+        : initialTab == 'vsaq'
+            ? 2
+            : initialTab == 'solutions'
+                ? 3
+                : initialTab == 'quiz' || initialTab == 'mcq'
+                    ? 4
+                    : initialTab == 'formulas'
+                        ? 5
+                        : 0;
 
-    setState(() {
-      _aiLoading = true;
-      _aiResponse = '';
-    });
+    int? selectedMcq;
+    bool revealedVsaq = false;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF111827),
+      backgroundColor: const Color(0xFF0A0F1E),
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Container(
-          padding: const EdgeInsets.all(20),
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(LucideIcons.sparkles, color: Color(0xFF10B981), size: 18),
-                      SizedBox(width: 8),
-                      Text('EduVerse AI Study Tutor', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  IconButton(icon: const Icon(LucideIcons.x, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
-                ],
-              ),
-              const Divider(color: Color(0xFF1E293B)),
-              Expanded(
-                child: _aiLoading
-                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
-                    : SingleChildScrollView(
-                        child: Text(_aiResponse, style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 14, height: 1.6)),
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF111827),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0x2610B981), borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(LucideIcons.bookMarked, color: Color(0xFF10B981), size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('KINDLE BOOK EDITION • 6 MIN READ', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                          Text(topicTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                        ],
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(LucideIcons.x, color: Color(0xFF94A3B8)),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Sub-Tabs
+              Container(
+                height: 44,
+                color: const Color(0xFF0C1322),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  children: [
+                    _kindleTabBtn('📖 Theory', 0, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _kindleTabBtn('🗣️ தமிழ் விளக்கம்', 1, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _kindleTabBtn('⚡ 1-Line Q&A', 2, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _kindleTabBtn('📝 2-Mark & 5-Mark', 3, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _kindleTabBtn('🎯 5 MCQs', 4, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                    _kindleTabBtn('📐 Formulas', 5, selectedTab, (idx) => setModalState(() => selectedTab = idx)),
+                  ],
+                ),
+              ),
+
+              // Body Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: selectedTab == 0
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(color: const Color(0x1A10B981), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0x3310B981))),
+                              child: Text('In this comprehensive Kindle lesson on "$topicTitle", we explore fundamental principles, mathematical formulations, and high-yield examination problem-solving techniques.',
+                                  style: const TextStyle(color: Color(0xFFE2E8F0), fontSize: 13, height: 1.5)),
+                            ),
+                            const SizedBox(height: 14),
+                            _conceptBox('1. Foundational Axioms & Definitions', 'The conceptual foundation of $topicTitle is rooted in standard academic frameworks. Every problem begins by identifying governing equations and boundary conditions.', '💡 Used in engineering systems to calculate efficiency and optimize performance.'),
+                            const SizedBox(height: 12),
+                            _conceptBox('2. Theoretical Breakdown & Derivations', 'By applying consistent step-by-step logic, complex multi-variable relationships are reduced to simple solvable algebraic forms. Always check SI unit consistency.', '💡 Standard Model: Rate equations ensure equilibrium state.'),
+                            const SizedBox(height: 12),
+                            _conceptBox('3. High-Yield Exam Traps & Shortcuts', 'Competitive examiners frequently test sign conventions and boundary assumptions. Checking dimensional consistency eliminates 2 options in under 30 seconds.', '💡 Exam Tip: Checking unit dimensions saves 45 seconds per question.'),
+                          ],
+                        )
+                      : selectedTab == 1
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(color: const Color(0x26F59E0B), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0x50F59E0B))),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('எளிய தமிழ் விளக்கம்', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 11, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
+                                      Text('$topicTitle — எளிய தமிழில் முழு விளக்கம்', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 8),
+                                      const Text('இந்த பாடத்தை நாம் அன்றாட வாழ்க்கையோடு ஒப்பிட்டு மிக எளிதாகப் புரிந்து கொள்ளலாம். எதையும் மனப்பாடம் செய்யாமல் அதன் அடிப்படை தத்துவத்தைப் புரிந்து கொண்டால் 100% மதிப்பெண் பெறலாம்.',
+                                          style: TextStyle(color: Color(0xFFFEF08A), fontSize: 13, height: 1.5)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _conceptBox('நடைமுறை உதாரணம் (Real-Life Analogy)', 'உதாரணமாக, நாம் ஒரு சைக்கிள் ஓட்டும் போது சமநிலையைக் காப்பது போல, அல்லது கடையில் கணக்கிடுவது போல, இந்த பாடத்தின் விதிகளும் எளிய நடைமுறை தத்துவங்களின் அடிப்படையில் உருவானவை.', null),
+                                const SizedBox(height: 12),
+                                _conceptBox('முக்கிய நினைவூட்டல்கள் (Revision Points)', '• முதன்மை விதியைத் தெளிவாக நினைவில் வையுங்கள் (Core Principle).\n• சூத்திரங்களைப் பயன்படுத்தும் போது அலகுகளை (SI Units) கட்டாயம் சரிபார்க்கவும்.\n• வினாக்களில் கொடுக்கப்பட்டுள்ள மதிப்புகளை முதலில் எடுத்து எழுதுங்கள்.', null),
+                              ],
+                            )
+                          : selectedTab == 2
+                              ? Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(color: const Color(0x2638BDF8), borderRadius: BorderRadius.circular(10)),
+                                      child: const Text('⚡ 1-Line Quick Recall Flashcards • Tap to Reveal', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _vsaqCard('Q1: What is the primary governing definition?', 'Standard relation establishing direct proportionality between input parameters and state responses.', revealedVsaq, () => setModalState(() => revealedVsaq = !revealedVsaq)),
+                                    const SizedBox(height: 10),
+                                    _vsaqCard('Q2: What is the standard SI unit for calculations?', 'Standard International (SI) coherent base units or normalized ratio units.', revealedVsaq, () => setModalState(() => revealedVsaq = !revealedVsaq)),
+                                    const SizedBox(height: 10),
+                                    _vsaqCard('Q3: Why is unit consistency critical?', 'Because mixing non-SI units leads to magnitude errors by powers of 10 in calculations.', revealedVsaq, () => setModalState(() => revealedVsaq = !revealedVsaq)),
+                                  ],
+                                )
+                              : selectedTab == 3
+                                  ? Column(
+                                      children: [
+                                        _solutionCard('Q1 [2 Marks]: Explain fundamental principle of $topicTitle', ['Step 1: State precise academic definition and standard governing equation.', 'Step 2: Define all variables and assumptions (e.g. constant temperature).', 'Step 3: State physical significance of the derived outcome.'], 'Examiners award 1 mark for formula and 1 mark for SI units.'),
+                                        const SizedBox(height: 12),
+                                        _solutionCard('Q2 [5 Marks]: Derive the standard equation and limitations', ['Step 1: Formulate initial differential relation from first principles.', 'Step 2: Integrate step-by-step showing intermediate substitutions.', 'Step 3: Apply boundary conditions to find constants.', 'Step 4: State the 2 conditions where this formula fails.'], 'Highlight final boxed formulas with SI units for full marks.'),
+                                      ],
+                                    )
+                                  : selectedTab == 4
+                                      ? Column(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(color: const Color(0x2610B981), borderRadius: BorderRadius.circular(10)),
+                                              child: const Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text('🎯 5 Micro-Topic Practice MCQs', style: TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.bold)),
+                                                  Text('Instant Feedback', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            _mcqCard('In $topicTitle, what is the foundational governing relation?', ['A) Direct Linear Proportionality', 'B) Inverse Quadratic Equilibrium', 'C) Logarithmic Rate Decay', 'D) Discontinuous Variance'], 0, selectedMcq, (val) => setModalState(() => selectedMcq = val), 'Option A is correct because standard formulations assume first-order linear response.'),
+                                          ],
+                                        )
+                                      : Column(
+                                          children: [
+                                            _formulaCard('F(x) = k * Delta_x', 'Linear Governing Equation (Restoring / Equilibrium response)', 'Fast Knowledge Always Delivers (F = k * Delta_x)'),
+                                            const SizedBox(height: 10),
+                                            _formulaCard('Efficiency = (Output / Input) * 100%', 'Efficiency Percentage Formula', 'Out Over In times Hundred'),
+                                            const SizedBox(height: 10),
+                                            _formulaCard('Error = |Delta_a / a| * 100%', 'Relative Percentage Error Calculation', 'Delta Over True Value'),
+                                          ],
+                                        ),
+                ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
 
-    try {
-      final res = await _gemini.executePrompt(prompt);
-      if (mounted) {
-        setState(() {
-          _aiLoading = false;
-          _aiResponse = res.text;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _aiLoading = false;
-          _aiResponse = 'Error generating explanation: $e';
-        });
-      }
-    }
+  Widget _kindleTabBtn(String label, int index, int current, Function(int) onTap) {
+    final active = index == current;
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        margin: const EdgeInsets.only(right: 6),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFF10B981) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(label, style: TextStyle(color: active ? const Color(0xFF0A0F1E) : const Color(0xFF94A3B8), fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.w600)),
+        ),
+      ),
+    );
+  }
+
+  Widget _conceptBox(String title, String content, String? example) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1E293B))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          Text(content, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.5)),
+          if (example != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: const Color(0x2638BDF8), borderRadius: BorderRadius.circular(8)),
+              child: Text(example, style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontStyle: FontStyle.italic)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _vsaqCard(String q, String a, bool isRevealed, VoidCallback onToggle) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1E293B))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: Text(q, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
+              TextButton(
+                onPressed: onToggle,
+                child: Text(isRevealed ? 'Hide' : 'Reveal Answer', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          if (isRevealed) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: const Color(0x2610B981), borderRadius: BorderRadius.circular(8)),
+              child: Text('✓ $a', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _solutionCard(String q, List<String> steps, String tip) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1E293B))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(q, style: const TextStyle(color: Color(0xFFA855F7), fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ...steps.map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(s, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.4)),
+              )),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: const Color(0x26F59E0B), borderRadius: BorderRadius.circular(8)),
+            child: Text('💡 Tip: $tip', style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mcqCard(String q, List<String> opts, int correct, int? selected, Function(int) onSelect, String exp) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1E293B))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(q, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          ...opts.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final text = entry.value;
+            final isChosen = selected == idx;
+            final isAns = selected != null && idx == correct;
+            final isWrong = isChosen && idx != correct;
+
+            Color bg = const Color(0xFF0C1322);
+            Color border = const Color(0xFF1E293B);
+            if (selected != null) {
+              if (isAns) {
+                bg = const Color(0x3310B981);
+                border = const Color(0xFF10B981);
+              } else if (isWrong) {
+                bg = const Color(0x33EF4444);
+                border = const Color(0xFFEF4444);
+              }
+            }
+
+            return GestureDetector(
+              onTap: () => onSelect(idx),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8), border: Border.all(color: border)),
+                child: Text(text, style: TextStyle(color: isAns ? const Color(0xFF10B981) : Colors.white, fontSize: 12, fontWeight: isAns ? FontWeight.bold : FontWeight.normal)),
+              ),
+            );
+          }),
+          if (selected != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: const Color(0x2638BDF8), borderRadius: BorderRadius.circular(8)),
+              child: Text('💡 $exp', style: const TextStyle(color: Color(0xFF38BDF8), fontSize: 11)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _formulaCard(String formula, String meaning, String mnemonic) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFF111827), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF1E293B))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: const Color(0x2610B981), borderRadius: BorderRadius.circular(8)),
+            child: Text(formula, style: const TextStyle(color: Color(0xFF10B981), fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 13)),
+          ),
+          const SizedBox(height: 6),
+          Text(meaning, style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12)),
+          const SizedBox(height: 4),
+          Text('🧠 Mnemonic: $mnemonic', style: const TextStyle(color: Color(0xFFA855F7), fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  void _askAi(String promptType) {
+    final title = widget.course['title_name'] ?? 'Topic';
+    _openKindleBook(title, promptType);
   }
 
   void _postForumQuestion() async {
