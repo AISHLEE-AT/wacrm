@@ -517,7 +517,18 @@ export function MessageThread({
         if (!res.ok) {
           const reason = payload?.error || `HTTP ${res.status}`;
           console.error("Failed to send message:", reason);
-          toast.error(`Failed to send: ${reason}`);
+          if (payload?.code === 'SESSION_EXPIRED' || payload?.isSessionExpired) {
+            toast.error(reason, {
+              duration: 6000,
+              action: {
+                label: 'Pick Template',
+                onClick: () => setTemplateModalOpen(true),
+              },
+            });
+            setTemplateModalOpen(true);
+          } else {
+            toast.error(`Failed to send: ${reason}`);
+          }
           // Mark the optimistic bubble as failed so the user sees what happened
           onUpdateMessage(tempId, { status: "failed" });
           return;

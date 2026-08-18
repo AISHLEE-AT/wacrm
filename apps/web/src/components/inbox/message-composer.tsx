@@ -389,6 +389,26 @@ export function MessageComposer({
         </div>
       )}
 
+      {sessionExpired && (
+        <div className="mb-2.5 flex items-center justify-between rounded-xl bg-amber-500/10 border border-amber-500/20 px-3.5 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 text-xs">⚠️</span>
+            <p className="text-xs text-amber-300 font-medium">
+              24h customer window closed. Meta requires sending an approved Template to re-open chat.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 border-none rounded-lg shadow-sm"
+            onClick={onOpenTemplates}
+          >
+            <LayoutTemplate className="mr-1.5 h-3.5 w-3.5" />
+            Send Template
+          </Button>
+        </div>
+      )}
+
       {/* Hidden file inputs driven by the attach menu. */}
       <input
         ref={imageInputRef}

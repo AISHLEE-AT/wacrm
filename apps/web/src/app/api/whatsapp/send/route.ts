@@ -355,9 +355,21 @@ export async function POST(request: Request) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown Meta API error'
       console.error('Meta API send failed for all variants:', message)
+      const isSessionExpired =
+        message.includes('131047') ||
+        message.toLowerCase().includes('24 hours') ||
+        message.toLowerCase().includes('re-engagement') ||
+        message.toLowerCase().includes('outside the allowed window')
+
       return NextResponse.json(
-        { error: `Meta API error: ${message}` },
-        { status: 502 }
+        {
+          error: isSessionExpired
+            ? '24-hour customer messaging window is closed. Meta requires sending an approved WhatsApp Template to re-open the conversation.'
+            : `Meta API error: ${message}`,
+          code: isSessionExpired ? 'SESSION_EXPIRED' : 'META_ERROR',
+          isSessionExpired,
+        },
+        { status: isSessionExpired ? 400 : 502 }
       )
     }
 
