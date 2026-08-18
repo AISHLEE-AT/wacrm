@@ -295,9 +295,28 @@ function ConversationItem({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium text-foreground">
-            {displayName}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="truncate text-sm font-medium text-foreground">
+              {displayName}
+            </span>
+            {conversation.last_message_at && (
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full shrink-0",
+                  Date.now() - new Date(conversation.last_message_at).getTime() < 22 * 60 * 60 * 1000
+                    ? "bg-emerald-400"
+                    : Date.now() - new Date(conversation.last_message_at).getTime() < 24 * 60 * 60 * 1000
+                    ? "bg-amber-400"
+                    : "bg-muted-foreground/40"
+                )}
+                title={
+                  Date.now() - new Date(conversation.last_message_at).getTime() < 24 * 60 * 60 * 1000
+                    ? "24h Window Active"
+                    : "24h Window Expired"
+                }
+              />
+            )}
+          </div>
           <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-2">

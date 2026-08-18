@@ -244,19 +244,41 @@ export function MessageThread({
     }
 
     if (!lastActiveTime || isNaN(lastActiveTime)) {
-      return { expired: true, remaining: "No session" };
+      return {
+        expired: true,
+        isExpiringSoon: false,
+        remaining: "No session active",
+        statusText: "EXPIRED",
+        colorClass: "border-red-500/30 bg-red-500/10 text-red-400",
+        dotClass: "bg-red-400",
+      };
     }
 
     const elapsed = Date.now() - lastActiveTime;
     const remaining = 24 * 60 * 60 * 1000 - elapsed; // ms left
     if (remaining <= 0) {
-      return { expired: true, remaining: "Session expired" };
+      return {
+        expired: true,
+        isExpiringSoon: false,
+        remaining: "24h Expired (Templates Only)",
+        statusText: "EXPIRED",
+        colorClass: "border-red-500/30 bg-red-500/10 text-red-400",
+        dotClass: "bg-red-400",
+      };
     }
     const hours = Math.floor(remaining / (60 * 60 * 1000));
     const mins = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    const isExpiringSoon = hours < 2;
+
     return {
       expired: false,
-      remaining: hours > 0 ? `${hours}h ${mins}m left` : `${mins}m left`,
+      isExpiringSoon,
+      remaining: hours > 0 ? `${hours}h ${mins}m remaining` : `${mins}m remaining`,
+      statusText: isExpiringSoon ? "EXPIRING" : "ACTIVE",
+      colorClass: isExpiringSoon
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+        : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+      dotClass: isExpiringSoon ? "bg-amber-400" : "bg-emerald-400",
     };
   }, [messages, conversation?.last_message_at, conversation?.updated_at]);
 
@@ -915,14 +937,17 @@ export function MessageThread({
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
             <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
           </div>
-          {/* Session timer badge — hidden on the narrowest phones so
-              the name + back arrow keep their room. */}
+          {/* Unified 24-Hour WhatsApp Session Badge */}
           <Badge
             variant="outline"
-            className="ml-1 hidden gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] sm:inline-flex sm:ml-2"
+            className={cn(
+              "ml-1 hidden items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold sm:inline-flex sm:ml-2 border shadow-sm transition",
+              sessionInfo.colorClass
+            )}
           >
-            <Clock className="h-3 w-3 text-emerald-400" />
-            {sessionInfo.expired ? "Active Session" : sessionInfo.remaining}
+            <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", sessionInfo.dotClass)} />
+            <Clock className="h-3 w-3 shrink-0" />
+            <span>{sessionInfo.remaining}</span>
           </Badge>
         </div>
 

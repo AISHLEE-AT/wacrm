@@ -470,6 +470,46 @@ function ProfilePageInner() {
         )}
       </div>
 
+      {/* ─── Unified WhatsApp 24-Hour Live Window Card ─── */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <MessageCircle size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">WHATSAPP 24H LIVE WINDOW</p>
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+                  ACTIVE
+                </span>
+              </div>
+              <h3 className="text-sm font-extrabold text-foreground mt-0.5 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-emerald-400" />
+                24h Session Window Active & Ready
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Inbound WhatsApp connection renewed daily for instant RideO bookings, RentO machinery alerts, and CRM replies.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              window.open('https://wa.me/916381029380?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
+            }}
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Keep-Alive Ping (WhatsApp)
+          </button>
+        </div>
+
+        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-full bg-emerald-500 rounded-full w-4/5 transition-all duration-500" />
+        </div>
+      </div>
+
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
         <div className="flex items-center gap-4 text-foreground">
           <div className="p-2 rounded-xl bg-primary/10">
