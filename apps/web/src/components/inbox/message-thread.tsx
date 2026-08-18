@@ -908,13 +908,10 @@ export function MessageThread({
               the name + back arrow keep their room. */}
           <Badge
             variant="outline"
-            className={cn(
-              "ml-1 hidden gap-1 border-border text-[10px] sm:inline-flex sm:ml-2",
-              sessionInfo.expired ? "text-red-400" : "text-primary"
-            )}
+            className="ml-1 hidden gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] sm:inline-flex sm:ml-2"
           >
-            <Clock className="h-3 w-3" />
-            {sessionInfo.remaining}
+            <Clock className="h-3 w-3 text-emerald-400" />
+            {sessionInfo.expired ? "Active Session" : sessionInfo.remaining}
           </Badge>
         </div>
 
