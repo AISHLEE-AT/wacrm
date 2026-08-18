@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,15 @@ import {
   SafeAreaView,
   StatusBar,
   Modal,
+  Platform,
+  PermissionsAndroid,
+  Animated,
+  Easing,
+  Alert,
 } from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
+import VoiceSpeechBridge, { VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
 import {
   PlayCircle,
   BookOpen,
@@ -34,6 +40,7 @@ import {
   Mic,
   MicOff,
   X,
+  Volume2,
 } from 'lucide-react-native';
 
 const CATEGORIES = [
@@ -105,7 +112,104 @@ export default function TeachOScreen() {
   const [xpPoints] = useState(480);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState<'ta-IN' | 'en-IN'>('ta-IN');
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceStatus, setVoiceStatus] = useState('Tap Mic to speak');
+  const voiceBridgeRef = useRef<VoiceSpeechBridgeRef>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation<any>();
+
+  // ─── Pulse Animation for Voice Mic ───
+  useEffect(() => {
+    if (isListening) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.25,
+            duration: 650,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 650,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isListening, pulseAnim]);
+
+  // ─── Request Microphone Permission ───
+  const requestMicPermission = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'Microphone Permission Required',
+            message: 'SuprO TeachO needs microphone access for voice search in Tamil and English.',
+            buttonPositive: 'Grant Permission',
+            buttonNegative: 'Cancel',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn('Mic permission error:', err);
+        return false;
+      }
+    }
+    return true;
+  }, []);
+
+  const startVoiceListening = useCallback(async (lang = voiceLang) => {
+    const ok = await requestMicPermission();
+    if (!ok) {
+      setVoiceStatus('Microphone permission denied. Please grant in Settings.');
+      Alert.alert('Microphone Required', 'Please enable microphone access in your phone Settings to use Voice Search.');
+      return;
+    }
+    setVoiceTranscript('');
+    setIsListening(true);
+    setVoiceStatus(
+      lang === 'ta-IN'
+        ? 'தமிழில் பேசவும் (Listening in Tamil)...'
+        : 'Speak now (Listening in English)...'
+    );
+    voiceBridgeRef.current?.startListening(lang);
+  }, [voiceLang, requestMicPermission]);
+
+  const stopVoiceListening = useCallback(() => {
+    setIsListening(false);
+    setVoiceStatus('Voice search stopped. Tap Mic to speak.');
+    voiceBridgeRef.current?.stopListening();
+  }, []);
+
+  const handleVoiceModalOpen = () => {
+    setIsVoiceModalOpen(true);
+    setVoiceTranscript('');
+    setTimeout(() => {
+      startVoiceListening(voiceLang);
+    }, 400);
+  };
+
+  const handleVoiceModalClose = () => {
+    stopVoiceListening();
+    setIsVoiceModalOpen(false);
+  };
+
+  const handleLangSwitch = (lang: 'ta-IN' | 'en-IN') => {
+    setVoiceLang(lang);
+    if (isListening) {
+      stopVoiceListening();
+      setTimeout(() => {
+        startVoiceListening(lang);
+      }, 300);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -415,7 +519,7 @@ export default function TeachOScreen() {
           />
           <TouchableOpacity
             style={styles.micBtn}
-            onPress={() => setIsVoiceModalOpen(true)}
+            onPress={handleVoiceModalOpen}
           >
             <Mic size={18} color="#10b981" />
           </TouchableOpacity>
@@ -472,28 +576,72 @@ export default function TeachOScreen() {
         visible={isVoiceModalOpen}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setIsVoiceModalOpen(false)}
+        onRequestClose={handleVoiceModalClose}
       >
         <View style={styles.voiceModalOverlay}>
           <View style={styles.voiceModalContent}>
             <View style={styles.voiceModalTop}>
-              <Text style={styles.voiceModalTitle}>Voice Search • குரல் தேடல்</Text>
-              <TouchableOpacity onPress={() => setIsVoiceModalOpen(false)} style={styles.voiceCloseBtn}>
+              <View>
+                <Text style={styles.voiceModalTitle}>Voice Search • குரல் தேடல்</Text>
+                <Text style={styles.voiceModalSub}>Speak course, exam or topic name</Text>
+              </View>
+              <TouchableOpacity onPress={handleVoiceModalClose} style={styles.voiceCloseBtn}>
                 <X size={20} color="#94a3b8" />
               </TouchableOpacity>
             </View>
 
+            {/* Language Switcher */}
+            <View style={styles.voiceLangRow}>
+              <TouchableOpacity
+                style={[styles.voiceLangPill, voiceLang === 'ta-IN' && styles.voiceLangPillActive]}
+                onPress={() => handleLangSwitch('ta-IN')}
+              >
+                <Text style={[styles.voiceLangText, voiceLang === 'ta-IN' && styles.voiceLangTextActive]}>
+                  🇮🇳 தமிழ் (Tamil)
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.voiceLangPill, voiceLang === 'en-IN' && styles.voiceLangPillActive]}
+                onPress={() => handleLangSwitch('en-IN')}
+              >
+                <Text style={[styles.voiceLangText, voiceLang === 'en-IN' && styles.voiceLangTextActive]}>
+                  🌐 English (Indian)
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.voiceAnimationBox}>
-              <View style={styles.voiceWaveRing}>
+              <Animated.View
+                style={[
+                  styles.voiceWaveRing,
+                  {
+                    transform: [{ scale: pulseAnim }],
+                    backgroundColor: isListening ? '#10b98130' : '#33415530',
+                    borderColor: isListening ? '#10b981' : '#475569',
+                  },
+                ]}
+              >
                 <TouchableOpacity
-                  style={styles.voiceMicCenter}
-                  onPress={() => setIsListening(!isListening)}
+                  style={[
+                    styles.voiceMicCenter,
+                    { backgroundColor: isListening ? '#10b981' : '#1e293b' },
+                  ]}
+                  onPress={() => (isListening ? stopVoiceListening() : startVoiceListening())}
                 >
-                  <Mic size={32} color="#0a0f1e" />
+                  {isListening ? <Mic size={32} color="#0a0f1e" /> : <MicOff size={32} color="#94a3b8" />}
                 </TouchableOpacity>
-              </View>
-              <Text style={styles.voiceStatusText}>
-                {isListening ? 'Listening in Tamil & English...' : 'Tap Mic or Select a Quick Search below'}
+              </Animated.View>
+
+              {/* Real-time Spoken Transcript Box */}
+              {voiceTranscript.trim().length > 0 && (
+                <View style={styles.voiceTranscriptCard}>
+                  <Volume2 size={16} color="#10b981" style={{ marginRight: 6 }} />
+                  <Text style={styles.voiceTranscriptText}>"{voiceTranscript}"</Text>
+                </View>
+              )}
+
+              <Text style={[styles.voiceStatusText, { color: isListening ? '#34d399' : '#94a3b8' }]}>
+                {voiceStatus}
               </Text>
             </View>
 
@@ -514,7 +662,7 @@ export default function TeachOScreen() {
                   style={styles.voiceChip}
                   onPress={() => {
                     setSearchQuery(query);
-                    setIsVoiceModalOpen(false);
+                    handleVoiceModalClose();
                   }}
                 >
                   <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
@@ -522,6 +670,32 @@ export default function TeachOScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Embedded Native Speech-to-Text Bridge */}
+            <VoiceSpeechBridge
+              ref={voiceBridgeRef}
+              onSpeechStart={() => {
+                setIsListening(true);
+                setVoiceStatus(voiceLang === 'ta-IN' ? 'தமிழில் பேசவும்...' : 'Listening now...');
+              }}
+              onSpeechResult={(transcript, isFinal) => {
+                setVoiceTranscript(transcript);
+                setVoiceStatus(`Recognized: "${transcript}"`);
+                if (isFinal && transcript.trim().length > 0) {
+                  setTimeout(() => {
+                    setSearchQuery(transcript.trim());
+                    handleVoiceModalClose();
+                  }, 700);
+                }
+              }}
+              onSpeechEnd={() => {
+                setIsListening(false);
+              }}
+              onSpeechError={(err) => {
+                setIsListening(false);
+                setVoiceStatus(err === 'no-speech' ? 'No speech detected. Tap mic to retry.' : `Voice status: ${err}`);
+              }}
+            />
           </View>
         </View>
       </Modal>
@@ -969,34 +1143,86 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffffff',
   },
+  voiceModalSub: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
   voiceCloseBtn: {
-    padding: 4,
+    padding: 6,
+    borderRadius: 20,
+    backgroundColor: '#1e293b',
+  },
+  voiceLangRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  voiceLangPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  voiceLangPillActive: {
+    backgroundColor: '#10b98120',
+    borderColor: '#10b981',
+  },
+  voiceLangText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  voiceLangTextActive: {
+    color: '#10b981',
+    fontWeight: 'bold',
   },
   voiceAnimationBox: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 16,
   },
   voiceWaveRing: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#10b98130',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   voiceMicCenter: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#10b981',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 4,
+  },
+  voiceTranscriptCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10b98115',
+    borderWidth: 1,
+    borderColor: '#10b98140',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 10,
+    maxWidth: '90%',
+  },
+  voiceTranscriptText: {
+    color: '#34d399',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   voiceStatusText: {
     fontSize: 13,
     color: '#94a3b8',
     fontWeight: '500',
+    textAlign: 'center',
   },
   voiceQuickTitle: {
     fontSize: 12,
