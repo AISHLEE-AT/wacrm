@@ -157,6 +157,10 @@ function LoginPageInner() {
       setIsChecking(true);
       try {
         const res = await fetch(`/api/auth/check?phone=${cleaned}`);
+        if (!res.ok) {
+          setIsExistingUser(false);
+          return;
+        }
         const data = await res.json();
 
         if (data.exists) {
@@ -208,7 +212,7 @@ function LoginPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, fullName: fullName.trim() || undefined, category, inviteToken }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to request OTP");
 
       setStep("otp");
@@ -239,7 +243,7 @@ function LoginPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp, fullName, category, inviteToken }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid or expired OTP");
 
       if (data.session) {
@@ -280,7 +284,7 @@ function LoginPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, pin: newPin }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to set PIN");
 
       router.replace(pendingRedirect || "/rideo");
@@ -304,19 +308,28 @@ function LoginPageInner() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/pin/verify", {
+      const res = await fetch("/api/auth/pin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, pin }),
       });
-      const data = await res.json();
+      
+      const contentType = res.headers.get("content-type") || "";
+      let data: any = {};
+      if (contentType.includes("application/json")) {
+        data = await res.json().catch(() => ({}));
+      } else {
+        const text = await res.text().catch(() => "");
+        throw new Error("Unable to verify PIN. Please verify your PIN or log in with WhatsApp OTP.");
+      }
+
       if (!res.ok) throw new Error(data.error || "Invalid PIN. If forgotten, login via WhatsApp OTP.");
 
       if (data.session) {
         await supabase.auth.setSession(data.session);
       }
 
-      router.replace(data.redirectUrl || "/rideo");
+      router.replace(data.redirectUrl || data.redirect_to || "/rideo");
     } catch (err: any) {
       setError(err.message || "PIN login failed");
       setLoading(false);
