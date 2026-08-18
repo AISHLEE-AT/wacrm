@@ -170,6 +170,10 @@ export const AppProvider = ({ children }: any) => {
                 lngStr = String(prof.longitude);
                 await SecureStore.setItemAsync('user-longitude', lngStr);
               }
+              if (prof.gemini_api_key) {
+                await SecureStore.setItemAsync('gemini-api-key', prof.gemini_api_key);
+                setGeminiApiKey(prof.gemini_api_key);
+              }
               if (prof.default_module) {
                 defaultModule = prof.default_module;
                 await SecureStore.setItemAsync('user-default-module', defaultModule);
@@ -393,11 +397,6 @@ export const AppProvider = ({ children }: any) => {
     await SecureStore.setItemAsync('recent-modules', JSON.stringify(updated));
   }, [recentModules]);
 
-  const updateGeminiKey = useCallback(async (key: string) => {
-    setGeminiApiKey(key);
-    await SecureStore.setItemAsync('gemini-api-key', key);
-  }, []);
-
   const setSelectedModule = useCallback(async (modulePath: string) => {
     setUser(prev => prev ? { ...prev, selectedModule: modulePath } : null);
     await SecureStore.setItemAsync('user-selected-module', modulePath);
@@ -437,6 +436,12 @@ export const AppProvider = ({ children }: any) => {
           if (!updated) return;
           const updatedPhone = (updated.phone || updated.whatsapp || '').replace(/\D/g, '').slice(-10);
           if (updatedPhone === cleanPhone || (user.id && updated.id === user.id)) {
+            if (updated.gemini_api_key !== undefined) {
+              setGeminiApiKey(updated.gemini_api_key || '');
+              if (updated.gemini_api_key) {
+                SecureStore.setItemAsync('gemini-api-key', updated.gemini_api_key);
+              }
+            }
             setUser(prev => {
               if (!prev) return null;
               const nextName = updated.full_name || updated.name || prev.name;
@@ -465,6 +470,34 @@ export const AppProvider = ({ children }: any) => {
     return () => {
       supabase.removeChannel(profileChannel);
     };
+  }, [user?.phone, user?.id]);
+
+  const updateGeminiKey = useCallback(async (newKey: string) => {
+    const key = (newKey || '').trim();
+    setGeminiApiKey(key);
+    if (key) {
+      await SecureStore.setItemAsync('gemini-api-key', key);
+    } else {
+      await SecureStore.deleteItemAsync('gemini-api-key');
+    }
+
+    if (user?.phone) {
+      const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ gemini_api_key: key })
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
+
+        fetch('https://watscrm.vercel.app/api/profile/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, phone: user.phone, gemini_api_key: key }),
+        }).catch(() => {});
+      } catch (err) {
+        console.warn('Sync gemini key to profile error:', err);
+      }
+    }
   }, [user?.phone, user?.id]);
 
   const updateUserProfile = useCallback(async (updates: Partial<AppUser>) => {
@@ -598,6 +631,7 @@ export const AppProvider = ({ children }: any) => {
       addRecentModule,
       geminiApiKey,
       updateGeminiKey,
+      setGeminiApiKey: updateGeminiKey,
       onboardingComplete,
       setSelectedModule,
       pinnedModules,

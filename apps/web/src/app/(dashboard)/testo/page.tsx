@@ -1,14 +1,483 @@
 'use client';
 
-import AishleeEmbed from '@/components/aishlee-embed';
+import React, { useState, useEffect, useMemo } from 'react';
+import { lmsSupabase } from '@/lib/lms-supabase';
+import {
+  FileCheck2,
+  Sparkles,
+  Award,
+  GraduationCap,
+  Zap,
+  Layers,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  ChevronRight,
+  Search,
+  Timer,
+  RotateCcw,
+  BookOpen,
+  Share2,
+  X,
+} from 'lucide-react';
 
-export default function TestoPage() {
+const CATEGORIES = [
+  { id: 'all', label: 'All Mock Tests', icon: FileCheck2 },
+  { id: 'entrance', label: 'NEET & JEE', icon: Zap },
+  { id: 'govt', label: 'Govt & TNPSC', icon: Award },
+  { id: 'school', label: 'School (Class 8–12)', icon: GraduationCap },
+  { id: 'skills', label: 'Tech & Programming', icon: Sparkles },
+  { id: 'college', label: 'College & Degree', icon: BookOpen },
+  { id: 'others', label: 'Others', icon: Layers },
+];
+
+function getTestCategory(t: any): string {
+  const cat = (t.category || '').toLowerCase();
+  const title = (t.title_name || '').toLowerCase();
+
+  if (cat.includes('neet') || cat.includes('jee') || /\b(neet|jee|iit|cuet|gate)\b/i.test(title)) {
+    return 'entrance';
+  }
+  if (cat.includes('tnpsc') || cat.includes('govt') || cat.includes('upsc') || /\b(tnpsc|upsc|ssc|cgl|chsl|rrb|ntpc|police|constable|si|forest|defence|nda|cds|agniveer)\b/i.test(title)) {
+    return 'govt';
+  }
+  if (cat.includes('grade') || cat.includes('school') || /\b(class 8|class 9|class 10|class 11|class 12|8th|9th|10th|11th|12th|samacheer|cbse)\b/i.test(title)) {
+    return 'school';
+  }
+  if (cat.includes('tech') || /\b(python|javascript|data|cloud|aws|cyber|software|mobile app|programming)\b/i.test(title)) {
+    return 'skills';
+  }
+  if (cat.includes('ug') || cat.includes('college') || /\b(spoken english|degree|engineering)\b/i.test(title)) {
+    return 'college';
+  }
+  return 'others';
+}
+
+export default function TestoWebPage() {
+  const [tests, setTests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Live Exam State
+  const [activeTest, setActiveTest] = useState<any | null>(null);
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
+  const [timeLeft, setTimeLeft] = useState(900); // 15 mins
+  const [isExamCompleted, setIsExamCompleted] = useState(false);
+
+  // Mock Question Pool
+  const mockQuestions = useMemo(() => {
+    if (!activeTest) return [];
+    const t = activeTest.title_name || 'Subject';
+    return [
+      {
+        question: `In ${t}, what is the foundational governing principle or standard equation?`,
+        options: ['A) Direct Linear Proportionality Law', 'B) Conservation of Energy & Momentum', 'C) Standard Inverse Quadratic Formulation', 'D) Equilibrium Thermodynamic Boundary'],
+        correct: 1,
+        explanation: 'Fundamental conservation theorems govern state transformations and balance equations across standard curricula.',
+      },
+      {
+        question: 'Which technique is recommended for maximum accuracy in competitive timed examinations?',
+        options: ['A) Blind Guessing All Options', 'B) Dimensional Verification & Elimination of Traps', 'C) Skipping All Problem Statements', 'D) Random Option Marking'],
+        correct: 1,
+        explanation: 'Eliminating impossible units and verifying boundary values cuts answering time by over 50%.',
+      },
+      {
+        question: 'What is the primary prerequisite concept required before attempting advanced numericals?',
+        options: ['A) Core Axioms & SI Unit Consistency', 'B) Complex Multi-Variable Integrals only', 'C) External Calculator Usage', 'D) Non-standard Assumptions'],
+        correct: 0,
+        explanation: 'Unit consistency and foundational definitions are critical before advancing to multi-step problem solving.',
+      },
+      {
+        question: 'When analyzing graphical data in this domain, what does the area under the curve represent?',
+        options: ['A) Cumulative Accumulation or Work Done', 'B) Zero Physical Meaning', 'C) Random Variance', 'D) Instantaneous Derivative'],
+        correct: 0,
+        explanation: 'The integral (area under curve) provides the total accumulated physical quantity.',
+      },
+      {
+        question: 'What is the key takeaway for achieving top percentile in this module?',
+        options: ['A) Daily Rapid PYQ Problem Drills & Mock Tests', 'B) Passive Reading Without Practice', 'C) Memorizing Without Derivations', 'D) Ignoring Diagnostic Feedback'],
+        correct: 0,
+        explanation: 'Consistent timed problem drills and reviewing diagnostic error logs maximize performance retention.',
+      },
+    ];
+  }, [activeTest]);
+
+  useEffect(() => {
+    fetchTests();
+  }, []);
+
+  // Timer Hook
+  useEffect(() => {
+    if (!activeTest || isExamCompleted) return;
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsExamCompleted(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeTest, isExamCompleted]);
+
+  const fetchTests = async () => {
+    try {
+      setLoading(true);
+      const { data } = await lmsSupabase
+        .from('unified_master_data')
+        .select('*')
+        .eq('item_type', 'o_test')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (data && data.length > 0) {
+        setTests(data);
+      } else {
+        // Fallback to Courses with test capability
+        const { data: courses } = await lmsSupabase
+          .from('unified_master_data')
+          .select('*')
+          .eq('item_type', 'COURSE')
+          .limit(50);
+        if (courses) setTests(courses);
+      }
+    } catch (e) {
+      console.error('Error fetching TestO Web tests:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTests = useMemo(() => {
+    let items = tests;
+    if (activeCategory !== 'all') {
+      items = tests.filter(t => getTestCategory(t) === activeCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(
+        t =>
+          (t.title_name && t.title_name.toLowerCase().includes(q)) ||
+          (t.category && t.category.toLowerCase().includes(q))
+      );
+    }
+    return items;
+  }, [tests, activeCategory, searchQuery]);
+
+  const handleStartExam = (test: any) => {
+    setActiveTest(test);
+    setCurrentQIndex(0);
+    setUserAnswers({});
+    setTimeLeft(900);
+    setIsExamCompleted(false);
+  };
+
+  const handleSelectOption = (optIndex: number) => {
+    setUserAnswers(prev => ({ ...prev, [currentQIndex]: optIndex }));
+  };
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const calculatedScore = useMemo(() => {
+    if (!mockQuestions.length) return { score: 0, total: 0, accuracy: 0, correct: 0, wrong: 0 };
+    let correct = 0;
+    let wrong = 0;
+    mockQuestions.forEach((q, idx) => {
+      const ans = userAnswers[idx];
+      if (ans !== undefined) {
+        if (ans === q.correct) correct++;
+        else wrong++;
+      }
+    });
+    const total = mockQuestions.length;
+    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+    return { score: correct * 4 - wrong * 1, total: total * 4, accuracy, correct, wrong };
+  }, [mockQuestions, userAnswers]);
+
   return (
-    <AishleeEmbed
-      path="/testo"
-      moduleName="TestO Module"
-      accentColor="#8b5cf6"
-      icon="📝"
-    />
+    <div className="min-h-screen bg-[#0a0f1e] text-slate-100 p-6">
+      {/* Top Header Bar */}
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-800">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-white tracking-tight">TestO Exam & Mock Test Hub</h1>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30">
+              <Sparkles className="w-3 h-3" /> Live Testing Engine
+            </span>
+          </div>
+          <p className="text-sm text-slate-400 mt-1">
+            Real-Time Timed Mock Exams, Negative Marking & Instant Diagnostic Scorecards
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto mt-6">
+        {/* Search */}
+        <div className="relative mb-6">
+          <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
+          <input
+            type="text"
+            placeholder="Search mock exams, NEET practice tests, TNPSC question sets..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-[#111827] border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
+          />
+        </div>
+
+        {/* Category Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
+          {CATEGORIES.map(cat => {
+            const Icon = cat.icon;
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                  isActive
+                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
+                    : 'bg-[#111827] text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Test Grid */}
+        {loading ? (
+          <div className="py-20 text-center text-slate-400">
+            <div className="inline-block animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mb-4" />
+            <p>Loading TestO Mock Examinations...</p>
+          </div>
+        ) : filteredTests.length === 0 ? (
+          <div className="py-20 text-center text-slate-500">
+            <FileCheck2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+            <p>No tests found in this category.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTests.map(test => (
+              <div
+                key={test.id}
+                className="bg-[#111827] border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 flex flex-col justify-between transition"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                      MOCK EXAM
+                    </span>
+                    <span className="text-xs text-slate-500 flex items-center gap-1 font-mono">
+                      <Clock className="w-3.5 h-3.5" /> 15 Mins
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-white mb-2 line-clamp-2">{test.title_name}</h3>
+                  <p className="text-xs text-slate-400 line-clamp-2 mb-4">
+                    {test.description_purpose || 'Comprehensive timed mock test series with instant score analysis & solutions.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleStartExam(test)}
+                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-purple-600/20"
+                >
+                  <FileCheck2 className="w-4 h-4" /> Start Mock Test
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Live Exam Modal */}
+      {activeTest && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#111827] border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Exam Header */}
+            <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-[#0c1322]">
+              <div>
+                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">
+                  TestO Live Exam Mode
+                </span>
+                <h3 className="text-sm font-bold text-white line-clamp-1">{activeTest.title_name}</h3>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-400 font-mono font-bold text-xs">
+                  <Timer className="w-4 h-4" />
+                  <span>{formatTimer(timeLeft)}</span>
+                </div>
+                <button
+                  onClick={() => setActiveTest(null)}
+                  className="p-1.5 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Exam Body */}
+            {!isExamCompleted ? (
+              <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-center mb-4 text-xs font-bold text-slate-400">
+                    <span>Question {currentQIndex + 1} of {mockQuestions.length}</span>
+                    <span className="text-purple-400 font-mono">Marking: +4 / -1</span>
+                  </div>
+
+                  <h4 className="text-base font-bold text-white mb-6 leading-relaxed">
+                    {mockQuestions[currentQIndex]?.question}
+                  </h4>
+
+                  <div className="space-y-3">
+                    {mockQuestions[currentQIndex]?.options.map((opt: string, optIdx: number) => {
+                      const isSelected = userAnswers[currentQIndex] === optIdx;
+                      return (
+                        <button
+                          key={optIdx}
+                          onClick={() => handleSelectOption(optIdx)}
+                          className={`w-full p-4 rounded-xl text-left text-xs font-semibold transition border ${
+                            isSelected
+                              ? 'bg-purple-600/20 border-purple-500 text-purple-200'
+                              : 'bg-[#0c1322] border-slate-800 text-slate-300 hover:bg-slate-800/40'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Exam Stepper Footer */}
+                <div className="flex justify-between items-center pt-6 border-t border-slate-800 mt-6">
+                  <button
+                    disabled={currentQIndex === 0}
+                    onClick={() => setCurrentQIndex(prev => prev - 1)}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+
+                  <div className="flex gap-1.5">
+                    {mockQuestions.map((_, dotIdx) => (
+                      <button
+                        key={dotIdx}
+                        onClick={() => setCurrentQIndex(dotIdx)}
+                        className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center transition ${
+                          currentQIndex === dotIdx
+                            ? 'bg-purple-600 text-white'
+                            : userAnswers[dotIdx] !== undefined
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                            : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {dotIdx + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  {currentQIndex < mockQuestions.length - 1 ? (
+                    <button
+                      onClick={() => setCurrentQIndex(prev => prev + 1)}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition"
+                    >
+                      Next Question
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsExamCompleted(true)}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition"
+                    >
+                      Submit Exam
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Scorecard & Solution Review */
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="text-center p-6 bg-[#0c1322] border border-slate-800 rounded-2xl">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded">
+                    OFFICIAL SCORECARD
+                  </span>
+                  <h3 className="text-3xl font-black text-white mt-2">
+                    {calculatedScore.score} / {calculatedScore.total}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">Accuracy: {calculatedScore.accuracy}% • Completed in {formatTimer(900 - timeLeft)}</p>
+
+                  <div className="grid grid-cols-2 gap-4 mt-6 max-w-sm mx-auto">
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                      <p className="text-xs text-emerald-400 font-bold">Correct</p>
+                      <p className="text-lg font-black text-white">{calculatedScore.correct}</p>
+                    </div>
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-center">
+                      <p className="text-xs text-rose-400 font-bold">Incorrect</p>
+                      <p className="text-lg font-black text-white">{calculatedScore.wrong}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Question-by-Question Solution Review */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-white">Diagnostic Question Review</h4>
+                  {mockQuestions.map((q, qIdx) => {
+                    const userAns = userAnswers[qIdx];
+                    const isCorrect = userAns === q.correct;
+                    return (
+                      <div key={qIdx} className="p-4 bg-[#0c1322] border border-slate-800 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-400">Q{qIdx + 1}</span>
+                          {userAns === undefined ? (
+                            <span className="text-slate-500">Unanswered</span>
+                          ) : isCorrect ? (
+                            <span className="text-emerald-400 font-bold flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Correct (+4)
+                            </span>
+                          ) : (
+                            <span className="text-rose-400 font-bold flex items-center gap-1">
+                              <XCircle className="w-3.5 h-3.5" /> Incorrect (-1)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-semibold text-white">{q.question}</p>
+                        <div className="p-2.5 bg-[#111827] rounded-lg text-xs text-slate-400">
+                          <p className="font-bold text-emerald-400">Correct Answer: {q.options[q.correct]}</p>
+                          <p className="mt-1 text-slate-300">💡 Solution: {q.explanation}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleStartExam(activeTest)}
+                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Retake Test
+                  </button>
+                  <button
+                    onClick={() => setActiveTest(null)}
+                    className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition"
+                  >
+                    Back to Test Hub
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
+

@@ -6,6 +6,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter/services.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -22,6 +24,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _upiController = TextEditingController();
+  static const _secureStorage = FlutterSecureStorage();
   
   bool _isSavingGemini = false;
   bool _isSavingLocation = false;
@@ -50,15 +53,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     try {
       final user = ref.read(currentUserProvider);
       final phone = user?.phone;
+
+      // Load local key first
+      final savedSecKey = await _secureStorage.read(key: 'gemini-api-key') ??
+          await _secureStorage.read(key: 'gemini_api_key');
+      if (savedSecKey != null && savedSecKey.isNotEmpty) {
+        setState(() {
+          _geminiState = savedSecKey;
+          _apiKeyController.text = savedSecKey;
+        });
+      }
+
       if (phone != null) {
-        // Fetch full profile via the check endpoint which we updated
+        // Fetch full profile via the check endpoint
         final res = await http.get(Uri.parse('https://watscrm.vercel.app/api/auth/check?phone=$phone'));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['exists'] == true) {
+            final serverKey = (data['gemini_api_key'] ?? '').toString().trim();
             setState(() {
-              _geminiState = data['gemini_api_key'] ?? '';
-              _apiKeyController.text = _geminiState;
+              if (serverKey.isNotEmpty) {
+                _geminiState = serverKey;
+                _apiKeyController.text = serverKey;
+              }
               
               _nameState = data['name'] ?? data['full_name'] ?? 'User';
               _nameController.text = _nameState;
@@ -72,6 +89,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             final prefs = await SharedPreferences.getInstance();
             if (_geminiState.isNotEmpty) {
               await prefs.setString('gemini_api_key', _geminiState);
+              await _secureStorage.write(key: 'gemini-api-key', value: _geminiState);
+              await _secureStorage.write(key: 'gemini_api_key', value: _geminiState);
             }
             if (_nameState.isNotEmpty) {
               await prefs.setString('user_name', _nameState);
@@ -98,21 +117,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final user = ref.read(currentUserProvider);
       final phone = user?.phone;
       if (phone != null) {
+        final cleanVal = value.trim();
         final res = await http.post(
           Uri.parse('https://watscrm.vercel.app/api/profile/update'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'phone': phone,
-            field: value,
+            field: cleanVal,
           }),
         );
         if (res.statusCode == 200) {
-          setLocalState(value);
+          setLocalState(cleanVal);
           setEditing(false);
           if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Updated successfully!')));
           if (field == 'gemini_api_key') {
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('gemini_api_key', value);
+            await prefs.setString('gemini_api_key', cleanVal);
+            await _secureStorage.write(key: 'gemini-api-key', value: cleanVal);
+            await _secureStorage.write(key: 'gemini_api_key', value: cleanVal);
+
+            try {
+              final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+              final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+              await Supabase.instance.client
+                  .from('profiles')
+                  .update({'gemini_api_key': cleanVal})
+                  .or('phone.ilike.%$tenDigit%,whatsapp.ilike.%$tenDigit%');
+            } catch (_) {}
           }
         }
       }

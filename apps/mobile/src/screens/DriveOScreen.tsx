@@ -1189,24 +1189,26 @@ export default function DriveOScreen() {
     <View style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        <View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={styles.headerTitle}>SuprO Partner</Text>
-            <View style={{ backgroundColor: `${COLORS.green}20`, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-              <Text style={{ color: COLORS.green, fontSize: 10, fontWeight: 'bold' }}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.headerTitle} numberOfLines={1}>SuprO Partner</Text>
+            <View style={styles.platformBadge}>
+              <Text style={styles.platformBadgeText}>
                 {driver.service_type === 'rento' ? '🚜 RentO' : driver.service_type === 'rideo' ? '🚗 RideO' : '⚡ RideO + RentO'}
               </Text>
             </View>
           </View>
-          <Text style={styles.headerSubtitle}>
+          <Text style={styles.headerSubtitle} numberOfLines={1} ellipsizeMode="tail">
             {driver.name} • {driver.vehicle_model || driver.vehicle_type || 'Vehicle'} ({driver.vehicle_number || driver.vehicle_registration || 'TN'})
           </Text>
         </View>
+
         <TouchableOpacity
           style={[styles.toggleBtn, isOnline ? styles.toggleOn : styles.toggleOff]}
           onPress={toggleStatus}
+          activeOpacity={0.8}
         >
-          <Power size={22} color="#fff" />
+          <Power size={18} color="#fff" />
           <Text style={styles.toggleText}>{isOnline ? 'ONLINE' : 'OFFLINE'}</Text>
         </TouchableOpacity>
       </View>
@@ -1691,29 +1693,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'ios' ? 52 : (Platform.OS === 'android' ? 44 : 20),
+    paddingBottom: 14,
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.cardLight,
   },
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
+    justifyContent: 'center',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  platformBadge: {
+    backgroundColor: `${COLORS.green}20`,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: `${COLORS.green}40`,
+  },
+  platformBadgeText: {
+    color: COLORS.green,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   headerSubtitle: {
     color: COLORS.textMuted,
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 12,
+    marginTop: 3,
   },
   toggleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 24,
-    gap: 8,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    gap: 6,
+    flexShrink: 0,
+    minWidth: 96,
   },
   toggleOn: {
     backgroundColor: COLORS.green,
@@ -1724,7 +1753,8 @@ const styles = StyleSheet.create({
   toggleText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   scrollContent: {
     padding: 16,

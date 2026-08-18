@@ -19,6 +19,12 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.poovisri.mobile",
+      "permissions": [
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDdAePjhtVNhbCPhvsdEGrMUGA2kn5WDds"

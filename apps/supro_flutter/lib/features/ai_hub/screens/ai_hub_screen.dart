@@ -10,6 +10,8 @@ import 'dart:io';
 
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/gemini_service.dart';
 import '../services/history_service.dart';
@@ -149,15 +151,38 @@ class _AiHubScreenState extends State<AiHubScreen> {
   }
 
   Future<void> _loadApiKey() async {
-    final key = await _secureStorage.read(key: 'gemini_api_key');
-    if (key != null && mounted) {
+    final key = await _secureStorage.read(key: 'gemini-api-key') ??
+        await _secureStorage.read(key: 'gemini_api_key');
+    if (key != null && key.isNotEmpty && mounted) {
       setState(() => _apiKey = key);
     }
   }
 
   Future<void> _saveApiKey(String key) async {
-    await _secureStorage.write(key: 'gemini_api_key', value: key.trim());
-    if (mounted) setState(() => _apiKey = key.trim());
+    final cleanKey = key.trim();
+    await _secureStorage.write(key: 'gemini-api-key', value: cleanKey);
+    await _secureStorage.write(key: 'gemini_api_key', value: cleanKey);
+    if (mounted) setState(() => _apiKey = cleanKey);
+
+    // Sync to backend CRM & Supabase
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      final phone = user?.phone;
+      if (phone != null && phone.isNotEmpty) {
+        http.post(
+          Uri.parse('https://watscrm.vercel.app/api/profile/update'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'phone': phone, 'gemini_api_key': cleanKey}),
+        ).catchError((_) {});
+
+        final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+        final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
+        await Supabase.instance.client
+            .from('profiles')
+            .update({'gemini_api_key': cleanKey})
+            .or('phone.ilike.%$tenDigit%,whatsapp.ilike.%$tenDigit%');
+      }
+    } catch (_) {}
   }
 
   void _resetInputs() {
@@ -363,6 +388,14 @@ class _AiHubScreenState extends State<AiHubScreen> {
                   Text('Get a Free Gemini API Key from Google AI Studio', style: TextStyle(color: Color(0xFF38bdf8), fontSize: 11, decoration: TextDecoration.underline)),
                 ]),
               ),
+              const SizedBox(height: 10),
+              const Row(children: [
+                Icon(LucideIcons.checkCircle, color: _primary, size: 14),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text('Synced with Profile & Saved Permanently across all AI tools', style: TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ]),
             ],
           ),
           actions: [

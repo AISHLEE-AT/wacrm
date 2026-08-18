@@ -27,6 +27,7 @@ import TeachOCourseScreen from './src/screens/TeachOCourseScreen';
 import TestOHubScreen   from './src/screens/TestOHubScreen';
 import TestOExamScreen  from './src/screens/TestOExamScreen';
 import TestOResultScreen from './src/screens/TestOResultScreen';
+import CareerHubScreen  from './src/screens/CareerHubScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
 import DealOScreen      from './src/screens/DealOScreen';
@@ -320,6 +321,7 @@ function RootNavigator() {
       <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />
       <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="CareerHubScreen" component={CareerHubScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
       <Stack.Screen name="RentOScreen" component={RentOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DealOScreen" component={DealOScreen} options={{ headerShown: false }} />

@@ -528,26 +528,120 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
       return _buildRegistrationView();
     }
 
+    final serviceType = _driverRecord?['service_type'] ?? 'both';
+    final vehicleModel = _driverRecord?['vehicle_model'] ?? _driverRecord?['vehicle_type'] ?? 'Vehicle';
+    final vehicleNum = _driverRecord?['vehicle_number'] ?? _driverRecord?['vehicle_registration'] ?? 'TN';
+    final driverName = _driverRecord?['name'] ?? 'Partner Driver';
+
+    String platformBadgeText = '⚡ RideO + RentO';
+    if (serviceType == 'rento') {
+      platformBadgeText = '🚜 RentO';
+    } else if (serviceType == 'rideo') {
+      platformBadgeText = '🚗 RideO';
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1E),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0F1E),
-        elevation: 0,
-        title: const Text('DriveO Partner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        actions: [
-          Row(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(74),
+        child: Container(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + 8,
+            bottom: 10,
+            left: 16,
+            right: 16,
+          ),
+          decoration: const BoxDecoration(
+            color: Color(0xFF111827),
+            border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+          ),
+          child: Row(
             children: [
-              Text(_isOnline ? 'ONLINE' : 'OFFLINE', style: TextStyle(color: _isOnline ? const Color(0xFF10B981) : Colors.grey, fontWeight: FontWeight.bold, fontSize: 13)),
-              Switch(
-                value: _isOnline,
-                onChanged: _toggleOnline,
-                activeColor: const Color(0xFF10B981),
-                inactiveThumbColor: Colors.grey,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'SuprO Partner',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0x2610B981),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0x5010B981)),
+                          ),
+                          child: Text(
+                            platformBadgeText,
+                            style: const TextStyle(
+                              color: Color(0xFF10B981),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '$driverName • $vehicleModel ($vehicleNum)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
+              InkWell(
+                onTap: () => _toggleOnline(!_isOnline),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _isOnline ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (_isOnline ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(LucideIcons.power, color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        _isOnline ? 'ONLINE' : 'OFFLINE',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-        ],
+        ),
       ),
       body: Stack(
         children: [

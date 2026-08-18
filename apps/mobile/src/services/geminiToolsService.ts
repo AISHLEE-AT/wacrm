@@ -1,4 +1,6 @@
 // @ts-nocheck
+import * as SecureStore from 'expo-secure-store';
+
 export interface ToolResponse {
   text: string;
   error?: string;
@@ -30,11 +32,18 @@ export const geminiToolsService = {
    */
   async executePrompt(
     prompt: string,
-    apiKey: string,
+    apiKey?: string,
     language: string = 'Tamil',
     attachments: any[] = [],
     modelName: string = DEFAULT_MODEL
   ): Promise<ToolResponse> {
+    let effectiveKey = (apiKey || '').trim();
+    if (!effectiveKey) {
+      try {
+        effectiveKey = ((await SecureStore.getItemAsync('gemini-api-key')) || '').trim();
+      } catch (e) {}
+    }
+
     const langInstructions =
       language === 'Tamil'
         ? 'Respond primarily in natural, clear, professional TAMIL language (தமிழ்). You may include key English technical terms in brackets where helpful.'
@@ -43,7 +52,7 @@ export const geminiToolsService = {
     const fullPrompt = `${prompt}\n\nLanguage Instruction:\n${langInstructions}`;
 
     // 1. Try Direct Google Gemini REST API if an API key is provided
-    if (apiKey && apiKey.trim().length > 0) {
+    if (effectiveKey && effectiveKey.length > 0) {
       try {
         const parts: any[] = [{ text: fullPrompt }];
 
@@ -67,7 +76,7 @@ export const geminiToolsService = {
 
         for (const candidate of modelsToTry) {
           try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${apiKey.trim()}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${effectiveKey}`;
             const response = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

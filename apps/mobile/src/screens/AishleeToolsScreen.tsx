@@ -33,6 +33,7 @@ import {
   Paperclip,
   Mic,
   Volume2,
+  Square,
   Trash2,
   CheckCircle,
   Copy,
@@ -42,6 +43,7 @@ import {
   HelpCircle,
   Key,
   RefreshCw,
+  RotateCcw,
 } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
@@ -58,6 +60,7 @@ import { colors } from '../lib/theme';
 import { geminiToolsService, GEMINI_MODELS } from '../services/geminiToolsService';
 import { historyService, HistoryItem } from '../services/historyService';
 import { aishleeSupabase } from '../services/aishleeSupabase';
+import { VoiceSpeechBridge, VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
 
 const { width } = Dimensions.get('window');
 
@@ -329,9 +332,16 @@ export default function AishleeToolsScreen({ navigation }: any) {
   const [activeTool, setActiveTool] = useState(CATEGORIES[0].tools[0]);
   const [language, setLanguage] = useState<'Tamil' | 'English'>('Tamil');
 
-  // Input ref for auto-focusing on voice trigger
+  // Input ref for auto-focusing
   const inputRef = useRef<TextInput>(null);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
+
+  // Voice Engine State
+  const voiceBridgeRef = useRef<VoiceSpeechBridgeRef>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [liveTranscript, setLiveTranscript] = useState('');
+  const [voiceLang, setVoiceLang] = useState<'ta-IN' | 'en-IN'>(language === 'Tamil' ? 'ta-IN' : 'en-IN');
+  const [isTtsPlaying, setIsTtsPlaying] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   // API Key State
   const [apiKey, setApiKey] = useState(contextKey || '');
@@ -376,6 +386,10 @@ export default function AishleeToolsScreen({ navigation }: any) {
     loadHistory();
   }, [showHistory]);
 
+  useEffect(() => {
+    setVoiceLang(language === 'Tamil' ? 'ta-IN' : 'en-IN');
+  }, [language]);
+
   const loadHistory = async () => {
     const items = await historyService.getHistory();
     setHistoryData(historyService.getGroupedHistory(items));
@@ -385,15 +399,238 @@ export default function AishleeToolsScreen({ navigation }: any) {
     setInput('');
     setAttachment(null);
     setOutput('');
+    if (isTtsPlaying) {
+      voiceBridgeRef.current?.stopSpeaking();
+      setIsTtsPlaying(false);
+    }
+  };
+
+  // ─── VOICE RECOGNITION HANDLERS ───
+  const handleStartListening = (targetLang?: 'ta-IN' | 'en-IN') => {
+    const langToUse = targetLang || voiceLang;
+    setVoiceError(null);
+    setLiveTranscript('');
+    setIsListening(true);
+    if (isTtsPlaying) {
+      voiceBridgeRef.current?.stopSpeaking();
+      setIsTtsPlaying(false);
+    }
+    voiceBridgeRef.current?.startListening(langToUse);
+  };
+
+  const handleStopListening = () => {
+    voiceBridgeRef.current?.stopListening();
+    setIsListening(false);
+  };
+
+  const handleSpeechResult = (transcript: string, isFinal: boolean) => {
+    setLiveTranscript(transcript);
+    setVoiceQuery(transcript);
+  };
+
+  const handleSpeechEnd = () => {
+    setIsListening(false);
+  };
+
+  const handleSpeechError = (error: string) => {
+    setIsListening(false);
+    if (error && !error.includes('no-speech')) {
+      setVoiceError(error);
+    }
+  };
+
+  const handleToggleTts = () => {
+    if (isTtsPlaying) {
+      voiceBridgeRef.current?.stopSpeaking();
+      setIsTtsPlaying(false);
+    } else {
+      if (!output) return;
+      setIsTtsPlaying(true);
+      voiceBridgeRef.current?.speak(output, language === 'Tamil' ? 'ta-IN' : 'en-IN');
+    }
+  };
+
+  // Smart Query to Tool Intent Detector
+  const detectToolFromQuery = (query: string): { category: any; tool: string } => {
+    const q = query.toLowerCase();
+    
+    // 1. Agri & Crop Disease
+    if (
+      q.includes('பூச்சி') ||
+      q.includes('நோய்') ||
+      q.includes('மருந்து') ||
+      q.includes('இலை') ||
+      q.includes('தக்காளி') ||
+      q.includes('நெல்') ||
+      q.includes('கரும்பு') ||
+      q.includes('வாழை') ||
+      q.includes('பருத்தி') ||
+      q.includes('தென்னை') ||
+      q.includes('disease') ||
+      q.includes('pest') ||
+      q.includes('crop') ||
+      q.includes('symptom') ||
+      q.includes('fertilizer') ||
+      q.includes('spray')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'agri') || CATEGORIES[1];
+      return { category: cat, tool: 'Crop Disease Analysis' };
+    }
+
+    // 2. Farming Insights / Mandi / Soil
+    if (
+      q.includes('விவசாயம்') ||
+      q.includes('மண்') ||
+      q.includes('பாசனம்') ||
+      q.includes('சாகுபடி') ||
+      q.includes('மகசூல்') ||
+      q.includes('சந்தை') ||
+      q.includes('mandi') ||
+      q.includes('irrigation') ||
+      q.includes('farming') ||
+      q.includes('yield')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'agri') || CATEGORIES[1];
+      return { category: cat, tool: 'Farming Insights' };
+    }
+
+    // 3. Govt & TN E-Sevai
+    if (
+      q.includes('சான்றிதழ்') ||
+      q.includes('பட்டா') ||
+      q.includes('சிட்டா') ||
+      q.includes('வருமான') ||
+      q.includes('இருப்பிட') ||
+      q.includes('ஜாதி') ||
+      q.includes('மகளிர்') ||
+      q.includes('உரிமை தொகை') ||
+      q.includes('அரசு') ||
+      q.includes('இ-சேவை') ||
+      q.includes('சேவை') ||
+      q.includes('certificate') ||
+      q.includes('e-sevai') ||
+      q.includes('patta') ||
+      q.includes('scheme') ||
+      q.includes('ration') ||
+      q.includes('aadhaar')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'govt') || CATEGORIES[2];
+      return { category: cat, tool: 'TN E-Sevai Chat' };
+    }
+
+    // 4. Legal
+    if (
+      q.includes('சட்டம்') ||
+      q.includes('பத்திரம்') ||
+      q.includes('ஒப்பந்தம்') ||
+      q.includes('வாடகை') ||
+      q.includes('குத்தகை') ||
+      q.includes('legal') ||
+      q.includes('deed') ||
+      q.includes('agreement')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'govt') || CATEGORIES[2];
+      return { category: cat, tool: 'Legal Translator' };
+    }
+
+    // 5. Quiz / Exam
+    if (
+      q.includes('வினாடி வினா') ||
+      q.includes('கேள்வி') ||
+      q.includes('தேர்வு') ||
+      q.includes('மாதிரி வினா') ||
+      q.includes('quiz') ||
+      q.includes('exam') ||
+      q.includes('questions')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'education') || CATEGORIES[3];
+      return { category: cat, tool: 'Quiz Creator' };
+    }
+
+    // 6. Notes Maker
+    if (
+      q.includes('குறிப்பு') ||
+      q.includes('நோட்ஸ்') ||
+      q.includes('பாடம்') ||
+      q.includes('notes') ||
+      q.includes('study')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'education') || CATEGORIES[3];
+      return { category: cat, tool: 'Notes Maker' };
+    }
+
+    // 7. Email / Letters
+    if (
+      q.includes('கடிதம்') ||
+      q.includes('மின்னஞ்சல்') ||
+      q.includes('விடுப்பு') ||
+      q.includes('மேலாளர்') ||
+      q.includes('email') ||
+      q.includes('leave') ||
+      q.includes('letter') ||
+      q.includes('draft')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'work') || CATEGORIES[4];
+      return { category: cat, tool: 'Email Crafter' };
+    }
+
+    // 8. Resume / Job
+    if (
+      q.includes('வேலை') ||
+      q.includes('சுயவிவரம்') ||
+      q.includes('ரெஸ்யூம்') ||
+      q.includes('resume') ||
+      q.includes('cv') ||
+      q.includes('job')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'work') || CATEGORIES[4];
+      return { category: cat, tool: 'Resume Improver' };
+    }
+
+    // 9. Status & Viral
+    if (
+      q.includes('ஸ்டேட்டஸ்') ||
+      q.includes('கவிதை') ||
+      q.includes('தத்துவம்') ||
+      q.includes('status') ||
+      q.includes('quote') ||
+      q.includes('viral')
+    ) {
+      const cat = CATEGORIES.find((c) => c.id === 'viral') || CATEGORIES[5];
+      return { category: cat, tool: 'StatusO Quote Gen' };
+    }
+
+    // 10. YouTube / Web
+    if (q.includes('youtube.com') || q.includes('youtu.be') || q.includes('video') || q.includes('வீடியோ')) {
+      const cat = CATEGORIES.find((c) => c.id === 'summarize') || CATEGORIES[0];
+      return { category: cat, tool: 'YouTube Summarizer' };
+    }
+    if (q.startsWith('http://') || q.startsWith('https://') || q.includes('.com') || q.includes('.in') || q.includes('.org')) {
+      const cat = CATEGORIES.find((c) => c.id === 'summarize') || CATEGORIES[0];
+      return { category: cat, tool: 'Webpage Summarizer' };
+    }
+
+    return { category: activeCategory, tool: activeTool };
+  };
+
+  const handleOpenVoiceModal = (autoListen = true) => {
+    setShowVoiceModal(true);
+    setVoiceError(null);
+    if (autoListen) {
+      setTimeout(() => {
+        handleStartListening();
+      }, 350);
+    }
   };
 
   const handleSaveApiKey = async () => {
     try {
-      await SecureStore.setItemAsync('gemini-api-key', apiKey.trim());
+      const cleanKey = apiKey.trim();
+      await SecureStore.setItemAsync('gemini-api-key', cleanKey);
       if (setGeminiApiKey) {
-        setGeminiApiKey(apiKey.trim());
+        await setGeminiApiKey(cleanKey);
       }
-      Alert.alert('Saved', 'Gemini API Key saved successfully! 🎉');
+      Alert.alert('Saved & Linked 🎉', 'Gemini API Key saved permanently and synced with your Profile!');
       setShowSettingsModal(false);
     } catch (err) {
       Alert.alert('Error', 'Failed to save API key.');
@@ -479,23 +716,15 @@ export default function AishleeToolsScreen({ navigation }: any) {
     }
   };
 
-  const handleTriggerVoiceInput = () => {
-    setIsVoiceActive(true);
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
-  };
-
-  const handleSelectVoicePreset = (preset: any, runImmediately: boolean = false) => {
+  const handleSelectVoicePreset = (preset: any, runImmediately = false) => {
     const targetTool = preset.tool;
-    // Find category for this tool
     const cat = CATEGORIES.find((c) => c.tools.includes(targetTool)) || activeCategory;
     setActiveCategory(cat);
     setActiveTool(targetTool);
     const chosenPrompt = language === 'Tamil' ? preset.tamil : preset.english;
     setInput(chosenPrompt);
     setShowVoiceModal(false);
-    setIsVoiceActive(false);
+    if (isListening) handleStopListening();
 
     if (runImmediately) {
       setTimeout(() => {
@@ -508,23 +737,29 @@ export default function AishleeToolsScreen({ navigation }: any) {
     }
   };
 
-  const handleApplyVoiceQuery = (runImmediately: boolean = false) => {
-    if (!voiceQuery.trim()) {
+  const handleApplyVoiceQuery = (runImmediately = false) => {
+    const rawQuery = (voiceQuery || liveTranscript || '').trim();
+    if (!rawQuery) {
       return Alert.alert(
         language === 'Tamil' ? 'குரல் உள்ளீடு' : 'Voice Input',
         language === 'Tamil'
-          ? 'தயவுசெய்து உங்கள் கீபோர்டில் உள்ள மைக் 🎙️ ஐகானைப் பயன்படுத்தி பேசவும் அல்லது மேலே உள்ள வினாக்களைத் தொடவும்.'
-          : 'Please speak using your keyboard microphone 🎙️ or tap one of the quick prompt cards above.'
+          ? 'தயவுசெய்து மைக்கை அழுத்தி பேசவும் அல்லது கீழே உள்ள மாதிரி வினாக்களைத் தொடவும்.'
+          : 'Please tap the microphone and speak, or select one of the quick prompt cards below.'
       );
     }
-    const query = voiceQuery.trim();
-    setInput(query);
+    if (isListening) handleStopListening();
+
+    const { category, tool } = detectToolFromQuery(rawQuery);
+    setActiveCategory(category);
+    setActiveTool(tool);
+    setInput(rawQuery);
     setVoiceQuery('');
+    setLiveTranscript('');
     setShowVoiceModal(false);
 
     if (runImmediately) {
       setTimeout(() => {
-        handleGenerate(query);
+        handleGenerate(rawQuery, tool);
       }, 150);
     } else {
       setTimeout(() => {
@@ -546,9 +781,13 @@ export default function AishleeToolsScreen({ navigation }: any) {
       );
     }
 
+    if (isTtsPlaying) {
+      voiceBridgeRef.current?.stopSpeaking();
+      setIsTtsPlaying(false);
+    }
+
     setLoading(true);
     setOutput('');
-    setIsVoiceActive(false);
 
     try {
       let result: { text: string; error?: string } = { text: '', error: '' };
@@ -814,7 +1053,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
     const chips = language === 'Tamil' ? toolConfig.chips_ta : toolConfig.chips_en;
 
     return (
-      <View style={[styles.inputCard, { backgroundColor: colors.card, borderColor: isVoiceActive ? '#10b981' : colors.border }]}>
+      <View style={[styles.inputCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {/* Dynamic Tool Label Header */}
         <View style={styles.inputHeaderRow}>
           <Text style={[styles.inputLabel, { color: colors.text }]}>{inputLabel}</Text>
@@ -822,45 +1061,14 @@ export default function AishleeToolsScreen({ navigation }: any) {
           {/* Quick Voice / Kural AI Launch Header Button */}
           <TouchableOpacity
             style={[styles.voiceLaunchBtn, { backgroundColor: colors.primaryLight, borderColor: colors.primaryBorder }]}
-            onPress={() => setShowVoiceModal(true)}
+            onPress={() => handleOpenVoiceModal(true)}
           >
             <Mic size={15} color={colors.primary} />
-            <Text style={[styles.voiceLaunchText, { color: colors.primary }]}>{language === 'Tamil' ? 'குரல் AI' : 'Voice AI'}</Text>
+            <Text style={[styles.voiceLaunchText, { color: colors.primary }]}>
+              {language === 'Tamil' ? 'குரல் AI 🎙️' : 'Voice AI 🎙️'}
+            </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Live Voice Dictation Active Banner */}
-        {isVoiceActive && (
-          <View style={[styles.voiceActiveBanner, { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-              <View style={[styles.pulseMicDot, { backgroundColor: colors.primary }]}>
-                <Mic size={14} color="#000" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 12 }}>
-                  {language === 'Tamil' ? '🎙️ குரல் தட்டச்சு தயார் (பேசுங்கள்...)' : '🎙️ Voice Input Ready (Speak now...)'}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 10 }}>
-                  {language === 'Tamil'
-                    ? 'கீபோர்டு மைக் 🎙️ அல்லது கீழே உள்ள விரைவு வினாக்களைப் பயன்படுத்தவும்'
-                    : 'Use keyboard mic 🎙️ or choose a 1-tap voice prompt'}
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={styles.voicePresetsQuickBtn}
-              onPress={() => setShowVoiceModal(true)}
-            >
-              <Sparkles size={12} color="#000" />
-              <Text style={{ color: '#000', fontSize: 11, fontWeight: '700' }}>
-                {language === 'Tamil' ? 'வினாக்கள்' : 'Prompts'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsVoiceActive(false)} style={{ padding: 4 }}>
-              <X size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
 
         {/* 1-Tap Quick Prompt Chips Specific to Active Tool */}
         {chips && chips.length > 0 && (
@@ -876,7 +1084,6 @@ export default function AishleeToolsScreen({ navigation }: any) {
                 style={[styles.promptChip, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
                 onPress={() => {
                   setInput(chip);
-                  setIsVoiceActive(false);
                 }}
               >
                 <Sparkles size={12} color={colors.primary} />
@@ -937,7 +1144,7 @@ export default function AishleeToolsScreen({ navigation }: any) {
         {/* Text Input Area with Specific Placeholder & Voice Ref */}
         <TextInput
           ref={inputRef}
-          style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: isVoiceActive ? colors.primary : colors.border }]}
+          style={[styles.textInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
           multiline={!isUrlTool}
           numberOfLines={isUrlTool ? 1 : 4}
           placeholder={inputPlaceholder}
@@ -989,16 +1196,13 @@ export default function AishleeToolsScreen({ navigation }: any) {
         <View style={styles.actionButtonsRow}>
           {/* Prominent Voice Input Button - Opens Kural Voice Assistant */}
           <TouchableOpacity
-            style={[styles.prominentVoiceBtn, isVoiceActive && styles.prominentVoiceBtnActive]}
-            onPress={() => setShowVoiceModal(true)}
-            onLongPress={handleTriggerVoiceInput}
+            style={styles.prominentVoiceBtn}
+            onPress={() => handleOpenVoiceModal(true)}
             activeOpacity={0.8}
           >
-            <Mic size={20} color={isVoiceActive ? '#000' : '#fff'} />
-            <Text style={[styles.prominentVoiceText, isVoiceActive && { color: '#000' }]}>
-              {isVoiceActive
-                ? (language === 'Tamil' ? 'பேசவும்...' : 'Speaking...')
-                : (language === 'Tamil' ? 'குரல்' : 'Voice')}
+            <Mic size={20} color="#000" />
+            <Text style={styles.prominentVoiceText}>
+              {language === 'Tamil' ? 'குரல் உள்ளீடு' : 'Voice Input'}
             </Text>
           </TouchableOpacity>
 
@@ -1021,6 +1225,8 @@ export default function AishleeToolsScreen({ navigation }: any) {
       </View>
     );
   };
+
+  const detectedInfo = (voiceQuery || liveTranscript) ? detectToolFromQuery(voiceQuery || liveTranscript) : null;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -1129,15 +1335,37 @@ export default function AishleeToolsScreen({ navigation }: any) {
                     : (TOOL_CONFIGS[activeTool]?.result_title_en || 'AI Response')}
                 </Text>
               </View>
-              <View style={{ flexDirection: 'row', gap: 14 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                {/* Text-to-Speech (TTS) Voice Playback Button */}
+                <TouchableOpacity
+                  onPress={handleToggleTts}
+                  style={[styles.ttsActionBtn, isTtsPlaying && { backgroundColor: colors.primaryLight, borderColor: colors.primary }]}
+                >
+                  {isTtsPlaying ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Square size={14} color={colors.primary} />
+                      <Text style={{ color: colors.primary, fontSize: 11, fontWeight: 'bold' }}>
+                        {language === 'Tamil' ? 'நிறுத்து' : 'Stop'}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Volume2 color={colors.primary} size={18} />
+                      <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '600' }}>
+                        {language === 'Tamil' ? 'வாசி' : 'Listen'}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
                 <TouchableOpacity onPress={shareViaWhatsApp} title="Share to WhatsApp">
-                  <Share2 color="#22c55e" size={20} />
+                  <Share2 color="#22c55e" size={19} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={copyToClipboard} title="Copy">
-                  <Copy color="#38bdf8" size={20} />
+                  <Copy color="#38bdf8" size={19} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleExportPDF} title="Download PDF">
-                  <Download color="#f59e0b" size={20} />
+                  <Download color="#f59e0b" size={19} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -1167,50 +1395,191 @@ export default function AishleeToolsScreen({ navigation }: any) {
         ) : null}
       </ScrollView>
 
-      {/* ─── VOICE ASSISTANT MODAL (KURAL AI) ─── */}
+      {/* ─── 🎙️ VOICE ASSISTANT MODAL (KURAL AI) ─── */}
       <Modal visible={showVoiceModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.voiceModalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {/* Modal Header */}
             <View style={styles.voiceModalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Mic size={22} color={colors.primary} />
                 <Text style={[styles.voiceModalTitle, { color: colors.text }]}>
-                  {language === 'Tamil' ? 'குரல் AI (Kural AI Assistant)' : 'Kural AI Voice Assistant'}
+                  {language === 'Tamil' ? 'குரல் AI (Kural Assistant)' : 'Kural Voice Assistant'}
                 </Text>
               </View>
-              <TouchableOpacity onPress={() => setShowVoiceModal(false)}>
-                <X color={colors.textSecondary} size={22} />
-              </TouchableOpacity>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                {/* Voice Language Toggle */}
+                <TouchableOpacity
+                  style={[styles.voiceLangSwitch, { borderColor: colors.primary, backgroundColor: colors.inputBg }]}
+                  onPress={() => {
+                    const nextLang = voiceLang === 'ta-IN' ? 'en-IN' : 'ta-IN';
+                    setVoiceLang(nextLang);
+                    if (isListening) {
+                      handleStartListening(nextLang);
+                    }
+                  }}
+                >
+                  <Text style={[styles.voiceLangSwitchText, { color: colors.primary }]}>
+                    {voiceLang === 'ta-IN' ? '🇮🇳 தமிழ்' : '🌐 Eng'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    if (isListening) handleStopListening();
+                    setShowVoiceModal(false);
+                  }}
+                >
+                  <X color={colors.textSecondary} size={22} />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <Text style={[styles.voiceModalSub, { color: colors.textSecondary }]}>
-              {language === 'Tamil'
-                ? 'நேரடியாகப் பேச அல்லது ஒரு வினாவைத் தேர்ந்தெடுத்து உடனடி பதில் பெறவும்:'
-                : 'Speak directly or tap a quick voice prompt for instant AI response:'}
+            {/* ─── INTERACTIVE VOICE HUB (PULSING MIC & REAL-TIME SPEECH) ─── */}
+            <View style={[styles.voiceListenHub, { backgroundColor: colors.inputBg, borderColor: isListening ? colors.primary : colors.border }]}>
+              {/* Animated Listening Mic */}
+              <TouchableOpacity
+                style={[
+                  styles.bigListeningMicBtn,
+                  isListening ? styles.bigListeningMicActive : { backgroundColor: colors.primary },
+                ]}
+                onPress={() => {
+                  if (isListening) {
+                    handleStopListening();
+                  } else {
+                    handleStartListening();
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Mic size={32} color="#000" />
+              </TouchableOpacity>
+
+              {/* Status & Soundwave Indicator */}
+              <View style={{ alignItems: 'center', marginTop: 10 }}>
+                {isListening ? (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={styles.listeningStatusText}>
+                      {voiceLang === 'ta-IN' ? '🎙️ உங்களை கவனிக்கிறது... பேசுங்கள்' : '🎙️ Listening... Speak now'}
+                    </Text>
+                    {/* Animated Wave Bars */}
+                    <View style={styles.waveContainer}>
+                      <View style={[styles.waveBar, { height: 16, backgroundColor: colors.primary }]} />
+                      <View style={[styles.waveBar, { height: 26, backgroundColor: colors.primary }]} />
+                      <View style={[styles.waveBar, { height: 34, backgroundColor: colors.primary }]} />
+                      <View style={[styles.waveBar, { height: 22, backgroundColor: colors.primary }]} />
+                      <View style={[styles.waveBar, { height: 14, backgroundColor: colors.primary }]} />
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={[styles.idleStatusText, { color: colors.textSecondary }]}>
+                    {language === 'Tamil'
+                      ? 'குரல் பதிவு தொடங்க மைக்கை தொடவும்'
+                      : 'Tap microphone to start speaking'}
+                  </Text>
+                )}
+              </View>
+
+              {/* Error Notice if any */}
+              {voiceError && (
+                <View style={styles.voiceErrorBanner}>
+                  <Text style={styles.voiceErrorText}>⚠️ {voiceError}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* ─── LIVE RECOGNIZED TRANSCRIPTION CARD ─── */}
+            <View style={[styles.transcriptContainer, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700' }}>
+                  {language === 'Tamil' ? 'பதிவான குரல் உரை (Spoken Text):' : 'Spoken Voice Query:'}
+                </Text>
+                {(voiceQuery || liveTranscript) ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVoiceQuery('');
+                      setLiveTranscript('');
+                    }}
+                    style={{ padding: 2 }}
+                  >
+                    <RotateCcw size={13} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              <TextInput
+                style={[styles.voiceTranscriptInput, { color: colors.text }]}
+                placeholder={
+                  language === 'Tamil'
+                    ? 'பேசிய குரல் உரை இங்கே தோன்றும் (அல்லது தட்டச்சு செய்யலாம்)...'
+                    : 'Recognized speech will appear here (or type)...'
+                }
+                placeholderTextColor={colors.textMuted}
+                value={voiceQuery || liveTranscript}
+                onChangeText={(t) => {
+                  setVoiceQuery(t);
+                  setLiveTranscript(t);
+                }}
+                multiline
+              />
+
+              {/* Detected Intent Tag */}
+              {detectedInfo && (voiceQuery || liveTranscript) ? (
+                <View style={styles.detectedBadgeRow}>
+                  <Sparkles size={12} color={colors.primary} />
+                  <Text style={[styles.detectedBadgeText, { color: colors.primary }]}>
+                    {language === 'Tamil' ? `தேர்வு: ${detectedInfo.tool}` : `Auto-Route: ${detectedInfo.tool}`}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Transcribed Action Buttons */}
+              <View style={styles.transcriptActionRow}>
+                {isListening ? (
+                  <TouchableOpacity
+                    style={styles.stopListeningBtn}
+                    onPress={handleStopListening}
+                  >
+                    <Square size={14} color="#fff" />
+                    <Text style={styles.stopListeningBtnText}>
+                      {language === 'Tamil' ? 'நிறுத்து' : 'Stop'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                <TouchableOpacity
+                  style={[styles.presetUseBtn, { borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 8 }]}
+                  onPress={() => handleApplyVoiceQuery(false)}
+                >
+                  <FileText size={14} color={colors.textSecondary} />
+                  <Text style={[styles.presetUseBtnText, { color: colors.textSecondary, fontSize: 12 }]}>
+                    {language === 'Tamil' ? 'உள்ளீடு (Use)' : 'Use Text'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.voiceApplyBtn, { backgroundColor: colors.primary }]}
+                  onPress={() => handleApplyVoiceQuery(true)}
+                >
+                  <Zap size={15} color="#000" />
+                  <Text style={styles.voiceApplyBtnText}>
+                    {language === 'Tamil' ? 'இயக்கு ⚡' : 'Run ⚡'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* ─── QUICK 1-TAP PRESET PROMPTS ─── */}
+            <Text style={[styles.presetSectionTitle, { color: colors.textSecondary }]}>
+              {language === 'Tamil' ? 'அல்லது மாதிரி வினாவைத் தேர்ந்தெடுக்கவும்:' : 'Or tap a 1-click voice prompt:'}
             </Text>
 
-            {/* Direct Voice Dictation Trigger Action Button */}
-            <TouchableOpacity
-              style={[styles.voiceSpeakNowBtn, { backgroundColor: colors.primary }]}
-              onPress={() => {
-                setShowVoiceModal(false);
-                handleTriggerVoiceInput();
-              }}
-            >
-              <Mic size={20} color="#000" />
-              <Text style={styles.voiceSpeakNowBtnText}>
-                {language === 'Tamil'
-                  ? '🎙️ இப்போது பேச தொடங்குங்கள் (Voice Dictation)'
-                  : '🎙️ Start Speaking Now (Voice Dictation)'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Quick Voice Prompt Cards with 1-Tap Execution */}
-            <ScrollView style={{ maxHeight: 240, marginBottom: 12 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={{ maxHeight: 180 }} showsVerticalScrollIndicator={false}>
               {VOICE_PRESETS.map((preset, idx) => (
                 <View key={idx} style={[styles.voicePresetCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 20 }}>{preset.icon}</Text>
+                    <Text style={{ fontSize: 18 }}>{preset.icon}</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.voicePresetText, { color: colors.text }]}>
                         {language === 'Tamil' ? preset.tamil : preset.english}
@@ -1219,7 +1588,6 @@ export default function AishleeToolsScreen({ navigation }: any) {
                     </View>
                   </View>
 
-                  {/* Dual Action Buttons on Each Preset: Run Immediately OR Insert in Box */}
                   <View style={styles.presetActionsRow}>
                     <TouchableOpacity
                       style={[styles.presetUseBtn, { borderColor: colors.border }]}
@@ -1244,33 +1612,6 @@ export default function AishleeToolsScreen({ navigation }: any) {
                 </View>
               ))}
             </ScrollView>
-
-            {/* Direct Voice Query Input */}
-            <View style={[styles.voiceInputRow, { backgroundColor: colors.inputBg, borderColor: colors.border, gap: 6 }]}>
-              <TextInput
-                style={[styles.voiceTextInput, { color: colors.text }]}
-                placeholder={language === 'Tamil' ? 'குரல் வழியே பேச அல்லது தட்டச்சு செய்ய...' : 'Speak via keyboard mic or type query...'}
-                placeholderTextColor={colors.textMuted}
-                value={voiceQuery}
-                onChangeText={setVoiceQuery}
-              />
-              <TouchableOpacity
-                style={[styles.presetUseBtn, { borderColor: colors.border, paddingVertical: 8, paddingHorizontal: 10 }]}
-                onPress={() => handleApplyVoiceQuery(false)}
-              >
-                <FileText size={13} color={colors.textSecondary} />
-                <Text style={[styles.presetUseBtnText, { color: colors.textSecondary }]}>
-                  {language === 'Tamil' ? 'உள்ளீடு' : 'Use'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.voiceApplyBtn, { backgroundColor: colors.primary }]}
-                onPress={() => handleApplyVoiceQuery(true)}
-              >
-                <Zap size={14} color="#000" />
-                <Text style={styles.voiceApplyBtnText}>{language === 'Tamil' ? 'இயக்கு' : 'Run'}</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -1307,6 +1648,13 @@ export default function AishleeToolsScreen({ navigation }: any) {
               <ExternalLink size={14} color="#38bdf8" />
               <Text style={styles.getKeyLinkText}>Get a Free Gemini API Key from Google AI Studio</Text>
             </TouchableOpacity>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <CheckCircle size={14} color="#10b981" />
+              <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '700' }}>
+                Synced with Profile & Saved Permanently across all AI tools
+              </Text>
+            </View>
 
             <View style={styles.settingsBtnRow}>
               <TouchableOpacity
@@ -1397,6 +1745,20 @@ export default function AishleeToolsScreen({ navigation }: any) {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* ─── HEADLESS VOICE & TTS ENGINE BRIDGE ─── */}
+      <VoiceSpeechBridge
+        ref={voiceBridgeRef}
+        onSpeechStart={() => {
+          setIsListening(true);
+          setVoiceError(null);
+        }}
+        onSpeechResult={handleSpeechResult}
+        onSpeechEnd={handleSpeechEnd}
+        onSpeechError={handleSpeechError}
+        onTtsStart={() => setIsTtsPlaying(true)}
+        onTtsEnd={() => setIsTtsPlaying(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -1657,7 +2019,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#059669',
+    backgroundColor: '#10b981',
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 10,
@@ -1666,7 +2028,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   prominentVoiceText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -1703,6 +2065,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  ttsActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#10b98140',
+    backgroundColor: '#10b98115',
   },
   statusQuoteCard: {
     backgroundColor: '#0a0f1e',
@@ -1748,81 +2120,171 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: 'rgba(0,0,0,0.80)',
     justifyContent: 'center',
     padding: 16,
   },
   voiceModalContent: {
     backgroundColor: '#111827',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 18,
     borderWidth: 1,
     borderColor: '#10b981',
+    maxHeight: '90%',
   },
   voiceModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 14,
   },
   voiceModalTitle: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  voiceModalSub: {
-    color: '#94a3b8',
-    fontSize: 12,
+  voiceLangSwitch: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  voiceLangSwitchText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  voiceListenHub: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
     marginBottom: 12,
   },
-  voiceActiveBanner: {
-    flexDirection: 'row',
+  bigListeningMicBtn: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    gap: 8,
-  },
-  pulseMicDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
     justifyContent: 'center',
-    alignItems: 'center',
+    elevation: 6,
   },
-  voicePresetsQuickBtn: {
+  bigListeningMicActive: {
+    backgroundColor: '#10b981',
+    borderWidth: 3,
+    borderColor: '#34d399',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+  },
+  listeningStatusText: {
+    color: '#10b981',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  idleStatusText: {
+    fontSize: 12,
+    marginTop: 6,
+  },
+  waveContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#10b981',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
+    height: 36,
   },
-  prominentVoiceBtnActive: {
-    backgroundColor: '#10b981',
-    borderColor: '#34d399',
+  waveBar: {
+    width: 5,
+    borderRadius: 3,
   },
-  voiceSpeakNowBtn: {
+  voiceErrorBanner: {
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#ef444420',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ef444450',
+  },
+  voiceErrorText: {
+    color: '#ef4444',
+    fontSize: 11,
+  },
+  transcriptContainer: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  voiceTranscriptInput: {
+    minHeight: 48,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlignVertical: 'top',
+    padding: 0,
+  },
+  detectedBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginBottom: 14,
-    elevation: 3,
+    gap: 6,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
   },
-  voiceSpeakNowBtnText: {
-    color: '#000',
-    fontSize: 14,
+  detectedBadgeText: {
+    fontSize: 11,
     fontWeight: 'bold',
+  },
+  transcriptActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  stopListeningBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  stopListeningBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  voiceApplyBtn: {
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voiceApplyBtnText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  presetSectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   voicePresetCard: {
     padding: 12,
     borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 1,
   },
   voicePresetText: {
@@ -1832,7 +2294,7 @@ const styles = StyleSheet.create({
   },
   voicePresetTool: {
     fontSize: 11,
-    marginTop: 4,
+    marginTop: 3,
     fontWeight: '600',
   },
   presetActionsRow: {
@@ -1869,32 +2331,6 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 11,
     fontWeight: 'bold',
-  },
-  voiceInputRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
-  },
-  voiceTextInput: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    fontSize: 13,
-    borderWidth: 1,
-  },
-  voiceApplyBtn: {
-    flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  voiceApplyBtnText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 13,
   },
   settingsModalContent: {
     backgroundColor: '#111827',

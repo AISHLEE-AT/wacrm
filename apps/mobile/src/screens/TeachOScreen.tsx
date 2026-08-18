@@ -1,63 +1,350 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, Linking } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  TextInput,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
-import { PlayCircle } from 'lucide-react-native';
+import {
+  PlayCircle,
+  BookOpen,
+  GraduationCap,
+  Search,
+  Award,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  Flame,
+  ChevronRight,
+  Star,
+  FileCheck2,
+  Zap,
+  Layers,
+  Briefcase,
+} from 'lucide-react-native';
+
+const CATEGORIES = [
+  { id: 'all', label: 'All Courses', icon: BookOpen },
+  { id: 'entrance', label: 'NEET & JEE', icon: Zap },
+  { id: 'govt', label: 'Govt & TNPSC', icon: Award },
+  { id: 'skills', label: 'AI & Tech Skills', icon: Sparkles },
+  { id: 'school', label: 'School (KG–12)', icon: GraduationCap },
+  { id: 'college', label: 'College (UG/PG)', icon: BookOpen },
+  { id: 'others', label: 'Others & General', icon: Layers },
+  { id: 'tests', label: 'TestO Mock Tests', icon: FileCheck2 },
+];
+
+export function getCourseCategory(c: any): 'entrance' | 'govt' | 'skills' | 'school' | 'college' | 'others' {
+  const cat = (c.category || '').toLowerCase();
+  const title = (c.title_name || '').toLowerCase();
+
+  if (
+    cat.includes('neet') ||
+    cat.includes('jee') ||
+    /\b(neet|jee|iit|cuet|gate)\b/i.test(title)
+  ) {
+    return 'entrance';
+  }
+
+  if (
+    cat.includes('tnpsc') ||
+    cat.includes('govt') ||
+    cat.includes('upsc') ||
+    /\b(tnpsc|upsc|civil services|group 1|group 2|group 4|group iv|ssc|chsl|cgl|rrb|ntpc|tnusrb|police|constable|si|forest guard|agniveer|cds|nda|tet|trb)\b/i.test(title)
+  ) {
+    return 'govt';
+  }
+
+  if (
+    (cat.includes('tech') || cat.includes('it training') || cat.includes('skill')) ||
+    /செயற்கை நுண்ணறிவு|பைதான்|ஜாவாஸ்கிரிப்ட்|தரவு அறிவியல்|கிளவுட்|சைபர்|சாப்ட்வேர்|மொபைல் ஆப்|கணினி|மார்க்கெட்டிங்/i.test(title) ||
+    /\b(python|javascript|data science|data analytics|cloud|aws|cyber security|mobile app|software testing|networking|digital marketing|web dev|coding|programming)\b/i.test(title)
+  ) {
+    return 'skills';
+  }
+
+  if (
+    cat.includes('grade') ||
+    cat.includes('school') ||
+    /\b(class 8|class 9|class 10|class 11|class 12|8th standard|9th standard|10th standard|11th standard|12th standard|lkg|ukg|samacheer|cbse|tn board)\b/i.test(title)
+  ) {
+    return 'school';
+  }
+
+  if (
+    cat.includes('ug') ||
+    cat.includes('college') ||
+    /\b(spoken english|engineering|computer architecture|degree|b\.tech|b\.sc|b\.com)\b/i.test(title)
+  ) {
+    return 'college';
+  }
+
+  return 'others';
+}
 
 export default function TeachOScreen() {
   const [courses, setCourses] = useState<any[]>([]);
+  const [tests, setTests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [streakDays] = useState(5);
+  const [xpPoints] = useState(480);
   const navigation = useNavigation<any>();
 
   useEffect(() => {
-    fetchCourses();
+    fetchData();
   }, []);
 
-  const fetchCourses = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await aishleeSupabase
+      setLoading(true);
+      // 1. Fetch Courses
+      const { data: courseData, error: courseError } = await aishleeSupabase
         .from('unified_master_data')
         .select('*')
         .eq('item_type', 'COURSE')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setCourses(data || []);
+      if (courseError) throw courseError;
+      setCourses(courseData || []);
+
+      // 2. Fetch Tests
+      const { data: testData, error: testError } = await aishleeSupabase
+        .from('unified_master_data')
+        .select('*')
+        .eq('item_type', 'o_test')
+        .limit(100);
+
+      if (!testError && testData) {
+        setTests(testData);
+      }
     } catch (err) {
-      console.error('Error fetching courses:', err);
+      console.error('Error fetching EduVerse data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const renderCourseCard = ({ item }: { item: any }) => {
-    let metadata = item.metadata || {};
-    if (typeof metadata === 'string') {
-      try { metadata = JSON.parse(metadata); } catch(e) {}
+  const filteredItems = useMemo(() => {
+    let items = courses;
+    if (activeCategory === 'tests') {
+      items = tests;
+    } else if (activeCategory !== 'all') {
+      items = courses.filter(c => getCourseCategory(c) === activeCategory);
     }
-    const thumbnailUrl = metadata.thumbnail_url || 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=400';
-    
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(
+        item =>
+          (item.title_name && item.title_name.toLowerCase().includes(q)) ||
+          (item.category && item.category.toLowerCase().includes(q)) ||
+          (item.description_purpose && item.description_purpose.toLowerCase().includes(q))
+      );
+    }
+
+    return items;
+  }, [courses, tests, activeCategory, searchQuery]);
+
+  const renderListHeader = () => {
+    const recentCourse = courses[0];
+    return (
+      <View style={styles.scrollHeader}>
+        {/* Continue Learning Widget */}
+        {recentCourse && activeCategory === 'all' && !searchQuery && (
+          <TouchableOpacity
+            style={styles.continueCard}
+            onPress={() => navigation.navigate('TeachOCourseScreen', { course: recentCourse })}
+          >
+            <View style={styles.continueHeader}>
+              <View style={styles.continueBadge}>
+                <Clock size={12} color="#38bdf8" style={{ marginRight: 4 }} />
+                <Text style={styles.continueBadgeText}>CONTINUE LEARNING</Text>
+              </View>
+              <Text style={styles.continueProgressText}>65% Complete</Text>
+            </View>
+
+            <Text style={styles.continueTitle} numberOfLines={1}>
+              {recentCourse.title_name}
+            </Text>
+
+            {/* Progress Bar */}
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, { width: '65%' }]} />
+            </View>
+
+            <View style={styles.continueFooter}>
+              <Text style={styles.continueLessonText}>Next: Chapter 4 • Interactive Practice</Text>
+              <View style={styles.resumeBtn}>
+                <Text style={styles.resumeBtnText}>Resume</Text>
+                <ChevronRight size={14} color="#10b981" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Today's Daily 3 Tasks */}
+        {activeCategory === 'all' && !searchQuery && (
+          <View style={styles.dailyTasksCard}>
+            <View style={styles.dailyTasksHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <CheckCircle2 size={16} color="#10b981" style={{ marginRight: 6 }} />
+                <Text style={styles.dailyTasksTitle}>Today's Learning Tasks</Text>
+              </View>
+              <Text style={styles.dailyTasksPoints}>+50 XP</Text>
+            </View>
+
+            <View style={styles.taskItem}>
+              <View style={[styles.taskCheck, styles.taskCheckDone]}>
+                <Text style={styles.checkMark}>✓</Text>
+              </View>
+              <Text style={[styles.taskLabel, styles.taskLabelDone]}>
+                Watch 1 Masterclass Video Lesson
+              </Text>
+            </View>
+
+            <View style={styles.taskItem}>
+              <View style={styles.taskCheck} />
+              <Text style={styles.taskLabel}>Review Chapter Mind Map & Formula Notes</Text>
+            </View>
+
+            <View style={styles.taskItem}>
+              <View style={styles.taskCheck} />
+              <Text style={styles.taskLabel}>Attempt 5 Daily Practice Questions</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Career & Placement Quick Launcher */}
+        {activeCategory === 'all' && !searchQuery && (
+          <TouchableOpacity
+            style={styles.careerBanner}
+            onPress={() => navigation.navigate('CareerHubScreen')}
+          >
+            <View style={styles.careerBannerLeft}>
+              <View style={styles.careerIconBox}>
+                <Briefcase size={18} color="#10b981" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.careerBannerTitle}>Career & Placement Hub</Text>
+                  <Sparkles size={12} color="#10b981" style={{ marginLeft: 4 }} />
+                </View>
+                <Text style={styles.careerBannerSub}>Job Alerts • AI Resume Builder • Mock Interviews</Text>
+              </View>
+            </View>
+            <ChevronRight size={16} color="#10b981" />
+          </TouchableOpacity>
+        )}
+
+        {/* Section Heading */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            {activeCategory === 'tests' ? '📝 TestO Online Mock Exams' : '📚 Masterclass Courses'}
+          </Text>
+          <Text style={styles.sectionCount}>{filteredItems.length} Available</Text>
+        </View>
+      </View>
+    );
+  };
+
+  const renderItem = ({ item }: { item: any }) => {
+    const isTestItem = item.item_type === 'o_test' || activeCategory === 'tests';
+
+    let metadata = item.metadata || item.additional_info || {};
+    if (typeof metadata === 'string') {
+      try {
+        metadata = JSON.parse(metadata);
+      } catch (e) {}
+    }
+
+    const thumbnailUrl =
+      metadata.thumbnail_url ||
+      'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=400';
+
+    const questionCount =
+      metadata.questions?.length || metadata.questionCount || (isTestItem ? 25 : 0);
+
+    const categoryKey = isTestItem ? 'tests' : getCourseCategory(item);
+    const categoryLabel = isTestItem
+      ? 'TESTO EXAM'
+      : item.category ||
+        (categoryKey === 'entrance'
+          ? 'NEET / JEE'
+          : categoryKey === 'govt'
+          ? 'Govt & TNPSC'
+          : categoryKey === 'skills'
+          ? 'AI & Tech'
+          : categoryKey === 'school'
+          ? 'School (KG–12)'
+          : categoryKey === 'college'
+          ? 'College'
+          : 'Others');
+
     return (
       <View style={styles.card}>
-        <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} />
+        {!isTestItem && <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} />}
+
         <View style={styles.cardContent}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.category || 'General'}</Text>
+          <View style={styles.badgeRow}>
+            <View style={[styles.badge, isTestItem && styles.testBadge]}>
+              <Text style={[styles.badgeText, isTestItem && styles.testBadgeText]}>
+                {categoryLabel}
+              </Text>
+            </View>
+
+            {questionCount > 0 && (
+              <View style={styles.metaPill}>
+                <Award size={12} color="#10b981" style={{ marginRight: 4 }} />
+                <Text style={styles.metaPillText}>{questionCount} MCQs</Text>
+              </View>
+            )}
           </View>
+
           <Text style={styles.cardTitle}>{item.title_name}</Text>
           <Text style={styles.cardDescription} numberOfLines={2}>
-            {item.description_purpose || item.description || 'Learn and excel with TeachO.'}
+            {item.description_purpose ||
+              item.description ||
+              (isTestItem
+                ? 'Timed interactive examination with instant accuracy analytics & scorecard.'
+                : 'Comprehensive subject coverage with video lessons, digital notes & AI tutor.')}
           </Text>
+
           <View style={styles.cardFooter}>
-            <TouchableOpacity 
-              style={styles.watchBtn}
-              onPress={() => {
-                navigation.navigate('TeachOCourseScreen', { course: item });
-              }}
-            >
-              <PlayCircle size={16} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.watchBtnText}>Watch Now</Text>
-            </TouchableOpacity>
+            {isTestItem ? (
+              <TouchableOpacity
+                style={styles.testBtn}
+                onPress={() => {
+                  navigation.navigate('TestOExamScreen', {
+                    testId: item.id,
+                    title: item.title_name,
+                  });
+                }}
+              >
+                <FileCheck2 size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
+                <Text style={styles.testBtnText}>Start Exam</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.watchBtn}
+                onPress={() => {
+                  navigation.navigate('TeachOCourseScreen', { course: item });
+                }}
+              >
+                <PlayCircle size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
+                <Text style={styles.watchBtnText}>Start Learning</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -66,119 +353,521 @@ export default function TeachOScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#f59e0b" />
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#10b981" />
+          <Text style={styles.loadingText}>Loading EduVerse Learning Hub...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerTitle}>TeachO</Text>
-      <Text style={styles.headerSubtitle}>Masterclass Courses & Tuitions</Text>
-      
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
+
+      {/* FIXED TOP HEADER & SEARCH (Never unmounts or loses focus) */}
+      <View style={styles.headerContainer}>
+        {/* Top Title & Gamification Bar */}
+        <View style={styles.topBar}>
+          <View>
+            <View style={styles.badgeRow}>
+              <Text style={styles.mainTitle}>TeachO</Text>
+              <View style={styles.eduVerseBadge}>
+                <Sparkles size={11} color="#10b981" style={{ marginRight: 4 }} />
+                <Text style={styles.eduVerseText}>EduVerse AI</Text>
+              </View>
+            </View>
+            <Text style={styles.subTitle}>School, Higher Ed, Competitive & Skills</Text>
+          </View>
+
+          {/* Streak & XP Badges */}
+          <View style={styles.statsRow}>
+            <View style={styles.statPill}>
+              <Flame size={14} color="#f97316" />
+              <Text style={styles.statText}>{streakDays}d</Text>
+            </View>
+            <View style={[styles.statPill, { backgroundColor: '#10b98120', borderColor: '#10b98150' }]}>
+              <Star size={14} color="#10b981" />
+              <Text style={[styles.statText, { color: '#10b981' }]}>{xpPoints} XP</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchBar}>
+          <Search size={18} color="#94a3b8" style={{ marginRight: 8 }} />
+          <TextInput
+            placeholder="Search subjects, lessons, TNPSC, NEET, AI..."
+            placeholderTextColor="#64748b"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
+        </View>
+
+        {/* Category Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+        >
+          {CATEGORIES.map(cat => {
+            const IconComponent = cat.icon;
+            const isActive = activeCategory === cat.id;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.categoryPill, isActive && styles.categoryPillActive]}
+                onPress={() => setActiveCategory(cat.id)}
+              >
+                <IconComponent
+                  size={14}
+                  color={isActive ? '#0a0f1e' : '#94a3b8'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* SCROLLABLE COURSES & TASKS LIST */}
       <FlatList
-        data={courses}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCourseCard}
+        data={filteredItems}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        ListHeaderComponent={renderListHeader}
         contentContainerStyle={styles.listContainer}
+        keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No courses available right now.</Text>
+          <View style={styles.emptyContainer}>
+            <BookOpen size={48} color="#334155" style={{ marginBottom: 12 }} />
+            <Text style={styles.emptyTitle}>No matching courses or tests found</Text>
+            <Text style={styles.emptySub}>Try searching with different keywords</Text>
+          </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#121212', // Dark premium background
+    backgroundColor: '#0a0f1e',
   },
   loaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0a0f1e',
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 60,
-    marginHorizontal: 20,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#a1a1aa',
-    marginHorizontal: 20,
-    marginBottom: 20,
+  loadingText: {
+    color: '#94a3b8',
+    marginTop: 12,
+    fontSize: 14,
   },
   listContainer: {
-    paddingHorizontal: 20,
     paddingBottom: 40,
   },
-  card: {
-    backgroundColor: '#1e1e24',
+  scrollHeader: {
+    paddingHorizontal: 16,
+  },
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mainTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#ffffff',
+    letterSpacing: -0.5,
+  },
+  eduVerseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10b98120',
+    borderColor: '#10b98150',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  eduVerseText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  subTitle: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9731620',
+    borderColor: '#f9731650',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 14,
+  },
+  statText: {
+    color: '#f97316',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    borderColor: '#1e293b',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 14,
+    padding: 0,
+  },
+  categoryScroll: {
+    paddingBottom: 14,
+    gap: 8,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    borderColor: '#1e293b',
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  categoryPillActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  categoryText: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  categoryTextActive: {
+    color: '#0a0f1e',
+    fontWeight: 'bold',
+  },
+  continueCard: {
+    backgroundColor: '#111827',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    padding: 16,
+    marginBottom: 14,
+  },
+  continueHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  continueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  continueBadgeText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  continueProgressText: {
+    color: '#10b981',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  continueTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  progressBarBg: {
+    height: 6,
+    backgroundColor: '#1e293b',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#10b981',
+  },
+  continueFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  continueLessonText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    flex: 1,
+  },
+  resumeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  resumeBtnText: {
+    color: '#10b981',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginRight: 2,
+  },
+  dailyTasksCard: {
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    padding: 16,
+    marginBottom: 16,
+  },
+  dailyTasksHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dailyTasksTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  dailyTasksPoints: {
+    color: '#f59e0b',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  taskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  taskCheck: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#475569',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  taskCheckDone: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  checkMark: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  taskLabel: {
+    color: '#cbd5e1',
+    fontSize: 13,
+  },
+  taskLabelDone: {
+    color: '#64748b',
+    textDecorationLine: 'line-through',
+  },
+  careerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#10b98140',
+    padding: 14,
+    marginBottom: 16,
+  },
+  careerBannerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  careerIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#10b98120',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  careerBannerTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  careerBannerSub: {
+    color: '#94a3b8',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 17,
+    fontWeight: 'bold',
+  },
+  sectionCount: {
+    color: '#64748b',
+    fontSize: 12,
+  },
+  card: {
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    marginHorizontal: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#1e293b',
     overflow: 'hidden',
   },
   thumbnail: {
     width: '100%',
-    height: 180,
-    backgroundColor: '#2d2d2d',
+    height: 170,
+    backgroundColor: '#1e293b',
   },
   cardContent: {
     padding: 16,
   },
   badge: {
-    backgroundColor: '#f59e0b30',
+    backgroundColor: '#10b98120',
+    borderColor: '#10b98150',
+    borderWidth: 1,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   badgeText: {
-    color: '#fcd34d',
-    fontSize: 12,
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  testBadge: {
+    backgroundColor: '#f59e0b20',
+    borderColor: '#f59e0b50',
+  },
+  testBadgeText: {
+    color: '#f59e0b',
+  },
+  metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginLeft: 8,
+    marginBottom: 8,
+  },
+  metaPillText: {
+    color: '#94a3b8',
+    fontSize: 11,
     fontWeight: '600',
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
+    color: '#ffffff',
+    marginBottom: 6,
   },
   cardDescription: {
-    fontSize: 14,
-    color: '#a1a1aa',
+    fontSize: 13,
+    color: '#94a3b8',
     marginBottom: 16,
-    lineHeight: 20,
+    lineHeight: 19,
   },
   cardFooter: {
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   watchBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f59e0b',
-    paddingHorizontal: 20,
+    backgroundColor: '#10b981',
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   watchBtnText: {
-    color: '#fff',
+    color: '#0a0f1e',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 13,
   },
-  emptyText: {
-    color: '#a1a1aa',
-    textAlign: 'center',
-    marginTop: 40,
+  testBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  testBtnText: {
+    color: '#0a0f1e',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    color: '#ffffff',
     fontSize: 16,
-  }
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  emptySub: {
+    color: '#64748b',
+    fontSize: 13,
+  },
 });
+

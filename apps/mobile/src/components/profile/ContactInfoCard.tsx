@@ -51,6 +51,8 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
         appContext?.updateUserProfile?.({ upiId: editValue.trim() });
       } else if (editingField === 'location') {
         appContext?.updateUserProfile?.({ location: editValue.trim() });
+      } else if (editingField === 'gemini_api_key') {
+        await appContext?.updateGeminiKey?.(editValue.trim());
       }
 
       fetch('https://watscrm.vercel.app/api/profile/update', {
@@ -76,6 +78,8 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
   const openGeminiLink = () => {
     Linking.openURL('https://aistudio.google.com/app/apikey');
   };
+
+  const activeApiKey = profile?.gemini_api_key || appContext?.geminiApiKey || '';
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -210,27 +214,39 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
             <Sparkles size={20} color={colors.primary} />
           </View>
           <View style={styles.contentContainer}>
-            <Text style={[styles.label, { color: colors.textMuted }]}>GEMINI API KEY (AI FEATURES)</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>GEMINI API KEY (UNIFIED AI HUB)</Text>
             {editingField === 'gemini_api_key' ? (
               <View>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
                   value={editValue}
                   onChangeText={setEditValue}
-                  placeholder="AIzaSy..."
+                  placeholder="Paste AI Studio key (AIzaSy...)"
                   placeholderTextColor={colors.textMuted}
-                  secureTextEntry
+                  secureTextEntry={false}
+                  autoCapitalize="none"
                   autoFocus
                 />
                 <TouchableOpacity style={styles.linkContainer} onPress={openGeminiLink}>
                   <ExternalLink size={14} color={colors.accent} />
-                  <Text style={[styles.linkText, { color: colors.accent }]}>Get API Key</Text>
+                  <Text style={[styles.linkText, { color: colors.accent }]}>Get Free Key from Google AI Studio</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              <Text style={[styles.value, { color: colors.text }]}>
-                {profile?.gemini_api_key ? '••••••••••••••••' : 'Not provided'}
-              </Text>
+              <View>
+                <Text style={[styles.value, { color: colors.text }]}>
+                  {activeApiKey ? '••••••••••••••••' : 'Not configured'}
+                </Text>
+                {activeApiKey ? (
+                  <Text style={{ fontSize: 11, color: '#10b981', marginTop: 2, fontWeight: '700' }}>
+                    ✓ Linked to SuprO AI Hub permanently
+                  </Text>
+                ) : (
+                  <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
+                    Tap Edit to add your free Gemini key
+                  </Text>
+                )}
+              </View>
             )}
           </View>
         </View>
@@ -249,8 +265,10 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
               </View>
             )
           ) : (
-            <TouchableOpacity onPress={() => handleEdit('gemini_api_key', profile?.gemini_api_key || '')}>
-              <Text style={[styles.editBtnText, { color: colors.primary }]}>Edit</Text>
+            <TouchableOpacity onPress={() => handleEdit('gemini_api_key', activeApiKey)}>
+              <Text style={[styles.editBtnText, { color: colors.primary }]}>
+                {activeApiKey ? 'Change' : 'Add Key'}
+              </Text>
             </TouchableOpacity>
           )}
         </View>

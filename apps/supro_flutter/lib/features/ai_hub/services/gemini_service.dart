@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ToolResponse {
   final String text;
@@ -28,6 +30,19 @@ class GeminiService {
     List<Map<String, String>> attachments = const [],
     String modelName = _defaultModel,
   }) async {
+    String effectiveKey = apiKey.trim();
+    if (effectiveKey.isEmpty) {
+      try {
+        const storage = FlutterSecureStorage();
+        effectiveKey = (await storage.read(key: 'gemini-api-key') ??
+            await storage.read(key: 'gemini_api_key') ?? '').trim();
+        if (effectiveKey.isEmpty) {
+          final prefs = await SharedPreferences.getInstance();
+          effectiveKey = (prefs.getString('gemini_api_key') ?? '').trim();
+        }
+      } catch (_) {}
+    }
+
     final langInstructions = language == 'Tamil'
         ? 'Respond primarily in natural, clear, professional TAMIL language (தமிழ்). You may include key English technical terms in brackets where helpful.'
         : 'Respond clearly and professionally in ENGLISH language.';
@@ -35,7 +50,7 @@ class GeminiService {
     final fullPrompt = '$prompt\n\nLanguage Instruction:\n$langInstructions';
 
     // 1. Try Direct Google Gemini REST API
-    if (apiKey.trim().isNotEmpty) {
+    if (effectiveKey.isNotEmpty) {
       final modelsToTry = modelName.isNotEmpty && !_candidateModels.contains(modelName)
           ? [modelName, ..._candidateModels]
           : _candidateModels;
@@ -57,7 +72,7 @@ class GeminiService {
             }
           }
 
-          final url = 'https://generativelanguage.googleapis.com/v1beta/models/$candidate:generateContent?key=${apiKey.trim()}';
+          final url = 'https://generativelanguage.googleapis.com/v1beta/models/$candidate:generateContent?key=$effectiveKey';
           final response = await http.post(
             Uri.parse(url),
             headers: {'Content-Type': 'application/json'},

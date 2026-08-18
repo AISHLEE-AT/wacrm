@@ -219,14 +219,22 @@ export default function TestOExamScreen() {
   const finishExam = () => {
     setSubmitted(true);
     if (timerRef.current) clearInterval(timerRef.current);
-    // Simple score calculation
     let score = 0;
     questions.forEach((q, idx) => {
-      if (answers[idx] === q.correct_answer || answers[idx] === q.correctAnswer || answers[idx] === q.answer) {
+      const correct = q.correct_answer || q.correctAnswer || q.answer || 'Option A';
+      if (answers[idx] === correct) {
         score += 1;
       }
     });
     setFinalScore(score);
+    navigation.replace('TestOResultScreen', {
+      score,
+      totalQuestions: questions.length,
+      userAnswers: answers,
+      questions,
+      timeTaken: 30 * 60 - timeLeft,
+      testTitle: title || 'TestO Mock Examination',
+    });
   };
 
   if (loading) {
@@ -240,124 +248,111 @@ export default function TestOExamScreen() {
 
   const currentQ = questions[currentIdx];
 
-  if (submitted) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.examTitle}>Exam Results</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <X size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <ScrollView style={styles.content}>
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreTitle}>Your Score</Text>
-            <Text style={styles.scoreValue}>{finalScore} / {questions.length}</Text>
-            <Text style={styles.scorePercent}>{Math.round((finalScore / questions.length) * 100)}%</Text>
-          </View>
-          
-          <Text style={styles.reviewTitle}>Detailed Review</Text>
-          {questions.map((q, idx) => {
-            const userAnswer = answers[idx];
-            const correctAns = q.correct_answer || q.correctAnswer || q.answer;
-            const isCorrect = userAnswer === correctAns;
-            
-            return (
-              <View key={idx} style={[styles.reviewCard, { borderColor: isCorrect ? '#22c55e' : '#ef4444' }]}>
-                <Text style={styles.reviewQNum}>Question {idx + 1}</Text>
-                <Text style={styles.reviewQText}>{q.question || q.q}</Text>
-                
-                <View style={styles.reviewAnswers}>
-                  <Text style={{ color: isCorrect ? '#22c55e' : '#ef4444', fontWeight: 'bold' }}>
-                    Your Answer: {userAnswer || 'Not Answered'}
-                  </Text>
-                  {!isCorrect && (
-                    <Text style={{ color: '#22c55e', fontWeight: 'bold', marginTop: 4 }}>
-                      Correct Answer: {correctAns}
-                    </Text>
-                  )}
-                </View>
-                
-                {q.explanation && (
-                  <View style={styles.explanationBox}>
-                    <Text style={styles.explanationTitle}>Explanation:</Text>
-                    <Text style={styles.explanationText}>{q.explanation}</Text>
-                  </View>
-                )}
-              </View>
-            );
-          })}
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
+
       {/* HEADER */}
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => {
+            Alert.alert(
+              'Exit Examination',
+              'Are you sure you want to exit? Your current test progress will be lost.',
+              [
+                { text: 'Continue Test', style: 'cancel' },
+                { text: 'Exit Test', style: 'destructive', onPress: () => navigation.goBack() },
+              ]
+            );
+          }}
+        >
+          <ChevronLeft size={24} color="#ffffff" />
+        </TouchableOpacity>
+
         <View style={styles.headerLeft}>
-          <Text style={styles.examTitle} numberOfLines={1}>{title}</Text>
-          <Text style={styles.sectionTitle}>Section: General</Text>
+          <Text style={styles.examTitle} numberOfLines={1}>
+            {title || 'Mock Examination'}
+          </Text>
+          <Text style={styles.sectionTitle}>EduVerse AI Test Engine</Text>
         </View>
+
         <View style={styles.headerRight}>
           <View style={styles.timerContainer}>
-            <Clock size={16} color="#fff" />
+            <Clock size={14} color="#10b981" />
             <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
           </View>
           <TouchableOpacity onPress={() => setIsPaletteVisible(true)} style={styles.menuBtn}>
-            <Menu size={24} color="#fff" />
+            <Menu size={22} color="#ffffff" />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* QUESTION CONTENT */}
-      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 20 }}>
-        <View style={styles.questionHeader}>
-          <Text style={styles.questionNumber}>Question {currentIdx + 1} of {questions.length}</Text>
-        </View>
-        
-        <Text style={styles.questionText}>
-          {currentQ?.question || currentQ?.q || 'Missing question text'}
-        </Text>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 30 }}>
+        <View style={styles.questionCard}>
+          <View style={styles.questionHeader}>
+            <Text style={styles.questionNumber}>
+              QUESTION {currentIdx + 1} OF {questions.length}
+            </Text>
+            <View style={styles.marksBadge}>
+              <Text style={styles.marksText}>+1 Mark</Text>
+            </View>
+          </View>
 
-        <View style={styles.optionsContainer}>
-          {(currentQ?.options || []).map((opt: string, index: number) => {
-            const isSelected = answers[currentIdx] === opt;
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[styles.optionBtn, isSelected && styles.optionBtnSelected]}
-                onPress={() => handleOptionSelect(opt)}
-              >
-                <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
-                  {isSelected && <View style={styles.radioInner} />}
-                </View>
-                <Text style={styles.optionText}>{opt}</Text>
-              </TouchableOpacity>
-            );
-          })}
+          <Text style={styles.questionText}>
+            {currentQ?.question || currentQ?.q || 'Question content loading...'}
+          </Text>
+
+          <View style={styles.optionsContainer}>
+            {(currentQ?.options || []).map((opt: string, index: number) => {
+              const isSelected = answers[currentIdx] === opt;
+              const optionLetter = String.fromCharCode(65 + index);
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.optionBtn, isSelected && styles.optionBtnSelected]}
+                  activeOpacity={0.8}
+                  onPress={() => handleOptionSelect(opt)}
+                >
+                  <View style={[styles.letterCircle, isSelected && styles.letterCircleSelected]}>
+                    <Text style={[styles.letterText, isSelected && styles.letterTextSelected]}>
+                      {optionLetter}
+                    </Text>
+                  </View>
+                  <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
+                    {opt}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </ScrollView>
 
       {/* FOOTER ACTIONS */}
       <View style={styles.footer}>
         <View style={styles.footerRow}>
-          <TouchableOpacity style={styles.actionBtnOutline} onPress={() => goToNext('REVIEW')}>
-            <Text style={styles.actionBtnOutlineText}>Mark for Review</Text>
+          <TouchableOpacity
+            style={styles.reviewBtn}
+            onPress={() => goToNext('REVIEW')}
+          >
+            <Text style={styles.reviewBtnText}>Mark Review</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtnOutline} onPress={clearResponse}>
-            <Text style={styles.actionBtnOutlineText}>Clear</Text>
+
+          <TouchableOpacity style={styles.clearBtn} onPress={clearResponse}>
+            <Text style={styles.clearBtnText}>Clear</Text>
           </TouchableOpacity>
-        </View>
-        <View style={styles.footerRow}>
+
           <TouchableOpacity style={styles.saveBtn} onPress={() => goToNext('SAVE')}>
             <Text style={styles.saveBtnText}>Save & Next</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.submitBtn} onPress={() => handleSubmit()}>
-            <Text style={styles.submitBtnText}>Submit Test</Text>
-          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={styles.submitBtn} onPress={() => handleSubmit()}>
+          <Text style={styles.submitBtnText}>Submit Examination</Text>
+        </TouchableOpacity>
       </View>
 
       {/* QUESTION PALETTE MODAL */}
@@ -367,15 +362,27 @@ export default function TestOExamScreen() {
             <View style={styles.paletteHeader}>
               <Text style={styles.paletteTitle}>Question Palette</Text>
               <TouchableOpacity onPress={() => setIsPaletteVisible(false)}>
-                <X size={24} color="#fff" />
+                <X size={22} color="#94a3b8" />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.legendContainer}>
-              <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.ANSWERED }]} /><Text style={styles.legendText}>Answered</Text></View>
-              <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.NOT_ANSWERED }]} /><Text style={styles.legendText}>Not Answered</Text></View>
-              <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.NOT_VISITED }]} /><Text style={styles.legendText}>Not Visited</Text></View>
-              <View style={styles.legendItem}><View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.REVIEW }]} /><Text style={styles.legendText}>Review</Text></View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.ANSWERED }]} />
+                <Text style={styles.legendText}>Answered</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.NOT_ANSWERED }]} />
+                <Text style={styles.legendText}>Not Answered</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.NOT_VISITED }]} />
+                <Text style={styles.legendText}>Not Visited</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendBox, { backgroundColor: STATUS_COLORS.REVIEW }]} />
+                <Text style={styles.legendText}>Review</Text>
+              </View>
             </View>
 
             <ScrollView>
@@ -384,7 +391,7 @@ export default function TestOExamScreen() {
                   const status = qStatus[idx] || 'NOT_VISITED';
                   const bgColor = STATUS_COLORS[status as keyof typeof STATUS_COLORS];
                   return (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       key={idx}
                       style={[styles.gridBtn, { backgroundColor: bgColor }]}
                       onPress={() => jumpToQuestion(idx)}
@@ -405,34 +412,40 @@ export default function TestOExamScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6', // Light gray background common in exam UIs
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    backgroundColor: '#0a0f1e',
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1e1e24',
+    backgroundColor: '#0a0f1e',
   },
   header: {
-    backgroundColor: '#2563eb', // Blue theme for exam
+    backgroundColor: '#111827',
     flexDirection: 'row',
-    padding: 16,
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+  },
+  backBtn: {
+    padding: 4,
+    marginRight: 8,
   },
   headerLeft: {
     flex: 1,
   },
   examTitle: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   sectionTitle: {
-    color: '#bfdbfe',
-    fontSize: 12,
-    marginTop: 2,
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 1,
   },
   headerRight: {
     flexDirection: 'row',
@@ -441,16 +454,19 @@ const styles = StyleSheet.create({
   timerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    paddingHorizontal: 10,
+    backgroundColor: '#10b98120',
+    borderColor: '#10b98150',
+    borderWidth: 1,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
     marginRight: 10,
   },
   timerText: {
-    color: '#fff',
+    color: '#10b981',
     fontWeight: 'bold',
-    marginLeft: 6,
+    fontSize: 12,
+    marginLeft: 5,
   },
   menuBtn: {
     padding: 4,
@@ -459,143 +475,184 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  questionCard: {
+    backgroundColor: '#111827',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    padding: 18,
+  },
   questionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#d1d5db',
-    paddingBottom: 8,
-    marginBottom: 16,
+    borderBottomColor: '#1e293b',
+    paddingBottom: 10,
+    marginBottom: 14,
   },
   questionNumber: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#10b981',
+    letterSpacing: 0.5,
+  },
+  marksBadge: {
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  marksText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '600',
   },
   questionText: {
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#111827',
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#ffffff',
+    fontWeight: '600',
     marginBottom: 20,
   },
   optionsContainer: {
-    marginTop: 10,
+    gap: 10,
   },
   optionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    elevation: 1,
+    backgroundColor: '#1e293b',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#334155',
   },
   optionBtnSelected: {
-    borderColor: '#2563eb',
-    backgroundColor: '#eff6ff',
+    borderColor: '#10b981',
+    backgroundColor: '#10b98115',
   },
-  radioCircle: {
-    height: 20,
-    width: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#9ca3af',
-    alignItems: 'center',
+  letterCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#334155',
     justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  radioCircleSelected: {
-    borderColor: '#2563eb',
+  letterCircleSelected: {
+    backgroundColor: '#10b981',
   },
-  radioInner: {
-    height: 10,
-    width: 10,
-    borderRadius: 5,
-    backgroundColor: '#2563eb',
+  letterText: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  letterTextSelected: {
+    color: '#0a0f1e',
   },
   optionText: {
-    fontSize: 16,
-    color: '#374151',
+    fontSize: 14,
+    color: '#cbd5e1',
     flex: 1,
+    lineHeight: 20,
+  },
+  optionTextSelected: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
   footer: {
-    backgroundColor: '#fff',
-    padding: 12,
-    paddingBottom: Platform.OS === 'android' ? 24 : 12,
+    backgroundColor: '#111827',
+    padding: 14,
     borderTopWidth: 1,
-    borderColor: '#e5e7eb',
-    elevation: 8,
+    borderColor: '#1e293b',
   },
   footerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 8,
   },
-  actionBtnOutline: {
+  reviewBtn: {
     flex: 1,
+    backgroundColor: '#a855f720',
+    borderColor: '#a855f750',
     borderWidth: 1,
-    borderColor: '#6b7280',
-    padding: 10,
-    borderRadius: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
-    marginHorizontal: 4,
   },
-  actionBtnOutlineText: {
-    color: '#4b5563',
+  reviewBtnText: {
+    color: '#c084fc',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  clearBtn: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  clearBtnText: {
+    color: '#94a3b8',
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: 12,
   },
   saveBtn: {
-    flex: 1,
-    backgroundColor: '#2563eb',
-    padding: 12,
-    borderRadius: 6,
+    flex: 1.2,
+    backgroundColor: '#10b981',
+    paddingVertical: 10,
+    borderRadius: 10,
     alignItems: 'center',
-    marginHorizontal: 4,
   },
   saveBtnText: {
-    color: '#fff',
+    color: '#0a0f1e',
     fontWeight: 'bold',
+    fontSize: 12,
   },
   submitBtn: {
-    flex: 1,
-    backgroundColor: '#10b981',
-    padding: 12,
-    borderRadius: 6,
+    backgroundColor: '#f59e0b',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
-    marginHorizontal: 4,
   },
   submitBtnText: {
-    color: '#fff',
+    color: '#0a0f1e',
     fontWeight: 'bold',
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   paletteContainer: {
-    backgroundColor: '#1e1e24',
-    height: '70%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: '#111827',
+    maxHeight: '75%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
+    borderWidth: 1,
+    borderColor: '#1e293b',
   },
   paletteHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
   },
   paletteTitle: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   legendContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 20,
+    marginBottom: 16,
     justifyContent: 'space-between',
   },
   legendItem: {
@@ -605,100 +662,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   legendBox: {
-    width: 16,
-    height: 16,
+    width: 14,
+    height: 14,
     borderRadius: 4,
-    marginRight: 8,
+    marginRight: 6,
   },
   legendText: {
-    color: '#a1a1aa',
-    fontSize: 12,
+    color: '#94a3b8',
+    fontSize: 11,
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    gap: 8,
   },
   gridBtn: {
-    width: (width - 40) / 5 - 10,
-    height: 40,
+    width: (width - 64) / 5,
+    height: 38,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 5,
     borderRadius: 8,
   },
   gridBtnText: {
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: 'bold',
+    fontSize: 13,
   },
-  scoreCard: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 24,
-    elevation: 2,
-  },
-  scoreTitle: {
-    fontSize: 18,
-    color: '#6b7280',
-    marginBottom: 8,
-  },
-  scoreValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#2563eb',
-  },
-  scorePercent: {
-    fontSize: 16,
-    color: '#10b981',
-    marginTop: 4,
-    fontWeight: 'bold',
-  },
-  reviewTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  reviewCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    marginBottom: 16,
-    elevation: 1,
-  },
-  reviewQNum: {
-    color: '#6b7280',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  reviewQText: {
-    fontSize: 16,
-    color: '#111827',
-    marginBottom: 12,
-  },
-  reviewAnswers: {
-    backgroundColor: '#f9fafb',
-    padding: 12,
-    borderRadius: 6,
-  },
-  explanationBox: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-  },
-  explanationTitle: {
-    fontWeight: 'bold',
-    color: '#4b5563',
-    marginBottom: 4,
-  },
-  explanationText: {
-    color: '#374151',
-    fontSize: 14,
-    lineHeight: 20,
-  }
 });
