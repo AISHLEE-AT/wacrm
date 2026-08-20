@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
