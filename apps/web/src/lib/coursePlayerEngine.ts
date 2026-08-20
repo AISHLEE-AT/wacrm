@@ -1396,7 +1396,7 @@ export function synthesizeFallbackContent(
  * 2. Checks In-Memory Cache (Instant 0ms)
  * 3. Checks Bundled Static Catalog (Instant 0ms)
  * 4. Checks Supabase LMS Database (kindle_content_cache)
- * 5. Checks Local AsyncStorage Cache
+ * 5. Checks Local localStorage Cache
  * 6. (Optional) Generates Live with Gemini Flash AI if explicitly requested
  * 7. Returns 100% topic-matched deterministic academic content and persists to Supabase
  */
@@ -1421,49 +1421,7 @@ export async function getCoursePlayerContent(
     return inMemoryContentCache.get(cacheKey)!;
   }
 
-  // 2. Check Static Pre-Generated Bundled Catalog (Instant 0ms)
-  try {
-    const { BUNDLED_COURSE_CATALOG } = require('../data/generated_catalog');
-    if (BUNDLED_COURSE_CATALOG) {
-      // Check day-specific key first
-      if (BUNDLED_COURSE_CATALOG[daySpecificKey]) {
-        const item = BUNDLED_COURSE_CATALOG[daySpecificKey];
-        if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-          inMemoryContentCache.set(daySpecificKey, item);
-          inMemoryContentCache.set(cacheKey, item);
-          return item;
-        }
-      }
-      // Fallback to day-agnostic canonical key
-      if (BUNDLED_COURSE_CATALOG[canonicalKey]) {
-        const item = BUNDLED_COURSE_CATALOG[canonicalKey];
-        if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-          // Override dayNumber in returned content to match actual day
-          const dayAdjusted = { ...item, dayNumber, topicKey: daySpecificKey };
-          inMemoryContentCache.set(daySpecificKey, dayAdjusted);
-          inMemoryContentCache.set(cacheKey, dayAdjusted);
-          return dayAdjusted;
-        }
-      }
-
-      const directKey = `${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9\u0B80-\u0BFF_]/g, '_').substring(0, 80);
-      
-      for (const k of Object.keys(BUNDLED_COURSE_CATALOG)) {
-        if (k === directKey || k === cacheKey || (k.includes(topicTitle.toLowerCase().substring(0, 15)) && k.includes(String(dayNumber)))) {
-          const item = BUNDLED_COURSE_CATALOG[k];
-          if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-            inMemoryContentCache.set(daySpecificKey, item);
-            inMemoryContentCache.set(cacheKey, item);
-            return item;
-          }
-        }
-      }
-    }
-  } catch (e) {
-    // Non-blocking
-  }
-
-  // 3. Check Supabase LMS Database (kindle_content_cache) — day-specific first
+  // 2. Check Supabase LMS Database (kindle_content_cache) — day-specific first
   try {
     // Try day-specific key first
     const { data: dayData, error: dayError } = await aishleeSupabase
@@ -1477,7 +1435,7 @@ export async function getCoursePlayerContent(
       if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
         inMemoryContentCache.set(daySpecificKey, item);
         inMemoryContentCache.set(cacheKey, item);
-        AsyncStorage.setItem(cacheKey, JSON.stringify(item)).catch(() => {});
+        localStorage.setItem(cacheKey, JSON.stringify(item)).catch(() => {});
         return item;
       }
     }
@@ -1496,7 +1454,7 @@ export async function getCoursePlayerContent(
         const dayAdjusted = { ...item, dayNumber, topicKey: daySpecificKey };
         inMemoryContentCache.set(daySpecificKey, dayAdjusted);
         inMemoryContentCache.set(cacheKey, dayAdjusted);
-        AsyncStorage.setItem(cacheKey, JSON.stringify(dayAdjusted)).catch(() => {});
+        localStorage.setItem(cacheKey, JSON.stringify(dayAdjusted)).catch(() => {});
         return dayAdjusted;
       }
     }
@@ -1504,7 +1462,7 @@ export async function getCoursePlayerContent(
     // Non-blocking
   }
 
-  // 4. Check Local AsyncStorage Cache
+  // 4. Check Local localStorage Cache
   try {
     const localCached = (typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null);
     if (localCached) {
@@ -1527,7 +1485,7 @@ export async function getCoursePlayerContent(
         aiContent.topicKey = daySpecificKey;
         inMemoryContentCache.set(daySpecificKey, aiContent);
         inMemoryContentCache.set(cacheKey, aiContent);
-        AsyncStorage.setItem(cacheKey, JSON.stringify(aiContent)).catch(() => {});
+        localStorage.setItem(cacheKey, JSON.stringify(aiContent)).catch(() => {});
         
         // Asynchronously persist to Supabase kindle_content_cache with day-specific key
         Promise.resolve(
@@ -1558,7 +1516,7 @@ export async function getCoursePlayerContent(
     fallback.topicKey = daySpecificKey;
     inMemoryContentCache.set(daySpecificKey, fallback);
     inMemoryContentCache.set(cacheKey, fallback);
-    AsyncStorage.setItem(cacheKey, JSON.stringify(fallback)).catch(() => {});
+    localStorage.setItem(cacheKey, JSON.stringify(fallback)).catch(() => {});
 
     // Asynchronously save to Supabase with day-specific key
     Promise.resolve(
@@ -1579,3 +1537,6 @@ export async function getCoursePlayerContent(
 
   return null;
 }
+
+
+export const loadCoursePlayerContent = getCoursePlayerContent;
