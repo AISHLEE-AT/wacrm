@@ -131,27 +131,63 @@ export default function TeachODashboard() {
     });
   };
 
-  const handleSendChat = () => {
+  const handleSendChat = async () => {
     if (!chatInput.trim() || aiLoading) return;
     const userText = chatInput.trim();
+    const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const newMsg = {
       role: 'user' as const,
       text: userText,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: currentTime,
     };
     setChatMessages(prev => [...prev, newMsg]);
     setChatInput('');
     setAiLoading(true);
 
-    setTimeout(() => {
-      const aiReply = {
-        role: 'assistant' as const,
-        text: `Here is the step-by-step guidance for "${userText}":\n\n1. **Core Concept**: Remember the fundamental rule from Day ${courseDay} in ${activeCourse.title}.\n2. **Formula / Rule**: Apply the standard theorem step-by-step.\n3. **Exam Tip**: Ensure units are clearly written for full marks! (தமிழில்: எளிய முறையில் நினைவில் கொள்ள முக்கிய சூத்திரங்களை பயன்படுத்தவும்).`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setChatMessages(prev => [...prev, aiReply]);
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: userText,
+          type: 'teacho_tutor',
+          courseContext: activeCourse.title,
+          day: courseDay,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.result) {
+        setChatMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant' as const,
+            text: data.result,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      } else {
+        setChatMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant' as const,
+            text: `Explanation for "${userText}":\n\n${data.error || 'Please check your connection and ask again.'}`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+      }
+    } catch (err: any) {
+      setChatMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant' as const,
+          text: `⚠️ Network error: Could not reach TeachO AI Tutor. Please try again in a moment.`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } finally {
       setAiLoading(false);
-    }, 1000);
+    }
   };
 
   // Filtered Catalog

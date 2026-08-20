@@ -4,25 +4,47 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Resilient model fallback hierarchy
 const CANDIDATE_MODELS = [
   'gemini-2.5-flash',
+  'gemini-2.0-flash',
   'gemini-1.5-flash',
-  'gemini-2.0-flash-exp',
   'gemini-2.5-pro',
   'gemini-1.5-pro',
 ];
 
+// Helper to get available API keys
+function getApiKeys(clientApiKey?: string): string[] {
+  if (clientApiKey) return [clientApiKey];
+  const pool = (process.env.GEMINI_API_KEYS || '')
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+  const primary = process.env.GEMINI_API_KEY?.trim();
+  if (primary && !pool.includes(primary)) pool.unshift(primary);
+  return pool;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, type, apiKey: clientApiKey, base64Audio } = await req.json();
-    
-    const apiKey = clientApiKey || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const { prompt, type, apiKey: clientApiKey, base64Audio, courseContext, day } = await req.json();
+
+    const keys = getApiKeys(clientApiKey);
+    if (keys.length === 0) {
       return NextResponse.json({ error: 'Please provide a Gemini API Key to use this feature.' }, { status: 400 });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-
     let systemPrompt = '';
-    if (type === 'translate') {
+    if (type === 'teacho_tutor') {
+      systemPrompt = `You are the TeachO 1-on-1 AI Personal Tutor for Indian Students (covering CBSE NCERT, Tamil Nadu State Board Samacheer Kalvi, Matriculation, TNPSC, UPSC, Engineering, and Tech Skills).
+Current Course Context: ${courseContext || 'General Academics'} (Day ${day || 1}).
+Your goal:
+1. Provide extremely clear, pedagogically sound, and engaging explanations.
+2. Give step-by-step mathematical/conceptual derivations with clear formulas where applicable.
+3. Provide bilingual support (English with natural Tamil explanations/terms when helpful).
+4. Give real-world examples and high-yield exam tips to help students score 100/100.
+5. Keep formatting clean using bold headings, bullet points, and numbered steps.
+
+Student Question:
+`;
+    } else if (type === 'translate') {
       systemPrompt = 'You are an expert English to Tamil and Tamil to English translator. Translate the following text naturally and accurately:\n\n';
     } else if (type === 'whatsapp') {
       systemPrompt = 'You are a professional WhatsApp business auto-reply generator. Write a concise, polite, and helpful auto-reply for the following scenario/message:\n\n';
@@ -40,40 +62,45 @@ export async function POST(req: NextRequest) {
 
     let lastError: any = null;
 
-    // Try candidate models in order with automatic fallback
-    for (const modelName of CANDIDATE_MODELS) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName });
-        let result;
-        if (base64Audio) {
-          const audioPart = {
-            inlineData: {
-              data: base64Audio,
-              mimeType: 'audio/webm',
-            },
-          };
-          const contentParts: any[] = [audioPart];
-          if (prompt) contentParts.push({ text: systemPrompt + prompt });
-          else contentParts.push({ text: 'Please respond to the audio in Tamil.' });
-          
-          result = await model.generateContent(contentParts);
-        } else {
-          if (!prompt) {
-            return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+    // Try keys and models in order
+    for (const key of keys) {
+      const genAI = new GoogleGenerativeAI(key);
+
+      for (const modelName of CANDIDATE_MODELS) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          let result;
+
+          if (base64Audio) {
+            const audioPart = {
+              inlineData: {
+                data: base64Audio,
+                mimeType: 'audio/webm',
+              },
+            };
+            const contentParts: any[] = [audioPart];
+            if (prompt) contentParts.push({ text: systemPrompt + prompt });
+            else contentParts.push({ text: 'Please respond to the audio in Tamil.' });
+
+            result = await model.generateContent(contentParts);
+          } else {
+            if (!prompt) {
+              return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
+            }
+            const fullPrompt = systemPrompt + prompt;
+            result = await model.generateContent(fullPrompt);
           }
-          const fullPrompt = systemPrompt + prompt;
-          result = await model.generateContent(fullPrompt);
-        }
 
-        const response = await result.response;
-        const text = response.text();
+          const response = await result.response;
+          const text = response.text();
 
-        if (text && text.trim().length > 0) {
-          return NextResponse.json({ result: text, model: modelName });
+          if (text && text.trim().length > 0) {
+            return NextResponse.json({ result: text.trim(), model: modelName });
+          }
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`Gemini Model ${modelName} on key ${key.substring(0, 8)}... failed:`, err.message);
         }
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Gemini Model ${modelName} failed, attempting next candidate:`, err.message);
       }
     }
 
