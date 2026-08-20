@@ -275,6 +275,7 @@ function RootNavigator() {
       />
       <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
       <Stack.Screen name="RideOScreen" component={RideOScreen} />
+      <Stack.Screen name="AishleeToolsScreen" component={AishleeToolsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TeachOScreen" component={TeachOScreen} />
       <Stack.Screen name="TeachOCourseScreen" component={TeachOCourseScreen} />
       <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />

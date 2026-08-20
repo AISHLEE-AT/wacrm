@@ -1,0 +1,11 @@
+{
+  "teacho-daily-sync": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "node D:/w/scripts/daily_teacho_sync_launcher.js",
+        "timeout": 15
+      }
+    ]
+  }
+}

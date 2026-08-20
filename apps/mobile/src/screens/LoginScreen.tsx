@@ -150,10 +150,16 @@ export default function LoginScreen({ navigation }: any) {
           if (data.name) setFullName(data.name);
           if (data.category) setCategory(data.category);
           if (data.role) await SecureStore.setItemAsync('user-role', data.role);
-          if (data.gemini_api_key) await SecureStore.setItemAsync('gemini-api-key', data.gemini_api_key);
-          if (data.is_whatsapp_session_active) {
-            await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
-            setIs23hSyncRequired(false);
+          if (data.last_whatsapp_inbound_at || data.whatsapp_window_expires_at) {
+            const inboundTs = data.last_whatsapp_inbound_at 
+              ? new Date(data.last_whatsapp_inbound_at).getTime()
+              : new Date(data.whatsapp_window_expires_at).getTime() - (24 * 60 * 60 * 1000);
+            if (!isNaN(inboundTs) && inboundTs > 0) {
+              await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', inboundTs.toString());
+              setIs23hSyncRequired(false);
+            }
+          } else if (data.is_whatsapp_session_active === false) {
+            setIs23hSyncRequired(true);
           }
           if (data.has_pin) {
             setStep('pin');

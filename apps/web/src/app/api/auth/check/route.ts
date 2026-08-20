@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { checkIsAdmin } from '@/lib/auth/admin'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -37,27 +38,65 @@ export async function GET(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    const isDriverPartner = !!driverRow || 
+    const isAdminUser = checkIsAdmin(cleanPhone, profile || undefined)
+
+    const isDriverPartner = !isAdminUser && (
+      !!driverRow || 
       profile?.role?.toLowerCase().includes('driver') || 
       profile?.main_category?.toLowerCase().includes('driver')
+    )
 
-    const resolvedRole = isDriverPartner ? 'driver' : (profile?.role || 'user')
-    const resolvedCategory = isDriverPartner ? 'Driver' : (profile?.main_category || 'Traveller')
+    const resolvedRole = isAdminUser ? 'admin' : (isDriverPartner ? 'driver' : (profile?.role || 'user'))
+    const resolvedCategory = isAdminUser ? 'Admin' : (isDriverPartner ? 'Driver' : (profile?.main_category || 'Traveller'))
     const resolvedUpi = profile?.upi_id || driverRow?.upi_id || ''
 
     // Compute Meta 24-hour customer service window status from last_whatsapp_inbound_at
-    const lastInbound = profile?.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0
+    let lastInbound = profile?.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0
+    let resolvedLastInboundIso = profile?.last_whatsapp_inbound_at || null
+
+    // Fallback: check contacts & conversations if profile doesn't have last_whatsapp_inbound_at
+    if ((!lastInbound || isNaN(lastInbound) || lastInbound <= 0)) {
+      try {
+        const { data: convData } = await admin
+          .from('conversations')
+          .select('last_message_at, updated_at, contact:contacts!inner(phone)')
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`, { foreignTable: 'contacts' })
+          .order('last_message_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        const convTime = convData?.last_message_at || convData?.updated_at
+        if (convTime) {
+          const parsed = new Date(convTime).getTime()
+          if (!isNaN(parsed) && parsed > 0) {
+            lastInbound = parsed
+            resolvedLastInboundIso = new Date(parsed).toISOString()
+            if (profile?.id) {
+              await admin.from('profiles').update({
+                last_whatsapp_inbound_at: resolvedLastInboundIso,
+              }).eq('id', profile.id)
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     const isWindowActive = lastInbound > 0 && (Date.now() - lastInbound) < 24 * 60 * 60 * 1000
     const hoursRemaining = isWindowActive ? Math.max(0, Math.round(((lastInbound + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0
     const expiresAt = lastInbound > 0 ? new Date(lastInbound + 24 * 60 * 60 * 1000).toISOString() : null
 
     if (profile || driverRow) {
       // Self-heal profile if user is driver partner but profile had legacy category
-      if (profile && isDriverPartner && (profile.main_category !== 'Driver' || profile.role !== 'driver')) {
+      if (profile && !isAdminUser && isDriverPartner && (profile.main_category !== 'Driver' || profile.role !== 'driver')) {
         await admin.from('profiles').update({
           role: 'driver',
           main_category: 'Driver',
           default_module: '/drivo'
+        }).eq('id', profile.id)
+      } else if (profile && isAdminUser && (profile.role !== 'admin' || profile.main_category !== 'Admin')) {
+        await admin.from('profiles').update({
+          role: 'admin',
+          main_category: 'Admin',
         }).eq('id', profile.id)
       }
 
@@ -69,6 +108,7 @@ export async function GET(request: Request) {
         category: resolvedCategory, 
         role: resolvedRole, 
         has_pin: !!profile?.pin_hash,
+        last_whatsapp_inbound_at: resolvedLastInboundIso,
         is_whatsapp_session_active: isWindowActive,
         whatsapp_window_expires_at: expiresAt,
         whatsapp_hours_remaining: hoursRemaining,

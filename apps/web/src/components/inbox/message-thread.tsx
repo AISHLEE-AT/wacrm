@@ -26,6 +26,7 @@ import {
   RefreshCw,
   PanelRightOpen,
   PanelRightClose,
+  Info,
 } from "lucide-react";
 import { format, isToday, isYesterday, differenceInHours } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -36,9 +37,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "./message-bubble";
 import { MessageActions } from "./message-actions";
+import { ContactSidebar } from "./contact-sidebar";
 import {
   MessageComposer,
   CHAT_MEDIA_BUCKET,
@@ -195,6 +203,7 @@ export function MessageThread({
     }, 700);
   }, [isRefreshing, onRefresh]);
   const [replyTo, setReplyTo] = useState<ReplyDraft | null>(null);
+  const [mobileContactOpen, setMobileContactOpen] = useState(false);
 
   // Profiles are bounded by RLS to rows the current user is allowed to
   // see — today that's just the current user, but the dropdown keeps the
@@ -316,7 +325,21 @@ export function MessageThread({
         if (session?.access_token) {
           headers.Authorization = `Bearer ${session.access_token}`;
         }
-        const query = typeof window !== 'undefined' ? window.location.search : '';
+        const isEmbed = typeof window !== 'undefined' && (
+          window.location.search.includes('embed=true') ||
+          document.cookie.includes('supro_is_embed=true') ||
+          sessionStorage.getItem('supro_is_embed') === 'true' ||
+          document.documentElement.classList.contains('is-native-app') ||
+          (window as any).__NATIVE_USER__?.isNative
+        );
+        const rawQuery = typeof window !== 'undefined' ? window.location.search : '';
+        let query = rawQuery;
+        if (isEmbed && !query.includes('embed=true')) {
+          query += (query.includes('?') ? '&' : '?') + 'embed=true';
+        }
+        if (isEmbed) {
+          headers['x-supro-embed'] = 'true';
+        }
         const res = await fetch(`/api/conversations/${conversationId}/messages${query}`, { cache: 'no-store', credentials: 'include', headers });
         const json = await res.json();
         if (json.messages && Array.isArray(json.messages)) {
@@ -930,12 +953,18 @@ export function MessageThread({
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-            <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+          <div 
+            onClick={() => setMobileContactOpen(true)}
+            className="flex min-w-0 items-center gap-2 sm:gap-3 cursor-pointer lg:cursor-default"
+            title="View contact details"
+          >
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-semibold text-foreground hover:underline lg:no-underline">{displayName}</h2>
+              <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+            </div>
           </div>
           {/* Unified 24-Hour WhatsApp Session Badge */}
           <Badge
@@ -952,6 +981,16 @@ export function MessageThread({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Mobile contact info trigger */}
+          <button
+            type="button"
+            onClick={() => setMobileContactOpen(true)}
+            aria-label="View contact details"
+            title="Contact details"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+          >
+            <Info className="h-4 w-4" />
+          </button>
           {/* Contact-panel toggle — desktop only. The contact sidebar
               eats a chunk of horizontal width that crowds the thread on
               smaller laptops; this lets agents reclaim it when they just
@@ -1183,6 +1222,18 @@ export function MessageThread({
         onOpenChange={setTemplateModalOpen}
         onSelect={handleSendTemplate}
       />
+
+      {/* Mobile Contact Sidebar Sheet */}
+      <Sheet open={mobileContactOpen} onOpenChange={setMobileContactOpen}>
+        <SheetContent side="right" className="w-[85%] max-w-sm p-0 border-l border-border bg-card">
+          <SheetHeader className="p-4 border-b border-border">
+            <SheetTitle className="text-sm font-semibold text-foreground">Contact Details</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            <ContactSidebar contact={contact} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

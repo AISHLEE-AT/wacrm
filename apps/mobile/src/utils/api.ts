@@ -39,7 +39,27 @@ export const API = {
       
       if (Array.isArray(spData) && spData.length > 0) {
         const profile = spData[0];
-        const lastInbound = profile.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0;
+        let lastInbound = profile.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0;
+        let lastInboundIso = profile.last_whatsapp_inbound_at || null;
+
+        // Fallback: check conversations if profile missing last_whatsapp_inbound_at
+        if (!lastInbound || isNaN(lastInbound) || lastInbound <= 0) {
+          try {
+            const convUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/conversations?select=last_message_at,updated_at&order=last_message_at.desc&limit=5`;
+            const convRes = await fetch(convUrl, {
+              headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
+            });
+            const convData = await convRes.json();
+            if (Array.isArray(convData) && convData.length > 0 && convData[0].last_message_at) {
+              const parsed = new Date(convData[0].last_message_at).getTime();
+              if (!isNaN(parsed) && parsed > 0) {
+                lastInbound = parsed;
+                lastInboundIso = convData[0].last_message_at;
+              }
+            }
+          } catch (_) {}
+        }
+
         const isWindowActive = lastInbound > 0 && (Date.now() - lastInbound) < 24 * 60 * 60 * 1000;
         const hoursRemaining = isWindowActive ? Math.max(0, Math.round(((lastInbound + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0;
         const expiresAt = lastInbound > 0 ? new Date(lastInbound + 24 * 60 * 60 * 1000).toISOString() : null;
@@ -53,6 +73,7 @@ export const API = {
           role: profile.role || 'user',
           has_pin: !!profile.pin_hash,
           gemini_api_key: profile.gemini_api_key,
+          last_whatsapp_inbound_at: lastInboundIso,
           is_whatsapp_session_active: isWindowActive,
           whatsapp_window_expires_at: expiresAt,
           whatsapp_hours_remaining: hoursRemaining,

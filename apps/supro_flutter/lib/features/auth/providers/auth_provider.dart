@@ -73,6 +73,7 @@ class AuthController extends AsyncNotifier<void> {
           'role': profileRes['role'] ?? 'user',
           'has_pin': profileRes['pin_hash'] != null && profileRes['pin_hash'].toString().isNotEmpty,
           'gemini_api_key': profileRes['gemini_api_key'],
+          'last_whatsapp_inbound_at': lastInboundStr,
           'is_whatsapp_session_active': isWindowActive,
           'whatsapp_window_expires_at': lastInbound?.add(const Duration(hours: 24)).toIso8601String(),
         };

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { checkIsAdmin } from '@/lib/auth/admin'
 
 function hashPin(pin: string): string {
   return crypto.createHash('sha256').update(`FAGO_PIN_${pin}`).digest('hex')
@@ -138,13 +139,18 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    const isDriverPartner = !!driverMatch || 
+    const isAdminUser = checkIsAdmin(cleanPhone, existingProfile || undefined)
+
+    const isDriverPartner = !isAdminUser && (
+      !!driverMatch || 
       (existingProfile as any)?.role?.toLowerCase().includes('driver') || 
       (existingProfile as any)?.main_category?.toLowerCase().includes('driver') ||
-      category?.toLowerCase().includes('driver');
+      category?.toLowerCase().includes('driver')
+    );
 
-    const resolvedRole = isDriverPartner ? 'driver' : (existingProfile?.role || 'user')
-    const finalCategory = isDriverPartner ? 'Driver' : (isExistingUser ? ((existingProfile as any)?.main_category || 'Traveller') : (category || 'Traveller'))
+    const resolvedRole = isAdminUser ? 'admin' : (isDriverPartner ? 'driver' : (existingProfile?.role || 'user'))
+    const finalCategory = isAdminUser ? 'Admin' : (isDriverPartner ? 'Driver' : (isExistingUser ? ((existingProfile as any)?.main_category || 'Traveller') : (category || 'Traveller')))
+    const defaultModule = isAdminUser ? ((existingProfile as any)?.default_module || '/drivo') : (isDriverPartner ? '/drivo' : ((existingProfile as any)?.default_module || '/rideo'))
 
     // 5. SAFE UPSERT — always targets the canonical existing profile ID
     const canonicalProfileId = existingProfile?.id || userId

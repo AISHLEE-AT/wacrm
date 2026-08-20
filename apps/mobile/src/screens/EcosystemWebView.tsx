@@ -78,6 +78,44 @@ export default function EcosystemWebView({ route, navigation }: Props) {
           } catch(err) {}
         }, true);
 
+        // Intercept window.fetch to automatically append x-supro-embed and Authorization headers
+        if (!window.__supro_fetch_patched) {
+          window.__supro_fetch_patched = true;
+          var _origFetch = window.fetch;
+          window.fetch = function(url, options) {
+            options = options || {};
+            options.headers = options.headers || {};
+            if (options.headers instanceof Headers) {
+              if (!options.headers.has('x-supro-embed')) {
+                options.headers.set('x-supro-embed', 'true');
+              }
+              if ("${accessToken}" && !options.headers.has('Authorization') && !options.headers.has('authorization')) {
+                options.headers.set('Authorization', 'Bearer ${accessToken}');
+              }
+              if ("${accessToken}" && !options.headers.has('x-supro-access-token')) {
+                options.headers.set('x-supro-access-token', '${accessToken}');
+              }
+            } else if (Array.isArray(options.headers)) {
+              options.headers.push(['x-supro-embed', 'true']);
+              if ("${accessToken}") {
+                options.headers.push(['Authorization', 'Bearer ${accessToken}']);
+                options.headers.push(['x-supro-access-token', '${accessToken}']);
+              }
+            } else {
+              options.headers['x-supro-embed'] = 'true';
+              if ("${accessToken}") {
+                if (!options.headers['Authorization'] && !options.headers['authorization']) {
+                  options.headers['Authorization'] = 'Bearer ${accessToken}';
+                }
+                if (!options.headers['x-supro-access-token']) {
+                  options.headers['x-supro-access-token'] = '${accessToken}';
+                }
+              }
+            }
+            return _origFetch.apply(this, [url, options]);
+          };
+        }
+
         // Inject Supabase session so user doesn't get redirected to login
         if ("${accessToken}") {
           var tokenKey = null;
@@ -120,6 +158,7 @@ export default function EcosystemWebView({ route, navigation }: Props) {
             }
           });
           localStorage.setItem(tokenKey, sessionData);
+          document.cookie = "sb-access-token=" + encodeURIComponent("${accessToken}") + "; path=/; max-age=604800; SameSite=Lax";
           
           // Also simulate the iframe postMessage that the web app uses!
           // This tells the aishlee-web app (which listens for message events) to sync immediately.
@@ -232,8 +271,10 @@ export default function EcosystemWebView({ route, navigation }: Props) {
         source={{ 
           uri: targetUrl,
           headers: {
+            'x-supro-embed': 'true',
             'x-supro-access-token': accessToken,
-            'x-supro-refresh-token': refreshToken
+            'x-supro-refresh-token': refreshToken,
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
           }
         }}
         injectedJavaScript={INJECTED_JS}

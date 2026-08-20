@@ -1,1310 +1,480 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useContext } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Image,
-  TextInput,
   ScrollView,
-  SafeAreaView,
   StatusBar,
-  Modal,
-  Platform,
-  PermissionsAndroid,
-  Animated,
-  Easing,
   Alert,
+  ActivityIndicator,
+  Linking,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
-import { aishleeSupabase } from '../services/aishleeSupabase';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import NativeSpeech from '../lib/NativeSpeech';
-import VoiceSpeechBridge, { VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
-import {
-  PlayCircle,
-  BookOpen,
-  GraduationCap,
-  Search,
-  Award,
-  Sparkles,
-  CheckCircle2,
-  Clock,
-  Flame,
-  ChevronRight,
-  Star,
-  FileCheck2,
-  Zap,
-  Layers,
-  Briefcase,
-  Mic,
-  MicOff,
-  X,
-  Volume2,
-} from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ShieldCheck, Sparkles, ChevronRight, Unlock } from 'lucide-react-native';
+import { AppContext } from '../context/AppContext';
 
-const CATEGORIES = [
-  { id: 'all', label: 'All Courses', icon: BookOpen },
-  { id: 'entrance', label: 'NEET & JEE', icon: Zap },
-  { id: 'govt', label: 'Govt & TNPSC', icon: Award },
-  { id: 'skills', label: 'AI & Tech Skills', icon: Sparkles },
-  { id: 'school', label: 'School (KG–12)', icon: GraduationCap },
-  { id: 'college', label: 'College (UG/PG)', icon: BookOpen },
-  { id: 'others', label: 'Others & General', icon: Layers },
-  { id: 'tests', label: 'TestO Mock Tests', icon: FileCheck2 },
-];
+import { TeachOHeader } from '../components/teacho/TeachOHeader';
+import { TeachOTodayHero } from '../components/teacho/TeachOTodayHero';
+import { TeachORoutineSteps, RoutineTask } from '../components/teacho/TeachORoutineSteps';
+import { TeachOQuickHub } from '../components/teacho/TeachOQuickHub';
+import { TeachOCoursePickerSheet } from '../components/teacho/TeachOCoursePickerSheet';
+import TeachOCoursePlayerModal from '../components/TeachOCoursePlayerModal';
 
-export function getCourseCategory(c: any): 'entrance' | 'govt' | 'skills' | 'school' | 'college' | 'others' {
-  const cat = (c.category || '').toLowerCase();
-  const title = (c.title_name || '').toLowerCase();
-
-  if (
-    cat.includes('neet') ||
-    cat.includes('jee') ||
-    /\b(neet|jee|iit|cuet|gate)\b/i.test(title)
-  ) {
-    return 'entrance';
-  }
-
-  if (
-    cat.includes('tnpsc') ||
-    cat.includes('govt') ||
-    cat.includes('upsc') ||
-    /\b(tnpsc|upsc|civil services|group 1|group 2|group 4|group iv|ssc|chsl|cgl|rrb|ntpc|tnusrb|police|constable|si|forest guard|agniveer|cds|nda|tet|trb)\b/i.test(title)
-  ) {
-    return 'govt';
-  }
-
-  if (
-    (cat.includes('tech') || cat.includes('it training') || cat.includes('skill')) ||
-    /செயற்கை நுண்ணறிவு|பைதான்|ஜாவாஸ்கிரிப்ட்|தரவு அறிவியல்|கிளவுட்|சைபர்|சாப்ட்வேர்|மொபைல் ஆப்|கணினி|மார்க்கெட்டிங்/i.test(title) ||
-    /\b(python|javascript|data science|data analytics|cloud|aws|cyber security|mobile app|software testing|networking|digital marketing|web dev|coding|programming)\b/i.test(title)
-  ) {
-    return 'skills';
-  }
-
-  if (
-    cat.includes('grade') ||
-    cat.includes('school') ||
-    /\b(class 8|class 9|class 10|class 11|class 12|8th standard|9th standard|10th standard|11th standard|12th standard|lkg|ukg|samacheer|cbse|tn board)\b/i.test(title)
-  ) {
-    return 'school';
-  }
-
-  if (
-    cat.includes('ug') ||
-    cat.includes('college') ||
-    /\b(spoken english|engineering|computer architecture|degree|b\.tech|b\.sc|b\.com)\b/i.test(title)
-  ) {
-    return 'college';
-  }
-
-  return 'others';
-}
+import { ALL_COURSES, DEFAULT_COURSE, CourseOption } from '../data/coursesCatalog';
+import { getDayPlanForCourse, DayPlan } from '../lib/dailyPlanResolver';
+import { getCoursePlayerContent } from '../lib/coursePlayerEngine';
 
 export default function TeachOScreen() {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [tests, setTests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [streakDays] = useState(5);
-  const [xpPoints] = useState(480);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [voiceLang, setVoiceLang] = useState<'ta-IN' | 'en-IN'>('ta-IN');
-  const [voiceTranscript, setVoiceTranscript] = useState('');
-  const [voiceStatus, setVoiceStatus] = useState('Tap Mic to speak');
-  const voiceBridgeRef = useRef<VoiceSpeechBridgeRef>(null);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
+  const { user, userRole, profile } = useContext(AppContext) || {};
 
-  // ─── Pulse Animation for Voice Mic ───
+  // Admin access validation: if user role is admin, phone is admin, or profile is admin
+  const isAdmin = Boolean(
+    user?.isAdmin ||
+    userRole === 'admin' ||
+    profile?.role === 'admin' ||
+    (user?.phone && ['6381029380', '9876543210', '9486335870'].includes(user.phone.replace(/\D/g, '').slice(-10)))
+  );
+
+  // ─── Active Single-Course State ───────────────────────────────────────────
+  const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
+  const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
+
+  // ─── Progress & Gamification State ────────────────────────────────────────
+  const [currentDay, setCurrentDay] = useState(1);
+  const [totalDays, setTotalDays] = useState(200);
+  const [streak, setStreak] = useState(1);
+  const [xp, setXp] = useState(50);
+  const [completedTasksMap, setCompletedTasksMap] = useState<{ [dayKey: string]: number }>({});
+
+  // ─── Day Plan & Player State ──────────────────────────────────────────────
+  const [activeDayPlan, setActiveDayPlan] = useState<DayPlan | null>(null);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [activePlayerTask, setActivePlayerTask] = useState<{
+    topicTitle: string;
+    subject: string;
+    taskType: string;
+  } | null>(null);
+
+  // Load user saved course and progress on initial mount
   useEffect(() => {
-    if (isListening) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.25,
-            duration: 650,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 650,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [isListening, pulseAnim]);
-
-  // ─── Request Microphone Permission ───
-  const requestMicPermission = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS === 'android') {
+    async function loadInitialProgress() {
       try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission Required',
-            message: 'SuprO TeachO needs microphone access for voice search in Tamil and English.',
-            buttonPositive: 'Grant Permission',
-            buttonNegative: 'Cancel',
-          }
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn('Mic permission error:', err);
-        return false;
+        const savedCourseId = await AsyncStorage.getItem('teacho_active_enrolled_course_id');
+        if (savedCourseId) {
+          const matched = ALL_COURSES.find((c) => c.id === savedCourseId);
+          if (matched) setSelectedCourse(matched);
+        }
+
+        const savedStreak = await AsyncStorage.getItem('teacho_user_streak');
+        if (savedStreak) setStreak(parseInt(savedStreak, 10));
+
+        const savedXp = await AsyncStorage.getItem('teacho_user_xp');
+        if (savedXp) setXp(parseInt(savedXp, 10));
+
+        const savedTasksProgress = await AsyncStorage.getItem('teacho_completed_tasks_map');
+        if (savedTasksProgress) setCompletedTasksMap(JSON.parse(savedTasksProgress));
+      } catch (e) {
+        console.warn('Error loading TeachO saved progress:', e);
       }
     }
-    return true;
+    loadInitialProgress();
   }, []);
 
-  const startVoiceListening = useCallback(async (lang = voiceLang) => {
-    const ok = await requestMicPermission();
-    if (!ok) {
-      setVoiceStatus('Microphone permission denied. Please grant in Settings.');
-      Alert.alert('Microphone Required', 'Please enable microphone access in your phone Settings to use Voice Search.');
+  // Sync course specifics when selectedCourse changes
+  useEffect(() => {
+    setTotalDays(selectedCourse.totalDays || 200);
+    setCurrentDay(selectedCourse.currentDayDefault || 1);
+  }, [selectedCourse]);
+
+  // Fetch dynamic day plan for active course & day
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchPlan() {
+      try {
+        const plan = await getDayPlanForCourse(selectedCourse.title, selectedCourse.category, currentDay);
+        if (isMounted && plan) {
+          setActiveDayPlan(plan);
+        }
+      } catch (e) {
+        console.warn('Error loading day plan:', e);
+      }
+    }
+    fetchPlan();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCourse, currentDay]);
+
+  // Pre-fetch content for all daily tasks in background (instant player opens)
+  useEffect(() => {
+    if (!activeDayPlan || !activeDayPlan.tasks || activeDayPlan.tasks.length === 0) return;
+    // Fire-and-forget: pre-warm content cache for all tasks of the current day
+    activeDayPlan.tasks.forEach((task) => {
+      getCoursePlayerContent(
+        task.topic,
+        task.subject,
+        selectedCourse.title,
+        currentDay,
+        false // don't trigger AI generation, just check cache/DB
+      ).catch(() => {});
+    });
+  }, [activeDayPlan, selectedCourse, currentDay]);
+
+  // Number of completed tasks for the current day
+  const currentDayKey = `${selectedCourse.id}_day_${currentDay}`;
+  const completedTasksForCurrentDay = completedTasksMap[currentDayKey] ?? (currentDay === 1 ? 1 : 0);
+
+  // Build clean 4-step routine tasks list
+  const routineTasks: RoutineTask[] = useMemo(() => {
+    if (activeDayPlan && activeDayPlan.tasks && activeDayPlan.tasks.length > 0) {
+      return activeDayPlan.tasks.map((taskItem, index) => {
+        let taskType: 'video' | 'notes' | 'quiz' | 'code' = 'notes';
+        if (taskItem.taskType === 'video' || index === 1) taskType = 'video';
+        else if (taskItem.taskType === 'practice' || taskItem.taskType === 'test' || index === 2) taskType = 'quiz';
+        else if (taskItem.taskType === 'activity' || index === 3) taskType = 'code';
+
+        let status: 'completed' | 'in_progress' | 'locked' = 'locked';
+        if (index < completedTasksForCurrentDay) {
+          status = 'completed';
+        } else if (index === completedTasksForCurrentDay || isAdmin) {
+          status = 'in_progress';
+        }
+
+        return {
+          id: `task-${index}`,
+          type: taskType,
+          duration: `${taskItem.durationMinutes || 12} Min`,
+          title: `${taskItem.subject}: ${taskItem.topic}`,
+          subtitle: `${taskItem.subject} lesson for Day ${currentDay}`,
+          rawTopic: taskItem.topic,
+          rawSubject: taskItem.subject,
+          status,
+          xp: 20,
+          actionLabel: status === 'completed' ? 'Review' : (status === 'in_progress' || isAdmin) ? (isAdmin ? 'Open 🔓' : 'Start') : 'Locked',
+        };
+      });
+    }
+
+    // Fallback standard 4 subjects
+    const fallbackSubjects = [
+      { sub: 'Mathematics', title: 'Number Magic & Counting (1 to 20)', dur: '15 Min', type: 'notes' as const },
+      { sub: 'Science & EVS', title: 'My Amazing Body & Five Senses', dur: '12 Min', type: 'video' as const },
+      { sub: 'Tamil Literature', title: 'உயிர் எழுத்துகள் & ஆத்திசூடி பாடல்', dur: '10 Min', type: 'notes' as const },
+      { sub: 'Creative Lab', title: 'Hands-on Activity & Bedtime Recap', dur: '10 Min', type: 'quiz' as const },
+    ];
+
+    return fallbackSubjects.map((item, index) => {
+      let status: 'completed' | 'in_progress' | 'locked' = 'locked';
+      if (index < completedTasksForCurrentDay) {
+        status = 'completed';
+      } else if (index === completedTasksForCurrentDay || isAdmin) {
+        status = 'in_progress';
+      }
+
+      return {
+        id: `fb-task-${index}`,
+        type: item.type,
+        duration: item.dur,
+        title: `${item.sub}: ${item.title}`,
+        subtitle: `${item.sub} Day ${currentDay} lesson`,
+        rawTopic: item.title,
+        rawSubject: item.sub,
+        status,
+        xp: 20,
+        actionLabel: status === 'completed' ? 'Review' : (status === 'in_progress' || isAdmin) ? (isAdmin ? 'Open 🔓' : 'Start') : 'Locked',
+      };
+    });
+  }, [activeDayPlan, completedTasksForCurrentDay, currentDay, isAdmin]);
+
+  // Find active task (in progress) for the Hero card
+  const currentTask = useMemo(() => {
+    return routineTasks.find((t) => t.status === 'in_progress') || routineTasks[0];
+  }, [routineTasks]);
+
+  // ─── Handlers ─────────────────────────────────────────────────────────────
+  const handleSelectCourse = async (course: CourseOption) => {
+    setSelectedCourse(course);
+    setIsCoursePickerOpen(false);
+    try {
+      await AsyncStorage.setItem('teacho_active_enrolled_course_id', course.id);
+    } catch (e) {}
+  };
+
+  const handleTaskPress = (task: RoutineTask) => {
+    if (task.status === 'locked' && !isAdmin) {
+      Alert.alert(
+        'Step Locked 🔒',
+        'Please complete the previous step to unlock this lesson and earn bonus XP!'
+      );
       return;
     }
-    setVoiceTranscript('');
-    setIsListening(true);
-    setVoiceStatus(
-      lang === 'ta-IN'
-        ? 'தமிழில் பேசவும் (Listening in Tamil)...'
-        : 'Speak now (Listening in English)...'
-    );
 
-    // 1. Try Native Android Speech Recognizer first
+    setActivePlayerTask({
+      topicTitle: task.rawTopic || task.title,
+      subject: task.rawSubject || selectedCourse.title,
+      taskType: task.type,
+    });
+    setIsPlayerOpen(true);
+  };
+
+  const handlePrimaryHeroAction = () => {
+    if (currentTask) {
+      handleTaskPress(currentTask);
+    }
+  };
+
+  const handleFinishLesson = async (earnedXp: number = 20) => {
+    const nextCompleted = Math.min(routineTasks.length, completedTasksForCurrentDay + 1);
+    const updatedMap = {
+      ...completedTasksMap,
+      [currentDayKey]: nextCompleted,
+    };
+    setCompletedTasksMap(updatedMap);
+
+    const newXp = xp + earnedXp;
+    setXp(newXp);
+
     try {
-      const isAvail = await NativeSpeech.isAvailable();
-      if (isAvail) {
-        await NativeSpeech.startListening(lang, {
-          onStart: () => {
-            setIsListening(true);
-            setVoiceStatus(lang === 'ta-IN' ? 'தமிழில் பேசவும்...' : 'Listening now...');
-          },
-          onResult: (text, isFinal) => {
-            setVoiceTranscript(text);
-            setVoiceStatus(`Recognized: "${text}"`);
-            if (isFinal && text.trim().length > 0) {
-              setTimeout(() => {
-                setSearchQuery(text.trim());
-                handleVoiceModalClose();
-              }, 600);
-            }
-          },
-          onEnd: () => {
-            setIsListening(false);
-          },
-          onError: (err) => {
-            setIsListening(false);
-            setVoiceStatus(err);
-          },
-        });
-        return;
-      }
-    } catch (e) {
-      console.warn('NativeSpeech fallback to bridge:', e);
-    }
+      await AsyncStorage.setItem('teacho_completed_tasks_map', JSON.stringify(updatedMap));
+      await AsyncStorage.setItem('teacho_user_xp', newXp.toString());
+    } catch (e) {}
 
-    // Fallback: Voice Bridge
-    voiceBridgeRef.current?.startListening(lang);
-  }, [voiceLang, requestMicPermission]);
-
-  const stopVoiceListening = useCallback(() => {
-    setIsListening(false);
-    setVoiceStatus('Voice search stopped. Tap Mic to speak.');
-    NativeSpeech.stopListening().catch(() => {});
-    voiceBridgeRef.current?.stopListening();
-  }, []);
-
-  const handleVoiceModalOpen = () => {
-    setIsVoiceModalOpen(true);
-    setVoiceTranscript('');
-    setTimeout(() => {
-      startVoiceListening(voiceLang);
-    }, 400);
-  };
-
-  const handleVoiceModalClose = () => {
-    stopVoiceListening();
-    setIsVoiceModalOpen(false);
-  };
-
-  const handleLangSwitch = (lang: 'ta-IN' | 'en-IN') => {
-    setVoiceLang(lang);
-    if (isListening) {
-      stopVoiceListening();
-      setTimeout(() => {
-        startVoiceListening(lang);
-      }, 300);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      // 1. Fetch Courses
-      const { data: courseData, error: courseError } = await aishleeSupabase
-        .from('unified_master_data')
-        .select('*')
-        .eq('item_type', 'COURSE')
-        .order('created_at', { ascending: false });
-
-      if (courseError) throw courseError;
-      setCourses(courseData || []);
-
-      // 2. Fetch Tests
-      const { data: testData, error: testError } = await aishleeSupabase
-        .from('unified_master_data')
-        .select('*')
-        .eq('item_type', 'o_test')
-        .limit(100);
-
-      if (!testError && testData) {
-        setTests(testData);
-      }
-    } catch (err) {
-      console.error('Error fetching EduVerse data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredItems = useMemo(() => {
-    let items = courses;
-    if (activeCategory === 'tests') {
-      items = tests;
-    } else if (activeCategory !== 'all') {
-      items = courses.filter(c => getCourseCategory(c) === activeCategory);
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      items = items.filter(
-        item =>
-          (item.title_name && item.title_name.toLowerCase().includes(q)) ||
-          (item.category && item.category.toLowerCase().includes(q)) ||
-          (item.description_purpose && item.description_purpose.toLowerCase().includes(q))
-      );
-    }
-
-    return items;
-  }, [courses, tests, activeCategory, searchQuery]);
-
-  const renderListHeader = () => {
-    const recentCourse = courses[0];
-    return (
-      <View style={styles.scrollHeader}>
-        {/* Continue Learning Widget */}
-        {recentCourse && activeCategory === 'all' && !searchQuery && (
-          <TouchableOpacity
-            style={styles.continueCard}
-            onPress={() => navigation.navigate('TeachOCourseScreen', { course: recentCourse })}
-          >
-            <View style={styles.continueHeader}>
-              <View style={styles.continueBadge}>
-                <Clock size={12} color="#38bdf8" style={{ marginRight: 4 }} />
-                <Text style={styles.continueBadgeText}>CONTINUE LEARNING</Text>
-              </View>
-              <Text style={styles.continueProgressText}>65% Complete</Text>
-            </View>
-
-            <Text style={styles.continueTitle} numberOfLines={1}>
-              {recentCourse.title_name}
-            </Text>
-
-            {/* Progress Bar */}
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '65%' }]} />
-            </View>
-
-            <View style={styles.continueFooter}>
-              <Text style={styles.continueLessonText}>Next: Chapter 4 • Interactive Practice</Text>
-              <View style={styles.resumeBtn}>
-                <Text style={styles.resumeBtnText}>Resume</Text>
-                <ChevronRight size={14} color="#10b981" />
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* Today's Daily 3 Tasks */}
-        {activeCategory === 'all' && !searchQuery && (
-          <View style={styles.dailyTasksCard}>
-            <View style={styles.dailyTasksHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <CheckCircle2 size={16} color="#10b981" style={{ marginRight: 6 }} />
-                <Text style={styles.dailyTasksTitle}>Today's Learning Tasks</Text>
-              </View>
-              <Text style={styles.dailyTasksPoints}>+50 XP</Text>
-            </View>
-
-            <View style={styles.taskItem}>
-              <View style={[styles.taskCheck, styles.taskCheckDone]}>
-                <Text style={styles.checkMark}>✓</Text>
-              </View>
-              <Text style={[styles.taskLabel, styles.taskLabelDone]}>
-                Watch 1 Masterclass Video Lesson
-              </Text>
-            </View>
-
-            <View style={styles.taskItem}>
-              <View style={styles.taskCheck} />
-              <Text style={styles.taskLabel}>Review Chapter Mind Map & Formula Notes</Text>
-            </View>
-
-            <View style={styles.taskItem}>
-              <View style={styles.taskCheck} />
-              <Text style={styles.taskLabel}>Attempt 5 Daily Practice Questions</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Career & Placement Quick Launcher */}
-        {activeCategory === 'all' && !searchQuery && (
-          <TouchableOpacity
-            style={styles.careerBanner}
-            onPress={() => navigation.navigate('CareerHubScreen')}
-          >
-            <View style={styles.careerBannerLeft}>
-              <View style={styles.careerIconBox}>
-                <Briefcase size={18} color="#10b981" />
-              </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={styles.careerBannerTitle}>Career & Placement Hub</Text>
-                  <Sparkles size={12} color="#10b981" style={{ marginLeft: 4 }} />
-                </View>
-                <Text style={styles.careerBannerSub}>Job Alerts • AI Resume Builder • Mock Interviews</Text>
-              </View>
-            </View>
-            <ChevronRight size={16} color="#10b981" />
-          </TouchableOpacity>
-        )}
-
-        {/* Section Heading */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {activeCategory === 'tests' ? '📝 TestO Online Mock Exams' : '📚 Masterclass Courses'}
-          </Text>
-          <Text style={styles.sectionCount}>{filteredItems.length} Available</Text>
-        </View>
-      </View>
+    setIsPlayerOpen(false);
+    Alert.alert(
+      'Lesson Completed! 🌟',
+      `Awesome work! You earned +${earnedXp} XP. Step ${nextCompleted} of ${routineTasks.length} is ready!`
     );
   };
 
-  const renderItem = ({ item }: { item: any }) => {
-    const isTestItem = item.item_type === 'o_test' || activeCategory === 'tests';
-
-    let metadata = item.metadata || item.additional_info || {};
-    if (typeof metadata === 'string') {
+  const handleOpenAiTutor = () => {
+    if (navigation && typeof navigation.navigate === 'function') {
       try {
-        metadata = JSON.parse(metadata);
+        navigation.navigate('AIHubScreen');
+        return;
       } catch (e) {}
     }
-
-    const thumbnailUrl =
-      metadata.thumbnail_url ||
-      'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=400';
-
-    const questionCount =
-      metadata.questions?.length || metadata.questionCount || (isTestItem ? 25 : 0);
-
-    const categoryKey = isTestItem ? 'tests' : getCourseCategory(item);
-    const categoryLabel = isTestItem
-      ? 'TESTO EXAM'
-      : item.category ||
-        (categoryKey === 'entrance'
-          ? 'NEET / JEE'
-          : categoryKey === 'govt'
-          ? 'Govt & TNPSC'
-          : categoryKey === 'skills'
-          ? 'AI & Tech'
-          : categoryKey === 'school'
-          ? 'School (KG–12)'
-          : categoryKey === 'college'
-          ? 'College'
-          : 'Others');
-
-    return (
-      <View style={styles.card}>
-        {!isTestItem && <Image source={{ uri: thumbnailUrl }} style={styles.thumbnail} />}
-
-        <View style={styles.cardContent}>
-          <View style={styles.badgeRow}>
-            <View style={[styles.badge, isTestItem && styles.testBadge]}>
-              <Text style={[styles.badgeText, isTestItem && styles.testBadgeText]}>
-                {categoryLabel}
-              </Text>
-            </View>
-
-            {questionCount > 0 && (
-              <View style={styles.metaPill}>
-                <Award size={12} color="#10b981" style={{ marginRight: 4 }} />
-                <Text style={styles.metaPillText}>{questionCount} MCQs</Text>
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.cardTitle}>{item.title_name}</Text>
-          <Text style={styles.cardDescription} numberOfLines={2}>
-            {item.description_purpose ||
-              item.description ||
-              (isTestItem
-                ? 'Timed interactive examination with instant accuracy analytics & scorecard.'
-                : 'Comprehensive subject coverage with video lessons, digital notes & AI tutor.')}
-          </Text>
-
-          <View style={styles.cardFooter}>
-            {isTestItem ? (
-              <TouchableOpacity
-                style={styles.testBtn}
-                onPress={() => {
-                  navigation.navigate('TestOExamScreen', {
-                    testId: item.id,
-                    title: item.title_name,
-                  });
-                }}
-              >
-                <FileCheck2 size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
-                <Text style={styles.testBtnText}>Start Exam</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.watchBtn}
-                onPress={() => {
-                  navigation.navigate('TeachOCourseScreen', { course: item });
-                }}
-              >
-                <PlayCircle size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
-                <Text style={styles.watchBtnText}>Start Learning</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      </View>
-    );
+    Alert.alert('AI Homework Tutor 🤖', 'Ask any doubt in Tamil or English for instant step-by-step guidance.');
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-        <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#10b981" />
-          <Text style={styles.loadingText}>Loading EduVerse Learning Hub...</Text>
-        </View>
-      </View>
-    );
-  }
+  const handleOpenTestO = () => {
+    if (navigation && typeof navigation.navigate === 'function') {
+      try {
+        navigation.navigate('TestOScreen');
+        return;
+      } catch (e) {}
+    }
+    Alert.alert('TestO Mock Tests 📝', 'Chapter mock tests and daily practice quizzes are active for your course.');
+  };
 
   return (
-    <View style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B1120" />
 
-      {/* FIXED TOP HEADER & SEARCH (Positioned cleanly below status bar / camera notch) */}
-      <View
-        style={[
-          styles.headerContainer,
-          {
-            paddingTop:
-              Math.max(
-                insets.top,
-                Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
-              ) + 8,
-          },
-        ]}
-      >
-        {/* Top Title & Gamification Bar */}
-        <View style={styles.topBar}>
-          <View>
-            <View style={styles.badgeRow}>
-              <Text style={styles.mainTitle}>TeachO</Text>
-              <View style={styles.eduVerseBadge}>
-                <Sparkles size={11} color="#10b981" style={{ marginRight: 4 }} />
-                <Text style={styles.eduVerseText}>EduVerse AI</Text>
-              </View>
-            </View>
-            <Text style={styles.subTitle}>School, Higher Ed, Competitive & Skills</Text>
-          </View>
-
-          {/* Streak & XP Badges */}
-          <View style={styles.statsRow}>
-            <View style={styles.statPill}>
-              <Flame size={14} color="#f97316" />
-              <Text style={styles.statText}>{streakDays}d</Text>
-            </View>
-            <View style={[styles.statPill, { backgroundColor: '#10b98120', borderColor: '#10b98150' }]}>
-              <Star size={14} color="#10b981" />
-              <Text style={[styles.statText, { color: '#10b981' }]}>{xpPoints} XP</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Search Bar with Mic Voice Button */}
-        <View style={styles.searchBar}>
-          <Search size={18} color="#94a3b8" style={{ marginRight: 8 }} />
-          <TextInput
-            placeholder="Search subjects, lessons, TNPSC, NEET, AI..."
-            placeholderTextColor="#64748b"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            style={styles.searchInput}
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-          />
-          <TouchableOpacity
-            style={styles.micBtn}
-            onPress={handleVoiceModalOpen}
-          >
-            <Mic size={18} color="#10b981" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Category Tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {CATEGORIES.map(cat => {
-            const IconComponent = cat.icon;
-            const isActive = activeCategory === cat.id;
-            return (
-              <TouchableOpacity
-                key={cat.id}
-                style={[styles.categoryPill, isActive && styles.categoryPillActive]}
-                onPress={() => setActiveCategory(cat.id)}
-              >
-                <IconComponent
-                  size={14}
-                  color={isActive ? '#0a0f1e' : '#94a3b8'}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
-                  {cat.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* SCROLLABLE COURSES & TASKS LIST */}
-      <FlatList
-        data={filteredItems}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        ListHeaderComponent={renderListHeader}
-        contentContainerStyle={[
-          styles.listContainer,
-          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <BookOpen size={48} color="#334155" style={{ marginBottom: 12 }} />
-            <Text style={styles.emptyTitle}>No matching courses or tests found</Text>
-            <Text style={styles.emptySub}>Try searching with different keywords</Text>
-          </View>
-        }
+      {/* 1. TOP HEADER & COURSE SWITCHER */}
+      <TeachOHeader
+        courseTitle={selectedCourse.short || selectedCourse.title}
+        gradeBadge={selectedCourse.badge || 'Tuition'}
+        gradeColor={selectedCourse.badgeColor || '#06b6d4'}
+        currentDay={currentDay}
+        totalDays={totalDays}
+        streak={streak}
+        xp={xp}
+        onOpenCoursePicker={() => setIsCoursePickerOpen(true)}
       />
 
-      {/* Voice Search Modal */}
-      <Modal
-        visible={isVoiceModalOpen}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={handleVoiceModalClose}
+      {/* 2. SCROLLABLE CLEAN MAIN FEED */}
+      <ScrollView
+        style={styles.feedScroll}
+        contentContainerStyle={styles.feedContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.voiceModalOverlay}>
-          <View style={styles.voiceModalContent}>
-            <View style={styles.voiceModalTop}>
-              <View>
-                <Text style={styles.voiceModalTitle}>Voice Search • குரல் தேடல்</Text>
-                <Text style={styles.voiceModalSub}>Speak course, exam or topic name</Text>
-              </View>
-              <TouchableOpacity onPress={handleVoiceModalClose} style={styles.voiceCloseBtn}>
-                <X size={20} color="#94a3b8" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Language Switcher */}
-            <View style={styles.voiceLangRow}>
-              <TouchableOpacity
-                style={[styles.voiceLangPill, voiceLang === 'ta-IN' && styles.voiceLangPillActive]}
-                onPress={() => handleLangSwitch('ta-IN')}
-              >
-                <Text style={[styles.voiceLangText, voiceLang === 'ta-IN' && styles.voiceLangTextActive]}>
-                  🇮🇳 தமிழ் (Tamil)
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.voiceLangPill, voiceLang === 'en-IN' && styles.voiceLangPillActive]}
-                onPress={() => handleLangSwitch('en-IN')}
-              >
-                <Text style={[styles.voiceLangText, voiceLang === 'en-IN' && styles.voiceLangTextActive]}>
-                  🌐 English (Indian)
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.voiceAnimationBox}>
-              <Animated.View
-                style={[
-                  styles.voiceWaveRing,
-                  {
-                    transform: [{ scale: pulseAnim }],
-                    backgroundColor: isListening ? '#10b98130' : '#33415530',
-                    borderColor: isListening ? '#10b981' : '#475569',
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  style={[
-                    styles.voiceMicCenter,
-                    { backgroundColor: isListening ? '#10b981' : '#1e293b' },
-                  ]}
-                  onPress={() => (isListening ? stopVoiceListening() : startVoiceListening())}
-                >
-                  {isListening ? <Mic size={32} color="#0a0f1e" /> : <MicOff size={32} color="#94a3b8" />}
-                </TouchableOpacity>
-              </Animated.View>
-
-              {/* Real-time Spoken Transcript Box */}
-              {voiceTranscript.trim().length > 0 && (
-                <View style={styles.voiceTranscriptCard}>
-                  <Volume2 size={16} color="#10b981" style={{ marginRight: 6 }} />
-                  <Text style={styles.voiceTranscriptText}>"{voiceTranscript}"</Text>
+        {/* 👑 ADMIN MASTER ACCESS BANNER */}
+        {isAdmin && (
+          <View style={styles.adminBannerCard}>
+            <View style={styles.adminBannerHeader}>
+              <View style={styles.adminBadgeRow}>
+                <View style={styles.adminIconBox}>
+                  <ShieldCheck size={16} color="#fbbf24" />
                 </View>
-              )}
-
-              <Text style={[styles.voiceStatusText, { color: isListening ? '#34d399' : '#94a3b8' }]}>
-                {voiceStatus}
-              </Text>
+                <Text style={styles.adminBadgeTitle}>ADMIN MASTER ACCESS</Text>
+              </View>
+              <View style={styles.adminTag}>
+                <Unlock size={12} color="#10b981" />
+                <Text style={styles.adminTagText}>All {totalDays} Days Unlocked</Text>
+              </View>
             </View>
 
-            <Text style={styles.voiceQuickTitle}>Quick Voice Suggestions:</Text>
-            <View style={styles.voiceSuggestionsWrap}>
-              {[
-                'NEET UG Physics',
-                'TNPSC பொதுத்தமிழ்',
-                'JEE Main Maths',
-                '10th Science',
-                'Python Programming',
-                'Banking Aptitude',
-                'Full Stack React',
-                'Generative AI',
-              ].map((query, qIdx) => (
+            <Text style={styles.adminBannerDesc}>
+              Full administrative privileges enabled. You can jump to any day and open every lesson without progression locks.
+            </Text>
+
+            {/* Quick Day Navigator Pills */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.adminDayScroll} contentContainerStyle={styles.adminDayScrollContent}>
+              {[1, 2, 5, 10, 15, 20, 30, 50, 75, 100, 150, totalDays].filter((d, i, arr) => d <= totalDays && arr.indexOf(d) === i).map((d) => (
                 <TouchableOpacity
-                  key={qIdx}
-                  style={styles.voiceChip}
-                  onPress={() => {
-                    setSearchQuery(query);
-                    handleVoiceModalClose();
-                  }}
+                  key={`admin-day-${d}`}
+                  style={[styles.adminDayPill, currentDay === d && styles.adminDayPillActive]}
+                  onPress={() => setCurrentDay(d)}
+                  activeOpacity={0.8}
                 >
-                  <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
-                  <Text style={styles.voiceChipText}>{query}</Text>
+                  <Text style={[styles.adminDayPillText, currentDay === d && styles.adminDayPillTextActive]}>
+                    Day {d}
+                  </Text>
                 </TouchableOpacity>
               ))}
-            </View>
-
-            {/* Embedded Native Speech-to-Text Bridge */}
-            <VoiceSpeechBridge
-              ref={voiceBridgeRef}
-              onSpeechStart={() => {
-                setIsListening(true);
-                setVoiceStatus(voiceLang === 'ta-IN' ? 'தமிழில் பேசவும்...' : 'Listening now...');
-              }}
-              onSpeechResult={(transcript, isFinal) => {
-                setVoiceTranscript(transcript);
-                setVoiceStatus(`Recognized: "${transcript}"`);
-                if (isFinal && transcript.trim().length > 0) {
-                  setTimeout(() => {
-                    setSearchQuery(transcript.trim());
-                    handleVoiceModalClose();
-                  }, 700);
-                }
-              }}
-              onSpeechEnd={() => {
-                setIsListening(false);
-              }}
-              onSpeechError={(err) => {
-                setIsListening(false);
-                setVoiceStatus(err === 'no-speech' ? 'No speech detected. Tap mic to retry.' : `Voice status: ${err}`);
-              }}
-            />
+            </ScrollView>
           </View>
-        </View>
-      </Modal>
+        )}
+
+        {/* HERO: Today's Mission & 1-Tap CTA */}
+        <TeachOTodayHero
+          currentDay={currentDay}
+          totalDays={totalDays}
+          themeTitle={activeDayPlan ? activeDayPlan.themeTitle : selectedCourse.phaseTitle}
+          completedTasksCount={completedTasksForCurrentDay}
+          totalTasksCount={routineTasks.length}
+          currentTaskTitle={currentTask?.title}
+          currentTaskDuration={currentTask?.duration}
+          onPressPrimaryAction={handlePrimaryHeroAction}
+          parentTip={selectedCourse.parentGuidance}
+        />
+
+        {/* 4-STEP SEQUENTIAL ROUTINE */}
+        <TeachORoutineSteps
+          currentDay={currentDay}
+          totalDays={totalDays}
+          tasks={routineTasks}
+          onSelectDay={(day) => setCurrentDay(day)}
+          onTaskPress={handleTaskPress}
+        />
+
+        {/* QUICK HUB: AI Doubt Tutor & TestO Tests */}
+        <TeachOQuickHub
+          onOpenAiTutor={handleOpenAiTutor}
+          onOpenTestO={handleOpenTestO}
+          onOpenNotes={() => Alert.alert('Study Notes 📚', 'Chapter summary notes and formula sheets are available inside each lesson!')}
+        />
+      </ScrollView>
+
+      {/* 3. COURSE PICKER BOTTOM SHEET */}
+      <TeachOCoursePickerSheet
+        visible={isCoursePickerOpen}
+        courses={ALL_COURSES}
+        selectedCourseId={selectedCourse.id}
+        onClose={() => setIsCoursePickerOpen(false)}
+        onSelectCourse={handleSelectCourse}
+      />
+
+      {/* 4. IN-APP VIDEO & ACADEMIC COURSE PLAYER MODAL */}
+      <TeachOCoursePlayerModal
+        visible={isPlayerOpen}
+        topicTitle={activePlayerTask?.topicTitle || 'Micro-Topic Masterclass'}
+        subject={activePlayerTask?.subject || selectedCourse.title}
+        courseTitle={selectedCourse.title}
+        dayNumber={currentDay}
+        onClose={() => setIsPlayerOpen(false)}
+        onCompleteTask={handleFinishLesson}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: '#0a0f1e',
+    backgroundColor: '#0B1120',
   },
-  loaderContainer: {
+  feedScroll: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0a0f1e',
   },
-  loadingText: {
-    color: '#94a3b8',
+  feedContent: {
+    paddingBottom: 40,
+  },
+  adminBannerCard: {
+    marginHorizontal: 16,
     marginTop: 12,
-    fontSize: 14,
-  },
-  listContainer: {
-    paddingBottom: 90,
-  },
-  scrollHeader: {
-    paddingHorizontal: 16,
-  },
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  mainTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#ffffff',
-    letterSpacing: -0.5,
-  },
-  eduVerseBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#10b98120',
-    borderColor: '#10b98150',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-    marginLeft: 8,
-  },
-  eduVerseText: {
-    color: '#10b981',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  subTitle: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9731620',
-    borderColor: '#f9731650',
-    borderWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 14,
-  },
-  statText: {
-    color: '#f97316',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111827',
-    borderRadius: 12,
-    borderColor: '#1e293b',
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 14,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#ffffff',
-    fontSize: 14,
-    padding: 0,
-  },
-  categoryScroll: {
-    paddingBottom: 14,
-    gap: 8,
-  },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111827',
-    borderColor: '#1e293b',
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  categoryPillActive: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981',
-  },
-  categoryText: {
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  categoryTextActive: {
-    color: '#0a0f1e',
-    fontWeight: 'bold',
-  },
-  continueCard: {
-    backgroundColor: '#111827',
+    marginBottom: 4,
+    backgroundColor: '#131c31',
     borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#1e293b',
-    padding: 16,
-    marginBottom: 14,
+    borderColor: 'rgba(251, 191, 36, 0.35)',
+    gap: 8,
   },
-  continueHeader: {
+  adminBannerHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
-  continueBadge: {
+  adminBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
   },
-  continueBadgeText: {
-    color: '#38bdf8',
-    fontSize: 11,
-    fontWeight: 'bold',
+  adminIconBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adminBadgeTitle: {
+    color: '#fbbf24',
+    fontSize: 12,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
-  continueProgressText: {
-    color: '#10b981',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  continueTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: '#1e293b',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#10b981',
-  },
-  continueFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  continueLessonText: {
-    color: '#94a3b8',
-    fontSize: 12,
-    flex: 1,
-  },
-  resumeBtn: {
+  adminTag: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  resumeBtnText: {
-    color: '#10b981',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginRight: 2,
-  },
-  dailyTasksCard: {
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    padding: 16,
-    marginBottom: 16,
-  },
-  dailyTasksHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dailyTasksTitle: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  dailyTasksPoints: {
-    color: '#f59e0b',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  taskItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  taskCheck: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1.5,
-    borderColor: '#475569',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  taskCheckDone: {
-    backgroundColor: '#10b981',
-    borderColor: '#10b981',
-  },
-  checkMark: {
-    color: '#ffffff',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  taskLabel: {
-    color: '#cbd5e1',
-    fontSize: 13,
-  },
-  taskLabelDone: {
-    color: '#64748b',
-    textDecorationLine: 'line-through',
-  },
-  careerBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#10b98140',
-    padding: 14,
-    marginBottom: 16,
-  },
-  careerBannerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  careerIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#10b98120',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  careerBannerTitle: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  careerBannerSub: {
-    color: '#94a3b8',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  sectionCount: {
-    color: '#64748b',
-    fontSize: 12,
-  },
-  card: {
-    backgroundColor: '#111827',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    overflow: 'hidden',
-  },
-  thumbnail: {
-    width: '100%',
-    height: 170,
-    backgroundColor: '#1e293b',
-  },
-  cardContent: {
-    padding: 16,
-  },
-  badge: {
-    backgroundColor: '#10b98120',
-    borderColor: '#10b98150',
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  badgeText: {
-    color: '#10b981',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  testBadge: {
-    backgroundColor: '#f59e0b20',
-    borderColor: '#f59e0b50',
-  },
-  testBadgeText: {
-    color: '#f59e0b',
-  },
-  metaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e293b',
+    gap: 4,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 10,
-    marginLeft: 8,
-    marginBottom: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
-  metaPillText: {
+  adminTagText: {
+    color: '#10b981',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  adminBannerDesc: {
     color: '#94a3b8',
     fontSize: 11,
-    fontWeight: '600',
+    lineHeight: 16,
   },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 6,
+  adminDayScroll: {
+    marginTop: 4,
   },
-  cardDescription: {
-    fontSize: 13,
-    color: '#94a3b8',
-    marginBottom: 16,
-    lineHeight: 19,
+  adminDayScrollContent: {
+    gap: 6,
+    paddingVertical: 2,
   },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  watchBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#10b981',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  watchBtnText: {
-    color: '#0a0f1e',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  testBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f59e0b',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  testBtnText: {
-    color: '#0a0f1e',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  emptySub: {
-    color: '#64748b',
-    fontSize: 13,
-  },
-  micBtn: {
-    padding: 6,
+  adminDayPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#10b98120',
-  },
-  voiceModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    justifyContent: 'flex-end',
-  },
-  voiceModalContent: {
-    backgroundColor: '#111827',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#1e293b',
-  },
-  voiceModalTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  voiceModalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  voiceModalSub: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 2,
-  },
-  voiceCloseBtn: {
-    padding: 6,
-    borderRadius: 20,
-    backgroundColor: '#1e293b',
-  },
-  voiceLangRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  voiceLangPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
     backgroundColor: '#1e293b',
     borderWidth: 1,
     borderColor: '#334155',
   },
-  voiceLangPillActive: {
-    backgroundColor: '#10b98120',
-    borderColor: '#10b981',
+  adminDayPillActive: {
+    backgroundColor: '#fbbf24',
+    borderColor: '#fbbf24',
   },
-  voiceLangText: {
-    fontSize: 12,
+  adminDayPillText: {
     color: '#94a3b8',
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
   },
-  voiceLangTextActive: {
-    color: '#10b981',
-    fontWeight: 'bold',
-  },
-  voiceAnimationBox: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  voiceWaveRing: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  voiceMicCenter: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-  },
-  voiceTranscriptCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#10b98115',
-    borderWidth: 1,
-    borderColor: '#10b98140',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginBottom: 10,
-    maxWidth: '90%',
-  },
-  voiceTranscriptText: {
-    color: '#34d399',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  voiceStatusText: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  voiceQuickTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-    marginTop: 10,
-  },
-  voiceSuggestionsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  voiceChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e293b',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  voiceChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#e2e8f0',
+  adminDayPillTextActive: {
+    color: '#0B1120',
+    fontWeight: '900',
   },
 });
-

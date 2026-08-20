@@ -86,7 +86,21 @@ export function ConversationList({
         if (session?.access_token) {
           headers.Authorization = `Bearer ${session.access_token}`;
         }
-        const query = typeof window !== 'undefined' ? window.location.search : '';
+        const isEmbed = typeof window !== 'undefined' && (
+          window.location.search.includes('embed=true') ||
+          document.cookie.includes('supro_is_embed=true') ||
+          sessionStorage.getItem('supro_is_embed') === 'true' ||
+          document.documentElement.classList.contains('is-native-app') ||
+          (window as any).__NATIVE_USER__?.isNative
+        );
+        const rawQuery = typeof window !== 'undefined' ? window.location.search : '';
+        let query = rawQuery;
+        if (isEmbed && !query.includes('embed=true')) {
+          query += (query.includes('?') ? '&' : '?') + 'embed=true';
+        }
+        if (isEmbed) {
+          headers['x-supro-embed'] = 'true';
+        }
         const res = await fetch(`/api/conversations${query}`, { cache: 'no-store', credentials: 'include', headers });
         const json = await res.json();
         if (json.conversations && Array.isArray(json.conversations)) {

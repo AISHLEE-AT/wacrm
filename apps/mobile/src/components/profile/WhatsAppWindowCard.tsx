@@ -1,10 +1,20 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MessageCircle, RefreshCw, Clock, Zap } from 'lucide-react-native';
 import { AppContext } from '../../context/AppContext';
 
 export function WhatsAppWindowCard() {
   const { lastWhatsAppSync, getWhatsAppWindowRemaining, renewWhatsAppWindow, user } = useContext(AppContext);
+  const [, setTick] = useState(0);
+
+  // Live countdown tick every 30s while viewing profile screen
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   const windowStatus = getWhatsAppWindowRemaining();
 
   const handleRenew = async () => {

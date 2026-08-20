@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
+import { checkIsAdmin } from '@/lib/auth/admin'
 
 function getAdminClient() {
   return createClient(
@@ -127,6 +128,8 @@ export async function POST(request: Request) {
 
     const userId = authResult.data.user.id
 
+    const isAdminUser = checkIsAdmin(cleanPhone, existingProfile || undefined)
+
     // Check if phone matches any registered driver partner
     const { data: driverMatch } = await admin
       .from('drivers')
@@ -135,14 +138,16 @@ export async function POST(request: Request) {
       .limit(1)
       .maybeSingle()
 
-    const isDriverPartner = !!driverMatch || 
+    const isDriverPartner = !isAdminUser && (
+      !!driverMatch || 
       (existingProfile as any)?.role?.toLowerCase().includes('driver') || 
       (existingProfile as any)?.main_category?.toLowerCase().includes('driver') ||
-      category?.toLowerCase().includes('driver');
+      category?.toLowerCase().includes('driver')
+    );
 
-    const resolvedRole = isDriverPartner ? 'driver' : (existingProfile?.role || 'user')
-    const finalCategory = isDriverPartner ? 'Driver' : (category || (existingProfile as any)?.main_category || 'Traveller')
-    const defaultModule = isDriverPartner ? '/drivo' : ((existingProfile as any)?.default_module || '/rideo')
+    const resolvedRole = isAdminUser ? 'admin' : (isDriverPartner ? 'driver' : (existingProfile?.role || 'user'))
+    const finalCategory = isAdminUser ? 'Admin' : (isDriverPartner ? 'Driver' : (category || (existingProfile as any)?.main_category || 'Traveller'))
+    const defaultModule = isAdminUser ? ((existingProfile as any)?.default_module || '/drivo') : (isDriverPartner ? '/drivo' : ((existingProfile as any)?.default_module || '/rideo'))
 
     const finalName = fullName || existingProfile?.full_name || `User ${cleanPhone.slice(-4)}`
 

@@ -24,7 +24,7 @@ import {
   UserCheck,
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
-import { AppContext } from '../../context/AppContext';
+import { AppContext, ADMIN_PHONES } from '../../context/AppContext';
 import { supabase } from '../../lib/supabase';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
 
@@ -186,27 +186,33 @@ export function UserCategoryCard({
 
     setIsUpdating(true);
     try {
-      // 1. Update SecureStore
-      await SecureStore.setItemAsync('user-category', cat.key);
+      const cleanPhone = (phone || user?.phone || '').replace(/\D/g, '').slice(-10);
+      const isAdminUser = user?.isAdmin || (cleanPhone && ADMIN_PHONES.includes(cleanPhone)) || user?.role === 'admin';
+      const newRole = isAdminUser ? 'admin' : cat.key.toLowerCase();
 
-      // 2. Update AppContext
+      // 1. Update AppContext (updates user state, pinnedModules, defaultModule, and SecureStore)
       if (updateUserProfile) {
-        await updateUserProfile({ category: cat.key });
+        await updateUserProfile({
+          category: cat.key,
+          role: newRole,
+          defaultModule: cat.path,
+        });
       }
 
-      // 3. Update Supabase profiles table
-      const cleanPhone = (phone || user?.phone || '').replace(/\D/g, '').slice(-10);
+      // 2. Update Supabase profiles table
       if (cleanPhone) {
         await supabase
           .from('profiles')
           .update({
             main_category: cat.key,
+            role: newRole,
+            default_module: cat.path,
             updated_at: new Date().toISOString(),
           })
           .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
       }
 
-      // 4. Update backend profile API
+      // 3. Update backend profile API
       fetch('https://watscrm.vercel.app/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,18 +220,24 @@ export function UserCategoryCard({
           phone: phone || user?.phone,
           main_category: cat.key,
           category: cat.key,
+          role: newRole,
+          default_module: cat.path,
         }),
       }).catch((e) => console.warn('Profile category update API warning:', e));
 
-      // 5. Notify parent callback
+      // 4. Notify parent callback
       if (onProfileUpdate) {
-        onProfileUpdate({ ...profile, main_category: cat.key });
+        onProfileUpdate({
+          ...profile,
+          main_category: cat.key,
+          role: newRole,
+        });
       }
 
       setModalVisible(false);
       Alert.alert(
-        'User Type Updated',
-        `Your primary role has been set to ${cat.label}. Primary module: ${cat.moduleName}`
+        'User Type Updated ⚡',
+        `App reconfigured for ${cat.label}!\nPrimary Module: ${cat.moduleName}`
       );
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to update user category');

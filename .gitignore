@@ -87,3 +87,8 @@ screen_*.png
 *.log
 scratch/
 scripts/
+*.apk
+*.json.gz
+apps/mobile/src/lib/coursePlayerPrecompiledCache.json
+apps/mobile/src/data/generated_catalog/
+apps/mobile/src/lib/dailyCoursePlans/
