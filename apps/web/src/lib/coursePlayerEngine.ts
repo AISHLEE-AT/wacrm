@@ -1405,8 +1405,12 @@ export async function getCoursePlayerContent(
   subject: string,
   courseTitle: string = 'Master Course',
   dayNumber: number = 1,
-  allowAiGeneration: boolean = false
+  courseIdOrAi?: string | boolean,
+  allowAi?: boolean
 ): Promise<CoursePlayerContent | null> {
+  const courseId = typeof courseIdOrAi === 'string' ? courseIdOrAi : '';
+  const allowAiGeneration = typeof courseIdOrAi === 'boolean' ? courseIdOrAi : (allowAi ?? false);
+  const directIdKey = courseId ? `${courseId}_day_${dayNumber}` : '';
   const canonicalDef = resolveCanonicalTopic(topicTitle, subject, courseTitle);
   const canonicalKey = canonicalDef.canonicalKey;
   // Day-specific keys to prevent Day 7 returning Day 1 content
@@ -1414,6 +1418,9 @@ export async function getCoursePlayerContent(
   const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
   // 1. Check In-Memory Cache (Instant 0ms) — day-specific first
+  if (directIdKey && inMemoryContentCache.has(directIdKey)) {
+    return inMemoryContentCache.get(directIdKey)!;
+  }
   if (inMemoryContentCache.has(daySpecificKey)) {
     return inMemoryContentCache.get(daySpecificKey)!;
   }
@@ -1421,8 +1428,25 @@ export async function getCoursePlayerContent(
     return inMemoryContentCache.get(cacheKey)!;
   }
 
-  // 2. Check Supabase LMS Database (kindle_content_cache) — day-specific first
+    // 2. Check Supabase LMS Database (kindle_content_cache) — day-specific first
   try {
+    if (directIdKey) {
+      const { data: idData, error: idError } = await aishleeSupabase
+        .from('kindle_content_cache')
+        .select('kindle_json')
+        .eq('topic_key', directIdKey)
+        .limit(1);
+
+      if (!idError && idData && idData.length > 0 && idData[0].kindle_json) {
+        const item = idData[0].kindle_json as CoursePlayerContent;
+        if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
+          inMemoryContentCache.set(directIdKey, item);
+          inMemoryContentCache.set(daySpecificKey, item);
+          inMemoryContentCache.set(cacheKey, item);
+          return item;
+        }
+      }
+    }
     // Try day-specific key first
     const { data: dayData, error: dayError } = await aishleeSupabase
       .from('kindle_content_cache')
