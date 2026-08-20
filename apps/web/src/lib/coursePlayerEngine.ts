@@ -1499,37 +1499,68 @@ export async function getCoursePlayerContent(
     }
   } catch (e) {}
 
-  // 5. Generate Live with Gemini Flash (only if explicitly enabled)
-  if (allowAiGeneration) {
-    try {
-      const aiContent = await generateContentWithGeminiAI(topicTitle, subject, courseTitle, dayNumber);
-      if (aiContent && aiContent.notes && aiContent.mcqs && aiContent.mcqs.length > 0) {
-        // Ensure dayNumber is correctly set in generated content
-        aiContent.dayNumber = dayNumber;
-        aiContent.topicKey = daySpecificKey;
-        inMemoryContentCache.set(daySpecificKey, aiContent);
-        inMemoryContentCache.set(cacheKey, aiContent);
-        localStorage.setItem(cacheKey, JSON.stringify(aiContent)).catch(() => {});
-        
-        // Asynchronously persist to Supabase kindle_content_cache with day-specific key
-        Promise.resolve(
-          aishleeSupabase
-            .from('kindle_content_cache')
-            .upsert({
-              topic_key: daySpecificKey,
-              topic_title: topicTitle,
-              course_title: courseTitle,
-              kindle_json: aiContent,
-              generated_at: new Date().toISOString(),
-              model_used: 'gemini-2.5-flash'
-            }, { onConflict: 'topic_key' })
-        ).then(() => {}, () => {});
+  // 5. On-Demand Just-In-Time (JIT) API Fetcher
+  try {
+    if (typeof window !== 'undefined') {
+      const res = await fetch('/api/kindle-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topicTitle,
+          courseTitle,
+          courseId,
+          dayNumber,
+          board: courseTitle.includes('CBSE') ? 'CBSE' : courseTitle.includes('Matric') ? 'Matric' : 'TNSB',
+          standard: courseTitle
+        })
+      });
 
-        return aiContent;
+      if (res.ok) {
+        const json = await res.json();
+        if (json && (json.notes || json.coreConcepts) && json.mcqs && json.mcqs.length > 0) {
+          const transformed: CoursePlayerContent = {
+            topicTitle: json.topicTitle || topicTitle,
+            category: json.category || subject,
+            videoMeta: {
+              youtubeVideoId: json.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
+              videoTitle: json.videoMeta?.videoTitle || topicTitle,
+              channelName: json.videoMeta?.channelName || 'TeachO 1-on-1 Tuition',
+              duration: json.videoMeta?.duration || '15:00',
+              keyTimestamps: json.videoMeta?.keyTimestamps || [{ time: '0:00', label: 'Concept Overview' }]
+            },
+            notes: json.notes || {
+              overview: json.overview || '',
+              coreConcepts: json.coreConcepts || [],
+              tamilExplanation: json.tamilExplanation || {
+                simpleTitle: topicTitle,
+                colloquialIntro: '',
+                everydayAnalogy: '',
+                keyPointsTamil: []
+              },
+              vsaqs: json.vsaqs || [],
+              shortAnswers: json.shortAnswers || [],
+              formulasAndMnemonics: json.formulasAndMnemonics || []
+            },
+            flashcards: json.flashcards || (json.coreConcepts || []).map((c: any, i: number) => ({
+              id: `fc_${i+1}`,
+              front: c.heading || `Concept ${i+1}`,
+              back: c.content || `Explanation for ${c.heading}`,
+              tamilHint: json.tamilExplanation?.keyPointsTamil?.[i] || ''
+            })),
+            mcqs: json.mcqs || [],
+            dayNumber,
+            topicKey: directIdKey || daySpecificKey
+          };
+
+          if (directIdKey) inMemoryContentCache.set(directIdKey, transformed);
+          inMemoryContentCache.set(daySpecificKey, transformed);
+          inMemoryContentCache.set(cacheKey, transformed);
+          return transformed;
+        }
       }
-    } catch (err) {
-      console.warn('[TeachO Content Resolver] Live generation error:', err);
     }
+  } catch (jitErr) {
+    // Fallback gracefully to deterministic offline syllabus
   }
 
   // 6. High-Precision Topic & Day Matched Fallback Engine (0ms instant response)

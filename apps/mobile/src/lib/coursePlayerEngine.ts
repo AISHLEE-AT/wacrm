@@ -1405,13 +1405,20 @@ export async function getCoursePlayerContent(
   subject: string,
   courseTitle: string = 'Master Course',
   dayNumber: number = 1,
-  allowAiGeneration: boolean = false
+  allowAiGeneration: boolean = false,
+  courseId?: string
 ): Promise<CoursePlayerContent | null> {
   const canonicalDef = resolveCanonicalTopic(topicTitle, subject, courseTitle);
   const canonicalKey = canonicalDef.canonicalKey;
+  const directIdKey = courseId ? `${courseId}_day_${dayNumber}` : null;
   // Day-specific keys to prevent Day 7 returning Day 1 content
   const daySpecificKey = `${canonicalKey}_day_${dayNumber}`;
   const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+
+  // 0. Check Direct Course ID Key First (Instant 0ms)
+  if (directIdKey && inMemoryContentCache.has(directIdKey)) {
+    return inMemoryContentCache.get(directIdKey)!;
+  }
 
   // 1. Check In-Memory Cache (Instant 0ms) — day-specific first
   if (inMemoryContentCache.has(daySpecificKey)) {
@@ -1463,9 +1470,84 @@ export async function getCoursePlayerContent(
     // Non-blocking
   }
 
-  // 3. Check Supabase LMS Database (kindle_content_cache) — day-specific first
+  // 3. Check Supabase LMS Database (kindle_content_cache) — direct ID & day-specific first
   try {
-    // Try day-specific key first
+    if (directIdKey) {
+      const { data: idData, error: idErr } = await aishleeSupabase
+        .from('kindle_content_cache')
+        .select('kindle_json, model_used')
+        .eq('topic_key', directIdKey)
+        .limit(1);
+
+      if (!idErr && idData && idData.length > 0 && idData[0].kindle_json) {
+        const item = idData[0].kindle_json as any;
+        if (item) {
+          const transformed: CoursePlayerContent = {
+            topicTitle: item.topicTitle || topicTitle,
+            category: item.category || subject,
+            videoMeta: item.videoMeta || {
+              channel: 'TeachO 1-on-1 Tuition',
+              channelUrl: 'https://youtube.com/@TeachO',
+              youtubeVideoId: item.videoId || item.youtubeVideoId || '0TgLtF3PMOc',
+              videoTitle: item.topicTitle || topicTitle,
+              durationMinutes: 15,
+              isOfficialAishlee: true
+            },
+            notes: item.notes || {
+              overview: item.overview || '',
+              keyPoints: item.keyPoints || [],
+              coreConcepts: item.coreConcepts?.map((c: any) => ({
+                heading: c.heading || 'Core Concept',
+                body: c.content || c.body || '',
+                formulaOrExample: c.example || c.formulaOrExample
+              })) || [],
+              bilingualExplanation: item.tamilExplanation ? {
+                tamil: item.tamilExplanation.colloquialIntro || '',
+                english: item.overview || ''
+              } : undefined,
+              formulasAndShortcuts: item.formulasAndMnemonics?.map((f: any) => ({
+                name: f.name || 'Master Formula',
+                formula: f.formula || '',
+                tip: f.mnemonic || f.tip
+              })) || []
+            },
+            oneLineQnA: item.vsaqs?.map((v: any) => ({
+              question: v.question,
+              answer: v.answer
+            })) || item.oneLineQnA || [],
+            fillInTheBlanks: item.fillInTheBlanks || [],
+            mcqs: item.mcqs?.map((m: any) => ({
+              question: m.question,
+              options: m.options || [],
+              correctIndex: typeof m.correctAnswer === 'number' ? m.correctAnswer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
+              explanation: m.explanation || 'Verified answer.'
+            })) || [],
+            twoMarkQuestions: item.vsaqs?.map((v: any) => ({
+              question: v.question,
+              marks: v.marks || 2,
+              modelAnswer: v.answer,
+              keyPointsToInclude: [v.answer]
+            })) || [],
+            fiveMarkQuestions: item.shortAnswers?.map((s: any) => ({
+              question: s.question,
+              marks: s.marks || 5,
+              stepByStepSolution: s.points || s.solutionSteps || [],
+              diagramOrFormulaNote: s.keyTips
+            })) || [],
+            essayQuestions: [],
+            dayNumber,
+            topicKey: directIdKey
+          };
+
+          inMemoryContentCache.set(directIdKey, transformed);
+          inMemoryContentCache.set(daySpecificKey, transformed);
+          inMemoryContentCache.set(cacheKey, transformed);
+          return transformed;
+        }
+      }
+    }
+
+    // Try day-specific key next
     const { data: dayData, error: dayError } = await aishleeSupabase
       .from('kindle_content_cache')
       .select('kindle_json')
