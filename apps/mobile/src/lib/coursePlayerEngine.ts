@@ -12,11 +12,11 @@
  * 8. Clean In-App Video Metadata
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { aishleeSupabase } from '../services/aishleeSupabase';
-import { resolveCanonicalTopic } from './canonicalTopicResolver';
-import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
-import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry';
+
+import { lmsSupabase as aishleeSupabase } from './lms-supabase.ts';
+import { resolveCanonicalTopic } from './canonicalTopicResolver.ts';
+import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry.ts';
+import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry.ts';
 
 export interface VideoMeta {
   channel: string;
@@ -111,8 +111,13 @@ export interface CoursePlayerContent {
 
 // ─── ROTATING GEMINI API KEY POOL ─────────────────────────────────────────────
 function getCandidatePool(): string[] {
-  const envKeys = (process.env.EXPO_PUBLIC_GEMINI_API_KEY || '').split(',').map((k: string) => k.trim()).filter(Boolean);
-  return envKeys;
+  if (typeof window !== 'undefined') {
+    const userKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key');
+    if (userKey) return [userKey];
+  }
+  const envKeys = (process.env.GEMINI_API_KEYS || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
+  if (envKeys.length > 0) return envKeys;
+  return [(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim()].filter(Boolean);
 }
 
 let currentKeyIndex = 0;
@@ -124,27 +129,14 @@ function getNextGeminiKey(): string {
   return key;
 }
 
-async function getCandidateGeminiKeys(): Promise<string[]> {
-  const keys: string[] = [];
-  try {
-    const userKey = (await AsyncStorage.getItem('user_gemini_api_key')) || (await AsyncStorage.getItem('gemini_api_key'));
-    if (userKey && userKey.trim().length > 10) {
-      keys.push(userKey.trim());
-    }
-  } catch (e) {}
-  const pool = getCandidatePool();
-  pool.forEach((k: string) => {
-    if (!keys.includes(k)) keys.push(k);
-  });
-  return keys;
-}
 
-// ─── IN-MEMORY CONTENT CACHE ──────────────────────────────────────────────────
+
+// Memory cache to ensure instantaneous subsequent access
 const inMemoryContentCache = new Map<string, CoursePlayerContent>();
 
 /**
  * Unified content persistence helper.
- * Saves content to all 3 layers: in-memory, AsyncStorage, and Supabase.
+ * Saves content to all 3 layers: in-memory, localStorage, and Supabase.
  */
 async function persistContent(
   content: CoursePlayerContent,
@@ -156,11 +148,13 @@ async function persistContent(
   inMemoryContentCache.set(keys.cacheKey, content);
   if (keys.directIdKey) inMemoryContentCache.set(keys.directIdKey, content);
 
-  // 2. AsyncStorage (fast offline access)
+  // 2. localStorage (fast offline access)
   try {
-    await AsyncStorage.setItem(keys.cacheKey, JSON.stringify(content));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(keys.cacheKey, JSON.stringify(content));
+    }
   } catch (e) {
-    // Non-fatal
+    // Quota exceeded or private browsing
   }
 
   // 3. Supabase cloud persistence (with 1 retry)
@@ -179,21 +173,24 @@ async function persistContent(
         .from('kindle_content_cache')
         .upsert(upsertData, { onConflict: 'topic_key' });
       if (!error) break;
+      if (attempt === 0) console.warn('[TeachO Persist] Supabase upsert retry after:', error.message);
     } catch (e) {
-      // Non-fatal
+      if (attempt === 0) console.warn('[TeachO Persist] Supabase upsert error, retrying:', e);
     }
   }
 
   return content;
 }
 
+/**
+ * Calls Gemini Flash to generate 100% topic-specific academic content
+ */
 async function generateContentWithGeminiAI(
   topicTitle: string,
   subject: string,
   courseTitle: string,
   dayNumber: number
 ): Promise<CoursePlayerContent | null> {
-  const candidateKeys = await getCandidateGeminiKeys();
   const prompt = `You are a premier Curriculum Master & Board Exam Question Setter for Tamil Nadu State Board (Samacheer Kalvi), CBSE NCERT, and Competitive Exams (TNPSC/UPSC).
 
 Create exhaustive, 100% topic-specific, authentic academic learning content ONLY for:
@@ -303,8 +300,8 @@ Return ONLY a JSON object with this EXACT structure:
   ]
 }`;
 
-  for (let attempt = 0; attempt < Math.min(3, candidateKeys.length); attempt++) {
-    const apiKey = candidateKeys[attempt];
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const apiKey = getNextGeminiKey();
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
       const controller = new AbortController();
@@ -1459,7 +1456,8 @@ export function synthesizeFallbackContent(
 }
 
 /**
- * Normalizes any content payload into a full, rich CoursePlayerContent interface with zero blank fields.
+ * Normalizes any content payload (from Supabase, local cache, JIT API, or deterministic syllabus)
+ * into a full, rich CoursePlayerContent interface with zero blank fields.
  */
 export function normalizeCoursePlayerPayload(
   raw: any,
@@ -1691,10 +1689,14 @@ export async function getCoursePlayerContent(
   subject: string,
   courseTitle: string = 'Master Course',
   dayNumber: number = 1,
-  allowAiGeneration: boolean = false,
-  courseId?: string,
-  taskNumber?: number
+  courseIdOrAi?: string | boolean,
+  allowAiOrTaskNum?: boolean | number,
+  taskNumberParam?: number
 ): Promise<CoursePlayerContent | null> {
+  const courseId = typeof courseIdOrAi === 'string' ? courseIdOrAi : '';
+  const taskNumber = typeof allowAiOrTaskNum === 'number' ? allowAiOrTaskNum : (typeof taskNumberParam === 'number' ? taskNumberParam : undefined);
+  
+  // Extract task number from topic title if not explicitly passed
   const secMatch = topicTitle.match(/(?:Section|Period|Task|Module)\s*#?(\d+)/i);
   const resolvedTaskNum = taskNumber || (secMatch ? parseInt(secMatch[1], 10) : 1);
 
@@ -1703,19 +1705,17 @@ export async function getCoursePlayerContent(
   const canonicalDef = resolveCanonicalTopic(topicTitle, subject, courseTitle);
   const canonicalKey = canonicalDef.canonicalKey;
   const daySpecificKey = `${canonicalKey}_day_${dayNumber}`;
-  const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}_task_${resolvedTaskNum}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
   const persistKeys = { daySpecificKey, cacheKey, directIdKey: directTaskKey || directIdKey };
 
-  // 0. Check Direct Course ID & Task Key First (Instant 0ms)
+  // 1. Check In-Memory Cache (Instant 0ms)
   if (directTaskKey && inMemoryContentCache.has(directTaskKey)) {
     return inMemoryContentCache.get(directTaskKey)!;
   }
   if (directIdKey && inMemoryContentCache.has(directIdKey)) {
     return inMemoryContentCache.get(directIdKey)!;
   }
-
-  // 1. Check In-Memory Cache (Instant 0ms)
   if (inMemoryContentCache.has(daySpecificKey)) {
     return inMemoryContentCache.get(daySpecificKey)!;
   }
@@ -1725,7 +1725,9 @@ export async function getCoursePlayerContent(
 
   // 2. Check Supabase LMS Database (kindle_content_cache)
   try {
+    const isStandardCanonical = canonicalKey && !canonicalKey.startsWith('canonical_academic_') && !canonicalKey.startsWith('canonical_general_');
     const candidateKeys = [
+      ...(isStandardCanonical ? [canonicalKey, daySpecificKey] : []),
       directTaskKey,
       directIdKey,
       `${canonicalKey}_day_${dayNumber}_task_${resolvedTaskNum}`,
@@ -1758,24 +1760,26 @@ export async function getCoursePlayerContent(
       }
     }
   } catch (e) {
-    // Non-blocking
+    // Non-blocking fallback
   }
 
-  // 3. Check Local AsyncStorage Cache
+  // 3. Check Local localStorage Cache
   try {
-    const localCached = await AsyncStorage.getItem(cacheKey);
-    if (localCached) {
-      const parsed = JSON.parse(localCached);
-      if (parsed) {
-        const normalized = normalizeCoursePlayerPayload(parsed, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
-        inMemoryContentCache.set(daySpecificKey, normalized);
-        inMemoryContentCache.set(cacheKey, normalized);
-        return normalized;
+    if (typeof window !== 'undefined') {
+      const localCached = localStorage.getItem(cacheKey);
+      if (localCached) {
+        const parsed = JSON.parse(localCached);
+        if (parsed) {
+          const normalized = normalizeCoursePlayerPayload(parsed, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
+          inMemoryContentCache.set(daySpecificKey, normalized);
+          inMemoryContentCache.set(cacheKey, normalized);
+          return normalized;
+        }
       }
     }
   } catch (e) {}
 
-  // 4. Fallback to Deterministic Sequential Master Syllabus (100% authentic)
+  // 4. Fallback to Deterministic Sequential Master Syllabus (100% authentic, zero blank fields)
   try {
     const seqItem = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, resolvedTaskNum);
     if (seqItem) {
@@ -1795,3 +1799,6 @@ export async function getCoursePlayerContent(
 
   return null;
 }
+
+export const loadCoursePlayerContent = getCoursePlayerContent;
+

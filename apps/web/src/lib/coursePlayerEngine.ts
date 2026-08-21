@@ -13,10 +13,10 @@
  */
 
 
-import { lmsSupabase as aishleeSupabase } from './lms-supabase';
-import { resolveCanonicalTopic } from './canonicalTopicResolver';
-import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
-import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry';
+import { lmsSupabase as aishleeSupabase } from './lms-supabase.ts';
+import { resolveCanonicalTopic } from './canonicalTopicResolver.ts';
+import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry.ts';
+import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry.ts';
 
 export interface VideoMeta {
   channel: string;
@@ -1725,7 +1725,9 @@ export async function getCoursePlayerContent(
 
   // 2. Check Supabase LMS Database (kindle_content_cache)
   try {
+    const isStandardCanonical = canonicalKey && !canonicalKey.startsWith('canonical_academic_') && !canonicalKey.startsWith('canonical_general_');
     const candidateKeys = [
+      ...(isStandardCanonical ? [canonicalKey, daySpecificKey] : []),
       directTaskKey,
       directIdKey,
       `${canonicalKey}_day_${dayNumber}_task_${resolvedTaskNum}`,
