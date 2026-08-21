@@ -7,6 +7,7 @@
  * - Secondary Stage: Class 9, Class 10 (Ages 14–16)
  */
 import { UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData.ts';
+import { NEET_UG_OFFICIAL_SUBJECTS, JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS, TNPSC_UNIFIED_OFFICIAL_SUBJECTS } from './officialExhaustiveSyllabi.ts';
 
 export interface SyllabusMicroTopic {
   id: string;
@@ -490,238 +491,6 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. JEE MAIN & JEE ADVANCED OFFICIAL UNIFIED MASTER SYLLABUS
-// ─────────────────────────────────────────────────────────────────────────────
-export function getJeeMainAdvancedCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
-  // SUBJECT 1: MATHEMATICS (13 Comprehensive Units)
-  const mathChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Sets, Relations, Functions & Graphical Transformations',
-      description: 'Sets operations, Equivalence relations, Domain/Range, Injective/Surjective/Bijective, Transformations |f(x)|, f(|x|)',
-      microTopics: [
-        { id: 'jee_m_1', topicTitle: 'Sets, Relations & Equivalence Classes', subtopic: 'Principle of inclusion-exclusion, Cartesian product, Reflexive/Symmetric/Transitive relations, Equivalence classes', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'n(A ∪ B ∪ C) = Σn(A) - Σn(A ∩ B) + n(A ∩ B ∩ C) | Total Relations = 2^(mn)', keyPoints: ['Equivalence relation must satisfy Reflexive, Symmetric, and Transitive properties simultaneously', 'Number of reflexive relations on set with n elements = 2^(n² - n)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'jee_m_2', topicTitle: 'Functions Classification & Graphical Transformations', subtopic: 'One-one (injective), onto (surjective), bijective mappings, composite functions f(g(x)), inverse functions, transformations f(|x|), |f(x)|', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'Bijective Condition: f\'(x) > 0 or f\'(x) < 0 strictly monotonic AND Range = Codomain | Number of OnTo functions = Σ (-1)^(n-r) ^nC_r r^m', keyPoints: ['f(x) is even if f(-x) = f(x) (Symmetric about Y-axis) | Odd if f(-x) = -f(x) (Symmetric in opposite quadrants)', 'Fractional part {x} = x - [x] is periodic with fundamental period 1'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Complex Numbers & Quadratic Equations',
-      description: 'Euler exponential form, de Moivre theorem, nth roots of unity, Coni rotation, Vieta relations, Newton theorem, Location of roots',
-      microTopics: [
-        { id: 'jee_m_3', topicTitle: 'Complex Numbers: Modulus-Argument, Euler Form & Geometry of Argand Plane', subtopic: 'Triangle inequality |z₁ ± z₂| ≤ |z₁| + |z₂|, De Moivre theorem, Cube roots of unity 1, ω, ω², Coni rotation theorem', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'Euler Form: z = r e^(iθ) = r(cos θ + i sin θ) | 1 + ω + ω² = 0, ω³ = 1 | Coni: (z₃ - z₁)/(z₂ - z₁) = (|z₃ - z₁|/|z₂ - z₁|) e^(iα)', keyPoints: ['Locus |z - z₁| = |z - z₂| represents perpendicular bisector of segment joining z₁ and z₂', 'Locus |z - z₁| + |z - z₂| = 2a represents ellipse if 2a > |z₁ - z₂|'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_4', topicTitle: 'Quadratic Equations: Vieta Relations, Newton Theorem & Location of Roots', subtopic: 'Roots of ax² + bx + c = 0, Newton power sum identity S_n = a α^n + b β^n, Location of roots with respect to constants k, k₁, k₂', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Newton Theorem: a S_n + b S_(n-1) + c S_(n-2) = 0 | Location: Both roots > k <=> D ≥ 0, -b/(2a) > k, a·f(k) > 0', keyPoints: ['Condition for exactly one common root: (c₁a₂ - c₂a₁)² = (a₁b₂ - a₂b₁)(b₁c₂ - b₂c₁)', 'Sign of quadratic expression ax² + bx + c is same as sign of "a" for all real x if D < 0'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Matrices, Determinants & System of Linear Equations',
-      description: 'Matrix algebra, Adjoint identities, Cramer rule, Consistency of system of linear equations AX = B',
-      microTopics: [
-        { id: 'jee_m_5', topicTitle: 'Matrices: Symmetric, Orthogonal, Adjoint Identities & Inverse', subtopic: 'Matrix multiplication properties, trace, adj(A) determinant formulas |adj(A)| = |A|^(n-1), A·adj(A) = |A| I_n', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: '|adj(adj(A))| = |A|^((n-1)²) | adj(AB) = adj(B)·adj(A) | Orthogonal: A·A^T = I', keyPoints: ['Skew-symmetric matrix of odd order always has determinant = 0', 'Inverse A⁻¹ exists if and only if |A| ≠ 0 (Non-singular matrix)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_6', topicTitle: 'Determinants, Cramer Rule & System of Linear Equations', subtopic: 'Properties of determinants, differentiation of determinants, Cramer rule for 3 variables, homogeneous/non-homogeneous systems', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'Cramer Rule: x = Δ_x/Δ, y = Δ_y/Δ, z = Δ_z/Δ | Infinite Solutions: Δ = Δ_x = Δ_y = Δ_z = 0 | Inconsistent: Δ = 0 and at least one Δ_i ≠ 0', keyPoints: ['Homogeneous system has non-trivial (infinite) solutions if and only if determinant of coefficients Δ = 0', 'Matrix rank consistency: Rank(A) = Rank(A|B) for consistency'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Permutations, Combinations, Binomial Theorem & Sequences',
-      description: 'Beggar method, Derangements, Legendre formula, Multinomial, Binomial properties, AP/GP/AGP, Telescoping sums',
-      microTopics: [
-        { id: 'jee_m_7', topicTitle: 'Permutations & Combinations: Beggar Method & Derangements', subtopic: 'Distribution of identical items ^(n+r-1)C_(r-1), Derangements formula D_n = n! Σ (-1)^k / k!, Circular permutations', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'Beggar Method (Non-negative solutions): ^(n+r-1)C_(r-1) | Derangements: D_n = (n - 1)(D_(n-1) + D_(n-2))', keyPoints: ['Exponent of prime p in n! (Legendre formula): E_p(n!) = ⌊n/p⌋ + ⌊n/p²⌋ + ⌊n/p³⌋ + ...', 'Number of ways to divide 2n items into 2 equal groups = (2n)! / [2! (n!)²]'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_8', topicTitle: 'Binomial Theorem, Multinomial Expansions & Telescoping Series', subtopic: 'General term T_(r+1) = ^nC_r x^(n-r) a^r, Properties of binomial coefficients, AGP sum formula, Telescoping V-n method, AM ≥ GM ≥ HM', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'Σ r·^nC_r = n·2^(n-1) | Multinomial General Term: [n! / (p! q! r!)] a^p b^q c^r | AGP S_∞ = a/(1 - r) + (dr)/(1 - r)²', keyPoints: ['Telescoping series: Express general term T_r = f(r) - f(r-1) so intermediate terms cancel out', 'AM-GM Inequality: Equality holds if and only if all variables are equal'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 5,
-      chapterTitle: 'Coordinate Geometry: Straight Lines, Circles & Conic Sections',
-      description: 'Family of lines, Angle bisectors, Radical axis, Tangency conditions for Parabola, Ellipse, Hyperbola, Focal properties',
-      microTopics: [
-        { id: 'jee_m_9', topicTitle: 'Straight Lines & Circles: Family of Curves, Radical Axis & Tangency', subtopic: 'Distance of point from line, Angle bisectors, Family L₁ + λ L₂ = 0, Circle tangency condition c² = a²(1 + m²), Radical axis S₁ - S₂ = 0', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Perpendicular Distance: d = |ax₁ + by₁ + c| / √(a² + b²) | Director Circle of Circle x² + y² = r² is x² + y² = 2r²', keyPoints: ['Orthogonal circles condition: 2g₁g₂ + 2f₁f₂ = c₁ + c₂', 'Length of tangent from point (x₁, y₁) to circle S = 0 is √S₁'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_10', topicTitle: 'Conic Sections: Parabola, Ellipse & Hyperbola Tangents and Normals', subtopic: 'Parabola y² = 4ax (tangent y = mx + a/m), Ellipse x²/a² + y²/b² = 1 (c² = a²m² + b²), Hyperbola (c² = a²m² - b²), Rectangular hyperbola xy = c²', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'Parabola Normal: y = mx - 2am - am³ | Ellipse Director Circle: x² + y² = a² + b² | Hyperbola Director Circle: x² + y² = a² - b²', keyPoints: ['Focal property of parabola: Tangent at point P bisects angle between focal radius SP and line perpendicular to directrix', 'Asymptotes of hyperbola pass through its centre and angle between asymptotes is 2 tan⁻¹(b/a)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 6,
-      chapterTitle: 'Differential Calculus & Applications of Derivatives (AOD)',
-      description: 'Limits (L\'Hopital, Taylor series), Continuity IVT, Differentiability, Monotonicity, Maxima/Minima, Rolle & LMVT',
-      microTopics: [
-        { id: 'jee_m_11', topicTitle: 'Limits (L\'Hopital, Taylor Series), Continuity & Differentiability', subtopic: 'Indeterminate forms 0/0, ∞/∞, 1^∞, Squeeze theorem, Intermediate Value Theorem (IVT), Differentiability of |f(x)| and piecewise functions', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'Form 1^∞: lim [f(x)]^(g(x)) = e^(lim [f(x) - 1] g(x)) | Taylor: sin x = x - x³/3! + x⁵/5!, e^x = 1 + x + x²/2! + ...', keyPoints: ['A function is continuous at x = a if LHL = RHL = f(a)', 'Differentiability implies continuity, but continuity does not guarantee differentiability (e.g. sharp corner in |x|)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_12', topicTitle: 'Applications of Derivatives: Monotonicity, Maxima/Minima, Rolle & LMVT', subtopic: 'First and second derivative tests, Strictly increasing f\'(x) > 0, Point of inflection f\'\'(x) = 0, Lagrange Mean Value Theorem', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'LMVT: f\'(c) = [f(b) - f(a)] / (b - a) for some c ∈ (a, b) | Rolle: If f(a) = f(b), then f\'(c) = 0', keyPoints: ['Global maximum on closed interval [a, b] is max of critical points and boundary values f(a), f(b)', 'Sub-tangent length = |y / (dy/dx)| | Sub-normal length = |y · (dy/dx)|'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 7,
-      chapterTitle: 'Integral Calculus & Differential Equations',
-      description: 'Integration techniques, King property, Leibniz differentiation under integral, Area Under Curves, 1st order Linear DE',
-      microTopics: [
-        { id: 'jee_m_13', topicTitle: 'Definite Integration Properties (King Property, Leibniz Rule) & Area Under Curves', subtopic: 'King property ∫_a^b f(x)dx = ∫_a^b f(a+b-x)dx, Differentiation under integral sign (Leibniz rule), Area bounded between intersecting curves', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'King Property: ∫_0^a f(x)dx = ∫_0^a f(a - x)dx | Leibniz: d/dx ∫_u(x)^v(x) f(t)dt = f(v(x))·v\'(x) - f(u(x))·u\'(x)', keyPoints: ['Area between curves y = f(x) and y = g(x) is ∫_a^b |f(x) - g(x)| dx', 'Periodicity in definite integrals: ∫_0^(nT) f(x)dx = n ∫_0^T f(x)dx'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_14', topicTitle: 'Differential Equations: Variable Separable, Homogeneous & Linear (IF)', subtopic: 'Order and degree, Homogeneous y = vx, First order Linear DE dy/dx + Py = Q with Integrating Factor IF = e^(∫ P dx), Bernoulli equations', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Linear DE General Solution: y · e^(∫ P dx) = ∫ Q · e^(∫ P dx) dx + C', keyPoints: ['Degree is power of highest order derivative after making equation rational and integral in derivatives', 'Exact differential forms: d(x/y) = (y dx - x dy)/y², d(xy) = x dy + y dx'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 8,
-      chapterTitle: 'Vector Algebra, 3D Geometry & Probability',
-      description: 'Scalar/Vector Triple Product, Skew lines shortest distance, Planes, Bayes theorem, Binomial distribution',
-      microTopics: [
-        { id: 'jee_m_15', topicTitle: 'Vector Algebra & 3D Geometry: Triple Products, Skew Lines & Planes', subtopic: 'Scalar Triple Product [a b c] = a · (b × c), Vector Triple Product a × (b × c) = (a·c)b - (a·b)c, Shortest distance between skew lines', dayNumber: 15, periodNumber: 1, keyFormulaOrLaw: 'Shortest Distance between Skew Lines: d = |(a₂ - a₁) · (b₁ × b₂)| / |b₁ × b₂| | Plane: a(x - x₁) + b(y - y₁) + c(z - z₁) = 0', keyPoints: ['Volume of parallelepiped formed by vectors a, b, c is |[a b c]|', 'Three vectors a, b, c are coplanar if and only if [a b c] = 0'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_m_16', topicTitle: 'Probability: Conditional Probability, Bayes Theorem & Binomial Distribution', subtopic: 'Law of total probability, Bayes theorem for cause identification, Random variables expectation and variance Var(X) = E(X²) - [E(X)]²', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'Bayes Theorem: P(E_i|A) = [P(E_i)·P(A|E_i)] / [Σ P(E_k)·P(A|E_k)] | Binomial Distribution: P(X = r) = ^nC_r p^r q^(n-r)', keyPoints: ['Mean of Binomial Distribution = np | Variance = npq (where q = 1 - p)', 'Two events A and B are independent if and only if P(A ∩ B) = P(A)·P(B)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  // SUBJECT 2: PHYSICS (Mechanics, Electrodynamics, Thermal, Optics & Modern Physics)
-  const physicsChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Units, Measurements, Error Propagation & Vernier/Screw Gauge',
-      description: 'Dimensional analysis, fractional error propagation ΔZ/Z, Least count, Zero errors of Vernier Calipers and Screw Gauge',
-      microTopics: [
-        { id: 'jee_p_1', topicTitle: 'Units, Dimensions & Error Propagation in Arithmetic Operations', subtopic: 'Principle of homogeneity, dimensional formula derivation, error combination in Z = A^p B^q / C^r, significant figures', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: '[Planck Constant h] = [M L² T⁻¹] | Fractional Error: ΔZ/Z = p(ΔA/A) + q(ΔB/B) + r(ΔC/C)', keyPoints: ['Errors always add up in worst-case analysis', 'Dimensionless quantities: Angle, Strain, Dielectric constant'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_2', topicTitle: 'Experimental Physics: Vernier Calipers, Screw Gauge & Simple Pendulum', subtopic: 'Vernier least count, main scale reading, positive/negative zero error correction, screw gauge pitch and circular scale divisions', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'LC of Vernier = 1 MSD - 1 VSD | LC of Screw Gauge = Pitch / Total Circular Divisions | True Reading = MSR + (VSR × LC) - (Zero Error)', keyPoints: ['Positive zero error is subtracted from observed reading; negative zero error is added', 'Simple pendulum determination of g with L vs T² graph'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Kinematics (1D/2D), Projectile on Incline, River-Swimmer & Relative Motion',
-      description: 'Calculus kinematics, Projectile motion, Trajectory equations, Relative velocity in 2D (Rain-Man, River-Swimmer)',
-      microTopics: [
-        { id: 'jee_p_3', topicTitle: 'Kinematics in 1D & Graphical Motion Analysis', subtopic: 'Instantaneous velocity v = dx/dt, acceleration a = v(dv/dx), area under v-t graph, slope of x-t graph, motion under gravity', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'v = u + at | s = ut + ½at² | v² = u² + 2as | s_nth = u + ½a(2n - 1)', keyPoints: ['Area under a-t graph gives change in velocity Δv', 'Slope of v-t graph gives instantaneous acceleration'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_4', topicTitle: '2D Projectile Motion on Incline, River-Swimmer & Rain-Man Problems', subtopic: 'Trajectory equation y = x tan θ - gx²/(2u² cos² θ), Projectile on inclined plane (range up and down incline), Shortest path vs shortest time across river', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'Projectile on Incline: T = (2u sin(α - β)) / (g cos β) | River Shortest Path: sin θ = v_river / v_boat (drifting = 0)', keyPoints: ['Range is maximum at angle θ = 45° on flat ground', 'Relative velocity v_AB = v_A - v_B used to determine collision of moving particles'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Newton Laws of Motion, Friction, Work-Energy & Rotational Dynamics',
-      description: 'Constraint relations, Pseudo forces, Multi-block friction, Work-Energy theorem, Moment of Inertia, Pure rolling down incline, ICOR',
-      microTopics: [
-        { id: 'jee_p_5', topicTitle: 'Laws of Motion: Constraint Relations, Pulleys & Multi-Block Friction', subtopic: 'String and wedge constraint equations, Pseudo force in accelerating frames, static vs kinetic friction, two-block slipping conditions', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Σ T · a = 0 (Virtual Work on Strings) | Limiting Friction f_s(max) = μ_s N | Pseudo Force F_pseudo = -m a_frame', keyPoints: ['Two-block system: Upper block accelerates by friction alone up to max acceleration a_max = μ_s g', 'Apparent weight in elevator N = m(g ± a)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_6', topicTitle: 'Work-Energy Theorem, Potential Energy & Vertical Circular Motion', subtopic: 'Conservative force F = -dU/dx, work done by variable force, spring potential energy ½kx², critical velocity for vertical loop completion', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'W_net = ΔK = ½m(v² - u²) | Vertical Circle: v_bottom(min) = √(5gR), v_top(min) = √(gR), Tension T_bottom - T_top = 6mg', keyPoints: ['Stable equilibrium occurs where potential energy is minimum (dU/dx = 0, d²U/dx² > 0)', 'Mechanical energy is conserved when only conservative forces do work'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_7', topicTitle: 'Rotational Dynamics: Moment of Inertia Theorems, Torque, Pure Rolling & ICOR', subtopic: 'Parallel and perpendicular axes theorems, Torque τ = Iα, Angular momentum L = Iω conservation, Pure rolling down inclined plane, Instantaneous Centre of Rotation', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'I_parallel = I_cm + Md² | τ = Iα = r × F | Total K_rolling = ½Mv²(1 + k²/R²) | Rolling Down Incline a = (g sin θ) / (1 + k²/R²)', keyPoints: ['Pure rolling condition without slipping: v_cm = Rω and a_cm = Rα at point of contact', 'Conservation of angular momentum applies when net external torque Στ_ext = 0'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Gravitation, Fluid Dynamics, Thermal Physics & SHM',
-      description: 'Variation of g, Escape velocity, Bernoulli equation, Stokes law, Fourier conduction, Carnot cycle, SHM phasor method',
-      microTopics: [
-        { id: 'jee_p_8', topicTitle: 'Gravitation: Variation of g, Escape Velocity & Kepler Planetary Laws', subtopic: 'Variation of g with altitude/depth/rotation, Gravitational potential V_g, Escape velocity v_e = √(2gR), Kepler third law T² ∝ a³', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'v_escape = √(2GM/R) ≈ 11.2 km/s | g_h = g(1 - 2h/R) | Orbital Speed v_o = √(GM/r)', keyPoints: ['Total mechanical energy of orbiting satellite is negative: E = -GMm / (2r) = -K = U/2', 'Geostationary satellites rotate with period T = 24 hours at altitude ~36,000 km'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_9', topicTitle: 'Fluid Dynamics: Bernoulli Principle, Stokes Law & Surface Tension', subtopic: 'Equation of continuity A₁v₁ = A₂v₂, Bernoulli equation P + ½ρv² + ρgh = C, Torricelli efflux, Stokes terminal velocity, Capillary ascent', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: 'Bernoulli: P + ½ρv² + ρgh = const | v_terminal = 2r²(ρ - σ)g / (9η) | Capillary Rise h = (2T cos θ) / (r ρ g)', keyPoints: ['Excess pressure inside soap bubble ΔP = 4T/R | inside water drop ΔP = 2T/R', 'Venturimeter and Magnus effect (spinning ball curve) are direct applications of Bernoulli principle'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_10', topicTitle: 'Thermal Physics, KTG, First & Second Laws of Thermodynamics', subtopic: 'Fourier thermal conduction dQ/dt = kA(T₁-T₂)/L, Stefan-Boltzmann P = eσAT⁴, KTG RMS speed v_rms = √(3RT/M), Carnot engine efficiency', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'ΔQ = ΔU + ΔW | W_isothermal = nRT ln(V₂/V₁) | W_adiabatic = (P₁V₁ - P₂V₂) / (γ - 1) | Carnot η = 1 - T_C / T_H', keyPoints: ['Molar heat capacities: C_p - C_v = R | Adiabatic index γ = C_p / C_v = 1 + 2/f', 'In cyclic process on PV diagram, net work done equals enclosed area (Positive for clockwise loop)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_11', topicTitle: 'Oscillations (SHM) & Mechanical Waves: Standing Waves & Doppler Effect', subtopic: 'Linear SHM differential equation d²x/dt² + ω²x = 0, Simple pendulum T = 2π√(L/g), Standing waves on strings/pipes, Beat frequency, Doppler effect in sound', dayNumber: 11, periodNumber: 2, keyFormulaOrLaw: 'SHM Energy: E = ½mω²A² | Standing Wave Node-to-Node Distance = λ/2 | Doppler: f\' = f [(v ± v_o) / (v ∓ v_s)]', keyPoints: ['Closed organ pipe produces only odd harmonics (1, 3, 5, ...); Open pipe produces all harmonics', 'End correction for organ pipe: e = 0.6 r'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 5,
-      chapterTitle: 'Electrostatics, Capacitance, Current Electricity & Magnetism',
-      description: 'Gauss law, Potential, Dielectric capacitors, RC transients, Kirchhoff laws, Biot-Savart, Lorentz force, Galvanometer',
-      microTopics: [
-        { id: 'jee_p_12', topicTitle: 'Gauss Law, Electrostatic Potential & Capacitors with Dielectrics', subtopic: 'Electric flux Φ = q_in/ε₀, Potential V = -∫ E·dr, Parallel plate capacitor C = K ε₀ A/d, Energy density u = ½ε₀E², Transient RC charging', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'C = K ε₀ A / d | Energy U = ½CV² = Q²/(2C) | RC Charging: q(t) = Q_0(1 - e^(-t/RC)) with time constant τ = RC', keyPoints: ['Field inside conducting spherical shell is zero; potential throughout interior is constant and equals surface potential', 'Inserting dielectric slab with battery connected increases charge and energy; battery disconnected keeps charge constant'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_13', topicTitle: 'Current Electricity: Drift Velocity, Kirchhoff Rules & Measuring Instruments', subtopic: 'Microscopic Ohm law j = σE, drift velocity v_d = eEτ/m, Wheatstone bridge, Metre bridge, Potentiometer cell comparison E₁/E₂ = L₁/L₂', dayNumber: 13, periodNumber: 2, keyFormulaOrLaw: 'I = n e A v_d | R = ρL/A | Kirchhoff Voltage Law: ΣΔV = 0 (Energy conservation) | Potentiometer: E = k L', keyPoints: ['Internal resistance of cell r = R(L₁/L₂ - 1) using potentiometer', 'Maximum Power Transfer Theorem: Power delivered to load is maximum when load resistance R equals internal resistance r'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_14', topicTitle: 'Magnetic Effects of Current: Biot-Savart, Ampere Law, Lorentz Force & MCG', subtopic: 'Field due to circular loop B = μ₀IR²/[2(R²+x²)^(3/2)], Ampere circuital law, Lorentz force F = q(E + v × B), Moving coil galvanometer conversion to ammeter/voltmeter', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'B_axis = (μ₀ I R²) / [2(R² + x²)^(3/2)] | F = I L × B | Shunt for Ammeter: S = I_g G / (I - I_g)', keyPoints: ['Moving charge in uniform magnetic field traces helical path if velocity has component parallel to field; pitch p = v_parallel × (2πm/qB)', 'Moving coil galvanometer sensitivity is increased by using strong radial magnetic field and large number of turns'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 6,
-      chapterTitle: 'EMI, AC Circuits, Optics (Ray & Wave) & Modern Physics',
-      description: 'Faraday law, Motional EMF, LCR series resonance, Lens Maker formula, YDSE, Photoelectric effect, Bohr atom, Semiconductors',
-      microTopics: [
-        { id: 'jee_p_15', topicTitle: 'Electromagnetic Induction & Series LCR Alternating Current Circuits', subtopic: 'Motional EMF E = Bvl, Self-inductance L, Series LCR impedance Z = √[R² + (X_L - X_C)²], Resonant frequency ω₀ = 1/√(LC), Quality factor Q', dayNumber: 15, periodNumber: 2, keyFormulaOrLaw: 'Z = √[R² + (ωL - 1/ωC)²] | Resonance: ω₀ = 1/√(LC) | Quality Factor Q = (ω₀ L)/R | Power Factor cos φ = R/Z', keyPoints: ['At resonance, impedance is purely resistive (minimum Z = R), and current is maximum and in phase with voltage', 'Wattless current occurs in pure inductor or capacitor where power factor cos φ = 0'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_16', topicTitle: 'Ray & Wave Optics: Total Internal Reflection, Lens Maker, YDSE & Diffraction', subtopic: 'Refraction at spherical surfaces, Lens Maker formula 1/f = (μ-1)(1/R₁ - 1/R₂), Prism formula, YDSE fringe width β = λD/d, Brewster law tan i_p = μ', dayNumber: 16, periodNumber: 2, keyFormulaOrLaw: 'Lens Maker: 1/f = (μ - 1)(1/R₁ - 1/R₂) | YDSE: β = (λ D)/d | Shift with mica slab: Δy = (μ - 1)t D / d | Brewster: μ = tan i_p', keyPoints: ['Total Internal Reflection occurs when light travels from denser to rarer medium at angle > critical angle (sin C = 1/μ)', 'Central maximum width in single slit diffraction is 2λD/a (double the secondary fringe width)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_p_17', topicTitle: 'Modern Physics & Semiconductor Electronics: Bohr Model, Photoelectric & Diodes', subtopic: 'Einstein photoelectric equation hν = φ + eV₀, Bohr energy levels E_n = -13.6 Z²/n² eV, Radioactive decay N(t) = N₀ e^(-λt), p-n junction diode, Zener regulator, Logic gates', dayNumber: 17, periodNumber: 2, keyFormulaOrLaw: 'Photoelectric: K_max = hν - φ = eV₀ | Bohr: r_n = 0.529 n²/Z Å | Radioactive Half-Life: T_½ = 0.693 / λ | Zener Diode Voltage Regulation', keyPoints: ['Hydrogen spectrum: Lyman in UV, Balmer in Visible, Paschen in IR', 'De Morgan laws for logic gates: (A + B)\' = A\'·B\' and (A·B)\' = A\' + B\' (NAND and NOR are universal gates)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  // SUBJECT 3: CHEMISTRY (Physical, Inorganic & Organic 26 Units)
-  const chemChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Physical Chemistry: Stoichiometry, Atomic Structure & Thermodynamics',
-      description: 'Mole concept, Limiting reagent, Quantum numbers, Radial nodes, Hess law, Entropy, Gibbs free energy ΔG° = -RT ln K',
-      microTopics: [
-        { id: 'jee_c_1', topicTitle: 'Mole Concept, Stoichiometry, Limiting Reagent & Concentration Terms', subtopic: 'Molarity, Molality, Mole fraction, Limiting reagent calculations, Percentage yield, Redox equivalent weight', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Moles n = Mass / Molar Mass | Molarity M = n_solute / V(L) | Molality m = n_solute / Mass_solvent(kg)', keyPoints: ['Limiting reagent completely consumed determines maximum theoretical product yield', 'Normality = Molarity × n-factor (where n-factor is change in oxidation state or replaceable H⁺/OH⁻)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_2', topicTitle: 'Quantum Mechanical Atomic Model, Quantum Numbers & Radial/Angular Nodes', subtopic: 'Heisenberg uncertainty principle, de Broglie wavelength, Quantum numbers (n, l, m, s), Radial nodes (n - l - 1), Angular nodes (l), Aufbau and Hund rules', dayNumber: 4, periodNumber: 3, keyFormulaOrLaw: 'Δx · Δp ≥ h / (4π) | de Broglie λ = h / (mv) | Radial Nodes = n - l - 1 | Angular Nodes = l', keyPoints: ['Chromium [Ar] 3d⁵ 4s¹ and Copper [Ar] 3d¹⁰ 4s¹ stability due to symmetry and high exchange energy', 'Maximum electrons in subshell = 2(2l + 1)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'jee_c_3', topicTitle: 'Chemical Thermodynamics, Hess Law, Entropy & Gibbs Free Energy Spontaneity', subtopic: 'First law ΔU = q + w, Enthalpy ΔH = ΔU + Δn_g RT, Hess law of heat summation, Entropy ΔS = q_rev/T, Spontaneity criterion ΔG = ΔH - TΔS < 0', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'ΔG° = -RT ln K_eq = -2.303 RT log K_eq | Standard Reaction Enthalpy ΔH°_rxn = ΣΔH°_f(products) - ΣΔH°_f(reactants)', keyPoints: ['Reversible isothermal work w = -2.303 nRT log(V₂/V₁)', 'Spontaneous process requires total entropy of universe to increase (ΔS_universe > 0)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Equilibrium (Chemical & Ionic), Redox & Electrochemistry',
-      description: 'Le Chatelier principle, pH, Buffer Henderson equation, Ksp, Nernst equation, Kohlrausch law, Faraday electrolysis',
-      microTopics: [
-        { id: 'jee_c_4', topicTitle: 'Chemical & Ionic Equilibrium: Le Chatelier, pH, Buffers & Solubility Product (Ksp)', subtopic: 'Relation K_p = K_c(RT)^Δn_g, Le Chatelier principle, Henderson-Hasselbalch buffer equation, Salt hydrolysis pH, Common ion effect on K_sp', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'K_p = K_c(RT)^(Δn_g) | Acidic Buffer: pH = pK_a + log([Salt]/[Acid]) | K_sp for A_x B_y = x^x y^y s^(x+y)', keyPoints: ['Addition of inert gas at constant pressure shifts equilibrium towards side with more gas moles; at constant volume no shift', 'Precipitation occurs when ionic product Q_sp exceeds solubility product K_sp'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_5', topicTitle: 'Electrochemistry: Nernst Equation, Cell EMF, Kohlrausch Law & Batteries', subtopic: 'Standard reduction potentials, Nernst equation at 298 K, ΔG° = -nFE°_cell, Kohlrausch law of independent ion migration, Faraday electrolysis', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Nernst Equation: E_cell = E°_cell - (0.0591/n) log Q | ΔG° = -n F E°_cell | Faraday: m = (E I t) / 96500', keyPoints: ['Kohlrausch law allows calculation of limiting molar conductivity Λ°_m for weak electrolytes', 'Rusting of iron is electrochemical process with iron anode and oxygen reduction cathode'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Chemical Kinetics, Solutions & Colligative Properties',
-      description: 'Integrated rate laws, Arrhenius equation, Raoult law, Colligative properties (RLVP, ΔTb, ΔTf, Osmotic pressure), Van\'t Hoff factor',
-      microTopics: [
-        { id: 'jee_c_6', topicTitle: 'Chemical Kinetics: Order of Reaction, Half-Life & Arrhenius Activation Energy', subtopic: 'Zero and first order integrated rate laws, half-life formulas, pseudo first order, Arrhenius equation k = A e^(-E_a/RT)', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'First Order: k = (2.303/t) log(a / (a - x)) | t_½ = 0.693 / k | Arrhenius: log(k₂/k₁) = (E_a / 2.303R)[1/T₁ - 1/T₂]', keyPoints: ['Half-life of first-order reaction is completely independent of initial reactant concentration', 'Catalyst provides alternative reaction pathway with lower activation energy without affecting equilibrium constant'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_7', topicTitle: 'Solutions & Colligative Properties: Raoult Law, Van\'t Hoff Factor & Osmosis', subtopic: 'Ideal vs non-ideal solutions (azeotropes), Relative lowering of vapor pressure, Boiling point elevation ΔT_b = i K_b m, Freezing depression, Osmotic pressure Π = i CRT', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'RLVP: (P° - P)/P° = i X_solute | ΔT_b = i K_b m | ΔT_f = i K_f m | Osmotic Pressure: Π = i C R T', keyPoints: ['Van\'t Hoff factor for dissociation: i = 1 + (n - 1)α | for association: i = 1 + (1/n - 1)α', 'Positive deviation (e.g. ethanol-water) shows higher vapor pressure and minimum boiling azeotrope'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Inorganic Chemistry: Chemical Bonding, Periodic Properties & Coordination Compounds',
-      description: 'VSEPR, Hybridization, MOT, Fajan rules, Werner theory, Coordination isomerism, Crystal Field Theory (CFT)',
-      microTopics: [
-        { id: 'jee_c_8', topicTitle: 'Chemical Bonding: VSEPR Geometry, Hybridization, MOT & Fajan Rules', subtopic: 'Steric number, shapes with lone pairs (SF₄, ClF₃, XeF₄), Molecular Orbital Theory bond order and paramagnetism (O₂, B₂), Fajan rules for covalent character', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'Bond Order = ½(N_b - N_a) | Fajan: Smaller cation + Larger anion + Higher charge => Higher Covalency', keyPoints: ['O₂ is paramagnetic with bond order 2 due to 2 unpaired electrons in π*2p antibonding orbitals', 'Dipole moment determines polarity: BF₃ and CCl₄ have zero dipole moment due to symmetric cancellation'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_9', topicTitle: 'Coordination Chemistry: IUPAC Nomenclature, Isomerism & Crystal Field Theory (CFT)', subtopic: 'Ligands classification, Geometrical (cis/trans, fac/mer) and optical isomerism, Crystal field splitting Δ_o in octahedral and Δ_t in tetrahedral, Synergic bonding in metal carbonyls', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Octahedral Splitting: t₂g (-0.4 Δ_o) and e_g (+0.6 Δ_o) | Tetrahedral Splitting: Δ_t = (4/9) Δ_o', keyPoints: ['Strong field ligands (CN⁻, CO) cause pairing of electrons (low spin complexes)', 'Metal carbonyls feature synergic bonding: σ-donation from CO lone pair and π-backbonding from metal d-orbitals to CO π* orbitals'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 5,
-      chapterTitle: 'Inorganic Chemistry: P-Block (Groups 13-18), D & F-Block & Qualitative Salt Analysis',
-      description: 'Boranes 3c-2e, Silicates, KMnO4, K2Cr2O7, Lanthanoid contraction, Cations (Groups 0-VI) and Anions qualitative detection',
-      microTopics: [
-        { id: 'jee_c_10', topicTitle: 'P-Block, D & F-Block Elements: Structures, Reactions & Lanthanoid Contraction', subtopic: 'Diborane 3c-2e bridge bonding, Silicates classification, KMnO₄ and K₂Cr₂O₇ preparation and redox actions, Lanthanoid contraction consequences (Zr-Hf similarity)', dayNumber: 10, periodNumber: 3, keyFormulaOrLaw: 'Lanthanoid Contraction causes 4d and 5d transition series (Zr/Hf, Nb/Ta) to have nearly identical atomic radii', keyPoints: ['KMnO₄ acts as self-indicator in titrations and powerful oxidizer in acidic (ΔON = 5), neutral (3), and basic (1) media', 'Interhalogen compounds (ClF₃, BrF₅) are more reactive than parent halogens (except F₂)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'jee_c_11', topicTitle: 'Qualitative Inorganic Salt Analysis: Cations & Anions Systematic Testing', subtopic: 'Group reagents: Group I (dil. HCl Pb²⁺, Ag⁺), Group II (H₂S in dil. HCl Cu²⁺, Pb²⁺), Group III (NH₄OH + NH₄Cl Fe³⁺, Al³⁺), Nessler reagent for NH₄⁺, Chromyl chloride test for Cl⁻', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'Chromyl Chloride Test: Solid Chloride + K₂Cr₂O₇ + conc. H₂SO₄ -> Red Vapours of CrO₂Cl₂ -> Yellow PbCrO₄ ppt with Lead Acetate', keyPoints: ['Group II sulfides precipitated in acidic medium because low S²⁻ concentration prevents precipitation of Group IV cations', 'Borax bead test: Cu gives blue bead in oxidizing flame and red opaque in reducing flame'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 6,
-      chapterTitle: 'Organic Chemistry: GOC, Stereochemistry, Hydrocarbons & Reaction Mechanisms',
-      description: 'Inductive, Resonance, Hyperconjugation, Carbocation rearrangements, CIP R/S configuration, SN1/SN2, E1/E2, Electrophilic additions',
-      microTopics: [
-        { id: 'jee_c_12', topicTitle: 'General Organic Chemistry (GOC) & Electronic Intermediates Stability', subtopic: 'Inductive (+I/-I), Resonance (+M/-M), Hyperconjugation (Baker-Nathan), Aromaticity (Hückel 4n+2 rule), Carbocation rearrangements (1,2-hydride/methyl shifts)', dayNumber: 12, periodNumber: 3, keyFormulaOrLaw: 'Carbocation Stability: 3° > 2° > 1° > Methyl | Aromaticity: Planar, Cyclic, Conjugated with (4n + 2) π-electrons', keyPoints: ['Acidic strength increases with electron-withdrawing groups (-I, -M) which stabilize conjugate base carboxylate/phenoxide', 'Hyperconjugation in alkenes directly correlates with heat of hydrogenation (More substituted alkene = More stable = Lower heat of hydrogenation)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_13', topicTitle: 'Stereochemistry (CIP R/S, Conformations of Cyclohexane) & Hydrocarbons Reactions', subtopic: 'Enantiomers, Diastereomers, Meso compounds, Chair/Boat conformations of cyclohexane, Markovnikov/Anti-Markovnikov addition, Ozonolysis, Friedel-Crafts alkylation/acylation', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'Ozonolysis: R-CH=CH-R\' + O₃ -> Reductive (Zn/H₂O) gives Aldehydes; Oxidative (H₂O₂) gives Carboxylic Acids', keyPoints: ['In chair cyclohexane, bulky substituents prefer equatorial position to minimize 1,3-diaxial strain', 'Electrophilic aromatic substitution of benzene involves arenium ion (sigma-complex) intermediate'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 7,
-      chapterTitle: 'Organic Chemistry: Functional Groups, Named Reactions & Biomolecules',
-      description: 'SN1/SN2/E2, Lucas test, Reimer-Tiemann, Aldol, Cannizzaro, Iodoform, Gabriel phthalimide, Diazonium Sandmeyer, Carbohydrates & Polymers',
-      microTopics: [
-        { id: 'jee_c_14', topicTitle: 'Alkyl/Aryl Halides & Alcohols/Phenols/Ethers Mechanisms', subtopic: 'SN1 (two-step, racemization) vs SN2 (one-step, Walden inversion), Lucas test for alcohols, Cumene to phenol process, Reimer-Tiemann reaction, Williamson ether synthesis', dayNumber: 14, periodNumber: 3, keyFormulaOrLaw: 'SN2 Reactivity: Methyl > 1° > 2° > 3° (Steric hindrance) | SN1 Reactivity: 3° > 2° > 1° (Carbocation stability)', keyPoints: ['Reimer-Tiemann reaction involves generation of neutral electrophile Dichlorocarbene (:CCl₂)', 'Williamson synthesis requires 1° alkyl halide; 3° alkyl halide yields elimination product (alkene) exclusively'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_15', topicTitle: 'Aldehydes, Ketones, Carboxylic Acids & Nitrogen Compounds Named Reactions', subtopic: 'Aldol condensation, Cannizzaro disproportionation, Iodoform test (CH₃-C=O), Clemmensen & Wolff-Kishner reductions, Gabriel phthalimide synthesis, Diazonium coupling reactions', dayNumber: 15, periodNumber: 3, keyFormulaOrLaw: 'Aldol: Aldehyde with α-H + dil. NaOH -> β-hydroxy aldehyde | Cannizzaro: Non-enolizable aldehyde + 50% KOH -> Alcohol + Acid salt', keyPoints: ['Iodoform test gives yellow precipitate of CHI₃ with compounds containing CH₃-C=O or CH₃-CH(OH)- group', 'Hinsberg reagent (Benzene sulfonyl chloride) differentiates 1°, 2°, 3° amines based on alkali solubility of sulfonamide'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'jee_c_16', topicTitle: 'Biomolecules, Polymers & Practical Organic Chemistry Purification', subtopic: 'Glucose open vs cyclic structure, Anomers, Peptide bond, DNA/RNA bases, Addition/Condensation polymers (Bakelite, Nylon-6,6, Teflon), Lassaigne test for N, S, Halogens', dayNumber: 16, periodNumber: 3, keyFormulaOrLaw: 'Peptide Bond: -CO-NH- formed between -COOH of one amino acid and -NH₂ of another with elimination of H₂O', keyPoints: ['Lassaigne test: Nitrogen detected as Prussian blue Fe₄[Fe(CN)₆]₃ | Sulfur detected as purple sodium nitroprusside complex', 'DNA contains A, T, G, C bases linked by hydrogen bonds (A=T, G≡C); RNA contains Uracil in place of Thymine'], type: 'concept', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const subjects: SyllabusSubject[] = [
-    { subjectId: 'jee_math', subjectName: 'JEE Mathematics (Calculus, Coordinate, Algebra & 3D)', icon: '📐', color: '#06b6d4', totalChapters: mathChapters.length, totalMicroTopics: mathChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: mathChapters },
-    { subjectId: 'jee_physics', subjectName: 'JEE Physics (Mechanics, Electrodynamics, Thermo & Optics)', icon: '⚡', color: '#10b981', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: physicsChapters },
-    { subjectId: 'jee_chemistry', subjectName: 'JEE Chemistry (Physical, Inorganic, Organic & Analysis)', icon: '🧪', color: '#f59e0b', totalChapters: chemChapters.length, totalMicroTopics: chemChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: chemChapters }
-  ];
-
-  return {
-    courseId: courseId || 'exam-jee-main',
-    courseTitle: courseTitle || 'JEE Main & Advanced Engineering — Target 99.5%ile Master Blueprint',
-    category: 'entrance',
-    board: 'NTA / IIT JEE (National)',
-    medium: 'English',
-    totalDays: 360,
-    totalSubjects: subjects.length,
-    totalChapters: subjects.reduce((a, s) => a + s.totalChapters, 0),
-    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
-    subjects
-  };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // 6. UPSC CIVIL SERVICES EXAMINATION (CSE — IAS / IPS / IFS / IRS) MASTER SYLLABUS
 // ─────────────────────────────────────────────────────────────────────────────
 export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
@@ -1004,157 +773,25 @@ export function getUpscOptionalSubjectSyllabus(courseId: string, courseTitle?: s
 // ─────────────────────────────────────────────────────────────────────────────
 // 7. TNPSC UNIFIED MASTER SYLLABUS (GROUP 1, 2/2A, 4, VAO, DEO, SI)
 // ─────────────────────────────────────────────────────────────────────────────
-export function getTnpscUnifiedCompleteSyllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
-  const tamilChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'பகுதி அ: தமிழ் இலக்கணம் (Grammar Masterclass)',
-      description: 'எழுத்து, சொல், சந்திப்பிழை நீக்குதல், ஓரெழுத்து ஒருமொழி, வேர்ச்சொல், பெயர்ச்சொல் 6 வகை, இலக்கணக் குறிப்பறிதல் & வேற்றுமை',
-      microTopics: [
-        { id: 'tn_t_1', topicTitle: 'முதல் & சார்பெழுத்துகள் (10 வகைகள்) & புணர்ச்சி விதிகள்', subtopic: 'உயிர் 12, மெய் 18, உயிர்மெய், ஆய்தம், உயிரளபெடை, ஒற்றளபெடை, குற்றியலுகரம், குற்றியலிகரம்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'முதல் எழுத்துகள் 30 | சார்பெழுத்துகள் 10 வகை | குற்றியலுகரம் 6 வகை', keyPoints: ['உயிரளபெடை 3 வகை: செய்யுளிசை, இன்னிசை, சொல்லிசை', 'ஆய்த குறுக்கம் மற்றும் மகர குறுக்கம் மாத்திரை அளவுகள் (1/4 மாத்திரை)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_2', topicTitle: 'வேற்றுமை உருபுகள் (1 முதல் 8 வரை) & சொல்லுருபுகள்', subtopic: 'ஐ, ஆல், கு, இன், அது, கண் வேற்றுமைத் தொடர்கள் மற்றும் உடன்தொக்க தொகை', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: '2-ம்: ஐ | 3-ம்: ஆல், ஆண், ஒடு, ஓடு | 4-ம்: கு | 5-ம்: இன், இல் | 6-ம்: அது, ஆது, அ | 7-ம்: கண் | 8-ம்: விளி', keyPoints: ['முதல் வேற்றுமைக்கு உருபு இல்லை (எழுவாய் வேற்றுமை)', '8-ம் வேற்றுமை விளி வேற்றுமை (அழைத்தல்)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'பகுதி ஆ: இலக்கியம் — திருக்குறள் & அறநூல்கள்',
-      description: 'அன்பு, பண்பு, கல்வி, கேள்வி, அறிவு, ஒழுக்கம், நட்பு, வாய்மை, காலமறிதல், நாலடியார், நான்மணிக்கடிகை',
-      microTopics: [
-        { id: 'tn_t_6', topicTitle: 'திருக்குறள்: கடவுள் வாழ்த்து, வான்சிறப்பு & அன்புடைமை', subtopic: 'அகர முதல எழுத்தெல்லாம், துப்பார்க்குத் துப்பாய & அன்பிலார் எல்லாம் தமக்குரியர்', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'அகர முதல எழுத்தெல்லாம் ஆதி பகவன் முதற்றே உலகு | அன்பின் வழியது உயிர்நிலை', keyPoints: ['பரிமேலழகர் உரை திருக்குறளின் மிகச்சிறந்த உரை', 'திருக்குறள் 133 அதிகாரங்கள் (1330 குறள்கள்)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const polityChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'அரசியலமைப்பு உருவாக்கம், முகப்புரை & அடிப்படை உரிமைகள் (Part 1–3)',
-      description: 'அரசியல் நிர்ணய சபை, முகப்புரை 42-வது திருத்தம், அடிப்படை உரிமைகள் (Articles 12–35) & 5 நீதிப்பேராணைகள்',
-      microTopics: [
-        { id: 'tn_pol_1', topicTitle: 'அரசியல் நிர்ணய சபை, வரைவுக்குழு & முகப்புரை', subtopic: 'டாக்டர் அம்பேத்கர், கேசவானந்த பாரதி வழக்கு 1973, 42-வது திருத்தம் 1976', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: '42nd Amendment added: SOCIALIST, SECULAR, INTEGRITY | Art 32: Heart and Soul', keyPoints: ['அரசியல் சாசனம் ஏற்றுக்கொள்ளப்பட்டது: 26 நவம்பர் 1949 | நடைமுறை: 26 ஜனவரி 1950', 'பிரிவு 32 உச்ச நீதிமன்ற நீதிப்பேராணைகள் (Habeas Corpus, Mandamus, Quo-Warranto)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const aptitudeChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'சுருக்குதல் (BODMAS), HCF & LCM & விழுக்காடு',
-      description: 'இயற்கணித முற்றொருமைகள், மீ.சி.ம / மீ.பொ.வ, தனிவட்டி & கூட்டுவட்டி (2, 3 ஆண்டுகள் வித்தியாசம்)',
-      microTopics: [
-        { id: 'tn_apt_1', topicTitle: 'சுருக்குதல், HCF-LCM & 2 ஆண்டுகள் CI - SI வித்தியாசம் (D)', subtopic: 'BODMAS, Product = HCF × LCM, D = P(R/100)²', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Product = HCF × LCM | 2 Years CI-SI Diff D = P(R/100)² | Chain Rule: (M₁D₁H₁)/W₁ = (M₂D₂H₂)/W₂', keyPoints: ['BODMAS முறைப்படி அடைப்புக்குறி முதலில் தீர்க்கப்பட வேண்டும்', '3 ஆண்டுகள் CI - SI வித்தியாசம் D = P(R/100)² (3 + R/100)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const unit8_9Chapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Unit VIII & IX: தமிழ்நாடு வரலாறு, கீழடி அகழாய்வு & வளர்ச்சி நிர்வாகம்',
-      description: 'கீழடி (கிமு 6-ம் நூற்றாண்டு), 1801 மருது சகோதரர்கள் பிரகடனம், 1916 நீதிக்கட்சி, 69% இடஒதுக்கீடு சட்டம், ஆசியாவின் டெட்ராய்ட்',
-      microTopics: [
-        { id: 'tn_u8_1', topicTitle: 'கீழடி அகழாய்வு, நீதிக்கட்சி சாதனைகள் & 69% இடஒதுக்கீடு', subtopic: 'வைகை நதிக்கரை நாகரிகம், 1921 வகுப்புவாரி அரசாணை, 1994 தமிழ்நாடு 69% இடஒதுக்கீடு சட்டம்', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'கீழடி: கிமு 6-ம் நூற்றாண்டு | 1994 தமிழ்நாடு 69% இடஒதுக்கீடு (9-வது அட்டவணை)', keyPoints: ['நீதிக்கட்சி 1921-ல் வகுப்புவாரி அரசாணையை வெளியிட்டது', 'தமிழ்நாடு ஆசியாவின் டெட்ராய்ட் (சென்னை) மற்றும் இந்தியாவின் பின்னலாடை தலைநகரம் (திருப்பூர்)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const gsCoreChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'பொது அறிவியல், புவியியல், வரலாறு & பொருளாதாரம் (Unit I, III, IV, VI, VII)',
-      description: 'நியூட்டன் இயக்க விதிகள், வடகிழக்குப் பருவமழை, காவிரி நதி, 1857 புரட்சி, NITI Aayog & GST',
-      microTopics: [
-        { id: 'tn_sci_1', topicTitle: 'இயற்பியல் இயக்க விதிகள், வடகிழக்குப் பருவமழை & GST வரி முறை', subtopic: 'F = ma, தமிழ்நாடு வடகிழக்குப் பருவமழை, 1 ஜூலை 2017 GST நடைமுறை', dayNumber: 1, periodNumber: 5, keyFormulaOrLaw: 'F = ma | V = IR | GST: 101-வது அரசியலமைப்பு திருத்தம் 2017', keyPoints: ['தமிழ்நாடு அதிக மழைப்பொழிவை வடகிழக்குப் பருவமழை மூலம் பெறுகிறது', 'வேதாரண்யம் உப்பு சத்தியாகிரகம் 1930 ராஜாஜி தலைமையில் நடைபெற்றது'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const subjects: SyllabusSubject[] = [
-    { subjectId: 'tnpsc_tamil', subjectName: 'பொதுத்தமிழ் & இலக்கிய நயவுரை (General Tamil 100/150)', icon: '📜', color: '#10b981', totalChapters: tamilChapters.length, totalMicroTopics: tamilChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: tamilChapters },
-    { subjectId: 'tnpsc_polity', subjectName: 'இந்திய அரசியலமைப்பு & மக்களாட்சி (Unit V: Polity)', icon: '⚖️', color: '#06b6d4', totalChapters: polityChapters.length, totalMicroTopics: polityChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: polityChapters },
-    { subjectId: 'tnpsc_aptitude', subjectName: 'கணிதம் & திறனறிவு (Unit X: Aptitude 25/25 Target)', icon: '🔢', color: '#f59e0b', totalChapters: aptitudeChapters.length, totalMicroTopics: aptitudeChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: aptitudeChapters },
-    { subjectId: 'tnpsc_unit8_9', subjectName: 'தமிழ்நாடு வரலாறு, பண்பாடு & வளர்ச்சி நிர்வாகம் (Unit VIII & IX)', icon: '🏛️', color: '#8b5cf6', totalChapters: unit8_9Chapters.length, totalMicroTopics: unit8_9Chapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: unit8_9Chapters },
-    { subjectId: 'tnpsc_science_geo_hist', subjectName: 'பொது அறிவியல், புவியியல், வரலாறு & பொருளாதாரம் (Unit I, III, IV, VI, VII)', icon: '🌍', color: '#ec4899', totalChapters: gsCoreChapters.length, totalMicroTopics: gsCoreChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: gsCoreChapters }
-  ];
-
+export function getTnpscUnifiedCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
   return {
-    courseId: courseId || 'exam-tnpsc-grp4',
-    courseTitle: courseTitle || 'TNPSC All Groups Unified Exam Master Course',
+    courseId: courseId || 'exam-tnpsc-grp1',
+    courseTitle: courseTitle || 'TNPSC Unified Complete Syllabus (Group 1, 2, 4 & VAO)',
     category: 'tnpsc',
-    board: 'TNPSC / TNUSRB',
-    medium: 'Bilingual (Tamil & English)',
-    totalDays: 360,
-    totalSubjects: subjects.length,
-    totalChapters: subjects.reduce((a, s) => a + s.totalChapters, 0),
-    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
-    subjects
+    board: 'TNPSC',
+    medium: courseTitle?.includes('English') ? 'English' : 'Tamil',
+    totalDays: 300,
+    totalSubjects: TNPSC_UNIFIED_OFFICIAL_SUBJECTS.length,
+    totalChapters: TNPSC_UNIFIED_OFFICIAL_SUBJECTS.reduce((a, s) => a + s.totalChapters, 0),
+    totalMicroTopics: TNPSC_UNIFIED_OFFICIAL_SUBJECTS.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects: TNPSC_UNIFIED_OFFICIAL_SUBJECTS
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8. NEET UG OFFICIAL VAST MICRO-TOPIC SYLLABUS REGISTRY
+// 8. NEET UG COMPLETE MICRO-TOPIC SYLLABUS REGISTRY (NTA / NMC VERBATIM)
 // ─────────────────────────────────────────────────────────────────────────────
 export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
-  const physicsChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Physics and Measurement & Practical Skills',
-      description: 'SI Units, Dimensional Analysis, Error Analysis, Vernier Calipers, Screw Gauge & Simple Pendulum',
-      microTopics: [
-        { id: 'neet_p_1', topicTitle: 'Units, Dimensions & Dimensional Analysis Applications', subtopic: 'Fundamental & derived units, principle of homogeneity, formula derivation', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '[Force] = [M L T⁻²] | [Energy] = [M L² T⁻²] | [Planck Constant h] = [M L² T⁻¹]', keyPoints: ['Dimensionless quantities: Strain, Angle, Refractive index', 'Checking dimensional consistency of equations'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_p_2', topicTitle: 'Errors in Measurement, Significant Figures & Combination of Errors', subtopic: 'Absolute, relative and percentage errors, error propagation in Z = A^p B^q / C^r', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'ΔZ/Z = p(ΔA/A) + q(ΔB/B) + r(ΔC/C) | Percentage Error = (ΔZ/Z) × 100%', keyPoints: ['Errors always add up in worst-case analysis', 'Rounding off rules and significant digits'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Kinematics (1D & 2D Motion) & Vectors',
-      description: 'Rectilinear motion, calculus equations, vectors, projectile motion & uniform circular motion',
-      microTopics: [
-        { id: 'neet_p_4', topicTitle: 'Motion in a Straight Line & Graphical Kinematics', subtopic: 'v-t and x-t graphs, instantaneous velocity v = dx/dt, acceleration a = dv/dt = v(dv/dx)', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'v = u + at | s = ut + ½at² | v² = u² + 2as | s_nth = u + ½a(2n - 1)', keyPoints: ['Area under v-t graph = Displacement', 'Slope of v-t graph = Acceleration'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const chemistryChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Physical Chemistry: Mole Concept, Atomic Structure & Bonding',
-      description: 'Stoichiometry, quantum numbers, electronic configuration, VSEPR, Hybridization & Molecular Orbital Theory',
-      microTopics: [
-        { id: 'neet_c_1', topicTitle: 'Mole Concept, Molarity, Molality & Stoichiometry', subtopic: 'Limiting reagent calculations, percentage composition, empirical and molecular formula', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Moles n = Mass / Molar Mass | Molarity M = n_solute / V_solution(L) | Molality m = n_solute / Mass_solvent(kg)', keyPoints: ['Limiting reagent determines maximum product yield', 'Mole fraction X_A + X_B = 1'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const botanyChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Plant Diversity, Morphology & Anatomy',
-      description: 'Five kingdom system, Algae/Bryophytes/Pteridophytes/Gymnosperms, Floral families, Dicot/Monocot anatomy',
-      microTopics: [
-        { id: 'neet_b_1', topicTitle: 'Five Kingdom Classification & Plant Kingdom Systematics', subtopic: 'Whittaker 5 kingdoms, characteristics of Chlorophyceae, Phaeophyceae, Rhodophyceae', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Pigments: Green Algae (Chl a, b) | Brown Algae (Fucoxanthin) | Red Algae (r-Phycoerythrin)', keyPoints: ['Lichens are symbiotic associations between Algae and Fungi', 'Gymnosperms possess naked seeds'], type: 'concept', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const zoologyChapters: SyllabusChapter[] = [
-    {
-      chapterNumber: 1,
-      chapterTitle: 'Animal Kingdom & Animal Morphology (Cockroach & Frog)',
-      description: 'Non-chordate phyla (Porifera to Hemichordata), Chordate classes, Cockroach and Frog anatomy',
-      microTopics: [
-        { id: 'neet_z_1', topicTitle: 'Animal Kingdom Classification: Phyla Porifera to Chordata', subtopic: 'Levels of organization, coelom types, open vs closed circulatory systems', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'Coelom: Aschelminthes are Pseudocoelomate | Annelida to Chordata are Eucoelomates', keyPoints: ['Arthropoda is the largest phylum with jointed appendages', 'Echinodermata possess water vascular system'], type: 'concept', importance: 'High-Yield' }
-      ]
-    }
-  ];
-
-  const subjects: SyllabusSubject[] = [
-    { subjectId: 'neet_physics', subjectName: 'NEET Physics (19 Units)', icon: '⚡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: physicsChapters },
-    { subjectId: 'neet_chemistry', subjectName: 'NEET Chemistry (Physical, Inorganic & Organic)', icon: '🧪', color: '#10b981', totalChapters: chemistryChapters.length, totalMicroTopics: chemistryChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: chemistryChapters },
-    { subjectId: 'neet_botany', subjectName: 'NEET Biology: Botany (Plant Kingdom & Physiology)', icon: '🌿', color: '#84cc16', totalChapters: botanyChapters.length, totalMicroTopics: botanyChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: botanyChapters },
-    { subjectId: 'neet_zoology', subjectName: 'NEET Biology: Zoology (Human Physiology & Genetics)', icon: '🧬', color: '#ec4899', totalChapters: zoologyChapters.length, totalMicroTopics: zoologyChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: zoologyChapters }
-  ];
-
   return {
     courseId: 'exam-neet-ug',
     courseTitle: 'NEET UG — National Medical Entrance Exam Preparation',
@@ -1162,10 +799,28 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
     board: 'NTA / NMC',
     medium: 'English',
     totalDays: 360,
-    totalSubjects: subjects.length,
-    totalChapters: subjects.reduce((a, s) => a + s.totalChapters, 0),
-    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
-    subjects
+    totalSubjects: NEET_UG_OFFICIAL_SUBJECTS.length,
+    totalChapters: NEET_UG_OFFICIAL_SUBJECTS.reduce((a, s) => a + s.totalChapters, 0),
+    totalMicroTopics: NEET_UG_OFFICIAL_SUBJECTS.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects: NEET_UG_OFFICIAL_SUBJECTS
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8B. JEE MAIN & ADVANCED COMPLETE MICRO-TOPIC SYLLABUS REGISTRY (NTA / IIT JEE)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getJeeMainAdvancedCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
+  return {
+    courseId: courseId || 'exam-jee-main',
+    courseTitle: courseTitle || 'JEE Main & JEE Advanced Unified Entrance Preparation',
+    category: 'entrance',
+    board: 'NTA / IIT JEE',
+    medium: 'English',
+    totalDays: 360,
+    totalSubjects: JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS.length,
+    totalChapters: JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS.reduce((a, s) => a + s.totalChapters, 0),
+    totalMicroTopics: JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects: JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS
   };
 }
 
@@ -1385,4 +1040,93 @@ export function resolveCompleteCourseSyllabus(
 
   // 12. DEFAULT FALLBACK
   return getPreparatoryClass3to5Syllabus(courseId, title);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. AUGMENTED SYLLABUS RESOLVER (BUILT-IN + DYNAMIC ADMIN ADDITIONS)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getAugmentedCourseSyllabus(
+  courseId: string,
+  courseTitle?: string
+): CourseFullSyllabus {
+  const base = resolveCompleteCourseSyllabus(courseId, courseTitle || '');
+  
+  if (typeof window === 'undefined') return base;
+  
+  try {
+    const raw = localStorage.getItem(`teacho_custom_syllabus_${courseId}`);
+    if (!raw) return base;
+    const customItems: Array<{
+      subjectName: string;
+      subjectIcon?: string;
+      subjectColor?: string;
+      chapterNumber?: number;
+      chapterTitle: string;
+      chapterDescription?: string;
+      microTopic: SyllabusMicroTopic;
+    }> = JSON.parse(raw);
+
+    if (!Array.isArray(customItems) || customItems.length === 0) return base;
+
+    // Deep clone base subjects
+    const subjects = base.subjects.map(s => ({
+      ...s,
+      chapters: s.chapters.map(c => ({
+        ...c,
+        microTopics: [...c.microTopics]
+      }))
+    }));
+
+    for (const item of customItems) {
+      let subj = subjects.find(s => 
+        s.subjectName.toLowerCase().includes(item.subjectName.toLowerCase()) || 
+        item.subjectName.toLowerCase().includes(s.subjectName.toLowerCase())
+      );
+      if (!subj) {
+        subj = {
+          subjectId: `custom_subj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          subjectName: item.subjectName,
+          icon: item.subjectIcon || '📚',
+          color: item.subjectColor || '#06b6d4',
+          totalChapters: 1,
+          totalMicroTopics: 1,
+          chapters: []
+        };
+        subjects.push(subj);
+      }
+
+      let chap = subj.chapters.find(c => 
+        c.chapterTitle.toLowerCase().includes(item.chapterTitle.toLowerCase()) || 
+        item.chapterTitle.toLowerCase().includes(c.chapterTitle.toLowerCase())
+      );
+      if (!chap) {
+        chap = {
+          chapterNumber: item.chapterNumber || (subj.chapters.length + 1),
+          chapterTitle: item.chapterTitle,
+          description: item.chapterDescription || `Chapter covering ${item.chapterTitle}`,
+          microTopics: []
+        };
+        subj.chapters.push(chap);
+      }
+
+      const exists = chap.microTopics.some(t => t.id === item.microTopic.id || t.topicTitle === item.microTopic.topicTitle);
+      if (!exists) {
+        chap.microTopics.push(item.microTopic);
+      }
+
+      subj.totalChapters = subj.chapters.length;
+      subj.totalMicroTopics = subj.chapters.reduce((acc, ch) => acc + ch.microTopics.length, 0);
+    }
+
+    return {
+      ...base,
+      totalSubjects: subjects.length,
+      totalChapters: subjects.reduce((acc, s) => acc + s.totalChapters, 0),
+      totalMicroTopics: subjects.reduce((acc, s) => acc + s.totalMicroTopics, 0),
+      subjects
+    };
+  } catch (err) {
+    console.warn('Could not augment custom syllabus:', err);
+    return base;
+  }
 }

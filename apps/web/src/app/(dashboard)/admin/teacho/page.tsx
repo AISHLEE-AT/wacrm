@@ -5,14 +5,15 @@ import Link from 'next/link';
 import { 
   BookOpen, Sparkles, Save, Upload, Download, Eye, CheckCircle2, 
   AlertCircle, ArrowLeft, RefreshCw, Layers, Video, FileText, 
-  HelpCircle, Languages, Database, Search, ChevronRight, Check,
-  Share2, MessageCircle
+  HelpCircle, Languages, Database, Search, ChevronRight, ChevronDown, Check,
+  Share2, MessageCircle, Plus, FolderPlus, Compass, ExternalLink, Award, Trash2
 } from 'lucide-react';
 import { ALL_COURSES, CourseOption } from '@/data/coursesCatalog';
 import { resolveMasterSequentialSyllabus } from '@/data/curriculum/masterCurriculumRegistry';
+import { getAugmentedCourseSyllabus, SyllabusMicroTopic } from '@/data/curriculum/courseSyllabusRegistry';
 
 export default function TeachOAdminStudioPage() {
-  const [activeTab, setActiveTab] = useState<'editor' | 'bulk'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'syllabus_builder' | 'bulk'>('editor');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
@@ -66,6 +67,231 @@ export default function TeachOAdminStudioPage() {
   const [bulkImporting, setBulkImporting] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkResult, setBulkResult] = useState<string | null>(null);
+
+  // ─── SYLLABUS & AI MICRO-TOPIC BUILDER STATE ────────────────────────────────
+  const [builderCourse, setBuilderCourse] = useState<CourseOption>(ALL_COURSES[0]);
+  const [builderSyllabus, setBuilderSyllabus] = useState<any>(null);
+  const [builderSubjectId, setBuilderSubjectId] = useState<string>('all');
+  const [isCreatingNewSubject, setIsCreatingNewSubject] = useState(false);
+  const [isCreatingNewChapter, setIsCreatingNewChapter] = useState(false);
+
+  // Syllabus Form Fields
+  const [targetSubjectName, setTargetSubjectName] = useState('பொதுத்தமிழ் & இலக்கிய நயவுரை');
+  const [targetSubjectIcon, setTargetSubjectIcon] = useState('📜');
+  const [targetSubjectColor, setTargetSubjectColor] = useState('#10b981');
+  const [targetChapterNumber, setTargetChapterNumber] = useState(1);
+  const [targetChapterTitle, setTargetChapterTitle] = useState('பகுதி அ: தமிழ் இலக்கணம்');
+  const [targetChapterDesc, setTargetChapterDesc] = useState('எழுத்து, புணர்ச்சி மற்றும் இலக்கண விதிகள்');
+
+  const [topicTitle, setTopicTitle] = useState('');
+  const [subtopic, setSubtopic] = useState('');
+  const [targetDay, setTargetDay] = useState(1);
+  const [targetPeriod, setTargetPeriod] = useState(1);
+  const [keyFormula, setKeyFormula] = useState('');
+  const [keyPoint1, setKeyPoint1] = useState('');
+  const [keyPoint2, setKeyPoint2] = useState('');
+  const [keyPoint3, setKeyPoint3] = useState('');
+  const [importance, setImportance] = useState<'High-Yield' | 'Core Standard' | 'Foundational'>('High-Yield');
+  const [topicType, setTopicType] = useState<'concept' | 'solved_problem' | 'memorization' | 'quiz'>('concept');
+
+  // AI Content Generation & Review
+  const [isGeneratingMicroLesson, setIsGeneratingMicroLesson] = useState(false);
+  const [aiGeneratedMicroLesson, setAiGeneratedMicroLesson] = useState<any | null>(null);
+  const [isSavingMicroTopic, setIsSavingMicroTopic] = useState(false);
+  const [builderStatusMessage, setBuilderStatusMessage] = useState('');
+  const [builderSuccessCard, setBuilderSuccessCard] = useState<any | null>(null);
+  const [expandedSyllabusChapters, setExpandedSyllabusChapters] = useState<Record<string, boolean>>({});
+
+  // Sync builder syllabus when builder course changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const syl = getAugmentedCourseSyllabus(builderCourse.id, builderCourse.title);
+      setBuilderSyllabus(syl);
+      if (syl.subjects?.length > 0) {
+        const firstSubj = syl.subjects[0];
+        setTargetSubjectName(firstSubj.subjectName);
+        setTargetSubjectIcon(firstSubj.icon || '📚');
+        setTargetSubjectColor(firstSubj.color || '#06b6d4');
+        if (firstSubj.chapters?.length > 0) {
+          setTargetChapterNumber(firstSubj.chapters[0].chapterNumber);
+          setTargetChapterTitle(firstSubj.chapters[0].chapterTitle);
+          setTargetChapterDesc(firstSubj.chapters[0].description);
+        }
+      }
+    }
+  }, [builderCourse]);
+
+  // Generate Course Player Content using AI
+  async function handleAiGenerateMicroLesson() {
+    if (!topicTitle.trim()) {
+      setBuilderStatusMessage('⚠️ Please enter a Micro-Topic Title first.');
+      return;
+    }
+    setIsGeneratingMicroLesson(true);
+    setBuilderStatusMessage('✨ Calling Gemini AI with curriculum standards to generate complete course player lesson...');
+    setBuilderSuccessCard(null);
+
+    const userKey = getUserGeminiKey();
+    try {
+      const res = await fetch('/api/kindle-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userKey ? { 'x-user-gemini-key': userKey } : {})
+        },
+        body: JSON.stringify({
+          courseId: builderCourse.id,
+          courseTitle: builderCourse.title,
+          dayNumber: targetDay,
+          taskNumber: targetPeriod,
+          sectionNumber: targetPeriod,
+          topicTitle,
+          board: builderCourse.board,
+          standard: builderCourse.title,
+          subject: targetSubjectName,
+          subtopic: subtopic || topicTitle,
+          keyFormulaOrLaw: keyFormula,
+          userGeminiKey: userKey,
+          forceRefresh: true
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setAiGeneratedMicroLesson(data);
+        setBuilderStatusMessage('✅ Course Player lesson generated successfully! Review below and click "Save to Supabase & Map to Syllabus".');
+      } else {
+        setBuilderStatusMessage('⚠️ Gemini notice: Content drafted with master curriculum engine.');
+      }
+    } catch (err: any) {
+      setBuilderStatusMessage(`Generation error: ${err.message}`);
+    } finally {
+      setIsGeneratingMicroLesson(false);
+    }
+  }
+
+  // Save Micro-Topic and persist to Supabase & Syllabus Registry
+  async function handleSaveMicroTopicToDb() {
+    if (!topicTitle.trim()) {
+      setBuilderStatusMessage('⚠️ Please provide a Micro-Topic Title.');
+      return;
+    }
+
+    setIsSavingMicroTopic(true);
+    setBuilderStatusMessage('💾 Persisting to Supabase kindle_content_cache & updating course syllabus...');
+    const userKey = getUserGeminiKey();
+
+    const newMicroTopic: SyllabusMicroTopic = {
+      id: `custom_${Date.now()}`,
+      topicTitle,
+      subtopic: subtopic || topicTitle,
+      dayNumber: targetDay,
+      periodNumber: targetPeriod,
+      keyFormulaOrLaw: keyFormula || 'Standard Curriculum Formulation',
+      keyPoints: [
+        keyPoint1 || 'Core principle and theoretical definition.',
+        keyPoint2 || 'Application method and analytical formula.',
+        keyPoint3 || 'High-yield exam recall point.'
+      ].filter(Boolean),
+      type: topicType,
+      importance
+    };
+
+    const payload = {
+      ...(aiGeneratedMicroLesson || {}),
+      topicTitle,
+      courseTitle: builderCourse.title,
+      courseId: builderCourse.id,
+      category: targetSubjectName,
+      dayNumber: targetDay,
+      taskNumber: targetPeriod,
+      is_admin_verified: true,
+      videoMeta: aiGeneratedMicroLesson?.videoMeta || {
+        youtubeVideoId: aiGeneratedMicroLesson?.videoId || aiGeneratedMicroLesson?.youtubeVideoId || '0TgLtF3PMOc',
+        videoTitle: topicTitle,
+        channelName: 'TeachO 1-on-1 Tuition'
+      },
+      overview: aiGeneratedMicroLesson?.overview || `Comprehensive theoretical and practical lesson on ${topicTitle}.`,
+      coreConcepts: aiGeneratedMicroLesson?.coreConcepts?.length ? aiGeneratedMicroLesson.coreConcepts : [
+        { heading: `1. Core Principles of ${topicTitle}`, content: subtopic || 'Theoretical foundation.', example: 'Model example.' },
+        { heading: `2. Methodologies & Applications`, content: 'Step-by-step problem solving approach.', example: 'Standard application.' },
+        { heading: `3. Exam Rules & Mnemonics`, content: 'Essential formulas and recall rules.', example: keyFormula || 'Key Formula' }
+      ],
+      tamilExplanation: aiGeneratedMicroLesson?.tamilExplanation || {
+        simpleTitle: topicTitle,
+        colloquialIntro: `இன்றைய பாடம்: ${topicTitle}`,
+        everydayAnalogy: 'எளிய வாழ்வியல் ஒப்பீடு.',
+        keyPointsTamil: [topicTitle, 'முக்கிய கருத்துகள்', 'தேர்வுக்கான குறிப்புகள்']
+      },
+      formulasAndMnemonics: aiGeneratedMicroLesson?.formulasAndMnemonics || [
+        { name: 'Master Formula', formula: keyFormula || 'Standard Formula', mnemonic: 'Key Mnemonic' }
+      ],
+      mcqs: aiGeneratedMicroLesson?.mcqs?.length ? aiGeneratedMicroLesson.mcqs : [
+        {
+          question: `What is the key principle behind ${topicTitle}?`,
+          options: ['Fundamental Law', 'Alternative Hypothesis', 'Secondary Effect', 'Variable Parameter'],
+          correctAnswer: 0,
+          explanation: 'Governing standard curriculum definition.'
+        }
+      ]
+    };
+
+    try {
+      // 1. Save to Supabase kindle_content_cache
+      const res = await fetch('/api/kindle-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userKey ? { 'x-user-gemini-key': userKey } : {})
+        },
+        body: JSON.stringify({
+          courseId: builderCourse.id,
+          dayNumber: targetDay,
+          taskNumber: targetPeriod,
+          sectionNumber: targetPeriod,
+          topicTitle,
+          courseTitle: builderCourse.title,
+          isAdminEdit: true,
+          adminContent: payload,
+          userGeminiKey: userKey
+        })
+      });
+
+      // 2. Save to localStorage custom syllabus registry
+      if (typeof window !== 'undefined') {
+        const storageKey = `teacho_custom_syllabus_${builderCourse.id}`;
+        const existingRaw = localStorage.getItem(storageKey);
+        const existing: any[] = existingRaw ? JSON.parse(existingRaw) : [];
+        existing.push({
+          subjectName: targetSubjectName,
+          subjectIcon: targetSubjectIcon,
+          subjectColor: targetSubjectColor,
+          chapterNumber: targetChapterNumber,
+          chapterTitle: targetChapterTitle,
+          chapterDescription: targetChapterDesc,
+          microTopic: newMicroTopic
+        });
+        localStorage.setItem(storageKey, JSON.stringify(existing));
+
+        // Refresh builder syllabus state
+        const updatedSyllabus = getAugmentedCourseSyllabus(builderCourse.id, builderCourse.title);
+        setBuilderSyllabus(updatedSyllabus);
+      }
+
+      setBuilderSuccessCard({
+        courseId: builderCourse.id,
+        courseTitle: builderCourse.title,
+        day: targetDay,
+        task: targetPeriod,
+        topic: topicTitle
+      });
+      setBuilderStatusMessage('🎉 Topic successfully created, persisted to Supabase & added to course syllabus!');
+    } catch (err: any) {
+      setBuilderStatusMessage(`Save error: ${err.message}`);
+    } finally {
+      setIsSavingMicroTopic(false);
+    }
+  }
 
   // Compute all sections / periods dynamically from Master Sequential Syllabus
   const isTamilCourse = selectedCourse.medium === 'Tamil' || selectedCourse.id.includes('-ta-');
@@ -626,7 +852,7 @@ exam-jee-main,10,1,Mathematics,Coordinate Geometry: Straight Lines,"Perpendicula
             TeachO Teacher Studio &amp; Curriculum CMS
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Manage, edit, AI-draft, and publish day-wise academic lessons &amp; multi-subject periods across all 86 courses directly to Supabase LMS.
+            Manage, edit, AI-draft, and publish day-wise academic lessons &amp; multi-subject periods across all {ALL_COURSES.length} courses directly to Supabase LMS.
           </p>
         </div>
 
@@ -639,6 +865,14 @@ exam-jee-main,10,1,Mathematics,Coordinate Geometry: Straight Lines,"Perpendicula
             }`}
           >
             Single Lesson &amp; Section Editor
+          </button>
+          <button
+            onClick={() => setActiveTab('syllabus_builder')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'syllabus_builder' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            ✨ Add Syllabus &amp; AI Micro-Topic Studio
           </button>
           <button
             onClick={() => setActiveTab('bulk')}
@@ -660,7 +894,7 @@ exam-jee-main,10,1,Mathematics,Coordinate Geometry: Straight Lines,"Perpendicula
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-emerald-400" />
-                  Select Course ({filteredCourses.length}/86)
+                  Select Course ({filteredCourses.length}/{ALL_COURSES.length})
                 </h3>
               </div>
 
@@ -669,7 +903,7 @@ exam-jee-main,10,1,Mathematics,Coordinate Geometry: Straight Lines,"Perpendicula
                 <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search 86 courses..."
+                  placeholder={`Search ${ALL_COURSES.length} courses...`}
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-700 bg-[#070b14] text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-500"
@@ -1255,6 +1489,569 @@ exam-jee-main,10,1,Mathematics,Coordinate Geometry: Straight Lines,"Perpendicula
             </div>
           </div>
 
+        </div>
+      ) : activeTab === 'syllabus_builder' ? (
+        /* ─── 2. SYLLABUS & AI MICRO-TOPIC BUILDER TAB ───────────────────────── */
+        <div className="space-y-6">
+          {/* Header & Course Switcher Bar */}
+          <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold text-[10px] uppercase border border-emerald-500/30">
+                  {builderCourse.badge}
+                </span>
+                <span className="text-xs text-slate-400 font-mono">
+                  {builderCourse.medium} Medium • {builderCourse.totalDays} Total Days
+                </span>
+              </div>
+              <h2 className="text-lg md:text-xl font-black text-white flex items-center gap-2">
+                <span>{builderCourse.icon}</span>
+                <span>{builderCourse.title}</span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Syllabus Scope: {builderSyllabus?.totalSubjects || 0} Subjects • {builderSyllabus?.totalChapters || 0} Chapters • {builderSyllabus?.totalMicroTopics || 0} Micro-Topics mapped to Course Player.
+              </p>
+            </div>
+
+            {/* Quick Course Picker & Action */}
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={builderCourse.id}
+                onChange={e => {
+                  const found = ALL_COURSES.find(c => c.id === e.target.value);
+                  if (found) setBuilderCourse(found);
+                }}
+                className="bg-[#111827] border border-slate-700 text-white text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500"
+              >
+                {ALL_COURSES.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.icon} {c.title} ({c.board})
+                  </option>
+                ))}
+              </select>
+
+              <Link
+                href={`/teacho?course=${builderCourse.id}`}
+                target="_blank"
+                className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-400" /> Open Live Course
+              </Link>
+            </div>
+          </div>
+
+          {/* Builder Status Banner */}
+          {builderStatusMessage && (
+            <div className={`p-3.5 rounded-xl border text-xs font-bold flex items-center justify-between gap-3 ${
+              builderStatusMessage.includes('✅') || builderStatusMessage.includes('🎉')
+                ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+                : builderStatusMessage.includes('⚠️')
+                ? 'bg-amber-950/60 border-amber-500/40 text-amber-300'
+                : 'bg-blue-950/60 border-blue-500/40 text-blue-300'
+            }`}>
+              <div className="flex items-center gap-2">
+                {isGeneratingMicroLesson || isSavingMicroTopic ? (
+                  <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+                ) : (
+                  <Sparkles className="w-4 h-4 shrink-0 text-emerald-400" />
+                )}
+                <span>{builderStatusMessage}</span>
+              </div>
+
+              {builderSuccessCard && (
+                <Link
+                  href={`/teacho?course=${builderSuccessCard.courseId}&day=${builderSuccessCard.day}`}
+                  target="_blank"
+                  className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg text-[11px] font-bold shadow-md shrink-0 flex items-center gap-1"
+                >
+                  <Eye className="w-3.5 h-3.5" /> Test in Course Player (Day {builderSuccessCard.day})
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* 2-Column Studio Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* ─── LEFT: SYLLABUS HIERARCHY TREE (5 Cols) ──────────────────── */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-emerald-400" />
+                    Course Syllabus Explorer ({builderSyllabus?.totalMicroTopics || 0} Topics)
+                  </h3>
+                </div>
+
+                {/* Subject Filter Pills */}
+                <div className="flex gap-1 overflow-x-auto pb-1 text-[11px] scrollbar-none">
+                  <button
+                    onClick={() => setBuilderSubjectId('all')}
+                    className={`px-2.5 py-1 rounded-full whitespace-nowrap font-medium transition-all ${
+                      builderSubjectId === 'all'
+                        ? 'bg-emerald-500 text-slate-950 font-bold'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    All Subjects ({builderSyllabus?.subjects?.length || 0})
+                  </button>
+                  {builderSyllabus?.subjects?.map((s: any) => (
+                    <button
+                      key={s.subjectId}
+                      onClick={() => setBuilderSubjectId(s.subjectId)}
+                      className={`px-2.5 py-1 rounded-full whitespace-nowrap font-medium transition-all flex items-center gap-1 ${
+                        builderSubjectId === s.subjectId
+                          ? 'bg-emerald-500 text-slate-950 font-bold'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      <span>{s.icon}</span>
+                      <span className="truncate max-w-[120px]">{s.subjectName.split('(')[0]}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Chapters & Topics List */}
+                <div className="max-h-[550px] overflow-y-auto space-y-3 pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                  {builderSyllabus?.subjects
+                    ?.filter((s: any) => builderSubjectId === 'all' || s.subjectId === builderSubjectId)
+                    .map((subj: any) => (
+                      <div key={subj.subjectId} className="bg-[#070b14] border border-slate-800/80 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{subj.icon}</span>
+                            <span className="text-xs font-bold text-white truncate max-w-[200px]">{subj.subjectName}</span>
+                          </div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-bold">
+                            {subj.chapters?.reduce((acc: number, c: any) => acc + (c.microTopics?.length || 0), 0)} Topics
+                          </span>
+                        </div>
+
+                        {/* Chapters */}
+                        <div className="space-y-1.5 pt-1">
+                          {subj.chapters?.map((chap: any) => {
+                            const chapKey = `${subj.subjectId}_${chap.chapterNumber}`;
+                            const isExp = expandedSyllabusChapters[chapKey] !== false;
+
+                            return (
+                              <div key={chap.chapterNumber} className="bg-[#0c1322] border border-slate-800/90 rounded-lg overflow-hidden">
+                                <button
+                                  onClick={() => setExpandedSyllabusChapters(prev => ({ ...prev, [chapKey]: !isExp }))}
+                                  className="w-full p-2 text-left flex items-center justify-between hover:bg-slate-800/40 transition text-[11px]"
+                                >
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="font-mono font-bold text-slate-400">Unit {chap.chapterNumber}:</span>
+                                    <span className="font-bold text-slate-200 truncate">{chap.chapterTitle}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className="text-[10px] text-slate-500">{chap.microTopics?.length || 0}</span>
+                                    {isExp ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                                  </div>
+                                </button>
+
+                                {isExp && (
+                                  <div className="p-2 pt-0 border-t border-slate-800/50 space-y-1">
+                                    {chap.microTopics?.map((t: any) => (
+                                      <div
+                                        key={t.id}
+                                        onClick={() => {
+                                          setTopicTitle(t.topicTitle);
+                                          setSubtopic(t.subtopic);
+                                          setTargetDay(t.dayNumber || 1);
+                                          setTargetPeriod(t.periodNumber || 1);
+                                          setKeyFormula(t.keyFormulaOrLaw || '');
+                                          if (t.keyPoints?.[0]) setKeyPoint1(t.keyPoints[0]);
+                                          if (t.keyPoints?.[1]) setKeyPoint2(t.keyPoints[1]);
+                                          if (t.keyPoints?.[2]) setKeyPoint3(t.keyPoints[2]);
+                                          setTargetSubjectName(subj.subjectName);
+                                          setTargetChapterTitle(chap.chapterTitle);
+                                          setTargetChapterNumber(chap.chapterNumber);
+                                          setTargetChapterDesc(chap.description);
+                                          setImportance(t.importance || 'High-Yield');
+                                        }}
+                                        className="p-2 rounded bg-[#080d17] border border-slate-800 hover:border-emerald-500/40 cursor-pointer transition text-[11px] space-y-1 group"
+                                      >
+                                        <div className="flex items-center justify-between gap-1">
+                                          <span className="text-[9px] font-mono font-bold bg-slate-800 px-1.5 py-0.2 rounded text-emerald-400">
+                                            Day {t.dayNumber} · Period {t.periodNumber}
+                                          </span>
+                                          <span className="text-[9px] text-amber-400 font-semibold">★ {t.importance}</span>
+                                        </div>
+                                        <div className="font-bold text-white group-hover:text-emerald-300 transition truncate">
+                                          {t.topicTitle}
+                                        </div>
+                                      </div>
+                                    ))}
+
+                                    <button
+                                      onClick={() => {
+                                        setTargetSubjectName(subj.subjectName);
+                                        setTargetSubjectIcon(subj.icon || '📚');
+                                        setTargetSubjectColor(subj.color || '#06b6d4');
+                                        setTargetChapterNumber(chap.chapterNumber);
+                                        setTargetChapterTitle(chap.chapterTitle);
+                                        setTargetChapterDesc(chap.description);
+                                        setTopicTitle('');
+                                        setSubtopic('');
+                                        setAiGeneratedMicroLesson(null);
+                                      }}
+                                      className="w-full py-1 text-[10px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded transition flex items-center justify-center gap-1 mt-1"
+                                    >
+                                      <Plus className="w-3 h-3" /> Add Topic to Unit {chap.chapterNumber}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ─── RIGHT: ADD TOPIC & AI CONTENT GENERATOR (7 Cols) ────────── */}
+            <div className="lg:col-span-7 space-y-5">
+              <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+                
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="font-black text-sm md:text-base text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                      Add Syllabus Topic &amp; AI Content Studio
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Define a curriculum micro-topic, generate full Course Player lesson with Gemini AI, and publish to database.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 1. SUBJECT & CHAPTER MAPPING */}
+                <div className="p-4 rounded-xl bg-[#070b14] border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      1. Subject &amp; Chapter Structure
+                    </span>
+                    <button
+                      onClick={() => setIsCreatingNewSubject(!isCreatingNewSubject)}
+                      className="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> {isCreatingNewSubject ? 'Select Existing Subject' : '+ Create New Subject'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Subject */}
+                    <div>
+                      <label className="text-[11px] text-slate-400 font-medium block mb-1">Subject Name</label>
+                      {isCreatingNewSubject ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={targetSubjectIcon}
+                            onChange={e => setTargetSubjectIcon(e.target.value)}
+                            className="w-12 text-center bg-[#111827] border border-slate-700 rounded-lg text-xs text-white py-1.5"
+                            placeholder="📚"
+                          />
+                          <input
+                            type="text"
+                            value={targetSubjectName}
+                            onChange={e => setTargetSubjectName(e.target.value)}
+                            placeholder="e.g. இந்திய அரசியலமைப்பு (Polity)"
+                            className="flex-1 bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                          />
+                        </div>
+                      ) : (
+                        <select
+                          value={targetSubjectName}
+                          onChange={e => {
+                            setTargetSubjectName(e.target.value);
+                            const subj = builderSyllabus?.subjects?.find((s: any) => s.subjectName === e.target.value);
+                            if (subj?.chapters?.length > 0) {
+                              setTargetChapterNumber(subj.chapters[0].chapterNumber);
+                              setTargetChapterTitle(subj.chapters[0].chapterTitle);
+                              setTargetChapterDesc(subj.chapters[0].description);
+                            }
+                          }}
+                          className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-2"
+                        >
+                          {builderSyllabus?.subjects?.map((s: any) => (
+                            <option key={s.subjectId} value={s.subjectName}>
+                              {s.icon} {s.subjectName}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Chapter / Unit */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] text-slate-400 font-medium">Chapter / Unit Title</label>
+                        <button
+                          onClick={() => setIsCreatingNewChapter(!isCreatingNewChapter)}
+                          className="text-[10px] text-cyan-400 hover:underline"
+                        >
+                          {isCreatingNewChapter ? 'Select Existing' : '+ New Unit'}
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={targetChapterNumber}
+                          onChange={e => setTargetChapterNumber(parseInt(e.target.value || '1', 10))}
+                          className="w-14 text-center bg-[#111827] border border-slate-700 rounded-lg text-xs text-white py-1.5"
+                          title="Unit Number"
+                        />
+                        <input
+                          type="text"
+                          value={targetChapterTitle}
+                          onChange={e => setTargetChapterTitle(e.target.value)}
+                          placeholder="e.g. Unit 1: Preamble & Fundamental Rights"
+                          className="flex-1 bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-medium block mb-1">Chapter Description</label>
+                    <input
+                      type="text"
+                      value={targetChapterDesc}
+                      onChange={e => setTargetChapterDesc(e.target.value)}
+                      placeholder="Brief conceptual overview of this chapter unit..."
+                      className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. MICRO-TOPIC DETAILS */}
+                <div className="p-4 rounded-xl bg-[#070b14] border border-slate-800 space-y-3">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                    2. Micro-Topic Details &amp; Routine Mapping
+                  </span>
+
+                  <div>
+                    <label className="text-[11px] text-slate-300 font-bold block mb-1">Micro-Topic Title *</label>
+                    <input
+                      type="text"
+                      value={topicTitle}
+                      onChange={e => setTopicTitle(e.target.value)}
+                      placeholder="e.g. அரசியலமைப்பு பிரிவு 32: 5 வகை நீதிப்பேராணைகள் (Writs)"
+                      className="w-full bg-[#111827] border border-emerald-500/60 rounded-lg text-xs text-white px-3 py-2 focus:ring-1 focus:ring-emerald-500 font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-medium block mb-1">Subtopic &amp; Pedagogical Scope</label>
+                    <textarea
+                      value={subtopic}
+                      onChange={e => setSubtopic(e.target.value)}
+                      rows={2}
+                      placeholder="e.g. ஆட்கொணர் நீதிப்பேராணை, கட்டளையிடும் நீதிப்பேராணை, தடையுறுத்தும் நீதிப்பேராணை, ஆவணக் கேட்பு மற்றும் தகுதிமுறை வினவும் நீதிப்பேராணை"
+                      className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white p-2.5"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-[11px] text-slate-400 font-medium block mb-1">Target Day</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={builderCourse.totalDays || 360}
+                        value={targetDay}
+                        onChange={e => setTargetDay(parseInt(e.target.value || '1', 10))}
+                        className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5 font-bold font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-400 font-medium block mb-1">Period (Task)</label>
+                      <select
+                        value={targetPeriod}
+                        onChange={e => setTargetPeriod(parseInt(e.target.value, 10))}
+                        className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                      >
+                        <option value={1}>Period 1 (Task 1)</option>
+                        <option value={2}>Period 2 (Task 2)</option>
+                        <option value={3}>Period 3 (Task 3)</option>
+                        <option value={4}>Period 4 (Task 4)</option>
+                        <option value={5}>Period 5 (Task 5)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-400 font-medium block mb-1">Importance</label>
+                      <select
+                        value={importance}
+                        onChange={e => setImportance(e.target.value as any)}
+                        className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-amber-300 font-bold px-2 py-1.5"
+                      >
+                        <option value="High-Yield">★ High-Yield</option>
+                        <option value="Core Standard">Core Standard</option>
+                        <option value="Foundational">Foundational</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-400 font-medium block mb-1">Topic Type</label>
+                      <select
+                        value={topicType}
+                        onChange={e => setTopicType(e.target.value as any)}
+                        className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-2 py-1.5 capitalize"
+                      >
+                        <option value="concept">Concept</option>
+                        <option value="solved_problem">Solved Problem</option>
+                        <option value="memorization">Memorization</option>
+                        <option value="quiz">Diagnostic Quiz</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-medium block mb-1">Governing Formula / Law / Landmark Case</label>
+                    <input
+                      type="text"
+                      value={keyFormula}
+                      onChange={e => setKeyFormula(e.target.value)}
+                      placeholder="e.g. Article 32 (Supreme Court) | Article 226 (High Court) | Kesavananda Bharati Case (1973)"
+                      className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-cyan-300 font-mono px-3 py-1.5"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] text-slate-400 font-medium block">Core Exam Scoring Points</label>
+                    <input
+                      type="text"
+                      value={keyPoint1}
+                      onChange={e => setKeyPoint1(e.target.value)}
+                      placeholder="Point 1: பிரிவு 32 அரசியலமைப்பின் இதயம் மற்றும் ஆன்மா (டாக்டர் அம்பேத்கர்)"
+                      className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                    />
+                    <input
+                      type="text"
+                      value={keyPoint2}
+                      onChange={e => setKeyPoint2(e.target.value)}
+                      placeholder="Point 2: உயர் நீதிமன்றத்தின் நீதிப்பேராணை அதிகாரம் (226) அடிப்படை உரிமை மற்றும் சட்ட உரிமை இரண்டிற்கும் பொருந்தும்"
+                      className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                    />
+                    <input
+                      type="text"
+                      value={keyPoint3}
+                      onChange={e => setKeyPoint3(e.target.value)}
+                      placeholder="Point 3: தகுதிமுறை வினவும் பேராணை (Quo-Warranto) பொதுப்பதவிகளை தவறாக ஆக்கிரமிப்பதைத் தடுக்கிறது"
+                      className="w-full bg-[#111827] border border-slate-700 rounded-lg text-xs text-white px-3 py-1.5"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. ONE-CLICK AI GENERATION BUTTON */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                  <button
+                    onClick={handleAiGenerateMicroLesson}
+                    disabled={isGeneratingMicroLesson || !topicTitle.trim()}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2"
+                  >
+                    {isGeneratingMicroLesson ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Generating Course Player Lesson...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        ✨ AI Generate Course Player Lesson
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleSaveMicroTopicToDb}
+                    disabled={isSavingMicroTopic || !topicTitle.trim()}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 disabled:opacity-50 transition flex items-center justify-center gap-2"
+                  >
+                    {isSavingMicroTopic ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                        Saving to Supabase...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        💾 Save to Supabase &amp; Map to Syllabus &amp; Day Plan
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* 4. AI GENERATED CONTENT PREVIEW */}
+                {aiGeneratedMicroLesson && (
+                  <div className="p-4 rounded-xl bg-[#090e1a] border border-emerald-500/30 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        AI Generated Course Player Lesson Preview
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {aiGeneratedMicroLesson._meta?.modelUsed || 'Gemini Pro'}
+                      </span>
+                    </div>
+
+                    {/* Overview */}
+                    <div>
+                      <span className="text-[11px] text-slate-400 font-bold block mb-1">Theoretical Overview</span>
+                      <p className="text-xs text-slate-300 bg-[#111827] p-3 rounded-lg border border-slate-800 leading-relaxed">
+                        {aiGeneratedMicroLesson.overview}
+                      </p>
+                    </div>
+
+                    {/* Tamil Explanation */}
+                    {aiGeneratedMicroLesson.tamilExplanation && (
+                      <div className="bg-[#111827] p-3 rounded-lg border border-slate-800 space-y-1">
+                        <span className="text-[11px] text-emerald-400 font-bold block">தமிழ் எளிய விளக்கம் &amp; வாழ்வியல் ஒப்பீடு</span>
+                        <p className="text-xs text-slate-300">
+                          {aiGeneratedMicroLesson.tamilExplanation.colloquialIntro}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* MCQs Preview */}
+                    {aiGeneratedMicroLesson.mcqs?.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-[11px] text-amber-400 font-bold block">
+                          Practice MCQs ({aiGeneratedMicroLesson.mcqs.length} Questions)
+                        </span>
+                        <div className="space-y-2">
+                          {aiGeneratedMicroLesson.mcqs.slice(0, 2).map((m: any, idx: number) => (
+                            <div key={idx} className="bg-[#111827] p-3 rounded-lg border border-slate-800 text-xs space-y-1.5">
+                              <div className="font-bold text-white">Q{idx + 1}: {m.question}</div>
+                              <div className="grid grid-cols-2 gap-1 text-[11px] text-slate-300">
+                                {m.options?.map((opt: string, oIdx: number) => (
+                                  <div
+                                    key={oIdx}
+                                    className={`p-1.5 rounded ${oIdx === m.correctAnswer ? 'bg-emerald-500/20 text-emerald-300 font-bold' : 'bg-slate-800/50'}`}
+                                  >
+                                    {String.fromCharCode(65 + oIdx)}. {opt}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+          </div>
         </div>
       ) : (
         /* ─── BULK CSV / JSON IMPORTER TAB ──────────────────────────────── */

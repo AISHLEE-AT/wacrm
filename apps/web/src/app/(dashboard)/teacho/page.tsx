@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, CourseCategory } from '@/data/coursesCatalog';
 import { resolveMasterCurriculumPlan } from '@/data/curriculum';
-import { resolveCompleteCourseSyllabus } from '@/data/curriculum/courseSyllabusRegistry';
+import { resolveCompleteCourseSyllabus, getAugmentedCourseSyllabus } from '@/data/curriculum/courseSyllabusRegistry';
 import { TeachOCoursePickerModal } from '@/components/teacho/TeachOCoursePickerModal';
 import { TeachOCoursePlayerModal } from '@/components/teacho/TeachOCoursePlayerModal';
 
@@ -99,7 +99,7 @@ export default function TeachODashboard() {
 
   // Resolve Full Micro-Granular Syllabus for Active Course
   const fullSyllabus = useMemo(() => {
-    return resolveCompleteCourseSyllabus(activeCourse.id, activeCourse.title);
+    return getAugmentedCourseSyllabus(activeCourse.id, activeCourse.title);
   }, [activeCourse.id, activeCourse.title]);
 
   const toggleChapter = (chapterKey: string) => {
@@ -241,7 +241,7 @@ export default function TeachODashboard() {
                 TeachO <span className="text-emerald-400 font-medium text-xs md:text-sm">1-on-1 AI Tuition</span>
               </h1>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-                86 Master Programs
+                {ALL_COURSES.length} Master Programs
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
@@ -341,7 +341,7 @@ export default function TeachODashboard() {
         <div className="flex border-b border-slate-800/80 gap-2 overflow-x-auto scrollbar-none">
           {[
             { id: 'routine', label: '📅 Today\'s Daily Routine', count: dailyCurriculum.tasks.length },
-            { id: 'catalog', label: '🎒 86-Course Catalog', count: 86 },
+            { id: 'catalog', label: `🎒 ${ALL_COURSES.length}-Course Catalog`, count: ALL_COURSES.length },
             { id: 'syllabus', label: '📚 Full Syllabus & Phases' },
             { id: 'ai_tutor', label: '🤖 24/7 AI Doubt Tutor' },
             { id: 'reports', label: '📊 Parent Progress Report' },
