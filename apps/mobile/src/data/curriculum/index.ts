@@ -3,22 +3,7 @@
  * Dynamically resolves 100% authentic, chapter-by-chapter curriculum for all 96+ courses!
  */
 
-import { TNPSC_TAMIL_SYLLABUS, TNPSC_POLITY_SYLLABUS, TNPSC_MATHS_SYLLABUS } from './tnpscCurriculum';
-import { UPSC_POLITY_SYLLABUS, UPSC_HISTORY_SYLLABUS, UPSC_ECONOMY_SYLLABUS } from './upscCurriculum';
-import {
-  CLASS_10_MATHS,
-  CLASS_10_SCIENCE,
-  PRIMARY_MATHS_MODULES,
-  PRIMARY_EVS_SCIENCE,
-  PRIMARY_LANGUAGE_LIT,
-  MIDDLE_MATHS,
-  MIDDLE_SCIENCE,
-  COLLEGE_CSE_MODULES,
-  COLLEGE_COMMERCE_MODULES,
-  KIDS_SKILLS_MODULES,
-} from './schoolCurriculum';
-import { PYTHON_AI_SYLLABUS, FULLSTACK_WEB_SYLLABUS } from './skillsCurriculum';
-import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry';
+import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry.ts';
 
 export interface DailySubjectTask {
   id: string;
@@ -88,14 +73,14 @@ export function resolveMasterCurriculumPlan(
 
   const safeDay = Math.max(1, Math.min(day, totalDays));
   const blockNum = Math.ceil(safeDay / 10);
-  const isTamilMedium = courseTitle.includes('தமிழ்') || courseId.includes('-ta-') || courseId.includes('10-ta');
+  const isTamilMedium = (courseTitle || '').includes('தமிழ்') || (courseId || '').includes('-ta-') || (courseId || '').includes('10-ta');
 
   // Build 4 to 5 authentic subject period tasks from master sequential curriculum
   const taskCount = isTamilMedium || courseId.includes('7') || courseId.includes('10') ? 5 : 4;
   const tasks: DailySubjectTask[] = [];
 
   const icons = ['📐', '🔬', '🌍', '📜', '📚', '🎯'];
-  const taskTypes = ['practice', 'video', 'reading', 'reading', 'test'];
+  const taskTypes: Array<DailySubjectTask['taskType']> = ['practice', 'video', 'reading', 'reading', 'test'];
 
   for (let tNum = 1; tNum <= taskCount; tNum++) {
     const item = resolveMasterSequentialSyllabus(courseId, courseTitle, safeDay, tNum);

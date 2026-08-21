@@ -1442,17 +1442,9 @@ export function synthesizeFallbackContent(
     return synthesizePolityContent(topicTitle, subject, courseTitle, dayNumber);
   }
 
-  // 10. General Math fallback
-  if (s.includes('math') || s.includes('கணிதம்')) {
-    return synthesizeAdditionSubtractionContent(topicTitle, subject, courseTitle, dayNumber);
-  }
-
-  // 11. General Science fallback
-  if (s.includes('science') || s.includes('physics') || s.includes('chemistry') || s.includes('biology') || s.includes('evs')) {
-    return synthesizePlantKingdomContent(topicTitle, subject, courseTitle, dayNumber);
-  }
-
-  return synthesizeAdditionSubtractionContent(topicTitle, subject, courseTitle, dayNumber);
+  // 10. Always use Master Sequential Syllabus Resolution
+  const seqItem = resolveMasterSequentialSyllabus(courseTitle, courseTitle, dayNumber, 1);
+  return normalizeCoursePlayerPayload(seqItem, topicTitle, subject, courseTitle, dayNumber);
 }
 
 /**
@@ -1725,14 +1717,13 @@ export async function getCoursePlayerContent(
 
   // 2. Check Supabase LMS Database (kindle_content_cache)
   try {
-    const isStandardCanonical = canonicalKey && !canonicalKey.startsWith('canonical_academic_') && !canonicalKey.startsWith('canonical_general_');
+    // Strictly prioritize courseId-specific and day-specific keys to prevent cross-course content collision
     const candidateKeys = [
-      ...(isStandardCanonical ? [canonicalKey, daySpecificKey] : []),
       directTaskKey,
       directIdKey,
-      `${canonicalKey}_day_${dayNumber}_task_${resolvedTaskNum}`,
-      daySpecificKey,
-      canonicalKey
+      cacheKey,
+      `${courseId}_day_${dayNumber}_task_${resolvedTaskNum}`,
+      daySpecificKey
     ].filter(Boolean) as string[];
 
     for (const key of candidateKeys) {
@@ -1779,12 +1770,11 @@ export async function getCoursePlayerContent(
     }
   } catch (e) {}
 
-  // 4. Fallback to Deterministic Sequential Master Syllabus (100% authentic, zero blank fields)
+  // 4. Fallback to Deterministic Sequential Master Syllabus (100% authentic, exact chapter syllabus)
   try {
-    const seqItem = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, resolvedTaskNum);
+    const seqItem = resolveMasterSequentialSyllabus(courseId || courseTitle, courseTitle, dayNumber, resolvedTaskNum);
     if (seqItem) {
       const normalized = normalizeCoursePlayerPayload(seqItem, topicTitle || seqItem.topicTitle, subject || seqItem.subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
-      await persistContent(normalized, persistKeys, { topicTitle: normalized.topicTitle, courseTitle, modelUsed: 'master-sequential-engine-v3' });
       return normalized;
     }
   } catch (e) {}

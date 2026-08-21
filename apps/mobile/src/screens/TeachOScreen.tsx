@@ -50,7 +50,9 @@ export default function TeachOScreen() {
   const [completedTasksMap, setCompletedTasksMap] = useState<{ [dayKey: string]: number }>({});
 
   // ─── Day Plan & Player State ──────────────────────────────────────────────
-  const [activeDayPlan, setActiveDayPlan] = useState<DayPlan | null>(null);
+  const [activeDayPlan, setActiveDayPlan] = useState<DayPlan | null>(() => {
+    return resolveMasterCurriculumPlan(ALL_COURSES[0], 1);
+  });
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [activePlayerTask, setActivePlayerTask] = useState<{
     topicTitle: string;
@@ -66,7 +68,10 @@ export default function TeachOScreen() {
         const savedCourseId = await AsyncStorage.getItem('teacho_active_enrolled_course_id');
         if (savedCourseId) {
           const matched = ALL_COURSES.find((c) => c.id === savedCourseId);
-          if (matched) setSelectedCourse(matched);
+          if (matched) {
+            setSelectedCourse(matched);
+            setActiveDayPlan(resolveMasterCurriculumPlan(matched, matched.currentDayDefault || 1));
+          }
         }
 
         const savedStreak = await AsyncStorage.getItem('teacho_user_streak');
@@ -87,39 +92,33 @@ export default function TeachOScreen() {
   // Sync course specifics when selectedCourse changes
   useEffect(() => {
     setTotalDays(selectedCourse.totalDays || 200);
-    setCurrentDay(selectedCourse.currentDayDefault || 1);
+    const dayToUse = selectedCourse.currentDayDefault || 1;
+    setCurrentDay(dayToUse);
+    setActiveDayPlan(resolveMasterCurriculumPlan(selectedCourse, dayToUse));
   }, [selectedCourse]);
 
-  // Fetch dynamic day plan for active course & day
+  // Fetch dynamic day plan for active course & day synchronously (0ms)
   useEffect(() => {
-    let isMounted = true;
-    async function fetchPlan() {
-      try {
-        const plan = await getDayPlanForCourse(selectedCourse as any, selectedCourse.category, currentDay);
-        if (isMounted && plan) {
-          setActiveDayPlan(plan);
-        }
-      } catch (e) {
-        console.warn('Error loading day plan:', e);
-      }
+    try {
+      const plan = resolveMasterCurriculumPlan(selectedCourse, currentDay);
+      setActiveDayPlan(plan);
+    } catch (e) {
+      console.warn('Error loading day plan:', e);
     }
-    fetchPlan();
-    return () => {
-      isMounted = false;
-    };
   }, [selectedCourse, currentDay]);
 
   // Pre-fetch content for all daily tasks in background (instant player opens)
   useEffect(() => {
     if (!activeDayPlan || !activeDayPlan.tasks || activeDayPlan.tasks.length === 0) return;
-    // Fire-and-forget: pre-warm content cache for all tasks of the current day
-    activeDayPlan.tasks.forEach((task) => {
+    activeDayPlan.tasks.forEach((task, idx) => {
       getCoursePlayerContent(
         task.topic,
         task.subject,
         selectedCourse.title,
         currentDay,
-        false // don't trigger AI generation, just check cache/DB
+        selectedCourse.id,
+        false,
+        idx + 1
       ).catch(() => {});
     });
   }, [activeDayPlan, selectedCourse, currentDay]);
@@ -128,7 +127,7 @@ export default function TeachOScreen() {
   const currentDayKey = `${selectedCourse.id}_day_${currentDay}`;
   const completedTasksForCurrentDay = completedTasksMap[currentDayKey] ?? (currentDay === 1 ? 1 : 0);
 
-  // Build clean 4-step routine tasks list
+  // Build clean 4-to-5 step routine tasks list from authentic syllabus
   const routineTasks: RoutineTask[] = useMemo(() => {
     if (activeDayPlan && activeDayPlan.tasks && activeDayPlan.tasks.length > 0) {
       return activeDayPlan.tasks.map((taskItem, index) => {
@@ -145,11 +144,12 @@ export default function TeachOScreen() {
         }
 
         return {
-          id: `task-${index}`,
+          id: `task-${index + 1}`,
           type: taskType,
-          duration: `${taskItem.durationMinutes || 12} Min`,
+          stepNumber: index + 1,
+          duration: `${taskItem.durationMinutes || 20} Min`,
           title: `${taskItem.subject}: ${taskItem.topic}`,
-          subtitle: `${taskItem.subject} lesson for Day ${currentDay}`,
+          subtitle: `${taskItem.subject} • Day ${currentDay} Period ${index + 1}`,
           rawTopic: taskItem.topic,
           rawSubject: taskItem.subject,
           status,
@@ -159,35 +159,8 @@ export default function TeachOScreen() {
       });
     }
 
-    // Fallback standard 4 subjects
-    const fallbackSubjects = [
-      { sub: 'Mathematics', title: 'Number Magic & Counting (1 to 20)', dur: '15 Min', type: 'notes' as const },
-      { sub: 'Science & EVS', title: 'My Amazing Body & Five Senses', dur: '12 Min', type: 'video' as const },
-      { sub: 'Tamil Literature', title: 'உயிர் எழுத்துகள் & ஆத்திசூடி பாடல்', dur: '10 Min', type: 'notes' as const },
-      { sub: 'Creative Lab', title: 'Hands-on Activity & Bedtime Recap', dur: '10 Min', type: 'quiz' as const },
-    ];
-
-    return fallbackSubjects.map((item, index) => {
-      let status: 'completed' | 'in_progress' | 'locked' = 'locked';
-      if (index < completedTasksForCurrentDay) {
-        status = 'completed';
-      } else if (index === completedTasksForCurrentDay || isAdmin) {
-        status = 'in_progress';
-      }
-
-      return {
-        id: `fb-task-${index}`,
-        type: item.type,
-        duration: item.dur,
-        title: `${item.sub}: ${item.title}`,
-        subtitle: `${item.sub} Day ${currentDay} lesson`,
-        rawTopic: item.title,
-        rawSubject: item.sub,
-        status,
-        xp: 20,
-        actionLabel: status === 'completed' ? 'Review' : (status === 'in_progress' || isAdmin) ? (isAdmin ? 'Open 🔓' : 'Start') : 'Locked',
-      };
-    });
+    // If no content, return clean empty list instead of arbitrary fallback
+    return [];
   }, [activeDayPlan, completedTasksForCurrentDay, currentDay, isAdmin]);
 
   // Find active task (in progress) for the Hero card
