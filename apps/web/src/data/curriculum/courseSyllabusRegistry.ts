@@ -1,13 +1,12 @@
 /**
  * TeachO Master Course Syllabus Registry
  * Complete Authentic Real-World Micro-Granular Curricula for all 86 Courses:
- * - JEE Main & JEE Advanced (Unified 20-Min Studyable Micro-Topic Blueprint)
- * - UPSC Civil Services (IAS / IPS / IFS / IRS / Central Services - Prelims + Mains GS 1-4 + CSAT)
- * - TNPSC Unified All Groups (Group 1, 2/2A, 4, VAO, DEO, SI, Police - Prelims + Mains)
- * - NEET UG (NTA/NMC Official Blueprint)
- * - Class 11 & 12 Commerce (Accountancy, Business Studies, Economics)
- * - Kindergarten (LKG & UKG Phonics, Rhymes, Numbers, EVS)
- * - K-12 School (TNSB Samacheer & CBSE NCERT)
+ * - Foundational Stage: LKG, UKG, Class 1, Class 2 (Ages 3–8)
+ * - Preparatory Stage: Class 3, Class 4, Class 5 (Ages 8–11)
+ * - Middle Stage: Class 6, Class 7, Class 8 (Ages 11–14)
+ * - Secondary Stage: Class 9, Class 10 (Ages 14–16)
+ * - Higher Secondary Stage: Class 11, Class 12 (Science, Commerce, Arts)
+ * - Competitive Entrance: JEE Main/Advanced, NEET UG, UPSC CSE, TNPSC All Groups
  */
 
 export interface SyllabusMicroTopic {
@@ -54,7 +53,445 @@ export interface CourseFullSyllabus {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. JEE MAIN & JEE ADVANCED OFFICIAL UNIFIED MASTER SYLLABUS
+// 1. FOUNDATIONAL STAGE: CLASS 1 & CLASS 2 (AGES 6–8)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
+
+  const subjects: SyllabusSubject[] = [
+    {
+      subjectId: 'fnd_math',
+      subjectName: isTa ? 'கணிதம் & எண்கணித அடிப்படை (Mathematics & FLN)' : 'Mathematics & Number Sense (FLN)',
+      icon: '🔢',
+      color: '#06b6d4',
+      totalChapters: 3,
+      totalMicroTopics: 10,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'எண்கள், இடமதிப்பு & கூட்டல்/கழித்தல்' : 'Numbers, Place Value & Addition/Subtraction',
+          description: isTa ? '2 மற்றும் 3 இலக்க எண்கள், பத்துகள்/ஒன்றுகள் இடமதிப்பு, கூட்டல் கழித்தல் கணக்குகள்' : '2 & 3-digit numbers, Tens/Ones place value, Skip counting (2s, 5s, 10s), Word problems',
+          microTopics: [
+            { id: 'fnd_m_1', topicTitle: isTa ? 'இடமதிப்பு & 2 இலக்க எண்கள் (Tens & Ones)' : 'Place Value & 2-Digit Numbers (Tens & Ones)', subtopic: isTa ? 'மணிகள் சட்டம் மூலம் இடமதிப்பு அறிதல்' : 'Abacus representation, tens and ones grouping', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Place Value: 1 Ten = 10 Ones | 1 Hundred = 10 Tens', keyPoints: ['Grouping into bundles of tens', 'Expanded form: 47 = 40 + 7'], type: 'concept', importance: 'Foundational' },
+            { id: 'fnd_m_2', topicTitle: isTa ? 'கூட்டல் & கழித்தல் எளிய கணக்குகள்' : 'Addition & Subtraction Word Problems', subtopic: isTa ? 'நடைமுறை வாழ்க்கை கணக்கீடுகள்' : 'Single and double-digit operations with carry-over and borrowing', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'Addition: Combine groups (+) | Subtraction: Take away (-)', keyPoints: ['Word problem keywords: Total, In all, Left, Difference', 'Checking subtraction using addition'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'பெருக்கல் வாய்ப்பாடுகள் (1–10) & நாணயங்கள்' : 'Multiplication Tables (1–10) & Indian Currency',
+          description: isTa ? 'தொடர் கூட்டலே பெருக்கல், சமமாகப் பிரித்தலே வகுத்தல், இந்திய ரூபாய் நோட்டுகள்' : 'Multiplication as repeated addition, Division as sharing, Indian coins & notes',
+          microTopics: [
+            { id: 'fnd_m_3', topicTitle: isTa ? 'பெருக்கல் வாய்ப்பாடு & தொடர் கூட்டல்' : 'Multiplication Tables & Repeated Addition', subtopic: isTa ? '2, 3, 5, 10 வாய்ப்பாடுகள் பயிற்சி' : 'Visual array grouping and tables 1 to 10', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'Multiplication: 3 × 4 = 4 + 4 + 4 = 12', keyPoints: ['Order of multiplication does not change product (a × b = b × a)', 'Multiplying any number by 0 gives 0; by 1 gives same number'], type: 'memorization', importance: 'High-Yield' },
+            { id: 'fnd_m_4', topicTitle: isTa ? 'இந்திய நாணயங்கள் & ரூபாய் நோட்டுகள்' : 'Indian Currency: Coins & Notes Combinations', subtopic: isTa ? 'பொருட்கள் வாங்குதல் மற்றும் மீதி கணக்கிடுதல்' : 'Making amounts using ₹1, ₹2, ₹5, ₹10 coins and ₹20, ₹50, ₹100 notes', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: '1 Rupee (₹1) = 100 Paise | Total Amount = Price × Quantity', keyPoints: ['Coin identification and exchange equivalents', 'Calculating change to be returned'], type: 'solved_problem', importance: 'Foundational' }
+          ]
+        },
+        {
+          chapterNumber: 3,
+          chapterTitle: isTa ? 'அடிப்படை பின்னங்கள் & அளவீடுகள் (நீளம், எடை)' : 'Basic Fractions & Measurement Units',
+          description: isTa ? 'அரை (1/2), கால் (1/4), மீட்டர், கிலோகிராம், லிட்டர் அளவுகள்' : 'Fractions (1/2, 1/4), Standard units of length (m/cm), weight (kg/g), capacity (L/mL)',
+          microTopics: [
+            { id: 'fnd_m_5', topicTitle: isTa ? 'பின்னங்கள்: அரை (1/2), கால் (1/4) அறிமுகம்' : 'Fractions: Half (1/2) and Quarter (1/4)', subtopic: isTa ? 'வடிவங்களை சமமாகப் பிரித்தல்' : 'Shading and identifying halves and quarters in 2D shapes', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'Fraction = Part / Whole | 1/2 + 1/2 = 1 | 1/4 + 1/4 + 1/4 + 1/4 = 1', keyPoints: ['Equal parts of a whole shape or collection', 'Visual fraction circle models'], type: 'concept', importance: 'Foundational' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'fnd_science',
+      subjectName: isTa ? 'சூழ்நிலையியல் & அறிவியல் (General Science & EVS)' : 'General Science & Environmental Studies',
+      icon: '🌿',
+      color: '#10b981',
+      totalChapters: 3,
+      totalMicroTopics: 10,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'மனித உடல் உறுப்புகள் & சுகாதார பழக்கங்கள்' : 'My Body Organs & Healthy Habits',
+          description: isTa ? 'மூளை, இதயம், நுரையீரல், வயிறு மற்றும் ஆரோக்கிய பழக்கங்கள்' : 'Internal organs (Brain, Heart, Lungs, Stomach), 5 senses, Hygiene and Balanced diet',
+          microTopics: [
+            { id: 'fnd_s_1', topicTitle: isTa ? 'உள் உறுப்புகள்: மூளை, இதயம், நுரையீரல், வயிறு' : 'Internal Organs: Brain, Heart, Lungs & Stomach', subtopic: isTa ? 'உறுப்புகளின் முதன்மைப் பணிகள்' : 'Functions: Brain (Thinking), Heart (Pumping blood), Lungs (Breathing), Stomach (Digestion)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Body Organs: Heart pumps blood | Lungs breathe Oxygen (O₂) | Brain controls body', keyPoints: ['Protecting sense organs', 'Good posture and daily exercise'], type: 'concept', importance: 'Foundational' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'தாவரங்கள், விலங்குகள் & பருவகாலங்கள்' : 'Plants, Animals & Seasons',
+          description: isTa ? 'மரங்கள், செடிகள், கொடிகள், விலங்குகளின் உணவு மற்றும் கோடை/மழை/குளிர் பருவங்கள்' : 'Trees, Shrubs, Herbs, Herbivores/Carnivores, Germination, Summer/Rainy/Winter seasons',
+          microTopics: [
+            { id: 'fnd_s_2', topicTitle: isTa ? 'தாவர வளர்ச்சி (விதை முளைத்தல்) & வகைகள்' : 'Plant Life Cycle: Germination & Classification', subtopic: isTa ? 'மரம், செடி, புதர், கொடி வேறுபாடுகள்' : 'Seed to plant stages, Trees, Shrubs, Herbs, Climbers and Creepers', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'Seed Germination Requirements: Air + Water + Sunlight + Soil', keyPoints: ['Tap root vs Fibrous root basics', 'Photosynthesis produces food for plants'], type: 'concept', importance: 'Foundational' },
+            { id: 'fnd_s_3', topicTitle: isTa ? 'பொருட்களின் நிலைகள் & ஒளி நிழல்' : 'States of Matter & Light and Shadows', subtopic: isTa ? 'திண்மம், திரவம், வாயு மற்றும் நிழல் உருவாக்கம்' : 'Solids, Liquids, Gases properties and how shadows form when light is blocked', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Matter: Solid (Fixed shape) | Liquid (Takes container shape) | Gas (Spreads freely)', keyPoints: ['Shadow is formed when an opaque object blocks light', 'Shadow length changes at morning, noon, and evening'], type: 'concept', importance: 'Foundational' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'fnd_social_lang',
+      subjectName: isTa ? 'சமூக சிந்தனை, திருக்குறள் & மொழி (Social, Tamil & English)' : 'Social Awareness, Moral Stories & Language',
+      icon: '📜',
+      color: '#8b5cf6',
+      totalChapters: 3,
+      totalMicroTopics: 10,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'நமது சமுதாயம், தேசிய சின்னங்கள் & திருக்குறள்' : 'Our Community Helpers, National Symbols & Thirukkural',
+          description: isTa ? 'காவல்துறை, மருத்துவமனை, தபால் நிலையம், தேசியக் கொடி, விலங்கு, பறவை & திருக்குறள்' : 'Police, Hospital, Post Office, National Flag/Emblem/Anthem, Moral couplets',
+          microTopics: [
+            { id: 'fnd_sl_1', topicTitle: isTa ? 'இந்திய தேசிய சின்னங்கள் & திருக்குறள் நற்பண்புகள்' : 'National Symbols of India & Moral Couplets', subtopic: isTa ? 'தேசியக் கொடி (மூவர்ணம்), அசோகச் சக்கரம் & திருக்குறள்' : 'Tricolour Flag (Saffron, White, Green), Ashoka Chakra (24 spokes), Tiger, Peacock', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'National Flag: Saffron (Courage), White (Peace), Green (Prosperity) | Thirukkural: அகர முதல எழுத்தெல்லாம்', keyPoints: ['Respecting national symbols', 'Moral values: Truthfulness, Kindness, Respecting elders'], type: 'concept', importance: 'Foundational' },
+            { id: 'fnd_sl_2', topicTitle: isTa ? 'திசைகள் (கிழக்கு, மேற்கு) & குடும்ப உறவுகள்' : 'Direction Sense (Cardinal) & Family Tree', subtopic: isTa ? 'சூரியன் உதிக்கும் திசை கிழக்கு & உறவுமுறை பெயர்கள்' : 'Sun rises in East, sets in West; Family relations (Grandparents, Parents, Siblings)', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: '4 Cardinal Directions: North, South, East, West', keyPoints: ['Facing morning sun: Front is East, Back is West, Left is North, Right is South', 'Family tree generational diagram'], type: 'concept', importance: 'Foundational' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  return {
+    courseId,
+    courseTitle,
+    category: 'school_foundational',
+    board: 'TNSB / CBSE / NCERT',
+    medium: isTa ? 'Tamil' : 'English',
+    totalDays: 200,
+    totalSubjects: subjects.length,
+    totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
+    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. PREPARATORY STAGE: CLASS 3 TO CLASS 5 (AGES 8–11)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
+
+  const subjects: SyllabusSubject[] = [
+    {
+      subjectId: 'prep_math',
+      subjectName: isTa ? 'கணிதம் & அடிப்படை இயற்கணிதம் (Mathematics Core)' : 'Mathematics & Computational Arithmetic',
+      icon: '📐',
+      color: '#06b6d4',
+      totalChapters: 3,
+      totalMicroTopics: 12,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'பெரிய எண்கள், காரணி & மடங்குகள் (HCF & LCM)' : 'Large Numbers, Factors, Multiples, HCF & LCM',
+          description: isTa ? '5–6 இலக்க எண்கள், பகா எண்கள், மீ.சி.ம & மீ.பொ.வ, உரோமானிய எண்கள்' : '5 to 6-digit operations, Prime & Composite numbers, HCF & LCM, Roman Numerals',
+          microTopics: [
+            { id: 'prep_m_1', topicTitle: isTa ? 'பகா எண்கள் & பகா காரணிப்படுத்துதல் (HCF / LCM)' : 'Prime Factorization, HCF & LCM Fundamentals', subtopic: isTa ? 'மீப்பெரு பொது காரணி மற்றும் மீச்சிறு பொது மடங்கு' : 'Factor tree method, division method, Product = HCF × LCM formula', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Product of Two Numbers = HCF × LCM | Prime Numbers have exactly 2 factors (1 and itself)', keyPoints: ['2 is the only even prime number', 'Co-prime numbers have HCF = 1'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'prep_m_2', topicTitle: isTa ? 'பின்னங்கள் & தசம எண்கள் கூட்டல்/கழித்தல்' : 'Fractions & Decimals Operations', subtopic: isTa ? 'ஓரின மற்றும் வேற்றின பின்னங்கள்' : 'Like/Unlike fractions, Equivalent fractions, Decimal place value chart', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'Fractions: a/b + c/b = (a+c)/b | Decimals: 0.75 = 75/100 = 3/4', keyPoints: ['Converting unlike fractions using LCM of denominators', 'Multiplication and division of decimals by 10, 100, 1000'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'நேர்வீத முறை, விழுக்காடு, இலாப நட்டம்' : 'Unitary Method, Percentages, Profit & Loss',
+          description: isTa ? 'ஒரு பொருளின் விலை கொண்டு பல பொருட்களின் விலை காணுதல், சதவீத கணக்கீடுகள்' : 'Unitary method problems, Percentage conversions, Profit = SP - CP, Loss = CP - SP',
+          microTopics: [
+            { id: 'prep_m_3', topicTitle: isTa ? 'நேர்வீத முறை & எளிய விழுக்காடு கணக்கீடு' : 'Unitary Method & Basic Percentages', subtopic: isTa ? 'அடக்க விலை, விற்ற விலை மற்றும் இலாப நட்டம்' : 'Find cost of 1 unit -> Multiply by desired quantity; % = (Value/Total) × 100', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'Unitary Rule: Unit Cost = Total Cost / Total Units | Profit = SP - CP (if SP > CP)', keyPoints: ['Profit% = (Profit / CP) × 100', 'Discount = Marked Price - Selling Price'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'prep_m_4', topicTitle: isTa ? 'வடிவியல்: கோணங்கள் & பரப்பளவு / சுற்றளவு' : 'Geometry: Angles, Perimeter & Area', subtopic: isTa ? 'செங்கோணம், குறுங்கோணம், விரிகோணம், செவ்வகம்/சதுரம் சுற்றளவு' : 'Acute, Right, Obtuse angles; Perimeter = Sum of all sides; Area of Rectangle = l × w', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'Rectangle: Perimeter = 2(l + w), Area = l × w | Square: Perimeter = 4a, Area = a²', keyPoints: ['Right angle = 90°, Straight angle = 180°', 'Sum of angles in a triangle = 180°'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'prep_science',
+      subjectName: isTa ? 'பொது அறிவியல் (General Science & Human Physiology)' : 'General Science & Human Organ Systems',
+      icon: '🔬',
+      color: '#10b981',
+      totalChapters: 3,
+      totalMicroTopics: 12,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'மனித உறுப்பு மண்டலங்கள் & ஊட்டச்சத்து' : 'Human Organ Systems & Nutrition',
+          description: isTa ? 'செரிமான மண்டலம், சுவாச மண்டலம், ரத்த ஓட்ட மண்டலம் & சரிவிகித உணவு' : 'Digestive, Respiratory, Circulatory, Nervous systems; Balanced diet (Carbs, Proteins, Vitamins, Minerals)',
+          microTopics: [
+            { id: 'prep_s_1', topicTitle: isTa ? 'செரிமான & சுவாச உறுப்பு மண்டலங்கள்' : 'Digestive & Respiratory System Anatomy', subtopic: isTa ? 'உணவுக்குழாய், இரைப்பை, சிறுகுடல், மூச்சுக்குழாய், நுரையீரல்' : 'Alimentary canal stages, Enzyme digestion, Alveoli gas exchange (O₂ in, CO₂ out)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Respiration: Glucose + Oxygen -> Energy (ATP) + Carbon Dioxide + Water', keyPoints: ['Digestion begins in the mouth with salivary amylase', 'Villi in small intestine absorb digested nutrients into bloodstream'], type: 'concept', importance: 'High-Yield' },
+            { id: 'prep_s_2', topicTitle: isTa ? 'ஊட்டச்சத்துகள் & குறைபாட்டு நோய்கள்' : 'Balanced Diet & Deficiency Diseases', subtopic: isTa ? 'வைட்டமின்கள் A, B, C, D மற்றும் தாது உப்புக்கள்' : 'Nutrients: Carbohydrates (Energy), Proteins (Body-building), Fats, Vitamins & Minerals (Protective)', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'Deficiency Diseases: Vit A (Night blindness), Vit C (Scurvy), Vit D (Rickets), Iron (Anemia)', keyPoints: ['Proteins made of amino acids repair damaged body tissues', 'Iodine deficiency causes Goitre (thyroid enlargement)'], type: 'concept', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'விசை, வேலை, ஆற்றல் & எளிய எந்திரங்கள்' : 'Force, Work, Energy & Simple Machines',
+          description: isTa ? 'இயக்க விசை, உராய்வு விசை, நெம்புகோல் (Lever), கப்பி (Pulley), சாய்தளம்' : 'Gravitational & Frictional forces, Kinetic & Potential energy, Lever (1st/2nd/3rd class), Pulley, Inclined plane',
+          microTopics: [
+            { id: 'prep_s_3', topicTitle: isTa ? 'விசை வகைகள் & எளிய எந்திரங்கள் (Lever & Pulley)' : 'Forces & Simple Machines (Levers & Pulleys)', subtopic: isTa ? 'நெம்புகோல் 3 வகைகள் மற்றும் தத்துவம்' : 'Mechanical advantage, 1st Class (Seesaw), 2nd Class (Wheelbarrow), 3rd Class (Tongs)', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Work = Force × Displacement | Lever Principle: Load × Load Arm = Effort × Effort Arm', keyPoints: ['Simple machines make work easier by changing force direction or magnitude', 'Friction opposes relative motion between surfaces'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'prep_s_4', topicTitle: isTa ? 'நீர் சுழற்சி, சூரிய குடும்பம் & சுற்றுச்சூழல்' : 'Water Cycle, Solar System & Environmental Conservation', subtopic: isTa ? 'ஆவியாதல், ஆவி சுருங்குதல், மழைப்பொழிவு & 8 கோள்கள்' : 'Evaporation, Condensation, Precipitation; 8 Planets (Mercury to Neptune), Pollution control', dayNumber: 11, periodNumber: 2, keyFormulaOrLaw: 'Water Cycle: Evaporation -> Condensation (Clouds) -> Precipitation (Rain) -> Collection', keyPoints: ['Jupiter is the largest planet; Venus is the hottest planet', '3 R\'s of Conservation: Reduce, Reuse, Recycle'], type: 'concept', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'prep_social',
+      subjectName: isTa ? 'சமூக அறிவியல் & குடிமையியல் (Social Science & Civics)' : 'Social Science, History & Indian Polity Seed',
+      icon: '🌍',
+      color: '#f59e0b',
+      totalChapters: 3,
+      totalMicroTopics: 12,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'இந்திய இயற்கை அமைப்புகள், ஆறுகள் & வரைபடம்' : 'Physical Geography of India, Rivers & Maps',
+          description: isTa ? 'இமயமலை, கங்கை சமவெளி, தக்காண பீடபூமி, காவிரி, வைகை ஆறுகள்' : 'Himalayas, Northern Plains, Peninsular Plateau, Coastal Plains, Indian Rivers & Continents',
+          microTopics: [
+            { id: 'prep_soc_1', topicTitle: isTa ? 'இந்திய இயற்கை அமைப்புகள் & ஆறுகள் (Cauvery, Vaigai)' : 'Physical Divisions of India & Major Rivers', subtopic: isTa ? 'இமயமலை, தக்காண பீடபூமி, காவிரி, கங்கை' : 'Perennial Himalayan rivers (Ganga, Indus) vs Rain-fed Peninsular rivers (Cauvery, Godavari)', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Physical Divisions: Himalayas (North) | Plains (Central) | Plateau (South) | Deserts (West)', keyPoints: ['Cauvery originates at Talakaveri (Karnataka) and flows through Tamil Nadu', 'Continents: Asia is largest; Australia is smallest'], type: 'concept', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'பண்டைய வரலாறு, மூவேந்தர் & இந்திய அரசியலமைப்பு' : 'Ancient History, Sangam Kings & Indian Constitution',
+          description: isTa ? 'சிந்து சமவெளி அறிமுகம், சேர சோழ பாண்டியர், அரசியலமைப்பு முகப்புரை' : 'Indus Valley Civilization intro, Sangam Age (Chera, Chola, Pandya), Indian Constitution & Preamble',
+          microTopics: [
+            { id: 'prep_soc_2', topicTitle: isTa ? 'சேர, சோழ, பாண்டியர் வரலாறு & இந்திய முகப்புரை' : 'Sangam Dynasties & Indian Constitution Preamble', subtopic: isTa ? 'மூவேந்தர் சின்னங்கள் & அரசியலமைப்பு அடிப்படை' : 'Emblems (Bow-Arrow, Tiger, Fish), Dr. Ambedkar role, Preamble values (Justice, Liberty, Equality)', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Constitution Day: 26 November | Republic Day: 26 January 1950', keyPoints: ['Chola capital: Uraiyur / Thanjavur | Pandya capital: Madurai', 'Fundamental Duties enshrined in Indian Constitution'], type: 'concept', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  return {
+    courseId,
+    courseTitle,
+    category: 'school_preparatory',
+    board: 'TNSB / CBSE / NCERT',
+    medium: isTa ? 'Tamil' : 'English',
+    totalDays: 200,
+    totalSubjects: subjects.length,
+    totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
+    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. MIDDLE STAGE: CLASS 6 TO CLASS 8 (AGES 11–14)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
+
+  const subjects: SyllabusSubject[] = [
+    {
+      subjectId: 'mid_math',
+      subjectName: isTa ? 'கணிதம் & இயற்கணிதம் (Mathematics & Pre-Algebra)' : 'Mathematics, Pre-Algebra & Geometry',
+      icon: '📐',
+      color: '#06b6d4',
+      totalChapters: 3,
+      totalMicroTopics: 14,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'முழுக்கள், விகிதமுறு எண்கள் & அடுக்குகள்' : 'Integers, Rational Numbers & Exponents',
+          description: isTa ? 'குறை மற்றும் மிகை எண்கள், விகிதமுறு எண்கள் கூட்டல்/பெருக்கல், அடுக்கு விதிகள்' : 'Negative & Positive integers, Rational numbers, Laws of Exponents (a^m × a^n = a^(m+n))',
+          microTopics: [
+            { id: 'mid_m_1', topicTitle: isTa ? 'விகிதமுறு எண்கள் & அடுக்கு விதிகள்' : 'Rational Numbers & Laws of Exponents', subtopic: isTa ? 'பின்ன வடிவில் எண்கள் (p/q, q ≠ 0) & அடுக்கு சமன்பாடுகள்' : 'Properties (Closure, Commutative, Associative, Distributive), Scientific notation', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Exponent Laws: a^m × a^n = a^(m+n) | a^m / a^n = a^(m-n) | (a^m)^n = a^(mn) | a^0 = 1', keyPoints: ['Rational numbers are dense between any two given rationals', 'Negative exponent: a^(-n) = 1 / a^n'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_2', topicTitle: isTa ? 'ஒருபடி சமன்பாடுகள் & காரணிப்படுத்துதல்' : 'Linear Equations in 1-Variable & Factorization', subtopic: isTa ? 'ax + b = c சமன்பாடுகள் & இயற்கணித முற்றொருமைகள்' : 'Transposition method, Word problems on ages/numbers, Algebraic identities', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: '(a + b)² = a² + 2ab + b² | (a - b)² = a² - 2ab + b² | a² - b² = (a+b)(a-b)', keyPoints: ['Solving equations by isolating variable on one side', 'Factorization by splitting middle term and common factors'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'விகிதம், கூட்டுவட்டி & 2D/3D அளவியல்' : 'Ratio, Compound Interest & Mensuration',
+          description: isTa ? 'தனிவட்டி, கூட்டுவட்டி A = P(1+R/100)^n, முக்கோணம், வட்டம், நாற்கரம் பரப்பளவு' : 'Direct/Inverse proportion, Compound Interest formula, Area of Trapezium, Surface Area/Volume of Cuboid & Cylinder',
+          microTopics: [
+            { id: 'mid_m_3', topicTitle: isTa ? 'கூட்டுவட்டி (Compound Interest) & தள்ளுபடி கணக்கீடுகள்' : 'Compound Interest & Commercial Mathematics', subtopic: isTa ? 'அரையாண்டு, முழு ஆண்டு கூட்டுவட்டி சமன்பாடுகள்' : 'A = P(1 + R/100)ⁿ | CI = A - P | Profit% and Loss% formulas', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Compound Amount A = P(1 + R/100)ⁿ | CI = P[(1 + R/100)ⁿ - 1]', keyPoints: ['CI grows exponentially compared to linear growth of SI', 'Depreciation formula: V = P(1 - R/100)ⁿ'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'mid_physics_chem',
+      subjectName: isTa ? 'இயற்பியல் & வேதியியல் (Physics & Chemistry Core)' : 'Physics & Chemistry Scientific Inquiry',
+      icon: '⚡',
+      color: '#10b981',
+      totalChapters: 3,
+      totalMicroTopics: 14,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'இயக்கம், விசை, அழுத்தம் & ஒளி / ஒலி' : 'Motion, Force, Pressure, Light & Sound',
+          description: isTa ? 'வேகம் v = d/t, பாய்ம அழுத்தம், ஒளியின் எதிரொளிப்பு, ஒலியின் சுருதி மற்றும் உரப்பு' : 'Speed & Distance-Time graphs, Atmospheric & Fluid pressure, Reflection laws, Sound pitch/frequency/human ear',
+          microTopics: [
+            { id: 'mid_p_1', topicTitle: isTa ? 'வேகம், இயக்கம் & விசை அழுத்தம் (Force & Pressure)' : 'Speed, Velocity, Force & Pressure Mechanics', subtopic: isTa ? 'v = d/t மற்றும் P = F/A கணக்கீடுகள்' : 'Uniform vs non-uniform motion, Pressure P = F/A in Pascals, Atmospheric pressure barometer', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Speed = Distance / Time | Pressure P = Force / Area (1 Pa = 1 N/m²)', keyPoints: ['Pressure increases with depth in liquids (P = ρgh)', 'Friction can be reduced using ball bearings and lubricants'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_2', topicTitle: isTa ? 'ஒளியியல் எதிரொளிப்பு & ஒலியியல் அதிர்வெண்' : 'Optics (Reflection) & Acoustics (Pitch & Loudness)', subtopic: isTa ? 'சமதள ஆடி எதிரொளிப்பு விதிகள், அதிர்வெண் (Hz), வீச்சு' : 'Laws of reflection (i = r), Amplitude determines loudness, Frequency determines pitch/shrilness', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Frequency f = 1 / Time Period | Audible Human Range: 20 Hz to 20,000 Hz', keyPoints: ['Sound requires a material medium to propagate; cannot travel in vacuum', 'Infrasonic (<20 Hz) vs Ultrasonic (>20,000 Hz)'], type: 'concept', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'அமிலங்கள், காரங்கள், உலோகங்கள் & எரிதல்' : 'Acids, Bases, Metals, Non-Metals & Combustion',
+          description: isTa ? 'லிட்மஸ், pH, உலோகங்களின் வினைபடு வரிசை, பெட்ரோலியம், எரிதல் தத்துவம்' : 'Neutralization (Acid + Base -> Salt + Water), Reactivity series of metals, Displacement reactions, Calorific value',
+          microTopics: [
+            { id: 'mid_c_1', topicTitle: isTa ? 'அமிலங்கள், காரங்கள் & உலோகங்களின் வினைபடு வரிசை' : 'Acids, Bases, Salts & Metal Reactivity Series', subtopic: isTa ? 'இடப்பெயர்ச்சி வினைகள் மற்றும் நடுநிலையாக்கல்' : 'Litmus/Phenolphthalein indicators, Metal + Acid -> Salt + H₂ gas, Reactivity series (K > Na > Ca > Mg > Al > Zn > Fe > Cu)', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'Neutralization: Acid + Base -> Salt + Water | Metal Displacement: Zn + CuSO₄ -> ZnSO₄ + Cu', keyPoints: ['More reactive metal displaces less reactive metal from its salt solution', 'Bases are bitter in taste and soapy to touch; turn red litmus blue'], type: 'concept', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'mid_bio_social',
+      subjectName: isTa ? 'உயிரியல், வரலாறு & அரசியலமைப்பு (Biology, History & Polity)' : 'Biology, History & Indian Constitution Core',
+      icon: '🌍',
+      color: '#f59e0b',
+      totalChapters: 3,
+      totalMicroTopics: 14,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'செல் அமைப்பு, ஊட்டச்சத்து & சுவாச மண்டலம்' : 'Cell Biology, Nutrition & Respiration',
+          description: isTa ? 'தாவர/விலங்கு செல் நுண்ணுறுப்புகள், மனித செரிமானம், சுவாசம் & ரத்த ஓட்டம்' : 'Cell membrane, Nucleus, Mitochondria (Powerhouse), Plant vs Animal cell, Respiration, Crop management',
+          microTopics: [
+            { id: 'mid_b_1', topicTitle: isTa ? 'செல் அமைப்பு: தாவர மற்றும் விலங்கு செல்' : 'Cell: Structure & Function (Plant vs Animal Cell)', subtopic: isTa ? 'மைட்டோகாண்ட்ரியா, உட்கரு, பசுங்கணிகம் வேறுபாடுகள்' : 'Cell wall (plants only), Chloroplast (photosynthesis), Nucleus (genetic material), Vacuoles', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Mitochondria = Powerhouse of Cell (ATP) | Ribosomes = Protein Factories', keyPoints: ['Robert Hooke discovered cells in cork (1665)', 'Prokaryotic (no true nucleus) vs Eukaryotic cells'], type: 'concept', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'இந்திய வரலாறு (முகலாயர், 1857) & அரசியலமைப்பு' : 'Indian History, 1857 Revolt & Indian Constitution',
+          description: isTa ? 'சிந்து சமவெளி, மௌரியர், முகலாயர், 1857 பெரும் புரட்சி, அடிப்படை உரிமைகள் & உள்ளாட்சி' : 'Indus Valley, Mauryas, Delhi Sultanate, Mughals, 1857 Revolt, Fundamental Rights/Duties, Gram Sabha',
+          microTopics: [
+            { id: 'mid_soc_1', topicTitle: isTa ? '1857 பெரும் புரட்சி & இந்திய அரசியலமைப்பு அடிப்படை' : '1857 Great Revolt & Indian Constitution Core', subtopic: isTa ? 'மீரட் புரட்சி, மங்கள் பாண்டே, அடிப்படை உரிமைகள் 6' : 'Causes of 1857 revolt, Queen Victoria proclamation 1858, 6 Fundamental Rights (Art 14–32), Secularism', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Article 14: Equality before Law | Article 21: Protection of Life and Personal Liberty', keyPoints: ['Panchayati Raj 3-tier structure (Gram Panchayat, Panchayat Samiti, Zilla Parishad)', 'Governor is constitutional head of state; Chief Minister is real executive head'], type: 'concept', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  return {
+    courseId,
+    courseTitle,
+    category: 'school_middle',
+    board: 'TNSB / CBSE / NCERT',
+    medium: isTa ? 'Tamil' : 'English',
+    totalDays: 200,
+    totalSubjects: subjects.length,
+    totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
+    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. SECONDARY STAGE: CLASS 9 & CLASS 10 (AGES 14–16 - JEE/NEET/TNPSC FOUNDATION)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
+
+  const subjects: SyllabusSubject[] = [
+    {
+      subjectId: 'sec_math',
+      subjectName: isTa ? 'கணிதம் & முக்கோணவியல் (Mathematics & Trigonometry)' : 'Mathematics, Trigonometry & Coordinate Geometry',
+      icon: '📐',
+      color: '#06b6d4',
+      totalChapters: 4,
+      totalMicroTopics: 16,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'மெய் எண்கள், பல்லுறுப்புக் கோவைகள் & இருபடிச் சமன்பாடுகள்' : 'Real Numbers, Polynomials & Quadratic Equations',
+          description: isTa ? 'யூக்ளிட் வகுத்தல் வழிமுறை, மூலங்களின் தன்மை, இருபடி சூத்திரம்' : 'Euclid division lemma, Fundamental Theorem of Arithmetic, Quadratic formula x = (-b ± √D)/(2a)',
+          microTopics: [
+            { id: 'sec_m_1', topicTitle: isTa ? 'இருபடிச் சமன்பாடுகள் & மூலங்களின் தன்மை (Discriminant D)' : 'Quadratic Equations & Nature of Roots (Discriminant D)', subtopic: isTa ? 'D = b² - 4ac மற்றும் இருபடி சூத்திரம்' : 'D > 0 (Real & Distinct), D = 0 (Real & Equal), D < 0 (Imaginary), Vieta relations α+β = -b/a, αβ = c/a', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Quadratic Formula: x = [-b ± √(b² - 4ac)] / (2a) | Discriminant D = b² - 4ac', keyPoints: ['Sum of roots α + β = -b/a | Product of roots αβ = c/a', 'Equation formation: x² - (Sum)x + (Product) = 0'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_2', topicTitle: isTa ? 'கூட்டுத்தொடர்வரிசை — AP (n-வது உறுப்பு & கூடுதல்)' : 'Arithmetic Progressions (AP: n-th Term & Sum Sn)', subtopic: isTa ? 't_n = a + (n-1)d மற்றும் S_n = n/2 [2a + (n-1)d]' : 'General term of AP, Sum of first n terms, Word problems on daily savings/patterns', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'n-th Term a_n = a + (n - 1)d | Sum S_n = n/2 [2a + (n - 1)d] = n/2 [a + l]', keyPoints: ['Common difference d = a_k - a_(k-1)', 'Arithmetic Mean between a and b is (a + b) / 2'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'முக்கோணவியல் முற்றொருமைகள் & ஆயத்தொலை வடிவியல்' : 'Trigonometric Identities & Coordinate Geometry',
+          description: isTa ? 'sin²θ + cos²θ = 1, உயரங்களும் தொலைவுகளும், பிரிவு சூத்திரம்' : 'Trigonometric ratios, Standard angles (0°, 30°, 45°, 60°, 90°), Identities, Section formula, Area of triangle',
+          microTopics: [
+            { id: 'sec_m_3', topicTitle: isTa ? 'முக்கோணவியல் முற்றொருமைகள் & உயரங்களும் தொலைவுகளும்' : 'Trigonometric Identities & Heights and Distances', subtopic: isTa ? 'sin²θ + cos²θ = 1, tan θ = எதிர்ப்பக்கம் / அடுத்துள்ள பக்கம்' : 'Identities: 1 + tan²θ = sec²θ, 1 + cot²θ = cosec²θ, Angle of elevation and depression problems', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'sin²θ + cos²θ = 1 | 1 + tan²θ = sec²θ | tan θ = Height / Distance', keyPoints: ['Values at 45°: sin 45° = cos 45° = 1/√2, tan 45° = 1', 'Angle of elevation from observer equals angle of depression from top (Alternate interior angles)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_4', topicTitle: isTa ? 'ஆயத்தொலை வடிவியல்: தொலைவு & பிரிவு சூத்திரம்' : 'Coordinate Geometry: Distance & Section Formula', subtopic: isTa ? 'இரு புள்ளிகளுக்கு இடைப்பட்ட தொலைவு & உட்புறமாகப் பிரிக்கும் புள்ளி' : 'd = √[(x₂-x₁)² + (y₂-y₁)²], Section formula P(x, y) = [(m₁x₂ + m₂x₁)/(m₁+m₂), (m₁y₂ + m₂y₁)/(m₁+m₂)]', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'Distance d = √[(x₂ - x₁)² + (y₂ - y₁)²] | Midpoint = ((x₁+x₂)/2, (y₁+y₂)/2)', keyPoints: ['Collinearity condition: Area of triangle formed by 3 points = 0', 'Centroid of triangle = ((x₁+x₂+x₃)/3, (y₁+y₂+y₃)/3)'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'sec_physics',
+      subjectName: isTa ? 'இயற்பியல் (Physics — NEET/JEE Foundation)' : 'Physics (Mechanics, Optics, Electricity & Magnetism)',
+      icon: '⚡',
+      color: '#10b981',
+      totalChapters: 3,
+      totalMicroTopics: 16,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'இயக்க விதிகள், ஈர்ப்பியல் & வேலை ஆற்றல்' : 'Laws of Motion, Gravitation & Work-Energy',
+          description: isTa ? 'நியூட்டனின் 3 விதிகள் (F=ma), ஈர்ப்பு மாறிலி G, இயக்க ஆற்றல் ½mv²' : 'Equations of motion, Momentum conservation, Universal Law of Gravitation (F = G M m / r²), Kinetic & Potential Energy',
+          microTopics: [
+            { id: 'sec_p_1', topicTitle: isTa ? 'நியூட்டனின் இயக்க விதிகள் & உந்த அழிவின்மை விதி' : 'Newton Laws of Motion & Momentum Conservation', subtopic: isTa ? 'F = ma சூத்திரம் & துப்பாக்கி பின்னுதைப்பு கணக்கீடு' : 'Inertia, F = dp/dt = ma, Action-Reaction pairs, Recoil velocity of gun v = -(m/M)u', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'F = ma | Momentum p = mv | Conservation: m₁u₁ + m₂u₂ = m₁v₁ + m₂v₂', keyPoints: ['Impulse J = F × Δt = Change in momentum Δp', 'Apparent weight in elevator: N = m(g ± a)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_p_2', topicTitle: isTa ? 'ஈர்ப்பியல் & வேலை, திறன், ஆற்றல் சமன்பாடுகள்' : 'Universal Gravitation, Work, Power & Energy', subtopic: isTa ? 'g மாறுபாடுகள், எடைlessness, K = ½mv², P = W/t' : 'F = G m₁ m₂ / r², Acceleration due to gravity g = GM/R², Work W = F s cos θ, Kinetic energy ½mv²', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Gravitation: F = (G M m) / R² | Kinetic Energy K = ½mv² | Power P = W / t (Watts)', keyPoints: ['g at earth surface ≈ 9.8 m/s²; g decreases with altitude and depth', '1 Horsepower (hp) = 746 Watts | 1 kWh = 3.6 × 10⁶ Joules'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'ஒளியியல் (எதிரொளிப்பு, விலகல்) & மின்னியல் (Ohm Law)' : 'Optics (Mirrors & Lenses) & Current Electricity (Ohm Law)',
+          description: isTa ? 'ஆடி மற்றும் லென்ஸ் சூத்திரங்கள், ஓம் விதி V = IR, தொடர்/பக்க இணைப்பு மின்தடை' : 'Mirror formula 1/v + 1/u = 1/f, Lens formula 1/v - 1/u = 1/f, Snell\'s law, Ohm\'s law V = IR, Series/Parallel resistors',
+          microTopics: [
+            { id: 'sec_p_3', topicTitle: isTa ? 'ஒளியியல்: லென்ஸ் சூத்திரம், திறன் & ஸ்நெல் விதி' : 'Optics: Reflection, Refraction, Lens Formula & Power', subtopic: isTa ? '1/v - 1/u = 1/f, P = 1/f(m), ஒளிவிலகல் எண் n = c/v' : 'Sign convention, Mirror formula 1/v+1/u=1/f, Lens formula 1/v-1/u=1/f, Power of lens P = 1/f in Dioptres (D)', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'Lens Formula: 1/v - 1/u = 1/f | Power P = 1/f(m) | Snell Law: n₁ sin i = n₂ sin r', keyPoints: ['Convex lens is converging (f > 0); Concave lens is diverging (f < 0)', 'Myopia (short-sightedness) corrected by Concave lens; Hypermetropia by Convex lens'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_p_4', topicTitle: isTa ? 'மின்னியல்: ஓம் விதி & மின்தடை இணைப்புகள்' : 'Electricity: Ohm Law, Resistance Combinations & Joule Heating', subtopic: isTa ? 'V = IR, தொடர் இணைப்பு R_s = R₁ + R₂, பக்க இணைப்பு 1/R_p = 1/R₁ + 1/R₂' : 'Resistivity R = ρL/A, Series resistance R_s = ΣR_i, Parallel 1/R_p = Σ(1/R_i), Joule heating H = I²Rt', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'Ohm Law: V = IR | Series: R_s = R₁ + R₂ | Parallel: 1/R_p = 1/R₁ + 1/R₂ | Power P = VI = I²R', keyPoints: ['Current is same through all series resistors; Voltage divides', 'Voltage is same across all parallel branches; Current divides'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'sec_chem_bio',
+      subjectName: isTa ? 'வேதியியல் & உயிரியல் (Chemistry & Biology Core)' : 'Chemistry & Biology Life Processes',
+      icon: '🧪',
+      color: '#f59e0b',
+      totalChapters: 3,
+      totalMicroTopics: 16,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'வேதி வினைகள், அமிலங்கள் காரங்கள் & கார்பன் சேர்மங்கள்' : 'Chemical Reactions, Acids/Bases & Carbon Compounds',
+          description: isTa ? 'வேதி சமன்பாடுகள் சமன்செய்தல், pH அளவீடு, பிளாஸ்டர் ஆஃப் பாரிஸ், ஹைட்ரோகார்பன்கள்' : 'Balancing reactions, pH scale, Chlor-alkali process, Covalent bonding, Homologous series, Esterification',
+          microTopics: [
+            { id: 'sec_c_1', topicTitle: isTa ? 'வேதி வினைகள் சமன்செய்தல், அமிலங்கள் & pH மதிப்பு' : 'Chemical Reactions Balancing, Acids, Bases & pH Scale', subtopic: isTa ? 'சேர்க்கை, சிதைவு, இடப்பெயர்ச்சி, ஆக்ஸிஜனேற்ற வினைகள்' : 'Combination, Decomposition, Redox reactions, pH = -log[H⁺], Bleaching powder CaOCl₂, POP CaSO₄·½H₂O', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'pH Scale: 0 to 14 (Acidic < 7, Neutral = 7, Basic > 7) | POP: CaSO₄ · ½H₂O', keyPoints: ['Law of conservation of mass dictates equal atoms on both sides of equation', 'Antacids like Mg(OH)₂ (Milk of Magnesia) neutralize excess stomach acid'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_c_2', topicTitle: isTa ? 'கார்பனும் அதன் சேர்மங்களும் (ஹைட்ரோகார்பன்கள் & எஸ்டராக்குதல்)' : 'Carbon and Its Compounds: Covalent Bonding & Functional Groups', subtopic: isTa ? 'ஆல்கேன், ஆல்கீன், ஆல்கைன், எத்தனால், எத்தனாயிக் அமிலம்' : 'Tetravalency, Catenation, Homologous series, Functional groups (-OH, -CHO, -COOH), Esterification & Saponification', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Alkanes: C_n H_(2n+2) | Alkenes: C_n H_2n | Alkynes: C_n H_(2n-2) | Ester: RCOOH + R\'OH -> RCOOR\' + H₂O', keyPoints: ['Ethanol (CH₃CH₂OH) reacts with sodium metal to evolve hydrogen gas', 'Soap molecule has hydrophilic head (ionic) and hydrophobic tail (hydrocarbon) forming micelles'], type: 'concept', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 2,
+          chapterTitle: isTa ? 'உயிர்ச் செயல்கள், மரபியல் & பரிணாமம்' : 'Life Processes, Control-Coordination & Genetics',
+          description: isTa ? 'மனித செரிமானம், சுவாசம், ரத்த ஓட்டம், மூளை நரம்பு மண்டலம், மெண்டலின் மரபியல் விதிகள்' : 'Human nutrition, Respiration, Double circulation, Reflex arc, Human Brain, Mendel\'s monohybrid/dihybrid laws',
+          microTopics: [
+            { id: 'sec_b_1', topicTitle: isTa ? 'மனித உயிர்ச் செயல்கள் (செரிமானம், சுவாசம் & ரத்த ஓட்டம்)' : 'Human Life Processes: Digestion, Respiration & Double Circulation', subtopic: isTa ? 'இதயம் 4 அறைகள், நெஃப்ரான் கழிவுநீக்கம்' : 'Heart chambers, Pulmonary/Systemic circulation, Nephron ultrafiltration, Stomatal guard cells', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'Aerobic Respiration Yield: 36–38 ATP per Glucose | Blood Pressure Normal: 120/80 mmHg', keyPoints: ['Left ventricle pumps oxygenated blood to entire body through aorta', 'Nephron is structural and functional filtration unit of kidney'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_b_2', topicTitle: isTa ? 'மரபியல்: கிரிகோர் மெண்டலின் மரபுக்கடத்தல் விதிகள்' : 'Heredity & Mendel Laws of Inheritance', subtopic: isTa ? 'ஒருபண்பு கலப்பு (3:1) & இருபண்பு கலப்பு (9:3:3:1)' : 'Dominant vs Recessive traits, Monohybrid ratio 3:1 (genotypic 1:2:1), Dihybrid ratio 9:3:3:1, Human sex determination (XX/XY)', dayNumber: 15, periodNumber: 3, keyFormulaOrLaw: 'Monohybrid Phenotypic Ratio = 3 : 1 | Dihybrid Phenotypic Ratio = 9 : 3 : 3 : 1 | Sex: Father sperm determines (X or Y)', keyPoints: ['Gregor Mendel is Father of Genetics (experiments on garden pea Pisum sativum)', 'DNA is genetic material carrying hereditary instructions'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    },
+    {
+      subjectId: 'sec_social',
+      subjectName: isTa ? 'சமூக அறிவியல் & தமிழ்நாடு நிர்வாகம் (Social Science & TNPSC Core)' : 'Social Science, History, Economics & TNPSC Core',
+      icon: '🏛️',
+      color: '#8b5cf6',
+      totalChapters: 3,
+      totalMicroTopics: 16,
+      chapters: [
+        {
+          chapterNumber: 1,
+          chapterTitle: isTa ? 'இந்திய விடுதலை இயக்கம், நீதிக்கட்சி & தமிழ்நாடு வளர்ச்சி' : 'Indian National Movement, Justice Party & TN Administration',
+          description: isTa ? '1916 நீதிக்கட்சி, 1921 வகுப்புவாரி அரசாணை, பெரியார் சுயமரியாதை இயக்கம், தமிழ்நாட்டின் மனிதவளம்' : 'Nationalism in India, 1916 Justice Party, 1921 Communal GO, Periyar Self-Respect 1925, Anna, TN Industrial Clusters',
+          microTopics: [
+            { id: 'sec_soc_1', topicTitle: isTa ? 'நீதிக்கட்சி (1916), பெரியார் சுயமரியாதை இயக்கம் & 69% இடஒதுக்கீடு' : 'Justice Party (1916), Periyar Self-Respect Movement & 69% Reservation', subtopic: isTa ? '1921 வகுப்புவாரி அரசாணை & 1994 தமிழ்நாடு 69% இடஒதுக்கீடு சட்டம்' : '1921 Communal GO, 1926 HR&CE Act, 1994 69% Reservation Act (9th Schedule), Detroit of Asia Chennai', dayNumber: 4, periodNumber: 4, keyFormulaOrLaw: '1921 Communal GO | 1925 Self-Respect Movement | 1994 TN 69% Reservation Act', keyPoints: ['Tamil Nadu has highest Higher Education GER (~51%) in India', 'Tiruppur is Knitwear Capital; Sivakasi is Little Japan of India'], type: 'concept', importance: 'High-Yield' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  return {
+    courseId,
+    courseTitle,
+    category: 'school_secondary',
+    board: 'TNSB / CBSE / NCERT',
+    medium: isTa ? 'Tamil' : 'English',
+    totalDays: 200,
+    totalSubjects: subjects.length,
+    totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
+    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. JEE MAIN & JEE ADVANCED OFFICIAL UNIFIED MASTER SYLLABUS
 // ─────────────────────────────────────────────────────────────────────────────
 export function getJeeMainAdvancedCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
   // SUBJECT 1: MATHEMATICS (13 Comprehensive Units)
@@ -286,7 +723,7 @@ export function getJeeMainAdvancedCompleteSyllabus(courseId?: string, courseTitl
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. UPSC CIVIL SERVICES EXAMINATION (CSE — IAS / IPS / IFS / IRS) MASTER SYLLABUS
+// 6. UPSC CIVIL SERVICES EXAMINATION (CSE — IAS / IPS / IFS / IRS) MASTER SYLLABUS
 // ─────────────────────────────────────────────────────────────────────────────
 export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
   // SUBJECT 1: GS PAPER I (History, Art & Culture, Geography & Indian Society)
@@ -492,190 +929,69 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. TNPSC UNIFIED MASTER SYLLABUS (GROUP 1, 2/2A, 4, VAO, DEO, SI)
+// 7. TNPSC UNIFIED MASTER SYLLABUS (GROUP 1, 2/2A, 4, VAO, DEO, SI)
 // ─────────────────────────────────────────────────────────────────────────────
 export function getTnpscUnifiedCompleteSyllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
-  // SUBJECT 1: GENERAL TAMIL (பகுதி அ: இலக்கணம், பகுதி ஆ: இலக்கியம், பகுதி இ: தமிழ் அறிஞர்கள்)
   const tamilChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
       chapterTitle: 'பகுதி அ: தமிழ் இலக்கணம் (Grammar Masterclass)',
       description: 'எழுத்து, சொல், சந்திப்பிழை நீக்குதல், ஓரெழுத்து ஒருமொழி, வேர்ச்சொல், பெயர்ச்சொல் 6 வகை, இலக்கணக் குறிப்பறிதல் & வேற்றுமை',
       microTopics: [
-        { id: 'tn_t_1', topicTitle: 'முதல் & சார்பெழுத்துகள் (10 வகைகள்) & புணர்ச்சி விதிகள்', subtopic: 'உயிர் 12, மெய் 18, உயிர்மெய், ஆய்தம், உயிரளபெடை, ஒற்றளபெடை, குற்றியலுகரம், குற்றியலிகரம்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'முதல் எழுத்துகள் 30 | சார்பெழுத்துகள் 10 வகை | குற்றியலுகரம் 6 வகை (நெடில்தொடர், ஆய்தத்தொடர், உயிர்த்தொடர், வன்தொடர், மென்தொடர், இடைத்தொடர்)', keyPoints: ['உயிரளபெடை 3 வகை: செய்யுளிசை, இன்னிசை, சொல்லிசை', 'ஆய்த குறுக்கம் மற்றும் மகர குறுக்கம் மாத்திரை அளவுகள் (1/4 மாத்திரை)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_2', topicTitle: 'வேற்றுமை உருபுகள் (1 முதல் 8 வரை) & சொல்லுருபுகள்', subtopic: 'ஐ, ஆல், கு, இன், அது, கண் வேற்றுமைத் தொடர்கள் மற்றும் உடன்தொக்க தொகை', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: '2-ம் வேற்றுமை: ஐ | 3-ம்: ஆல், ஆண், ஒடு, ஓடு | 4-ம்: கு | 5-ம்: இன், இல் | 6-ம்: அது, ஆது, அ | 7-ம்: கண் | 8-ம்: விளி', keyPoints: ['முதல் வேற்றுமைக்கு உருபு இல்லை (எழுவாய் வேற்றுமை)', '8-ம் வேற்றுமை விளி வேற்றுமை (அழைத்தல்)', 'மரப்பலகை: மரத்தால் ஆகிய பலகை (3-ம் வேற்றுமை உருபும் பயனும் உடன்தொக்க தொகை)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_3', topicTitle: 'வலிமிகும் இடங்கள் & வலிமிகா இடங்கள் (சந்திப்பிழை நீக்குதல்)', subtopic: 'நிலைமொழி, வருமொழி புணர்ச்சி, சுட்டெழுத்துக்கள், ஓரெழுத்து ஒருமொழிகள் பின் வலிமிகும் விதிகள்', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'அ, இ சுட்டெழுத்துகள் & எ வினாவெழுத்தின் பின் வலிமிகும் | வினைத்தொகை, உம்மைத்தொகையில் வலிமிகாது', keyPoints: ['அந்த + பையன் = அந்தப் பையன் (வலிமிகும்)', 'குடி + நீர் = குடிநீர் (வினைத்தொகையில் மிகாது)', 'இரண்டாம் வேற்றுமை விரி தொடரில் வலிமிகும்'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_t_4', topicTitle: 'ஓரெழுத்து ஒருமொழி (42 சொற்கள்) & வேர்ச்சொல் மாற்றம்', subtopic: 'நன்னூல் 42 ஓரெழுத்து ஒருமொழிகள் & வினையாலணையும் பெயர், தொழிற்பெயர் உருவாக்கம்', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'நெடில் 40 + குறில் 2 (நொ, து) = 42 சொற்கள் (நன்னூல் நூற்பா)', keyPoints: ['ஆ-பசு, மா-பெரிய/விலங்கு, கோ-அரசன், கா-காடு, தீ-நெருப்பு, தை-மாதம்', 'படித்தான் வேர்ச்சொல்: படி -> வினையெச்சம்: படித்து -> வினையாலணையும் பெயர்: படித்தவர்'], type: 'memorization', importance: 'High-Yield' },
-        { id: 'tn_t_5', topicTitle: 'வாக்கிய வகைகள் & இலக்கணக் குறிப்பறிதல் (6 வகை பெயர்ச்சொற்கள்)', subtopic: 'தன்வினை, பிறவினை, செய்வினை, செயப்பாட்டு வினை, நேர்க்கூற்று, அயற்கூற்று மற்றும் பொருட்பெயர் முதல் தொழிற்பெயர் வரை', dayNumber: 21, periodNumber: 1, keyFormulaOrLaw: 'பொருட்பெயர், இடப்பெயர், காலப்பெயர், சினைப்பெயர், பண்புப்பெயர், தொழிற்பெயர்', keyPoints: ['செந்தாமரை (பண்புத்தொகை)', 'காய் கனி (உம்மைத்தொகை)', 'படித்தல் (தொழிற்பெயர்)'], type: 'quiz', importance: 'High-Yield' }
+        { id: 'tn_t_1', topicTitle: 'முதல் & சார்பெழுத்துகள் (10 வகைகள்) & புணர்ச்சி விதிகள்', subtopic: 'உயிர் 12, மெய் 18, உயிர்மெய், ஆய்தம், உயிரளபெடை, ஒற்றளபெடை, குற்றியலுகரம், குற்றியலிகரம்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'முதல் எழுத்துகள் 30 | சார்பெழுத்துகள் 10 வகை | குற்றியலுகரம் 6 வகை', keyPoints: ['உயிரளபெடை 3 வகை: செய்யுளிசை, இன்னிசை, சொல்லிசை', 'ஆய்த குறுக்கம் மற்றும் மகர குறுக்கம் மாத்திரை அளவுகள் (1/4 மாத்திரை)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_2', topicTitle: 'வேற்றுமை உருபுகள் (1 முதல் 8 வரை) & சொல்லுருபுகள்', subtopic: 'ஐ, ஆல், கு, இன், அது, கண் வேற்றுமைத் தொடர்கள் மற்றும் உடன்தொக்க தொகை', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: '2-ம்: ஐ | 3-ம்: ஆல், ஆண், ஒடு, ஓடு | 4-ம்: கு | 5-ம்: இன், இல் | 6-ம்: அது, ஆது, அ | 7-ம்: கண் | 8-ம்: விளி', keyPoints: ['முதல் வேற்றுமைக்கு உருபு இல்லை (எழுவாய் வேற்றுமை)', '8-ம் வேற்றுமை விளி வேற்றுமை (அழைத்தல்)'], type: 'concept', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'பகுதி ஆ: இலக்கியம் — திருக்குறள் (19 அதிகாரங்கள்) & அறநூல்கள்',
-      description: 'அன்பு, பண்பு, கல்வி, கேள்வி, அறிவு, ஒழுக்கம், நட்பு, வாய்மை, காலமறிதல், வலியறிதல், நாலடியார், நான்மணிக்கடிகை, பழமொழி நானூறு',
+      chapterTitle: 'பகுதி ஆ: இலக்கியம் — திருக்குறள் & அறநூல்கள்',
+      description: 'அன்பு, பண்பு, கல்வி, கேள்வி, அறிவு, ஒழுக்கம், நட்பு, வாய்மை, காலமறிதல், நாலடியார், நான்மணிக்கடிகை',
       microTopics: [
-        { id: 'tn_t_6', topicTitle: 'திருக்குறள்: கடவுள் வாழ்த்து, வான்சிறப்பு & நீத்தார் பெருமை (அதிகாரம் 1, 2, 3)', subtopic: 'அகர முதல எழுத்தெல்லாம், துப்பார்க்குத் துப்பாய & ஒழுக்கத்து நீத்தார் பெருமை', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'அகர முதல எழுத்தெல்லாம் ஆதி பகவன் முதற்றே உலகு | செயற்கரிய செய்வார் பெரியர் சிறியர் செய்கலா தார்', keyPoints: ['பரிமேலழகர் உரை திருக்குறளின் மிகச்சிறந்த உரை', 'திருக்குறள் அறத்துப்பால் 38, பொருட்பால் 70, காமத்துப்பால் 25 = 133 அதிகாரங்கள் (1330 குறள்கள்)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_7', topicTitle: 'திருக்குறள்: அன்புடைமை, கல்வி & அறிவுடைமை (அதிகாரம் 8, 40, 43)', subtopic: 'அன்பிலார் எல்லாம் தமக்குரியர், கற்க கசடறக் கற்பவை & அறிவற்றங் காக்கும் கருவி', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'அன்பின் வழியது உயிர்நிலை அஃதிலார்க்கு என்புதோல் போர்த்த உடம்பு | தொட்டனைத் தூறும் மணற்கேணி மாந்தர்க்குக் கற்றனைத் தூறும் அறிவு', keyPoints: ['அன்புடைமை குறள்கள் நயவுரை', 'எப்பொருள் யார்யார்வாய்க் கேட்பினும் அப்பொருள் மெய்ப்பொருள் காண்ப தறிவு'], type: 'memorization', importance: 'High-Yield' },
-        { id: 'tn_t_8', topicTitle: 'பதினெண்கீழ்க்கணக்கு அறநூல்கள்: நாலடியார், நான்மணிக்கடிகை, பழமொழி நானூறு', subtopic: 'சமண முனிவர்கள் (நாலடியார்), விளம்பி நாகனார் (நான்மணிக்கடிகை), முன்றுறை அரையனார் (பழமொழி நானூறு)', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'நாலும் இரண்டும் சொல்லுக்குறுதி (நாலடியார் 400 + திருக்குறள் 2 அடிக் குறள்கள்)', keyPoints: ['கல்வி கரையில கற்பவர் நாள்சில (நாலடியார்)', 'பழமொழி நானூறு ஒவ்வொரு பாடலிலும் ஒரு பழமொழி இடம் பெறும்'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'பகுதி ஆ: சங்க இலக்கியம், காப்பியங்கள் & பக்தி இலக்கியம்',
-      description: 'எட்டுத்தொகை, பத்துப்பாட்டு, சிலப்பதிகாரம், மணிமேகலை, சீவகசிந்தாமணி, கம்பராமாயணம், பெரியபுராணம், தேவாரம் & திருவாசகம்',
-      microTopics: [
-        { id: 'tn_t_9', topicTitle: 'எட்டுத்தொகை & பத்துப்பாட்டு சங்க இலக்கிய நயவுரை', subtopic: 'நற்றிணை, குறுந்தொகை, புறநானூறு, முல்லைப்பாட்டு, மதுரைக்காஞ்சி மேற்கோள்கள்', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'நற்றிணை நல்ல குறுந்தொகை ஐங்குறுநூறு ஒத்த பதிற்றுப்பத்து ஓங்கு பரிபாடல் கற்றறிந்தார் ஏத்தும் கலியோடு அகம் புறம் என்று இத்திறத்த எட்டுத்தொகை', keyPoints: ['யாதும் ஊரே யாவரும் கேளிர் — கணியன் பூங்குன்றனார் (புறநானூறு)', 'உண்டி கொடுத்தோர் உயிர் கொடுத்தோரே — குடபுலவியனார்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_10', topicTitle: 'ஐம்பெருங்காப்பியங்கள்: சிலப்பதிகாரம், மணிமேகலை & சீவகசிந்தாமணி', subtopic: 'இளங்கோவடிகள், சீத்தலைச் சாத்தனார், திருத்தக்கதேவர் காப்பியக் கட்டமைப்பு & கம்பராமாயணம் 6 காண்டங்கள்', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'அரசியல் பிழைத்தோர்க்கு அறங்கூற்றாவதூஉம் உரைசால் பத்தினியை உயர்ந்தோர் ஏத்தலும் ஊழ்வினை உருத்துவந்து ஊட்டும்', keyPoints: ['சிலப்பதிகாரம்: புகார், மதுரை, வஞ்சிக் காண்டங்கள் 30 காதைகள்', 'மணிமேகலை: துறவுக் காப்பியம், அமுதசுரபி சிறப்புகள்', 'கம்பராமாயணம்: பாலகாண்டம் முதல் யுத்தகாண்டம் வரை 6 காண்டங்கள்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_11', topicTitle: 'பக்தி இலக்கியம் & சிற்றிலக்கியங்கள்: தேவாரம், திருவாசகம், கலிங்கத்துப் பரணி', subtopic: 'அப்பர், சம்பந்தர், சுந்தரர் தேவாரம், மாணிக்கவாசகர் திருவாசகம், ஜெயங்கொண்டார் கலிங்கத்துப்பரணி, குற்றாலக்குறவஞ்சி', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'திருவாசகத்திற்கு உருகார் ஒரு வாசகத்திற்கும் உருகார் | பரணிக்கோர் ஜெயங்கொண்டார்', keyPoints: ['நாலாயிர திவ்வியப் பிரபந்தம் தொகுத்தவர் நாதமுனிகள்', 'கலிங்கத்துப்பரணி முதலாம் குலோத்துங்க சோழன் தளபதி கருணாகரத் தொண்டைமான் போர் வெற்றி'], type: 'concept', importance: 'Core Standard' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'பகுதி இ: தமிழ் அறிஞர்களும் தமிழ்த் தொண்டும் & நாட்டுப்புறக் கலைகள்',
-      description: 'மகாகவி பாரதியார், பாரதிதாசன், நாமக்கல் கவிஞர், கவிமணி, உ.வே.சா, பரிதிமாற்கலைஞர், பெரியார், அண்ணா, கரகாட்டம், தெருக்கூத்து',
-      microTopics: [
-        { id: 'tn_t_12', topicTitle: 'மகாகவி பாரதியார் & புரட்சிக் கவிஞர் பாரதிதாசன்', subtopic: 'சுதேசமித்திரன், இந்தியா இதழ்கள், பாஞ்சாலி சபதம், குடும்ப விளக்கு, பாண்டியன் பரிசு, இருண்ட வீடு', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'பாட்டுக்கொரு புலவன் பாரதி | எங்கள் வாழ்வும் எங்கள் வளமும் மங்காத தமிழென்று சங்கே முழங்கு', keyPoints: ['பாரதியார் இயற்பெயர் சுப்பிரமணியன், எட்டயபுர மன்னரால் பாரதி பட்டம்', 'பாரதிதாசன் இயற்பெயர் கனகசுப்புரத்தினம்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_13', topicTitle: 'தமிழ்த்தாத்தா உ.வே.சா & பரிதிமாற்கலைஞர் தமிழ்த் தொண்டு', subtopic: 'ஓலைச்சுவடிகள் பதிப்புப் பணி, என் சரித்திரம், திராவிட சாஸ்திரி பட்டம் & உயர்தனிச் செம்மொழி பிரகடனம்', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'என் சரித்திரம் — உ.வே.சா தன் வரலாறு | பரிதிமாற்கலைஞர் இயற்பெயர் வி.கோ.சூரியநாராயண சாஸ்திரியார்', keyPoints: ['உ.வே.சா 1887-ல் சீவகசிந்தாமணியை முதன்முதலில் பதிப்பித்தார்', 'பரிதிமாற்கலைஞர் தமிழ் மொழியை உயர்தனிச் செம்மொழி என முதன்முதலில் நிலைநாட்டினார்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_t_14', topicTitle: 'தந்தை பெரியார், பேரறிஞர் அண்ணா & பெருந்தலைவர் காமராசர்', subtopic: 'சுயமரியாதை இயக்கம், குடியரசு இதழ், 1969 தமிழ்நாடு பெயர் மாற்றம், இருமொழிக் கொள்கை, தொடக்கக் கல்வி புரட்சி', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: '14 ஜனவரி 1969: மதராஸ் மாநிலம் "தமிழ்நாடு" என அண்ணாவால் பெயர் மாற்றம் செய்யப்பட்டது', keyPoints: ['பெரியார் 1925-ல் சுயமரியாதை இயக்கத்தைத் தொடங்கினார்', 'காமராசர் இலவச மதிய உணவு மற்றும் இலவச சீருடைத் திட்டத்தை அறிமுகப்படுத்தினார்'], type: 'concept', importance: 'High-Yield' }
+        { id: 'tn_t_6', topicTitle: 'திருக்குறள்: கடவுள் வாழ்த்து, வான்சிறப்பு & அன்புடைமை', subtopic: 'அகர முதல எழுத்தெல்லாம், துப்பார்க்குத் துப்பாய & அன்பிலார் எல்லாம் தமக்குரியர்', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'அகர முதல எழுத்தெல்லாம் ஆதி பகவன் முதற்றே உலகு | அன்பின் வழியது உயிர்நிலை', keyPoints: ['பரிமேலழகர் உரை திருக்குறளின் மிகச்சிறந்த உரை', 'திருக்குறள் 133 அதிகாரங்கள் (1330 குறள்கள்)'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
 
-  // SUBJECT 2: INDIAN POLITY & CONSTITUTION (UNIT V)
   const polityChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'அரசியலமைப்பு உருவாக்கம், முகப்புரை & குடியுரிமை (Part 1 & 2)',
-      description: 'அரசியல் நிர்ணய சபை, வரைவுக்குழு தலைவர் டாக்டர் அம்பேத்கர், முகப்புரை மற்றும் குடியுரிமை சட்டம் 1955',
+      chapterTitle: 'அரசியலமைப்பு உருவாக்கம், முகப்புரை & அடிப்படை உரிமைகள் (Part 1–3)',
+      description: 'அரசியல் நிர்ணய சபை, முகப்புரை 42-வது திருத்தம், அடிப்படை உரிமைகள் (Articles 12–35) & 5 நீதிப்பேராணைகள்',
       microTopics: [
-        { id: 'tn_pol_1', topicTitle: 'அரசியல் நிர்ணய சபை & வரைவுக்குழு (Constituent Assembly)', subtopic: '1946 கேபினட் மிஷன், டாக்டர் ராஜேந்திர பிரசாத், வரைவுக்குழு 7 உறுப்பினர்கள், 2 ஆண்டுகள் 11 மாதங்கள் 18 நாட்கள்', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'முதல் கூட்டம்: 9 டிசம்பர் 1946 | அரசியல் சாசனம் ஏற்றுக்கொள்ளப்பட்டது: 26 நவம்பர் 1949 | நடைமுறை: 26 ஜனவரி 1950', keyPoints: ['வரைவுக்குழு தலைவர் டாக்டர் பி.ஆர். அம்பேத்கர் (இந்திய அரசியலமைப்பின் தந்தை)', 'அரசியலமைப்பு ஆலோசகர் பி.என். ராவ்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_pol_2', topicTitle: 'அரசியலமைப்பின் முகப்புரை & 42-வது சட்டத்திருத்தம் 1976 (Preamble)', subtopic: 'இறையாண்மை, சமதர்ம, மதச்சார்பற்ற, ஜனநாயக, குடியரசு (SOVEREIGN, SOCIALIST, SECULAR, DEMOCRATIC, REPUBLIC)', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: '42nd Amendment Act 1976 added: SOCIALIST, SECULAR, INTEGRITY', keyPoints: ['கேசவானந்த பாரதி வழக்கு 1973: முகப்புரை அரசியலமைப்பின் ஓர் அங்கமே', 'ஜவஹர்லால் நேருவின் குறிக்கோள் தீர்மானம் (Objective Resolution 1946) முகப்புரையாக ஏற்றுக்கொள்ளப்பட்டது'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_pol_3', topicTitle: 'பகுதி 1 & 2: இந்திய ஒன்றியம் & குடியுரிமை சட்டம் 1955 (Articles 1–11)', subtopic: 'பிரிவு 1-4 மாநிலங்கள் உருவாக்கம், மொழிவாரி மாநிலங்கள் மறுசீரமைப்பு 1956 & குடியுரிமை பெறும் 5 வழிகள், இழக்கும் 3 வழிகள்', dayNumber: 11, periodNumber: 2, keyFormulaOrLaw: 'Article 1: India, that is Bharat, shall be a Union of States | Citizenship by: Birth, Descent, Registration, Naturalization, Incorporation', keyPoints: ['குடியுரிமை இழக்கும் வழிகள்: துPermission (துறத்தல்), Termination (முடிவுக்கு வருதல்), Deprivation (பறித்தல்)', '1956 ஃபசல் அலி கமிஷன் (மாநிலங்கள் மறுசீரமைப்பு)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'பகுதி 3: அடிப்படை உரிமைகள் (Articles 12–35) & 5 நீதிப்பேராணைகள்',
-      description: 'சமத்துவ உரிமை (14-18), சுதந்திர உரிமை (19-22), சுரண்டலுக்கு எதிரான உரிமை (23-24), மத உரிமை (25-28), பிரிவு 32 நீதிப்பேராணைகள்',
-      microTopics: [
-        { id: 'tn_pol_4', topicTitle: 'சமத்துவ உரிமை (Articles 14–18) & தீண்டாமை ஒழிப்பு', subtopic: 'சட்டத்தின் முன் அனைவரும் சமம் (Art 14), 5 காரணங்களால் பாகுபாடு தடை (Art 15), வேலைவாய்ப்பில் சமவாய்ப்பு (Art 16), தீண்டாமை ஒழிப்பு (Art 17)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Article 14: Equality before Law | Article 17: Abolition of Untouchability (Protection of Civil Rights Act 1955)', keyPoints: ['Article 16(4): பின்தங்கிய வகுப்பினருக்கு இடஒதுக்கீடு வழங்கும் அதிகாரம்', 'Article 18: ராணுவ மற்றும் கல்வி பட்டங்களைத் தவிர பிற பட்டங்கள் ஒழிப்பு'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_pol_5', topicTitle: 'சுதந்திர உரிமை & வாழ்வுரிமை (Articles 19–22 & Art 21A கல்வி உரிமை)', subtopic: 'பிரிவு 19(1) 6 அடிப்படை சுதந்திரங்கள், பிரிவு 21 தனிநபர் சுதந்திரம் & 86-வது திருத்தம் 2002 பிரிவு 21A 6-14 வயது இலவச கட்டாயக் கல்வி', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'Article 19(1): 6 Freedoms | Article 21: Protection of Life & Personal Liberty | Article 21A: Right to Education', keyPoints: ['மேனகா காந்தி வழக்கு 1978: பிரிவு 21 வாழ்வுரிமையின் விரிவான விளக்கம்', 'பிரிவு 20: குற்றங்களுக்கான தண்டனையிலிருந்து பாதுகாப்பு (Double Jeopardy)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_pol_6', topicTitle: 'பிரிவு 32 & 226: 5 நீதிப்பேராணைகள் (Writs Jurisdiction)', subtopic: 'ஆட்கொணர்வு, கட்டளையிடும், தடையுறுத்தும், ஆவணக்கேட்பு, தகுதிமுறை வினவும் நீதிப்பேராணைகள்', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Article 32: "Heart and Soul of the Indian Constitution" (Dr. Ambedkar) | Article 226: High Court Writs', keyPoints: ['Habeas Corpus: சட்டவிரோத காவலில் இருந்து நபரை விடுவித்தல்', 'Mandamus: அரசு அதிகாரியை தன் பொதுக்கடமையை செய்ய கட்டளையிடுதல்', 'Quo-Warranto: தகுதியின்றி பொதுப்பதவியை வகிப்பதை வினவுதல்'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'பகுதி 4, 4A: DPSP, அடிப்படைக் கடமைகள் & மத்திய/மாநில நிர்வாகம்',
-      description: 'அரசு நெறிமுறைக் கோட்பாடுகள் (36-51), 11 அடிப்படைக் கடமைகள் (51A), குடியரசுத் தலைவர், பிரதமர், ஆளுநர், முதலமைச்சர்',
-      microTopics: [
-        { id: 'tn_pol_7', topicTitle: 'அரசு வழிகாட்டு நெறிமுறைகள் — DPSP (Articles 36–51) & அடிப்படைக் கடமைகள் 51A', subtopic: 'கிராம பஞ்சாயத்து (Art 40), பொது சிவில் சட்டம் (Art 44), ஸ்வரண் சிங் கமிட்டி 11 அடிப்படைக் கடமைகள்', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Art 40: Village Panchayats | Art 44: Uniform Civil Code | Art 51A: 11 Fundamental Duties (Added by 42nd & 86th Amendments)', keyPoints: ['அயர்லாந்து அரசியலமைப்பிலிருந்து DPSP பெறப்பட்டது', '11-வது கடமை: 6-14 வயது குழந்தைகளுக்கு கல்வி வாய்ப்பளிப்பது பெற்றோரின் கடமை'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_pol_8', topicTitle: 'இந்தியக் குடியரசுத் தலைவர், நாடாளுமன்றம் & ஆளுநர் அதிகாரங்கள்', subtopic: 'குடியரசுத் தலைவர் தேர்தல், அவசரநிலை (352, 356, 360), நிதி மசோதா (Art 110), ஆளுநரின் விருப்புரிமை அதிகாரங்கள்', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Article 52: President of India | Article 72: Pardoning Power | Article 110: Money Bill (Speaker Decision Final)', keyPoints: ['Article 352: தேசிய அவசரநிலை | Article 356: மாநில குடியரசுத் தலைவர் ஆட்சி | Article 360: நிதி அவசரநிலை', 'மக்களவை அதிகபட்சம் 550 | மாநிலங்களவை 250 (12 நியமன உறுப்பினர்கள்)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'நீதித்துறை, உள்ளாட்சி அமைப்புகள் (73rd/74th) & அரசியலமைப்பு அமைப்புகள்',
-      description: 'உச்ச நீதிமன்றம், உயர் நீதிமன்றங்கள், 73/74-வது பஞ்சாயத்து ராஜ் திருத்தங்கள் 1992, தேர்தல் ஆணையம், CAG, Lokpal & RTI 2005',
-      microTopics: [
-        { id: 'tn_pol_9', topicTitle: 'உச்ச நீதிமன்றம், உயர் நீதிமன்றங்கள் & நீதித்துறை மறுஆய்வு (Judicial Review)', subtopic: 'கொலீஜியம் முறை, அசல் வரம்பு (Art 131), மேல்முறையீட்டு வரம்பு, நீதிமன்ற அவமதிப்பு அதிகாரம் (Art 129)', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'Article 124: Establishment of Supreme Court | Article 214: High Courts in States | Court of Record: Art 129', keyPoints: ['உச்ச நீதிமன்ற நீதிபதிகள் ஓய்வு வயது 65 | உயர் நீதிமன்ற நீதிபதிகள் ஓய்வு வயது 62', 'நீதி மறுஆய்வு அதிகாரம் அரசியலமைப்பின் அடிப்படைக் கட்டமைப்பு (Basic Structure)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_pol_10', topicTitle: 'பஞ்சாயத்து ராஜ் & நகராட்சிகள் (73-வது & 74-வது சட்டத்திருத்தங்கள் 1992)', subtopic: 'பல்வந்த் ராய் மேத்தா கமிட்டி (3 அடுக்கு முறை), 11-வது அட்டவணை (29 துறைகள்), 12-வது அட்டவணை (18 துறைகள்), கிராம சபை', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: '73rd Amendment 1992: Part IX (Art 243 to 243O) | 74th Amendment: Part IXA (Art 243P to 243ZG)', keyPoints: ['கிராம சபை பஞ்சாயத்து ராஜ் அமைப்பின் ஆணிவேர்', 'பெண்களுக்கு 33% இடஒதுக்கீடு (தமிழ்நாட்டில் 50% இடஒதுக்கீடு சட்டம்)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_pol_11', topicTitle: 'தேர்தல் ஆணையம், CAG, TNPSC, லோக்பால் & தகவல் அறியும் உரிமைச் சட்டம் (RTI 2005)', subtopic: 'பிரிவு 324 தேர்தல் ஆணையம், பிரிவு 148 CAG, லோக்பால் மற்றும் லோக் ஆயுக்தா சட்டம் 2013, தகவல் அறியும் உரிமை சட்டம் 2005 (30 நாட்கள்)', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'Art 324: Election Commission of India | Art 148: Comptroller & Auditor General (Public Purse Guardian)', keyPoints: ['RTI 2005: 30 நாட்களுக்குள் தகவல் வழங்க வேண்டும் (உயிர்/சுதந்திரம் சார்ந்தது எனில் 48 மணிநேரம்)', 'CAG அறிக்கை நாடாளுமன்ற பொதுக்கணக்கு குழுவுக்கு (PAC) சமர்ப்பிக்கப்படும்'], type: 'concept', importance: 'High-Yield' }
+        { id: 'tn_pol_1', topicTitle: 'அரசியல் நிர்ணய சபை, வரைவுக்குழு & முகப்புரை', subtopic: 'டாக்டர் அம்பேத்கர், கேசவானந்த பாரதி வழக்கு 1973, 42-வது திருத்தம் 1976', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: '42nd Amendment added: SOCIALIST, SECULAR, INTEGRITY | Art 32: Heart and Soul', keyPoints: ['அரசியல் சாசனம் ஏற்றுக்கொள்ளப்பட்டது: 26 நவம்பர் 1949 | நடைமுறை: 26 ஜனவரி 1950', 'பிரிவு 32 உச்ச நீதிமன்ற நீதிப்பேராணைகள் (Habeas Corpus, Mandamus, Quo-Warranto)'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
 
-  // SUBJECT 3: APTITUDE & MENTAL ABILITY (UNIT X - 25/25 TARGET)
   const aptitudeChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'சுருக்குதல் (BODMAS), HCF & LCM',
-      description: 'எண்கணித அடிப்படை, இயற்கணித முற்றொருமைகள் & மீ.சி.ம / மீ.பொ.வ',
+      chapterTitle: 'சுருக்குதல் (BODMAS), HCF & LCM & விழுக்காடு',
+      description: 'இயற்கணித முற்றொருமைகள், மீ.சி.ம / மீ.பொ.வ, தனிவட்டி & கூட்டுவட்டி (2, 3 ஆண்டுகள் வித்தியாசம்)',
       microTopics: [
-        { id: 'tn_apt_1', topicTitle: 'சுருக்குதல் (Simplification) — BODMAS & முற்றொருமைகள்', subtopic: 'a²+b², a³+b³, பின்னங்கள், தசம எண்கள் மற்றும் வர்க்கமூலம் காணுதல்', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'BODMAS Rule: Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction', keyPoints: ['(a+b)² = a² + 2ab + b²', '(a-b)² = a² - 2ab + b²', 'a² - b² = (a+b)(a-b)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_apt_2', topicTitle: 'மீப்பெரு பொது காரணி & மீச்சிறு பொது மடங்கு (HCF & LCM)', subtopic: 'பகா காரணி முறை, தொடர் வகுத்தல், பின்னங்களின் HCF/LCM, இரு எண்களின் பெருக்கற்பலன் சமன்பாடு', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Product of Two Numbers = HCF × LCM (a × b = HCF × LCM) | Fractions HCF = Numerators HCF / Denominators LCM', keyPoints: ['இரு அடுத்தடுத்த பகா எண்களின் HCF = 1', 'மணிகள் ஒன்றாக ஒலிக்கும் கால இடைவெளி = LCM'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'விழுக்காடு, இலாப நட்டம், தனிவட்டி & கூட்டுவட்டி (CI - SI)',
-      description: 'சதவீத கணக்கீடுகள், தள்ளுபடி, SI = PNR/100, மற்றும் 2/3 ஆண்டுகள் CI - SI வித்தியாசம்',
-      microTopics: [
-        { id: 'tn_apt_3', topicTitle: 'விழுக்காடு (Percentage), இலாப நட்டம் & தொடர் தள்ளுபடி', subtopic: 'பின்னத்தை சதவீதமாக மாற்றுதல், விலை ஏற்ற/இறக்க சமன்பாடு, அடக்க/விற்ற விலை மற்றும் தொடர் தள்ளுபடி சூத்திரம்', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'Profit% = (Profit / CP) × 100 | Successive Discount Formula = a + b - (ab / 100)', keyPoints: ['விலை r% அதிகரித்தால் செலவு மாறாமல் இருக்க நுகர்வு குறைப்பு = [r / (100 + r)] × 100%', 'குறித்த விலை மற்றும் விற்பனை விலை கணக்கீடுகள்'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_apt_4', topicTitle: 'தனிவட்டி (SI) & கூட்டுவட்டி (CI) & 2, 3 ஆண்டுகள் வித்தியாசம் (D)', subtopic: 'SI = PNR/100, A = P(1+R/100)ⁿ, அரை ஆண்டு கூட்டுவட்டி மற்றும் 2, 3 ஆண்டுகள் CI - SI வித்தியாசம்', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: '2 Years Difference D = P(R / 100)² | 3 Years Difference D = P(R / 100)² (3 + R / 100)', keyPoints: ['அசல் n மடங்காகும் காலம்: N = (n - 1) × 100 / R', 'கூட்டுவட்டி அரையாண்டு முறை: R/2, 2N'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'விகிதம், நேரம் & வேலை, அளவியல் (2D/3D) & தர்க்கவியல் (Reasoning)',
-      description: 'விகிதாசாரம், குழாய்கள் தொட்டி கணக்குகள், 2D/3D பரப்பளவு/கனஅளவு, பகடை & இரத்த உறவுகள்',
-      microTopics: [
-        { id: 'tn_apt_5', topicTitle: 'விகிதம் (Ratio & Proportion), நேரம் மற்றும் வேலை (Time & Work)', subtopic: 'A:B:C குறுக்குவழி, A & B சேர்ந்து செய்யும் வேலை, குழாய்கள் தொட்டி மற்றும் மனிதன்-நாள் சூத்திரம்', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Chain Rule: (M₁ × D₁ × H₁) / W₁ = (M₂ × D₂ × H₂) / W₂ | A and B Together = (xy) / (x + y) days', keyPoints: ['வேலை = திறன் × நாட்கள் (Work = Efficiency × Time)', 'கசிவு உள்ள தொட்டி காலியாகும் நேரம்'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_apt_6', topicTitle: 'அளவியல் (2D & 3D Mensuration): பரப்பளவு, சுற்றளவு & கனஅளவு', subtopic: 'முக்கோணம், வட்டம், உருளை (Cylinder), கூம்பு (Cone), கோளம் (Sphere) & அரைக்கோளம் சூத்திரங்கள்', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'வட்டப் பரப்பு = πr² | உருளை கனஅளவு = πr²h | கூம்பு கனஅளவு = 1/3 πr²h | கோள கனஅளவு = 4/3 πr³', keyPoints: ['கூம்பு சாயுயரம் l = √(h² + r²)', 'அரைக்கோள மொத்த புறப்பரப்பு = 3πr²'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_apt_7', topicTitle: 'தர்க்கவியல் காரணமறிதல் (Reasoning): பகடை, இரத்த உறவுகள் & வரைபடங்கள்', subtopic: 'எண் தொடர், பகடை எதிரெதிர் பக்கங்கள், இரத்த உறவு மரபு வரைபடம், கடிகாரம்/காலண்டர் & வட்ட விளக்கப்படம் (Pie Chart)', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'கடிகார முட்களுக்கு இடைப்பட்ட கோணம் θ = |30H - (11/2)M|', keyPoints: ['பகடை விதிகளில் பொதுவான பக்கங்களை வைத்து எதிர்ப்பக்கம் காணுதல்', 'Pie Chart 100% = 360° கோண அளவு மாற்றம்'], type: 'quiz', importance: 'High-Yield' }
+        { id: 'tn_apt_1', topicTitle: 'சுருக்குதல், HCF-LCM & 2 ஆண்டுகள் CI - SI வித்தியாசம் (D)', subtopic: 'BODMAS, Product = HCF × LCM, D = P(R/100)²', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Product = HCF × LCM | 2 Years CI-SI Diff D = P(R/100)² | Chain Rule: (M₁D₁H₁)/W₁ = (M₂D₂H₂)/W₂', keyPoints: ['BODMAS முறைப்படி அடைப்புக்குறி முதலில் தீர்க்கப்பட வேண்டும்', '3 ஆண்டுகள் CI - SI வித்தியாசம் D = P(R/100)² (3 + R/100)'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
 
-  // SUBJECT 4: HISTORY, CULTURE & DEVELOPMENT ADMINISTRATION OF TAMIL NADU (UNIT VIII & IX)
   const unit8_9Chapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'Unit VIII: பண்டைய தமிழக வரலாறு & தொல்லியல் அகழாய்வுகள்',
-      description: 'கீழடி, ஆதிச்சநல்லூர், கொடுமணல், பொருந்தல், சிவகளை மற்றும் சங்க கால மூவேந்தர் ஆட்சி',
+      chapterTitle: 'Unit VIII & IX: தமிழ்நாடு வரலாறு, கீழடி அகழாய்வு & வளர்ச்சி நிர்வாகம்',
+      description: 'கீழடி (கிமு 6-ம் நூற்றாண்டு), 1801 மருது சகோதரர்கள் பிரகடனம், 1916 நீதிக்கட்சி, 69% இடஒதுக்கீடு சட்டம், ஆசியாவின் டெட்ராய்ட்',
       microTopics: [
-        { id: 'tn_u8_1', topicTitle: 'தொல்லியல் அகழாய்வுகள்: கீழடி, ஆதிச்சநல்லூர், கொடுமணல், பொருந்தல், சிவகளை', subtopic: 'வைகை நதிக்கரை நாகரிகம், தமிழ்-பிராமி எழுத்துப் பொறிப்புகள், ரோமானிய நாணயங்கள் & கிமு 6-ம் நூற்றாண்டு நகரமைப்பு', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'கீழடி அகழாய்வு காலம்: கிமு 6-ம் நூற்றாண்டு (கிமு 580 - வைகை சமவெளி நாகரிகம்)', keyPoints: ['ஆதிச்சநல்லூர் முதுமக்கள் தாழிகள் & இரும்புப் பொருட்கள்', 'பொருந்தல் நெல்மணிகள் சான்று (கிமு 450)', 'சிவகளை தாமிரபரணி நதிக்கரை நாகரிகம் (கிமு 1155)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_u8_2', topicTitle: 'சங்க கால அரசியல், மூவேந்தர் & சோழர்களின் குடவோலை முறை (உத்தரமேரூர்)', subtopic: 'சேர, சோழ, பாண்டியர் நிர்வாகம், கடையேழு வள்ளல்கள், முதலாம் பராந்தக சோழன் உத்தரமேரூர் கல்வெட்டு (கி.பி 919 & 921)', dayNumber: 6, periodNumber: 4, keyFormulaOrLaw: 'உத்தரமேரூர் கல்வெட்டு: கிராம சுயாட்சி மற்றும் குடவோலை தேர்தல் முறை தகுதிகள்', keyPoints: ['வாரியங்கள்: ஏரி வாரியம், தோட்ட வாரியம், பொன் வாரியம், பஞ்சவார வாரியம்', 'சேரர் - வில் அம்பு (வஞ்சி) | சோழர் - புலி (உறையூர்) | பாண்டியர் - மீன் (மதுரை)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Unit VIII: தமிழக விடுதலைப் போராட்ட வீரர்கள் & சமூக இயக்கங்கள்',
-      description: 'வேலு நாச்சியார், கட்டபொம்மன், மருது சகோதரர்கள், வ.உ.சி, பாரதியார், நீதிக்கட்சி 1916 & பெரியார் சுயமரியாதை இயக்கம்',
-      microTopics: [
-        { id: 'tn_u8_3', topicTitle: 'பாளையக்காரர் புரட்சி & தமிழக விடுதலைப் போராட்ட வீரர்கள்', subtopic: 'பூலித்தேவர், வேலு நாச்சியார் (குயிலி தற்கொலைப்படை), வீரபாண்டிய கட்டபொம்மன், மருது சகோதரர்கள் (1801 திருச்சிராப்பள்ளி பிரகடனம்), வ.உ.சி சுதேசிக் கப்பல்', dayNumber: 2, periodNumber: 4, keyFormulaOrLaw: '1801 ஜூன் 12: மருது சகோதரர்களின் திருச்சிராப்பள்ளி சுதந்திரப் பிரகடனம்', keyPoints: ['வேலு நாச்சியார் பிரிட்டிஷாரை எதிர்த்து வென்ற முதல் இந்திய பெண் அரசி (1780)', 'வ.உ.சிதம்பரனார் 1906-ல் சுதேசி ஸ்டீம் நேவிகேஷன் கப்பல் நிறுவனத்தைத் தொடங்கினார்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_u8_4', topicTitle: 'நீதிக்கட்சி (1916) சாதனைகள் & தந்தை பெரியார் சுயமரியாதை இயக்கம் (1925)', subtopic: 'தியாகராய செட்டியார், 1921 வகுப்புவாரி அரசாணை (Communal GO), இந்து சமய அறநிலையச் சட்டம் 1926, வைக்கம் போராட்டம் 1924 & குடியரசு இதழ்', dayNumber: 7, periodNumber: 4, keyFormulaOrLaw: '1921 Communal GO | 1926 இந்து சமய அறநிலையச் சட்டம் | 1925 சுயமரியாதை இயக்கம்', keyPoints: ['ஆந்திரா பல்கலைக்கழகம் 1926, அண்ணாமலை பல்கலைக்கழகம் 1929 நீதிக்கட்சியால் உருவாக்கம்', 'தேவதாசி முறை ஒழிப்பு சட்டம் (டாக்டர் முத்துலட்சுமி ரெட்டி முயற்சி)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Unit IX: தமிழ்நாடு வளர்ச்சி நிர்வாகம், மனிதவளம் (HDI) & தொழில் தொகுப்புகள்',
-      description: 'மனிதவள குறியீடுகள் (HDI, GII), 69% இடஒதுக்கீடு, நான் முதல்வன், புதுமைப் பெண், Detroit of Asia சென்னை, e-Sevai',
-      microTopics: [
-        { id: 'tn_u9_1', topicTitle: 'தமிழ்நாட்டின் மனிதவள மேம்பாட்டுக் குறியீடுகள் (HDI) & 69% இடஒதுக்கீடு சட்டம்', subtopic: 'உயர் கல்வி சேர்க்கை விகிதம் (GER ~51%), தாய்-சேய் இறப்பு விகிதம் (MMR, IMR) & 1994 தமிழ்நாடு 69% இடஒதுக்கீடு சட்டம் (9-வது அட்டவணை பாதுகாப்பு)', dayNumber: 3, periodNumber: 4, keyFormulaOrLaw: '1994 தமிழ்நாடு இடஒதுக்கீடு சட்டம்: 69% இடஒதுக்கீடு அரசியலமைப்பின் 9-வது அட்டவணையில் சேர்க்கப்பட்டது', keyPoints: ['தமிழ்நாடு GER தேசிய சராசரியை விட 2 மடங்கு அதிகம்', 'NITI Aayog சுகாதாரக் குறியீட்டில் தமிழ்நாடு முன்னணி'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_u9_2', topicTitle: 'தமிழ்நாட்டின் தொழில் தொகுப்புகள் (Industrial Clusters) & e-Governance (TNeGA)', subtopic: 'ஆசியாவின் டெட்ராய்ட் (சென்னை), பின்னலாடை நகரம் (திருப்பூர்), சிவகாசி (குட்டி ஜப்பான்), SIPCOT, TIDEL Park & TNeGA இ-சேவை மையங்கள்', dayNumber: 8, periodNumber: 4, keyFormulaOrLaw: 'சென்னை: "Detroit of Asia" | திருப்பூர்: இந்தியாவின் பின்னலாடை தலைநகரம் | சிவகாசி: குட்டி ஜப்பான் (நேரு)', keyPoints: ['SIPCOT, TIDCO, TANSIDCO தொழில் பூங்காக்கள்', 'TNeGA, உழவன் செயலி மற்றும் ஒருங்கிணைந்த பொது விநியோகத் திட்டம் (Universal PDS)'], type: 'concept', importance: 'High-Yield' }
+        { id: 'tn_u8_1', topicTitle: 'கீழடி அகழாய்வு, நீதிக்கட்சி சாதனைகள் & 69% இடஒதுக்கீடு', subtopic: 'வைகை நதிக்கரை நாகரிகம், 1921 வகுப்புவாரி அரசாணை, 1994 தமிழ்நாடு 69% இடஒதுக்கீடு சட்டம்', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'கீழடி: கிமு 6-ம் நூற்றாண்டு | 1994 தமிழ்நாடு 69% இடஒதுக்கீடு (9-வது அட்டவணை)', keyPoints: ['நீதிக்கட்சி 1921-ல் வகுப்புவாரி அரசாணையை வெளியிட்டது', 'தமிழ்நாடு ஆசியாவின் டெட்ராய்ட் (சென்னை) மற்றும் இந்தியாவின் பின்னலாடை தலைநகரம் (திருப்பூர்)'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
 
-  // SUBJECT 5: GENERAL SCIENCE, GEOGRAPHY, INDIAN HISTORY & ECONOMY (UNIT I, III, IV, VI, VII)
   const gsCoreChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'Unit I: பொது அறிவியல் (Physics, Chemistry & Life Sciences)',
-      description: 'இயக்க விதிகள், ஒளியியல், மின்னியல், தனிம வரிசை அட்டவணை, அமிலங்கள் காரங்கள், மனித உறுப்பு மண்டலங்கள் & நோய்கள்',
+      chapterTitle: 'பொது அறிவியல், புவியியல், வரலாறு & பொருளாதாரம் (Unit I, III, IV, VI, VII)',
+      description: 'நியூட்டன் இயக்க விதிகள், வடகிழக்குப் பருவமழை, காவிரி நதி, 1857 புரட்சி, NITI Aayog & GST',
       microTopics: [
-        { id: 'tn_sci_1', topicTitle: 'இயக்கவியல், ஒளியியல் & மின்னியல் (Physics Core)', subtopic: 'நியூட்டனின் இயக்க விதிகள் (F=ma), முழு அக எதிரொளிப்பு (TIR), ஓம் விதி (V=IR), மின் திறன் & மின்காந்த தூண்டல்', dayNumber: 1, periodNumber: 5, keyFormulaOrLaw: 'F = ma | V = IR | P = VI = I²R | 1 Unit = 1 kWh = 3.6 × 10⁶ Joules', keyPoints: ['வைரம் ஒளிர்தல் மற்றும் ஆப்டிகல் ஃபைபர் முழு அக எதிரொளிப்பு தத்துவத்தில் இயங்குகிறது', 'கிட்டப்பார்வைக்கு குழி லென்ஸ் (Concave) | தூரப்பார்வைக்கு குவி லென்ஸ் (Convex)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tn_sci_2', topicTitle: 'தனிமங்கள், அமிலங்கள், காரங்கள் & அன்றாட வேதியியல் (Chemistry Core)', subtopic: 'pH மதிப்பு, பிளாஸ்டர் ஆஃப் பாரிஸ், சலவைத்தூள், உரங்கள் (NPK), பெட்ரோலிய பொருட்கள் & உலோகக் கலவைகள்', dayNumber: 5, periodNumber: 5, keyFormulaOrLaw: 'pH = -log[H⁺] | பிளாஸ்டர் ஆஃப் பாரிஸ்: CaSO₄ · ½H₂O | சலவைத்தூள்: CaOCl₂', keyPoints: ['மனித ரத்தத்தின் pH மதிப்பு 7.35 - 7.45', 'பித்தளை (Brass): செம்பு (Cu) + துத்தநாகம் (Zn) | வெண்கலம் (Bronze): செம்பு (Cu) + தகரம் (Sn)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_sci_3', topicTitle: 'மனித உடலியல், வைட்டமின்கள், ஊட்டச்சத்து & நோய்கள் (Life Sciences Core)', subtopic: 'செரிமான மண்டலம், ரத்த சுழற்சி (ABO ரத்த வகை), நாளமில்லா சுரப்பிகள், வைட்டமின் குறைபாட்டு நோய்கள் & தடுப்பூசிகள்', dayNumber: 9, periodNumber: 5, keyFormulaOrLaw: 'வைட்டமின் A (மாலைக்கண்), B1 (பெரிபெரி), C (ஸ்கர்வி), D (ரிக்கெட்ஸ்), K (ரத்தம் உறையாமை)', keyPoints: ['இன்சுலின் கணையத்தின் பீட்டா செல்களால் சுரக்கப்படுகிறது (ரத்த சர்க்கரை குறைப்பு)', 'உலகளாவிய ரத்தக் கொடையாளி: O Negative | உலகளாவிய ரத்த ஏற்பாளர்: AB Positive'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Unit III: இந்திய & தமிழ்நாடு புவியியல் (Geography of India & TN)',
-      description: 'இயற்கை அமைப்புகள், தென்மேற்கு/வடகிழக்கு பருவக்காற்று, ஆறுகள் (காவிரி, வைகை), மண் வகைகள், பயிர் பருவங்கள் (குறுவை, தாளடி, சம்பா)',
-      microTopics: [
-        { id: 'tn_geo_1', topicTitle: 'இந்திய & தமிழ்நாடு இயற்கை அமைப்புகள், பருவமழை & ஆறுகள்', subtopic: 'இமயமலை, தக்காண பீடபூமி, தென்மேற்கு மற்றும் வடகிழக்கு பருவக்காற்று, காவிரி, வைகை, தாமிரபரணி நீர்நிலைகள்', dayNumber: 2, periodNumber: 5, keyFormulaOrLaw: 'தமிழ்நாடு அதிக மழைப்பொழிவைப் பெறுவது: வடகிழக்குப் பருவமழை (அக்டோபர் - டிசம்பர்)', keyPoints: ['தாமிரபரணி தமிழ்நாட்டின் வற்றாத ஜீவநதி', 'மேட்டூர் அணை (ஸ்டான்லி நீர்த்தேக்கம்) காவிரி நதியின் குறுக்கே கட்டப்பட்டுள்ளது'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_geo_2', topicTitle: 'மண் வகைகள், காடுகள், வேளாண் பருவங்கள் & பேரிடர் மேலாண்மை', subtopic: 'வண்டல் மண், கரிசல் மண், செம்மண், குறுவை, சம்பா, தாளடி பயிர் பருவங்கள், நெய்வேலி பழுப்பு நிலக்கரி & புயல்/வெள்ள அபாய மேலாண்மை', dayNumber: 6, periodNumber: 5, keyFormulaOrLaw: 'பயிர் பருவங்கள்: குறுவை (ஜூன்-செப்), சம்பா (ஆக-ஜன), நவரை/தாளடி (நவ-மார்)', keyPoints: ['பருத்தி விளைச்சலுக்கு ஏற்ற மண்: கரிசல் மண் (Regur Soil)', 'நெய்வேலியில் லிக்னைட் பழுப்பு நிலக்கரி வெட்டி எடுக்கப்படுகிறது'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Unit IV, VI & VII: இந்திய வரலாறு, பொருளாதாரம் & தேசிய இயக்கம்',
-      description: 'சிந்து சமவெளி, மௌரியர், குப்தர், முகலாயர், 1857 புரட்சி, காந்தியடிகள், ஐந்தாண்டு திட்டங்கள், NITI Aayog & GST',
-      microTopics: [
-        { id: 'tn_his_1', topicTitle: 'சிந்து சமவெளி நாகரிகம், மௌரியர், குப்தர்கள் & முகலாயப் பேரரசு', subtopic: 'ஹரப்பா, மொகஞ்சதாரோ, அசோகரின் தர்மம், இரண்டாம் சந்திரகுப்தர் பொற்காலம், அக்பரின் மன்சப்தாரி முறை & தீன்-இலாஹி', dayNumber: 3, periodNumber: 5, keyFormulaOrLaw: 'சிந்து சமவெளி பெருங்குளம் மொகஞ்சதாரோவில் கண்டறியப்பட்டது | கப்பல் கட்டும் தளம்: லோத்தல்', keyPoints: ['அசோகரின் கல்வெட்டுகள் பிராமி மற்றும் கரோஷ்டி எழுத்துக்களில் பொறிக்கப்பட்டன', 'அக்பரின் மத நல்லிணக்கக் கொள்கை: சுல்-இ-குல் (Sulh-i-Kul)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_his_2', topicTitle: '1857 பெரும் புரட்சி, இந்திய தேசிய காங்கிரஸ் & காந்தியடிகள் இயக்கம்', subtopic: 'மீரட் புரட்சி, மங்கள் பாண்டே, ஜான்சி ராணி, 1885 INC தோற்றம், ஒத்துழையாமை இயக்கம், வேதாரண்யம் உப்பு சத்தியாகிரகம் (ராஜாஜி), வெள்ளையனே வெளியேறு 1942', dayNumber: 7, periodNumber: 5, keyFormulaOrLaw: '1930 ஏப்ரல் 13 - 28: ராஜாஜி தலைமையில் திருச்சியிலிருந்து வேதாரண்யத்திற்கு உப்பு சத்தியாகிரக நடைபயணம்', keyPoints: ['1857 புரட்சியின் முதல் வெடிப்பு: பராக்பூர் (மங்கள் பாண்டே)', '1942 ஆகஸ்ட் 8: காந்தியடிகளின் "செய் அல்லது செத்து மடி" (Do or Die) பிரகடனம்'], type: 'concept', importance: 'High-Yield' },
-        { id: 'tn_his_3', topicTitle: 'இந்தியப் பொருளாதாரம்: ஐந்தாண்டுத் திட்டங்கள், NITI Aayog, GST & RBI கொள்கைகள்', subtopic: 'ஹரோட்-டோமர் மாதிரி (1-ம் திட்டம்), மஹலனோபிஸ் மாதிரி (2-ம் திட்டம்), NITI Aayog (2015), GST வரி அடுக்குகள் (5%, 12%, 18%, 28%) & ரெப்போ வட்டி விகிதம்', dayNumber: 11, periodNumber: 5, keyFormulaOrLaw: 'GST நடைமுறை: 1 ஜூலை 2017 (101-வது அரசியலமைப்பு திருத்தம்) | NITI Aayog: 1 ஜனவரி 2015', keyPoints: ['ரெப்போ ரேட்: வணிக வங்கிகளுக்கு ரிசர்வ் வங்கி வழங்கும் கடனுக்கான வட்டி விகிதம்', 'பசுமைப் புரட்சியின் தந்தை: இந்தியாவில் எம்.எஸ். சுவாமிநாதன், உலகில் நார்மன் போர்லாக்'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'tn_sci_1', topicTitle: 'இயற்பியல் இயக்க விதிகள், வடகிழக்குப் பருவமழை & GST வரி முறை', subtopic: 'F = ma, தமிழ்நாடு வடகிழக்குப் பருவமழை, 1 ஜூலை 2017 GST நடைமுறை', dayNumber: 1, periodNumber: 5, keyFormulaOrLaw: 'F = ma | V = IR | GST: 101-வது அரசியலமைப்பு திருத்தம் 2017', keyPoints: ['தமிழ்நாடு அதிக மழைப்பொழிவை வடகிழக்குப் பருவமழை மூலம் பெறுகிறது', 'வேதாரண்யம் உப்பு சத்தியாகிரகம் 1930 ராஜாஜி தலைமையில் நடைபெற்றது'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -703,7 +1019,7 @@ export function getTnpscUnifiedCompleteSyllabus(courseId: string, courseTitle: s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. NEET UG OFFICIAL VAST MICRO-TOPIC SYLLABUS REGISTRY
+// 8. NEET UG OFFICIAL VAST MICRO-TOPIC SYLLABUS REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
   const physicsChapters: SyllabusChapter[] = [
@@ -713,8 +1029,7 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
       description: 'SI Units, Dimensional Analysis, Error Analysis, Vernier Calipers, Screw Gauge & Simple Pendulum',
       microTopics: [
         { id: 'neet_p_1', topicTitle: 'Units, Dimensions & Dimensional Analysis Applications', subtopic: 'Fundamental & derived units, principle of homogeneity, formula derivation', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '[Force] = [M L T⁻²] | [Energy] = [M L² T⁻²] | [Planck Constant h] = [M L² T⁻¹]', keyPoints: ['Dimensionless quantities: Strain, Angle, Refractive index', 'Checking dimensional consistency of equations'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_p_2', topicTitle: 'Errors in Measurement, Significant Figures & Combination of Errors', subtopic: 'Absolute, relative and percentage errors, error propagation in Z = A^p B^q / C^r', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'ΔZ/Z = p(ΔA/A) + q(ΔB/B) + r(ΔC/C) | Percentage Error = (ΔZ/Z) × 100%', keyPoints: ['Errors always add up in worst-case analysis', 'Rounding off rules and significant digits'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_3', topicTitle: 'Experimental Physics: Vernier Calipers & Screw Gauge', subtopic: 'Least count, pitch, zero error (positive and negative), measurement of diameter and thickness', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'LC of Vernier = 1 MSD - 1 VSD | LC of Screw Gauge = Pitch / Total Circular Divisions', keyPoints: ['Correct Reading = Main Scale Reading + (VSR × LC) - (Zero Error)', 'Thickness of thin wire / sheet calculations'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'neet_p_2', topicTitle: 'Errors in Measurement, Significant Figures & Combination of Errors', subtopic: 'Absolute, relative and percentage errors, error propagation in Z = A^p B^q / C^r', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'ΔZ/Z = p(ΔA/A) + q(ΔB/B) + r(ΔC/C) | Percentage Error = (ΔZ/Z) × 100%', keyPoints: ['Errors always add up in worst-case analysis', 'Rounding off rules and significant digits'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
@@ -722,57 +1037,7 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
       chapterTitle: 'Kinematics (1D & 2D Motion) & Vectors',
       description: 'Rectilinear motion, calculus equations, vectors, projectile motion & uniform circular motion',
       microTopics: [
-        { id: 'neet_p_4', topicTitle: 'Motion in a Straight Line & Graphical Kinematics', subtopic: 'v-t and x-t graphs, instantaneous velocity v = dx/dt, acceleration a = dv/dt = v(dv/dx)', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'v = u + at | s = ut + ½at² | v² = u² + 2as | s_nth = u + ½a(2n - 1)', keyPoints: ['Area under v-t graph = Displacement', 'Slope of v-t graph = Acceleration', 'Motion under gravity (g = 9.8 m/s²)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_5', topicTitle: 'Vectors & Relative Velocity in 1D and 2D', subtopic: 'Dot and Cross product, resolution of vectors, river-boat and rain-man problems', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'A · B = AB cos θ | |A × B| = AB sin θ | v_AB = v_A - v_B', keyPoints: ['Shortest path across river: sin θ = v_r / v_b', 'Work done = F · d (Scalar) | Torque = r × F (Vector)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_6', topicTitle: 'Projectile Motion & Circular Kinematics', subtopic: 'Equation of trajectory, time of flight, maximum height, horizontal range and centripetal acceleration', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'T = (2u sin θ)/g | H_max = (u² sin² θ)/(2g) | R = (u² sin 2θ)/g | a_c = v²/r = ω²r', keyPoints: ['Trajectory is parabolic: y = x tan θ - gx² / (2u² cos² θ)', 'Range is maximum at launch angle θ = 45°'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Laws of Motion & Friction',
-      description: 'Newton laws, linear momentum conservation, connected bodies, friction and banked roads',
-      microTopics: [
-        { id: 'neet_p_7', topicTitle: 'Newton Laws of Motion, Momentum Conservation & Pulleys', subtopic: 'Impulse J = Δp = F_avg Δt, free body diagrams (FBD), tension in strings and elevator problems', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'F_net = dp/dt = m(dv/dt) = ma | Atwood Machine a = (m₂ - m₁)g / (m₁ + m₂)', keyPoints: ['Rocket propulsion thrust F = v_rel (dm/dt)', 'Apparent weight in elevator: N = m(g ± a)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_8', topicTitle: 'Friction & Dynamics of Circular Motion on Banked Roads', subtopic: 'Static friction, kinetic friction, angle of repose, maximum safe speed on level and banked curves', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'f_s(max) = μ_s N | Level Road v_max = √(μ_s r g) | Banked Road v_opt = √(r g tan θ)', keyPoints: ['Angle of repose θ = tan⁻¹(μ_s)', 'Centripetal force is provided by component of normal reaction and friction'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Work, Energy, Power & Rotational Motion',
-      description: 'Work-energy theorem, potential energy of spring, centre of mass, torque, moment of inertia & rolling',
-      microTopics: [
-        { id: 'neet_p_9', topicTitle: 'Work-Energy Theorem, Spring Potential Energy & Collisions', subtopic: 'Conservative forces F = -dU/dx, 1D and 2D elastic and inelastic collisions', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'W_net = ΔK = ½m(v² - u²) | U_spring = ½kx² | Coefficient of Restitution e = (v₂ - v₁)/(u₁ - u₂)', keyPoints: ['For perfectly elastic collision e = 1 | Inelastic e = 0', 'Power P = F · v = dW/dt'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_10', topicTitle: 'Centre of Mass, Torque & Moment of Inertia Theorems', subtopic: 'Parallel and perpendicular axes theorems, angular momentum conservation, pure rolling without slipping', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'τ = Iα = r × F | L = Iω | I_parallel = I_cm + Md² | Total K_rolling = ½Mv²(1 + k²/R²)', keyPoints: ['Ring k²/R² = 1 | Disc k²/R² = 0.5 | Solid Sphere k²/R² = 0.4', 'Conservation of angular momentum L = I₁ω₁ = I₂ω₂'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 5,
-      chapterTitle: 'Gravitation, Solids, Fluids & Thermodynamics',
-      description: 'Gravitational field & escape velocity, elasticity, fluid dynamics (Bernoulli/Stokes), thermal laws',
-      microTopics: [
-        { id: 'neet_p_11', topicTitle: 'Universal Gravitation, Variation of g & Escape Velocity', subtopic: 'Variation of g with height/depth, orbital velocity, Kepler laws of planetary motion', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'v_escape = √(2GM/R) = √(2gR) ≈ 11.2 km/s | g_h = g(1 - 2h/R) | g_d = g(1 - d/R)', keyPoints: ['Kepler Third Law: T² ∝ a³', 'Gravitational potential inside solid sphere vs outside'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_12', topicTitle: 'Fluid Dynamics: Bernoulli Principle, Stokes Law & Surface Tension', subtopic: 'Viscosity, terminal velocity, streamline flow, equation of continuity, capillary rise', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'A₁v₁ = A₂v₂ | P + ½ρv² + ρgh = constant | v_t = 2r²(ρ - σ)g / (9η) | h = (2T cos θ)/(r ρ g)', keyPoints: ['Bernoulli application in Magnus effect and Venturimeter', 'Excess pressure in bubble: ΔP = 4T/R | in liquid drop: 2T/R'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_13', topicTitle: 'Thermodynamic Processes, First & Second Laws & Carnot Engine', subtopic: 'Work done in isothermal (W = nRT ln(V₂/V₁)) and adiabatic (PV^γ = C) processes, entropy', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'ΔQ = ΔU + ΔW | W_adiabatic = (P₁V₁ - P₂V₂) / (γ - 1) | Efficiency η = 1 - T_sink/T_source', keyPoints: ['For cyclic process ΔU = 0 -> Q = W', 'Isothermal bulk modulus = P | Adiabatic = γP'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 6,
-      chapterTitle: 'Electrostatics, Current Electricity & Magnetism',
-      description: 'Coulomb law, Gauss law, capacitors, Ohm law, Kirchhoff rules, Biot-Savart law & Galvanometer',
-      microTopics: [
-        { id: 'neet_p_14', topicTitle: 'Gauss Law, Electric Potential & Parallel Plate Capacitors', subtopic: 'Flux Φ = q_in / ε₀, potential energy, dielectric insertion and combinations of capacitors', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'E_sheet = σ/(2ε₀) | V = kq/r | C = K ε₀ A / d | Energy U = ½CV² = Q²/(2C)', keyPoints: ['Equipotential surfaces are always perpendicular to electric field lines', 'Dielectric increases capacitance by factor K'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_15', topicTitle: 'Current Electricity: Drift Velocity, Kirchhoff Rules & Potentiometer', subtopic: 'Ohm law micro-form j = σE, Wheatstone bridge, EMF vs terminal potential, temperature coefficient', dayNumber: 15, periodNumber: 1, keyFormulaOrLaw: 'I = n e A v_d | R = ρL/A | V = E - Ir | Wheatstone: P/Q = R/S | Potentiometer: E₁/E₂ = L₁/L₂', keyPoints: ['Kirchhoff Current Law (Charge conservation) | Voltage Law (Energy conservation)', 'Metre bridge wire resistance analysis'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_16', topicTitle: 'Magnetic Effects of Current: Biot-Savart, Ampere Law & Galvanometer', subtopic: 'Magnetic field at centre and axis of circular loop, Lorentz force F = q(E + v × B), galvanometer to ammeter/voltmeter', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'B_loop = (μ₀ I)/(2R) | B_axis = (μ₀ I R²)/[2(R² + x²)^(3/2)] | Shunt S = I_g G / (I - I_g)', keyPoints: ['Moving coil galvanometer current sensitivity = NBA/k', 'Cyclotron frequency f = qB/(2πm)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 7,
-      chapterTitle: 'Optics, Modern Physics & Semiconductor Electronics',
-      description: 'Ray optics (lenses/prisms), Wave optics (YDSE), Photoelectric effect, Bohr atom & Logic gates',
-      microTopics: [
-        { id: 'neet_p_17', topicTitle: 'Ray Optics: Total Internal Reflection, Lens Maker Formula & Prisms', subtopic: 'Refraction at spherical surfaces, combination of thin lenses, resolving power and microscopes', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: '1/f = (μ - 1)(1/R₁ - 1/R₂) | Power P = 1/f | Prism: μ = sin[(A + δ_m)/2] / sin(A/2)', keyPoints: ['TIR condition: Angle of incidence > Critical angle (sin C = 1/μ)', 'Astronomical telescope magnification M = -f_o / f_e'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_18', topicTitle: 'Wave Optics: Young Double Slit Experiment (YDSE) & Polarization', subtopic: 'Fringe width derivation, path difference for maxima and minima, Brewster law', dayNumber: 18, periodNumber: 1, keyFormulaOrLaw: 'Fringe Width β = (λ D)/d | Constructive: Δx = nλ | Destructive: Δx = (2n - 1)λ/2 | Brewster: μ = tan i_p', keyPoints: ['Diffraction central maximum angular width = 2λ/a', 'Shift in fringes with mica sheet: Δy = (μ - 1)t D / d'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_p_19', topicTitle: 'Photoelectric Effect, Bohr Model of Hydrogen & Semiconductors', subtopic: 'Einstein photoelectric equation, de Broglie wavelength, Bohr energy levels E_n = -13.6/n² eV, p-n junction and logic gates', dayNumber: 19, periodNumber: 1, keyFormulaOrLaw: 'K_max = hν - Φ = eV_0 | λ = h/p = h/√(2mE) | 1/λ = R_H(1/n₁² - 1/n₂²) | Zener Diode Voltage Regulation', keyPoints: ['Lyman series in UV | Balmer in Visible | Paschen in IR', 'Logic Gates: NAND and NOR are universal gates'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'neet_p_4', topicTitle: 'Motion in a Straight Line & Graphical Kinematics', subtopic: 'v-t and x-t graphs, instantaneous velocity v = dx/dt, acceleration a = dv/dt = v(dv/dx)', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'v = u + at | s = ut + ½at² | v² = u² + 2as | s_nth = u + ½a(2n - 1)', keyPoints: ['Area under v-t graph = Displacement', 'Slope of v-t graph = Acceleration'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -783,38 +1048,7 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
       chapterTitle: 'Physical Chemistry: Mole Concept, Atomic Structure & Bonding',
       description: 'Stoichiometry, quantum numbers, electronic configuration, VSEPR, Hybridization & Molecular Orbital Theory',
       microTopics: [
-        { id: 'neet_c_1', topicTitle: 'Mole Concept, Molarity, Molality & Stoichiometry', subtopic: 'Limiting reagent calculations, percentage composition, empirical and molecular formula', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Moles n = Mass / Molar Mass | Molarity M = n_solute / V_solution(L) | Molality m = n_solute / Mass_solvent(kg)', keyPoints: ['Limiting reagent determines maximum product yield', 'Mole fraction X_A + X_B = 1'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_c_2', topicTitle: 'Quantum Mechanical Model of Atom & Electronic Configuration', subtopic: 'Heisenberg uncertainty principle, de Broglie relation, quantum numbers (n, l, m, s), Aufbau and Hund rules', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'Δx · Δp ≥ h / (4π) | de Broglie λ = h / (mv) | Orbital Angular Momentum = √[l(l+1)] (h/2π)', keyPoints: ['Cr (3d⁵ 4s¹) and Cu (3d¹⁰ 4s¹) extra stability of half/fully filled d-orbitals', 'Maximum electrons in shell = 2n²'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_c_3', topicTitle: 'Chemical Bonding: VSEPR Theory, Hybridization & Molecular Orbital Theory (MOT)', subtopic: 'Geometry and shapes of molecules (sp, sp², sp³, sp³d, sp³d²), dipole moments, MOT bond order and magnetic behavior', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: 'Bond Order = ½(N_b - N_a) | Magnetic Moment μ = √[n(n+2)] BM', keyPoints: ['O₂ is paramagnetic with Bond Order 2.0 (unpaired electrons in π* antibonding)', 'Hydrogen bonding strength: F-H...F > O-H...O > N-H...N'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Thermodynamics, Equilibrium & Chemical Kinetics',
-      description: 'Hess law, Gibbs free energy, Le Chatelier principle, pH, Buffer solutions, Solubility product & Arrhenius rate law',
-      microTopics: [
-        { id: 'neet_c_4', topicTitle: 'Chemical Thermodynamics & Hess Law of Constant Heat Summation', subtopic: 'First law ΔU = q + w, enthalpy ΔH = ΔU + Δn_g RT, spontaneity condition ΔG = ΔH - TΔS < 0', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'ΔG° = -RT ln K_eq = -2.303 RT log K_eq | Standard Enthalpy of Reaction ΔH°_rxn = ΣΔH°_f(products) - ΣΔH°_f(reactants)', keyPoints: ['ΔG < 0 is spontaneous | ΔG = 0 at equilibrium', 'Entropy of universe always increases (2nd Law)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_c_5', topicTitle: 'Ionic Equilibrium: pH, Buffer Solutions & Solubility Product (Ksp)', subtopic: 'Ostwald dilution law, common ion effect, Henderson-Hasselbalch equation for buffers, salt hydrolysis', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'pH = -log[H⁺] | Acidic Buffer: pH = pK_a + log([Salt]/[Acid]) | K_sp for A_x B_y = x^x y^y s^(x+y)', keyPoints: ['Precipitation occurs when Ionic Product (Q_sp) > K_sp', 'pH of strong acid + weak base salt: pH = 7 - ½pK_b - ½log C'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_c_6', topicTitle: 'Chemical Kinetics: Order of Reaction, Half-Life & Arrhenius Equation', subtopic: 'Integrated rate laws (zero and 1st order), collision theory, activation energy and temperature dependence', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'First Order: k = (2.303/t) log(a / (a - x)) | t_½ = 0.693 / k | Arrhenius: k = A e^(-E_a / RT)', keyPoints: ['Half-life of first-order reaction is independent of initial concentration', 'log(k₂/k₁) = (E_a / 2.303R) [1/T₁ - 1/T₂]'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Inorganic Chemistry: Periodicity, d & f Block & Coordination Compounds',
-      description: 'Periodic trends, lanthanoid contraction, KMnO4 / K2Cr2O7 properties, Werner theory, VBT & Crystal Field Theory (CFT)',
-      microTopics: [
-        { id: 'neet_c_7', topicTitle: 'Periodic Properties & Transition Elements (d & f Block)', subtopic: 'Ionization enthalpy trends, electron gain enthalpy, variable oxidation states, lanthanoid contraction', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Lanthanoid Contraction causes 4d and 5d series elements (Zr/Hf, Nb/Ta) to have almost identical atomic radii', keyPoints: ['KMnO₄ acts as powerful oxidant in acidic (change in ON = 5), neutral (3), basic (1)', 'Colored ions due to d-d transitions and charge transfer'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_c_8', topicTitle: 'Coordination Chemistry: IUPAC Nomenclature, Isomerism & Crystal Field Theory (CFT)', subtopic: 'Ligands classification (chelating, ambidentate), spectrochemical series, octahedral and tetrahedral splitting Δ_o vs P', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'Octahedral Splitting: t₂g (-0.4 Δ_o) and e_g (+0.6 Δ_o) | CFSE = [-0.4 n(t₂g) + 0.6 n(e_g)] Δ_o + mP', keyPoints: ['Strong field ligands (CN⁻, CO) cause pairing (low spin) | Weak field (I⁻, Br⁻, F⁻) give high spin', 'Geometric (cis/trans) and Optical isomerism in [Co(en)₃]³⁺'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Organic Chemistry: GOC, Hydrocarbons & Reaction Mechanisms',
-      description: 'Inductive, Resonance, Hyperconjugation, Carbocations, SN1/SN2 mechanisms, Electrophilic aromatic substitution & Named reactions',
-      microTopics: [
-        { id: 'neet_c_9', topicTitle: 'General Organic Chemistry (GOC): Electronic Effects & Stability of Intermediates', subtopic: 'Inductive effect (+I/-I), resonance/mesomeric (+M/-M), hyperconjugation, aromaticity (Hückel 4n+2 rule), carbocation/carbanion/free radical stabilities', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'Stability of Carbocations: 3° > 2° > 1° > Methyl (governed by Hyperconjugation and +I effect)', keyPoints: ['Acidic strength increases with -I and -M groups (e.g. Picric acid)', 'Aromatic compounds have (4n + 2) π-electrons in cyclic planar ring'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_c_10', topicTitle: 'Hydrocarbons: Alkanes, Alkenes, Alkynes & Aromatic Benzene Reactions', subtopic: 'Markovnikov and anti-Markovnikov addition, ozonolysis of alkenes, Friedel-Crafts alkylation and acylation', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Markovnikov Addition: H goes to carbon with more H | Peroxide effect (Kharasch) applies only to HBr', keyPoints: ['Ozonolysis determines position of double/triple bonds in alkenes/alkynes', 'Nitration of Benzene uses conc. HNO₃ + conc. H₂SO₄ (Nitronium ion NO₂⁺ is electrophile)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_c_11', topicTitle: 'Organic Oxygen & Nitrogen Compounds: Carbonyls, Amines & Biomolecules', subtopic: 'Aldol condensation, Cannizzaro reaction, Lucas test for alcohols, Gabriel phthalimide synthesis, Carbohydrates and amino acids', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Aldol: Aldehydes with α-H in dil. NaOH | Cannizzaro: Aldehydes without α-H (HCHO, PhCHO) in 50% KOH', keyPoints: ['Hinsberg reagent (Benzene sulfonyl chloride) distinguishes 1°, 2°, 3° amines', 'Proteins consist of α-amino acids linked by peptide bonds (-CONH-)'], type: 'concept', importance: 'High-Yield' }
+        { id: 'neet_c_1', topicTitle: 'Mole Concept, Molarity, Molality & Stoichiometry', subtopic: 'Limiting reagent calculations, percentage composition, empirical and molecular formula', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Moles n = Mass / Molar Mass | Molarity M = n_solute / V_solution(L) | Molality m = n_solute / Mass_solvent(kg)', keyPoints: ['Limiting reagent determines maximum product yield', 'Mole fraction X_A + X_B = 1'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -823,31 +1057,9 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
     {
       chapterNumber: 1,
       chapterTitle: 'Plant Diversity, Morphology & Anatomy',
-      description: 'Five kingdom system, Algae/Bryophytes/Pteridophytes/Gymnosperms, Floral families (Solanaceae, Fabaceae), Dicot/Monocot anatomy',
+      description: 'Five kingdom system, Algae/Bryophytes/Pteridophytes/Gymnosperms, Floral families, Dicot/Monocot anatomy',
       microTopics: [
-        { id: 'neet_b_1', topicTitle: 'Five Kingdom Classification & Plant Kingdom Systematics', subtopic: 'Whittaker 5 kingdoms, characteristics of Chlorophyceae, Phaeophyceae, Rhodophyceae, Bryophytes (Amphibians of plant kingdom), Pteridophytes', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Pigments: Green Algae (Chl a, b) | Brown Algae (Fucoxanthin) | Red Algae (r-Phycoerythrin)', keyPoints: ['Lichens are symbiotic associations between Algae (Phycobiont) and Fungi (Mycobiont)', 'Gymnosperms possess naked seeds (no ovary wall)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_b_2', topicTitle: 'Morphology of Flowering Plants & Description of Families', subtopic: 'Modifications of roots, stems, leaves, inflorescence (Racemose/Cymose), floral formula of Fabaceae, Solanaceae, Liliaceae', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Floral Formula of Solanaceae: ⊕ ⚥ K(5) C(5) A5 G(2) | Placentation: Marginal, Axile, Parietal, Free-central, Basal', keyPoints: ['Pneumatophores in Rhizophora for respiration', 'Phyllode is modified petiole in Australian Acacia'], type: 'memorization', importance: 'High-Yield' },
-        { id: 'neet_b_3', topicTitle: 'Anatomy of Flowering Plants & Secondary Growth', subtopic: 'Meristematic vs permanent tissues, vascular bundles (Radial, Conjoint, Open/Closed), internal anatomy of Dicot vs Monocot stem and root', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Dicot Root has Exarch Xylem | Dicot Stem has Endarch Xylem and Open Vascular Bundles (Cambium present)', keyPoints: ['Casparian strips on Endodermis made of suberin', 'Spring wood has wider vessels than autumn wood (Annual rings)'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Cell Biology, Photosynthesis & Plant Physiology',
-      description: 'Cell organelles, Mitosis & Meiosis, Light & Dark reactions (C3/C4), Glycolysis, Krebs Cycle & Plant Hormones (PGRs)',
-      microTopics: [
-        { id: 'neet_b_4', topicTitle: 'Cell: The Unit of Life & Cell Cycle Division (Mitosis / Meiosis)', subtopic: 'Fluid mosaic model of plasma membrane, semiautonomous organelles (Chloroplast, Mitochondria), Meiosis I prophase stages (Leptotene to Diakinesis)', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'Crossing over occurs in Pachytene stage of Prophase I catalyzed by Recombinase enzyme', keyPoints: ['Chloroplast has thylakoids (grana) and stroma (site of dark reaction)', 'G1 -> S (DNA replication) -> G2 -> M phase sequence'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_b_5', topicTitle: 'Photosynthesis in Higher Plants: Light Reactions, C3 & C4 Pathways', subtopic: 'Z-scheme electron transport, photolysis of water, Calvin cycle (RuBisCO carboxylation), Hatch-Slack C4 pathway with Kranz anatomy', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Calvin Cycle: 1 Glucose requires 6 CO₂ + 18 ATP + 12 NADPH | C4 plants avoid photorespiration', keyPoints: ['Kranz anatomy in C4 plants (Maize, Sugarcane) with bundle sheath cells', 'Chemiosmotic hypothesis: ATP synthesis driven by proton gradient across thylakoid membrane'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_b_6', topicTitle: 'Plant Respiration & Growth Regulators (Auxins, Gibberellins, Cytokinins, Ethylene, ABA)', subtopic: 'Glycolysis (EMP pathway), TCA / Krebs cycle in mitochondrial matrix, ETS oxidative phosphorylation, physiological actions of PGRs', dayNumber: 10, periodNumber: 3, keyFormulaOrLaw: 'Net ATP yield from 1 molecule of Glucose = 36 to 38 ATP | Respiratory Quotient RQ = Vol. CO₂ evolved / Vol. O₂ consumed', keyPoints: ['Auxin promotes apical dominance and rooting | Cytokinin promotes cell division and overcomes apical dominance', 'Ethylene is gaseous ripening hormone | ABA is stress hormone inducing stomatal closure'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Plant Reproduction, Genetics & Ecology',
-      description: 'Double fertilization, Mendelian genetics, Molecular basis (DNA replication, transcription, Lac operon) & Ecosystems',
-      microTopics: [
-        { id: 'neet_b_7', topicTitle: 'Sexual Reproduction in Flowering Plants & Double Fertilization', subtopic: 'Microsporogenesis (Pollen grain), Megasporogenesis (Embryo sac 7-celled 8-nucleate), pollination types, endosperm development', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Double Fertilization = Syngamy (Male gamete + Egg -> 2n Zygote) + Triple Fusion (Male gamete + 2 Polar nuclei -> 3n PEN)', keyPoints: ['Apomixis is asexual reproduction mimicking sexual seed formation without fertilization', 'Outbreeding devices prevent self-pollination'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_b_8', topicTitle: 'Principles of Inheritance & Molecular Basis of Genetics', subtopic: 'Mendel laws, incomplete dominance, dihybrid ratio (9:3:3:1), DNA packaging (nucleosome), Meselson-Stahl experiment, Lac Operon model', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Central Dogma: DNA -> (Transcription) -> mRNA -> (Translation) -> Protein | Lac Operon: Inducer is Allolactose', keyPoints: ['Nucleosome core contains octamer of histones (H2A, H2B, H3, H4) wrapped with 200 bp DNA', 'Genetic code is universal, degenerate, unambiguous and non-overlapping'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_b_9', topicTitle: 'Ecology, Ecosystem Function & Biodiversity Conservation', subtopic: 'Population growth models (Logistic dN/dt = rN(K-N)/K), ecological pyramids (Energy pyramid is always upright), In-situ and Ex-situ conservation', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'Species-Area Relationship: log S = log C + Z log A (Alexander von Humboldt) | 10% Law of Energy Transfer (Lindeman)', keyPoints: ['The Evil Quartet: Habitat loss & fragmentation, Over-exploitation, Alien species invasion, Co-extinctions', 'In-situ: National Parks, Sanctuaries | Ex-situ: Botanical gardens, Cryopreservation'], type: 'concept', importance: 'High-Yield' }
+        { id: 'neet_b_1', topicTitle: 'Five Kingdom Classification & Plant Kingdom Systematics', subtopic: 'Whittaker 5 kingdoms, characteristics of Chlorophyceae, Phaeophyceae, Rhodophyceae', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Pigments: Green Algae (Chl a, b) | Brown Algae (Fucoxanthin) | Red Algae (r-Phycoerythrin)', keyPoints: ['Lichens are symbiotic associations between Algae and Fungi', 'Gymnosperms possess naked seeds'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -858,38 +1070,7 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
       chapterTitle: 'Animal Kingdom & Animal Morphology (Cockroach & Frog)',
       description: 'Non-chordate phyla (Porifera to Hemichordata), Chordate classes, Cockroach and Frog anatomy',
       microTopics: [
-        { id: 'neet_z_1', topicTitle: 'Animal Kingdom Classification: Phyla Porifera to Chordata', subtopic: 'Levels of organization, coelom types (Acoelomate, Pseudocoelomate, Coelomate), open vs closed circulatory systems, key features of Arthropoda, Mollusca, Echinodermata', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'Coelom Classification: Aschelminthes are Pseudocoelomate | Annelida to Chordata are True Coelomates (Eucoelomates)', keyPoints: ['Arthropoda is the largest phylum with chitinous exoskeleton and jointed appendages', 'Echinodermata possess unique water vascular system with radial symmetry in adults'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_z_2', topicTitle: 'Structural Organisation in Animals & Morphology of Cockroach / Frog', subtopic: 'Epithelial, connective, muscular and nervous tissues, mouthparts, digestive, spiracular respiratory and reproductive systems of Periplaneta americana', dayNumber: 5, periodNumber: 4, keyFormulaOrLaw: 'Cockroach Excretory Organs: Malpighian Tubules (excrete Uric Acid - Uricotelic)', keyPoints: ['Blood vascular system of cockroach is open type with 13-chambered tubular heart', 'Tight junctions prevent leaking, Gap junctions facilitate intercellular communication'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Human Physiology: Respiration, Circulation & Excretion',
-      description: 'Breathing mechanisms, lung volumes, cardiac cycle, ECG, Nephron structure, Counter-current mechanism & RAAS',
-      microTopics: [
-        { id: 'neet_z_3', topicTitle: 'Human Respiratory System: Gas Exchange & Lung Capacities', subtopic: 'Tidal Volume (TV), Vital Capacity (VC), Oxygen-hemoglobin dissociation curve (Bohr effect), respiratory disorders (Asthma, Emphysema)', dayNumber: 2, periodNumber: 4, keyFormulaOrLaw: 'Vital Capacity VC = TV + IRV + ERV (~4500 mL) | Total Lung Capacity TLC = VC + RV | O₂ binding favoured by high pO₂, low pCO₂, low H⁺, low temp', keyPoints: ['Emphysema is chronic disorder where alveolar walls are damaged (major cause: cigarette smoking)', 'Carbon dioxide is mainly transported as Bicarbonate ions (HCO₃⁻ ~70%) in blood'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_z_4', topicTitle: 'Human Circulatory System: Cardiac Cycle, ECG & Double Circulation', subtopic: 'Origin of heartbeat (SA node pacemaker), AV node, Purkinje fibers, ECG waves (P, QRS, T), cardiac output = Stroke Volume × Heart Rate', dayNumber: 6, periodNumber: 4, keyFormulaOrLaw: 'Cardiac Output CO = SV (70 mL) × HR (72 bpm) ≈ 5 Litres/min | P wave = Atrial depolarization, QRS = Ventricular depolarization, T wave = Ventricular repolarization', keyPoints: ['Double circulation consists of Pulmonary circulation and Systemic circulation', 'Coronary artery disease (Atherosclerosis) caused by deposit of calcium, fat, cholesterol'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'neet_z_5', topicTitle: 'Human Excretory System: Nephron Filtration & Counter-Current Multiplier', subtopic: 'Glomerular filtration rate (GFR = 125 mL/min), tubular reabsorption, Henle loop and Vasa Recta counter-current, RAAS hormone control', dayNumber: 10, periodNumber: 4, keyFormulaOrLaw: 'GFR = 125 mL/min = 180 Litres/day | Renin-Angiotensin-Aldosterone System (RAAS) increases blood pressure and GFR', keyPoints: ['Juxtaglomerular apparatus (JGA) releases Renin when GFR falls', 'Atrial Natriuretic Factor (ANF) acts as check on RAAS and causes vasodilation'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Human Locomotion, Neural Control & Endocrine System',
-      description: 'Sliding filament theory of muscle, Action potential propagation, Human brain, Pituitary, Thyroid & Adrenal hormones',
-      microTopics: [
-        { id: 'neet_z_6', topicTitle: 'Locomotion & Sliding Filament Mechanism of Muscle Contraction', subtopic: 'Actin and Myosin filaments, Troponin/Tropomyosin regulatory proteins, role of Ca²⁺ from sarcoplasmic reticulum, joints classification', dayNumber: 3, periodNumber: 4, keyFormulaOrLaw: 'Cross-bridge cycle: Myosin head hydrolyzes ATP -> binds actin -> power stroke releases ADP + Pi -> new ATP detaches head', keyPoints: ['H-zone and I-band shorten during contraction while A-band remains constant length', 'Synovial joints: Ball and socket (shoulder), Hinge (knee/elbow), Pivot (atlas/axis)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_z_7', topicTitle: 'Neural Control & Conduction of Nerve Impulse across Synapse', subtopic: 'Resting membrane potential (-70 mV), Na⁺ influx action potential depolarization, chemical synapse neurotransmitters (Acetylcholine)', dayNumber: 7, periodNumber: 4, keyFormulaOrLaw: 'Resting State: 3 Na⁺ pumped out for every 2 K⁺ pumped in by Na⁺/K⁺ ATPase pump | Inside is negative relative to outside', keyPoints: ['Forebrain: Cerebrum (intelligence), Hypothalamus (thermoregulation and hunger)', 'Cerebellum coordinates voluntary motor movements and body balance'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_z_8', topicTitle: 'Chemical Coordination: Endocrine Hormones & Mechanism of Action', subtopic: 'Hypothalamus-pituitary axis (GH, TSH, ACTH, LH, FSH), Thyroid (T3, T4), Adrenal (Cortisol, Adrenaline), Pancreas (Insulin, Glucagon), peptide vs steroid hormone receptors', dayNumber: 11, periodNumber: 4, keyFormulaOrLaw: 'Insulin (β-cells) lowers blood glucose (hypoglycemic) | Glucagon (α-cells) raises blood glucose (hyperglycemic)', keyPoints: ['Peptide hormones act via secondary messengers (cAMP, IP₃, Ca²⁺)', 'Steroid hormones (Estrogen, Progesterone, Testosterone) cross cell membrane and bind nuclear receptors'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Human Reproduction, Reproductive Health, Evolution & Immunity',
-      description: 'Spermatogenesis/Oogenesis, Menstrual cycle hormonal regulation, ART/IVF techniques, Natural selection, Immunity & AIDS/Cancer',
-      microTopics: [
-        { id: 'neet_z_9', topicTitle: 'Human Reproduction: Gametogenesis, Menstrual Cycle & Embryogenesis', subtopic: 'Spermatogenesis vs Oogenesis, LH surge causing ovulation (Day 14), fertilization in ampullary region, blastocyst implantation and placenta', dayNumber: 4, periodNumber: 4, keyFormulaOrLaw: 'LH Surge triggers Ovulation on Day 14 | Corpus Luteum secretes high Progesterone to maintain endometrium', keyPoints: ['Acrosome of sperm is derived from Golgi complex and contains hyaluronidase', 'Inner cell mass of blastocyst gives rise to embryo (ectoderm, mesoderm, endoderm)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_z_10', topicTitle: 'Reproductive Health, Infertility & Assisted Reproductive Technologies (ART)', subtopic: 'Contraceptive methods (IUDs Copper-T, Oral pills Saheli), MTP legal guidelines, IVF-ET, ZIFT, GIFT, ICSI techniques', dayNumber: 8, periodNumber: 4, keyFormulaOrLaw: 'ZIFT (Zygote Intra-Fallopian Transfer: upto 8 blastomeres) | IUT (Intra-Uterine Transfer: >8 blastomeres) | GIFT (Gamete transfer)', keyPoints: ['Copper-T releases Cu ions that suppress sperm motility and fertilizing capacity', 'Saheli is non-steroidal oral once-a-week pill developed by CDRI Lucknow'], type: 'concept', importance: 'High-Yield' },
-        { id: 'neet_z_11', topicTitle: 'Evolution, Human Health & Immunology (Innate/Acquired, Antibodies, AIDS, Cancer)', subtopic: 'Hardy-Weinberg equilibrium (p² + 2pq + q² = 1), antibody structure (H₂L₂), active vs passive immunity, HIV retrovirus replication, oncogenes', dayNumber: 12, periodNumber: 4, keyFormulaOrLaw: 'Hardy-Weinberg Law: p² + 2pq + q² = 1 | Antibody structure has 2 heavy and 2 light polypeptide chains held by disulfide bonds', keyPoints: ['Colostrum contains secretory IgA providing natural passive immunity to newborn', 'HIV targets and destroys Helper T-cells (CD4⁺ lymphocytes) causing severe immunosuppression'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'neet_z_1', topicTitle: 'Animal Kingdom Classification: Phyla Porifera to Chordata', subtopic: 'Levels of organization, coelom types, open vs closed circulatory systems', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'Coelom: Aschelminthes are Pseudocoelomate | Annelida to Chordata are Eucoelomates', keyPoints: ['Arthropoda is the largest phylum with jointed appendages', 'Echinodermata possess water vascular system'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -916,44 +1097,16 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. CLASS 11 & 12 COMMERCE COMPLETE MICRO-TOPIC SYLLABUS REGISTRY
+// 9. CLASS 11 & 12 COMMERCE COMPLETE MICRO-TOPIC SYLLABUS REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 export function getCommerceClass11Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
   const accountancyChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
       chapterTitle: 'Introduction to Accounting & Theoretical Framework',
-      description: 'Accounting concepts, GAAP, double entry system, cash vs accrual basis, and accounting standards (AS & Ind AS)',
+      description: 'Accounting concepts, GAAP, double entry system, cash vs accrual basis, and accounting standards',
       microTopics: [
-        { id: 'com_acc_1', topicTitle: 'Accounting Meaning, Objectives & Qualitative Characteristics', subtopic: 'Identification, measurement, recording, classifying, summarizing and communicating financial information', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Fundamental Accounting Equation: Assets = Liabilities + Capital (Equity)', keyPoints: ['Users of accounting information: Internal vs External', 'Qualitative traits: Reliability, Relevance, Understandability, Comparability'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_acc_2', topicTitle: 'GAAP Principles & Accounting Concepts (Entity, Going Concern, Accrual)', subtopic: 'Money measurement, accounting period, cost concept, matching principle, conservatism (prudence) and materiality', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Dual Aspect Principle: Every debit must have a corresponding credit of equal value', keyPoints: ['Conservatism: Anticipate no profit, but provide for all possible losses', 'Accrual concept: Recognize revenue when earned, expense when incurred regardless of cash flow'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Recording Transactions: Journal, Ledger & Trial Balance',
-      description: 'Golden rules of accounting, source documents, cash book, subsidiary books and trial balance preparation',
-      microTopics: [
-        { id: 'com_acc_3', topicTitle: 'Golden Rules of Accounting & Journal Entry Preparation', subtopic: 'Personal Accounts (Debit Receiver, Credit Giver), Real Accounts (Debit What Comes In), Nominal Accounts (Debit All Expenses)', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'Traditional Rules: Real (Assets), Personal (Persons/Firms), Nominal (Incomes/Expenses)', keyPoints: ['Modern Approach: Increase in Asset/Expense = Debit | Increase in Liability/Capital/Revenue = Credit', 'Compound journal entries and trade discount vs cash discount treatment'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'com_acc_4', topicTitle: 'Subsidiary Books, Cash Book (Triple Column) & Ledger Posting', subtopic: 'Purchase book, sales book, purchase return, sales return, petty cash book (imprest system), trial balance tallying', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'Trial Balance Debit Total = Credit Total (Arithmetical accuracy check)', keyPoints: ['Contra entries in two-column cash book (Cash deposited into bank or withdrawn for office)', 'Errors not disclosed by trial balance: Error of principle, compensating errors, complete omission'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Bank Reconciliation Statement (BRS), Depreciation & Rectification',
-      description: 'Causes of BRS differences, Straight Line Method (SLM) vs Written Down Value (WDV), error rectifications',
-      microTopics: [
-        { id: 'com_acc_5', topicTitle: 'Bank Reconciliation Statement (BRS) with Cash Book & Pass Book', subtopic: 'Timing differences (cheques issued but not presented, cheques deposited but not credited), direct debits/credits by bank', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'Balance as per Cash Book + Cheques issued but not presented - Cheques deposited not cleared = Pass Book Balance', keyPoints: ['Favourable balance: Cash book debit / Pass book credit', 'Overdraft: Cash book credit / Pass book debit'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'com_acc_6', topicTitle: 'Depreciation Accounting: Straight Line (SLM) vs Written Down Value (WDV)', subtopic: 'Calculation of annual depreciation, provision for depreciation account, asset disposal account', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'SLM Depreciation = (Original Cost - Estimated Scrap Value) / Useful Life | WDV Dep = Book Value × Rate%', keyPoints: ['SLM provides equal depreciation every year | WDV provides reducing depreciation', 'Tax authorities in India mandate WDV method for income tax depreciation computation'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Financial Statements of Sole Proprietorship (With Adjustments)',
-      description: 'Trading Account, Profit & Loss Account, Balance Sheet, Closing Stock, Outstanding/Prepaid items, Bad debts & Provision',
-      microTopics: [
-        { id: 'com_acc_7', topicTitle: 'Trading and Profit & Loss Account Preparation (Gross & Net Profit)', subtopic: 'Direct vs indirect expenses, cost of goods sold (COGS = Opening Stock + Net Purchases + Direct Expenses - Closing Stock)', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'Gross Profit = Net Sales - COGS | Net Profit = Operating Profit + Non-operating Incomes - Non-operating Expenses', keyPoints: ['Wages and carriage inwards are direct expenses in Trading Account', 'Salaries and rent are indirect expenses in Profit & Loss Account'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'com_acc_8', topicTitle: 'Balance Sheet & 12 Key Adjustments (Outstanding, Prepaid, Provision for Doubtful Debts)', subtopic: 'Treatment of closing stock outside trial balance, accrued income, unearned income, depreciation, provision for bad debts', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'Adjusted Debtors = Sundry Debtors - Further Bad Debts - Provision for Doubtful Debts', keyPoints: ['Every adjustment entry has two-fold effect in final accounts', 'Capital Expenditure gives long-term benefit (Asset) vs Revenue Expenditure (Expense)'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'com_acc_1', topicTitle: 'Accounting Meaning, Objectives & Fundamental Accounting Equation', subtopic: 'Assets = Liabilities + Capital (Equity), Users of accounting info', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Assets = Liabilities + Capital (Equity) | Dual Aspect Principle', keyPoints: ['Conservatism: Anticipate no profit, provide for all possible losses', 'Accrual concept recognizes revenue when earned'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -962,37 +1115,9 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
     {
       chapterNumber: 1,
       chapterTitle: 'Foundations of Business & Forms of Business Organisations',
-      description: 'Business, profession, employment, Sole Proprietorship, Partnership (Act 1932), Hindu Undivided Family, Joint Stock Company',
+      description: 'Sole Proprietorship, Partnership (Act 1932), Joint Stock Company, Business finance',
       microTopics: [
-        { id: 'com_bst_1', topicTitle: 'Nature, Purpose of Business & Classification of Business Activities', subtopic: 'Industry (Primary, Secondary, Tertiary), Commerce (Trade & Auxiliaries to trade: Banking, Transport, Insurance, Warehousing, Advertising)', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Business Risk Concept: Profit is the reward for risk bearing', keyPoints: ['Business objectives: Economic (Profit, Market standing, Innovation) & Social objectives', 'Auxiliaries to trade remove hindrances of person, place, time, risk, finance, and information'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_bst_2', topicTitle: 'Forms of Business Organisations: Sole Proprietorship, Partnership & Joint Stock Company', subtopic: 'Merits and limitations of Sole Trade, Partnership deed, types of partners, Joint Stock Company (Private vs Public Company formation)', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'Features of Company: Separate Legal Entity, Perpetual Succession, Common Seal, Limited Liability', keyPoints: ['Sole proprietor has unlimited liability | Company shareholders have liability limited to unpaid share capital', 'Private Company min 2 max 200 members | Public Company min 7 max unlimited'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Public, Private, Global Enterprises & Business Services',
-      description: 'Departmental undertakings, Statutory corporations, Government companies, Banking, Insurance principles, E-business',
-      microTopics: [
-        { id: 'com_bst_3', topicTitle: 'Public Sector Enterprises & Global Corporations (MNCs)', subtopic: 'Departmental undertakings (Railways), Statutory Corporations (LIC, RBI), Government Companies (ONGC, BHEL), Public-Private Partnerships (PPP)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Government Company: Min 51% paid-up share capital held by Central/State Government (Companies Act 2013)', keyPoints: ['Statutory corporations formed by special Act of Parliament', 'MNCs operate in multiple countries with advanced technology and global brand value'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_bst_4', topicTitle: 'Business Services: Banking, Principles of Insurance & E-Commerce', subtopic: 'Commercial banks (RTGS, NEFT), Principles of insurance (Utmost good faith, Insurable interest, Indemnity, Subrogation, Proximate cause)', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Principle of Indemnity: Insured cannot make profit out of loss (Applies to Fire and Marine, NOT Life Insurance)', keyPoints: ['Insurable interest must exist at time of taking policy (Life) and at time of loss (Marine)', 'E-business vs traditional business: B2B, B2C, C2C business models'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Social Responsibility, Business Ethics & Sources of Business Finance',
-      description: 'CSR, Environmental protection, Equity shares, Preference shares, Debentures, Retained earnings, Commercial banks, Loan funds',
-      microTopics: [
-        { id: 'com_bst_5', topicTitle: 'Social Responsibilities of Business & Corporate Social Responsibility (CSR)', subtopic: 'Responsibility towards shareholders, workers, consumers, government and community; business ethics and green business', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Section 135 Companies Act 2013: Mandatory 2% average net profit spending on CSR for qualifying companies', keyPoints: ['Arguments for social responsibility: Long-term self interest of business, avoidance of government regulation', 'Environmental protection measures by industrial units'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_bst_6', topicTitle: 'Sources of Business Finance: Owners Funds vs Borrowed Funds', subtopic: 'Equity shares (voting rights), Preference shares (fixed dividend), Debentures (secured loan), Retained earnings, Trade credit, Commercial papers, ADR/GDR', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'Capital Structure: Trade-off between Equity (No dilution of control) and Debt (Tax-deductible interest)', keyPoints: ['Equity shareholders are real risk-bearing owners with voting power', 'Debenture holders are creditors of company with fixed charge on assets'], type: 'concept', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Small Business, Internal Trade & International Business',
-      description: 'MSMED Act 2006/2020, Wholesale vs Retail trade, Departmental stores, Supermarkets, Export-Import procedures, WTO',
-      microTopics: [
-        { id: 'com_bst_7', topicTitle: 'Small Business & MSME Classification & Entrepreneurship Support', subtopic: 'Micro, Small, Medium Enterprises revised criteria (Investment and Turnover), role of small business in rural India, DIC, NABARD, SIDBI', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'MSME 2020 Criteria: Micro (Inv < ₹1 Cr, TO < ₹5 Cr) | Small (Inv < ₹10 Cr, TO < ₹50 Cr) | Medium (Inv < ₹50 Cr, TO < ₹250 Cr)', keyPoints: ['Small enterprises generate widespread employment and mobilize local resources', 'Incentives to industries in backward areas (Tax holidays, subsidized power)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_bst_8', topicTitle: 'Internal Trade (Wholesalers, Retailers, GST) & International Trade (Export/Import/WTO)', subtopic: 'Services of wholesaler to manufacturer and retailer, Large scale retail (Departmental stores, Chain stores, Mail order), Letter of Credit, Bill of Lading, WTO role', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Letter of Credit (LC): Guarantee issued by importer bank ensuring payment to exporter on submission of documents', keyPoints: ['GST (Goods and Services Tax) is destination-based indirect consumption tax', 'Bill of Lading acts as document of title to goods shipped'], type: 'concept', importance: 'High-Yield' }
+        { id: 'com_bst_1', topicTitle: 'Forms of Business Organisations & CSR Mandate', subtopic: 'Sole proprietorship, Partnership deed, Joint Stock Company, Section 135 CSR 2% rule', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Features of Company: Separate Legal Entity, Perpetual Succession, Limited Liability', keyPoints: ['Sole proprietor has unlimited liability; Company shareholders have limited liability', 'Section 135 Companies Act 2013 mandates 2% CSR spending'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -1000,38 +1125,10 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
   const economicsChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'Introductory Microeconomics: Consumer Equilibrium & Demand',
-      description: 'Law of Diminishing Marginal Utility, Indifference Curve Analysis, Budget Line, Law of Demand & Elasticity of Demand',
+      chapterTitle: 'Introductory Microeconomics & Statistics for Economics',
+      description: 'Law of Demand, Elasticity, Variable Proportions, Measures of Central Tendency (Mean, Median, Mode)',
       microTopics: [
-        { id: 'com_eco_1', topicTitle: 'Consumer Equilibrium: Marginal Utility Analysis & Indifference Curve Analysis', subtopic: 'Total Utility (TU) and Marginal Utility (MU), Law of Diminishing MU, Indifference curve properties (MRS_xy), Budget constraint', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Single Commodity: MU_x / P_x = MU_m | Two Commodities: MU_x / P_x = MU_y / P_y | IC Tangency: MRS_xy = P_x / P_y', keyPoints: ['When TU is maximum, MU is zero | When TU falls, MU becomes negative', 'Indifference curve is convex to origin due to diminishing Marginal Rate of Substitution (MRS)'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'com_eco_2', topicTitle: 'Theory of Demand & Price Elasticity of Demand (Ed)', subtopic: 'Demand function, determinants of demand, Law of Demand, movement vs shift in demand curve, percentage and geometric elasticity measurement', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Price Elasticity of Demand E_d = - (%ΔQ / %ΔP) = - (ΔQ / ΔP) × (P / Q)', keyPoints: ['Normal goods: Demand increases with income | Inferior goods: Demand decreases with income', 'Giffen goods and Veblen goods are exceptions to Law of Demand'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 2,
-      chapterTitle: 'Producer Behaviour: Production Function, Cost, Revenue & Supply',
-      description: 'Law of Variable Proportions (Total/Marginal Product), Short-run cost curves (TFC, TVC, TC, MC, AC), Revenue & Elasticity of Supply',
-      microTopics: [
-        { id: 'com_eco_3', topicTitle: 'Production Function & Law of Variable Proportions', subtopic: 'Short run vs long run, Total Product (TP), Average Product (AP), Marginal Product (MP), Three stages of production', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'MP_n = TP_n - TP_(n-1) | Stage 2 (Diminishing returns) is the only rational stage of production where MP > 0 and falling', keyPoints: ['AP rises as long as MP > AP | AP is maximum when MP = AP', 'Law of Variable Proportions operates due to fixed factors and imperfect factor substitutability'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_eco_4', topicTitle: 'Concepts of Cost, Revenue & Producer Equilibrium', subtopic: 'Fixed cost, variable cost, U-shaped AC and MC curves, relation between MC and AC, AR and MR under perfect vs imperfect competition', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'TC = TFC + TVC | MC = ΔTC / ΔQ | MR = MC condition for Producer Equilibrium (MC must cut MR from below)', keyPoints: ['TFC curve is horizontal line parallel to X-axis | TVC starts from origin', 'Under Perfect Competition AR = MR = Price (Horizontal demand curve)'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 3,
-      chapterTitle: 'Forms of Market & Price Determination (Perfect Competition)',
-      description: 'Perfect Competition, Monopoly, Monopolistic Competition, Oligopoly, Market equilibrium price determination & Government price controls',
-      microTopics: [
-        { id: 'com_eco_5', topicTitle: 'Forms of Market: Perfect Competition, Monopoly, Monopolistic & Oligopoly', subtopic: 'Features of Perfect Competition (large buyers/sellers, homogeneous product, free entry/exit), Product differentiation, Oligopoly (Kinked demand curve, collusive cartel)', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Perfect Competition: Firm is a Price Taker (Industry determines price through Market Demand = Market Supply)', keyPoints: ['Monopolistic competition features downward sloping elastic demand curve due to product differentiation', 'Oligopoly features price rigidity and strategic interdependence among few large sellers'], type: 'concept', importance: 'High-Yield' },
-        { id: 'com_eco_6', topicTitle: 'Market Equilibrium, Excess Demand/Supply & Price Ceiling / Price Floor', subtopic: 'Simultaneous shifts in demand and supply curves, Price ceiling (Maximum price for essential goods, Rationing), Price floor (Minimum Support Price MSP for farmers)', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Equilibrium: Quantity Demanded (Q_d) = Quantity Supplied (Q_s) | Excess Demand = Q_d - Q_s at price below equilibrium', keyPoints: ['Price ceiling leads to shortages, black marketing, and rationing', 'Price floor leads to surplus production and buffer stock accumulation by government'], type: 'solved_problem', importance: 'High-Yield' }
-      ]
-    },
-    {
-      chapterNumber: 4,
-      chapterTitle: 'Statistics for Economics: Collection, Measures of Central Tendency & Dispersion',
-      description: 'Primary/Secondary data, Mean, Median, Mode, Standard Deviation, Correlation (Karl Pearson) & Index Numbers (CPI/WPI)',
-      microTopics: [
-        { id: 'com_eco_7', topicTitle: 'Measures of Central Tendency: Mean, Median & Mode', subtopic: 'Arithmetic Mean (Direct, Shortcut, Step-deviation methods), Median (Partition values Q1, Q3), Mode (Inspection and Grouping table method)', dayNumber: 4, periodNumber: 3, keyFormulaOrLaw: 'Empirical Relationship: Mode = 3 Median - 2 Mean | Step-Deviation Mean X̄ = A + [Σ(f d\') / N] × c', keyPoints: ['Median is unaffected by extreme outliers and is best for qualitative data', 'Mode is the most frequently occurring observation'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'com_eco_8', topicTitle: 'Measures of Dispersion, Correlation (Karl Pearson) & Index Numbers', subtopic: 'Standard Deviation (σ), Coefficient of Variation (CV = σ/X̄ × 100%), Pearson correlation coefficient r (-1 to +1), Laspeyres, Paasche, Fisher Ideal Index', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'Standard Deviation σ = √[Σ(x - X̄)² / N] | Karl Pearson r = Cov(X,Y) / (σ_x σ_y) | Fisher Index = √(Laspeyres × Paasche)', keyPoints: ['Coefficient of Variation measures consistency: Lower CV indicates higher stability/consistency', 'Fisher Ideal Index satisfies both Time Reversal and Factor Reversal Tests'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'com_eco_1', topicTitle: 'Consumer Equilibrium & Price Elasticity of Demand (Ed)', subtopic: 'Marginal utility, Indifference curve tangency MRS_xy = P_x / P_y, E_d formula', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Price Elasticity of Demand E_d = - (ΔQ / ΔP) × (P / Q) | Empirical: Mode = 3 Median - 2 Mean', keyPoints: ['Indifference curve is convex to origin due to diminishing MRS', 'Standard Deviation σ measures absolute dispersion'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -1057,7 +1154,7 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 6. MASTER DISPATCHER FOR ALL 86 COURSES
+// 10. MASTER DISPATCHER FOR ALL 86 COURSES
 // ─────────────────────────────────────────────────────────────────────────────
 export function resolveCompleteCourseSyllabus(
   courseId: string,
@@ -1097,38 +1194,18 @@ export function resolveCompleteCourseSyllabus(
     const subjects: SyllabusSubject[] = [
       {
         subjectId: 'kg_tamil',
-        subjectName: 'தமிழ் மழலையர் பாடல் & உயிர் எழுத்துக்கள்',
+        subjectName: isTa ? 'தமிழ் மழலையர் பாடல் & உயிர் எழுத்துக்கள்' : 'Tamil Rhymes & Vowels (Uyir Ezhuthukkal)',
         icon: '🔤',
         color: '#ec4899',
-        totalChapters: 3,
-        totalMicroTopics: 12,
+        totalChapters: 2,
+        totalMicroTopics: 6,
         chapters: [
           {
             chapterNumber: 1,
-            chapterTitle: 'உயிர் எழுத்துகள் 12 & பாடல் அறிமுகம்',
-            description: 'அ முதல் ஔ வரை உள்ள 12 உயிர் எழுத்துகள் மற்றும் ஆய்த எழுத்து',
+            chapterTitle: 'உயிர் எழுத்துகள் 12 & மழலையர் பாலர் பாடல்கள்',
+            description: 'அ முதல் ஔ வரை உள்ள 12 உயிர் எழுத்துகள் மற்றும் நிலா நிலா ஓடி வா பாடல்கள்',
             microTopics: [
-              { id: 'kg_t_1', topicTitle: 'அ முதல் ஈ வரை (அம்மா, ஆடு, இலை, ஈட்டி)', subtopic: 'படங்கள் பார்த்து எழுத்துகளை அடையாளம் காணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'உயிர் எழுத்துக்கள்: அ, ஆ, இ, ஈ', keyPoints: ['அ - அணில், அம்மா', 'ஆ - ஆடு, ஆலமரம்'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_t_2', topicTitle: 'உ முதல் ஏ வரை (உரல், ஊஞ்சல், எலி, ஏணி)', subtopic: 'எழுத்து உச்சரிப்பு மற்றும் கை அசைவுப் பயிற்சி', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'உயிர் எழுத்துக்கள்: உ, ஊ, எ, ஏ', keyPoints: ['உ - உரல்', 'ஊ - ஊஞ்சல்'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_t_3', topicTitle: 'ஐ முதல் ஔ வரை & ஆய்த எழுத்து ஃ (ஐவர், ஒட்டகம், ஓடம், ஔவையார்)', subtopic: 'முழுமையான 12 உயிர் எழுத்துகள் நினைவுப் பாடல்', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'உயிர் எழுத்துக்கள் 12 + ஆய்தம் 1 (ஃ - எஃகு)', keyPoints: ['ஐ - ஐந்து', 'ஒ - ஒட்டகம்', 'ஔ - ஔவை'], type: 'memorization', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'மழலையர் பாலர் பாடல்கள் (Rhymes)',
-            description: 'மகிழ்ச்சியான பாலர் பாடல்கள் மற்றும் கைதட்டல் பயிற்சிகள்',
-            microTopics: [
-              { id: 'kg_t_4', topicTitle: 'நிலா நிலா ஓடி வா & கைவீசம்மா கைவீசு', subtopic: 'பாடி ஆடி மகிழும் மழலையர் பாடல் வரிகள்', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'நிலா நிலா ஓடி வா நில்லாமல் ஓடி வா', keyPoints: ['சைகை செய்து பாடுதல்', 'மகிழ்ச்சியான பாடல் வரிகள்'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_t_5', topicTitle: 'தோசையம்மா தோசை & வண்டியில பூட்டிய மாடு', subtopic: 'எளிய தமிழ் சொற்கள் உச்சரிப்பு பயிற்சி', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'தோசையம்மா தோசை சுடச்சுட தோசை', keyPoints: ['அம்மா சுட்ட தோசை', 'அப்பாவுக்கு நான்கு'], type: 'concept', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'மெய் எழுத்துகள் 18 அறிமுகம்',
-            description: 'க் முதல் ன் வரை உள்ள புள்ளி வைத்த மெய் எழுத்துகள்',
-            microTopics: [
-              { id: 'kg_t_6', topicTitle: 'வல்லின மெய் எழுத்துகள் (க், ச், ட், த், ப், ற்)', subtopic: 'கொக்கு, தக்காளி, பந்து போன்ற எளிய சொற்கள்', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'க், ச், ட், த், ப், ற் — வல்லினம்', keyPoints: ['கொக்கு - க்', 'பந்து - த்'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_t_7', topicTitle: 'மெல்லின & இடையின மெய் எழுத்துகள் (ங், ஞ், ண், ந், ம், ன், ய், ர், ல், வ், ழ், ள்)', subtopic: 'மெல்லினம் மற்றும் இடையின எழுத்துகள் உச்சரிப்பு', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'மெல்லினம் (ங, ஞ, ண, ந, ம, ன) | இடையினம் (ய, ர, ல, வ, ழ, ள)', keyPoints: ['மண் - ண்', 'மான் - ன்', 'மரம் - ர்'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_t_1', topicTitle: 'அ முதல் ஔ வரை உயிர் எழுத்துகள் (அம்மா, ஆடு, இலை, ஈட்டி)', subtopic: 'படங்கள் பார்த்து எழுத்துகளை அடையாளம் காணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'உயிர் எழுத்துக்கள்: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ', keyPoints: ['அ - அணில், அம்மா', 'ஆ - ஆடு, ஆலமரம்'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -1138,34 +1215,15 @@ export function resolveCompleteCourseSyllabus(
         subjectName: 'English Phonics & Alphabets (A to Z)',
         icon: '🔤',
         color: '#3b82f6',
-        totalChapters: 3,
-        totalMicroTopics: 12,
+        totalChapters: 2,
+        totalMicroTopics: 6,
         chapters: [
           {
             chapterNumber: 1,
-            chapterTitle: 'Phonics Sounds: Letters A to H',
-            description: 'Letter sounds, picture matching, and tracing for Beginners',
+            chapterTitle: 'Phonics Sounds: Letters A to Z & Classic Nursery Rhymes',
+            description: 'Letter sounds, picture matching, and CVC 3-letter word blending',
             microTopics: [
-              { id: 'kg_e_1', topicTitle: 'Letters A, B, C, D Phonics & Tracing', subtopic: 'A for Apple 🍎, B for Ball ⚽, C for Cat 🐱, D for Dog 🐶', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /æ/ /b/ /k/ /d/', keyPoints: ['Letter tracing inside lines', 'Object recognition'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_e_2', topicTitle: 'Letters E, F, G, H Phonics & Tracing', subtopic: 'E for Elephant 🐘, F for Fish 🐟, G for Grapes 🍇, H for Hat 🎩', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /e/ /f/ /g/ /h/', keyPoints: ['Sound recognition', 'Matching capital and small letters'], type: 'concept', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'Phonics Sounds: Letters I to P',
-            description: 'Letter sounds and CVC 3-letter word blending',
-            microTopics: [
-              { id: 'kg_e_3', topicTitle: 'Letters I, J, K, L Phonics & Words', subtopic: 'I for Igloo 🧊, J for Jug 🥛, K for Kite 🪁, L for Lion 🦁', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /ɪ/ /dʒ/ /k/ /l/', keyPoints: ['Short vowel sound', 'Sight words'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_e_4', topicTitle: 'Letters M, N, O, P Phonics & Words', subtopic: 'M for Mango 🥭, N for Nest 🪺, O for Orange 🍊, P for Parrot 🦜', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /m/ /n/ /ɒ/ /p/', keyPoints: ['Letter formation', 'Tracing uppercase and lowercase'], type: 'concept', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'Phonics Sounds: Letters Q to Z & Classic Nursery Rhymes',
-            description: 'Alphabet completion and rhythmic rhymes',
-            microTopics: [
-              { id: 'kg_e_5', topicTitle: 'Letters Q to Z Phonics & Alphabet Train', subtopic: 'Sun, Tiger, Umbrella, Van, Watch, Xylophone, Yak, Zebra', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'Complete 26 Letters A to Z Alphabet Song', keyPoints: ['26 English Letters', 'Singing A-B-C-D song'], type: 'memorization', importance: 'Foundational' },
-              { id: 'kg_e_6', topicTitle: 'Nursery Rhyme: Twinkle Twinkle & Baa Baa Black Sheep', subtopic: 'Action rhymes with finger gestures and music', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Twinkle, Twinkle, Little Star, How I wonder what you are!', keyPoints: ['Rhythm and melody', 'Word rhyming pairs'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_e_1', topicTitle: 'Letters A to Z Phonics & Nursery Rhymes', subtopic: 'Apple, Ball, Cat, Dog, Elephant phonics sounds and Twinkle Twinkle rhyme', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z', keyPoints: ['Letter tracing inside lines', 'Object recognition'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -1175,33 +1233,15 @@ export function resolveCompleteCourseSyllabus(
         subjectName: 'Fun Maths & Numbers (1 to 20)',
         icon: '🔢',
         color: '#06b6d4',
-        totalChapters: 3,
-        totalMicroTopics: 10,
+        totalChapters: 2,
+        totalMicroTopics: 6,
         chapters: [
           {
             chapterNumber: 1,
-            chapterTitle: 'Counting Numbers 1 to 10',
-            description: 'Count with fun objects, fingers, and matching games',
+            chapterTitle: 'Counting Numbers 1 to 20 & 2D Shapes',
+            description: 'Count with fun objects, Circle, Square, Triangle, Big vs Small',
             microTopics: [
-              { id: 'kg_m_1', topicTitle: 'Numbers 1 to 5: Counting with Fun Objects', subtopic: '1 Sun ☀️, 2 Shoes 👟, 3 Stars ⭐, 4 Wheels 🚗, 5 Fingers ✋', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Counting Numbers: 1, 2, 3, 4, 5', keyPoints: ['Finger counting', 'Number recognition'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_m_2', topicTitle: 'Numbers 6 to 10: Count & Match Activity', subtopic: '6 Balls, 7 Colors, 8 Legs (Spider), 9 Balloons, 10 Toes', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'Counting Numbers: 6, 7, 8, 9, 10', keyPoints: ['Count and write', 'Matching quantity to number'], type: 'concept', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'Basic 2D Shapes & Visual Patterns',
-            description: 'Identify circles, squares, triangles, and repeating color sequences',
-            microTopics: [
-              { id: 'kg_m_3', topicTitle: 'Basic Shapes: Circle ⚪, Square ⬛, Triangle 🔺, Star ⭐', subtopic: 'Find shapes in everyday objects around the classroom and home', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Circle has no sides | Triangle has 3 sides | Square has 4 equal sides', keyPoints: ['Round like a ball', 'Box like a square', 'Slice like pizza (triangle)'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_m_4', topicTitle: 'Pattern Recognition: Red, Blue, Red, Blue Sequence', subtopic: 'Identify repeating shape and color patterns', dayNumber: 4, periodNumber: 3, keyFormulaOrLaw: 'Pattern Rule: ⚪ ⬛ ⚪ ⬛ -> Next is ⚪', keyPoints: ['Logical sequence', 'Visual brain training'], type: 'quiz', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'Size & Comparison Concept',
-            description: 'Big vs Small, Tall vs Short, Heavy vs Light',
-            microTopics: [
-              { id: 'kg_m_5', topicTitle: 'Comparisons: Big vs Small 🐘🐁 & Tall vs Short 🦒🐰', subtopic: 'Visual comparison between animals and everyday objects', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Elephant is BIG 🐘 | Mouse is SMALL 🐁 | Giraffe is TALL 🦒', keyPoints: ['Observation skills', 'Comparative vocabulary'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_m_1', topicTitle: 'Numbers 1 to 20: Counting, Shapes & Comparison', subtopic: '1 Sun, 2 Shoes, 3 Stars, Circle, Square, Big elephant vs small mouse', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)', keyPoints: ['Finger counting and pattern recognition', 'Big vs Small visual comparison'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -1211,32 +1251,15 @@ export function resolveCompleteCourseSyllabus(
         subjectName: 'EVS, Nature, Animals & Good Habits',
         icon: '🌿',
         color: '#10b981',
-        totalChapters: 3,
-        totalMicroTopics: 10,
+        totalChapters: 2,
+        totalMicroTopics: 6,
         chapters: [
           {
             chapterNumber: 1,
-            chapterTitle: 'My Amazing Body & 5 Sense Organs',
-            description: 'Body parts, daily hygiene, and five senses',
+            chapterTitle: 'My 5 Senses, Friendly Animals & Magic Manners',
+            description: '5 senses (Eyes, Ears, Nose, Tongue, Skin), Domestic animals, Please/Thank You',
             microTopics: [
-              { id: 'kg_ev_1', topicTitle: 'My 5 Senses: Eyes, Ears, Nose, Tongue & Skin', subtopic: '👀 Eyes to see, 👂 Ears to hear, 👃 Nose to smell, 👅 Tongue to taste, ✋ Skin to touch', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: '5 Sense Organs: Eyes, Ears, Nose, Tongue, Skin', keyPoints: ['Healthy body care', 'Washing hands with soap'], type: 'concept', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'Friendly Animals & Fruit Basket',
-            description: 'Domestic animals, wild animals, birds, and colorful fruits',
-            microTopics: [
-              { id: 'kg_ev_2', topicTitle: 'Domestic & Farm Animals: Dog, Cat, Cow, Goat', subtopic: 'Animal sounds: Woof Woof, Meow Meow, Moo Moo', dayNumber: 2, periodNumber: 4, keyFormulaOrLaw: 'Dog guards home | Cow gives sweet milk 🥛', keyPoints: ['Love and care for animals', 'Animal habitats'], type: 'concept', importance: 'Foundational' },
-              { id: 'kg_ev_3', topicTitle: 'Fruits & Vegetables: Apple, Banana, Mango, Carrot', subtopic: 'Healthy eating habits and colorful vitamin-rich food', dayNumber: 3, periodNumber: 4, keyFormulaOrLaw: 'An Apple a day keeps the doctor away! 🍎', keyPoints: ['Fresh green vegetables', 'Eating seasonal fruits'], type: 'concept', importance: 'Foundational' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'Good Habits & Magic Manners',
-            description: 'Magic words, sharing, and daily discipline',
-            microTopics: [
-              { id: 'kg_ev_4', topicTitle: 'Magic Words: "Please", "Thank You", "Sorry"', subtopic: 'Polite words and respectful behavior with elders and friends', dayNumber: 4, periodNumber: 4, keyFormulaOrLaw: 'Magic Manners: Always say "Thank You" 💖 and "Please" 🙏', keyPoints: ['Sharing toys with friends', 'Greeting teachers with smile'], type: 'memorization', importance: 'Foundational' }
+              { id: 'kg_ev_1', topicTitle: 'My 5 Senses, Animals & Magic Words ("Thank You", "Please")', subtopic: 'Eyes to see, Ears to hear, Nose to smell, Tongue to taste, Skin to touch', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: '5 Sense Organs | Magic Words: "Please" and "Thank You"', keyPoints: ['Domestic animals (Dog, Cat, Cow)', 'Daily hygiene and handwashing'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -1257,94 +1280,31 @@ export function resolveCompleteCourseSyllabus(
     };
   }
 
-  // 7. UNIVERSAL / K-12 STATE BOARD & CBSE GENERAL
-  const defaultSubjects: SyllabusSubject[] = [
-    {
-      subjectId: 'school_sub_1',
-      subjectName: isTa ? 'தமிழ் மொழி & செய்யுள்' : 'Language & Literature',
-      icon: '📜',
-      color: '#10b981',
-      totalChapters: 3,
-      totalMicroTopics: 12,
-      chapters: [
-        {
-          chapterNumber: 1,
-          chapterTitle: isTa ? 'இயல் 1: செய்யுள் நயவுரை & உரைநடை' : 'Unit 1: Reading Comprehension & Prose',
-          description: isTa ? 'பாடப்பகுதி செய்யுள், ஆசிரியர் வரலாறு மற்றும் சொற்பொருள்' : 'Textbook prose analysis, author background, and central theme',
-          microTopics: [
-            { id: 'gen_t_1', topicTitle: isTa ? 'செய்யுள் நயவுரை & மையக் கருத்து' : 'Core Theme & Literary Comprehension', subtopic: isTa ? 'பாடல் விளக்கம் & நயங்கள்' : 'Central moral idea and character study', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: isTa ? 'செய்யுள் நயம்: எதுகை, மோனை, இயைபு' : 'Literary Device: Alliteration & Rhyme Scheme', keyPoints: ['Textual interpretation', 'Model questions'], type: 'concept', importance: 'High-Yield' },
-            { id: 'gen_t_2', topicTitle: isTa ? 'இலக்கண விதிகள் & பிழை திருத்தம்' : 'Applied Grammar & Mechanics', subtopic: isTa ? 'இலக்கண வகைகள் & வாக்கிய அமைப்புகள்' : 'Tenses, Subject-Verb agreement, and syntax', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: isTa ? 'எழுத்து, சொல், தொடர் இலக்கண விதிகள்' : 'Grammar Rule: Subject + Verb + Object', keyPoints: ['Error spotting', 'Sentence transformation'], type: 'solved_problem', importance: 'High-Yield' }
-          ]
-        }
-      ]
-    },
-    {
-      subjectId: 'school_sub_2',
-      subjectName: isTa ? 'கணிதம் (Mathematics)' : 'Mathematics',
-      icon: '📐',
-      color: '#06b6d4',
-      totalChapters: 3,
-      totalMicroTopics: 12,
-      chapters: [
-        {
-          chapterNumber: 1,
-          chapterTitle: isTa ? 'அலகு 1: எண்கள், இயற்கணிதம் & சமன்பாடுகள்' : 'Unit 1: Number Systems & Algebra',
-          description: isTa ? 'முழுக்கள், விகிதமுறு எண்கள் மற்றும் இயற்கணித சமன்பாடுகள்' : 'Real numbers, polynomial equations, and algebraic identities',
-          microTopics: [
-            { id: 'gen_m_1', topicTitle: isTa ? 'இயற்கணித முற்றொருமைகள் & காரணிப்படுத்துதல்' : 'Algebraic Identities & Factorization', subtopic: isTa ? '(a+b)², (a-b)² சூத்திரப் பயன்பாடு' : 'Expansion and factorization algorithms', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: '(a + b)² = a² + 2ab + b² | (a - b)² = a² - 2ab + b²', keyPoints: ['Step-by-step substitution', 'Exam benchmarks'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'gen_m_2', topicTitle: isTa ? 'வடிவியல் & கோணக் கணக்கீடுகள்' : 'Geometry: Angles & Triangle Theorems', subtopic: isTa ? 'முக்கோண கோணங்களின் கூடுதல் 180°' : 'Angle sum property, congruency, and proofs', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Sum of angles in a triangle = 180°', keyPoints: ['Theorem proofs', 'Construction steps'], type: 'concept', importance: 'High-Yield' }
-          ]
-        }
-      ]
-    },
-    {
-      subjectId: 'school_sub_3',
-      subjectName: isTa ? 'அறிவியல் (Science)' : 'Science',
-      icon: '🔬',
-      color: '#8b5cf6',
-      totalChapters: 3,
-      totalMicroTopics: 12,
-      chapters: [
-        {
-          chapterNumber: 1,
-          chapterTitle: isTa ? 'அலகு 1: விசையும் இயக்கமும் (Force & Motion)' : 'Unit 1: Force, Motion & Laws',
-          description: isTa ? 'நியூட்டனின் இயக்க விதிகள் மற்றும் சமன்பாடுகள்' : 'Kinematics, Newton laws, and momentum conservation',
-          microTopics: [
-            { id: 'gen_s_1', topicTitle: isTa ? 'நியூட்டனின் மூன்று இயக்க விதிகள்' : 'Newton Three Laws of Motion', subtopic: isTa ? 'F = ma சூத்திரம் மற்றும் நிலைம விதி' : 'Inertia, Momentum (p=mv), and Action-Reaction', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Second Law of Motion: F = m × a | Equations: v = u + at', keyPoints: ['Momentum conservation', 'Real-world rocket propulsion'], type: 'concept', importance: 'High-Yield' }
-          ]
-        }
-      ]
-    },
-    {
-      subjectId: 'school_sub_4',
-      subjectName: isTa ? 'சமூக அறிவியல் (Social Science)' : 'Social Science',
-      icon: '🌍',
-      color: '#f59e0b',
-      totalChapters: 3,
-      totalMicroTopics: 12,
-      chapters: [
-        {
-          chapterNumber: 1,
-          chapterTitle: isTa ? 'அலகு 1: வரலாறு & அரசியலமைப்பு' : 'Unit 1: History & Civics',
-          description: isTa ? 'வரலாற்று சான்றுகள், மக்களாட்சி மற்றும் குடிமையியல்' : 'Historical evidence, democracy, and fundamental rights',
-          microTopics: [
-            { id: 'gen_soc_1', topicTitle: isTa ? 'வரலாற்று சான்றுகள் & பண்டைய நாகரிகங்கள்' : 'Ancient Civilizations & Historical Evidence', subtopic: isTa ? 'கல்வெட்டுகள், நாணயங்கள் மற்றும் அகழாய்வுகள்' : 'Archaeological sources and inscriptions', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: isTa ? 'வரலாற்று சான்றுகள்: தொல்பொருள், நாணயங்கள், இலக்கியங்கள்' : 'Historical Sources: Inscriptions, Coins, Monuments', keyPoints: ['Timeline chronology', 'Map pointing skills'], type: 'concept', importance: 'High-Yield' }
-          ]
-        }
-      ]
-    }
-  ];
+  // 7. HIGHER SECONDARY STAGE (Class 11 & 12 Science / General)
+  if (c.includes('-11') || c.includes('-12') || c.includes('std-11') || c.includes('std-12') || c.includes('grade-11') || c.includes('grade-12')) {
+    return getSecondaryClass9to10Syllabus(courseId, title);
+  }
 
-  return {
-    courseId,
-    courseTitle: title,
-    category: 'school_standard',
-    board: 'TNSB / CBSE',
-    medium: isTa ? 'Tamil' : 'English',
-    totalDays: 200,
-    totalSubjects: defaultSubjects.length,
-    totalChapters: defaultSubjects.reduce((a, s) => a + s.chapters.length, 0),
-    totalMicroTopics: defaultSubjects.reduce((a, s) => a + s.totalMicroTopics, 0),
-    subjects: defaultSubjects
-  };
+  // 8. SECONDARY STAGE (Class 9 & Class 10)
+  if (c.includes('-10') || c.includes('-9') || c.includes('std-10') || c.includes('std-9') || c.includes('grade-10') || c.includes('grade-9')) {
+    return getSecondaryClass9to10Syllabus(courseId, title);
+  }
+
+  // 9. MIDDLE STAGE (Class 6, 7, 8)
+  if (c.includes('-6') || c.includes('-7') || c.includes('-8') || c.includes('std-6') || c.includes('std-7') || c.includes('std-8') || c.includes('grade-6') || c.includes('grade-7') || c.includes('grade-8')) {
+    return getMiddleClass6to8Syllabus(courseId, title);
+  }
+
+  // 10. PREPARATORY STAGE (Class 3, 4, 5)
+  if (c.includes('-3') || c.includes('-4') || c.includes('-5') || c.includes('std-3') || c.includes('std-4') || c.includes('std-5') || c.includes('grade-3') || c.includes('grade-4') || c.includes('grade-5')) {
+    return getPreparatoryClass3to5Syllabus(courseId, title);
+  }
+
+  // 11. FOUNDATIONAL STAGE (Class 1 & Class 2)
+  if (c.includes('-1') || c.includes('-2') || c.includes('std-1') || c.includes('std-2') || c.includes('grade-1') || c.includes('grade-2')) {
+    return getFoundationalClass1to2Syllabus(courseId, title);
+  }
+
+  // 12. DEFAULT FALLBACK
+  return getPreparatoryClass3to5Syllabus(courseId, title);
 }
