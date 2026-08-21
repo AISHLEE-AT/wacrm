@@ -1472,18 +1472,24 @@ export async function getCoursePlayerContent(
   courseTitle: string = 'Master Course',
   dayNumber: number = 1,
   allowAiGeneration: boolean = false,
-  courseId?: string
+  courseId?: string,
+  taskNumber?: number
 ): Promise<CoursePlayerContent | null> {
   const canonicalDef = resolveCanonicalTopic(topicTitle, subject, courseTitle);
   const canonicalKey = canonicalDef.canonicalKey;
+  const sectionTask = taskNumber && taskNumber > 1 ? taskNumber : 1;
+  const taskSpecificKey = courseId ? `${courseId}_day_${dayNumber}_task_${sectionTask}` : undefined;
   const directIdKey = courseId ? `${courseId}_day_${dayNumber}` : undefined;
   // Day-specific keys to prevent Day 7 returning Day 1 content
   const daySpecificKey = `${canonicalKey}_day_${dayNumber}`;
-  const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}_task_${sectionTask}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
-  const persistKeys = { daySpecificKey, cacheKey, directIdKey };
+  const persistKeys = { daySpecificKey, cacheKey, directIdKey: taskSpecificKey || directIdKey };
 
-  // 0. Check Direct Course ID Key First (Instant 0ms)
+  // 0. Check Direct Course ID & Task Key First (Instant 0ms)
+  if (taskSpecificKey && inMemoryContentCache.has(taskSpecificKey)) {
+    return inMemoryContentCache.get(taskSpecificKey)!;
+  }
   if (directIdKey && inMemoryContentCache.has(directIdKey)) {
     return inMemoryContentCache.get(directIdKey)!;
   }

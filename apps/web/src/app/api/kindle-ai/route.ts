@@ -93,54 +93,76 @@ function normalizeLessonItem(raw: any, primaryKey: string) {
   };
 }
 
-// ── Multi-Day Curriculum Synthesizer for 100% Day-Specific Fallback ──
-function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, dayNumber: number, board?: string) {
+// ── Multi-Day & Multi-Section Curriculum Synthesizer ──────────
+function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, dayNumber: number, board?: string, taskNumber?: number) {
   const isTamil = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
   const safeDay = Math.max(1, dayNumber || 1);
+  const taskIdx = taskNumber ? Math.max(0, taskNumber - 1) : 0;
 
-  // Subject domains
   let subject = 'General Studies';
   let topicName = `Day ${safeDay} Mastery`;
   let formula = 'Standard Formula / Method';
-  let mcqQuestion = 'What is the primary governing principle of this lesson?';
-  let mcqOptions = ['Option A: Fundamental Principle', 'Option B: Secondary Rule', 'Option C: Exceptions Only', 'Option D: None of the above'];
 
   if (courseId.includes('jee') || courseId.includes('engineering')) {
-    const subjects = ['Mathematics', 'Physics', 'Chemistry'];
-    subject = subjects[(safeDay - 1) % 3];
+    const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Daily Problem Sprint'];
+    const activeSub = taskNumber ? subjects[taskIdx % subjects.length] : subjects[(safeDay - 1) % 3];
+    subject = activeSub;
     const topicsMap: Record<string, string[]> = {
-      Mathematics: ['Straight Lines & Coordinate Geometry', 'Complex Numbers & Quadratic Equations', 'Matrices, Determinants & System of Equations', 'Differential Calculus & Limits', 'Integral Calculus & Area Under Curves', 'Vectors & 3D Geometry', 'Probability & Statistics', 'Trigonometric Equations & Identities'],
-      Physics: ['Kinematics & Laws of Motion', 'Work, Energy, Power & Rotational Dynamics', 'Gravitation & Fluid Mechanics', 'Thermodynamics & Kinetic Theory', 'Electrostatics & Gauss Law', 'Current Electricity & Magnetism', 'Optics & Wave Optics', 'Modern Physics & Dual Nature'],
-      Chemistry: ['Chemical Bonding & Molecular Structure', 'Thermodynamics & Chemical Equilibrium', 'Solutions & Electrochemistry', 'Chemical Kinetics & Surface Chemistry', 'General Organic Chemistry (GOC)', 'Hydrocarbons & Reaction Mechanisms', 'Coordination Compounds & d-Block Elements', 'Biomolecules & Polymers']
+      Mathematics: ['Straight Lines & Coordinate Geometry', 'Complex Numbers & Quadratic Equations', 'Matrices & Determinants', 'Differential Calculus', 'Integral Calculus & Areas', 'Vectors & 3D Geometry', 'Probability & Statistics', 'Trigonometric Equations'],
+      Physics: ['Kinematics & Laws of Motion', 'Work, Energy & Rotational Motion', 'Gravitation & Fluids', 'Thermodynamics & Heat', 'Electrostatics & Capacitance', 'Current Electricity & Magnetism', 'Ray Optics & Wave Optics', 'Modern Physics & Semiconductors'],
+      Chemistry: ['Chemical Bonding & Molecular Structure', 'Chemical Thermodynamics & Equilibrium', 'Solutions & Electrochemistry', 'Chemical Kinetics', 'General Organic Chemistry (GOC)', 'Hydrocarbons & Haloalkanes', 'Coordination Compounds', 'Biomolecules & Polymers'],
+      'Daily Problem Sprint': ['10-Question High-Speed JEE Sprint', 'Advanced Multi-Concept Integration', 'Previous Year Examination Drills', 'Error Elimination & Time Strategy']
     };
-    const list = topicsMap[subject];
-    topicName = `${subject}: ${list[(Math.floor((safeDay - 1) / 3)) % list.length]} (Part ${((safeDay - 1) % 3) + 1})`;
+    const list = topicsMap[subject] || topicsMap.Mathematics;
+    topicName = `${subject}: ${list[(Math.floor((safeDay - 1) / 2)) % list.length]} (Day ${safeDay})`;
     formula = subject === 'Mathematics' ? 'Perpendicular Distance: d = |ax1 + by1 + c| / sqrt(a^2 + b^2)' : (subject === 'Physics' ? 'Work-Energy: W_net = Delta K = 1/2 m(v^2 - u^2)' : 'Equilibrium Constant: Delta G^0 = -RT ln(K_eq)');
   } else if (courseId.includes('neet') || courseId.includes('medical')) {
-    const subjects = ['Biology', 'Physics', 'Chemistry'];
-    subject = subjects[(safeDay - 1) % 3];
+    const subjects = ['Botany & Plant Physiology', 'Zoology & Human Physiology', 'Physics', 'Chemistry'];
+    const activeSub = taskNumber ? subjects[taskIdx % subjects.length] : subjects[(safeDay - 1) % subjects.length];
+    subject = activeSub;
     const topicsMap: Record<string, string[]> = {
-      Biology: ['Cell Biology: Unit of Life & Cell Cycle', 'Genetics & Molecular Basis of Inheritance', 'Human Physiology: Digestion & Respiration', 'Human Physiology: Circulatory & Excretory Systems', 'Plant Physiology: Photosynthesis & Respiration', 'Reproduction in Organisms & Humans', 'Ecology & Biodiversity Conservation', 'Biotechnology: Principles & Processes'],
-      Physics: ['Physical World, Units & Dimensions', 'Kinematics & Projectile Motion', 'Gravitation & Properties of Bulk Matter', 'Thermodynamics & Heat Transfer', 'Electrostatics & Potential', 'Magnetic Effects of Current', 'Ray Optics & Optical Instruments', 'Semiconductors & Electronic Devices'],
-      Chemistry: ['Structure of Atom & Periodic Table', 'Chemical Thermodynamics & Energetics', 'Equilibrium: Ionic & Chemical', 'Redox Reactions & Electrochemistry', 'Aldehydes, Ketones & Carboxylic Acids', 'Organic Nitrogen Compounds (Amines)', 'Coordination Chemistry', 'Environmental Chemistry & Biomolecules']
+      'Botany & Plant Physiology': ['Cell Cycle & Division', 'Plant Physiology: Photosynthesis & Respiration', 'Plant Kingdom & Morphology', 'Ecology & Environmental Issues'],
+      'Zoology & Human Physiology': ['Human Digestion & Respiration', 'Circulation & Excretory System', 'Neural Control & Coordination', 'Genetics & Molecular Evolution'],
+      Physics: ['Kinematics & Dynamics', 'Thermodynamics', 'Ray Optics & Waves', 'Electrostatics & Magnetic Effects'],
+      Chemistry: ['Atomic Structure & Periodic Trends', 'Thermodynamics & Solutions', 'Organic Reactions & Mechanisms', 'Coordination Chemistry']
     };
-    const list = topicsMap[subject];
-    topicName = `${subject}: ${list[(Math.floor((safeDay - 1) / 3)) % list.length]} (Day ${safeDay})`;
-    formula = subject === 'Biology' ? 'Hardy-Weinberg Principle: p^2 + 2pq + q^2 = 1' : (subject === 'Physics' ? 'Snell Law: n1 sin(i) = n2 sin(r)' : 'Ideal Gas Law: PV = nRT');
+    const list = topicsMap[subject] || topicsMap['Botany & Plant Physiology'];
+    topicName = `${subject}: ${list[(Math.floor((safeDay - 1) / 2)) % list.length]} (Day ${safeDay})`;
+    formula = subject.includes('Botany') || subject.includes('Zoology') ? 'Hardy-Weinberg Principle: p^2 + 2pq + q^2 = 1' : 'Snell Law: n1 sin(i) = n2 sin(r)';
   } else if (courseId.includes('tnpsc') || courseId.includes('upsc') || courseId.includes('ssc')) {
-    const subjects = ['Indian Polity', 'History & Culture', 'General Science', 'Indian Economy', 'Geography', 'Aptitude & Mental Ability'];
-    subject = subjects[(safeDay - 1) % subjects.length];
+    const subjects = isTamil 
+      ? ['பொதுத்தமிழ் & செய்யுள்', 'இந்திய அரசியலமைப்பு (Polity)', 'இந்திய வரலாறு & தமிழ்நாடு பண்பாடு', 'பொது அறிவியல் & பொருளாதாரம்', 'திறனறிவும் மனக்கணக்கும் (Aptitude)']
+      : ['General English & Lit', 'Indian Polity & Constitution', 'History & Culture of India', 'General Science & Economy', 'Aptitude & Mental Ability'];
+    const activeSub = taskNumber ? subjects[taskIdx % subjects.length] : subjects[(safeDay - 1) % subjects.length];
+    subject = activeSub;
     const polityTopics = ['Preamble & Salient Features of Constitution', 'Fundamental Rights (Articles 14–32)', 'Directive Principles & Fundamental Duties', 'Union Executive: President & Prime Minister', 'Parliament: Lok Sabha & Rajya Sabha Powers', 'Judiciary: Supreme Court & Judicial Review', 'State Government & Governor Powers', 'Constitutional Bodies & Election Commission'];
     topicName = `${subject}: ${polityTopics[(safeDay - 1) % polityTopics.length]} (Day ${safeDay})`;
-    formula = subject === 'Indian Polity' ? 'Article 32: Constitutional Remedies (Writs: Habeas Corpus, Mandamus, etc.)' : 'Simple Interest: SI = (P * N * R) / 100';
+    formula = subject.includes('Aptitude') || subject.includes('திறனறிவும்') ? 'Simple Interest: SI = (P * N * R) / 100' : 'Article 32: Constitutional Remedies (Writs)';
   } else {
-    // School K-12
+    // K-12 Tamil / English Medium Schools (e.g. Class 7, 10, 12)
     const subjects = isTamil 
-      ? ['தமிழ் மொழி', 'கணிதம்', 'அறிவியல்', 'சமூக அறிவியல்', 'ஆங்கிலம்']
-      : ['Mathematics', 'Science', 'Social Science', 'English', 'Tamil'];
-    subject = subjects[(safeDay - 1) % subjects.length];
-    topicName = `${subject}: Day ${safeDay} Chapter Foundations & Applications`;
-    formula = subject.includes('கணிதம்') || subject.includes('Math') ? '(a + b)^2 = a^2 + 2ab + b^2' : 'Newton Second Law: F = ma';
+      ? ['தமிழ் மொழி & செய்யுள்', 'கணிதம்', 'அறிவியல்', 'சமூக அறிவியல்', 'ஆங்கிலம்', 'மாதிரித் தேர்வு & வினாடி வினா']
+      : ['Language (Tamil/Hindi)', 'Mathematics', 'Science (EVS/Physics/Chem)', 'Social Science', 'English & Phonics', 'Daily Assessment Quiz'];
+    const activeSub = taskNumber ? subjects[taskIdx % subjects.length] : subjects[(safeDay - 1) % subjects.length];
+    subject = activeSub;
+    
+    // Class-level topics
+    if (isTamil) {
+      const tamilUnits = ['இயல் 1: கவிதைப்பேழை & எங்கள் தமிழ்', 'இயல் 2: உரைநடை உலகம் & விலங்குகள் உலகம்', 'இயல் 3: விரிவானம் & இலக்கணம்', 'இயல் 4: அறிவியல் ஆக்கம் & கவிதை', 'இயல் 5: கல்வியே செல்வம்'];
+      const mathsUnits = ['அலகு 1: எண்கள் & முழுக்கள்', 'அலகு 2: அளவைகள் & சுற்றளவு', 'அலகு 3: இயற்கணிதம் & மாறிகள்', 'அலகு 4: நேர் மற்றும் எதிர் விகிதங்கள்', 'அலகு 5: வடிவியல்'];
+      const sciUnits = ['அலகு 1: அளவீட்டியல் & இயக்கம்', 'அலகு 2: விசையும் அழுத்தமும்', 'அலகு 3: நம்மைச் சுற்றியுள்ள பருப்பொருள்கள்', 'அலகு 4: அணு அமைப்பு', 'அலகு 5: தாவரங்களின் இனப்பெருக்கம்'];
+      const socUnits = ['வரலாறு: இடைக்கால இந்திய வரலாற்று ஆதாரங்கள்', 'புவியியல்: புவியின் உள் அமைப்பு', 'குடிமையியல்: சமத்துவம்', 'வரலாறு: தென்னிந்திய அரசுகள்', 'புவியியல்: நிலத்தோற்றங்கள்'];
+
+      if (subject.includes('தமிழ்')) topicName = `${subject}: ${tamilUnits[(safeDay - 1) % tamilUnits.length]} (நாள் ${safeDay})`;
+      else if (subject.includes('கணிதம்')) topicName = `${subject}: ${mathsUnits[(safeDay - 1) % mathsUnits.length]} (நாள் ${safeDay})`;
+      else if (subject.includes('அறிவியல்')) topicName = `${subject}: ${sciUnits[(safeDay - 1) % sciUnits.length]} (நாள் ${safeDay})`;
+      else if (subject.includes('சமூக')) topicName = `${subject}: ${socUnits[(safeDay - 1) % socUnits.length]} (நாள் ${safeDay})`;
+      else if (subject.includes('ஆங்கிலம்')) topicName = `${subject}: Unit ${((safeDay - 1) % 5) + 1} Prose & Grammar (Day ${safeDay})`;
+      else topicName = `${subject}: நாள் ${safeDay} முழு மாதிரித் தேர்வு (50 மதிப்பெண்கள்)`;
+    } else {
+      topicName = `${subject}: Day ${safeDay} Chapter Foundations & Key Drills`;
+    }
+    formula = subject.includes('கணிதம்') || subject.includes('Math') ? '(a + b)^2 = a^2 + 2ab + b^2' : (subject.includes('அறிவியல்') || subject.includes('Science') ? 'Speed = Distance / Time' : 'Subject + Verb + Object');
   }
 
   return {
@@ -149,27 +171,28 @@ function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, 
     category: subject,
     subject: subject,
     dayNumber: safeDay,
-    overview: `Day ${safeDay} structured lesson on ${topicName}. This session provides rigorous conceptual foundations, step-by-step problem derivations, and high-yield examination strategies aligned with standard syllabus requirements.`,
+    taskNumber: taskNumber || 1,
+    overview: `Day ${safeDay} structured academic session on ${topicName}. This session covers theoretical concepts, illustrative examples, exam guidelines, and retention drills aligned with board curriculum standards.`,
     coreConcepts: [
       {
         heading: `1. Core Theoretical Foundations: ${topicName}`,
-        content: `Master the fundamental definitions, underlying laws, and theoretical principles governing ${topicName}. Emphasis is placed on structural understanding and conceptual clarity.`,
-        example: `Standard textbook derivation and real-world physical or analytical application.`
+        content: `Master the key definitions, underlying principles, and essential textbook rules of ${topicName}. Designed for conceptual clarity and exam readiness.`,
+        example: `Standard textbook problem and illustrative real-world application.`
       },
       {
         heading: `2. Methodologies & Step-by-Step Problem Solving`,
-        content: `Systematic algorithm to approach exam questions on ${topicName}. Includes key steps, boundary conditions, and analytical frameworks.`,
-        example: `Worked model problem illustrating exact examination marking steps.`
+        content: `Systematic approach to solving exam questions for ${topicName}. Details required steps, working notes, and presentation methods.`,
+        example: `Worked model question highlighting scoring points.`
       },
       {
-        heading: `3. High-Yield Exam Formulas, Shortcuts & Traps to Avoid`,
-        content: `Crucial memory aids, unit conversions, and rapid elimination techniques to maximize accuracy under timed examination conditions.`,
+        heading: `3. High-Yield Exam Formulas & Traps to Avoid`,
+        content: `Crucial memory aids, formulas, and rapid elimination rules to prevent marks loss in exams.`,
         example: formula
       }
     ],
     tamilExplanation: {
       simpleTitle: isTamil ? topicName : `${topicName} (தமிழ் விளக்கம்)`,
-      colloquialIntro: `இன்றைய பாடம் ${safeDay}: ${topicName} பற்றிய முழுமையான எளிய விளக்கம் மற்றும் முக்கிய கருத்துகள்.`,
+      colloquialIntro: `இன்றைய பாடம் (நாள் ${safeDay}, பிரிவு ${taskNumber || 1}): ${topicName} பற்றிய எளிய தமிழ் விளக்கம்.`,
       everydayAnalogy: `நமது அன்றாட வாழ்வியல் உதாரணங்கள் மூலம் இந்த கருத்தை எளிதாக நினைவில் கொள்ளலாம்.`,
       keyPointsTamil: [
         `கருத்து 1: ${topicName} அடிப்படைக் கோட்பாடுகள்`,
@@ -178,28 +201,28 @@ function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, 
       ]
     },
     vsaqs: [
-      { question: `State the primary principle or definition of ${topicName}.`, answer: `Standard academic definition and governing conditions for ${topicName}.`, marks: 2 },
-      { question: `Write the governing formula and define its variables.`, answer: formula, marks: 2 }
+      { question: `State the primary definition or rule for ${topicName}.`, answer: `Standard academic definition and conditions for ${topicName}.`, marks: 2 },
+      { question: `Write the governing formula, principle, or key takeaway.`, answer: formula, marks: 2 }
     ],
     mcqs: [
       {
         id: 'q1',
-        question: `Which option represents the fundamental principle of ${topicName}?`,
+        question: `Which option represents the primary governing principle of ${topicName}?`,
         options: ['A) Primary Governing Principle', 'B) Secondary Approximate Rule', 'C) Special Case Exception', 'D) None of the above'],
         correctAnswer: 0,
         explanation: 'Option A is the verified core definition according to standard textbook curriculum.'
       },
       {
         id: 'q2',
-        question: `What is the governing equation or formula for ${topicName}?`,
-        options: [`A) ${formula}`, 'B) Inverted Variable Ratio', 'C) Dimensional Non-Homogeneous Form', 'D) Empirical Constant Only'],
+        question: `What is the governing equation or rule for ${topicName}?`,
+        options: [`A) ${formula}`, 'B) Inverted Variable Ratio', 'C) Non-Standard Expression', 'D) Empirical Constant Only'],
         correctAnswer: 0,
         explanation: `The exact formulation is: ${formula}.`
       },
       {
         id: 'q3',
-        question: `In standard competitive and board examinations, this topic carries:`,
-        options: ['A) High weightage with direct questions', 'B) Negligible weightage', 'C) Optional reading only', 'D) Non-evaluated section'],
+        question: `In standard board and competitive examinations, this topic carries:`,
+        options: ['A) High weightage with recurring questions', 'B) Negligible weightage', 'C) Optional reading only', 'D) Non-evaluated section'],
         correctAnswer: 0,
         explanation: 'This is an essential core syllabus component with recurring questions.'
       },
@@ -212,7 +235,7 @@ function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, 
       }
     ],
     formulasAndMnemonics: [
-      { name: `${topicName} Master Formula`, formula: formula, mnemonic: 'Active Recall Examination Rule' }
+      { name: `${topicName} Master Rule`, formula: formula, mnemonic: 'Active Recall Examination Rule' }
     ],
     videoMeta: {
       youtubeVideoId: '0TgLtF3PMOc',
@@ -224,7 +247,7 @@ function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, 
 }
 
 // ── Structured prompt for micro-topic content ─────────────────
-function buildPrompt(topicTitle: string, courseTitle: string, board: string, standard: string, dayNumber?: number): string {
+function buildPrompt(topicTitle: string, courseTitle: string, board: string, standard: string, dayNumber?: number, taskNumber?: number): string {
   return `You are an expert academic content creator for Indian education (CBSE NCERT, TN State Board Samacheer, TNPSC, and NEET).
 
 Generate a COMPLETE Kindle study book and interactive lesson for this EXACT micro-topic.
@@ -233,6 +256,7 @@ Generate a COMPLETE Kindle study book and interactive lesson for this EXACT micr
 - Board: "${board}"
 - Class/Standard: "${standard}"
 ${dayNumber ? `- Day Number: ${dayNumber}` : ''}
+${taskNumber ? `- Section/Task Number: ${taskNumber}` : ''}
 
 Return ONLY valid JSON (no markdown, no code fences, no explanation) with these EXACT fields:
 {
@@ -282,8 +306,11 @@ CRITICAL RULES:
 }
 
 // ── Cache key generator ─────────────────────────────────────
-function generateCacheKey(topicTitle: string, courseTitle: string, courseId?: string, dayNumber?: number): string {
+function generateCacheKey(topicTitle: string, courseTitle: string, courseId?: string, dayNumber?: number, taskNumber?: number): string {
   if (courseId && dayNumber) {
+    if (taskNumber && taskNumber > 1) {
+      return `${courseId}_day_${dayNumber}_task_${taskNumber}`;
+    }
     return `${courseId}_day_${dayNumber}`;
   }
   const raw = `${topicTitle.trim().toLowerCase()}::${courseTitle.trim().toLowerCase()}`;
@@ -307,6 +334,8 @@ export async function POST(req: NextRequest) {
       courseTitle,
       courseId,
       dayNumber,
+      taskNumber,
+      sectionNumber,
       board,
       standard,
       forceRefresh = false,
@@ -319,19 +348,20 @@ export async function POST(req: NextRequest) {
     const effectiveUserKey = userGeminiKey || headerUserKey;
 
     const safeDay = Math.max(1, parseInt(dayNumber || '1', 10));
+    const safeTask = parseInt(taskNumber || sectionNumber || '1', 10) || 1;
     const cleanCourseId = (courseId || '').trim();
     const cleanCourse = (courseTitle || adminContent?.courseTitle || 'Master Course').trim();
     const cleanBoard = (board || 'General').trim();
     const cleanStandard = (standard || '').trim();
     
-    // Auto-resolve authentic day topic if generic or missing
+    // Auto-resolve authentic day and section topic if generic or missing
     let cleanTopic = (topicTitle || adminContent?.topicTitle || '').trim();
     if (!cleanTopic || cleanTopic === `${cleanCourse} Day ${safeDay}`) {
-      const syn = synthesizeDaySpecificCurriculum(cleanCourseId, cleanCourse, safeDay, cleanBoard);
+      const syn = synthesizeDaySpecificCurriculum(cleanCourseId, cleanCourse, safeDay, cleanBoard, safeTask);
       cleanTopic = syn.topicTitle;
     }
 
-    const primaryKey = generateCacheKey(cleanTopic, cleanCourse, cleanCourseId, safeDay);
+    const primaryKey = generateCacheKey(cleanTopic, cleanCourse, cleanCourseId, safeDay, safeTask);
 
     // ── Handle Admin Direct Save / Publish ────────────────────
     if (isAdminEdit && adminContent) {
@@ -342,8 +372,10 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
           courseId: cleanCourseId || adminContent.courseId,
           dayNumber: safeDay || adminContent.dayNumber || 1,
+          taskNumber: safeTask || adminContent.taskNumber || 1,
         };
 
+        // Save section-specific key
         await lms.from('kindle_content_cache').upsert({
           topic_key: primaryKey,
           topic_title: cleanTopic,
@@ -353,10 +385,23 @@ export async function POST(req: NextRequest) {
           model_used: 'admin-studio',
         }, { onConflict: 'topic_key' });
 
+        // If this is task 1, also update day root key
+        if (safeTask === 1 && cleanCourseId && safeDay) {
+          const rootKey = `${cleanCourseId}_day_${safeDay}`;
+          await lms.from('kindle_content_cache').upsert({
+            topic_key: rootKey,
+            topic_title: cleanTopic,
+            course_title: cleanCourse,
+            kindle_json: payloadToSave,
+            generated_at: new Date().toISOString(),
+            model_used: 'admin-studio',
+          }, { onConflict: 'topic_key' });
+        }
+
         return NextResponse.json({
           success: true,
           content: payloadToSave,
-          _meta: { source: 'admin-published', topicKey: primaryKey }
+          _meta: { source: 'admin-published', topicKey: primaryKey, isVerifiedInDb: true }
         });
       } catch (err: any) {
         return NextResponse.json({ error: err.message || 'Failed to save admin content' }, { status: 500 });
@@ -368,8 +413,9 @@ export async function POST(req: NextRequest) {
       try {
         const candidateKeys = [
           primaryKey,
+          cleanCourseId && safeDay && safeTask > 1 ? `${cleanCourseId}_day_${safeDay}_task_${safeTask}` : null,
+          cleanCourseId && safeDay && safeTask === 1 ? `${cleanCourseId}_day_${safeDay}_task_1` : null,
           cleanCourseId && safeDay ? `${cleanCourseId}_day_${safeDay}` : null,
-          cleanCourseId && safeDay ? `${cleanCourseId}_day_${safeDay}_task_1` : null,
         ].filter(Boolean) as string[];
 
         for (const cKey of candidateKeys) {
@@ -387,6 +433,7 @@ export async function POST(req: NextRequest) {
                 ...normalized,
                 _meta: {
                   source: 'cache',
+                  isVerifiedInDb: true,
                   isAdminVerified: Boolean(normalized.is_admin_verified || cached.model_used === 'admin-studio'),
                   latencyMs: elapsed,
                   cacheKey: cKey
@@ -399,8 +446,9 @@ export async function POST(req: NextRequest) {
         // Check local bundle & harvest fallback files
         const localCandidates = [
           path.join(process.cwd(), 'src/data/generated_catalog', `${primaryKey}.json`),
-          cleanCourseId && safeDay ? path.join(process.cwd(), 'src/data/generated_catalog', `${cleanCourseId}_day_${safeDay}.json`) : null,
+          cleanCourseId && safeDay && safeTask > 1 ? path.join(process.cwd(), 'src/data/generated_catalog', `${cleanCourseId}_day_${safeDay}_task_${safeTask}.json`) : null,
           cleanCourseId && safeDay ? path.join(process.cwd(), 'src/data/generated_catalog', `${cleanCourseId}_day_${safeDay}_task_1.json`) : null,
+          cleanCourseId && safeDay ? path.join(process.cwd(), 'src/data/generated_catalog', `${cleanCourseId}_day_${safeDay}.json`) : null,
           cleanCourseId && safeDay ? `D:/doc/MULTI_DAY_HARVEST/json_by_day/${cleanCourseId}_day_${safeDay}.json` : null,
         ].filter(Boolean) as string[];
 
@@ -415,6 +463,7 @@ export async function POST(req: NextRequest) {
                   ...normalized,
                   _meta: {
                     source: 'local-file-bundle',
+                    isVerifiedInDb: false,
                     isAdminVerified: false,
                     latencyMs: elapsed,
                     cacheKey: primaryKey
@@ -436,7 +485,7 @@ export async function POST(req: NextRequest) {
     let usedKeyType = '';
 
     if (candidateKeys.length > 0) {
-      const prompt = buildPrompt(cleanTopic, cleanCourse, cleanBoard, cleanStandard, safeDay);
+      const prompt = buildPrompt(cleanTopic, cleanCourse, cleanBoard, cleanStandard, safeDay, safeTask);
 
       // Try keys starting with user's personal key
       for (let kIdx = 0; kIdx < candidateKeys.length; kIdx++) {
@@ -481,6 +530,7 @@ export async function POST(req: NextRequest) {
       try {
         generatedJson.courseId = cleanCourseId;
         generatedJson.dayNumber = safeDay;
+        generatedJson.taskNumber = safeTask;
 
         await lms.from('kindle_content_cache').upsert({
           topic_key: primaryKey,
@@ -499,6 +549,7 @@ export async function POST(req: NextRequest) {
         ...normalizeLessonItem(generatedJson, primaryKey),
         _meta: {
           source: 'jit-generated',
+          isVerifiedInDb: true,
           model: usedModel,
           keySource: usedKeyType,
           latencyMs: elapsed,
@@ -507,9 +558,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Step 4: Deterministic Day-Specific Curriculum Fallback ──
-    // NEVER fail with 400 — always return 100% authentic day-specific curriculum lesson!
-    const synthesized = synthesizeDaySpecificCurriculum(cleanCourseId, cleanCourse, safeDay, cleanBoard);
+    // ── Step 4: Deterministic Day & Section Specific Fallback ──
+    const synthesized = synthesizeDaySpecificCurriculum(cleanCourseId, cleanCourse, safeDay, cleanBoard, safeTask);
     const normalizedFallback = normalizeLessonItem(synthesized, primaryKey);
     const elapsed = Date.now() - startTime;
 
@@ -517,8 +567,10 @@ export async function POST(req: NextRequest) {
       ...normalizedFallback,
       _meta: {
         source: 'curriculum-engine',
+        isVerifiedInDb: false,
         isDaySpecific: true,
         dayNumber: safeDay,
+        taskNumber: safeTask,
         latencyMs: elapsed,
         cacheKey: primaryKey
       }
@@ -529,7 +581,7 @@ export async function POST(req: NextRequest) {
     const fallback = synthesizeDaySpecificCurriculum('', 'Master Course', 1);
     return NextResponse.json({
       ...fallback,
-      _meta: { source: 'emergency-fallback' }
+      _meta: { source: 'emergency-fallback', isVerifiedInDb: false }
     });
   }
 }

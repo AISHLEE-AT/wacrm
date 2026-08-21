@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { 
   BookOpen, Sparkles, Save, Upload, Download, Eye, CheckCircle2, 
   AlertCircle, ArrowLeft, RefreshCw, Layers, Video, FileText, 
-  HelpCircle, Languages, Database, Search, ChevronRight, Check
+  HelpCircle, Languages, Database, Search, ChevronRight, Check,
+  Share2, MessageCircle
 } from 'lucide-react';
 import { ALL_COURSES, CourseOption } from '@/data/coursesCatalog';
 
@@ -14,9 +15,10 @@ export default function TeachOAdminStudioPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
-  // Selected course & day
+  // Selected course, day & active section/period
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(ALL_COURSES[0]);
   const [dayNumber, setDayNumber] = useState<number>(1);
+  const [activeSection, setActiveSection] = useState<number>(1);
   
   // Lesson form state
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,7 @@ export default function TeachOAdminStudioPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   const [isVerifiedByAdmin, setIsVerifiedByAdmin] = useState(false);
+  const [isDbLoaded, setIsDbLoaded] = useState(false);
 
   const [formData, setFormData] = useState({
     topicTitle: '',
@@ -63,10 +66,47 @@ export default function TeachOAdminStudioPage() {
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkResult, setBulkResult] = useState<string | null>(null);
 
-  // Load lesson on course/day change
+  // Compute all sections / periods available for this course
+  const courseSubjects = selectedCourse.subjects || [];
+  const isTamilCourse = selectedCourse.medium === 'Tamil' || selectedCourse.id.includes('-ta-');
+
+  const daySections = courseSubjects.length > 0
+    ? courseSubjects.map((s, idx) => ({
+        taskNumber: idx + 1,
+        title: s.name,
+        icon: s.icon || '📖',
+        color: s.color || '#3b82f6',
+        currentChapter: s.currentChapter || ''
+      }))
+    : (selectedCourse.id.includes('jee') ? [
+        { taskNumber: 1, title: 'Mathematics', icon: '📐', color: '#06b6d4', currentChapter: 'Coordinate Geometry & Calculus' },
+        { taskNumber: 2, title: 'Physics', icon: '⚡', color: '#ec4899', currentChapter: 'Mechanics & Electromagnetism' },
+        { taskNumber: 3, title: 'Chemistry', icon: '🧪', color: '#8b5cf6', currentChapter: 'Organic & Inorganic Chemistry' },
+        { taskNumber: 4, title: 'Daily Problem Sprint', icon: '🏆', color: '#f59e0b', currentChapter: '10-Question High-Yield Drills' }
+      ] : selectedCourse.id.includes('neet') ? [
+        { taskNumber: 1, title: 'Botany & Plant Physiology', icon: '🌿', color: '#10b981', currentChapter: 'Cell Biology & Plant Physiology' },
+        { taskNumber: 2, title: 'Zoology & Human Physiology', icon: '🧬', color: '#3b82f6', currentChapter: 'Human Physiology & Genetics' },
+        { taskNumber: 3, title: 'Physics', icon: '⚡', color: '#ec4899', currentChapter: 'Optics & Thermodynamics' },
+        { taskNumber: 4, title: 'Chemistry', icon: '🧪', color: '#8b5cf6', currentChapter: 'Organic & Physical Chemistry' }
+      ] : selectedCourse.id.includes('tnpsc') ? [
+        { taskNumber: 1, title: isTamilCourse ? 'பொதுத்தமிழ் & செய்யுள்' : 'General English', icon: '📜', color: '#ec4899', currentChapter: 'இலக்கணம் & இலக்கியம்' },
+        { taskNumber: 2, title: 'இந்திய அரசியலமைப்பு (Polity)', icon: '🏛️', color: '#3b82f6', currentChapter: 'அரசியலமைப்பு & உரிமைகள்' },
+        { taskNumber: 3, title: 'வரலாறு & பண்பாடு', icon: '🏺', color: '#f59e0b', currentChapter: 'தமிழக வரலாறு & பண்பாடு' },
+        { taskNumber: 4, title: 'பொது அறிவியல் & பொருளாதாரம்', icon: '🔬', color: '#10b981', currentChapter: 'பொருளாதாரம் & அறிவியல்' },
+        { taskNumber: 5, title: 'திறனறிவும் மனக்கணக்கும் (Aptitude)', icon: '📐', color: '#06b6d4', currentChapter: 'சுருக்குதல் & தனிவட்டி' }
+      ] : [
+        { taskNumber: 1, title: isTamilCourse ? 'தமிழ் மொழி & செய்யுள்' : 'Primary Language', icon: '📜', color: '#ec4899', currentChapter: 'செய்யுள் & உரைநடை' },
+        { taskNumber: 2, title: isTamilCourse ? 'கணிதம்' : 'Mathematics', icon: '📐', color: '#06b6d4', currentChapter: 'எண்கள் & இயற்கணிதம்' },
+        { taskNumber: 3, title: isTamilCourse ? 'அறிவியல்' : 'Science & EVS', icon: '🔬', color: '#10b981', currentChapter: 'இயற்பியல் & உயிரியல்' },
+        { taskNumber: 4, title: isTamilCourse ? 'சமூக அறிவியல்' : 'Social Science', icon: '🌍', color: '#f59e0b', currentChapter: 'வரலாறு & புவியியல்' },
+        { taskNumber: 5, title: 'English & Grammar', icon: '📖', color: '#8b5cf6', currentChapter: 'Prose & Vocabulary' },
+        { taskNumber: 6, title: isTamilCourse ? 'மாதிரித் தேர்வு & வினாடி வினா' : 'Assessment Quiz', icon: '📝', color: '#ef4444', currentChapter: 'Daily Assessment' }
+      ]);
+
+  // Load lesson on course/day/section change
   useEffect(() => {
-    loadLessonForDay(selectedCourse.id, dayNumber);
-  }, [selectedCourse, dayNumber]);
+    loadLessonForDay(selectedCourse.id, dayNumber, activeSection);
+  }, [selectedCourse, dayNumber, activeSection]);
 
   function getUserGeminiKey(): string {
     if (typeof window === 'undefined') return '';
@@ -77,28 +117,28 @@ export default function TeachOAdminStudioPage() {
     ).trim();
   }
 
-  async function loadLessonForDay(courseId: string, day: number) {
+  async function loadLessonForDay(courseId: string, day: number, sectionNum: number = 1) {
     setLoading(true);
     setSaveStatus('idle');
     const userKey = getUserGeminiKey();
 
-    // Reset formData immediately to prevent any stale previous day content
-    const courseSubjects = selectedCourse.subjects || [];
-    const activeSub = courseSubjects[(day - 1) % (courseSubjects.length || 1)]?.name || 'Core Subject';
+    const curSection = daySections.find(s => s.taskNumber === sectionNum) || daySections[0];
+    const activeSub = curSection?.title || 'Core Subject';
 
+    // Reset formData immediately to prevent any stale previous day/section content
     setFormData({
-      topicTitle: `${selectedCourse.title} - Day ${day}`,
+      topicTitle: `${selectedCourse.title} - Day ${day}: ${activeSub}`,
       category: activeSub,
       youtubeVideoId: '0TgLtF3PMOc',
-      overview: `Loading Day ${day} syllabus lesson for ${selectedCourse.title}...`,
+      overview: `Loading Day ${day} section (${activeSub}) for ${selectedCourse.title}...`,
       coreConcepts: [
-        { heading: `Day ${day}: Core Theoretical Framework`, content: 'Loading conceptual foundations...', example: '' },
-        { heading: `Day ${day}: Step-by-Step Problem Solving`, content: 'Loading analytical methods...', example: '' },
-        { heading: `Day ${day}: High-Yield Exam Formulas`, content: 'Loading memory rules and formulas...', example: '' }
+        { heading: `Day ${day} (${activeSub}): Core Theoretical Framework`, content: 'Loading conceptual foundations...', example: '' },
+        { heading: `Day ${day} (${activeSub}): Step-by-Step Problem Solving`, content: 'Loading analytical methods...', example: '' },
+        { heading: `Day ${day} (${activeSub}): High-Yield Exam Formulas`, content: 'Loading memory rules and formulas...', example: '' }
       ],
       tamilExplanation: {
-        simpleTitle: `${selectedCourse.title} - நாள் ${day}`,
-        colloquialIntro: `நாள் ${day} பாடக்குறிப்பு ஏற்றப்படுகிறது...`,
+        simpleTitle: `${selectedCourse.title} - நாள் ${day} (${activeSub})`,
+        colloquialIntro: `நாள் ${day}, பிரிவு ${sectionNum} (${activeSub}) பாடக்குறிப்பு ஏற்றப்படுகிறது...`,
         everydayAnalogy: '',
         keyPointsTamil: ['', '', '']
       },
@@ -127,7 +167,9 @@ export default function TeachOAdminStudioPage() {
         body: JSON.stringify({
           courseId,
           dayNumber: day,
-          topicTitle: `${selectedCourse.title} Day ${day}`,
+          taskNumber: sectionNum,
+          sectionNumber: sectionNum,
+          topicTitle: `${selectedCourse.title} Day ${day} ${activeSub}`,
           courseTitle: selectedCourse.title,
           board: selectedCourse.board,
           standard: selectedCourse.title,
@@ -137,6 +179,8 @@ export default function TeachOAdminStudioPage() {
 
       if (res.ok) {
         const data = await res.json();
+        const isDb = Boolean(data._meta?.isVerifiedInDb || data._meta?.source === 'cache' || data._meta?.isAdminVerified);
+        setIsDbLoaded(isDb);
         setIsVerifiedByAdmin(Boolean(data._meta?.isAdminVerified || data.is_admin_verified));
         
         // 1. Extract Core Concepts
@@ -151,9 +195,9 @@ export default function TeachOAdminStudioPage() {
         }
         if (!loadedConcepts?.length) {
           loadedConcepts = [
-            { heading: '1. Theoretical Foundations & Scope', content: 'Detailed conceptual explanation and core principles.', example: 'Model scenario application.' },
-            { heading: '2. Methodologies & Derivations', content: 'Standard analytical approach, laws, and equations.', example: 'Step-by-step problem breakdown.' },
-            { heading: '3. Exam Shortcuts & High-Yield Tips', content: 'Key exam recall tips, common traps, and rapid calculation rules.', example: 'Board examination memory trigger.' }
+            { heading: `1. Core Principles: ${activeSub}`, content: `Detailed theoretical explanation and principles of ${activeSub} for Day ${day}.`, example: 'Standard textbook model.' },
+            { heading: `2. Problem Solving & Analysis`, content: 'Standard analytical approach, derivations, and methodology.', example: 'Worked example problem.' },
+            { heading: `3. Exam Formulas & Shortcuts`, content: 'Key exam recall tips, shortcuts, and memory triggers.', example: 'Formula derivation.' }
           ];
         }
 
@@ -168,14 +212,14 @@ export default function TeachOAdminStudioPage() {
           }));
         } else {
           loadedMcqs = [
-            { question: 'Which option represents the primary governing principle of this topic?', options: ['Option A: Fundamental Principle', 'Option B: Secondary Rule', 'Option C: Exceptions Only', 'Option D: None of the above'], correctAnswer: 0, explanation: 'Option A gives the verified core definition.' },
+            { question: `Which option represents the primary governing principle of this ${activeSub} lesson?`, options: ['Option A: Fundamental Principle', 'Option B: Secondary Rule', 'Option C: Exceptions Only', 'Option D: None of the above'], correctAnswer: 0, explanation: 'Option A gives the verified core definition.' },
             { question: 'What is the standard formula or governing equation?', options: ['Standard Formula A', 'Variant Equation B', 'Empirical Rule C', 'Alternative Form D'], correctAnswer: 0, explanation: 'Standard textbook formulation.' },
             { question: 'In board and competitive examinations, this concept carries:', options: ['High weightage', 'Moderate weightage', 'Not included', 'Optional only'], correctAnswer: 0, explanation: 'Essential syllabus high-yield component.' },
             { question: 'What is the most common exam pitfall to avoid?', options: ['Calculation error', 'Formula confusion', 'Unit mismatch', 'All of the above'], correctAnswer: 3, explanation: 'Careful step-by-step verification prevents errors.' }
           ];
         }
 
-        // 3. Extract VSAQs / Flashcards / 2-Mark questions
+        // 3. Extract VSAQs
         let loadedVsaqs = data.vsaqs;
         if (!loadedVsaqs?.length && data.twoMarkQuestions?.length) {
           loadedVsaqs = data.twoMarkQuestions.map((tm: any) => ({
@@ -198,7 +242,7 @@ export default function TeachOAdminStudioPage() {
         }
         if (!loadedVsaqs?.length) {
           loadedVsaqs = [
-            { question: 'Define the core principle of this lesson.', answer: 'Fundamental textbook definition and primary application.', marks: 2 },
+            { question: `Define the core principle of this ${activeSub} lesson.`, answer: 'Fundamental textbook definition and primary application.', marks: 2 },
             { question: 'State the key formula, theorem, or rule.', answer: 'Standard mathematical formula with defined units.', marks: 2 }
           ];
         }
@@ -214,7 +258,7 @@ export default function TeachOAdminStudioPage() {
         }
         if (!loadedFormulas?.length) {
           loadedFormulas = [
-            { name: `${data.topicTitle || 'Lesson'} Master Rule`, formula: 'Standard Method / Equation', mnemonic: 'Active Recall Memory Rule' }
+            { name: `${data.topicTitle || activeSub} Master Rule`, formula: 'Standard Method / Equation', mnemonic: 'Active Recall Memory Rule' }
           ];
         }
 
@@ -223,7 +267,7 @@ export default function TeachOAdminStudioPage() {
         let loadedTamil = rawTamil;
         if (!loadedTamil && data.notes?.bilingualExplanation?.tamil) {
           loadedTamil = {
-            simpleTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
+            simpleTitle: data.topicTitle || `${selectedCourse.title} Day ${day} (${activeSub})`,
             colloquialIntro: data.notes.bilingualExplanation.tamil,
             everydayAnalogy: 'எளிய வாழ்வியல் ஒப்பீடு.',
             keyPointsTamil: [data.notes.bilingualExplanation.tamil, 'முக்கிய கருத்துகள்', 'தேர்வுக்கான குறிப்புகள்']
@@ -231,16 +275,16 @@ export default function TeachOAdminStudioPage() {
         }
         if (!loadedTamil) {
           loadedTamil = {
-            simpleTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
-            colloquialIntro: 'பாடத்தின் சுருக்கம் மற்றும் எளிய தமிழ் விளக்கம்.',
+            simpleTitle: data.topicTitle || `${selectedCourse.title} Day ${day} (${activeSub})`,
+            colloquialIntro: `நாள் ${day}: ${activeSub} பாடத்தின் சுருக்கம் மற்றும் எளிய தமிழ் விளக்கம்.`,
             everydayAnalogy: 'வாழ்வியல் உதாரணம்.',
             keyPointsTamil: ['முக்கிய குறிப்பு 1', 'முக்கிய குறிப்பு 2', 'முக்கிய குறிப்பு 3']
           };
         }
 
         setFormData({
-          topicTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
-          category: data.category || data.subject || selectedCourse.subjects?.[0]?.name || 'Core Subject',
+          topicTitle: data.topicTitle || `${selectedCourse.title} Day ${day} - ${activeSub}`,
+          category: data.category || activeSub,
           youtubeVideoId: data.videoId || data.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
           overview: data.overview || data.notes?.overview || (data.notes?.keyPoints ? data.notes.keyPoints.join(' ') : '') || '',
           coreConcepts: loadedConcepts,
@@ -250,12 +294,10 @@ export default function TeachOAdminStudioPage() {
           mcqs: loadedMcqs
         });
 
-        if (data._meta?.source === 'cache') {
-          setStatusMessage(`✅ Loaded from Supabase LMS Database (${data._meta?.isAdminVerified ? 'Admin Verified' : 'Auto-Saved'})`);
-        } else if (data._meta?.source === 'local-file-bundle') {
-          setStatusMessage(`📦 Loaded from Offline Multi-Day Harvest Archive. Ready to edit or publish.`);
-        } else if (data._meta?.source === 'jit-generated') {
-          setStatusMessage(`✨ Generated live with Gemini (${data._meta?.keySource || 'Active Pool'}). Review and click Publish.`);
+        if (isDb) {
+          setStatusMessage(`✅ Loaded Day ${day} Section ${sectionNum} (${activeSub}) from Supabase LMS.`);
+        } else {
+          setStatusMessage(`✨ Generated Day ${day} Section ${sectionNum} (${activeSub}) with Curriculum Engine.`);
         }
       }
     } catch (e) {
@@ -266,10 +308,10 @@ export default function TeachOAdminStudioPage() {
     }
   }
 
-  // 1-Click AI Auto-Draft with Gemini (using Profile API Key)
+  // AI Auto-Draft Full Lesson
   async function handleAiDraft() {
     setAiDrafting(true);
-    setSaveStatus('idle');
+    setStatusMessage('Drafting full lesson with Gemini AI...');
     const userKey = getUserGeminiKey();
 
     try {
@@ -282,7 +324,9 @@ export default function TeachOAdminStudioPage() {
         body: JSON.stringify({
           courseId: selectedCourse.id,
           dayNumber,
-          topicTitle: formData.topicTitle || `${selectedCourse.title} Day ${dayNumber}`,
+          taskNumber: activeSection,
+          sectionNumber: activeSection,
+          topicTitle: formData.topicTitle,
           courseTitle: selectedCourse.title,
           board: selectedCourse.board,
           standard: selectedCourse.title,
@@ -293,53 +337,22 @@ export default function TeachOAdminStudioPage() {
 
       if (res.ok) {
         const data = await res.json();
-        
-        let loadedConcepts = data.coreConcepts || data.notes?.coreConcepts;
-        if (!loadedConcepts?.length && data.studyNotes?.length) {
-          loadedConcepts = data.studyNotes.map((sn: any) => ({
-            heading: sn.sectionTitle || 'Core Concept',
-            content: sn.content || '',
-            example: sn.example || ''
-          }));
-        }
-
-        let loadedMcqs = data.mcqs || data.practiceQuiz;
-        if (loadedMcqs?.length) {
-          loadedMcqs = loadedMcqs.map((pq: any) => ({
-            question: pq.question || '',
-            options: pq.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-            correctAnswer: pq.correctAnswer !== undefined ? pq.correctAnswer : (pq.correctIndex !== undefined ? pq.correctIndex : 0),
-            explanation: pq.explanation || ''
-          }));
-        }
-
-        setFormData(prev => ({
-          ...prev,
-          topicTitle: data.topicTitle || prev.topicTitle,
-          category: data.category || data.subject || prev.category,
-          overview: data.overview || data.notes?.overview || prev.overview,
-          coreConcepts: loadedConcepts?.length ? loadedConcepts : prev.coreConcepts,
-          tamilExplanation: data.tamilExplanation || data.notes?.tamilExplanation || prev.tamilExplanation,
-          formulasAndMnemonics: data.formulasAndMnemonics?.length ? data.formulasAndMnemonics : prev.formulasAndMnemonics,
-          vsaqs: data.vsaqs?.length ? data.vsaqs : prev.vsaqs,
-          mcqs: loadedMcqs?.length ? loadedMcqs : prev.mcqs
-        }));
-        setStatusMessage('✨ AI draft generated successfully! Review below and click Publish to Supabase.');
+        loadLessonForDay(selectedCourse.id, dayNumber, activeSection);
+        setStatusMessage(`✨ Successfully generated AI curriculum draft for Section ${activeSection}!`);
       } else {
-        const err = await res.json().catch(() => ({}));
-        setStatusMessage(`AI draft notice: ${err.error || 'Please ensure your Gemini key in Profile is active.'}`);
+        setStatusMessage('AI draft notice: Please check your Gemini API key in Profile.');
       }
     } catch (e: any) {
-      setStatusMessage(`Error: ${e.message}`);
+      setStatusMessage(`Draft error: ${e.message}`);
     } finally {
       setAiDrafting(false);
     }
   }
 
-  // AI Polish & Enhance Helper
+  // AI Polish
   async function handleAiPolish() {
-    if (!formData.overview && !formData.topicTitle) return;
     setAiDrafting(true);
+    setStatusMessage('Polishing lesson concepts with Gemini AI...');
     const userKey = getUserGeminiKey();
 
     try {
@@ -352,6 +365,8 @@ export default function TeachOAdminStudioPage() {
         body: JSON.stringify({
           courseId: selectedCourse.id,
           dayNumber,
+          taskNumber: activeSection,
+          sectionNumber: activeSection,
           topicTitle: formData.topicTitle,
           courseTitle: selectedCourse.title,
           board: selectedCourse.board,
@@ -389,6 +404,7 @@ export default function TeachOAdminStudioPage() {
         courseId: selectedCourse.id,
         courseTitle: selectedCourse.title,
         dayNumber,
+        taskNumber: activeSection,
         is_admin_verified: true,
         videoMeta: {
           youtubeVideoId: formData.youtubeVideoId,
@@ -415,6 +431,8 @@ export default function TeachOAdminStudioPage() {
         body: JSON.stringify({
           courseId: selectedCourse.id,
           dayNumber,
+          taskNumber: activeSection,
+          sectionNumber: activeSection,
           topicTitle: formData.topicTitle,
           courseTitle: selectedCourse.title,
           isAdminEdit: true,
@@ -426,7 +444,8 @@ export default function TeachOAdminStudioPage() {
       if (res.ok) {
         setSaveStatus('saved');
         setIsVerifiedByAdmin(true);
-        setStatusMessage(`🎉 Successfully published Day ${dayNumber} to Supabase LMS!`);
+        setIsDbLoaded(true);
+        setStatusMessage(`🎉 Successfully published Day ${dayNumber} Section ${activeSection} to Supabase LMS!`);
       } else {
         setSaveStatus('error');
         setStatusMessage('Failed to publish. Please check database permissions.');
@@ -435,6 +454,33 @@ export default function TeachOAdminStudioPage() {
       setSaveStatus('error');
       setStatusMessage(`Publish failed: ${e.message}`);
     }
+  }
+
+  // WhatsApp Share Helper
+  function handleShareWhatsApp() {
+    const curSecTitle = daySections.find(s => s.taskNumber === activeSection)?.title || 'Core';
+    const text = encodeURIComponent(
+      `📚 TeachO Daily Lesson Module\n` +
+      `🎓 Course: ${selectedCourse.title}\n` +
+      `📅 Day: ${dayNumber} | Section ${activeSection}: ${curSecTitle}\n` +
+      `📖 Topic: ${formData.topicTitle}\n` +
+      `📝 Overview: ${formData.overview.substring(0, 150)}...\n\n` +
+      `🚀 Open on TeachO: https://watscrm.vercel.app/admin/teacho`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }
+
+  // WhatsApp Admin Request Link
+  function handleContactAdminWhatsApp() {
+    const curSecTitle = daySections.find(s => s.taskNumber === activeSection)?.title || 'Core';
+    const text = encodeURIComponent(
+      `Hello TeachO Admin, please review and verify the lesson:\n` +
+      `• Course: ${selectedCourse.title}\n` +
+      `• Day: ${dayNumber} | Section ${activeSection} (${curSecTitle})\n` +
+      `• Topic: ${formData.topicTitle}\n\n` +
+      `Please prioritize publishing this content to Supabase LMS.`
+    );
+    window.open(`https://wa.me/919944900000?text=${text}`, '_blank');
   }
 
   // Bulk CSV file selection & parsing
@@ -454,7 +500,6 @@ export default function TeachOAdminStudioPage() {
           alert('Invalid JSON file format.');
         }
       } else {
-        // Simple CSV parser
         const lines = text.split(/\r?\n/).filter(Boolean);
         const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
         const rows = [];
@@ -476,15 +521,16 @@ export default function TeachOAdminStudioPage() {
 
   // Download Sample CSV template
   function handleDownloadSampleCsv() {
-    const csvContent = `course_id,day_number,subject,topic_title,overview,formula,tamil_summary,mcq_q1,mcq_opt_a,mcq_opt_b,mcq_opt_c,mcq_opt_d,mcq_correct
-exam-tnpsc-grp1,1,General Science,Mechanics & Laws of Motion,"Academic overview of Newton's laws and mechanics.",F=ma,"நியூட்டனின் இயக்க விதிகள் மற்றும் சமன்பாடுகள்.","What is Newton's second law?","F = ma","E = mc^2","V = IR","PV = nRT",0
-exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations for projectile range and maximum height.",R = u^2 sin(2θ) / g,"எறிபொருளின் இயக்கம் மற்றும் சமன்பாடுகள்.","What is maximum range angle?","45 degrees","90 degrees","30 degrees","60 degrees",0`;
+    const csvContent = `course_id,day_number,task_number,subject,topic_title,overview,formula,tamil_summary,mcq_q1,mcq_opt_a,mcq_opt_b,mcq_opt_c,mcq_opt_d,mcq_correct
+tnsb-ta-7,10,1,தமிழ்,இயல் 1: கவிதைப்பேழை எங்கள் தமிழ்,"நாமக்கல் கவிஞர் வெ. இராமலிங்கனாரின் பாடல் நயங்கள்.",நூல் குறிப்பு,"தமிழ் மொழியின் அருள்நெறி பண்புகள்.","நாமக்கல் கவிஞர் எவ்வாறு அழைக்கப்படுகிறார்?","காந்தியக் கவிஞர்","புரட்சிக் கவிஞர்","மக்கள் கவிஞர்","தேசியக் கவிஞர்",0
+tnsb-ta-7,10,2,கணிதம்,அலகு 1: எண்கள் மற்றும் முழுக்கள்,"முழுக்களின் கூட்டல் மற்றும் கழித்தல் விதிகள்.",a+b=c,"முழுக்களின் எளிய பயன்பாடுகள்.","(-5) + (-3) இன் மதிப்பு என்ன?","-8","8","-2","2",0
+exam-jee-main,10,1,Mathematics,Coordinate Geometry: Straight Lines,"Perpendicular distance from a point to a line.",d=|ax1+by1+c|/sqrt(a^2+b^2),"நேர்க்கோட்டின் சமன்பாடுகள்.","What is distance from origin to 3x+4y=5?","1","5","0","2",0`;
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'teacho_curriculum_sample_template.csv');
+    link.setAttribute('download', 'teacho_curriculum_multisection_template.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -504,6 +550,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
       const row = bulkRows[i];
       const courseId = row.course_id || selectedCourse.id;
       const day = parseInt(row.day_number || '1', 10);
+      const task = parseInt(row.task_number || '1', 10);
       const topic = row.topic_title || `Lesson ${day}`;
       const subject = row.subject || 'Core Subject';
 
@@ -512,6 +559,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
         courseTitle: row.course_title || selectedCourse.title,
         category: subject,
         dayNumber: day,
+        taskNumber: task,
         is_admin_verified: true,
         overview: row.overview || `Detailed lesson on ${topic}.`,
         coreConcepts: [
@@ -545,6 +593,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
           body: JSON.stringify({
             courseId,
             dayNumber: day,
+            taskNumber: task,
             topicTitle: topic,
             isAdminEdit: true,
             adminContent: payload
@@ -570,6 +619,9 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
     return matchesSearch && matchesCat;
   });
 
+  const currentSectionInfo = daySections.find(s => s.taskNumber === activeSection) || daySections[0];
+  const sectionKey = activeSection > 1 ? `${selectedCourse.id}_day_${dayNumber}_task_${activeSection}` : `${selectedCourse.id}_day_${dayNumber}`;
+
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 p-4 md:p-8 space-y-6 max-w-7xl mx-auto font-sans">
       
@@ -588,7 +640,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
             TeachO Teacher Studio &amp; Curriculum CMS
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Manage, edit, AI-draft, and publish day-wise academic lessons across all 86 courses directly to Supabase LMS.
+            Manage, edit, AI-draft, and publish day-wise academic lessons &amp; multi-subject periods across all 86 courses directly to Supabase LMS.
           </p>
         </div>
 
@@ -600,7 +652,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
               activeTab === 'editor' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Single Lesson Editor
+            Single Lesson &amp; Section Editor
           </button>
           <button
             onClick={() => setActiveTab('bulk')}
@@ -654,7 +706,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
               </div>
 
               {/* Course List */}
-              <div className="max-h-[360px] overflow-y-auto space-y-1 pr-1 divide-y divide-slate-800/50 scrollbar-thin scrollbar-thumb-slate-700">
+              <div className="max-h-[340px] overflow-y-auto space-y-1 pr-1 divide-y divide-slate-800/50 scrollbar-thin scrollbar-thumb-slate-700">
                 {filteredCourses.map(c => {
                   const isSelected = selectedCourse.id === c.id;
                   return (
@@ -663,6 +715,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                       onClick={() => {
                         setSelectedCourse(c);
                         setDayNumber(1);
+                        setActiveSection(1);
                       }}
                       className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between gap-2 ${
                         isSelected 
@@ -691,13 +744,13 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                   <Database className="w-4 h-4 text-blue-400" />
                   Day Number ({dayNumber} / {selectedCourse.totalDays || 200})
                 </h3>
-                {isVerifiedByAdmin ? (
+                {isDbLoaded ? (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
-                    <CheckCircle2 className="w-3 h-3" /> Admin Verified
+                    <CheckCircle2 className="w-3 h-3" /> In Supabase DB
                   </span>
                 ) : (
-                  <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-medium">
-                    Auto-Cached
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full">
+                    <Sparkles className="w-3 h-3" /> AI Draft Mode
                   </span>
                 )}
               </div>
@@ -742,27 +795,95 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                 ))}
               </div>
             </div>
+
+            {/* WHATSAPP & SUPPORT CONNECT CARD */}
+            <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-emerald-400" />
+                WhatsApp Connect &amp; Share
+              </h3>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Share this day&apos;s lesson with students on WhatsApp or request immediate content verification from the admin team.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleShareWhatsApp}
+                  className="w-full py-2 px-3 text-xs font-bold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Share Lesson on WhatsApp
+                </button>
+                <button
+                  onClick={handleContactAdminWhatsApp}
+                  className="w-full py-2 px-3 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-emerald-400" /> WhatsApp Request to Admin
+                </button>
+              </div>
+            </div>
+
           </div>
 
-          {/* ─── RIGHT: RICH LESSON EDITOR (8 Cols) ───────────────────────── */}
+          {/* ─── RIGHT: RICH LESSON & MULTI-SECTION EDITOR (8 Cols) ─────────── */}
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-5">
               
+              {/* Day Sections / Periods Header Tabs */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-emerald-400" />
+                    Day {dayNumber} Sections &amp; Subject Periods ({daySections.length}):
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Selected: <strong className="text-emerald-400">Section {activeSection} ({currentSectionInfo.title})</strong>
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {daySections.map((sec) => {
+                    const isActive = activeSection === sec.taskNumber;
+                    return (
+                      <button
+                        key={sec.taskNumber}
+                        onClick={() => setActiveSection(sec.taskNumber)}
+                        className={`p-2.5 rounded-xl text-left border transition-all flex items-center gap-2.5 ${
+                          isActive
+                            ? 'bg-emerald-500/20 border-emerald-500 text-white shadow-md shadow-emerald-500/10'
+                            : 'bg-[#070b14] border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                        }`}
+                      >
+                        <span className="text-lg">{sec.icon}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[11px] font-bold truncate text-white">
+                            P{sec.taskNumber}: {sec.title}
+                          </div>
+                          {sec.currentChapter && (
+                            <div className="text-[9px] text-slate-500 truncate mt-0.5">
+                              {sec.currentChapter}
+                            </div>
+                          )}
+                        </div>
+                        {isActive && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Action Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-b border-slate-800 py-4">
                 <div>
                   <h2 className="text-base md:text-lg font-black text-white">{selectedCourse.title}</h2>
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="text-xs text-slate-400">
-                      Editing <span className="font-bold text-emerald-400">Day {dayNumber}</span> &bull; Key: <code className="text-xs bg-[#070b14] border border-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-300">{selectedCourse.id}_day_{dayNumber}</code>
+                      Editing <span className="font-bold text-emerald-400">Day {dayNumber} · Section {activeSection}</span> &bull; Key: <code className="text-xs bg-[#070b14] border border-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-300">{sectionKey}</code>
                     </p>
-                    {getUserGeminiKey() ? (
-                      <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        🔑 Profile Key Active
+                    {isDbLoaded ? (
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Supabase DB
                       </span>
                     ) : (
-                      <span className="text-[10px] bg-slate-800 text-slate-300 font-medium px-2 py-0.5 rounded-full flex items-center gap-1 border border-slate-700">
-                        🌐 System Key Pool
+                      <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> AI Draft
                       </span>
                     )}
                   </div>
@@ -815,26 +936,26 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Topic Title
+                    Section Heading / Topic Title
                   </label>
                   <input
                     type="text"
                     value={formData.topicTitle}
                     onChange={e => setFormData({ ...formData, topicTitle: e.target.value })}
                     className="w-full p-2.5 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500"
-                    placeholder="e.g. Mechanics & Laws of Motion"
+                    placeholder="e.g. தமிழ்: இயல் 1 செய்யுள் & உரைநடை"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                    Subject / Category
+                    Subject / Period Category
                   </label>
                   <input
                     type="text"
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
                     className="w-full p-2.5 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500"
-                    placeholder="e.g. Physics / Polity"
+                    placeholder="e.g. தமிழ் மொழி / Mathematics"
                   />
                 </div>
               </div>
@@ -873,7 +994,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                   value={formData.overview}
                   onChange={e => setFormData({ ...formData, overview: e.target.value })}
                   className="w-full p-3 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500"
-                  placeholder="Comprehensive high-yield overview of the lesson..."
+                  placeholder="Comprehensive high-yield overview of the section lesson..."
                 />
               </div>
 
@@ -953,7 +1074,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-amber-300 mb-1">தமிழ் உரை (Colloquial Intro)</label>
+                  <label className="block text-[11px] font-bold text-amber-300 mb-1">எளிய தமிழ் அறிமுகம் (2–3 வாக்கியங்கள்)</label>
                   <textarea
                     rows={2}
                     value={formData.tamilExplanation.colloquialIntro}
@@ -961,196 +1082,278 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                       ...formData,
                       tamilExplanation: { ...formData.tamilExplanation, colloquialIntro: e.target.value }
                     })}
-                    className="w-full p-2 text-xs border border-amber-500/40 rounded-lg bg-[#070b14] text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 leading-relaxed"
+                    className="w-full p-2 text-xs border border-amber-500/40 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-amber-500 leading-relaxed"
                   />
                 </div>
               </div>
 
-              {/* MCQs */}
+              {/* Master Formula & Mnemonics */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                  <HelpCircle className="w-4 h-4 text-emerald-400" /> 4 High-Yield Daily MCQs
+                  <Sparkles className="w-4 h-4 text-purple-400" /> Formulas &amp; Mnemonics
                 </h4>
-                {formData.mcqs.map((mcq, mIdx) => (
-                  <div key={mIdx} className="p-4 border border-slate-800 rounded-xl bg-[#090e1a] space-y-3">
+                {formData.formulasAndMnemonics.map((form, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 border border-slate-800 rounded-xl bg-[#090e1a]">
                     <input
                       type="text"
-                      placeholder={`Question ${mIdx + 1}`}
+                      placeholder="Rule / Formula Name"
+                      value={form.name}
+                      onChange={e => {
+                        const updated = [...formData.formulasAndMnemonics];
+                        updated[idx].name = e.target.value;
+                        setFormData({ ...formData, formulasAndMnemonics: updated });
+                      }}
+                      className="p-2 text-xs font-bold border border-slate-700 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Exact Formula (e.g. F = ma)"
+                      value={form.formula}
+                      onChange={e => {
+                        const updated = [...formData.formulasAndMnemonics];
+                        updated[idx].formula = e.target.value;
+                        setFormData({ ...formData, formulasAndMnemonics: updated });
+                      }}
+                      className="p-2 text-xs font-mono border border-slate-700 rounded-lg bg-[#070b14] text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Exam Memory Shortcut"
+                      value={form.mnemonic}
+                      onChange={e => {
+                        const updated = [...formData.formulasAndMnemonics];
+                        updated[idx].mnemonic = e.target.value;
+                        setFormData({ ...formData, formulasAndMnemonics: updated });
+                      }}
+                      className="p-2 text-xs border border-slate-700 rounded-lg bg-[#070b14] text-purple-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* 2-Mark VSAQs */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <HelpCircle className="w-4 h-4 text-blue-400" /> High-Yield 2-Mark Short Questions (VSAQs)
+                </h4>
+                {formData.vsaqs.map((vsaq, idx) => (
+                  <div key={idx} className="p-3 border border-slate-800 rounded-xl bg-[#090e1a] space-y-2">
+                    <input
+                      type="text"
+                      placeholder={`2-Mark Question ${idx + 1}`}
+                      value={vsaq.question}
+                      onChange={e => {
+                        const updated = [...formData.vsaqs];
+                        updated[idx].question = e.target.value;
+                        setFormData({ ...formData, vsaqs: updated });
+                      }}
+                      className="w-full p-2 text-xs font-bold border border-slate-700 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Precise textbook model answer..."
+                      value={vsaq.answer}
+                      onChange={e => {
+                        const updated = [...formData.vsaqs];
+                        updated[idx].answer = e.target.value;
+                        setFormData({ ...formData, vsaqs: updated });
+                      }}
+                      className="w-full p-2 text-xs border border-slate-700 rounded-lg bg-[#070b14] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* 4 Daily MCQs */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> 4 Daily High-Yield Practice MCQs
+                </h4>
+                {formData.mcqs.map((mcq, idx) => (
+                  <div key={idx} className="p-4 border border-slate-800 rounded-xl bg-[#090e1a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-400">Diagnostic Question {idx + 1}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-slate-400">Correct Option:</span>
+                        <select
+                          value={mcq.correctAnswer}
+                          onChange={e => {
+                            const updated = [...formData.mcqs];
+                            updated[idx].correctAnswer = parseInt(e.target.value, 10);
+                            setFormData({ ...formData, mcqs: updated });
+                          }}
+                          className="p-1 text-xs border border-slate-700 rounded-lg bg-[#070b14] text-emerald-400 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        >
+                          <option value={0}>A</option>
+                          <option value={1}>B</option>
+                          <option value={2}>C</option>
+                          <option value={3}>D</option>
+                        </select>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Question text..."
                       value={mcq.question}
                       onChange={e => {
                         const updated = [...formData.mcqs];
-                        updated[mIdx].question = e.target.value;
+                        updated[idx].question = e.target.value;
                         setFormData({ ...formData, mcqs: updated });
                       }}
                       className="w-full p-2 text-xs font-bold border border-slate-700 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {mcq.options.map((opt, oIdx) => (
-                        <div key={oIdx} className="flex items-center gap-2 p-1.5 rounded-lg border border-slate-800 bg-[#070b14]">
-                          <input
-                            type="radio"
-                            name={`correct_${mIdx}`}
-                            checked={mcq.correctAnswer === oIdx}
-                            onChange={() => {
-                              const updated = [...formData.mcqs];
-                              updated[mIdx].correctAnswer = oIdx;
-                              setFormData({ ...formData, mcqs: updated });
-                            }}
-                            className="text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-slate-900 border-slate-700"
-                          />
+                      {['A', 'B', 'C', 'D'].map((optLetter, optIdx) => (
+                        <div key={optIdx} className="flex items-center gap-1.5">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                            mcq.correctAnswer === optIdx ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {optLetter}
+                          </span>
                           <input
                             type="text"
-                            placeholder={`Option ${String.fromCharCode(65 + oIdx)}`}
-                            value={opt}
+                            placeholder={`Option ${optLetter}...`}
+                            value={mcq.options[optIdx] || ''}
                             onChange={e => {
                               const updated = [...formData.mcqs];
-                              updated[mIdx].options[oIdx] = e.target.value;
+                              const newOpts = [...updated[idx].options];
+                              newOpts[optIdx] = e.target.value;
+                              updated[idx].options = newOpts;
                               setFormData({ ...formData, mcqs: updated });
                             }}
-                            className="flex-1 p-1 text-xs bg-transparent text-slate-200 focus:outline-none"
+                            className={`flex-1 p-2 text-xs border rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 ${
+                              mcq.correctAnswer === optIdx ? 'border-emerald-500/70' : 'border-slate-700'
+                            }`}
                           />
                         </div>
                       ))}
                     </div>
                     <input
                       type="text"
-                      placeholder="Step-by-step reasoning explanation..."
+                      placeholder="Step-by-step verified explanation for why this option is correct..."
                       value={mcq.explanation}
                       onChange={e => {
                         const updated = [...formData.mcqs];
-                        updated[mIdx].explanation = e.target.value;
+                        updated[idx].explanation = e.target.value;
                         setFormData({ ...formData, mcqs: updated });
                       }}
-                      className="w-full p-2 text-xs border border-slate-700/60 rounded-lg bg-[#070b14] text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      className="w-full p-2 text-xs border border-slate-700/80 rounded-lg bg-[#070b14] text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 ))}
               </div>
 
-              {/* Bottom Publish Button */}
-              <div className="pt-4 border-t border-slate-800 flex justify-end">
-                <button
-                  onClick={handlePublish}
-                  disabled={saveStatus === 'saving' || loading}
-                  className="flex items-center gap-2 px-6 py-2.5 font-bold text-xs rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-600/30 disabled:opacity-50 transition-all"
-                >
-                  <Save className="w-4 h-4" />
-                  {saveStatus === 'saving' ? 'Publishing to Supabase...' : 'Save & Publish to Supabase Database'}
-                </button>
+              {/* Bottom Sticky Action Bar */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                <div className="text-xs text-slate-400">
+                  Ready to publish <span className="font-bold text-white">Day {dayNumber} · Section {activeSection}</span> to Supabase LMS
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleShareWhatsApp}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 transition-colors"
+                  >
+                    <Share2 className="w-3.5 h-3.5" /> Share on WhatsApp
+                  </button>
+                  <button
+                    onClick={handlePublish}
+                    disabled={saveStatus === 'saving' || loading}
+                    className="flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saveStatus === 'saving' ? 'Publishing...' : 'Publish to Supabase LMS'}
+                  </button>
+                </div>
               </div>
+
             </div>
           </div>
+
         </div>
       ) : (
-        /* BULK CSV / JSON IMPORTER TAB */
-        <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-w-4xl mx-auto">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        /* ─── BULK CSV / JSON IMPORTER TAB ──────────────────────────────── */
+        <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div>
-              <h2 className="text-base md:text-lg font-black text-white flex items-center gap-2">
-                <Upload className="w-5 h-5 text-emerald-400" />
-                Bulk CSV / JSON Curriculum Importer
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Upload entire spreadsheets of 200 or 360-day syllabus lessons directly into Supabase LMS.
+              <h2 className="text-lg font-black text-white">Bulk Curriculum CSV / JSON Importer</h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Upload day-wise or multi-section syllabus files to batch-publish hundreds of lessons directly to Supabase LMS.
               </p>
             </div>
             <button
               onClick={handleDownloadSampleCsv}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl transition-colors shrink-0"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-400" /> Download Sample CSV
+              <Download className="w-4 h-4 text-emerald-400" /> Download Sample CSV Template
             </button>
           </div>
 
-          {/* Upload Area */}
-          <div className="border-2 border-dashed border-slate-700 rounded-2xl p-8 text-center space-y-3 bg-[#070b14]/50">
-            <Upload className="w-10 h-10 text-slate-500 mx-auto" />
+          <div className="p-8 border-2 border-dashed border-slate-700 rounded-2xl bg-[#090e1a] text-center space-y-3">
+            <Upload className="w-10 h-10 text-emerald-400 mx-auto" />
             <div>
-              <label htmlFor="csv-upload" className="cursor-pointer font-bold text-sm text-emerald-400 hover:underline">
-                Click to browse
-              </label>{' '}
-              <span className="text-sm text-slate-300">or drag and drop your .csv or .json file here</span>
+              <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all">
+                Select CSV or JSON File
+                <input
+                  type="file"
+                  accept=".csv,.json"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+              <p className="text-xs text-slate-400 mt-2">Supports multi-day curriculum files exported from Excel, Sheets, or harvested JSONs.</p>
             </div>
-            <p className="text-xs text-slate-500">Supports UTF-8 CSV with course_id, day_number, topic_title, overview, formulas, mcqs</p>
-            <input
-              id="csv-upload"
-              type="file"
-              accept=".csv,.json"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+            {bulkFile && (
+              <div className="inline-block p-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold text-emerald-300">
+                📄 Loaded: {bulkFile.name} ({bulkRows.length} rows parsed)
+              </div>
+            )}
           </div>
 
-          {bulkFile && (
-            <div className="p-4 border border-slate-800 rounded-xl bg-[#070b14] flex items-center justify-between">
-              <div>
-                <div className="text-xs font-bold text-white">{bulkFile.name}</div>
-                <div className="text-[11px] text-slate-400">
-                  Parsed <span className="font-bold text-emerald-400">{bulkRows.length} lesson rows</span> ready for import.
-                </div>
-              </div>
-              <button
-                onClick={handleExecuteBulkImport}
-                disabled={bulkImporting || !bulkRows.length}
-                className="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
-              >
-                {bulkImporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                {bulkImporting ? `Importing (${bulkProgress}%)...` : 'Start Bulk Import'}
-              </button>
-            </div>
-          )}
-
-          {bulkImporting && (
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-bold text-slate-300">
-                <span>Importing to Supabase...</span>
-                <span>{bulkProgress}%</span>
-              </div>
-              <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${bulkProgress}%` }} />
-              </div>
-            </div>
-          )}
-
-          {bulkResult && (
-            <div className="p-4 rounded-xl bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              {bulkResult}
-            </div>
-          )}
-
-          {/* Table Preview */}
           {bulkRows.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Preview Parsed Rows (First 5)</h3>
-              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-[#070b14]">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0c1322] text-slate-300 border-b border-slate-800">
-                    <tr>
-                      <th className="p-2.5 font-bold">Course ID</th>
-                      <th className="p-2.5 font-bold">Day</th>
-                      <th className="p-2.5 font-bold">Subject</th>
-                      <th className="p-2.5 font-bold">Topic Title</th>
-                      <th className="p-2.5 font-bold">Formula</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                    {bulkRows.slice(0, 5).map((r, i) => (
-                      <tr key={i} className="hover:bg-slate-800/30">
-                        <td className="p-2.5 font-mono text-emerald-400">{r.course_id || '-'}</td>
-                        <td className="p-2.5 font-bold text-white">{r.day_number || '-'}</td>
-                        <td className="p-2.5">{r.subject || '-'}</td>
-                        <td className="p-2.5 font-medium text-white">{r.topic_title || '-'}</td>
-                        <td className="p-2.5 font-mono text-slate-400">{r.formula || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300">Preview ({bulkRows.length} Lessons to Import):</span>
+                <button
+                  onClick={handleExecuteBulkImport}
+                  disabled={bulkImporting}
+                  className="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md disabled:opacity-50 transition-all flex items-center gap-2"
+                >
+                  {bulkImporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  {bulkImporting ? `Importing (${bulkProgress}%)...` : `🚀 Start Bulk Import (${bulkRows.length} Lessons)`}
+                </button>
+              </div>
+
+              {bulkImporting && (
+                <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-emerald-500 h-full transition-all duration-300 rounded-full"
+                    style={{ width: `${bulkProgress}%` }}
+                  />
+                </div>
+              )}
+
+              {bulkResult && (
+                <div className="p-4 bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  {bulkResult}
+                </div>
+              )}
+
+              <div className="max-h-60 overflow-y-auto border border-slate-800 rounded-xl divide-y divide-slate-800/60 bg-[#070b14] text-xs">
+                {bulkRows.slice(0, 20).map((row, idx) => (
+                  <div key={idx} className="p-3 flex items-center justify-between text-slate-300">
+                    <span className="font-mono text-emerald-400">{row.course_id || selectedCourse.id}</span>
+                    <span className="font-bold">Day {row.day_number || '1'} (Section {row.task_number || '1'})</span>
+                    <span className="truncate max-w-xs">{row.topic_title || row.title}</span>
+                    <span className="text-slate-400">{row.subject || 'Core'}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       )}
+
     </div>
   );
 }
