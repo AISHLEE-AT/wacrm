@@ -72,6 +72,7 @@ export default function TeachODashboard() {
     courseTitle: string;
     courseId: string;
     dayNumber: number;
+    taskNumber?: number;
   } | null>(null);
 
   // AI Chat Assistant State
@@ -425,6 +426,7 @@ export default function TeachODashboard() {
                             courseTitle: activeCourse.title,
                             courseId: activeCourse.id,
                             dayNumber: courseDay,
+                            taskNumber: idx + 1,
                           });
                         }}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -716,8 +718,9 @@ export default function TeachODashboard() {
           courseTitle={activePlayerTask.courseTitle}
           courseId={activePlayerTask.courseId}
           dayNumber={activePlayerTask.dayNumber}
+          taskNumber={activePlayerTask.taskNumber}
           onComplete={(xp) => {
-            const taskId = `${activePlayerTask.courseId}_day_${activePlayerTask.dayNumber}`;
+            const taskId = `${activePlayerTask.courseId}_day_${activePlayerTask.dayNumber}_task_${activePlayerTask.taskNumber || 1}`;
             handleTaskComplete(taskId, xp);
           }}
         />

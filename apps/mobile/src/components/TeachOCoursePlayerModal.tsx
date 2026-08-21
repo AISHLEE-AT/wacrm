@@ -107,7 +107,7 @@ function getEducationalFallbackVideoId(topic: string, subject: string): { videoI
     t.includes('எளிய கணிதம்')
   ) {
     return {
-      videoId: '0TgLtF3PMOc',
+      videoId: 'igcoDFokKzM',
       title: `${topic} - Number Counting & Magic Math`
     };
   }
@@ -152,7 +152,7 @@ function getEducationalFallbackVideoId(topic: string, subject: string): { videoI
     t.includes('உரிமைகள்')
   ) {
     return {
-      videoId: 'xqgCwgvInDU',
+      videoId: 'LgCg_1yP6_M',
       title: `${topic} - Indian Polity & Constitution Masterclass`
     };
   }
@@ -802,17 +802,21 @@ export default function TeachOCoursePlayerModal({
                   <Text style={styles.overviewText}>{content.notes.overview}</Text>
                 </View>
 
-                {content.notes.coreConcepts.map((concept, idx) => (
-                  <View key={idx} style={styles.card}>
-                    <Text style={styles.conceptHeading}>{concept.heading}</Text>
-                    <Text style={styles.conceptBody}>{concept.body}</Text>
-                    {concept.formulaOrExample && (
-                      <View style={styles.exampleBox}>
-                        <Text style={styles.exampleText}>{concept.formulaOrExample}</Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
+                {content.notes.coreConcepts.map((concept, idx) => {
+                  const bodyText = concept.body || (concept as any).content || content.notes.overview || '';
+                  const exampleText = concept.formulaOrExample || (concept as any).example || '';
+                  return (
+                    <View key={idx} style={styles.card}>
+                      <Text style={styles.conceptHeading}>{concept.heading}</Text>
+                      <Text style={styles.conceptBody}>{bodyText}</Text>
+                      {exampleText ? (
+                        <View style={styles.exampleBox}>
+                          <Text style={styles.exampleText}>{exampleText}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
 
                 {content.notes.bilingualExplanation && (
                   <View style={[styles.card, { borderColor: '#10b98140' }]}>

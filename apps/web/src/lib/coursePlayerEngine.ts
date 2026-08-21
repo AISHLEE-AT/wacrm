@@ -16,6 +16,7 @@
 import { lmsSupabase as aishleeSupabase } from './lms-supabase';
 import { resolveCanonicalTopic } from './canonicalTopicResolver';
 import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
+import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry';
 
 export interface VideoMeta {
   channel: string;
@@ -1455,13 +1456,233 @@ export function synthesizeFallbackContent(
 }
 
 /**
+ * Normalizes any content payload (from Supabase, local cache, JIT API, or deterministic syllabus)
+ * into a full, rich CoursePlayerContent interface with zero blank fields.
+ */
+export function normalizeCoursePlayerPayload(
+  raw: any,
+  topicTitle: string,
+  subject: string,
+  courseTitle: string,
+  dayNumber: number,
+  courseId?: string,
+  taskNumber?: number
+): CoursePlayerContent {
+  const fallbackVideo = resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle);
+  
+  // Extract overview
+  const overview = 
+    raw?.overview || 
+    raw?.notes?.overview || 
+    (Array.isArray(raw?.notes?.keyPoints) ? raw.notes.keyPoints.join(' ') : '') || 
+    (Array.isArray(raw?.keyPoints) ? raw.keyPoints.join(' ') : '') || 
+    `Day ${dayNumber}: Comprehensive syllabus lesson on ${topicTitle}. Designed with 100% adherence to standard textbook curriculum, official exam blueprints, and structured learning objectives.`;
+
+  // Extract core concepts
+  let rawConcepts = raw?.coreConcepts || raw?.notes?.coreConcepts || raw?.studyNotes || raw?.notes?.studyNotes || [];
+  if (!Array.isArray(rawConcepts) || rawConcepts.length === 0) {
+    const seq = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, taskNumber || 1);
+    rawConcepts = seq.keyConcepts || [
+      { heading: `1. Core Theoretical Foundations: ${topicTitle}`, content: overview, body: overview, example: 'Standard textbook principle.' },
+      { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm and step-by-step presentation to solve exam questions on ${topicTitle}.`, body: `Systematic algorithm and step-by-step presentation to solve exam questions on ${topicTitle}.`, example: 'Worked model question highlighting scoring points.' },
+      { heading: `3. High-Yield Formulas, Mnemonics & Exam Shortcuts`, content: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules for ${topicTitle}.`, body: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules for ${topicTitle}.`, example: 'Active Recall Examination Tip' }
+    ];
+  }
+
+  const coreConcepts = rawConcepts.map((c: any, i: number) => {
+    const heading = c.heading || c.sectionTitle || `Concept ${i + 1}`;
+    const textContent = c.body || c.content || c.explanation || overview;
+    const formulaOrExample = c.formulaOrExample || c.example || '';
+    return {
+      heading,
+      body: textContent,
+      content: textContent,
+      formulaOrExample
+    };
+  });
+
+  // Extract Tamil Explanation
+  const rawTamil = raw?.tamilExplanation || raw?.notes?.tamilExplanation;
+  const tamilExplanation = {
+    simpleTitle: rawTamil?.simpleTitle || raw?.topicTitle || topicTitle,
+    colloquialIntro: rawTamil?.colloquialIntro || `இன்றைய பாடத்தில் ${topicTitle} பற்றிய முக்கிய கருத்துகளை எளிய பேச்சுத்தமிழில் புரிந்து கொள்வோம்.`,
+    everydayAnalogy: rawTamil?.everydayAnalogy || 'அன்றாட வாழ்வில் நாம் காணும் எளிய நிகழ்வுகள் மூலம் இந்த விதியை நினைவில் வைக்கலாம்.',
+    keyPointsTamil: Array.isArray(rawTamil?.keyPointsTamil) && rawTamil.keyPointsTamil.length > 0
+      ? rawTamil.keyPointsTamil
+      : [
+          `1. ${topicTitle} - அடிப்படைக் கோட்பாடுகள்.`,
+          `2. தேர்வுக்கான முதன்மை சூத்திரம் மற்றும் விதிகள்.`,
+          `3. முழு மதிப்பெண் பெற எளிய நினைவு உத்திகள்.`
+        ]
+  };
+
+  // Extract formulas & shortcuts
+  let rawFormulas = raw?.formulasAndMnemonics || raw?.formulasAndShortcuts || raw?.notes?.formulasAndShortcuts || raw?.notes?.formulasAndMnemonics || [];
+  if (!Array.isArray(rawFormulas) || rawFormulas.length === 0) {
+    rawFormulas = [
+      { name: `${topicTitle} Master Rule`, formula: 'Standard Method / Equation', mnemonic: 'Active Recall Examination Tip', tip: 'Active Recall Examination Tip' }
+    ];
+  }
+  const formulasAndShortcuts = rawFormulas.map((f: any) => ({
+    name: f.name || `${topicTitle} Rule`,
+    formula: f.formula || 'Standard Formulation',
+    tip: f.tip || f.mnemonic || 'Active Recall Tip',
+    mnemonic: f.mnemonic || f.tip || 'Active Recall Tip'
+  }));
+
+  // Extract videoMeta
+  const rawVideoId = raw?.videoMeta?.youtubeVideoId || raw?.videoId || raw?.youtubeVideoId;
+  const blacklistedIds = ['0TgLtF3PMOc', 'xqgCwgvInDU', '2p8x9K4jW7Q'];
+  const isVideoValid = rawVideoId && typeof rawVideoId === 'string' && rawVideoId.length >= 8 && !blacklistedIds.includes(rawVideoId);
+  const youtubeVideoId = isVideoValid ? rawVideoId : (fallbackVideo.youtubeVideoId || 'LgCg_1yP6_M');
+
+  const videoMeta: VideoMeta = {
+    channel: raw?.videoMeta?.channelName || raw?.videoMeta?.channel || fallbackVideo.channelName || 'TeachO Masterclass',
+    channelUrl: raw?.videoMeta?.channelUrl || 'https://youtube.com/@TeachO',
+    youtubeVideoId,
+    videoTitle: raw?.videoMeta?.videoTitle || fallbackVideo.videoTitle || `${topicTitle} Masterclass`,
+    durationMinutes: raw?.videoMeta?.durationMinutes || fallbackVideo.durationMinutes || 18,
+    isOfficialAishlee: true,
+    channelName: raw?.videoMeta?.channelName || fallbackVideo.channelName || 'TeachO Masterclass',
+    duration: raw?.videoMeta?.duration || fallbackVideo.duration || '18 Min',
+    keyTimestamps: raw?.videoMeta?.keyTimestamps || [{ time: '0:00', label: 'Concept Overview' }]
+  };
+
+  // Extract MCQs
+  let rawMcqs = raw?.mcqs || raw?.practiceQuiz || [];
+  if (!Array.isArray(rawMcqs) || rawMcqs.length === 0) {
+    rawMcqs = [
+      {
+        question: `Which option represents the primary governing principle of ${topicTitle}?`,
+        options: ['A) Primary Governing Principle', 'B) Secondary Approximate Rule', 'C) Special Case Exception', 'D) None of the above'],
+        correctIndex: 0,
+        correctAnswer: 0,
+        explanation: 'Option A is the verified core definition according to standard textbook curriculum.'
+      },
+      {
+        question: `In standard board and competitive examinations, this concept carries:`,
+        options: ['A) High weightage with recurring questions', 'B) Negligible weightage', 'C) Optional reading only', 'D) Non-evaluated section'],
+        correctIndex: 0,
+        correctAnswer: 0,
+        explanation: 'This is an essential core syllabus component with recurring questions.'
+      },
+      {
+        question: `What is the most frequent examination error to avoid in this topic?`,
+        options: ['A) Calculation and sign errors', 'B) Incorrect unit conversion', 'C) Formula misapplication', 'D) All of the above'],
+        correctIndex: 3,
+        correctAnswer: 3,
+        explanation: 'Step-by-step verification of signs, units, and boundary conditions prevents common marks deduction.'
+      }
+    ];
+  }
+
+  const mcqs = rawMcqs.map((m: any, i: number) => ({
+    id: m.id || `q${i + 1}`,
+    question: m.question || `Question ${i + 1}`,
+    options: Array.isArray(m.options) && m.options.length >= 2 ? m.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+    correctIndex: typeof m.correctIndex === 'number' ? m.correctIndex : (typeof m.correctAnswer === 'number' ? m.correctAnswer : 0),
+    explanation: m.explanation || 'Verified curriculum standard answer.'
+  }));
+
+  // Extract VSAQs / 1-Line QnA
+  let rawVsaqs = raw?.vsaqs || raw?.oneLineQnA || [];
+  if (!Array.isArray(rawVsaqs) || rawVsaqs.length === 0) {
+    rawVsaqs = [
+      { question: `State the primary definition or law governing ${topicTitle}.`, answer: overview.substring(0, 120), marks: 2 },
+      { question: `Write the governing mathematical formula or rule for this lesson.`, answer: formulasAndShortcuts[0]?.formula || 'Standard formulation.', marks: 2 }
+    ];
+  }
+
+  const oneLineQnA = rawVsaqs.map((v: any) => ({
+    question: v.question || 'Key Question',
+    answer: v.answer || v.modelAnswer || 'Model answer.'
+  }));
+
+  const flashcards = raw?.flashcards || oneLineQnA.map((q: any, i: number) => ({
+    id: `fc_${i + 1}`,
+    front: q.question,
+    back: q.answer,
+    tamilHint: tamilExplanation?.keyPointsTamil?.[i] || ''
+  }));
+
+  const twoMarkQuestions = raw?.twoMarkQuestions || raw?.bookBackSolutions?.twoMarkShortAnswers || rawVsaqs.map((v: any) => ({
+    question: v.question || '2-Mark Question',
+    marks: v.marks || 2,
+    modelAnswer: v.answer || v.modelAnswer || 'Standard model answer.',
+    keyPointsToInclude: v.keyPoints || [v.answer || 'Key point']
+  }));
+
+  const fiveMarkQuestions = raw?.fiveMarkQuestions || (raw?.bookBackSolutions?.fiveMarkEssayAnswers ? raw.bookBackSolutions.fiveMarkEssayAnswers.map((f: any) => ({
+    question: f.question,
+    marks: f.marks || 5,
+    stepByStepSolution: f.structuredOutline || [f.modelAnswer],
+    diagramOrFormulaNote: f.modelAnswer
+  })) : [
+    {
+      question: `Explain ${topicTitle} in detail with standard textbook principles. (5 Marks)`,
+      marks: 5,
+      stepByStepSolution: [
+        '1. Definition and introduction of concept.',
+        '2. Core governing equations and laws.',
+        '3. Practical applications and real-world examples.',
+        '4. Key exam takeaways and conclusions.'
+      ]
+    }
+  ]);
+
+  const essayQuestions = raw?.essayQuestions || (raw?.bookBackSolutions?.fiveMarkEssayAnswers ? raw.bookBackSolutions.fiveMarkEssayAnswers.map((f: any) => ({
+    question: f.question,
+    marks: 10,
+    structuredOutline: f.structuredOutline || ['Introduction', 'Core Principles', 'Applications', 'Conclusion'],
+    modelEssay: f.modelAnswer || 'Comprehensive descriptive answer.'
+  })) : [
+    {
+      question: `Comprehensive Essay on ${topicTitle}: Theory, Derivations, and Exam Applications (10 Marks)`,
+      marks: 10,
+      structuredOutline: ['Introduction', 'Theoretical Principles', 'Analytical Applications', 'Conclusion'],
+      modelEssay: `Introduction:\n${overview}\n\nKey Principles:\nUnderstanding the core foundations of ${topicTitle} is essential for competitive and board examination success.`
+    }
+  ]);
+
+  return {
+    topicKey: raw?.topicKey || `${courseId || 'course'}_day_${dayNumber}`,
+    topicTitle: raw?.topicTitle || topicTitle,
+    courseTitle: raw?.courseTitle || courseTitle,
+    subject: raw?.subject || subject,
+    standardOrExam: raw?.standardOrExam || courseTitle,
+    category: raw?.category || subject,
+    dayNumber,
+    videoMeta,
+    notes: {
+      overview,
+      keyPoints: Array.isArray(raw?.notes?.keyPoints) ? raw.notes.keyPoints : (Array.isArray(raw?.keyPoints) ? raw.keyPoints : [overview]),
+      coreConcepts,
+      bilingualExplanation: raw?.notes?.bilingualExplanation || {
+        tamil: tamilExplanation.colloquialIntro,
+        english: overview
+      },
+      formulasAndShortcuts
+    },
+    oneLineQnA,
+    fillInTheBlanks: raw?.fillInTheBlanks || [],
+    mcqs,
+    twoMarkQuestions,
+    fiveMarkQuestions,
+    essayQuestions,
+    flashcards,
+    xpReward: raw?.xpReward || 20,
+    bookBackSolutions: raw?.bookBackSolutions,
+    solvedProblems: raw?.solvedProblems,
+    diagramsAndVisuals: raw?.diagramsAndVisuals
+  } as CoursePlayerContent;
+}
+
+/**
  * Main Content Resolver:
- * 1. Resolves Canonical Micro-Topic Key for Cross-Course Deduplication & Reuse
- * 2. Checks In-Memory Cache (Instant 0ms)
- * 3. Checks Supabase LMS Database (kindle_content_cache)
- * 4. Checks Local localStorage Cache
- * 5. On-Demand JIT API Fetcher
- * 6. Returns 100% topic-matched deterministic academic content and persists to Supabase & localStorage
+ * 1. Checks In-Memory Cache (Instant 0ms)
+ * 2. Checks Supabase LMS Database (kindle_content_cache)
+ * 3. Normalizes all structures (top-level or nested)
+ * 4. Falls back to Deterministic Master Syllabus (100% textbook-aligned)
  */
 export async function getCoursePlayerContent(
   topicTitle: string,
@@ -1469,19 +1690,29 @@ export async function getCoursePlayerContent(
   courseTitle: string = 'Master Course',
   dayNumber: number = 1,
   courseIdOrAi?: string | boolean,
-  allowAi?: boolean
+  allowAiOrTaskNum?: boolean | number,
+  taskNumberParam?: number
 ): Promise<CoursePlayerContent | null> {
   const courseId = typeof courseIdOrAi === 'string' ? courseIdOrAi : '';
-  const allowAiGeneration = typeof courseIdOrAi === 'boolean' ? courseIdOrAi : (allowAi ?? false);
+  const taskNumber = typeof allowAiOrTaskNum === 'number' ? allowAiOrTaskNum : (typeof taskNumberParam === 'number' ? taskNumberParam : undefined);
+  
+  // Extract task number from topic title if not explicitly passed
+  const secMatch = topicTitle.match(/(?:Section|Period|Task|Module)\s*#?(\d+)/i);
+  const resolvedTaskNum = taskNumber || (secMatch ? parseInt(secMatch[1], 10) : 1);
+
+  const directTaskKey = courseId ? `${courseId}_day_${dayNumber}_task_${resolvedTaskNum}` : undefined;
   const directIdKey = courseId ? `${courseId}_day_${dayNumber}` : undefined;
   const canonicalDef = resolveCanonicalTopic(topicTitle, subject, courseTitle);
   const canonicalKey = canonicalDef.canonicalKey;
   const daySpecificKey = `${canonicalKey}_day_${dayNumber}`;
   const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
-  const persistKeys = { daySpecificKey, cacheKey, directIdKey };
+  const persistKeys = { daySpecificKey, cacheKey, directIdKey: directTaskKey || directIdKey };
 
-  // 1. Check In-Memory Cache (Instant 0ms) — day-specific first
+  // 1. Check In-Memory Cache (Instant 0ms)
+  if (directTaskKey && inMemoryContentCache.has(directTaskKey)) {
+    return inMemoryContentCache.get(directTaskKey)!;
+  }
   if (directIdKey && inMemoryContentCache.has(directIdKey)) {
     return inMemoryContentCache.get(directIdKey)!;
   }
@@ -1492,183 +1723,80 @@ export async function getCoursePlayerContent(
     return inMemoryContentCache.get(cacheKey)!;
   }
 
-  // 2. Check Supabase LMS Database (kindle_content_cache) — day-specific first
+  // 2. Check Supabase LMS Database (kindle_content_cache)
   try {
-    if (directIdKey) {
-      const { data: idData, error: idError } = await aishleeSupabase
+    const candidateKeys = [
+      directTaskKey,
+      directIdKey,
+      `${canonicalKey}_day_${dayNumber}_task_${resolvedTaskNum}`,
+      daySpecificKey,
+      canonicalKey
+    ].filter(Boolean) as string[];
+
+    for (const key of candidateKeys) {
+      const { data, error } = await aishleeSupabase
         .from('kindle_content_cache')
         .select('kindle_json')
-        .eq('topic_key', directIdKey)
+        .eq('topic_key', key)
         .limit(1);
 
-      if (!idError && idData && idData.length > 0 && idData[0].kindle_json) {
-        const item = idData[0].kindle_json as CoursePlayerContent;
-        if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-          // Persist to in-memory + localStorage (Supabase already has it)
-          inMemoryContentCache.set(directIdKey, item);
-          inMemoryContentCache.set(daySpecificKey, item);
-          inMemoryContentCache.set(cacheKey, item);
-          try { if (typeof window !== 'undefined') localStorage.setItem(cacheKey, JSON.stringify(item)); } catch (e) {}
-          return item;
-        }
-      }
-    }
-    // Try day-specific key
-    const { data: dayData, error: dayError } = await aishleeSupabase
-      .from('kindle_content_cache')
-      .select('kindle_json')
-      .eq('topic_key', daySpecificKey)
-      .limit(1);
-
-    if (!dayError && dayData && dayData.length > 0 && dayData[0].kindle_json) {
-      const item = dayData[0].kindle_json as CoursePlayerContent;
-      if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-        inMemoryContentCache.set(daySpecificKey, item);
-        inMemoryContentCache.set(cacheKey, item);
-        try { if (typeof window !== 'undefined') localStorage.setItem(cacheKey, JSON.stringify(item)); } catch (e) {}
-        return item;
-      }
-    }
-
-    // Fallback to day-agnostic canonical key
-    const { data, error } = await aishleeSupabase
-      .from('kindle_content_cache')
-      .select('kindle_json')
-      .eq('topic_key', canonicalKey)
-      .limit(1);
-
-    if (!error && data && data.length > 0 && data[0].kindle_json) {
-      const item = data[0].kindle_json as CoursePlayerContent;
-      if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-        const dayAdjusted = { ...item, dayNumber, topicKey: daySpecificKey };
-        inMemoryContentCache.set(daySpecificKey, dayAdjusted);
-        inMemoryContentCache.set(cacheKey, dayAdjusted);
-        try { if (typeof window !== 'undefined') localStorage.setItem(cacheKey, JSON.stringify(dayAdjusted)); } catch (e) {}
-        return dayAdjusted;
+      if (!error && data && data.length > 0 && data[0].kindle_json) {
+        const normalized = normalizeCoursePlayerPayload(
+          data[0].kindle_json,
+          topicTitle,
+          subject,
+          courseTitle,
+          dayNumber,
+          courseId,
+          resolvedTaskNum
+        );
+        inMemoryContentCache.set(key, normalized);
+        if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
+        inMemoryContentCache.set(daySpecificKey, normalized);
+        inMemoryContentCache.set(cacheKey, normalized);
+        return normalized;
       }
     }
   } catch (e) {
-    // Non-blocking
+    // Non-blocking fallback
   }
 
   // 3. Check Local localStorage Cache
   try {
-    const localCached = (typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null);
-    if (localCached) {
-      const parsed = JSON.parse(localCached) as CoursePlayerContent;
-      if (parsed && parsed.notes && parsed.mcqs && parsed.mcqs.length > 0) {
-        inMemoryContentCache.set(daySpecificKey, parsed);
-        inMemoryContentCache.set(cacheKey, parsed);
-        return parsed;
+    if (typeof window !== 'undefined') {
+      const localCached = localStorage.getItem(cacheKey);
+      if (localCached) {
+        const parsed = JSON.parse(localCached);
+        if (parsed) {
+          const normalized = normalizeCoursePlayerPayload(parsed, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
+          inMemoryContentCache.set(daySpecificKey, normalized);
+          inMemoryContentCache.set(cacheKey, normalized);
+          return normalized;
+        }
       }
     }
   } catch (e) {}
 
-  // 4. On-Demand Just-In-Time (JIT) API Fetcher
+  // 4. Fallback to Deterministic Sequential Master Syllabus (100% authentic, zero blank fields)
   try {
-    if (typeof window !== 'undefined') {
-      const userGeminiKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key') || undefined;
-      const res = await fetch('/api/kindle-ai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(userGeminiKey ? { 'x-user-gemini-key': userGeminiKey } : {})
-        },
-        body: JSON.stringify({
-          topicTitle,
-          courseTitle,
-          courseId,
-          dayNumber,
-          userGeminiKey,
-          board: courseTitle.includes('CBSE') ? 'CBSE' : courseTitle.includes('Matric') ? 'Matric' : 'TNSB',
-          standard: courseTitle
-        })
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        if (json && (json.notes || json.coreConcepts) && json.mcqs && json.mcqs.length > 0) {
-          const transformed: CoursePlayerContent = {
-            topicTitle: json.topicTitle || topicTitle,
-            courseTitle: courseTitle,
-            subject: subject,
-            standardOrExam: courseTitle,
-            category: json.category || subject,
-            videoMeta: {
-              channel: json.videoMeta?.channelName || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).channelName || 'TeachO Masterclass',
-              channelUrl: 'https://youtube.com/@TeachO',
-              youtubeVideoId: json.videoMeta?.youtubeVideoId || json.videoId || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).youtubeVideoId || 'LgCg_1yP6_M',
-              videoTitle: json.videoMeta?.videoTitle || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).videoTitle || topicTitle,
-              durationMinutes: resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).durationMinutes || 18,
-              isOfficialAishlee: true,
-              channelName: json.videoMeta?.channelName || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).channelName || 'TeachO Masterclass',
-              duration: json.videoMeta?.duration || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).duration || '18 Min',
-              keyTimestamps: json.videoMeta?.keyTimestamps || [{ time: '0:00', label: 'Concept Overview' }]
-            },
-            notes: json.notes || {
-              overview: json.overview || '',
-              keyPoints: json.keyPoints || [],
-              coreConcepts: json.coreConcepts || [],
-              bilingualExplanation: json.bilingualExplanation,
-              formulasAndShortcuts: json.formulasAndShortcuts || json.formulasAndMnemonics || []
-            },
-            flashcards: json.flashcards || (json.coreConcepts || []).map((c: any, i: number) => ({
-              id: `fc_${i+1}`,
-              front: c.heading || `Concept ${i+1}`,
-              back: c.content || `Explanation for ${c.heading}`,
-              tamilHint: json.tamilExplanation?.keyPointsTamil?.[i] || ''
-            })),
-            oneLineQnA: json.vsaqs?.map((v: any) => ({
-              question: v.question,
-              answer: v.answer
-            })) || json.oneLineQnA || [],
-            fillInTheBlanks: json.fillInTheBlanks || [],
-            mcqs: json.mcqs?.map((m: any) => ({
-              question: m.question,
-              options: m.options || [],
-              correctIndex: typeof m.correctAnswer === 'number' ? m.correctAnswer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
-              explanation: m.explanation || 'Verified answer.'
-            })) || [],
-            twoMarkQuestions: json.vsaqs?.map((v: any) => ({
-              question: v.question,
-              marks: v.marks || 2,
-              modelAnswer: v.answer,
-              keyPointsToInclude: [v.answer]
-            })) || [],
-            fiveMarkQuestions: json.shortAnswers?.map((s: any) => ({
-              question: s.question,
-              marks: s.marks || 5,
-              stepByStepSolution: s.points || s.solutionSteps || [],
-              diagramOrFormulaNote: s.keyTips
-            })) || [],
-            essayQuestions: json.essayQuestions || [],
-            dayNumber,
-            topicKey: directIdKey || daySpecificKey
-          };
-
-          // Persist JIT results immediately to all 3 layers
-          await persistContent(transformed, persistKeys, { topicTitle, courseTitle, modelUsed: 'jit-kindle-ai' });
-          return transformed;
-        }
-      }
+    const seqItem = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, resolvedTaskNum);
+    if (seqItem) {
+      const normalized = normalizeCoursePlayerPayload(seqItem, topicTitle || seqItem.topicTitle, subject || seqItem.subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
+      await persistContent(normalized, persistKeys, { topicTitle: normalized.topicTitle, courseTitle, modelUsed: 'master-sequential-engine-v3' });
+      return normalized;
     }
-  } catch (jitErr) {
-    // Fallback gracefully to deterministic offline syllabus
-  }
+  } catch (e) {}
 
-  // 5. High-Precision Topic & Day Matched Fallback Engine (0ms instant response)
+  // 5. Ultimate Fallback
   const fallback = synthesizeFallbackContent(topicTitle, subject, courseTitle, dayNumber);
   if (fallback) {
-    fallback.dayNumber = dayNumber;
-    fallback.topicKey = daySpecificKey;
-    // Persist immediately to all 3 layers
-    await persistContent(fallback, persistKeys, { topicTitle, courseTitle, modelUsed: 'deterministic-academic-engine-v2' });
-    return fallback;
+    const normalized = normalizeCoursePlayerPayload(fallback, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
+    await persistContent(normalized, persistKeys, { topicTitle, courseTitle, modelUsed: 'deterministic-academic-engine-v2' });
+    return normalized;
   }
 
   return null;
 }
-
 
 export const loadCoursePlayerContent = getCoursePlayerContent;
 

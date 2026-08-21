@@ -32,6 +32,7 @@ interface TeachOCoursePlayerModalProps {
   courseTitle: string;
   courseId: string;
   dayNumber: number;
+  taskNumber?: number;
   onComplete?: (xp: number) => void;
 }
 
@@ -43,6 +44,7 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
   courseTitle,
   courseId,
   dayNumber,
+  taskNumber,
   onComplete,
 }) => {
   const [content, setContent] = useState<CoursePlayerContent | null>(null);
@@ -66,7 +68,7 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
     setSelectedAnswers({});
     setIsCompleted(false);
 
-    loadCoursePlayerContent(topicTitle, subject, courseTitle, dayNumber, courseId)
+    loadCoursePlayerContent(topicTitle, subject, courseTitle, dayNumber, courseId, taskNumber)
       .then(res => {
         if (mounted) {
           setContent(res);
@@ -80,11 +82,13 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
     return () => {
       mounted = false;
     };
-  }, [isOpen, topicTitle, subject, courseTitle, dayNumber, courseId]);
+  }, [isOpen, topicTitle, subject, courseTitle, dayNumber, courseId, taskNumber]);
 
   if (!isOpen) return null;
 
-  const videoId = content?.videoMeta?.youtubeVideoId || '0TgLtF3PMOc';
+  const rawVideoId = content?.videoMeta?.youtubeVideoId;
+  const isVideoValid = rawVideoId && rawVideoId !== '0TgLtF3PMOc' && rawVideoId !== 'xqgCwgvInDU' && rawVideoId !== '2p8x9K4jW7Q';
+  const videoId = isVideoValid ? rawVideoId : 'LgCg_1yP6_M';
   const videoTitle = content?.videoMeta?.videoTitle || topicTitle;
 
   const handlePlayPause = () => {
@@ -267,30 +271,34 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
                   {activeTab === 'notes' && (
                     <div className="space-y-4">
                       {/* Overview Block */}
-                      {content?.notes?.overview && (
+                      {(content?.notes?.overview || (content as any)?.overview) && (
                         <div className="p-4 rounded-2xl bg-[#111827] border border-slate-800 text-xs leading-relaxed text-slate-200 space-y-1">
                           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
                             Lesson Concept Overview
                           </span>
-                          <p>{content.notes.overview}</p>
+                          <p>{content?.notes?.overview || (content as any)?.overview}</p>
                         </div>
                       )}
 
                       {/* Core Concept Breakdown Sections */}
-                      {content?.notes?.coreConcepts && content.notes.coreConcepts.map((sec, sIdx) => (
-                        <div key={sIdx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-2">
-                          <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                            {sec.heading}
-                          </h4>
-                          <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{sec.body}</p>
-                          {sec.formulaOrExample && (
-                            <div className="mt-2 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/20 text-emerald-300 font-mono text-[11px]">
-                              💡 {sec.formulaOrExample}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      {content?.notes?.coreConcepts && content.notes.coreConcepts.map((sec, sIdx) => {
+                        const bodyText = sec.body || (sec as any).content || content?.notes?.overview || '';
+                        const exampleText = sec.formulaOrExample || (sec as any).example || '';
+                        return (
+                          <div key={sIdx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-2">
+                            <h4 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                              {sec.heading}
+                            </h4>
+                            <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{bodyText}</p>
+                            {exampleText && (
+                              <div className="mt-2 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/20 text-emerald-300 font-mono text-[11px]">
+                                💡 {exampleText}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
 
                       {/* Formulas & Shortcuts */}
                       {content?.notes?.formulasAndShortcuts && content.notes.formulasAndShortcuts.length > 0 && (
@@ -303,7 +311,7 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
                               <div key={fIdx} className="p-2.5 rounded-xl bg-[#080d1a] border border-slate-800 flex flex-col gap-1">
                                 <span className="text-xs font-bold text-white">{f.name}</span>
                                 <span className="font-mono text-emerald-400 text-xs">{f.formula}</span>
-                                {f.tip && <span className="text-[10px] text-slate-400">💡 {f.tip}</span>}
+                                {(f.tip || (f as any).mnemonic) && <span className="text-[10px] text-slate-400">💡 {f.tip || (f as any).mnemonic}</span>}
                               </div>
                             ))}
                           </div>
