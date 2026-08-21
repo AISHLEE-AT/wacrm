@@ -1,7 +1,11 @@
 /**
  * TeachO Master Course Syllabus Registry
- * Provides authentic, vast, real-world, micro-granular syllabus trees for all 86 courses!
- * 100% Aligned with Official Blueprints: NEET NTA, JEE NTA, CBSE NCERT, TNSB Samacheer, TNPSC, UPSC.
+ * Complete Authentic Real-World Micro-Granular Curricula for all 86 Courses:
+ * - NEET UG (NTA/NMC Official Blueprint)
+ * - TNPSC Unified All Groups (Group 1, 2/2A, 4, VAO, DEO, SI, Police - Prelims + Mains)
+ * - Class 11 & 12 Commerce (Accountancy, Business Studies, Economics)
+ * - Kindergarten (LKG & UKG Phonics, Rhymes, Numbers, EVS)
+ * - K-12 School (TNSB Samacheer & CBSE NCERT)
  */
 
 export interface SyllabusMicroTopic {
@@ -48,7 +52,221 @@ export interface CourseFullSyllabus {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. NEET UG OFFICIAL VAST MICRO-TOPIC SYLLABUS REGISTRY
+// 1. TNPSC UNIFIED MASTER SYLLABUS (GROUP 1, 2/2A, 4, VAO, DEO, SI)
+// ─────────────────────────────────────────────────────────────────────────────
+export function getTnpscUnifiedCompleteSyllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
+  const isGroup1 = (courseId || '').includes('grp1');
+  const isGroup4 = (courseId || '').includes('grp4') || (courseId || '').includes('vao');
+
+  // SUBJECT 1: GENERAL TAMIL (பகுதி அ: இலக்கணம், பகுதி ஆ: இலக்கியம், பகுதி இ: தமிழ் அறிஞர்கள்)
+  const tamilChapters: SyllabusChapter[] = [
+    {
+      chapterNumber: 1,
+      chapterTitle: 'பகுதி அ: தமிழ் இலக்கணம் (Grammar Masterclass)',
+      description: 'எழுத்து, சொல், சந்திப்பிழை நீக்குதல், ஓரெழுத்து ஒருமொழி, வேர்ச்சொல், பெயர்ச்சொல் 6 வகை, இலக்கணக் குறிப்பறிதல் & வேற்றுமை',
+      microTopics: [
+        { id: 'tn_t_1', topicTitle: 'முதல் & சார்பெழுத்துகள் (10 வகைகள்) & புணர்ச்சி விதிகள்', subtopic: 'உயிர் 12, மெய் 18, உயிர்மெய், ஆய்தம், உயிரளபெடை, ஒற்றளபெடை, குற்றியலுகரம், குற்றியலிகரம்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'முதல் எழுத்துகள் 30 | சார்பெழுத்துகள் 10 வகை | குற்றியலுகரம் 6 வகை (நெடில்தொடர், ஆய்தத்தொடர், உயிர்த்தொடர், வன்தொடர், மென்தொடர், இடைத்தொடர்)', keyPoints: ['உயிரளபெடை 3 வகை: செய்யுளிசை, இன்னிசை, சொல்லிசை', 'ஆய்த குறுக்கம் மற்றும் மகர குறுக்கம் மாத்திரை அளவுகள் (1/4 மாத்திரை)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_2', topicTitle: 'வேற்றுமை உருபுகள் (1 முதல் 8 வரை) & சொல்லுருபுகள்', subtopic: 'ஐ, ஆல், கு, இன், அது, கண் வேற்றுமைத் தொடர்கள் மற்றும் உடன்தொக்க தொகை', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: '2-ம் வேற்றுமை: ஐ | 3-ம்: ஆல், ஆண், ஒடு, ஓடு | 4-ம்: கு | 5-ம்: இன், இல் | 6-ம்: அது, ஆது, அ | 7-ம்: கண் | 8-ம்: விளி', keyPoints: ['முதல் வேற்றுமைக்கு உருபு இல்லை (எழுவாய் வேற்றுமை)', '8-ம் வேற்றுமை விளி வேற்றுமை (அழைத்தல்)', 'மரப்பலகை: மரத்தால் ஆகிய பலகை (3-ம் வேற்றுமை உருபும் பயனும் உடன்தொக்க தொகை)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_3', topicTitle: 'வலிமிகும் இடங்கள் & வலிமிகா இடங்கள் (சந்திப்பிழை நீக்குதல்)', subtopic: 'நிலைமொழி, வருமொழி புணர்ச்சி, சுட்டெழுத்துக்கள், ஓரெழுத்து ஒருமொழிகள் பின் வலிமிகும் விதிகள்', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'அ, இ சுட்டெழுத்துகள் & எ வினாவெழுத்தின் பின் வலிமிகும் | வினைத்தொகை, உம்மைத்தொகையில் வலிமிகாது', keyPoints: ['அந்த + பையன் = அந்தப் பையன் (வலிமிகும்)', 'குடி + நீர் = குடிநீர் (வினைத்தொகையில் மிகாது)', 'இரண்டாம் வேற்றுமை விரி தொடரில் வலிமிகும்'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_t_4', topicTitle: 'ஓரெழுத்து ஒருமொழி (42 சொற்கள்) & வேர்ச்சொல் மாற்றம்', subtopic: 'நன்னூல் 42 ஓரெழுத்து ஒருமொழிகள் & வினையாலணையும் பெயர், தொழிற்பெயர் உருவாக்கம்', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'நெடில் 40 + குறில் 2 (நொ, து) = 42 சொற்கள் (நன்னூல் நூற்பா)', keyPoints: ['ஆ-பசு, மா-பெரிய/விலங்கு, கோ-அரசன், கா-காடு, தீ-நெருப்பு, தை-மாதம்', 'படித்தான் வேர்ச்சொல்: படி -> வினையெச்சம்: படித்து -> வினையாலணையும் பெயர்: படித்தவர்'], type: 'memorization', importance: 'High-Yield' },
+        { id: 'tn_t_5', topicTitle: 'வாக்கிய வகைகள் & இலக்கணக் குறிப்பறிதல் (6 வகை பெயர்ச்சொற்கள்)', subtopic: 'தன்வினை, பிறவினை, செய்வினை, செயப்பாட்டு வினை, நேர்க்கூற்று, அயற்கூற்று மற்றும் பொருட்பெயர் முதல் தொழிற்பெயர் வரை', dayNumber: 21, periodNumber: 1, keyFormulaOrLaw: 'பொருட்பெயர், இடப்பெயர், காலப்பெயர், சினைப்பெயர், பண்புப்பெயர், தொழிற்பெயர்', keyPoints: ['செந்தாமரை (பண்புத்தொகை)', 'காய் கனி (உம்மைத்தொகை)', 'படித்தல் (தொழிற்பெயர்)'], type: 'quiz', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 2,
+      chapterTitle: 'பகுதி ஆ: இலக்கியம் — திருக்குறள் (19 அதிகாரங்கள்) & அறநூல்கள்',
+      description: 'அன்பு, பண்பு, கல்வி, கேள்வி, அறிவு, ஒழுக்கம், நட்பு, வாய்மை, காலமறிதல், வலியறிதல், நாலடியார், நான்மணிக்கடிகை, பழமொழி நானூறு',
+      microTopics: [
+        { id: 'tn_t_6', topicTitle: 'திருக்குறள்: கடவுள் வாழ்த்து, வான்சிறப்பு & நீத்தார் பெருமை (அதிகாரம் 1, 2, 3)', subtopic: 'அகர முதல எழுத்தெல்லாம், துப்பார்க்குத் துப்பாய & ஒழுக்கத்து நீத்தார் பெருமை', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'அகர முதல எழுத்தெல்லாம் ஆதி பகவன் முதற்றே உலகு | செயற்கரிய செய்வார் பெரியர் சிறியர் செய்கலா தார்', keyPoints: ['பரிமேலழகர் உரை திருக்குறளின் மிகச்சிறந்த உரை', 'திருக்குறள் அறத்துப்பால் 38, பொருட்பால் 70, காமத்துப்பால் 25 = 133 அதிகாரங்கள் (1330 குறள்கள்)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_7', topicTitle: 'திருக்குறள்: அன்புடைமை, கல்வி & அறிவுடைமை (அதிகாரம் 8, 40, 43)', subtopic: 'அன்பிலார் எல்லாம் தமக்குரியர், கற்க கசடறக் கற்பவை & அறிவற்றங் காக்கும் கருவி', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'அன்பின் வழியது உயிர்நிலை அஃதிலார்க்கு என்புதோல் போர்த்த உடம்பு | தொட்டனைத் தூறும் மணற்கேணி மாந்தர்க்குக் கற்றனைத் தூறும் அறிவு', keyPoints: ['அன்புடைமை குறள்கள் நயவுரை', 'எப்பொருள் யார்யார்வாய்க் கேட்பினும் அப்பொருள் மெய்ப்பொருள் காண்ப தறிவு'], type: 'memorization', importance: 'High-Yield' },
+        { id: 'tn_t_8', topicTitle: 'பதினெண்கீழ்க்கணக்கு அறநூல்கள்: நாலடியார், நான்மணிக்கடிகை, பழமொழி நானூறு', subtopic: 'சமண முனிவர்கள் (நாலடியார்), விளம்பி நாகனார் (நான்மணிக்கடிகை), முன்றுறை அரையனார் (பழமொழி நானூறு)', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'நாலும் இரண்டும் சொல்லுக்குறுதி (நாலடியார் 400 + திருக்குறள் 2 அடிக் குறள்கள்)', keyPoints: ['கல்வி கரையில கற்பவர் நாள்சில (நாலடியார்)', 'பழமொழி நானூறு ஒவ்வொரு பாடலிலும் ஒரு பழமொழி இடம் பெறும்'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 3,
+      chapterTitle: 'பகுதி ஆ: சங்க இலக்கியம், காப்பியங்கள் & பக்தி இலக்கியம்',
+      description: 'எட்டுத்தொகை, பத்துப்பாட்டு, சிலப்பதிகாரம், மணிமேகலை, சீவகசிந்தாமணி, கம்பராமாயணம், பெரியபுராணம், தேவாரம் & திருவாசகம்',
+      microTopics: [
+        { id: 'tn_t_9', topicTitle: 'எட்டுத்தொகை & பத்துப்பாட்டு சங்க இலக்கிய நயவுரை', subtopic: 'நற்றிணை, குறுந்தொகை, புறநானூறு, முல்லைப்பாட்டு, மதுரைக்காஞ்சி மேற்கோள்கள்', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'நற்றிணை நல்ல குறுந்தொகை ஐங்குறுநூறு ஒத்த பதிற்றுப்பத்து ஓங்கு பரிபாடல் கற்றறிந்தார் ஏத்தும் கலியோடு அகம் புறம் என்று இத்திறத்த எட்டுத்தொகை', keyPoints: ['யாதும் ஊரே யாவரும் கேளிர் — கணியன் பூங்குன்றனார் (புறநானூறு)', 'உண்டி கொடுத்தோர் உயிர் கொடுத்தோரே — குடபுலவியனார்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_10', topicTitle: 'ஐம்பெருங்காப்பியங்கள்: சிலப்பதிகாரம், மணிமேகலை & சீவகசிந்தாமணி', subtopic: 'இளங்கோவடிகள், சீத்தலைச் சாத்தனார், திருத்தக்கதேவர் காப்பியக் கட்டமைப்பு & கம்பராமாயணம் 6 காண்டங்கள்', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'அரசியல் பிழைத்தோர்க்கு அறங்கூற்றாவதூஉம் உரைசால் பத்தினியை உயர்ந்தோர் ஏத்தலும் ஊழ்வினை உருத்துவந்து ஊட்டும்', keyPoints: ['சிலப்பதிகாரம்: புகார், மதுரை, வஞ்சிக் காண்டங்கள் 30 காதைகள்', 'மணிமேகலை: துறவுக் காப்பியம், அமுதசுரபி சிறப்புகள்', 'கம்பராமாயணம்: பாலகாண்டம் முதல் யுத்தகாண்டம் வரை 6 காண்டங்கள்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_11', topicTitle: 'பக்தி இலக்கியம் & சிற்றிலக்கியங்கள்: தேவாரம், திருவாசகம், கலிங்கத்துப் பரணி', subtopic: 'அப்பர், சம்பந்தர், சுந்தரர் தேவாரம், மாணிக்கவாசகர் திருவாசகம், ஜெயங்கொண்டார் கலிங்கத்துப்பரணி, குற்றாலக்குறவஞ்சி', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'திருவாசகத்திற்கு உருகார் ஒரு வாசகத்திற்கும் உருகார் | பரணிக்கோர் ஜெயங்கொண்டார்', keyPoints: ['நாலாயிர திவ்வியப் பிரபந்தம் தொகுத்தவர் நாதமுனிகள்', 'கலிங்கத்துப்பரணி முதலாம் குலோத்துங்க சோழன் தளபதி கருணாகரத் தொண்டைமான் போர் வெற்றி'], type: 'concept', importance: 'Core Standard' }
+      ]
+    },
+    {
+      chapterNumber: 4,
+      chapterTitle: 'பகுதி இ: தமிழ் அறிஞர்களும் தமிழ்த் தொண்டும் & நாட்டுப்புறக் கலைகள்',
+      description: 'மகாகவி பாரதியார், பாரதிதாசன், நாமக்கல் கவிஞர், கவிமணி, உ.வே.சா, பரிதிமாற்கலைஞர், பெரியார், அண்ணா, கரகாட்டம், தெருக்கூத்து',
+      microTopics: [
+        { id: 'tn_t_12', topicTitle: 'மகாகவி பாரதியார் & புரட்சிக் கவிஞர் பாரதிதாசன்', subtopic: 'சுதேசமித்திரன், இந்தியா இதழ்கள், பாஞ்சாலி சபதம், குடும்ப விளக்கு, பாண்டியன் பரிசு, இருண்ட வீடு', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'பாட்டுக்கொரு புலவன் பாரதி | எங்கள் வாழ்வும் எங்கள் வளமும் மங்காத தமிழென்று சங்கே முழங்கு', keyPoints: ['பாரதியார் இயற்பெயர் சுப்பிரமணியன், எட்டயபுர மன்னரால் பாரதி பட்டம்', 'பாரதிதாசன் இயற்பெயர் கனகசுப்புரத்தினம்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_13', topicTitle: 'தமிழ்த்தாத்தா உ.வே.சா & பரிதிமாற்கலைஞர் தமிழ்த் தொண்டு', subtopic: 'ஓலைச்சுவடிகள் பதிப்புப் பணி, என் சரித்திரம், திராவிட சாஸ்திரி பட்டம் & உயர்தனிச் செம்மொழி பிரகடனம்', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'என் சரித்திரம் — உ.வே.சா தன் வரலாறு | பரிதிமாற்கலைஞர் இயற்பெயர் வி.கோ.சூரியநாராயண சாஸ்திரியார்', keyPoints: ['உ.வே.சா 1887-ல் சீவகசிந்தாமணியை முதன்முதலில் பதிப்பித்தார்', 'பரிதிமாற்கலைஞர் தமிழ் மொழியை உயர்தனிச் செம்மொழி என முதன்முதலில் நிலைநாட்டினார்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_t_14', topicTitle: 'தந்தை பெரியார், பேரறிஞர் அண்ணா & பெருந்தலைவர் காமராசர்', subtopic: 'சுயமரியாதை இயக்கம், குடியரசு இதழ், 1969 தமிழ்நாடு பெயர் மாற்றம், இருமொழிக் கொள்கை, தொடக்கக் கல்வி புரட்சி', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: '14 ஜனவரி 1969: மதராஸ் மாநிலம் "தமிழ்நாடு" என அண்ணாவால் பெயர் மாற்றம் செய்யப்பட்டது', keyPoints: ['பெரியார் 1925-ல் சுயமரியாதை இயக்கத்தைத் தொடங்கினார்', 'காமராசர் இலவச மதிய உணவு மற்றும் இலவச சீருடைத் திட்டத்தை அறிமுகப்படுத்தினார்'], type: 'concept', importance: 'High-Yield' }
+      ]
+    }
+  ];
+
+  // SUBJECT 2: INDIAN POLITY & CONSTITUTION (UNIT V)
+  const polityChapters: SyllabusChapter[] = [
+    {
+      chapterNumber: 1,
+      chapterTitle: 'அரசியலமைப்பு உருவாக்கம், முகப்புரை & குடியுரிமை (Part 1 & 2)',
+      description: 'அரசியல் நிர்ணய சபை, வரைவுக்குழு தலைவர் டாக்டர் அம்பேத்கர், முகப்புரை மற்றும் குடியுரிமை சட்டம் 1955',
+      microTopics: [
+        { id: 'tn_pol_1', topicTitle: 'அரசியல் நிர்ணய சபை & வரைவுக்குழு (Constituent Assembly)', subtopic: '1946 கேபினட் மிஷன், டாக்டர் ராஜேந்திர பிரசாத், வரைவுக்குழு 7 உறுப்பினர்கள், 2 ஆண்டுகள் 11 மாதங்கள் 18 நாட்கள்', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'முதல் கூட்டம்: 9 டிசம்பர் 1946 | அரசியல் சாசனம் ஏற்றுக்கொள்ளப்பட்டது: 26 நவம்பர் 1949 | நடைமுறை: 26 ஜனவரி 1950', keyPoints: ['வரைவுக்குழு தலைவர் டாக்டர் பி.ஆர். அம்பேத்கர் (இந்திய அரசியலமைப்பின் தந்தை)', 'அரசியலமைப்பு ஆலோசகர் பி.என். ராவ்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_pol_2', topicTitle: 'அரசியலமைப்பின் முகப்புரை & 42-வது சட்டத்திருத்தம் 1976 (Preamble)', subtopic: 'இறையாண்மை, சமதர்ம, மதச்சார்பற்ற, ஜனநாயக, குடியரசு (SOVEREIGN, SOCIALIST, SECULAR, DEMOCRATIC, REPUBLIC)', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: '42nd Amendment Act 1976 added: SOCIALIST, SECULAR, INTEGRITY', keyPoints: ['கேசவானந்த பாரதி வழக்கு 1973: முகப்புரை அரசியலமைப்பின் ஓர் அங்கமே', 'ஜவஹர்லால் நேருவின் குறிக்கோள் தீர்மானம் (Objective Resolution 1946) முகப்புரையாக ஏற்றுக்கொள்ளப்பட்டது'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_pol_3', topicTitle: 'பகுதி 1 & 2: இந்திய ஒன்றியம் & குடியுரிமை சட்டம் 1955 (Articles 1–11)', subtopic: 'பிரிவு 1-4 மாநிலங்கள் உருவாக்கம், மொழிவாரி மாநிலங்கள் மறுசீரமைப்பு 1956 & குடியுரிமை பெறும் 5 வழிகள், இழக்கும் 3 வழிகள்', dayNumber: 11, periodNumber: 2, keyFormulaOrLaw: 'Article 1: India, that is Bharat, shall be a Union of States | Citizenship by: Birth, Descent, Registration, Naturalization, Incorporation', keyPoints: ['குடியுரிமை இழக்கும் வழிகள்: துPermission (துறத்தல்), Termination (முடிவுக்கு வருதல்), Deprivation (பறித்தல்)', '1956 ஃபசல் அலி கமிஷன் (மாநிலங்கள் மறுசீரமைப்பு)'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 2,
+      chapterTitle: 'பகுதி 3: அடிப்படை உரிமைகள் (Articles 12–35) & 5 நீதிப்பேராணைகள்',
+      description: 'சமத்துவ உரிமை (14-18), சுதந்திர உரிமை (19-22), சுரண்டலுக்கு எதிரான உரிமை (23-24), மத உரிமை (25-28), பிரிவு 32 நீதிப்பேராணைகள்',
+      microTopics: [
+        { id: 'tn_pol_4', topicTitle: 'சமத்துவ உரிமை (Articles 14–18) & தீண்டாமை ஒழிப்பு', subtopic: 'சட்டத்தின் முன் அனைவரும் சமம் (Art 14), 5 காரணங்களால் பாகுபாடு தடை (Art 15), வேலைவாய்ப்பில் சமவாய்ப்பு (Art 16), தீண்டாமை ஒழிப்பு (Art 17)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Article 14: Equality before Law | Article 17: Abolition of Untouchability (Protection of Civil Rights Act 1955)', keyPoints: ['Article 16(4): பின்தங்கிய வகுப்பினருக்கு இடஒதுக்கீடு வழங்கும் அதிகாரம்', 'Article 18: ராணுவ மற்றும் கல்வி பட்டங்களைத் தவிர பிற பட்டங்கள் ஒழிப்பு'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_pol_5', topicTitle: 'சுதந்திர உரிமை & வாழ்வுரிமை (Articles 19–22 & Art 21A கல்வி உரிமை)', subtopic: 'பிரிவு 19(1) 6 அடிப்படை சுதந்திரங்கள், பிரிவு 21 தனிநபர் சுதந்திரம் & 86-வது திருத்தம் 2002 பிரிவு 21A 6-14 வயது இலவச கட்டாயக் கல்வி', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'Article 19(1): 6 Freedoms | Article 21: Protection of Life & Personal Liberty | Article 21A: Right to Education', keyPoints: ['மேனகா காந்தி வழக்கு 1978: பிரிவு 21 வாழ்வுரிமையின் விரிவான விளக்கம்', 'பிரிவு 20: குற்றங்களுக்கான தண்டனையிலிருந்து பாதுகாப்பு (Double Jeopardy)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_pol_6', topicTitle: 'பிரிவு 32 & 226: 5 நீதிப்பேராணைகள் (Writs Jurisdiction)', subtopic: 'ஆட்கொணர்வு, கட்டளையிடும், தடையுறுத்தும், ஆவணக்கேட்பு, தகுதிமுறை வினவும் நீதிப்பேராணைகள்', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Article 32: "Heart and Soul of the Indian Constitution" (Dr. Ambedkar) | Article 226: High Court Writs', keyPoints: ['Habeas Corpus: சட்டவிரோத காவலில் இருந்து நபரை விடுவித்தல்', 'Mandamus: அரசு அதிகாரியை தன் பொதுக்கடமையை செய்ய கட்டளையிடுதல்', 'Quo-Warranto: தகுதியின்றி பொதுப்பதவியை வகிப்பதை வினவுதல்'], type: 'solved_problem', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 3,
+      chapterTitle: 'பகுதி 4, 4A: DPSP, அடிப்படைக் கடமைகள் & மத்திய/மாநில நிர்வாகம்',
+      description: 'அரசு நெறிமுறைக் கோட்பாடுகள் (36-51), 11 அடிப்படைக் கடமைகள் (51A), குடியரசுத் தலைவர், பிரதமர், ஆளுநர், முதலமைச்சர்',
+      microTopics: [
+        { id: 'tn_pol_7', topicTitle: 'அரசு வழிகாட்டு நெறிமுறைகள் — DPSP (Articles 36–51) & அடிப்படைக் கடமைகள் 51A', subtopic: 'கிராம பஞ்சாயத்து (Art 40), பொது சிவில் சட்டம் (Art 44), ஸ்வரண் சிங் கமிட்டி 11 அடிப்படைக் கடமைகள்', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Art 40: Village Panchayats | Art 44: Uniform Civil Code | Art 51A: 11 Fundamental Duties (Added by 42nd & 86th Amendments)', keyPoints: ['அயர்லாந்து அரசியலமைப்பிலிருந்து DPSP பெறப்பட்டது', '11-வது கடமை: 6-14 வயது குழந்தைகளுக்கு கல்வி வாய்ப்பளிப்பது பெற்றோரின் கடமை'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_pol_8', topicTitle: 'இந்தியக் குடியரசுத் தலைவர், நாடாளுமன்றம் & ஆளுநர் அதிகாரங்கள்', subtopic: 'குடியரசுத் தலைவர் தேர்தல், அவசரநிலை (352, 356, 360), நிதி மசோதா (Art 110), ஆளுநரின் விருப்புரிமை அதிகாரங்கள்', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Article 52: President of India | Article 72: Pardoning Power | Article 110: Money Bill (Speaker Decision Final)', keyPoints: ['Article 352: தேசிய அவசரநிலை | Article 356: மாநில குடியரசுத் தலைவர் ஆட்சி | Article 360: நிதி அவசரநிலை', 'மக்களவை அதிகபட்சம் 550 | மாநிலங்களவை 250 (12 நியமன உறுப்பினர்கள்)'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 4,
+      chapterTitle: 'நீதித்துறை, உள்ளாட்சி அமைப்புகள் (73rd/74th) & அரசியலமைப்பு அமைப்புகள்',
+      description: 'உச்ச நீதிமன்றம், உயர் நீதிமன்றங்கள், 73/74-வது பஞ்சாயத்து ராஜ் திருத்தங்கள் 1992, தேர்தல் ஆணையம், CAG, Lokpal & RTI 2005',
+      microTopics: [
+        { id: 'tn_pol_9', topicTitle: 'உச்ச நீதிமன்றம், உயர் நீதிமன்றங்கள் & நீதித்துறை மறுஆய்வு (Judicial Review)', subtopic: 'கொலீஜியம் முறை, அசல் வரம்பு (Art 131), மேல்முறையீட்டு வரம்பு, நீதிமன்ற அவமதிப்பு அதிகாரம் (Art 129)', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'Article 124: Establishment of Supreme Court | Article 214: High Courts in States | Court of Record: Art 129', keyPoints: ['உச்ச நீதிமன்ற நீதிபதிகள் ஓய்வு வயது 65 | உயர் நீதிமன்ற நீதிபதிகள் ஓய்வு வயது 62', 'நீதி மறுஆய்வு அதிகாரம் அரசியலமைப்பின் அடிப்படைக் கட்டமைப்பு (Basic Structure)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_pol_10', topicTitle: 'பஞ்சாயத்து ராஜ் & நகராட்சிகள் (73-வது & 74-வது சட்டத்திருத்தங்கள் 1992)', subtopic: 'பல்வந்த் ராய் மேத்தா கமிட்டி (3 அடுக்கு முறை), 11-வது அட்டவணை (29 துறைகள்), 12-வது அட்டவணை (18 துறைகள்), கிராம சபை', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: '73rd Amendment 1992: Part IX (Art 243 to 243O) | 74th Amendment: Part IXA (Art 243P to 243ZG)', keyPoints: ['கிராம சபை பஞ்சாயத்து ராஜ் அமைப்பின் ஆணிவேர்', 'பெண்களுக்கு 33% இடஒதுக்கீடு (தமிழ்நாட்டில் 50% இடஒதுக்கீடு சட்டம்)'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_pol_11', topicTitle: 'தேர்தல் ஆணையம், CAG, TNPSC, லோக்பால் & தகவல் அறியும் உரிமைச் சட்டம் (RTI 2005)', subtopic: 'பிரிவு 324 தேர்தல் ஆணையம், பிரிவு 148 CAG, லோக்பால் மற்றும் லோக் ஆயுக்தா சட்டம் 2013, தகவல் அறியும் உரிமை சட்டம் 2005 (30 நாட்கள்)', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'Art 324: Election Commission of India | Art 148: Comptroller & Auditor General (Public Purse Guardian)', keyPoints: ['RTI 2005: 30 நாட்களுக்குள் தகவல் வழங்க வேண்டும் (உயிர்/சுதந்திரம் சார்ந்தது எனில் 48 மணிநேரம்)', 'CAG அறிக்கை நாடாளுமன்ற பொதுக்கணக்கு குழுவுக்கு (PAC) சமர்ப்பிக்கப்படும்'], type: 'concept', importance: 'High-Yield' }
+      ]
+    }
+  ];
+
+  // SUBJECT 3: APTITUDE & MENTAL ABILITY (UNIT X - 25/25 TARGET)
+  const aptitudeChapters: SyllabusChapter[] = [
+    {
+      chapterNumber: 1,
+      chapterTitle: 'சுருக்குதல் (BODMAS), HCF & LCM',
+      description: 'எண்கணித அடிப்படை, இயற்கணித முற்றொருமைகள் & மீ.சி.ம / மீ.பொ.வ',
+      microTopics: [
+        { id: 'tn_apt_1', topicTitle: 'சுருக்குதல் (Simplification) — BODMAS & முற்றொருமைகள்', subtopic: 'a²+b², a³+b³, பின்னங்கள், தசம எண்கள் மற்றும் வர்க்கமூலம் காணுதல்', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'BODMAS Rule: Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction', keyPoints: ['(a+b)² = a² + 2ab + b²', '(a-b)² = a² - 2ab + b²', 'a² - b² = (a+b)(a-b)'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_apt_2', topicTitle: 'மீப்பெரு பொது காரணி & மீச்சிறு பொது மடங்கு (HCF & LCM)', subtopic: 'பகா காரணி முறை, தொடர் வகுத்தல், பின்னங்களின் HCF/LCM, இரு எண்களின் பெருக்கற்பலன் சமன்பாடு', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Product of Two Numbers = HCF × LCM (a × b = HCF × LCM) | Fractions HCF = Numerators HCF / Denominators LCM', keyPoints: ['இரு அடுத்தடுத்த பகா எண்களின் HCF = 1', 'மணிகள் ஒன்றாக ஒலிக்கும் கால இடைவெளி = LCM'], type: 'solved_problem', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 2,
+      chapterTitle: 'விழுக்காடு, இலாப நட்டம், தனிவட்டி & கூட்டுவட்டி (CI - SI)',
+      description: 'சதவீத கணக்கீடுகள், தள்ளுபடி, SI = PNR/100, மற்றும் 2/3 ஆண்டுகள் CI - SI வித்தியாசம்',
+      microTopics: [
+        { id: 'tn_apt_3', topicTitle: 'விழுக்காடு (Percentage), இலாப நட்டம் & தொடர் தள்ளுபடி', subtopic: 'பின்னத்தை சதவீதமாக மாற்றுதல், விலை ஏற்ற/இறக்க சமன்பாடு, அடக்க/விற்ற விலை மற்றும் தொடர் தள்ளுபடி சூத்திரம்', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'Profit% = (Profit / CP) × 100 | Successive Discount Formula = a + b - (ab / 100)', keyPoints: ['விலை r% அதிகரித்தால் செலவு மாறாமல் இருக்க நுகர்வு குறைப்பு = [r / (100 + r)] × 100%', 'குறித்த விலை மற்றும் விற்பனை விலை கணக்கீடுகள்'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_apt_4', topicTitle: 'தனிவட்டி (SI) & கூட்டுவட்டி (CI) & 2, 3 ஆண்டுகள் வித்தியாசம் (D)', subtopic: 'SI = PNR/100, A = P(1+R/100)ⁿ, அரை ஆண்டு கூட்டுவட்டி மற்றும் 2, 3 ஆண்டுகள் CI - SI வித்தியாசம்', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: '2 Years Difference D = P(R / 100)² | 3 Years Difference D = P(R / 100)² (3 + R / 100)', keyPoints: ['அசல் n மடங்காகும் காலம்: N = (n - 1) × 100 / R', 'கூட்டுவட்டி அரையாண்டு முறை: R/2, 2N'], type: 'solved_problem', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 3,
+      chapterTitle: 'விகிதம், நேரம் & வேலை, அளவியல் (2D/3D) & தர்க்கவியல் (Reasoning)',
+      description: 'விகிதாசாரம், குழாய்கள் தொட்டி கணக்குகள், 2D/3D பரப்பளவு/கனஅளவு, பகடை & இரத்த உறவுகள்',
+      microTopics: [
+        { id: 'tn_apt_5', topicTitle: 'விகிதம் (Ratio & Proportion), நேரம் மற்றும் வேலை (Time & Work)', subtopic: 'A:B:C குறுக்குவழி, A & B சேர்ந்து செய்யும் வேலை, குழாய்கள் தொட்டி மற்றும் மனிதன்-நாள் சூத்திரம்', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Chain Rule: (M₁ × D₁ × H₁) / W₁ = (M₂ × D₂ × H₂) / W₂ | A and B Together = (xy) / (x + y) days', keyPoints: ['வேலை = திறன் × நாட்கள் (Work = Efficiency × Time)', 'கசிவு உள்ள தொட்டி காலியாகும் நேரம்'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_apt_6', topicTitle: 'அளவியல் (2D & 3D Mensuration): பரப்பளவு, சுற்றளவு & கனஅளவு', subtopic: 'முக்கோணம், வட்டம், உருளை (Cylinder), கூம்பு (Cone), கோளம் (Sphere) & அரைக்கோளம் சூத்திரங்கள்', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'வட்டப் பரப்பு = πr² | உருளை கனஅளவு = πr²h | கூம்பு கனஅளவு = 1/3 πr²h | கோள கனஅளவு = 4/3 πr³', keyPoints: ['கூம்பு சாயுயரம் l = √(h² + r²)', 'அரைக்கோள மொத்த புறப்பரப்பு = 3πr²'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_apt_7', topicTitle: 'தர்க்கவியல் காரணமறிதல் (Reasoning): பகடை, இரத்த உறவுகள் & வரைபடங்கள்', subtopic: 'எண் தொடர், பகடை எதிரெதிர் பக்கங்கள், இரத்த உறவு மரபு வரைபடம், கடிகாரம்/காலண்டர் & வட்ட விளக்கப்படம் (Pie Chart)', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'கடிகார முட்களுக்கு இடைப்பட்ட கோணம் θ = |30H - (11/2)M|', keyPoints: ['பகடை விதிகளில் பொதுவான பக்கங்களை வைத்து எதிர்ப்பக்கம் காணுதல்', 'Pie Chart 100% = 360° கோண அளவு மாற்றம்'], type: 'quiz', importance: 'High-Yield' }
+      ]
+    }
+  ];
+
+  // SUBJECT 4: HISTORY, CULTURE & DEVELOPMENT ADMINISTRATION OF TAMIL NADU (UNIT VIII & IX)
+  const unit8_9Chapters: SyllabusChapter[] = [
+    {
+      chapterNumber: 1,
+      chapterTitle: 'Unit VIII: பண்டைய தமிழக வரலாறு & தொல்லியல் அகழாய்வுகள்',
+      description: 'கீழடி, ஆதிச்சநல்லூர், கொடுமணல், பொருந்தல், சிவகளை மற்றும் சங்க கால மூவேந்தர் ஆட்சி',
+      microTopics: [
+        { id: 'tn_u8_1', topicTitle: 'தொல்லியல் அகழாய்வுகள்: கீழடி, ஆதிச்சநல்லூர், கொடுமணல், பொருந்தல், சிவகளை', subtopic: 'வைகை நதிக்கரை நாகரிகம், தமிழ்-பிராமி எழுத்துப் பொறிப்புகள், ரோமானிய நாணயங்கள் & கிமு 6-ம் நூற்றாண்டு நகரமைப்பு', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'கீழடி அகழாய்வு காலம்: கிமு 6-ம் நூற்றாண்டு (கிமு 580 - வைகை சமவெளி நாகரிகம்)', keyPoints: ['ஆதிச்சநல்லூர் முதுமக்கள் தாழிகள் & இரும்புப் பொருட்கள்', 'பொருந்தல் நெல்மணிகள் சான்று (கிமு 450)', 'சிவகளை தாமிரபரணி நதிக்கரை நாகரிகம் (கிமு 1155)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_u8_2', topicTitle: 'சங்க கால அரசியல், மூவேந்தர் & சோழர்களின் குடவோலை முறை (உத்தரமேரூர்)', subtopic: 'சேர, சோழ, பாண்டியர் நிர்வாகம், கடையேழு வள்ளல்கள், முதலாம் பராந்தக சோழன் உத்தரமேரூர் கல்வெட்டு (கி.பி 919 & 921)', dayNumber: 6, periodNumber: 4, keyFormulaOrLaw: 'உத்தரமேரூர் கல்வெட்டு: கிராம சுயாட்சி மற்றும் குடவோலை தேர்தல் முறை தகுதிகள்', keyPoints: ['வாரியங்கள்: ஏரி வாரியம், தோட்ட வாரியம், பொன் வாரியம், பஞ்சவார வாரியம்', 'சேரர் - வில் அம்பு (வஞ்சி) | சோழர் - புலி (உறையூர்) | பாண்டியர் - மீன் (மதுரை)'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 2,
+      chapterTitle: 'Unit VIII: தமிழக விடுதலைப் போராட்ட வீரர்கள் & சமூக இயக்கங்கள்',
+      description: 'வேலு நாச்சியார், கட்டபொம்மன், மருது சகோதரர்கள், வ.உ.சி, பாரதியார், நீதிக்கட்சி 1916 & பெரியார் சுயமரியாதை இயக்கம்',
+      microTopics: [
+        { id: 'tn_u8_3', topicTitle: 'பாளையக்காரர் புரட்சி & தமிழக விடுதலைப் போராட்ட வீரர்கள்', subtopic: 'பூலித்தேவர், வேலு நாச்சியார் (குயிலி தற்கொலைப்படை), வீரபாண்டிய கட்டபொம்மன், மருது சகோதரர்கள் (1801 திருச்சிராப்பள்ளி பிரகடனம்), வ.உ.சி சுதேசிக் கப்பல்', dayNumber: 2, periodNumber: 4, keyFormulaOrLaw: '1801 ஜூன் 12: மருது சகோதரர்களின் திருச்சிராப்பள்ளி சுதந்திரப் பிரகடனம்', keyPoints: ['வேலு நாச்சியார் பிரிட்டிஷாரை எதிர்த்து வென்ற முதல் இந்திய பெண் அரசி (1780)', 'வ.உ.சிதம்பரனார் 1906-ல் சுதேசி ஸ்டீம் நேவிகேஷன் கப்பல் நிறுவனத்தைத் தொடங்கினார்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_u8_4', topicTitle: 'நீதிக்கட்சி (1916) சாதனைகள் & தந்தை பெரியார் சுயமரியாதை இயக்கம் (1925)', subtopic: 'தியாகராய செட்டியார், 1921 வகுப்புவாரி அரசாணை (Communal GO), இந்து சமய அறநிலையச் சட்டம் 1926, வைக்கம் போராட்டம் 1924 & குடியரசு இதழ்', dayNumber: 7, periodNumber: 4, keyFormulaOrLaw: '1921 Communal GO | 1926 இந்து சமய அறநிலையச் சட்டம் | 1925 சுயமரியாதை இயக்கம்', keyPoints: ['ஆந்திரா பல்கலைக்கழகம் 1926, அண்ணாமலை பல்கலைக்கழகம் 1929 நீதிக்கட்சியால் உருவாக்கம்', 'தேவதாசி முறை ஒழிப்பு சட்டம் (டாக்டர் முத்துலட்சுமி ரெட்டி முயற்சி)'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 3,
+      chapterTitle: 'Unit IX: தமிழ்நாடு வளர்ச்சி நிர்வாகம், மனிதவளம் (HDI) & தொழில் தொகுப்புகள்',
+      description: 'மனிதவள குறியீடுகள் (HDI, GII), 69% இடஒதுக்கீடு, நான் முதல்வன், புதுமைப் பெண், Detroit of Asia சென்னை, e-Sevai',
+      microTopics: [
+        { id: 'tn_u9_1', topicTitle: 'தமிழ்நாட்டின் மனிதவள மேம்பாட்டுக் குறியீடுகள் (HDI) & 69% இடஒதுக்கீடு சட்டம்', subtopic: 'உயர் கல்வி சேர்க்கை விகிதம் (GER ~51%), தாய்-சேய் இறப்பு விகிதம் (MMR, IMR) & 1994 தமிழ்நாடு 69% இடஒதுக்கீடு சட்டம் (9-வது அட்டவணை பாதுகாப்பு)', dayNumber: 3, periodNumber: 4, keyFormulaOrLaw: '1994 தமிழ்நாடு இடஒதுக்கீடு சட்டம்: 69% இடஒதுக்கீடு அரசியலமைப்பின் 9-வது அட்டவணையில் சேர்க்கப்பட்டது', keyPoints: ['தமிழ்நாடு GER தேசிய சராசரியை விட 2 மடங்கு அதிகம்', 'NITI Aayog சுகாதாரக் குறியீட்டில் தமிழ்நாடு முன்னணி'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_u9_2', topicTitle: 'தமிழ்நாட்டின் தொழில் தொகுப்புகள் (Industrial Clusters) & e-Governance (TNeGA)', subtopic: 'ஆசியாவின் டெட்ராய்ட் (சென்னை), பின்னலாடை நகரம் (திருப்பூர்), சிவகாசி (குட்டி ஜப்பான்), SIPCOT, TIDEL Park & TNeGA இ-சேவை மையங்கள்', dayNumber: 8, periodNumber: 4, keyFormulaOrLaw: 'சென்னை: "Detroit of Asia" | திருப்பூர்: இந்தியாவின் பின்னலாடை தலைநகரம் | சிவகாசி: குட்டி ஜப்பான் (நேரு)', keyPoints: ['SIPCOT, TIDCO, TANSIDCO தொழில் பூங்காக்கள்', 'TNeGA, உழவன் செயலி மற்றும் ஒருங்கிணைந்த பொது விநியோகத் திட்டம் (Universal PDS)'], type: 'concept', importance: 'High-Yield' }
+      ]
+    }
+  ];
+
+  // SUBJECT 5: GENERAL SCIENCE, GEOGRAPHY, INDIAN HISTORY & ECONOMY (UNIT I, III, IV, VI, VII)
+  const gsCoreChapters: SyllabusChapter[] = [
+    {
+      chapterNumber: 1,
+      chapterTitle: 'Unit I: பொது அறிவியல் (Physics, Chemistry & Life Sciences)',
+      description: 'இயக்க விதிகள், ஒளியியல், மின்னியல், தனிம வரிசை அட்டவணை, அமிலங்கள் காரங்கள், மனித உறுப்பு மண்டலங்கள் & நோய்கள்',
+      microTopics: [
+        { id: 'tn_sci_1', topicTitle: 'இயக்கவியல், ஒளியியல் & மின்னியல் (Physics Core)', subtopic: 'நியூட்டனின் இயக்க விதிகள் (F=ma), முழு அக எதிரொளிப்பு (TIR), ஓம் விதி (V=IR), மின் திறன் & மின்காந்த தூண்டல்', dayNumber: 1, periodNumber: 5, keyFormulaOrLaw: 'F = ma | V = IR | P = VI = I²R | 1 Unit = 1 kWh = 3.6 × 10⁶ Joules', keyPoints: ['வைரம் ஒளிர்தல் மற்றும் ஆப்டிகல் ஃபைபர் முழு அக எதிரொளிப்பு தத்துவத்தில் இயங்குகிறது', 'கிட்டப்பார்வைக்கு குழி லென்ஸ் (Concave) | தூரப்பார்வைக்கு குவி லென்ஸ் (Convex)'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tn_sci_2', topicTitle: 'தனிமங்கள், அமிலங்கள், காரங்கள் & அன்றாட வேதியியல் (Chemistry Core)', subtopic: 'pH மதிப்பு, பிளாஸ்டர் ஆஃப் பாரிஸ், சலவைத்தூள், உரங்கள் (NPK), பெட்ரோலிய பொருட்கள் & உலோகக் கலவைகள்', dayNumber: 5, periodNumber: 5, keyFormulaOrLaw: 'pH = -log[H⁺] | பிளாஸ்டர் ஆஃப் பாரிஸ்: CaSO₄ · ½H₂O | சலவைத்தூள்: CaOCl₂', keyPoints: ['மனித ரத்தத்தின் pH மதிப்பு 7.35 - 7.45', 'பித்தளை (Brass): செம்பு (Cu) + துத்தநாகம் (Zn) | வெண்கலம் (Bronze): செம்பு (Cu) + தகரம் (Sn)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_sci_3', topicTitle: 'மனித உடலியல், வைட்டமின்கள், ஊட்டச்சத்து & நோய்கள் (Life Sciences Core)', subtopic: 'செரிமான மண்டலம், ரத்த சுழற்சி (ABO ரத்த வகை), நாளமில்லா சுரப்பிகள், வைட்டமின் குறைபாட்டு நோய்கள் & தடுப்பூசிகள்', dayNumber: 9, periodNumber: 5, keyFormulaOrLaw: 'வைட்டமின் A (மாலைக்கண்), B1 (பெரிபெரி), C (ஸ்கர்வி), D (ரிக்கெட்ஸ்), K (ரத்தம் உறையாமை)', keyPoints: ['இன்சுலின் கணையத்தின் பீட்டா செல்களால் சுரக்கப்படுகிறது (ரத்த சர்க்கரை குறைப்பு)', 'உலகளாவிய ரத்தக் கொடையாளி: O Negative | உலகளாவிய ரத்த ஏற்பாளர்: AB Positive'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 2,
+      chapterTitle: 'Unit III: இந்திய & தமிழ்நாடு புவியியல் (Geography of India & TN)',
+      description: 'இயற்கை அமைப்புகள், தென்மேற்கு/வடகிழக்கு பருவக்காற்று, ஆறுகள் (காவிரி, வைகை), மண் வகைகள், பயிர் பருவங்கள் (குறுவை, தாளடி, சம்பா)',
+      microTopics: [
+        { id: 'tn_geo_1', topicTitle: 'இந்திய & தமிழ்நாடு இயற்கை அமைப்புகள், பருவமழை & ஆறுகள்', subtopic: 'இமயமலை, தக்காண பீடபூமி, தென்மேற்கு மற்றும் வடகிழக்கு பருவக்காற்று, காவிரி, வைகை, தாமிரபரணி நீர்நிலைகள்', dayNumber: 2, periodNumber: 5, keyFormulaOrLaw: 'தமிழ்நாடு அதிக மழைப்பொழிவைப் பெறுவது: வடகிழக்குப் பருவமழை (அக்டோபர் - டிசம்பர்)', keyPoints: ['தாமிரபரணி தமிழ்நாட்டின் வற்றாத ஜீவநதி', 'மேட்டூர் அணை (ஸ்டான்லி நீர்த்தேக்கம்) காவிரி நதியின் குறுக்கே கட்டப்பட்டுள்ளது'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_geo_2', topicTitle: 'மண் வகைகள், காடுகள், வேளாண் பருவங்கள் & பேரிடர் மேலாண்மை', subtopic: 'வண்டல் மண், கரிசல் மண், செம்மண், குறுவை, சம்பா, தாளடி பயிர் பருவங்கள், நெய்வேலி பழுப்பு நிலக்கரி & புயல்/வெள்ள அபாய மேலாண்மை', dayNumber: 6, periodNumber: 5, keyFormulaOrLaw: 'பயிர் பருவங்கள்: குறுவை (ஜூன்-செப்), சம்பா (ஆக-ஜன), நவரை/தாளடி (நவ-மார்)', keyPoints: ['பருத்தி விளைச்சலுக்கு ஏற்ற மண்: கரிசல் மண் (Regur Soil)', 'நெய்வேலியில் லிக்னைட் பழுப்பு நிலக்கரி வெட்டி எடுக்கப்படுகிறது'], type: 'concept', importance: 'High-Yield' }
+      ]
+    },
+    {
+      chapterNumber: 3,
+      chapterTitle: 'Unit IV, VI & VII: இந்திய வரலாறு, பொருளாதாரம் & தேசிய இயக்கம்',
+      description: 'சிந்து சமவெளி, மௌரியர், குப்தர், முகலாயர், 1857 புரட்சி, காந்தியடிகள், ஐந்தாண்டு திட்டங்கள், NITI Aayog & GST',
+      microTopics: [
+        { id: 'tn_his_1', topicTitle: 'சிந்து சமவெளி நாகரிகம், மௌரியர், குப்தர்கள் & முகலாயப் பேரரசு', subtopic: 'ஹரப்பா, மொகஞ்சதாரோ, அசோகரின் தர்மம், இரண்டாம் சந்திரகுப்தர் பொற்காலம், அக்பரின் மன்சப்தாரி முறை & தீன்-இலாஹி', dayNumber: 3, periodNumber: 5, keyFormulaOrLaw: 'சிந்து சமவெளி பெருங்குளம் மொகஞ்சதாரோவில் கண்டறியப்பட்டது | கப்பல் கட்டும் தளம்: லோத்தல்', keyPoints: ['அசோகரின் கல்வெட்டுகள் பிராமி மற்றும் கரோஷ்டி எழுத்துக்களில் பொறிக்கப்பட்டன', 'அக்பரின் மத நல்லிணக்கக் கொள்கை: சுல்-இ-குல் (Sulh-i-Kul)'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_his_2', topicTitle: '1857 பெரும் புரட்சி, இந்திய தேசிய காங்கிரஸ் & காந்தியடிகள் இயக்கம்', subtopic: 'மீரட் புரட்சி, மங்கள் பாண்டே, ஜான்சி ராணி, 1885 INC தோற்றம், ஒத்துழையாமை இயக்கம், வேதாரண்யம் உப்பு சத்தியாகிரகம் (ராஜாஜி), வெள்ளையனே வெளியேறு 1942', dayNumber: 7, periodNumber: 5, keyFormulaOrLaw: '1930 ஏப்ரல் 13 - 28: ராஜாஜி தலைமையில் திருச்சியிலிருந்து வேதாரண்யத்திற்கு உப்பு சத்தியாகிரக நடைபயணம்', keyPoints: ['1857 புரட்சியின் முதல் வெடிப்பு: பராக்பூர் (மங்கள் பாண்டே)', '1942 ஆகஸ்ட் 8: காந்தியடிகளின் "செய் அல்லது செத்து மடி" (Do or Die) பிரகடனம்'], type: 'concept', importance: 'High-Yield' },
+        { id: 'tn_his_3', topicTitle: 'இந்தியப் பொருளாதாரம்: ஐந்தாண்டுத் திட்டங்கள், NITI Aayog, GST & RBI கொள்கைகள்', subtopic: 'ஹரோட்-டோமர் மாதிரி (1-ம் திட்டம்), மஹலனோபிஸ் மாதிரி (2-ம் திட்டம்), NITI Aayog (2015), GST வரி அடுக்குகள் (5%, 12%, 18%, 28%) & ரெப்போ வட்டி விகிதம்', dayNumber: 11, periodNumber: 5, keyFormulaOrLaw: 'GST நடைமுறை: 1 ஜூலை 2017 (101-வது அரசியலமைப்பு திருத்தம்) | NITI Aayog: 1 ஜனவரி 2015', keyPoints: ['ரெப்போ ரேட்: வணிக வங்கிகளுக்கு ரிசர்வ் வங்கி வழங்கும் கடனுக்கான வட்டி விகிதம்', 'பசுமைப் புரட்சியின் தந்தை: இந்தியாவில் எம்.எஸ். சுவாமிநாதன், உலகில் நார்மன் போர்லாக்'], type: 'solved_problem', importance: 'High-Yield' }
+      ]
+    }
+  ];
+
+  const subjects: SyllabusSubject[] = [
+    { subjectId: 'tnpsc_tamil', subjectName: 'பொதுத்தமிழ் & இலக்கிய நயவுரை (General Tamil 100/150)', icon: '📜', color: '#10b981', totalChapters: tamilChapters.length, totalMicroTopics: tamilChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: tamilChapters },
+    { subjectId: 'tnpsc_polity', subjectName: 'இந்திய அரசியலமைப்பு & மக்களாட்சி (Unit V: Polity)', icon: '⚖️', color: '#06b6d4', totalChapters: polityChapters.length, totalMicroTopics: polityChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: polityChapters },
+    { subjectId: 'tnpsc_aptitude', subjectName: 'கணிதம் & திறனறிவு (Unit X: Aptitude 25/25 Target)', icon: '🔢', color: '#f59e0b', totalChapters: aptitudeChapters.length, totalMicroTopics: aptitudeChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: aptitudeChapters },
+    { subjectId: 'tnpsc_unit8_9', subjectName: 'தமிழ்நாடு வரலாறு, பண்பாடு & வளர்ச்சி நிர்வாகம் (Unit VIII & IX)', icon: '🏛️', color: '#8b5cf6', totalChapters: unit8_9Chapters.length, totalMicroTopics: unit8_9Chapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: unit8_9Chapters },
+    { subjectId: 'tnpsc_science_geo_hist', subjectName: 'பொது அறிவியல், புவியியல், வரலாறு & பொருளாதாரம் (Unit I, III, IV, VI, VII)', icon: '🌍', color: '#ec4899', totalChapters: gsCoreChapters.length, totalMicroTopics: gsCoreChapters.reduce((a, c) => a + c.microTopics.length, 0), chapters: gsCoreChapters }
+  ];
+
+  return {
+    courseId: courseId || 'exam-tnpsc-grp4',
+    courseTitle: courseTitle || 'TNPSC All Groups Unified Exam Master Course',
+    category: 'tnpsc',
+    board: 'TNPSC / TNUSRB',
+    medium: 'Bilingual (Tamil & English)',
+    totalDays: 360,
+    totalSubjects: subjects.length,
+    totalChapters: subjects.reduce((a, s) => a + s.totalChapters, 0),
+    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. NEET UG OFFICIAL VAST MICRO-TOPIC SYLLABUS REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
   const physicsChapters: SyllabusChapter[] = [
@@ -261,7 +479,7 @@ export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. CLASS 11 & 12 COMMERCE COMPLETE MICRO-TOPIC SYLLABUS REGISTRY
+// 3. CLASS 11 & 12 COMMERCE COMPLETE MICRO-TOPIC SYLLABUS REGISTRY
 // ─────────────────────────────────────────────────────────────────────────────
 export function getCommerceClass11Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
   const accountancyChapters: SyllabusChapter[] = [
@@ -402,7 +620,7 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. MASTER DISPATCHER FOR ALL 86 COURSES
+// 4. MASTER DISPATCHER FOR ALL 86 COURSES
 // ─────────────────────────────────────────────────────────────────────────────
 export function resolveCompleteCourseSyllabus(
   courseId: string,
@@ -417,218 +635,14 @@ export function resolveCompleteCourseSyllabus(
     return getNeetUgCompleteSyllabus();
   }
 
-  // 2. Class 11 & 12 Commerce Track (CBSE, State Board, Matric)
-  if (c.includes('11-com') || c.includes('12-com') || c.includes('commerce')) {
-    return getCommerceClass11Syllabus(courseId, courseTitle);
+  // 2. TNPSC & Police Exams Track (All Groups 1, 2, 4, VAO, DEO, SI)
+  if (c.includes('tnpsc') || c.includes('si') || c.includes('police') || c.includes('vao') || c.includes('group')) {
+    return getTnpscUnifiedCompleteSyllabus(courseId, title);
   }
 
-  // 3. TNPSC & Police Exams Track
-  if (c.includes('tnpsc') || c.includes('si') || c.includes('police')) {
-    const subjects: SyllabusSubject[] = [
-      {
-        subjectId: 'tnpsc_tamil',
-        subjectName: 'பொதுத்தமிழ் & தமிழ் அறிஞர்கள் (100 வினாக்கள் / 150 மதிப்பெண்)',
-        icon: '📜',
-        color: '#10b981',
-        totalChapters: 4,
-        totalMicroTopics: 18,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'பகுதி அ: தமிழ் இலக்கணம் & புணர்ச்சி விதிகள்',
-            description: 'எழுத்து, சொல், பொருள், யாப்பு, அணி மற்றும் பிழை திருத்தம்',
-            microTopics: [
-              { id: 'tn_t_1', topicTitle: 'முதல் & சார்பெழுத்துகள் (10 வகைகள்)', subtopic: 'உயிர்மெய், ஆய்தம், உயிரளபெடை, ஒற்றளபெடை, குற்றியலுகரம்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'முதல் எழுத்துகள் 30 | சார்பெழுத்துகள் 10 வகை', keyPoints: ['உயிர் 12 + மெய் 18 = 30', 'குற்றியலுகரம் 6 வகை', 'ஆய்த குறுக்கம்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_2', topicTitle: 'வேற்றுமை உருபுகள் (1 முதல் 8 வரை) & சொல்லுருபுகள்', subtopic: 'ஐ, ஆல், கு, இன், அது, கண் வேற்றுமைத் தொடர்கள்', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: '2-ம் வேற்றுமை: ஐ | 3-ம் வேற்றுமை: ஆல், ஆண் | 4-ம்: கு', keyPoints: ['முதல் வேற்றுமை எழுவாய்', '8-ம் வேற்றுமை விளி', 'உடன் தொக்க தொகை'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_3', topicTitle: 'வலிமிகும் இடங்கள் & வலிமிகா இடங்கள் விதிகள்', subtopic: 'நிலைமொழி, வருமொழி சந்தி விதிகள் & பிழையற்ற தமிழ் வாக்கியங்கள்', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'அ, இ சுட்டெழுத்துகளின் பின் வலிமிகும் | வினைத்தொகையில் மிகாது', keyPoints: ['அந்தப் பையன்', 'குடிநீர் (வினைத்தொகை)', 'இரண்டாம் வேற்றுமை விரி'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'tn_t_4', topicTitle: 'ஓரெழுத்து ஒருமொழி (42 சொற்கள்) & வேர்ச்சொல் மாற்றம்', subtopic: 'நன்னூல் 42 ஓரெழுத்து ஒருமொழிகள் & வினையாலணையும் பெயர்', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'நெடில் 40 + குறில் 2 (நொ, து) = 42 சொற்கள்', keyPoints: ['ஆ-பசு, மா-பெரிய, கோ-அரசன்', 'படித்தான் வேர்ச்சொல்: படி'], type: 'memorization', importance: 'High-Yield' },
-              { id: 'tn_t_5', topicTitle: 'இலக்கணக் குறிப்பறிதல் — பண்பு, உவமை, உம்மை & வினைத்தொகை', subtopic: 'சொற்றொடர் இலக்கண வகைப்பாடு & தேர்வுக் குறிப்புகள்', dayNumber: 21, periodNumber: 1, keyFormulaOrLaw: 'மை விகுதி: பண்புத்தொகை | உம் மறைதல்: உம்மைத்தொகை', keyPoints: ['செந்தாமரை - பண்பு', 'காய் கனி - உம்மை', 'ஊறுகாய் - வினைத்தொகை'], type: 'quiz', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'பகுதி ஆ: திருக்குறள் — அறத்துப்பால் & பொருட்பால் (25 அதிகாரங்கள்)',
-            description: 'அகர முதல எழுத்தெல்லாம் முதல் 25 அதிகாரங்களின் முழுமையான உரை & நயவுரை',
-            microTopics: [
-              { id: 'tn_t_6', topicTitle: 'கடவுள் வாழ்த்து & வான்சிறப்பு (அதிகாரம் 1 & 2)', subtopic: 'அகர முதல எழுத்தெல்லாம் & துப்பார்க்குத் துப்பாய குறட்பாக்கள்', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'அகர முதல எழுத்தெல்லாம் ஆதி பகவன் முதற்றே உலகு', keyPoints: ['பரிமேலழகர் உரை சிறப்பு', 'வான்சிறப்பு: துப்பார்க்குத் துப்பாய'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_7', topicTitle: 'நீத்தார் பெருமை & அறன் வலியுறுத்தல் (அதிகாரம் 3 & 4)', subtopic: 'ஒழுக்கத்து நீத்தார் பெருமை & மனத்துக்கண் மாசிலன் ஆதல்', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'செயற்கரிய செய்வார் பெரியர் சிறியர் செய்கலா தார்', keyPoints: ['ஐந்தவித்தான் ஆற்றல்', 'மனத்துக்கண் மாசிலன் ஆதல் அனைத்தறன்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_8', topicTitle: 'இல்வாழ்க்கை & அன்புடைமை (அதிகாரம் 5 & 8)', subtopic: 'அன்பும் அறனும் உடைத்தாயின் & அன்பிலார் எல்லாம் தமக்குரியர்', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'அன்பின் வழியது உயிர்நிலை அஃதிலார்க்கு என்புதோல் போர்த்த உடம்பு', keyPoints: ['ஈன்ற பொழுதின் பெரிதுவக்கும்', 'அன்போடு இயைந்த வழக்கு'], type: 'memorization', importance: 'High-Yield' },
-              { id: 'tn_t_9', topicTitle: 'கல்வி, கல்லாமை & அறிவுடைமை (அதிகாரம் 40, 41, 43)', subtopic: 'கற்க கசடறக் கற்பவை & அறிவற்றங் காக்கும் கருவி', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: 'கற்க கசடறக் கற்பவை கற்றபின் நிற்க அதற்குத் தக', keyPoints: ['தொட்டனைத் தூறும் மணற்கேணி', 'எப்பொருள் யார்யார்வாய்க் கேட்பினும்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_10', topicTitle: 'காலம் அறிதல் & வலி அறிதல் (அதிகாரம் 48 & 49)', subtopic: 'பகல்வெல்லும் கூகையைக் காக்கை & பீலிபெய் சாகாடும் அச்சிறும்', dayNumber: 22, periodNumber: 1, keyFormulaOrLaw: 'பகல்வெல்லும் கூகையைக் காக்கை இகல்வெல்லும் வேந்தர்க்கு வேண்டும் பொழுது', keyPoints: ['ஞாலம் கருதினுங் கைகூடும்', 'பீலிபெய் சாகாடு'], type: 'solved_problem', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'பகுதி ஆ: சங்க இலக்கியம் & காப்பியங்கள்',
-            description: 'எட்டுத்தொகை, பத்துப்பாட்டு, ஐம்பெருங்காப்பியங்கள் & பக்தி இலக்கியம்',
-            microTopics: [
-              { id: 'tn_t_11', topicTitle: 'எட்டுத்தொகை நூல்கள் (நற்றிணை, குறுந்தொகை, புறநானூறு)', subtopic: 'அகநானூறு, கலித்தொகை, பதிற்றுப்பத்து ஆசிரியர்கள் & மேற்கோள்கள்', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'நற்றிணை நல்ல குறுந்தொகை ஐங்குறுநூறு ஒத்த பதிற்றுப்பத்து ஓங்கு பரிபாடல்', keyPoints: ['யாதும் ஊரே யாவரும் கேளிர்', 'உண்டி கொடுத்தோர் உயிர் கொடுத்தோரே'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_12', topicTitle: 'பத்துப்பாட்டு நூல்கள் (முல்லைப்பாட்டு, மதுரைக்காஞ்சி)', subtopic: 'நெடுநல்வாடை, பட்டினப்பாலை, திருமுருகாற்றுப்படை சிறப்பு வரிகள்', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'முருகு பொருநாறு பாணிரண்டு முல்லை பெருகு வளமதுரைக் காஞ்சி', keyPoints: ['முல்லைப்பாட்டு நப்பூதனார் (103 அடிகள்)', 'மதுரைக்காஞ்சி மாங்குடி மருதனார்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_13', topicTitle: 'சிலப்பதிகாரம் & மணிமேகலை (இரட்டைக் காப்பியங்கள்)', subtopic: 'இளங்கோவடிகள் & சீத்தலைச் சாத்தனார் காப்பியக் கட்டமைப்பு', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'அரசியல் பிழைத்தோர்க்கு அறங்கூற்றாவதூஉம் உரைசால் பத்தினியை உயர்ந்தோர் ஏத்தலும்', keyPoints: ['புகார், மதுரை, வஞ்சிக் காண்டங்கள் 30 காதைகள்', 'அமுதசுரபி சிறப்புகள்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_14', topicTitle: 'பக்தி இலக்கியம் (தேவாரம், திருவாசகம், திவ்யப்பிரபந்தம்)', subtopic: 'நாயன்மார்கள், ஆழ்வார்கள், மாணிக்கவாசகர் பக்திப் பாடல்கள்', dayNumber: 18, periodNumber: 1, keyFormulaOrLaw: 'திருவாசகத்திற்கு உருகார் ஒரு வாசகத்திற்கும் உருகார்', keyPoints: ['அப்பர், சம்பந்தர், சுந்தரர் தேவாரம்', 'நம்மாழ்வார் திருவாய்மொழி'], type: 'memorization', importance: 'Core Standard' }
-            ]
-          },
-          {
-            chapterNumber: 4,
-            chapterTitle: 'பகுதி இ: தமிழ் அறிஞர்களும் தமிழ்த் தொண்டும்',
-            description: 'மகாகவி பாரதியார் முதல் தற்கால உரைநடை வரை',
-            microTopics: [
-              { id: 'tn_t_15', topicTitle: 'மகாகவி பாரதியார் & பாவேந்தர் பாரதிதாசன்', subtopic: 'சுதேசமித்திரன், இந்தியா இதழ்கள் & புரட்சிக் கவிதைகள்', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'பாட்டுக்கொரு புலவன் பாரதி | எங்கள் வாழ்வும் எங்கள் வளமும் மங்காத தமிழென்று சங்கே முழங்கு', keyPoints: ['பாஞ்சாலி சபதம், கண்ணன் பாட்டு', 'குடும்ப விளக்கு, பாண்டியன் பரிசு'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_16', topicTitle: 'நாமக்கல் கவிஞர், கவிமணி & கண்ணதாசன்', subtopic: 'காந்தியக் கவிஞர், ஆசிய ஜோதி & அர்த்தமுள்ள இந்துமதம்', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'கத்தியின்றி ரத்தமின்றி யுத்தமொன்று வருகுது', keyPoints: ['கத்தி இன்றி ரத்தம் இன்றி', 'தோட்டத்தில் மேயுது வெள்ளைப் பசு'], type: 'concept', importance: 'Core Standard' },
-              { id: 'tn_t_17', topicTitle: 'உ.வே.சாமிநாதையர், பரிதிமாற்கலைஞர் தமிழ்த் தொண்டு', subtopic: 'தமிழ்த்தாத்தா ஓலைச்சுவடிப் பதிப்பு & திராவிட சாஸ்திரி பட்டம்', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'என் சரித்திரம் — உ.வே.சா தன் வரலாறு', keyPoints: ['சீவகசிந்தாமணி முதல் பதிப்பு 1887', 'உயர்தனிச் செம்மொழி பிரகடனம்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'tn_t_18', topicTitle: 'தந்தை பெரியார், பேரறிஞர் அண்ணா & காமராசர் சாதனைகள்', subtopic: 'சுயமரியாதை இயக்கம், எழுத்துச் சீர்திருத்தம் & கல்விப் புரட்சி', dayNumber: 19, periodNumber: 1, keyFormulaOrLaw: 'மத்திய அரசு 1978-ல் பெரியார் எழுத்துச் சீர்திருத்தத்தை ஏற்றுக்கொண்டது', keyPoints: ['குடியரசு இதழ் 1925', 'மதிய உணவு திட்டம்'], type: 'concept', importance: 'High-Yield' }
-            ]
-          }
-        ]
-      },
-      {
-        subjectId: 'tnpsc_polity',
-        subjectName: 'இந்திய அரசியலமைப்பு & சட்டங்கள் (Indian Polity & Constitution)',
-        icon: '⚖️',
-        color: '#06b6d4',
-        totalChapters: 4,
-        totalMicroTopics: 18,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'அரசியலமைப்பு உருவாக்கம், முகப்புரை & குடியுரிமை',
-            description: 'அரசியல் நிர்ணய சபை, முகப்புரை தத்துவங்கள் மற்றும் குடியுரிமை சட்டம் 1955',
-            microTopics: [
-              { id: 'pol_1', topicTitle: 'அரசியல் நிர்ணய சபை & வரைவுக்குழு (1946–1949)', subtopic: 'டாக்டர் பி.ஆர். அம்பேத்கர் தலைமை & 2 ஆண்டுகள் 11 மாதங்கள் 18 நாட்கள் வரலாறு', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'முதல் கூட்டம்: 9 டிசம்பர் 1946 | நடைமுறை: 26 ஜனவரி 1950', keyPoints: ['நிரந்தர தலைவர்: டாக்டர் ராஜேந்திர பிரசாத்', 'வரைவுக்குழு தலைவர்: டாக்டர் அம்பேத்கர்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_2', topicTitle: 'அரசியலமைப்பின் முகப்புரை & சிறப்பியல்புகள் (Preamble)', subtopic: 'சமதர்ம, மதச்சார்பற்ற, ஜனநாயக, குடியரசு & 42-வது அரசியலமைப்பு திருத்தம் 1976', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Sovereign, Socialist, Secular, Democratic, Republic (42nd Amendment)', keyPoints: ['கேசவானந்த பாரதி வழக்கு 1973', 'முகப்புரை அரசியலமைப்பின் திறவுகோல்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_3', topicTitle: 'பகுதி 1 & 2: இந்திய ஒன்றியம் மற்றும் குடியுரிமை (Articles 1–11)', subtopic: 'மாநிலங்கள் மறுசீரமைப்பு சட்டம் 1956 & குடியுரிமை சட்டம் 1955', dayNumber: 11, periodNumber: 2, keyFormulaOrLaw: 'பிரிவு 1: இந்தியா மாநிலங்களின் ஒன்றியம் | குடியுரிமை பெறும் 5 வழிகள்', keyPoints: ['பிறப்பு, வம்சாவளி, பதிவு, இயல்புரிமை, நிலப்பரப்பு இணைவு', 'குடியுரிமை இழக்கும் 3 வழிகள்'], type: 'concept', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'பகுதி 3: அடிப்படை உரிமைகள் (Articles 12–35) & 5 நீதிப்பேராணைகள்',
-            description: 'சமத்துவம், சுதந்திரம், மத உரிமை மற்றும் பிரிவு 32 நீதிப்பேராணைகள்',
-            microTopics: [
-              { id: 'pol_4', topicTitle: 'சமத்துவ உரிமை (Articles 14–18)', subtopic: 'சட்டத்தின் முன் சமம், பாகுபாடு தடை, தீண்டாமை ஒழிப்பு (Art 17), பட்டங்கள் ஒழிப்பு', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Article 14: Equality before Law | Article 17: Abolition of Untouchability', keyPoints: ['Art 15: 5 காரணங்களால் பாகுபாடு கூடாது', 'Art 16: பொது வேலைவாய்ப்பில் சம வாய்ப்பு'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_5', topicTitle: 'சுதந்திர உரிமை & வாழ்வுரிமை (Articles 19–22)', subtopic: '6 அடிப்படை சுதந்திரங்கள் & பிரிவு 21 வாழ்வுரிமை மேனகா காந்தி வழக்கு', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'Article 19(1): 6 Freedoms | Article 21: Protection of Life & Personal Liberty', keyPoints: ['பேச்சு, கூட்டம், சங்கம், இயக்கம், வசிப்பிடம், தொழில்', 'Art 21A: கல்வி உரிமை (86-வது திருத்தம் 2002)'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_6', topicTitle: 'சுரண்டலுக்கு எதிரான உரிமை & மத சுதந்திரம் (Articles 23–28)', subtopic: 'மனித கடத்தல் தடை, குழந்தைத் தொழிலாளர் ஒழிப்பு (Art 24) & மத உரிமை', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Article 24: Prohibition of Child Labour in Factories (Below 14 years)', keyPoints: ['Art 23: கொத்தடிமை முறை ஒழிப்பு', 'Art 25: மதத்தைப் பரப்பும் உரிமை'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_7', topicTitle: 'அரசியலமைப்பு தீர்வு காணும் உரிமை & 5 நீதிப்பேராணைகள் (Article 32 & 226)', subtopic: 'ஆட்கொணர்வு, கட்டளையிடும், தடையுறுத்தும், ஆவணக்கேட்பு, தகுதிமுறை வினவும் நீதிப்பேராணைகள்', dayNumber: 17, periodNumber: 2, keyFormulaOrLaw: 'Article 32: Constitutional Remedies — "Heart and Soul of the Constitution" (Dr. Ambedkar)', keyPoints: ['Habeas Corpus (ஆட்கொணர்வு)', 'Mandamus (கட்டளையுறுத்தும்)', 'Prohibition (தடையுறுத்தும்)', 'Certiorari (ஆவணக்கேட்பு)', 'Quo Warranto (தகுதிமுறை வினவும்)'], type: 'solved_problem', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'பகுதி 4 & 4A: அரசு வழிகாட்டு நெறிமுறைகள் (DPSP) & அடிப்படைக் கடமைகள்',
-            description: 'சமதர்ம, காந்திய, தாராளவாத கோட்பாடுகள் மற்றும் 11 அடிப்படைக் கடமைகள்',
-            microTopics: [
-              { id: 'pol_8', topicTitle: 'அரசு வழிகாட்டு நெறிமுறைகள் — DPSP (Articles 36–51)', subtopic: 'அயர்லாந்து ஆதாரம், கிராம பஞ்சாயத்து (Art 40) & பொது சிவில் சட்டம் (Art 44)', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'Art 40: Village Panchayats | Art 44: Uniform Civil Code | Art 45: Early Childhood Care', keyPoints: ['நீதிமன்றத்தால் கட்டாயப்படுத்த முடியாது', 'நல அரசு (Welfare State) இலக்கு'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_9', topicTitle: 'பகுதி 4A: அடிப்படைக் கடமைகள் (Article 51A — 11 கடமைகள்)', subtopic: 'ஸ்வரண் சிங் கமிட்டி, ரஷ்யா ஆதாரம் & 86-வது திருத்தம் குழந்தைக் கல்வி', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Article 51A: 11 Fundamental Duties (Added by 42nd & 86th Amendments)', keyPoints: ['10 கடமைகள் 1976-ல் சேர்க்கப்பட்டன', '11-வது கடமை 2002-ல் சேர்க்கப்பட்டது (6-14 வயது கல்வி)'], type: 'memorization', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 4,
-            chapterTitle: 'மத்திய & மாநில அரசுகளின் நிர்வாகம், நாடாளுமன்றம் & உள்ளாட்சி',
-            description: 'குடியரசுத் தலைவர், பிரதமர், நாடாளுமன்றம், உச்ச நீதிமன்றம் மற்றும் பஞ்சாயத்து ராஜ்',
-            microTopics: [
-              { id: 'pol_10', topicTitle: 'இந்தியக் குடியரசுத் தலைவர் & துணைத் தலைவர் (Articles 52–73)', subtopic: 'தேர்தல் முறை, மன்னிப்பளிக்கும் அதிகாரம் (Art 72), அவசரநிலை அதிகாரங்கள் (352, 356, 360)', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'Art 52: President of India | Art 61: Impeachment | Art 72: Pardoning Power', keyPoints: ['நாட்டின் முதல் குடிமகன்', 'முப்படைகளின் தலைமை தளபதி', 'மாநிலங்களவை பதவிவழி தலைவர்: துணைத் தலைவர்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_11', topicTitle: 'இந்திய நாடாளுமன்றம்: மக்களவை & மாநிலங்களவை (Articles 79–122)', subtopic: 'சபாநாயகர், நிதி மசோதா (Art 110), பட்ஜெட் (Art 112) & கூட்டுக் கூட்டம் (Art 108)', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: 'Article 110: Money Bill (Speaker Certification Final)', keyPoints: ['மக்களவை அதிகபட்சம் 550', 'மாநிலங்களவை அதிகபட்சம் 250 (12 நியமனம்)'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_12', topicTitle: 'இந்திய உச்ச நீதிமன்றம் & உயர் நீதிமன்றங்கள் (Articles 124–147 & 214–231)', subtopic: 'கொலீஜியம் முறை, நீதி மறுஆய்வு (Judicial Review) & அசல்/மேல்முறையீட்டு வரம்பு', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'Art 124: Supreme Court Establishment | Art 129: Court of Record', keyPoints: ['1 தலைமை நீதிபதி + 33 நீதிபதிகள்', 'ஓய்வு வயது: உச்ச நீதிமன்றம் 65, உயர் நீதிமன்றம் 62'], type: 'concept', importance: 'High-Yield' },
-              { id: 'pol_13', topicTitle: 'பஞ்சாயத்து ராஜ் & நகராட்சிகள் (73-வது & 74-வது சட்டத்திருத்தங்கள் 1992)', subtopic: 'பல்வந்த் ராய் மேத்தா கமிட்டி (3 அடுக்கு முறை) & பகுதி 9, 9A, அட்டவணை 11, 12', dayNumber: 19, periodNumber: 2, keyFormulaOrLaw: '73rd Amendment: 11th Schedule (29 Subjects) | 74th Amendment: 12th Schedule (18 Subjects)', keyPoints: ['கிராம சபை அடிப்படை அலகு', 'பெண்களுக்கு 33% இடஒதுக்கீடு (தமிழகத்தில் 50%)'], type: 'solved_problem', importance: 'High-Yield' }
-            ]
-          }
-        ]
-      },
-      {
-        subjectId: 'tnpsc_aptitude',
-        subjectName: 'கணிதம் & திறனறிவு (Aptitude & Mental Ability 25/25 Target)',
-        icon: '🔢',
-        color: '#f59e0b',
-        totalChapters: 3,
-        totalMicroTopics: 15,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'சுருக்குதல் (BODMAS), HCF & LCM',
-            description: 'எண்கணித அடிப்படை, இயற்கணித முற்றொருமைகள் & மீ.சி.ம / மீ.பொ.வ',
-            microTopics: [
-              { id: 'apt_1', topicTitle: 'சுருக்குதல் (Simplification) — BODMAS & முற்றொருமைகள்', subtopic: 'a²+b², a³+b³, பின்னங்கள், தசம எண்கள் மற்றும் வர்க்கமூலம் காணுதல்', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'BODMAS Rule: Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction', keyPoints: ['(a+b)² = a² + 2ab + b²', '(a-b)² = a² - 2ab + b²', 'a² - b² = (a+b)(a-b)'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_2', topicTitle: 'மீப்பெரு பொது காரணி — மீ.பொ.வ (HCF)', subtopic: 'பகா காரணி முறை, தொடர் வகுத்தல் முறை மற்றும் பின்னங்களின் HCF', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'பின்னங்களின் HCF = தொகுதிகளின் HCF / பகுதிகளின் LCM', keyPoints: ['இரு எண்களின் பொது வகுத்தி', 'பகா எண்களின் HCF = 1'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_3', topicTitle: 'மீச்சிறு பொது மடங்கு — மீ.சி.ம (LCM)', subtopic: 'மணிகள் ஒலிக்கும் வினாக்கள் & தொடர் சுழற்சி கணக்கீடுகள்', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'இரு எண்களின் பெருக்கற்பலன் = HCF × LCM (a × b = HCF × LCM)', keyPoints: ['பின்னங்களின் LCM = தொகுதிகளின் LCM / பகுதிகளின் HCF', 'மீதமுள்ள வினாக்கள்'], type: 'solved_problem', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'விழுக்காடு, இலாப நட்டம் & தனிவட்டி / கூட்டுவட்டி',
-            description: 'சதவீத கணக்கீடுகள், தள்ளுபடி மற்றும் 2/3 ஆண்டுகள் CI-SI வித்தியாசம்',
-            microTopics: [
-              { id: 'apt_4', topicTitle: 'விழுக்காடு (Percentage) — அடிப்படை மற்றும் தேர்வு வினாக்கள்', subtopic: 'பின்னத்தை சதவீதமாக மாற்றுதல், விலை ஏற்ற/இறக்க சதவீத சமன்பாடுகள்', dayNumber: 2, periodNumber: 3, keyFormulaOrLaw: 'விலை r% அதிகரித்தால் செலவு மாறாமல் இருக்க நுகர்வு குறைப்பு = [r / (100 + r)] × 100%', keyPoints: ['மக்கள்தொகை வளர்ச்சி A = P(1 + r/100)ⁿ', 'தேர்வு மதிப்பெண் சதவீதங்கள்'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_5', topicTitle: 'இலாப நட்டம் & தள்ளுபடி (Profit, Loss & Discount)', subtopic: 'அடக்க விலை, விற்ற விலை, இலாப சதவீதம் & தொடர் தள்ளுபடி', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Profit% = (Profit / CP) × 100 | Loss% = (Loss / CP) × 100', keyPoints: ['தொடர் தள்ளுபடி சூத்திரம்: a + b - (ab/100)', 'குறித்த விலை வினாக்கள்'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_6', topicTitle: 'தனிவட்டி (Simple Interest — SI)', subtopic: 'SI = PNR / 100, அசல், காலம் (N) மற்றும் வட்டி வீதம் (R) காணுதல்', dayNumber: 12, periodNumber: 3, keyFormulaOrLaw: 'SI = (P × N × R) / 100 | Total Amount A = P + SI', keyPoints: ['தொகை n மடங்காகும் காலம்: N = (n - 1) × 100 / R', 'நாட்கள் வட்டி கணக்குகள்'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_7', topicTitle: 'கூட்டுவட்டி (Compound Interest — CI) & CI - SI வித்தியாசம்', subtopic: 'A = P(1 + R/100)ⁿ, அரை ஆண்டு மற்றும் 2, 3 ஆண்டுகள் வித்தியாசம்', dayNumber: 17, periodNumber: 3, keyFormulaOrLaw: '2 ஆண்டுகள் CI - SI வித்தியாசம் D = P(R / 100)² | 3 ஆண்டுகள்: D = P(R/100)² (3 + R/100)', keyPoints: ['வட்டி காலாண்டு முறை: R/4, 4N', 'அரை ஆண்டு முறை: R/2, 2N'], type: 'solved_problem', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'விகிதம், நேரம், வேலை & அளவியல் (Mensuration 2D/3D)',
-            description: 'A:B:C விகிதம், குழாய்கள் கணக்குகள், பரப்பளவு மற்றும் கனஅளவு',
-            microTopics: [
-              { id: 'apt_8', topicTitle: 'விகிதம் மற்றும் விகிதாச்சாரம் (Ratio & Proportion)', subtopic: 'A:B, B:C கொடுக்கப்பட்டால் A:B:C காணும் குறுக்குவழி & நாணயங்கள் வினாக்கள்', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Product of Extremes = Product of Means (ad = bc)', keyPoints: ['A:B:C குறுக்குவழி தலைகீழ் N முறை', 'நாணயங்களின் மதிப்பு வினாக்கள்'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_9', topicTitle: 'நேரம் மற்றும் வேலை (Time & Work) & குழாய்கள் கணக்குகள்', subtopic: 'A & B சேர்ந்து செய்யும் வேலை, திறமை விகிதம் மற்றும் தொட்டி கணக்குகள்', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'A and B together = (x × y) / (x + y) days | Chain Rule: (M1 × D1 × H1)/W1 = (M2 × D2 × H2)/W2', keyPoints: ['வேலை = திறன் × நாட்கள்', 'கசிவு உள்ள தொட்டி கணக்குகள்'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_10', topicTitle: 'நேரம், வேகம் மற்றும் தூரம் (Speed, Time & Distance)', subtopic: 'இரயில்கள் கடக்கும் நேரம், படகுகள் & சராசரி வேகம்', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'Distance = Speed × Time | km/h to m/s: Multiply by 5/18', keyPoints: ['சராசரி வேகம் = 2xy / (x + y)', 'எதிர் திசையில் ரயில்கள்: S1 + S2'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_11', topicTitle: 'பரப்பளவு மற்றும் சுற்றளவு (2D Mensuration)', subtopic: 'செவ்வகம், சதுரம், முக்கோணம், வட்டம் & வட்டக்கோணப் பகுதி', dayNumber: 18, periodNumber: 3, keyFormulaOrLaw: 'சமபக்க முக்கோண பரப்பு = (√3 / 4)a² | வட்டப் பரப்பு = πr² | வட்ட சுற்றளவு = 2πr', keyPoints: ['செவ்வகம் 2(l+b), lb', 'நாற்கரம் பரப்பு = 1/2 × d × (h1+h2)'], type: 'solved_problem', importance: 'High-Yield' },
-              { id: 'apt_12', topicTitle: 'கனஅளவு மற்றும் புறப்பரப்பு (3D Mensuration)', subtopic: 'உருளை (Cylinder), கூம்பு (Cone), கோளம் (Sphere) & அரைக்கோளம்', dayNumber: 23, periodNumber: 3, keyFormulaOrLaw: 'உருளை கனஅளவு = πr²h | கூம்பு கனஅளவு = 1/3 πr²h | கோள கனஅளவு = 4/3 πr³', keyPoints: ['கூம்பு சாயுயரம் l = √(h² + r²)', 'அரைக்கோள வளைபரப்பு = 2πr²'], type: 'solved_problem', importance: 'High-Yield' }
-            ]
-          }
-        ]
-      },
-      {
-        subjectId: 'tnpsc_unit8_9',
-        subjectName: 'தமிழ்நாடு வரலாறு, பண்பாடு & வளர்ச்சி நிர்வாகம் (Unit 8 & 9)',
-        icon: '🏛️',
-        color: '#8b5cf6',
-        totalChapters: 3,
-        totalMicroTopics: 12,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'பண்டைய தமிழக வரலாறு & தொல்லியல் அகழாய்வுகள்',
-            description: 'கீழடி, ஆதிச்சநல்லூர், கொடுமணல் மற்றும் சங்க கால ஆட்சி முறை',
-            microTopics: [
-              { id: 'u8_1', topicTitle: 'தொல்லியல் அகழாய்வுகள்: கீழடி, ஆதிச்சநல்லூர், கொடுமணல், பொருந்தல்', subtopic: 'வைகை நதிக்கரை நாகரிகம், தமிழ்-பிராமி எழுத்துக்கள் & சங்க கால நகரமைப்பு', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: 'கீழடி அகழாய்வு காலம்: கிமு 6-ம் நூற்றாண்டு (கிமு 580 - வைகை நாகரிகம்)', keyPoints: ['ஆதிச்சநல்லூர் முதுமக்கள் தாழிகள்', 'கொடுமணல் ரோமானிய நாணயங்கள்', 'பொருந்தல் நெல்மணிகள் சான்று'], type: 'concept', importance: 'High-Yield' },
-              { id: 'u8_2', topicTitle: 'சங்க கால அரசியல் & மூவேந்தர் (சேர, சோழ, பாண்டியர்)', subtopic: 'சங்க இலக்கிய புறத்திணைகள், குறுநில மன்னர்கள் (கடையேழு வள்ளல்கள்)', dayNumber: 6, periodNumber: 4, keyFormulaOrLaw: 'சேரர் - வில் அம்பு (வஞ்சி) | சோழர் - புலி (உறையூர்) | பாண்டியர் - மீன் (மதுரை)', keyPoints: ['கடையேழு வள்ளல்கள்: பேகன், பாரி, காரி, ஆய், அதியமான், நள்ளி, ஓரி', 'வெண்ணிப் போர் - கரிகாலன்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'u8_3', topicTitle: 'சோழர்களின் உள்ளாட்சி நிர்வாகம் & உத்தரமேரூர் கல்வெட்டு', subtopic: 'குடவோலை தேர்தல் முறை, வாரியங்கள் மற்றும் கிராம சுயாட்சி', dayNumber: 11, periodNumber: 4, keyFormulaOrLaw: 'உத்தரமேரூர் கல்வெட்டு (முதலாம் பராந்தக சோழன் - கி.பி 919 & 921)', keyPoints: ['குடவோலை தேர்தல் தகுதிகள்', 'ஏரி வாரியம், தோட்ட வாரியம், பொன் வாரியம்'], type: 'concept', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 2,
-            chapterTitle: 'தமிழ்நாட்டின் சமூக சீர்திருத்த இயக்கங்கள் & திராவிட இயக்கம்',
-            description: 'நீதிக்கட்சி, தந்தை பெரியார், சுயமரியாதை இயக்கம் & பேரறிஞர் அண்ணா',
-            microTopics: [
-              { id: 'u8_4', topicTitle: 'நீதிக்கட்சி (Justice Party 1916) சாதனைகள் & வகுப்புவாரி அரசாணை', subtopic: 'தியாகராய செட்டியார், டி.எம்.நாயர், 1921 முதல் வகுப்புவாரி பிரதிநிதித்துவம் (Communal GO)', dayNumber: 2, periodNumber: 4, keyFormulaOrLaw: '1921 Communal GO | 1926 இந்து சமய அறநிலையச் சட்டம் | 1921 பெண்களுக்கு வாக்குரிமை', keyPoints: ['ஆந்திரா பல்கலைக்கழகம் 1926, அண்ணாமலை 1929', 'தேவதாசி முறை ஒழிப்பு சட்டம்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'u8_5', topicTitle: 'தந்தை பெரியார் — சுயமரியாதை இயக்கம் & வைக்கம் போராட்டம் (1924)', subtopic: '1925 செங்கல்பட்டு மாநாடு, குடியரசு இதழ், பெண் விடுதலை & மூடநம்பிக்கை ஒழிப்பு', dayNumber: 7, periodNumber: 4, keyFormulaOrLaw: 'வைக்கம் வீரர் (1924) | யுனெஸ்கோ விருது (1970 - தெற்காசியாவின் சாக்ரட்டீஸ்)', keyPoints: ['சுயமரியாதை திருமண சட்டம்', '1938 சென்னை பெண்கள் மாநாட்டில் பெரியார் பட்டம்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'u8_6', topicTitle: 'பேரறிஞர் அண்ணா & பெருந்தலைவர் காமராசர் சாதனைகள்', subtopic: '1967 சுயமரியாதை திருமண சட்டம், தமிழ்நாடு பெயர் மாற்றம் (1969), மதிய உணவு திட்டம்', dayNumber: 12, periodNumber: 4, keyFormulaOrLaw: '14 ஜனவரி 1969: மதராஸ் மாநிலம் "தமிழ்நாடு" என பெயர் மாற்றம் செய்யப்பட்டது', keyPoints: ['இருமொழிக் கொள்கை (தமிழ் + ஆங்கிலம்)', 'காமராசர் இலவச சீருடை & தொடக்கக் கல்வி புரட்சி'], type: 'concept', importance: 'High-Yield' }
-            ]
-          },
-          {
-            chapterNumber: 3,
-            chapterTitle: 'தமிழ்நாட்டின் வளர்ச்சி நிர்வாகம் & மனிதவள மேம்பாடு (Unit 9)',
-            description: 'மனிதவள மேம்பாட்டு குறியீடுகள் (HDI), நலத்திட்டங்கள், மின்னாளுமை & தொழில் வளர்ச்சி',
-            microTopics: [
-              { id: 'u9_1', topicTitle: 'தமிழ்நாட்டின் மனிதவள மேம்பாட்டுக் குறியீடுகள் (HDI Rankings)', subtopic: 'கல்வி அறிவு வீதம், தாய்-சேய் இறப்பு விகிதம் (MMR, IMR) மற்றும் சுகாதார மாதிரி', dayNumber: 3, periodNumber: 4, keyFormulaOrLaw: 'தமிழ்நாடு உயர் கல்வி சேர்க்கை விகிதம் (GER) ~51% (தேசிய சராசரியை விட இரண்டு மடங்கு)', keyPoints: ['NITI Aayog சுகாதார குறியீட்டில் முன்னணி', 'மகப்பேறு உதவித்திட்டங்கள் (முத்துலட்சுமி ரெட்டி திட்டம்)'], type: 'concept', importance: 'High-Yield' },
-              { id: 'u9_2', topicTitle: 'தமிழ்நாடு மின்னாளுமை முகமை (TNeGA) & அரசு நலத்திட்டங்கள்', subtopic: 'இ-சேவை மையங்கள், முதலமைச்சரின் விரிவான மருத்துவக் காப்பீடு, புதுமைப் பெண் திட்டம்', dayNumber: 8, periodNumber: 4, keyFormulaOrLaw: 'TNeGA: e-Governance Portal | புதுமைப் பெண் திட்டம் (மூவலூர் ராமாமிர்தம் உயர்கல்வி உறுதி)', keyPoints: ['நான் முதல்வன் திட்டம்', 'இல்லம் தேடிக் கல்வி & மக்களைத் தேடி மருத்துவம்'], type: 'concept', importance: 'High-Yield' },
-              { id: 'u9_3', topicTitle: 'தமிழ்நாட்டின் தொழில் தொகுப்புகள் & பொருளாதார வளர்ச்சி', subtopic: 'வாகன உற்பத்தி தலைநகரம் (Detroit of Asia), ஜவுளி, தோல் மற்றும் IT பூங்காக்கள்', dayNumber: 13, periodNumber: 4, keyFormulaOrLaw: 'சென்னை: "ஆசியாவின் டெட்ராய்ட்" | திருப்பூர்: பின்னலாடை நகரம் | சிவகாசி: குட்டி ஜப்பான்', keyPoints: ['SIPCOT மற்றும் TIDEL Park', 'தமிழ்நாடு பொருளாதார இலக்கு: $1 Trillion Economy'], type: 'concept', importance: 'High-Yield' }
-            ]
-          }
-        ]
-      }
-    ];
-
-    return {
-      courseId,
-      courseTitle: title,
-      category: 'tnpsc',
-      board: 'TNPSC / TNUSRB',
-      medium: isTa ? 'Tamil' : 'Bilingual',
-      totalDays: 360,
-      totalSubjects: subjects.length,
-      totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
-      totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
-      subjects
-    };
+  // 3. Class 11 & 12 Commerce Track (CBSE, State Board, Matric)
+  if (c.includes('11-com') || c.includes('12-com') || c.includes('commerce')) {
+    return getCommerceClass11Syllabus(courseId, courseTitle);
   }
 
   // 4. KINDERGARTEN (LKG & UKG)

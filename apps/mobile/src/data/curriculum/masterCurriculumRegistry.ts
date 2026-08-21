@@ -378,10 +378,10 @@ export function resolveMasterSequentialSyllabus(
       formula = 'Ideal Gas Law: PV = nRT';
     }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-  } else if (courseId.includes('tnpsc') || courseId.includes('upsc') || courseId.includes('si') || courseId.includes('police')) {
+  } else if (courseId.includes('tnpsc') || courseId.includes('upsc') || courseId.includes('si') || courseId.includes('police') || courseId.includes('vao') || courseId.includes('group')) {
     const subjects = isTamil
-      ? ['பொதுத்தமிழ் & செய்யுள்', 'இந்திய அரசியலமைப்பு (Polity)', 'இந்திய வரலாறு & தமிழ்நாடு பண்பாடு', 'பொது அறிவியல் & பொருளாதாரம்', 'திறனறிவும் மனக்கணக்கும் (Aptitude)']
-      : ['General English & Lit', 'Indian Polity & Constitution', 'History & Culture of India', 'General Science & Economy', 'Aptitude & Mental Ability'];
+      ? ['பொதுத்தமிழ் & இலக்கிய நயவுரை', 'இந்திய அரசியலமைப்பு & மக்களாட்சி (Polity)', 'கணிதம் & திறனறிவு (Aptitude 25/25)', 'தமிழ்நாடு வரலாறு & வளர்ச்சி நிர்வாகம் (Unit 8 & 9)', 'பொது அறிவியல், புவியியல் & பொருளாதாரம் (GS Core)']
+      : ['General Tamil & Lit', 'Indian Polity & Constitution', 'Aptitude & Mental Ability (25/25)', 'Tamil Nadu History & Dev Administration (Unit 8 & 9)', 'General Science, Geography & Economy (GS Core)'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
 
