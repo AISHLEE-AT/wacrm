@@ -192,7 +192,7 @@ export default function AdminOverviewPage() {
               </div>
               <CardTitle className="text-xl">TeachO Teacher Studio &amp; CMS</CardTitle>
               <CardDescription>
-                Curate, AI-draft, edit, and publish day-wise lessons across 86 courses directly to Supabase LMS with bulk CSV/JSON import.
+                Curate, AI-draft, edit, and publish day-wise lessons across all 96+ master courses directly to Supabase LMS with bulk CSV/JSON import.
               </CardDescription>
             </CardHeader>
           </Card>

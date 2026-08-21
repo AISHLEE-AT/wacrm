@@ -471,7 +471,7 @@ export default function TeachODashboard() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h3 className="text-base md:text-lg font-bold text-white">
-                  86 Master Programs Catalog
+                  {ALL_COURSES.length} Master Programs Catalog
                 </h3>
                 <p className="text-xs text-slate-400">
                   Select any course to immediately load its authentic syllabus and day plan
@@ -485,7 +485,7 @@ export default function TeachODashboard() {
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search 86 courses by name, board, grade..."
+                  placeholder={`Search ${ALL_COURSES.length} courses by name, board, grade...`}
                   className="w-full pl-9 pr-4 py-2 bg-[#111827] border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
                 />
               </div>
@@ -494,17 +494,17 @@ export default function TeachODashboard() {
             {/* 10 Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               {[
-                { id: 'all', label: 'All 86 Programs' },
-                { id: 'school_tnsb_en', label: '🎒 TNSB English (17)' },
-                { id: 'school_tnsb_ta', label: '🎒 TNSB தமிழ் வழி (16)' },
-                { id: 'school_cbse', label: '🎒 CBSE NCERT (16)' },
-                { id: 'school_matric', label: '🎒 Matriculation (16)' },
-                { id: 'tnpsc', label: '🏛️ TNPSC (5)' },
-                { id: 'upsc_central', label: '🇮🇳 UPSC / Central (3)' },
-                { id: 'entrance', label: '🩺 Entrance (2)' },
-                { id: 'college_degree', label: '🎓 College (6)' },
-                { id: 'skills', label: '💻 Skills (3)' },
-                { id: 'kids_skills', label: '⭐ Kids (2)' },
+                { id: 'all', label: `All ${ALL_COURSES.length} Programs` },
+                { id: 'school_tnsb_en', label: `🎒 TNSB English (${ALL_COURSES.filter(c => c.category === 'school_tnsb_en').length})` },
+                { id: 'school_tnsb_ta', label: `🎒 TNSB தமிழ் வழி (${ALL_COURSES.filter(c => c.category === 'school_tnsb_ta').length})` },
+                { id: 'school_cbse', label: `🎒 CBSE NCERT (${ALL_COURSES.filter(c => c.category === 'school_cbse').length})` },
+                { id: 'school_matric', label: `🎒 Matriculation (${ALL_COURSES.filter(c => c.category === 'school_matric').length})` },
+                { id: 'tnpsc', label: `🏛️ TNPSC (${ALL_COURSES.filter(c => c.category === 'tnpsc').length})` },
+                { id: 'upsc_central', label: `🇮🇳 UPSC / Central (${ALL_COURSES.filter(c => c.category === 'upsc_central').length})` },
+                { id: 'entrance', label: `🩺 Entrance (${ALL_COURSES.filter(c => c.category === 'entrance').length})` },
+                { id: 'college_degree', label: `🎓 College (${ALL_COURSES.filter(c => c.category === 'college_degree').length})` },
+                { id: 'skills', label: `💻 Skills (${ALL_COURSES.filter(c => c.category === 'skills').length})` },
+                { id: 'kids_skills', label: `⭐ Kids (${ALL_COURSES.filter(c => c.category === 'kids_skills').length})` },
               ].map(cat => (
                 <button
                   key={cat.id}

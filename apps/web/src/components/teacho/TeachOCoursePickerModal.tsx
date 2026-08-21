@@ -70,7 +70,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
               <div className="flex items-center gap-2">
                 <h3 className="text-base md:text-lg font-bold text-white">Select Academic Program</h3>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[11px] font-bold">
-                  86 Master Programs
+                  {ALL_COURSES.length} Master Programs
                 </span>
               </div>
               <p className="text-xs text-slate-400">LKG to 12th Boards, Govt Exams, Degrees & Career Skills</p>

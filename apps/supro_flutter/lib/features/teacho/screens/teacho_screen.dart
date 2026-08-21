@@ -179,16 +179,16 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
               child: const Icon(LucideIcons.bookOpen, color: Color(0xFF022C22), size: 18),
             ),
             const SizedBox(width: 10),
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'TeachO Tuition',
                   style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  '86 Master Programs (K-12 & Exams)',
-                  style: TextStyle(color: Colors.white54, fontSize: 10),
+                  '${teachoMasterCourses.length} Master Programs (K-12 & Exams)',
+                  style: const TextStyle(color: Colors.white54, fontSize: 10),
                 ),
               ],
             ),
@@ -951,14 +951,14 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Select Program',
                         style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                      Text('86 Master Academic & Exam Courses', style: TextStyle(color: Colors.white54, fontSize: 11)),
+                      Text('${teachoMasterCourses.length} Master Academic & Exam Courses', style: const TextStyle(color: Colors.white54, fontSize: 11)),
                     ],
                   ),
                   IconButton(
