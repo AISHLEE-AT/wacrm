@@ -1315,6 +1315,16 @@ export function synthesizeFallbackContent(
   subject: string,
   courseTitle: string = 'Master Course',
   dayNumber: number = 1
+): CoursePlayerContent | null {
+  // If no authentic content exists in DB or static dataset, return null to show the official Coming Soon state with WhatsApp support
+  return null;
+}
+
+export function synthesizeFallbackContentLegacy(
+  topicTitle: string,
+  subject: string,
+  courseTitle: string = 'Master Course',
+  dayNumber: number = 1
 ): CoursePlayerContent {
   const t = (topicTitle || '').toLowerCase();
   const s = (subject || '').toLowerCase();
@@ -1670,6 +1680,101 @@ export function normalizeCoursePlayerPayload(
 }
 
 /**
+ * Strict Content Authenticity & Topic Relevance Guard
+ * Validates that cached database / local payloads actually belong to the requested topic and subject.
+ * Rejects corrupt, mismatched, or dummy-seeded payloads (e.g. Math in Biology, ChuChu TV in Grade 12).
+ */
+export function isAuthenticContentMatch(
+  raw: any,
+  requestedTopic: string,
+  requestedSubject: string,
+  requestedCourse: string
+): boolean {
+  if (!raw || typeof raw !== 'object') return false;
+
+  const rawTitle = (raw.topicTitle || raw.title || '').toLowerCase();
+  const rawSubj = (raw.subject || raw.category || '').toLowerCase();
+  const reqTopic = (requestedTopic || '').toLowerCase();
+  const reqSubj = (requestedSubject || '').toLowerCase();
+  const reqCourse = (requestedCourse || '').toLowerCase();
+
+  // 1. Channel Blacklist for higher grades
+  const channelName = (raw.videoMeta?.channel || raw.videoMeta?.channelName || '').toLowerCase();
+  if (channelName.includes('chuchu') || channelName.includes('nursery rhymes') || channelName.includes('cocomelon')) {
+    if (!reqCourse.includes('lkg') && !reqCourse.includes('ukg') && !reqCourse.includes('nursery') && !reqCourse.includes('pre-kg')) {
+      return false; // Reject Nursery Rhymes in higher classes
+    }
+  }
+
+  // 2. Reject obvious dummy title placeholders
+  const dummyTitles = [
+    'செண்டம் பயிற்சி',
+    'மாதிரி வினாத்தாள்',
+    'dummy topic',
+    'sample lesson',
+    'placeholder'
+  ];
+  for (const dt of dummyTitles) {
+    if (rawTitle.includes(dt) && !reqTopic.includes(dt)) {
+      return false;
+    }
+  }
+
+  // 3. Subject Domain Mismatch Checks
+  const isBioReq = reqSubj.includes('bio') || reqSubj.includes('botany') || reqSubj.includes('zoology') || reqSubj.includes('உயிரியல்') || reqSubj.includes('தாவர') || reqSubj.includes('விலங்கு');
+  const isCsReq = reqSubj.includes('computer') || reqSubj.includes('cs') || reqSubj.includes('coding') || reqSubj.includes('python') || reqSubj.includes('dbms') || reqSubj.includes('கணினி');
+  const isMathReq = reqSubj.includes('math') || reqSubj.includes('கணிதம்') || reqSubj.includes('algebra') || reqSubj.includes('geometry') || reqSubj.includes('matrices');
+
+  // Overview / core concepts text scan
+  const allText = (
+    rawTitle + ' ' + 
+    rawSubj + ' ' + 
+    (raw.overview || raw.notes?.overview || '') + ' ' +
+    (Array.isArray(raw.notes?.coreConcepts) ? raw.notes.coreConcepts.map((c: any) => (c.heading || '') + ' ' + (c.body || '')).join(' ') : '')
+  ).toLowerCase();
+
+  if (isBioReq) {
+    // If requested Biology, content must not be strictly about math polynomials or python recursion
+    if (allText.includes('மெய் எண்கள்') || allText.includes('பல்லுறுப்புக்') || allText.includes('recursion') || allText.includes('def solve(')) {
+      if (!allText.includes('cell') && !allText.includes('plant') && !allText.includes('animal') && !allText.includes('தாவர') && !allText.includes('இனப்பெருக்க') && !allText.includes('மரபியல்')) {
+        return false;
+      }
+    }
+  }
+
+  if (isCsReq) {
+    // If requested CS, content must not be purely about botany reproduction
+    if (allText.includes('தாவர இனப்பெருக்கம்') || allText.includes('botany') || allText.includes('zoology')) {
+      if (!allText.includes('code') && !allText.includes('python') && !allText.includes('algorithm') && !allText.includes('variable')) {
+        return false;
+      }
+    }
+  }
+
+  // 4. Topic Keyword Relevance Check
+  // Extract key terms (length >= 4) from requested topic
+  const keyTokens = reqTopic
+    .replace(/[^\w\s\u0B80-\u0BFF]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 4 && !['class', 'standard', 'unit', 'lesson', 'chapter', 'day', 'part', 'step', 'வகுப்பு', 'பாடம்'].includes(w));
+
+  if (keyTokens.length > 0) {
+    let matchCount = 0;
+    for (const token of keyTokens) {
+      if (allText.includes(token)) {
+        matchCount++;
+      }
+    }
+    // If none of the meaningful key topic words appear anywhere in the cached payload title or text, reject it
+    if (matchCount === 0 && !rawTitle.includes(reqTopic.slice(0, 15))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Main Content Resolver:
  * 1. Checks In-Memory Cache (Instant 0ms)
  * 2. Checks Supabase LMS Database (kindle_content_cache)
@@ -1686,6 +1791,7 @@ export async function getCoursePlayerContent(
   taskNumberParam?: number
 ): Promise<CoursePlayerContent | null> {
   const courseId = typeof courseIdOrAi === 'string' ? courseIdOrAi : '';
+  const allowAiGeneration = typeof courseIdOrAi === 'boolean' ? courseIdOrAi : (typeof allowAiOrTaskNum === 'boolean' ? allowAiOrTaskNum : false);
   const taskNumber = typeof allowAiOrTaskNum === 'number' ? allowAiOrTaskNum : (typeof taskNumberParam === 'number' ? taskNumberParam : undefined);
   
   // Extract task number from topic title if not explicitly passed
@@ -1703,16 +1809,28 @@ export async function getCoursePlayerContent(
 
   // 1. Check In-Memory Cache (Instant 0ms)
   if (directTaskKey && inMemoryContentCache.has(directTaskKey)) {
-    return inMemoryContentCache.get(directTaskKey)!;
+    const cached = inMemoryContentCache.get(directTaskKey)!;
+    if (isAuthenticContentMatch(cached, topicTitle, subject, courseTitle)) {
+      return cached;
+    }
   }
   if (directIdKey && inMemoryContentCache.has(directIdKey)) {
-    return inMemoryContentCache.get(directIdKey)!;
+    const cached = inMemoryContentCache.get(directIdKey)!;
+    if (isAuthenticContentMatch(cached, topicTitle, subject, courseTitle)) {
+      return cached;
+    }
   }
   if (inMemoryContentCache.has(daySpecificKey)) {
-    return inMemoryContentCache.get(daySpecificKey)!;
+    const cached = inMemoryContentCache.get(daySpecificKey)!;
+    if (isAuthenticContentMatch(cached, topicTitle, subject, courseTitle)) {
+      return cached;
+    }
   }
   if (inMemoryContentCache.has(cacheKey)) {
-    return inMemoryContentCache.get(cacheKey)!;
+    const cached = inMemoryContentCache.get(cacheKey)!;
+    if (isAuthenticContentMatch(cached, topicTitle, subject, courseTitle)) {
+      return cached;
+    }
   }
 
   // 2. Check Supabase LMS Database (kindle_content_cache)
@@ -1734,20 +1852,22 @@ export async function getCoursePlayerContent(
         .limit(1);
 
       if (!error && data && data.length > 0 && data[0].kindle_json) {
-        const normalized = normalizeCoursePlayerPayload(
-          data[0].kindle_json,
-          topicTitle,
-          subject,
-          courseTitle,
-          dayNumber,
-          courseId,
-          resolvedTaskNum
-        );
-        inMemoryContentCache.set(key, normalized);
-        if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
-        inMemoryContentCache.set(daySpecificKey, normalized);
-        inMemoryContentCache.set(cacheKey, normalized);
-        return normalized;
+        if (isAuthenticContentMatch(data[0].kindle_json, topicTitle, subject, courseTitle)) {
+          const normalized = normalizeCoursePlayerPayload(
+            data[0].kindle_json,
+            topicTitle,
+            subject,
+            courseTitle,
+            dayNumber,
+            courseId,
+            resolvedTaskNum
+          );
+          inMemoryContentCache.set(key, normalized);
+          if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
+          inMemoryContentCache.set(daySpecificKey, normalized);
+          inMemoryContentCache.set(cacheKey, normalized);
+          return normalized;
+        }
       }
     }
   } catch (e) {
@@ -1760,7 +1880,7 @@ export async function getCoursePlayerContent(
       const localCached = localStorage.getItem(cacheKey);
       if (localCached) {
         const parsed = JSON.parse(localCached);
-        if (parsed) {
+        if (parsed && isAuthenticContentMatch(parsed, topicTitle, subject, courseTitle)) {
           const normalized = normalizeCoursePlayerPayload(parsed, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
           inMemoryContentCache.set(daySpecificKey, normalized);
           inMemoryContentCache.set(cacheKey, normalized);
@@ -1773,7 +1893,7 @@ export async function getCoursePlayerContent(
   // 4. If AI generation is requested on-demand, generate high-quality custom lesson content
   if (allowAiGeneration) {
     try {
-      const generated = await generateAiCoursePlayerContent(topicTitle, subject, courseTitle, dayNumber);
+      const generated = await generateContentWithGeminiAI(topicTitle, subject, courseTitle, dayNumber);
       if (generated) {
         const normalized = normalizeCoursePlayerPayload(generated, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
         await persistContent(normalized, persistKeys, { topicTitle, courseTitle, modelUsed: 'gemini-academic-v1' });
@@ -1784,9 +1904,10 @@ export async function getCoursePlayerContent(
     }
   }
 
-  // 5. If no authentic DB content exists and AI not triggered, return null (clean blank state)
+  // 5. If no authentic DB content exists and AI not triggered, return null (clean blank state with WhatsApp support)
   return null;
 }
 
 export const loadCoursePlayerContent = getCoursePlayerContent;
+
 

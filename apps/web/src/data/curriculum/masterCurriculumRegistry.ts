@@ -85,12 +85,14 @@ export function getCourseProfile(courseId: string, courseTitle: string): string 
   if (id === 'skill-vedic-maths') return 'SKILL_VEDIC_MATHS';
   if (id === 'skill-coding-kids') return 'SKILL_CODING_KIDS';
 
-  // 7. Higher Secondary (Class 12) - Check BEFORE single digits!
-  if (id.includes('-12-sci') || id.includes('-12-cs') || id.includes('12th-maths') || id.includes('12th-sci') || id.endsWith('-12')) return 'CLASS_12_SCIENCE';
+  // 7. Higher Secondary (Class 12) - Explicit stream separation
+  if (id.includes('-12-cs') || id.includes('12-cs') || (id.includes('12') && id.includes('computer'))) return 'CLASS_12_CS';
+  if (id.includes('-12-sci') || id.includes('12th-maths') || id.includes('12th-sci') || id.includes('-12-bio') || id.endsWith('-12')) return 'CLASS_12_BIO';
   if (id.includes('-12-com') || id.includes('12th-com')) return 'CLASS_12_COMMERCE';
 
-  // 8. Higher Secondary (Class 11) - Check BEFORE single digits!
-  if (id.includes('-11-sci') || id.includes('11th-sci') || id.endsWith('-11')) return 'CLASS_11_SCIENCE';
+  // 8. Higher Secondary (Class 11) - Explicit stream separation
+  if (id.includes('-11-cs') || id.includes('11-cs') || (id.includes('11') && id.includes('computer'))) return 'CLASS_11_CS';
+  if (id.includes('-11-sci') || id.includes('11th-sci') || id.includes('-11-bio') || id.endsWith('-11')) return 'CLASS_11_BIO';
   if (id.includes('-11-com') || id.includes('11th-com')) return 'CLASS_11_COMMERCE';
 
   // 9. Secondary School (Class 10) - Check BEFORE single digits!
@@ -402,13 +404,21 @@ export function resolveMasterSequentialSyllabus(
     }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
 
-  // ── 7. CLASS 11 & 12 SCIENCE & COMMERCE ──────────────────────────────────
+  // ── 7. CLASS 11 & 12 SCIENCE, CS & COMMERCE ─────────────────────────────
   } else if (profile.startsWith('CLASS_12') || profile.startsWith('CLASS_11')) {
     const isCommerce = profile.includes('COMMERCE');
+    const isCS = profile.includes('CS');
     const grade = profile.includes('12') ? '12' : '11';
-    const subjects = isCommerce
-      ? ['Accountancy (Core)', 'Commerce & Management', 'Economics (Indian & Macro)', 'Business Mathematics / Computer Applications']
-      : ['Mathematics / Bio-Maths', 'Physics (Higher Secondary)', 'Chemistry (Organic & Physical)', 'Biology / Computer Science'];
+
+    let subjects: string[];
+    if (isCommerce) {
+      subjects = ['Accountancy (Core)', 'Commerce & Management', 'Economics (Indian & Macro)', 'Business Mathematics / Computer Applications'];
+    } else if (isCS) {
+      subjects = ['Mathematics (Higher Secondary)', 'Physics (Higher Secondary)', 'Chemistry (Organic & Physical)', 'Computer Science (Python & DBMS)'];
+    } else {
+      subjects = ['Mathematics / Bio-Maths', 'Physics (Higher Secondary)', 'Chemistry (Organic & Physical)', 'Biology (Botany & Zoology)'];
+    }
+
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
 
@@ -424,6 +434,14 @@ export function resolveMasterSequentialSyllabus(
       const chemHsc = ['Metallurgy: Concentration & Extraction Methods', 'p-Block Elements I & II Properties', 'd-Block and f-Block Transition Chemistry', 'Coordination Chemistry & Crystal Field Theory', 'Solid State: Unit Cells & Packing Efficiency', 'Chemical Kinetics: Integrated Rate Law', 'Ionic Equilibrium: Ostwald Dilution & Buffers', 'Electrochemistry: Nernst Equation & Batteries', 'Organic Hydroxy Compounds & Ethers', 'Carbonyl Compounds & Biomolecules'];
       chapterName = `Class ${grade} Chemistry: ${chemHsc[cycle10]}`;
       formula = 'Nernst: E = E0 - (0.0591 / n) log Q | Henderson-Hasselbalch: pH = pKa + log([Salt]/[Acid])';
+    } else if (activeSub.includes('Biology')) {
+      const bioHsc = ['Botany Unit 1: Reproduction in Plants (தாவர இனப்பெருக்கம்)', 'Botany Unit 2: Classical Genetics & Mendelian Principles (பாரம்பரிய மரபியல்)', 'Botany Unit 3: Chromosomal Basis of Inheritance (குரோமோசோம் மரபியல்)', 'Botany Unit 4: Principles & Processes of Biotechnology (உயிர்த்தொழில்நுட்பவியல்)', 'Botany Unit 5: Plant Tissue Culture & Totipotency (திசு வளர்ப்பு)', 'Zoology Unit 1: Human Reproduction & Gametogenesis (மனித இனப்பெருக்கம்)', 'Zoology Unit 2: Reproductive Health & Contraceptive Methods (இனப்பெருக்க நலன்)', 'Zoology Unit 3: Molecular Genetics: DNA Replication & Transcription (மூலக்கூறு மரபியல்)', 'Zoology Unit 4: Evolution & Natural Selection Theories (பரிணாமக் கொள்கைகள்)', 'Zoology Unit 5: Immunology & Human Diseases (மனித நலன் & நோய்த்தடைகாப்பியல்)'];
+      chapterName = `Class ${grade} Biology: ${bioHsc[cycle10]}`;
+      formula = 'Mendelian Dihybrid Ratio: 9:3:3:1 | Central Dogma: DNA -> mRNA -> Protein | Hardy-Weinberg: p^2 + 2pq + q^2 = 1';
+    } else if (activeSub.includes('Computer Science')) {
+      const csHsc = ['Function Definition, Scope & Algorithmic Complexity (LEGB Rule)', 'Data Abstraction & Abstract Data Types (ADT)', 'Python Control Structures (Branching & Loop Constructs)', 'Python Functions, Arguments & Recursion Fundamentals', 'Python Strings, Indexing, Slicing & Formatting', 'Python Lists, Tuples, Sets & Dictionary Operations', 'Classes and Objects in Python (OOP & Constructors)', 'Database Concepts & Relational Data Model (Keys & Normalization)', 'Structured Query Language (SQL DDL & DML Commands)', 'Python Database Connectivity (SQLite3 & MySQL Connector)'];
+      chapterName = `Class ${grade} CS: ${csHsc[cycle10]}`;
+      formula = 'LEGB Rule: Local -> Enclosing -> Global -> Built-in | SQL: SELECT column FROM table WHERE condition';
     } else if (activeSub.includes('Accountancy')) {
       const accHsc = ['Accounts from Incomplete Records (Single Entry)', 'Accounts of Not-for-Profit Organisations', 'Partnership Accounts: Admission of a Partner', 'Partnership Accounts: Retirement and Death of a Partner', 'Company Accounts: Issue of Shares & Forfeiture', 'Financial Statement Analysis & Comparative Statements', 'Ratio Analysis: Liquidity, Solvency & Profitability', 'Financial Statements of Sole Proprietorship', 'Cash Flow Statement & Capital Budgeting', 'Computerised Accounting System (Tally ERP)'];
       chapterName = `Class ${grade} Accountancy: ${accHsc[cycle10]}`;
@@ -433,7 +451,7 @@ export function resolveMasterSequentialSyllabus(
       chapterName = `Class ${grade} Commerce: ${comHsc[cycle10]}`;
       formula = 'Fayol 14 Principles | Marketing Mix 4Ps: Product, Price, Place, Promotion';
     } else {
-      chapterName = `Class ${grade} ${activeSub}: Chapter ${cycle10 + 1} Advanced Conceptual Mastery`;
+      chapterName = `Class ${grade} ${activeSub}: Unit ${cycle10 + 1} Core Academic Knowledge`;
       formula = 'Academic Standard HSC Core Formulation';
     }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
