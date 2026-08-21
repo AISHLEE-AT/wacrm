@@ -135,9 +135,16 @@ async function callGeminiAPI(prompt) {
 // ─── 5. GENERATE LESSON FOR COURSE & DAY ──────────────────────────────────────
 async function generateLessonContent(course, dayNumber) {
   const isTamil = course.medium === 'Tamil' || course.id.includes('-ta-');
-  const subjects = course.subjects || ['Core Subject'];
-  const activeSubject = subjects[(dayNumber - 1) % subjects.length];
-  const topicTitle = `${activeSubject}: Day ${dayNumber} Mastery & Core Applications`;
+  let sequential;
+  try {
+    const { resolveMasterSequentialSyllabus } = require('../apps/web/src/data/curriculum/masterCurriculumRegistry');
+    sequential = resolveMasterSequentialSyllabus(course.id, course.title, dayNumber, 1);
+  } catch (e) {
+    // fallback
+  }
+
+  const activeSubject = sequential?.subject || (course.subjects ? course.subjects[(dayNumber - 1) % course.subjects.length] : 'Core Subject');
+  const topicTitle = sequential?.topicTitle || `${activeSubject}: Day ${dayNumber} Core Mastery`;
 
   const prompt = `You are a Lead Curriculum Architect & Senior Examiner.
 Generate an authentic, highly detailed, board-exam standard Kindle Lesson JSON for:

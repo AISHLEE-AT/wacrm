@@ -9,6 +9,7 @@ import {
   Share2, MessageCircle
 } from 'lucide-react';
 import { ALL_COURSES, CourseOption } from '@/data/coursesCatalog';
+import { resolveMasterSequentialSyllabus } from '@/data/curriculum/masterCurriculumRegistry';
 
 export default function TeachOAdminStudioPage() {
   const [activeTab, setActiveTab] = useState<'editor' | 'bulk'>('editor');
@@ -66,42 +67,26 @@ export default function TeachOAdminStudioPage() {
   const [bulkProgress, setBulkProgress] = useState(0);
   const [bulkResult, setBulkResult] = useState<string | null>(null);
 
-  // Compute all sections / periods available for this course
-  const courseSubjects = selectedCourse.subjects || [];
+  // Compute all sections / periods dynamically from Master Sequential Syllabus
   const isTamilCourse = selectedCourse.medium === 'Tamil' || selectedCourse.id.includes('-ta-');
+  const sectionCount = selectedCourse.id.includes('jee') || selectedCourse.id.includes('neet') 
+    ? 4 
+    : (selectedCourse.id.includes('tnpsc') || selectedCourse.id.includes('upsc') || isTamilCourse || selectedCourse.id.includes('7') ? 5 : 4);
 
-  const daySections = courseSubjects.length > 0
-    ? courseSubjects.map((s, idx) => ({
-        taskNumber: idx + 1,
-        title: s.name,
-        icon: s.icon || '📖',
-        color: s.color || '#3b82f6',
-        currentChapter: s.currentChapter || ''
-      }))
-    : (selectedCourse.id.includes('jee') ? [
-        { taskNumber: 1, title: 'Mathematics', icon: '📐', color: '#06b6d4', currentChapter: 'Coordinate Geometry & Calculus' },
-        { taskNumber: 2, title: 'Physics', icon: '⚡', color: '#ec4899', currentChapter: 'Mechanics & Electromagnetism' },
-        { taskNumber: 3, title: 'Chemistry', icon: '🧪', color: '#8b5cf6', currentChapter: 'Organic & Inorganic Chemistry' },
-        { taskNumber: 4, title: 'Daily Problem Sprint', icon: '🏆', color: '#f59e0b', currentChapter: '10-Question High-Yield Drills' }
-      ] : selectedCourse.id.includes('neet') ? [
-        { taskNumber: 1, title: 'Botany & Plant Physiology', icon: '🌿', color: '#10b981', currentChapter: 'Cell Biology & Plant Physiology' },
-        { taskNumber: 2, title: 'Zoology & Human Physiology', icon: '🧬', color: '#3b82f6', currentChapter: 'Human Physiology & Genetics' },
-        { taskNumber: 3, title: 'Physics', icon: '⚡', color: '#ec4899', currentChapter: 'Optics & Thermodynamics' },
-        { taskNumber: 4, title: 'Chemistry', icon: '🧪', color: '#8b5cf6', currentChapter: 'Organic & Physical Chemistry' }
-      ] : selectedCourse.id.includes('tnpsc') ? [
-        { taskNumber: 1, title: isTamilCourse ? 'பொதுத்தமிழ் & செய்யுள்' : 'General English', icon: '📜', color: '#ec4899', currentChapter: 'இலக்கணம் & இலக்கியம்' },
-        { taskNumber: 2, title: 'இந்திய அரசியலமைப்பு (Polity)', icon: '🏛️', color: '#3b82f6', currentChapter: 'அரசியலமைப்பு & உரிமைகள்' },
-        { taskNumber: 3, title: 'வரலாறு & பண்பாடு', icon: '🏺', color: '#f59e0b', currentChapter: 'தமிழக வரலாறு & பண்பாடு' },
-        { taskNumber: 4, title: 'பொது அறிவியல் & பொருளாதாரம்', icon: '🔬', color: '#10b981', currentChapter: 'பொருளாதாரம் & அறிவியல்' },
-        { taskNumber: 5, title: 'திறனறிவும் மனக்கணக்கும் (Aptitude)', icon: '📐', color: '#06b6d4', currentChapter: 'சுருக்குதல் & தனிவட்டி' }
-      ] : [
-        { taskNumber: 1, title: isTamilCourse ? 'தமிழ் மொழி & செய்யுள்' : 'Primary Language', icon: '📜', color: '#ec4899', currentChapter: 'செய்யுள் & உரைநடை' },
-        { taskNumber: 2, title: isTamilCourse ? 'கணிதம்' : 'Mathematics', icon: '📐', color: '#06b6d4', currentChapter: 'எண்கள் & இயற்கணிதம்' },
-        { taskNumber: 3, title: isTamilCourse ? 'அறிவியல்' : 'Science & EVS', icon: '🔬', color: '#10b981', currentChapter: 'இயற்பியல் & உயிரியல்' },
-        { taskNumber: 4, title: isTamilCourse ? 'சமூக அறிவியல்' : 'Social Science', icon: '🌍', color: '#f59e0b', currentChapter: 'வரலாறு & புவியியல்' },
-        { taskNumber: 5, title: 'English & Grammar', icon: '📖', color: '#8b5cf6', currentChapter: 'Prose & Vocabulary' },
-        { taskNumber: 6, title: isTamilCourse ? 'மாதிரித் தேர்வு & வினாடி வினா' : 'Assessment Quiz', icon: '📝', color: '#ef4444', currentChapter: 'Daily Assessment' }
-      ]);
+  const daySections = Array.from({ length: sectionCount }, (_, i) => {
+    const tNum = i + 1;
+    const item = resolveMasterSequentialSyllabus(selectedCourse.id, selectedCourse.title, dayNumber, tNum);
+    const icons = ['📜', '📐', '🔬', '🌍', '📖', '📝'];
+    const colors = ['#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+    return {
+      taskNumber: tNum,
+      title: item.subject,
+      icon: icons[(tNum - 1) % icons.length],
+      color: colors[(tNum - 1) % colors.length],
+      currentChapter: item.chapterTitle || item.subtopic,
+      topicTitle: item.topicTitle
+    };
+  });
 
   // Load lesson on course/day/section change
   useEffect(() => {

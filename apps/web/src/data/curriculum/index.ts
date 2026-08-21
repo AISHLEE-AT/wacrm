@@ -18,6 +18,7 @@ import {
   KIDS_SKILLS_MODULES,
 } from './schoolCurriculum';
 import { PYTHON_AI_SYLLABUS, FULLSTACK_WEB_SYLLABUS } from './skillsCurriculum';
+import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry';
 
 export interface DailySubjectTask {
   id: string;
@@ -56,9 +57,7 @@ export interface DayPlan {
 
 /**
  * Resolves the exact DayPlan for any course and day number
- * Accepts either:
- * - resolveMasterCurriculumPlan(courseOption, dayNumber)
- * - resolveMasterCurriculumPlan(courseTitle, category, dayNumber, totalDays)
+ * Integrates directly with Master Sequential Curriculum Registry
  */
 export function resolveMasterCurriculumPlan(
   courseOrTitle: any,
@@ -66,21 +65,19 @@ export function resolveMasterCurriculumPlan(
   dayParam: number = 1,
   totalDaysParam: number = 200
 ): DayPlan {
+  let courseId = '';
   let courseTitle = 'Foundation Course';
   let category = 'school_primary';
   let day = 1;
   let totalDays = 200;
-  let baseTasks: any[] = [];
-  let baseSubjects: any[] = [];
   let phaseTitle = 'Phase 1: Foundation Building';
 
   if (typeof courseOrTitle === 'object' && courseOrTitle !== null) {
+    courseId = courseOrTitle.id || '';
     courseTitle = courseOrTitle.title || courseOrTitle.short || 'Master Course';
     category = courseOrTitle.category || 'school_primary';
     day = typeof categoryOrDay === 'number' ? categoryOrDay : 1;
     totalDays = courseOrTitle.totalDays || 200;
-    baseTasks = Array.isArray(courseOrTitle.tasks) ? courseOrTitle.tasks : [];
-    baseSubjects = Array.isArray(courseOrTitle.subjects) ? courseOrTitle.subjects : [];
     phaseTitle = courseOrTitle.phaseTitle || phaseTitle;
   } else {
     courseTitle = typeof courseOrTitle === 'string' ? courseOrTitle : 'Master Course';
@@ -90,159 +87,51 @@ export function resolveMasterCurriculumPlan(
   }
 
   const safeDay = Math.max(1, Math.min(day, totalDays));
-  const t = courseTitle.toLowerCase();
   const blockNum = Math.ceil(safeDay / 10);
+  const isTamilMedium = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
 
-  // If the course object has pre-configured structured tasks, cycle them cleanly
-  if (baseTasks.length > 0) {
-    const taskIndex = (safeDay - 1) % baseTasks.length;
-    const pTask = baseTasks[taskIndex];
-    const rawSub = pTask.rawSubject || (baseSubjects[0]?.name || 'Core Subject');
-    const rawTop = pTask.rawTopic || pTask.title || `Day ${safeDay} Focus`;
+  // Build 4 to 5 authentic subject period tasks from master sequential curriculum
+  const taskCount = isTamilMedium || courseId.includes('7') || courseId.includes('10') ? 5 : 4;
+  const tasks: DailySubjectTask[] = [];
 
-    const tasks: DailySubjectTask[] = [
-      {
-        id: `task_${safeDay}_1`,
-        title: pTask.title || `${rawSub}: ${rawTop}`,
-        subtitle: pTask.subtitle || `Interactive video lecture & concept breakdown`,
-        subject: rawSub,
-        topic: rawTop,
-        rawSubject: rawSub,
-        rawTopic: rawTop,
-        durationMinutes: 20,
-        duration: pTask.duration || '20 Min',
-        taskType: (pTask.type as any) || 'video',
-        type: pTask.type || 'video',
-        icon: '📖',
-        activityPrompt: `Watch the video and note down 3 key concepts.`
-      },
-      {
-        id: `task_${safeDay}_2`,
-        title: `Daily Practice Quiz (DPQ): ${rawSub}`,
-        subtitle: `4 High-Yield MCQs with step-by-step solutions`,
-        subject: 'DPQ Assessment',
-        topic: `${rawTop} Practice Drills`,
-        rawSubject: 'DPQ Test',
-        rawTopic: `${rawTop} MCQs`,
-        durationMinutes: 15,
-        duration: '15 Min',
-        taskType: 'practice',
-        type: 'practice',
-        icon: '📝',
-        activityPrompt: `Complete all 4 quiz questions and review explanations.`
-      },
-      {
-        id: `task_${safeDay}_3`,
-        title: `1-Minute Bedtime & Parent Recap`,
-        subtitle: `Quick daily summary and retention review`,
-        subject: 'Daily Revision',
-        topic: `${rawTop} Recap`,
-        rawSubject: 'Revision',
-        rawTopic: `Day ${safeDay} Concept Retention`,
-        durationMinutes: 10,
-        duration: '10 Min',
-        taskType: 'revision',
-        type: 'revision',
-        icon: '🌙',
-        activityPrompt: `Review flashcards and recall what you mastered today.`
-      }
-    ];
+  const icons = ['📜', '📐', '🔬', '🌍', '📚', '🎯'];
+  const taskTypes: Array<DailySubjectTask['taskType']> = ['reading', 'practice', 'video', 'activity', 'test'];
 
-    let totalMins = 0;
-    tasks.forEach(task => { totalMins += task.durationMinutes; });
-
-    return {
-      dayNumber: safeDay,
-      day: safeDay,
-      blockNumber: blockNum,
-      phaseTitle: phaseTitle,
-      themeTitle: `Day ${safeDay}: ${rawTop}`,
-      totalDurationMins: totalMins,
-      totalMinutes: totalMins,
-      tasks,
-      dailyRevision: `Recap ${rawTop} with interactive flashcards.`,
-      dailyTestSummary: { questionCount: 4, testType: 'mcq', focusArea: rawTop }
-    };
+  for (let tNum = 1; tNum <= taskCount; tNum++) {
+    const item = resolveMasterSequentialSyllabus(courseId, courseTitle, safeDay, tNum);
+    tasks.push({
+      id: `task_${safeDay}_${tNum}`,
+      title: item.topicTitle,
+      subtitle: item.subtopic ? `${item.chapterTitle} • ${item.subtopic}` : item.overview.substring(0, 70),
+      subject: item.subject,
+      topic: item.topicTitle,
+      subtopic: item.subtopic,
+      rawSubject: item.subject,
+      rawTopic: item.topicTitle,
+      durationMinutes: tNum === taskCount ? 15 : 20,
+      duration: tNum === taskCount ? '15 Min' : '20 Min',
+      taskType: taskTypes[(tNum - 1) % taskTypes.length],
+      type: taskTypes[(tNum - 1) % taskTypes.length],
+      icon: icons[(tNum - 1) % icons.length],
+      activityPrompt: `Day ${safeDay} (Period ${tNum}): Master ${item.topicTitle} with standard textbook exercises.`
+    });
   }
-
-  // 1. PRIMARY SCHOOL
-  const isPrimary = t.includes('class 1') || t.includes('class 2') || t.includes('class 3') || t.includes('class 4') || t.includes('class 5') ||
-                    t.includes('1st') || t.includes('2nd') || t.includes('3rd') || t.includes('4th') || t.includes('5th') ||
-                    t.includes('lkg') || t.includes('ukg') || t.includes('pre-school') || t.includes('kindergarten') ||
-                    t.includes('1-ஆம்') || t.includes('2-ஆம்') || t.includes('3-ஆம்') || t.includes('4-ஆம்') || t.includes('5-ஆம்') ||
-                    category === 'school_tnsb_en' || category === 'school_tnsb_ta' || category === 'school_cbse' || category === 'school_matric';
-
-  const mathIdx = (safeDay - 1) % (PRIMARY_MATHS_MODULES?.length || 1);
-  const evsIdx = (safeDay - 1) % (PRIMARY_EVS_SCIENCE?.length || 1);
-  const langIdx = (safeDay - 1) % (PRIMARY_LANGUAGE_LIT?.length || 1);
-
-  const curMath = PRIMARY_MATHS_MODULES[mathIdx] || { chapterTitle: 'Number Magic', subtopics: ['Counting', 'Addition'], keyConcepts: ['Numbers'] };
-  const curEvs = PRIMARY_EVS_SCIENCE[evsIdx] || { chapterTitle: 'My Surroundings', subtopics: ['Living Things', 'Plants'], keyConcepts: ['Nature'] };
-  const curLang = PRIMARY_LANGUAGE_LIT[langIdx] || { chapterTitle: 'Phonics & Stories', subtopics: ['Alphabet', 'Words'], keyConcepts: ['Reading'] };
-
-  const isTamilMedium = t.includes('தமிழ்') || t.includes('tamil') || category === 'school_tnsb_ta';
-
-  const tasks: DailySubjectTask[] = [
-    {
-      id: `task_${safeDay}_1`,
-      title: `${isTamilMedium ? 'கணிதம்' : 'Mathematics'}: ${curMath.chapterTitle}`,
-      subtitle: curMath.subtopics?.slice(0, 2).join(' • ') || 'Core concepts and drills',
-      subject: isTamilMedium ? 'கணிதம் (Mathematics)' : 'Math-Magic',
-      topic: curMath.chapterTitle,
-      rawSubject: 'Mathematics',
-      rawTopic: curMath.chapterTitle,
-      durationMinutes: 15,
-      duration: '15 Min',
-      taskType: 'practice',
-      type: 'practice',
-      icon: '📐',
-      activityPrompt: `Day ${safeDay}: Solve 3 visual math problems.`
-    },
-    {
-      id: `task_${safeDay}_2`,
-      title: `${isTamilMedium ? 'அறிவியல் / EVS' : 'Science & EVS'}: ${curEvs.chapterTitle}`,
-      subtitle: curEvs.subtopics?.slice(0, 2).join(' • ') || 'Nature concepts and exploration',
-      subject: isTamilMedium ? 'சூழ்நிலையியல் (EVS & Science)' : 'Environmental Science (EVS)',
-      topic: curEvs.chapterTitle,
-      rawSubject: 'EVS / Science',
-      rawTopic: curEvs.chapterTitle,
-      durationMinutes: 15,
-      duration: '15 Min',
-      taskType: 'video',
-      type: 'video',
-      icon: '🔬',
-      activityPrompt: `Day ${safeDay}: Watch the science video lesson.`
-    },
-    {
-      id: `task_${safeDay}_3`,
-      title: `${isTamilMedium ? 'தமிழ் மொழி' : 'English Phonics'}: ${curLang.chapterTitle}`,
-      subtitle: curLang.subtopics?.slice(0, 2).join(' • ') || 'Reading and writing practice',
-      subject: isTamilMedium ? 'தமிழ் பாடம் & ஆத்திசூடி' : 'English Phonics & Story',
-      topic: curLang.chapterTitle,
-      rawSubject: 'Language',
-      rawTopic: curLang.chapterTitle,
-      durationMinutes: 15,
-      duration: '15 Min',
-      taskType: 'reading',
-      type: 'reading',
-      icon: '📖',
-      activityPrompt: `Day ${safeDay}: Read aloud with parent and practice writing.`
-    }
-  ];
 
   let totalMins = 0;
   tasks.forEach(task => { totalMins += task.durationMinutes; });
+
+  const themeTitle = tasks.length > 0 ? `Day ${safeDay}: ${tasks[0].subject} & ${tasks[1]?.subject || 'Core Concepts'}` : `Day ${safeDay} Comprehensive Routine`;
 
   return {
     dayNumber: safeDay,
     day: safeDay,
     blockNumber: blockNum,
-    phaseTitle: `Phase ${Math.min(3, blockNum)}: Foundations & Problem Solving`,
-    themeTitle: `Day ${safeDay}: ${curMath.chapterTitle} & ${curEvs.chapterTitle}`,
+    phaseTitle: `Phase ${Math.min(4, blockNum)}: Academic Mastery & Exam Readiness`,
+    themeTitle,
     totalDurationMins: totalMins,
     totalMinutes: totalMins,
     tasks,
-    dailyRevision: `Recap ${curMath.chapterTitle} and ${curEvs.chapterTitle}.`,
-    dailyTestSummary: { questionCount: 4, testType: 'mcq', focusArea: curMath.chapterTitle }
+    dailyRevision: `Recap all ${tasks.length} subject periods covered on Day ${safeDay}.`,
+    dailyTestSummary: { questionCount: 4, testType: 'mcq', focusArea: tasks[0]?.topic || 'Day Review' }
   };
 }
