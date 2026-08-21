@@ -1770,23 +1770,21 @@ export async function getCoursePlayerContent(
     }
   } catch (e) {}
 
-  // 4. Fallback to Deterministic Sequential Master Syllabus (100% authentic, exact chapter syllabus)
-  try {
-    const seqItem = resolveMasterSequentialSyllabus(courseId || courseTitle, courseTitle, dayNumber, resolvedTaskNum);
-    if (seqItem) {
-      const normalized = normalizeCoursePlayerPayload(seqItem, topicTitle || seqItem.topicTitle, subject || seqItem.subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
-      return normalized;
+  // 4. If AI generation is requested on-demand, generate high-quality custom lesson content
+  if (allowAiGeneration) {
+    try {
+      const generated = await generateAiCoursePlayerContent(topicTitle, subject, courseTitle, dayNumber);
+      if (generated) {
+        const normalized = normalizeCoursePlayerPayload(generated, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
+        await persistContent(normalized, persistKeys, { topicTitle, courseTitle, modelUsed: 'gemini-academic-v1' });
+        return normalized;
+      }
+    } catch (e) {
+      console.warn('AI generation error:', e);
     }
-  } catch (e) {}
-
-  // 5. Ultimate Fallback
-  const fallback = synthesizeFallbackContent(topicTitle, subject, courseTitle, dayNumber);
-  if (fallback) {
-    const normalized = normalizeCoursePlayerPayload(fallback, topicTitle, subject, courseTitle, dayNumber, courseId, resolvedTaskNum);
-    await persistContent(normalized, persistKeys, { topicTitle, courseTitle, modelUsed: 'deterministic-academic-engine-v2' });
-    return normalized;
   }
 
+  // 5. If no authentic DB content exists and AI not triggered, return null (clean blank state)
   return null;
 }
 

@@ -530,33 +530,71 @@ export function resolveMasterSequentialSyllabus(
 
   // ── 11. COLLEGE DEGREE & TECH SKILLS ──────────────────────────────────────
   } else if (profile.startsWith('COLLEGE_') || profile.startsWith('SKILL_')) {
-    if (profile === 'SKILL_PYTHON_AI' || profile === 'COLLEGE_AIDS') {
-      const pyTopics = ['Python Syntax, Data Types & Virtual Environments', 'Control Flow, Functions, Lambdas & List Comprehensions', 'Object Oriented Programming (Classes, Inheritance, Dunder Methods)', 'NumPy Matrix Operations & Vectorized Computing', 'Pandas DataFrames, Data Cleaning & Feature Engineering', 'Matplotlib & Seaborn Interactive Visualizations', 'Scikit-Learn: Supervised Regression & Classification Models', 'Unsupervised Learning: K-Means Clustering & PCA Dimensionality', 'Deep Learning Foundations: PyTorch Tensors & Neural Networks', 'Building & Deploying FastAPI AI Microservices & LLM Agents'];
-      chapterName = pyTopics[cycle10];
-      formula = 'Linear Regression: y = Wx + b | Softmax: P(y=j|x) = e^(z_j) / Σ e^(z_k) | NumPy: np.dot(A, B)';
-      subjectName = 'Python AI & Machine Learning';
-    } else if (profile === 'SKILL_FULLSTACK' || profile === 'COLLEGE_CSE') {
+    if (profile === 'COLLEGE_CSE' || (courseId || '').includes('bca') || (courseId || '').includes('bsc-cs')) {
+      const cseSubjects = ['Data Structures & Algorithms', 'Database Management Systems (DBMS)', 'Operating Systems & Networking', 'Full-Stack Web & Software Engineering'];
+      const activeSub = cseSubjects[(safeTask - 1) % cseSubjects.length];
+      subjectName = activeSub;
+      
+      const cseDsaTopics = ['Arrays, Strings & Linked Lists Fundamentals', 'Stacks, Queues & Priority Queue Applications', 'Binary Trees & Binary Search Trees (BST)', 'Graph Representations & BFS/DFS Traversals', 'Divide & Conquer: Merge Sort & Quick Sort', 'Greedy Algorithms: Dijkstra & Kruskal MST', 'Dynamic Programming: Knapsack & Longest Subsequence', 'Hashing Techniques, HashMaps & Collision Resolution', 'Advanced Trees: AVL Trees & B-Tree Indexing', 'Asymptotic Notation & Time-Space Complexity Analysis'];
+      const cseDbmsTopics = ['ER Modeling & Relational Schema Design', 'SQL DDL/DML, Joins & Complex Subqueries', 'Functional Dependencies & Normalization (1NF to BCNF)', 'Relational Algebra & Tuple Relational Calculus', 'Transaction Processing & ACID Properties', 'Concurrency Control Protocols & Deadlock Handling', 'File Organization & B+ Tree Indexing', 'Query Execution Plans & Cost-Based Optimization', 'NoSQL Architecture, Key-Value & Document Stores', 'Database Security, Backup & Disaster Recovery'];
+      const cseOsNetTopics = ['Process Life Cycle & CPU Scheduling Algorithms', 'Process Synchronization, Semaphores & Mutex', 'Memory Management, Paging & Segmentation', 'Virtual Memory, Demand Paging & Page Replacement', 'File Systems, Directory Structures & Disk Scheduling', 'OSI 7-Layer & TCP/IP Protocol Architecture', 'Data Link Layer: Framing, Flow & Error Control', 'Network Layer: IPv4/IPv6 Addressing & Subnetting', 'Transport Layer: TCP Congestion Control & UDP', 'Network Security: Firewalls, TLS/SSL & Cryptography'];
+      const cseFsTopics = ['Modern TypeScript & ESNext Async Patterns', 'React 19, Hooks & State Management Architecture', 'Node.js Runtime & Express / NestJS REST APIs', 'PostgreSQL, Schema Migrations & Prisma ORM', 'Authentication: JWT, OAuth2 & Role-Based Access Control', 'Real-Time WebSockets & Message Brokers (Redis)', 'Docker Containerization & Microservices Architecture', 'CI/CD Workflows with GitHub Actions', 'Cloud Infrastructure Deployment on AWS & Vercel', 'System Design, Load Balancing & High Availability'];
+      
+      if (safeTask % 4 === 1) { chapterName = cseDsaTopics[cycle10]; formula = 'Time Complexity: O(log N) | BST Search: Left < Root < Right'; }
+      else if (safeTask % 4 === 2) { chapterName = cseDbmsTopics[cycle10]; formula = 'ACID: Atomicity, Consistency, Isolation, Durability | 3NF: X -> A (Superkey or Prime)'; }
+      else if (safeTask % 4 === 3) { chapterName = cseOsNetTopics[cycle10]; formula = 'TCP 3-Way Handshake: SYN -> SYN-ACK -> ACK | Deadlock 4 Coffman Conditions'; }
+      else { chapterName = cseFsTopics[cycle10]; formula = 'React Hook Rule: useState + useEffect | JWT: Header.Payload.Signature'; }
+    } else if (profile === 'COLLEGE_AIDS' || profile === 'SKILL_PYTHON_AI') {
+      const aidsSubjects = ['Mathematics & Statistics for AI', 'Python Data Engineering (NumPy & Pandas)', 'Machine Learning & Predictive Modeling', 'Deep Learning, PyTorch & LLM Architectures'];
+      const activeSub = aidsSubjects[(safeTask - 1) % aidsSubjects.length];
+      subjectName = activeSub;
+
+      const aidsMathTopics = ['Linear Algebra: Vectors, Matrices & Eigenvalues', 'Multivariate Calculus, Gradients & Partial Derivatives', 'Probability Distributions: Gaussian, Binomial & Poisson', 'Hypothesis Testing, p-values & Confidence Intervals', 'Optimization Algorithms: Gradient Descent & Adam', 'Dimensionality Reduction: PCA & SVD Derivations', 'Markov Chains, Monte Carlo & Bayesian Inference', 'Information Theory: Entropy, Cross-Entropy & KL Divergence', 'Statistical Decision Theory & Risk Minimization', 'Mathematical Foundations of Neural Networks'];
+      const aidsDataTopics = ['Python Vectorized Computing with NumPy', 'Pandas DataFrames: Advanced Indexing & Aggregations', 'Data Cleaning, Imputation & Outlier Detection', 'Feature Engineering & Categorical Encoding', 'Exploratory Data Analysis (EDA) with Seaborn & Plotly', 'SQL Analytics & Window Functions for Data Science', 'Big Data Processing with Apache PySpark', 'ETL Pipeline Automation & Parquet Data Lakes', 'Data Versioning with DVC & MLflow Tracking', 'Data Quality Auditing & Schema Validation'];
+      const aidsMlTopics = ['Supervised Learning: Linear & Logistic Regression', 'Decision Trees, Random Forests & Gradient Boosting (XGBoost)', 'Support Vector Machines (SVM) & Kernel Methods', 'Model Evaluation: ROC-AUC, Precision-Recall & F1 Score', 'Cross-Validation Strategies & Hyperparameter Tuning', 'Unsupervised Learning: K-Means & Hierarchical Clustering', 'Anomaly Detection & One-Class Classification', 'Time Series Forecasting: ARIMA, Prophet & LSTMs', 'Recommendation Systems: Collaborative Filtering', 'Explainable AI (XAI): SHAP & LIME Interpretability'];
+      const aidsDlTopics = ['Perceptrons, Multi-Layer Perceptrons & Backpropagation', 'PyTorch Tensor Operations & Autograd Engine', 'Convolutional Neural Networks (CNNs) for Computer Vision', 'Transfer Learning with ResNet & Vision Transformers (ViT)', 'Recurrent Neural Networks (RNNs) & GRU/LSTM Networks', 'Transformer Architecture & Multi-Head Self-Attention', 'Pretrained Large Language Models (LLMs) & Tokenization', 'Fine-Tuning LLMs with LoRA & QLoRA Techniques', 'Retrieval Augmented Generation (RAG) & Vector Databases', 'Deploying Scalable AI Inference APIs with FastAPI & Docker'];
+
+      if (safeTask % 4 === 1) { chapterName = aidsMathTopics[cycle10]; formula = 'Gradient Descent: θ := θ - α ∇J(θ) | Matrix Dot: C = A · B'; }
+      else if (safeTask % 4 === 2) { chapterName = aidsDataTopics[cycle10]; formula = 'Pandas Query: df.groupby().agg() | NumPy Broadcasting Shape'; }
+      else if (safeTask % 4 === 3) { chapterName = aidsMlTopics[cycle10]; formula = 'Logistic Sigmoid: σ(z) = 1 / (1 + e^-z) | Loss: Binary Cross-Entropy'; }
+      else { chapterName = aidsDlTopics[cycle10]; formula = 'Attention: Softmax((Q K^T) / √d_k) V | PyTorch: loss.backward()'; }
+    } else if (profile === 'COLLEGE_BCOM' || profile === 'COLLEGE_BBA') {
+      const bcomSubjects = ['Financial Accounting & Advanced Auditing', 'Corporate Law & Business Taxation', 'Business Economics & Financial Management', 'Marketing Management & Organizational Strategy'];
+      const activeSub = bcomSubjects[(safeTask - 1) % bcomSubjects.length];
+      subjectName = activeSub;
+
+      const bcomAccTopics = ['Double Entry Accounting & Trial Balance Preparation', 'Final Accounts: Trading, Profit & Loss and Balance Sheet', 'Depreciation Methods: Straight Line & Written Down Value', 'Bank Reconciliation Statements & Error Rectification', 'Partnership Accounts: Admission, Retirement & Dissolution', 'Company Accounts: Issue of Shares & Debentures', 'Cash Flow Statements (AS-3) & Fund Flow Analysis', 'Cost Accounting: Marginal Costing & Break-Even Analysis', 'Standard Costing, Variance Analysis & Budgetary Control', 'Auditing Standards, Internal Check & Audit Reports'];
+      const bcomLawTopics = ['Indian Contract Act 1872: Essential Elements & Types', 'Offer, Acceptance, Consideration & Capacity to Contract', 'Free Consent, Legality of Object & Void Agreements', 'Contingent Contracts, Quasi Contracts & Breach Remedies', 'Companies Act 2013: Incorporation & Memorandum of Association', 'Articles of Association & Doctrine of Constructive Notice', 'Directors: Appointment, Powers, Duties & Legal Liabilities', 'Company Meetings: AGM, EGM, Resolutions & Quorum', 'Income Tax Act: Heads of Income & Deductions under 80C', 'Goods and Services Tax (GST): CGST, SGST, IGST & Returns'];
+      const bcomEconTopics = ['Nature & Scope of Managerial Business Economics', 'Law of Demand, Elasticity of Demand & Forecasting', 'Law of Variable Proportions & Returns to Scale', 'Cost Curves: Short-Run & Long-Run Cost Output Relations', 'Market Structures: Perfect Competition & Price Determination', 'Monopoly, Monopolistic Competition & Oligopoly Models', 'National Income Accounting: GDP, GNP, NNP & Deflator', 'Monetary Policy, RBI Tools & Inflation Control', 'Fiscal Policy, Government Budget & Public Debt', 'International Trade: Balance of Payments & Exchange Rates'];
+      const bcomMgmtTopics = ['Evolution of Management Thought (Taylor & Fayol Principles)', 'Planning: Objectives, Strategies & Decision Making Process', 'Organizing: Organizational Structure & Span of Control', 'Staffing: Recruitment, Selection, Training & Performance Appraisal', 'Directing & Leadership Styles (Transformational & Servant)', 'Motivation Theories: Maslow, Herzberg & McGregor Theory X/Y', 'Controlling Techniques & Total Quality Management (TQM)', 'Marketing Mix 4Ps & Market Segmentation, Targeting, Positioning (STP)', 'Digital Marketing Channels & Consumer Buying Behaviour', 'Strategic Management: SWOT Analysis & Porter 5-Forces Framework'];
+
+      if (safeTask % 4 === 1) { chapterName = bcomAccTopics[cycle10]; formula = 'Accounting Equation: Assets = Liabilities + Capital'; }
+      else if (safeTask % 4 === 2) { chapterName = bcomLawTopics[cycle10]; formula = 'Contract Act: Section 10 Valid Contract Requirements'; }
+      else if (safeTask % 4 === 3) { chapterName = bcomEconTopics[cycle10]; formula = 'Elasticity of Demand: Ep = (% ΔQ) / (% ΔP)'; }
+      else { chapterName = bcomMgmtTopics[cycle10]; formula = 'Marketing 4Ps: Product, Price, Place, Promotion'; }
+    } else if (profile === 'SKILL_FULLSTACK') {
+      const fsSubjects = ['Frontend Architecture & React', 'Backend APIs & Node.js', 'Databases & Prisma ORM', 'DevOps, Docker & Cloud Deployment'];
+      const activeSub = fsSubjects[(safeTask - 1) % fsSubjects.length];
+      subjectName = activeSub;
       const fsTopics = ['Modern TypeScript & ESNext Async/Await Patterns', 'React 19 & Next.js App Router Server Components', 'Tailwind CSS, Responsive Layouts & Design Systems', 'State Management: Zustand, Context API & React Query', 'Node.js & Express / NestJS RESTful API Architecture', 'PostgreSQL & Prisma ORM Database Modeling & Migrations', 'Authentication: JWT, OAuth2 & Supabase Auth Bridge', 'Real-Time WebSockets & Background Job Queues (BullMQ)', 'Docker Containerization & CI/CD Pipeline Automation', 'Production Cloud Deployment on Vercel & AWS ECS'];
-      chapterName = fsTopics[cycle10];
-      formula = 'React Hook Rule: useState + useEffect | JWT: Header.Payload.Signature | REST: GET/POST/PUT/DELETE';
-      subjectName = 'Full-Stack Web & Mobile Engineering';
+      chapterName = fsTopics[(cycle10 + safeTask - 1) % fsTopics.length];
+      formula = 'React Hook Rule: useState + useEffect | JWT: Header.Payload.Signature';
     } else if (profile === 'SKILL_VEDIC_MATHS') {
+      subjectName = 'Vedic Maths & Speed Mental Arithmetic';
       const vmTopics = ['Ekadhikena Purvena (Fast Multiplication by 11 and 99)', 'Nikhilam Navatashcaramam Dashatah (Base Multiplication)', 'Urdhva Tiryagbhyam (Vertical & Crosswise 2x2 and 3x3 Math)', 'Paravartya Yojayet (Instant Algebraic Division)', 'Square of Numbers ending in 5 & Fast Square Roots'];
       chapterName = vmTopics[cycle10 % vmTopics.length];
       formula = 'Vedic Sutra: "Ekadhikena Purvena" -> 35^2 = (3 x 4) | 25 = 1225';
-      subjectName = 'Vedic Maths & Speed Mental Arithmetic';
     } else if (profile === 'SKILL_SPOKEN_ENGLISH') {
+      subjectName = 'Spoken English & Communication';
       const spTopics = ['Self-Introduction & Breaking the Ice with Confidence', 'Everyday Conversations at Work, College & Travel', 'Mastering English Tenses (Present, Past, Future Active)', 'Pronunciation Drills, Syllable Stress & Accent Neutralization', 'Professional Email Writing & Presentation Speaking'];
       chapterName = spTopics[cycle10 % spTopics.length];
       formula = 'Fluency Habit: 15-Minute Daily Aloud Reading & Self-Voice Recording';
-      subjectName = 'Spoken English & Communication';
     } else {
-      const comTopics = ['Financial Accounting: Double Entry & Balance Sheet', 'Corporate Law: Companies Act 2013 & Directors Duties', 'Business Economics: Demand Forecasting & Market Structures', 'Cost Accounting: Marginal Costing & Break-Even Analysis', 'Income Tax & Corporate Tax Planning Principles'];
-      chapterName = comTopics[cycle10 % comTopics.length];
-      formula = 'Accounting Equation: Assets = Liabilities + Capital | Break-Even Point = Fixed Cost / Contribution Margin';
-      subjectName = 'Commerce & Business Administration';
+      subjectName = 'College & Skill Foundations';
+      chapterName = `Unit ${cycle10 + 1}: Core Knowledge & Practical Lab`;
+      formula = 'Standard University Curriculum Standard';
     }
-    topicTitle = `${subjectName}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
+    topicTitle = `${chapterName} (Day ${safeDay} · Period ${safeTask})`;
 
   // ── 12. FALLBACK ──────────────────────────────────────────────────────────
   } else {
@@ -605,12 +643,97 @@ export function resolveMasterSequentialSyllabus(
         { question: 'What is the most frequent examination error to avoid in this topic?', options: ['A) Calculation and sign errors', 'B) Incorrect unit conversion', 'C) Formula misapplication', 'D) All of the above'], correctAnswer: 3, explanation: 'Step-by-step verification of signs, units, and boundary conditions prevents common marks deduction.' }
       ];
 
+  const aiPrompt = `Act as an elite expert curriculum author and master teacher for ${courseTitle} (${subjectName}).
+Generate a 100% authentic, chapter-accurate, pedagogical study lesson module in STRICT JSON format for:
+
+Course: "${courseTitle}" (Course ID: ${courseId})
+Subject: "${subjectName}"
+Topic: "${topicTitle}" (Day ${safeDay} · Period / Step ${safeTask})
+Core Formula / Law: "${formula}"
+Medium: ${isTamil ? 'Tamil & English Bilingual (எளிய தமிழ் விளக்கம்)' : 'English (Clear, conceptual, textbook-grade)'}
+
+Generate a complete, high-quality JSON object with NO Markdown wrappers or extra commentary:
+{
+  "notes": {
+    "overview": "Clear 3-4 sentence pedagogical overview of ${topicTitle}.",
+    "coreConcepts": [
+      {
+        "heading": "1. Core Conceptual Theory & Definitions",
+        "content": "Deep theoretical breakdown of ${topicTitle} with formal rules and textbook principles.",
+        "example": "${formula}"
+      },
+      {
+        "heading": "2. Step-by-Step Problem Solving & Working Model",
+        "content": "Step-by-step algorithms, solved problem breakdown, or structural analysis.",
+        "example": "Worked textbook numerical or practical implementation."
+      },
+      {
+        "heading": "3. Scoring Strategy & Common Pitfalls",
+        "content": "Important exam guidelines, scoring keys, and common student mistakes to avoid.",
+        "example": "Exam scoring mnemonic or checklist."
+      }
+    ],
+    "formulasAndShortcuts": [
+      {
+        "name": "Primary Law / Formula",
+        "formula": "${formula}",
+        "tip": "Memory shortcut and application rule"
+      }
+    ],
+    "bilingualExplanation": {
+      "tamil": "எளிய தமிழில் இந்த தலைப்பின் முழுமையான விளக்கமும் முக்கிய தேர்வு குறிப்புகளும்.",
+      "english": "Concise English executive summary of this topic."
+    }
+  },
+  "oneLineQnA": [
+    { "q": "Direct exam question 1 on ${chapterName}?", "a": "Precise one-sentence textbook answer." },
+    { "q": "Direct exam question 2 on ${chapterName}?", "a": "Precise one-sentence textbook answer." },
+    { "q": "Direct exam question 3 on ${chapterName}?", "a": "Precise one-sentence textbook answer." },
+    { "q": "Direct exam question 4 on ${chapterName}?", "a": "Precise one-sentence textbook answer." },
+    { "q": "Direct exam question 5 on ${chapterName}?", "a": "Precise one-sentence textbook answer." }
+  ],
+  "fillInTheBlanks": [
+    { "statement": "In ${chapterName}, the key parameter ________ determines the outcome.", "answer": "Core Term", "hint": "Fundamental concept" },
+    { "statement": "The primary law governing this process is known as ________.", "answer": "Primary Principle", "hint": "Textbook definition" },
+    { "statement": "Under standard conditions, the expected result is ________.", "answer": "Standard Value", "hint": "Key formula output" }
+  ],
+  "mcqs": [
+    {
+      "question": "Which of the following statements is correct regarding ${topicTitle}?",
+      "options": ["Accurate core principle", "Incorrect alternative A", "Incorrect alternative B", "Incorrect alternative C"],
+      "correctIndex": 0,
+      "explanation": "Detailed explanation referencing ${formula}."
+    },
+    {
+      "question": "What is the primary significance of ${chapterName} in ${subjectName}?",
+      "options": ["Irrelevant option", "Correct fundamental purpose", "Common misconception", "Superficial definition"],
+      "correctIndex": 1,
+      "explanation": "Conceptual justification."
+    },
+    {
+      "question": "When applying ${formula}, which condition must be satisfied?",
+      "options": ["False condition 1", "False condition 2", "Essential textbook prerequisite", "False condition 3"],
+      "correctIndex": 2,
+      "explanation": "Mathematical or operational justification."
+    }
+  ],
+  "twoAndFiveMarkQuestions": [
+    { "marks": 2, "question": "Define and explain two key characteristics of ${topicTitle}?", "modelAnswer": "1. Point one... 2. Point two..." },
+    { "marks": 5, "question": "Explain the comprehensive mechanism, structure, and applications of ${topicTitle} with diagrams/equations?", "modelAnswer": "Full detailed answer with headings, steps, and final inferences." }
+  ],
+  "essayQuestions": [
+    { "question": "Write an exhaustive analytical essay on ${topicTitle}, detailing its theoretical foundation, real-world applications, and problem-solving methodology.", "structure": ["Introduction & Background", "Theoretical Principles", "Practical Applications", "Critical Analysis & Summary"] }
+  ]
+}`;
+
   return {
     taskNumber: safeTask,
     subject: subjectName,
     topicTitle: topicTitle,
     subtopic: chapterName,
     chapterTitle: chapterName,
+    aiPrompt,
+    formula,
     overview: isKindergarten
       ? `மழலையர் பாலர் கல்வி நாள் ${safeDay} (பிரிவு ${safeTask}): ${topicTitle} பற்றிய எளிய, மகிழ்ச்சியான மழலையர் பாடக்குறிப்பு மற்றும் செயல்முறைப் பயிற்சி.`
       : `Day ${safeDay} (Section ${safeTask}): Comprehensive syllabus lesson on ${topicTitle}. Designed with 100% adherence to standard textbook curriculum, official exam blueprints, and structured learning objectives.`,

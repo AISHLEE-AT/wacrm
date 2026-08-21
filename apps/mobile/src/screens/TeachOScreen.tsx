@@ -149,7 +149,7 @@ export default function TeachOScreen() {
           type: taskType,
           stepNumber: index + 1,
           duration: `${taskItem.durationMinutes || 20} Min`,
-          title: `${taskItem.subject}: ${taskItem.topic}`,
+          title: (taskItem.topic || '').startsWith(taskItem.subject) ? taskItem.topic : `${taskItem.subject}: ${taskItem.topic}`,
           subtitle: `${taskItem.subject} • Day ${currentDay} Period ${index + 1}`,
           rawTopic: taskItem.topic,
           rawSubject: taskItem.subject,

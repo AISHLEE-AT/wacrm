@@ -14,6 +14,9 @@ export interface DailySubjectTask {
   subtopic?: string;
   rawSubject: string;
   rawTopic: string;
+  aiPrompt?: string;
+  keyFormula?: string;
+  learningObjective?: string;
   durationMinutes: number;
   duration: string;
   taskType: 'video' | 'reading' | 'practice' | 'activity' | 'test' | 'revision';
@@ -93,6 +96,9 @@ export function resolveMasterCurriculumPlan(
       subtopic: item.subtopic,
       rawSubject: item.subject,
       rawTopic: item.topicTitle,
+      aiPrompt: (item as any).aiPrompt || '',
+      keyFormula: (item as any).formula || (item as any).formulaOrLaw || '',
+      learningObjective: (item as any).overview || '',
       durationMinutes: tNum === taskCount ? 15 : 20,
       duration: tNum === taskCount ? '15 Min' : '20 Min',
       taskType: taskTypes[(tNum - 1) % taskTypes.length],
@@ -105,7 +111,19 @@ export function resolveMasterCurriculumPlan(
   let totalMins = 0;
   tasks.forEach(task => { totalMins += task.durationMinutes; });
 
-  const themeTitle = tasks.length > 0 ? `Day ${safeDay}: ${tasks[0].subject} & ${tasks[1]?.subject || 'Core Concepts'}` : `Day ${safeDay} Comprehensive Routine`;
+  // Generate high-impact, unique day milestone heading
+  const uniqueDailyTopics = tasks.map(t => {
+    const raw = t.subtopic || t.topic || '';
+    return raw
+      .replace(/\s*\(Day\s+\d+.*?\)/i, '')
+      .replace(/^[A-Za-z0-9\s&—\-()]*(?:Core|SSLC|Tuition|Foundation|Special):\s*/i, '')
+      .trim();
+  }).filter(Boolean);
+
+  const themeTopicSnippet = uniqueDailyTopics.slice(0, 2).join(' • ');
+  const themeTitle = themeTopicSnippet 
+    ? `Day ${safeDay}: ${themeTopicSnippet}`
+    : `Day ${safeDay}: ${tasks[0]?.subject || 'Academic Core'} & Daily Practice`;
 
   return {
     dayNumber: safeDay,
@@ -119,4 +137,26 @@ export function resolveMasterCurriculumPlan(
     dailyRevision: `Recap all ${tasks.length} subject periods covered on Day ${safeDay}.`,
     dailyTestSummary: { questionCount: 4, testType: 'mcq', focusArea: tasks[0]?.topic || 'Day Review' }
   };
+}
+
+/**
+ * Convenience helper to extract the precise, unique AI Prompt for any course, day, and step
+ */
+export function getStepAiPrompt(courseOrId: any, day: number = 1, stepNumber: number = 1): string {
+  const plan = resolveMasterCurriculumPlan(courseOrId, day);
+  const task = plan.tasks.find(t => t.id === `task_${day}_${stepNumber}`) || plan.tasks[stepNumber - 1];
+  return task?.aiPrompt || '';
+}
+
+/**
+ * Returns all step prompts for a given course and day
+ */
+export function getAllCourseStepPrompts(courseOrId: any, day: number = 1): Array<{ step: number; subject: string; topic: string; aiPrompt: string }> {
+  const plan = resolveMasterCurriculumPlan(courseOrId, day);
+  return plan.tasks.map((t, idx) => ({
+    step: idx + 1,
+    subject: t.subject,
+    topic: t.topic,
+    aiPrompt: t.aiPrompt || ''
+  }));
 }

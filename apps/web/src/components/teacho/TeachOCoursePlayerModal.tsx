@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  MessageCircle,
+  Copy,
   X,
   Play,
   Pause,
@@ -23,6 +25,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { loadCoursePlayerContent, CoursePlayerContent } from '@/lib/coursePlayerEngine';
+import { getStepAiPrompt } from '@/data/curriculum';
 
 interface TeachOCoursePlayerModalProps {
   isOpen: boolean;
@@ -55,6 +58,23 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+
+  
+  
+  const handleCopyAiPrompt = () => {
+    const prompt = getStepAiPrompt(courseId || courseTitle, dayNumber, taskNumber || 1);
+    if (prompt && navigator.clipboard) {
+      navigator.clipboard.writeText(prompt);
+      alert('AI Generation Prompt copied to clipboard! 📋');
+    }
+  };
+
+  const handleContactAdminWhatsApp = () => {
+    const adminPhone = '916381029380';
+    const msg = `Hello SuprO Admin,\n\nI am studying *${courseTitle || 'Tuition Course'}* (Day ${dayNumber || 1}).\n\n📌 Subject: *${subject || 'Core Subject'}*\n📖 Topic: *${topicTitle || 'Lesson'}*\n\nPlease provide the official study notes, lesson material, and teacher guidance for this topic.\n\nThank you!`;
+    const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(webLink, '_blank');
+  };
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -268,6 +288,27 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
               ) : (
                 <>
                   {/* TAB 1: STUDY NOTES */}
+
+                      {/* 💬 WhatsApp Topic Notes Support */}
+                      <div className="p-4 rounded-2xl bg-[#111827] border border-emerald-500/30 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <MessageCircle className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-white">Need Additional Notes or Doubt Clarification?</h4>
+                            <p className="text-[11px] text-slate-400">Chat directly with our academic desk on WhatsApp with this prefilled topic.</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleContactAdminWhatsApp}
+                          className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Chat with Mentor on WhatsApp
+                        </button>
+                      </div>
+  
                   {activeTab === 'notes' && (
                     <div className="space-y-4">
                       {/* Overview Block */}

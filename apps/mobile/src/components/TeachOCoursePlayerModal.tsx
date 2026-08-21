@@ -16,8 +16,12 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
+import { getStepAiPrompt } from '../data/curriculum';
 import { WebView } from 'react-native-webview';
 import {
+  MessageCircle,
+  Copy,
   X,
   Play,
   Pause,
@@ -279,6 +283,43 @@ export default function TeachOCoursePlayerModal({
         });
     }
   }, [visible, topicTitle, subject, courseTitle, dayNumber, courseId, taskNumber]);
+
+  
+  
+  const handleCopyAiPrompt = async () => {
+    const prompt = getStepAiPrompt(courseId || courseTitle, dayNumber, taskNumber || 1);
+    if (prompt) {
+      try {
+        await Clipboard.setStringAsync(prompt);
+        Alert.alert(
+          'AI Prompt Copied! 📋',
+          `Structured AI lesson prompt for "${topicTitle}" copied! You can paste it into Gemini or run automated batch scripts.`
+        );
+      } catch (e) {
+        Alert.alert('Notice', 'Could not copy to clipboard.');
+      }
+    } else {
+      Alert.alert('Notice', 'Prompt generated dynamically for this step.');
+    }
+  };
+
+  const handleContactAdminWhatsApp = async () => {
+    const adminPhone = '916381029380';
+    const msg = `Hello SuprO Admin,\n\nI am studying *${courseTitle || 'Tuition Course'}* (Day ${dayNumber || 1}).\n\n📌 Subject: *${subject || 'Core Subject'}*\n📖 Topic: *${topicTitle || 'Lesson'}*\n\nPlease provide the official study notes, lesson material, and teacher guidance for this topic.\n\nThank you!`;
+    const url = `whatsapp://send?phone=${adminPhone}&text=${encodeURIComponent(msg)}`;
+    const fallbackUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(url);
+      if (canOpen) {
+        await Linking.openURL(url);
+      } else {
+        await Linking.openURL(fallbackUrl);
+      }
+    } catch (e) {
+      await Linking.openURL(fallbackUrl);
+    }
+  };
 
   const handleGenerateAiOnDemand = async () => {
     setIsGeneratingAi(true);
@@ -627,7 +668,7 @@ export default function TeachOCoursePlayerModal({
               </View>
 
               <View style={styles.notAvailableBadge}>
-                <Text style={styles.notAvailableBadgeText}>CONTENT COMING SOON</Text>
+                <Text style={styles.notAvailableBadgeText}>OFFICIAL SYLLABUS LESSON</Text>
               </View>
 
               <Text style={styles.notAvailableTitle}>{topicTitle}</Text>
@@ -635,30 +676,58 @@ export default function TeachOCoursePlayerModal({
                 {subject} • {courseTitle} (Day {dayNumber})
               </Text>
 
+              {/* WhatsApp Instant Help Action Card */}
+              <TouchableOpacity
+                style={styles.whatsappPrimaryBtn}
+                onPress={handleContactAdminWhatsApp}
+                activeOpacity={0.85}
+              >
+                <View style={styles.whatsappIconBg}>
+                  <MessageCircle size={22} color="#ffffff" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.whatsappPrimaryBtnTitle}>Contact Admin on WhatsApp 💬</Text>
+                  <Text style={styles.whatsappPrimaryBtnSub}>
+                    Get Instant Topic Notes & Mentor Guidance
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
               <View style={styles.notAvailableCard}>
                 <Text style={styles.notAvailableDesc}>
-                  This micro-topic study material is currently being finalized with verified syllabus notes, conceptual videos, and exam question bank.
+                  Verified textbook notes and step-by-step problem solutions for this topic are available instantly via our academic WhatsApp desk.
                 </Text>
               </View>
 
-              <TouchableOpacity
-                style={[styles.generateAiBtn, isGeneratingAi && { opacity: 0.7 }]}
-                onPress={handleGenerateAiOnDemand}
-                disabled={isGeneratingAi}
-                activeOpacity={0.8}
-              >
-                {isGeneratingAi ? (
-                  <>
-                    <ActivityIndicator size="small" color="#0B1120" />
-                    <Text style={styles.generateAiBtnText}>Generating Lesson Content...</Text>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} color="#0B1120" />
-                    <Text style={styles.generateAiBtnText}>Generate Lesson with AI</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              <View style={styles.actionButtonRow}>
+                <TouchableOpacity
+                  style={[styles.generateAiBtn, { flex: 1 }, isGeneratingAi && { opacity: 0.7 }]}
+                  onPress={handleGenerateAiOnDemand}
+                  disabled={isGeneratingAi}
+                  activeOpacity={0.8}
+                >
+                  {isGeneratingAi ? (
+                    <>
+                      <ActivityIndicator size="small" color="#0B1120" />
+                      <Text style={styles.generateAiBtnText}>Generating...</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} color="#0B1120" />
+                      <Text style={styles.generateAiBtnText}>AI Lesson ✨</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.copyPromptBtn}
+                  onPress={handleCopyAiPrompt}
+                  activeOpacity={0.8}
+                >
+                  <Copy size={16} color="#38bdf8" />
+                  <Text style={styles.copyPromptBtnText}>Copy AI Prompt 📋</Text>
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity style={styles.backBtn} onPress={onClose} activeOpacity={0.7}>
                 <Text style={styles.backBtnText}>Back to Daily Routine</Text>
@@ -828,6 +897,28 @@ export default function TeachOCoursePlayerModal({
                     <Text style={styles.tamilText}>{content.notes.bilingualExplanation.tamil}</Text>
                   </View>
                 )}
+
+                
+                {/* 💬 WhatsApp Topic Notes Support */}
+                <View style={styles.whatsappNotesCard}>
+                  <View style={styles.whatsappNotesHeader}>
+                    <View style={styles.whatsappIconSmallBg}>
+                      <MessageCircle size={18} color="#25D366" />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={styles.whatsappNotesTitle}>Have Questions or Need Additional Notes?</Text>
+                      <Text style={styles.whatsappNotesSub}>Ask our faculty mentor directly on WhatsApp with prefilled topic context.</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.whatsappNotesBtn}
+                    onPress={handleContactAdminWhatsApp}
+                    activeOpacity={0.8}
+                  >
+                    <MessageCircle size={16} color="#ffffff" />
+                    <Text style={styles.whatsappNotesBtnText}>Chat with Academic Mentor on WhatsApp</Text>
+                  </TouchableOpacity>
+                </View>
 
                 {content.notes.formulasAndShortcuts.length > 0 && (
                   <View style={styles.card}>
@@ -1893,6 +1984,117 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 400,
   },
+
+  whatsappPrimaryBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#059669',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#34d399',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  whatsappIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#10b981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whatsappPrimaryBtnTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  whatsappPrimaryBtnSub: {
+    color: '#d1fae5',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  whatsappNotesCard: {
+    backgroundColor: '#111827',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#10b98140',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  whatsappNotesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  whatsappIconSmallBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(37, 211, 102, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whatsappNotesTitle: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  whatsappNotesSub: {
+    color: '#94a3b8',
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  whatsappNotesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+    borderRadius: 10,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  whatsappNotesBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
+
+  actionButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    marginVertical: 6,
+  },
+  copyPromptBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0c4a6e',
+    borderRadius: 12,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+    gap: 6,
+  },
+  copyPromptBtnText: {
+    color: '#38bdf8',
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+
   notAvailableContainer: {
     alignItems: 'center',
     justifyContent: 'center',
