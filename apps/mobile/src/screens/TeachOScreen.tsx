@@ -23,7 +23,8 @@ import { TeachOCoursePickerSheet } from '../components/teacho/TeachOCoursePicker
 import TeachOCoursePlayerModal from '../components/TeachOCoursePlayerModal';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption } from '../data/coursesCatalog';
-import { getDayPlanForCourse, DayPlan } from '../lib/dailyPlanResolver';
+import { getDayPlanForCourse } from '../lib/dailyPlanResolver';
+import { resolveMasterCurriculumPlan, DayPlan } from '../data/curriculum';
 import { getCoursePlayerContent } from '../lib/coursePlayerEngine';
 
 export default function TeachOScreen() {
