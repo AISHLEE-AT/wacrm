@@ -326,36 +326,73 @@ export function resolveMasterSequentialSyllabus(
   const cycle10 = (safeDay - 1) % 10;
 
   if (courseId.includes('jee')) {
-    const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Daily Problem Sprint'];
+    const subjects = ['Mathematics', 'Physics', 'Chemistry', 'JEE Advanced Problem Sprint'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
     if (activeSub === 'Mathematics') {
       const mathsTopics = [
-        'Straight Lines & Coordinate Geometry', 'Complex Numbers & Quadratic Equations', 'Matrices & Determinants', 'Calculus: Limits & Continuity',
-        'Differentiation & Applications of Derivatives', 'Definite & Indefinite Integrals', 'Differential Equations', 'Vector Algebra & 3D Geometry',
-        'Permutations, Combinations & Probability', 'Trigonometric Equations & Inverse Functions'
+        'Sets, Relations, Functions & Transformations |f(x)|',
+        'Complex Numbers (Euler Form, de Moivre & Coni Rotation)',
+        'Quadratic Equations (Vieta, Newton Theorem & Location of Roots)',
+        'Matrices, Adjoint Identities & Cramer\'s Rule',
+        'Permutations, Beggar\'s Method & Derangements',
+        'Binomial Theorem, Multinomial & Telescoping Series',
+        'Straight Lines, Family of Lines & Circles Radical Axis',
+        'Conic Sections: Parabola, Ellipse & Hyperbola Tangents/Normals',
+        'Limits (L\'Hopital, Taylor Series), Continuity & Differentiability',
+        'Applications of Derivatives: Monotonicity & Maxima/Minima',
+        'Definite Integrals (King\'s Property & Leibniz Rule) & AUC',
+        'Differential Equations: Variable Separable, Homogeneous & Linear IF',
+        'Vector Triple Product, 3D Skew Lines & Family of Planes',
+        'Probability: Bayes\' Theorem & Binomial Distribution'
       ];
-      chapterName = mathsTopics[cycle10];
-      formula = 'Perpendicular Distance: d = |ax1 + by1 + c| / sqrt(a^2 + b^2)';
+      chapterName = mathsTopics[(safeDay - 1) % mathsTopics.length];
+      formula = 'Bijective f\'(x) Monotonic | Coni Rotation: (z3-z1)/(z2-z1) = r e^(iα) | King: ∫_a^b f(x)dx = ∫_a^b f(a+b-x)dx';
     } else if (activeSub === 'Physics') {
       const phyTopics = [
-        'Kinematics & Projectile Motion', 'Newton\'s Laws of Motion & Friction', 'Work, Power & Energy', 'Rotational Dynamics & Moment of Inertia',
-        'Gravitation & Satellite Motion', 'Thermodynamics & Heat Transfer', 'Electrostatics & Gauss Law', 'Current Electricity & Kirchhoff\'s Laws',
-        'Magnetism & Electromagnetic Induction', 'Ray Optics & Wave Optics'
+        'Units, Dimensions, Error Propagation & Vernier/Screw Gauge',
+        'Kinematics: 1D Calculus, Projectile on Incline & Relative Motion',
+        'Newton\'s Laws: Constraint Relations, Pseudo Force & Multi-Block Friction',
+        'Work-Energy Theorem, Potential Energy & Vertical Circular Motion',
+        'Centre of Mass, Momentum Conservation & 2D Collisions',
+        'Rotational Dynamics: MOI Theorems, Torque & Pure Rolling Down Incline',
+        'Gravitation: Variation of g, Escape Velocity & Kepler Laws',
+        'Fluid Dynamics: Bernoulli Principle, Stokes Law & Surface Tension',
+        'Thermodynamics: Heat Conduction, KTG & Carnot Engine Efficiency',
+        'Oscillations (SHM), Phasor Method, Standing Waves & Doppler Effect',
+        'Electrostatics: Gauss\'s Law, Dipoles & Capacitors with Dielectrics',
+        'Current Electricity: Drift Velocity, Kirchhoff\'s Laws & Potentiometer',
+        'Magnetism: Biot-Savart, Ampere\'s Law, Lorentz Force & MCG',
+        'EMI & Alternating Current: Motional EMF & Series LCR Resonance',
+        'Ray Optics (Lens Maker, Prisms) & Wave Optics (YDSE & Brewster)',
+        'Modern Physics (Photoelectric, Bohr Model) & Semiconductor Diodes'
       ];
-      chapterName = phyTopics[cycle10];
-      formula = 'Work-Energy Theorem: W_net = Delta K = 1/2*m*(v^2 - u^2)';
+      chapterName = phyTopics[(safeDay - 1) % phyTopics.length];
+      formula = 'W_net = ΔK | Pure Rolling: a = (g sin θ)/(1 + k²/R²) | Series LCR Resonance: ω₀ = 1/√(LC)';
     } else if (activeSub === 'Chemistry') {
       const chemTopics = [
-        'Atomic Structure & Quantum Numbers', 'Periodic Table & Chemical Bonding', 'Thermodynamics & Thermochemistry', 'Chemical Equilibrium & Le Chatelier Principle',
-        'Ionic Equilibrium & Buffer Solutions', 'Electrochemistry & Nernst Equation', 'Chemical Kinetics & Rate Laws', 'Organic: Reaction Mechanisms & Hydrocarbons',
-        'Coordination Compounds & Crystal Field Theory', 'Biomolecules & Polymers'
+        'Mole Concept, Stoichiometry, Limiting Reagent & Redox Normality',
+        'Quantum Numbers, Radial/Angular Nodes & Electronic Configurations',
+        'Chemical Thermodynamics, Hess\'s Law & Gibbs Free Energy Spontaneity',
+        'Chemical & Ionic Equilibrium: Le Chatelier, pH & Buffer Henderson Eq',
+        'Solubility Product Ksp, Common Ion Effect & Selective Precipitation',
+        'Electrochemistry: Nernst Equation, Cell EMF & Kohlrausch\'s Law',
+        'Chemical Kinetics: Rate Laws, Half-Life & Arrhenius Activation Energy',
+        'Solutions: Raoult\'s Law, Colligative Properties & Van \'t Hoff Factor',
+        'Chemical Bonding: VSEPR Geometry, Hybridization & MOT Bond Order',
+        'Coordination Chemistry: Isomerism, CFT Splitting & Synergic Carbonyls',
+        'P-Block, D & F-Block Elements (KMnO4, K2Cr2O7) & Salt Analysis',
+        'General Organic Chemistry (GOC): Electronic Effects & Carbocations',
+        'Stereochemistry (CIP R/S, Conformations) & Hydrocarbons Reactions',
+        'Alkyl Halides (SN1 vs SN2, E1/E2) & Alcohols/Phenols/Ethers (Lucas/Cumene)',
+        'Aldehydes, Ketones (Aldol, Cannizzaro, Iodoform) & Carboxylic Acids',
+        'Amines Basicity, Diazonium Sandmeyer & Biomolecules (Peptide/DNA)'
       ];
-      chapterName = chemTopics[cycle10];
-      formula = 'Equilibrium Constant: Delta G^0 = -RT ln(K_eq)';
+      chapterName = chemTopics[(safeDay - 1) % chemTopics.length];
+      formula = 'ΔG° = -RT ln K_eq | Nernst: E_cell = E°_cell - (0.0591/n) log Q | Arrhenius: k = A e^(-E_a/RT)';
     } else {
-      chapterName = `Speed & Accuracy MCQ Sprint ${cycle10 + 1}`;
-      formula = 'Speed Formula: Elimination of Distractors & Dimensional Analysis';
+      chapterName = `NTA Numerical Type & Multi-Concept Advanced Sprint ${((safeDay - 1) % 15) + 1}`;
+      formula = 'Speed & Accuracy: Matrix Match, Assertion-Reason & Integer Type Tactics';
     }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
   } else if (courseId.includes('neet')) {
