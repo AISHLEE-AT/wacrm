@@ -5,9 +5,8 @@
  * - Preparatory Stage: Class 3, Class 4, Class 5 (Ages 8–11)
  * - Middle Stage: Class 6, Class 7, Class 8 (Ages 11–14)
  * - Secondary Stage: Class 9, Class 10 (Ages 14–16)
- * - Higher Secondary Stage: Class 11, Class 12 (Science, Commerce, Arts)
- * - Competitive Entrance: JEE Main/Advanced, NEET UG, UPSC CSE, TNPSC All Groups
  */
+import { UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData.ts';
 
 export interface SyllabusMicroTopic {
   id: string;
@@ -928,6 +927,80 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
   };
 }
 
+export function getUpscOptionalSubjectSyllabus(courseId: string, courseTitle?: string): CourseFullSyllabus {
+  const opt = UPSC_OPTIONALS_REGISTRY[courseId];
+  if (!opt) {
+    return getUpscCivilServicesCompleteSyllabus(courseId, courseTitle);
+  }
+
+  const paper1Units = opt.units.filter(u => u.paper === 'Paper I');
+  const paper2Units = opt.units.filter(u => u.paper === 'Paper II');
+
+  const subjects: SyllabusSubject[] = [
+    {
+      subjectId: `${courseId}_p1`,
+      subjectName: `${opt.shortTitle} — Paper I: Theory & Foundations`,
+      icon: '🏛️',
+      color: opt.badgeColor || '#06b6d4',
+      totalChapters: paper1Units.length,
+      totalMicroTopics: paper1Units.reduce((a, u) => a + u.keyTopics.length, 0),
+      chapters: paper1Units.map((u, idx) => ({
+        chapterNumber: idx + 1,
+        chapterTitle: `${u.unitTitle} (${u.section})`,
+        description: `Thinkers & Foundational Literature: ${u.thinkersOrLaws.join(', ')}`,
+        microTopics: u.keyTopics.map((kt, tIdx) => ({
+          id: `${courseId}_p1_${idx + 1}_${tIdx + 1}`,
+          topicTitle: kt,
+          subtopic: u.thinkersOrLaws.join(' · '),
+          dayNumber: (idx * 15) + (tIdx * 3) + 1,
+          periodNumber: 1,
+          keyFormulaOrLaw: `Core Thinkers: ${u.thinkersOrLaws.join(', ')}`,
+          keyPoints: ['Core theoretical framework and critical debates', 'Mains analytical application and 250-word answer structuring'],
+          type: 'concept',
+          importance: 'High-Yield'
+        }))
+      }))
+    },
+    {
+      subjectId: `${courseId}_p2`,
+      subjectName: `${opt.shortTitle} — Paper II: Indian Context & Advanced Applications`,
+      icon: '⚖️',
+      color: '#10b981',
+      totalChapters: paper2Units.length,
+      totalMicroTopics: paper2Units.reduce((a, u) => a + u.keyTopics.length, 0),
+      chapters: paper2Units.map((u, idx) => ({
+        chapterNumber: idx + 1,
+        chapterTitle: `${u.unitTitle} (${u.section})`,
+        description: `Thinkers & Statutory Frameworks: ${u.thinkersOrLaws.join(', ')}`,
+        microTopics: u.keyTopics.map((kt, tIdx) => ({
+          id: `${courseId}_p2_${idx + 1}_${tIdx + 1}`,
+          topicTitle: kt,
+          subtopic: u.thinkersOrLaws.join(' · '),
+          dayNumber: 180 + (idx * 15) + (tIdx * 3) + 1,
+          periodNumber: 2,
+          keyFormulaOrLaw: `Applied Principles: ${u.thinkersOrLaws.join(', ')}`,
+          keyPoints: ['Empirical case studies and Indian administrative relevance', 'Contemporary trends, criticisms and policy synthesis'],
+          type: 'solved_problem',
+          importance: 'High-Yield'
+        }))
+      }))
+    }
+  ];
+
+  return {
+    courseId,
+    courseTitle: courseTitle || opt.title,
+    category: 'upsc_central',
+    board: 'UPSC (National)',
+    medium: 'English',
+    totalDays: 360,
+    totalSubjects: subjects.length,
+    totalChapters: subjects.reduce((a, s) => a + s.totalChapters, 0),
+    totalMicroTopics: subjects.reduce((a, s) => a + s.totalMicroTopics, 0),
+    subjects
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 7. TNPSC UNIFIED MASTER SYLLABUS (GROUP 1, 2/2A, 4, VAO, DEO, SI)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1164,12 +1237,17 @@ export function resolveCompleteCourseSyllabus(
   const title = courseTitle || 'Standard Curriculum';
   const isTa = title.includes('தமிழ்') || c.includes('-ta-');
 
-  // 1. JEE Main & JEE Advanced Entrance Track
+  // 1. UPSC Mains Optionals Track (Top 10 Subjects)
+  if (c.includes('exam-upsc-opt-') || c.includes('-opt-')) {
+    return getUpscOptionalSubjectSyllabus(courseId, title);
+  }
+
+  // 2. JEE Main & JEE Advanced Entrance Track
   if (c.includes('jee')) {
     return getJeeMainAdvancedCompleteSyllabus(courseId, title);
   }
 
-  // 2. UPSC Civil Services (IAS / IPS / IFS / IRS) Central Track
+  // 3. UPSC Civil Services (IAS / IPS / IFS / IRS) Central Track
   if (c.includes('upsc') || c.includes('ias') || c.includes('central-services')) {
     return getUpscCivilServicesCompleteSyllabus(courseId, title);
   }

@@ -4,7 +4,8 @@
  * Covers all 86 courses across all academic days (Day 1 to 200/360) and subject periods (P1 to P6).
  */
 
-import { resolveAuthenticEducationalVideo } from './educationalVideoRegistry';
+import { resolveAuthenticEducationalVideo } from './educationalVideoRegistry.ts';
+import { getUpscDailyTopic, UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData.ts';
 
 export interface PeriodSyllabusItem {
   taskNumber: number;
@@ -415,7 +416,52 @@ export function resolveMasterSequentialSyllabus(
       formula = 'Ideal Gas Law: PV = nRT';
     }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-  } else if (courseId.includes('tnpsc') || courseId.includes('upsc') || courseId.includes('si') || courseId.includes('police') || courseId.includes('vao') || courseId.includes('group')) {
+  } else if (courseId.includes('exam-upsc-opt-') || courseId.includes('-opt-')) {
+    const opt = UPSC_OPTIONALS_REGISTRY[courseId] || UPSC_OPTIONALS_REGISTRY['exam-upsc-opt-psir'];
+    const isPaper1 = safeDay <= 180;
+    const activeSub = `${opt.shortTitle} (${isPaper1 ? 'Paper I' : 'Paper II'})`;
+    subjectName = activeSub;
+
+    const units = opt.units.filter(u => isPaper1 ? u.paper === 'Paper I' : u.paper === 'Paper II');
+    const unitIndex = Math.floor(((safeDay - (isPaper1 ? 1 : 181)) / 180) * units.length) % units.length;
+    const currentUnit = units[unitIndex] || units[0];
+
+    chapterName = `${currentUnit.unitTitle} (${currentUnit.section})`;
+    const topicIdx = (safeDay - 1) % currentUnit.keyTopics.length;
+    const specificTopic = currentUnit.keyTopics[topicIdx] || currentUnit.keyTopics[0];
+
+    if (safeTask === 1) {
+      topicTitle = `${opt.shortTitle}: ${specificTopic} (Core Concept & Theories)`;
+      formula = `Core Thinkers/Laws: ${currentUnit.thinkersOrLaws.join(', ')}`;
+    } else if (safeTask === 2) {
+      topicTitle = `${opt.shortTitle}: Critical Debates & Conceptual Masterclass`;
+      formula = `Analytical Framework: ${currentUnit.thinkersOrLaws.join(' vs ')}`;
+    } else if (safeTask === 3) {
+      topicTitle = `${opt.shortTitle}: Case Studies, Applied Examples & 20-Year PYQ Insights`;
+      formula = `Applied Case Study Reference · ${currentUnit.unitTitle}`;
+    } else {
+      topicTitle = `Daily 250-Word UPSC Optional Mains Answer Writing Practice (15/20 Marks)`;
+      formula = 'Answer Structuring: Intro + Core Theory + Thinker Quotes + Indian Case Study + Conclusion';
+    }
+  } else if (courseId.includes('upsc') || courseId.includes('ias')) {
+    const dailyTopic = getUpscDailyTopic(safeDay);
+    subjectName = dailyTopic.subject;
+    chapterName = dailyTopic.module;
+
+    if (safeTask === 1) {
+      topicTitle = `${dailyTopic.code}: ${dailyTopic.topicTitle} (20-Min Focus Class)`;
+      formula = dailyTopic.keyConcept;
+    } else if (safeTask === 2) {
+      topicTitle = `${dailyTopic.code}: In-Depth Video Masterclass & Multi-Dimensional Analysis`;
+      formula = `UPSC Mains GS Value Addition · ${dailyTopic.keyConcept}`;
+    } else if (safeTask === 3) {
+      topicTitle = `${dailyTopic.code}: Prelims 5-Question High-Yield Speed Test (+2 / -0.66)`;
+      formula = `Prelims Elimination Tactics & Fact Verification · ${dailyTopic.code}`;
+    } else {
+      topicTitle = `Daily 150-Word UPSC Mains Answer Writing Drill & Evaluation Matrix`;
+      formula = 'Mains Answer Writing: Directive Words (Critically Examine / Discuss) + Constitutional Backing';
+    }
+  } else if (courseId.includes('tnpsc') || courseId.includes('si') || courseId.includes('police') || courseId.includes('vao') || courseId.includes('group')) {
     const subjects = isTamil
       ? ['பொதுத்தமிழ் & இலக்கிய நயவுரை', 'இந்திய அரசியலமைப்பு & மக்களாட்சி (Polity)', 'கணிதம் & திறனறிவு (Aptitude 25/25)', 'தமிழ்நாடு வரலாறு & வளர்ச்சி நிர்வாகம் (Unit 8 & 9)', 'பொது அறிவியல், புவியியல் & பொருளாதாரம் (GS Core)']
       : ['General Tamil & Lit', 'Indian Polity & Constitution', 'Aptitude & Mental Ability (25/25)', 'Tamil Nadu History & Dev Administration (Unit 8 & 9)', 'General Science, Geography & Economy (GS Core)'];

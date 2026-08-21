@@ -4,6 +4,18 @@
  * TNPSC, UPSC, NEET, JEE, College Degrees, and Tech/Kids Skills.
  */
 
+export type CourseCategory =
+  | 'school_tnsb_en'
+  | 'school_tnsb_ta'
+  | 'school_cbse'
+  | 'school_matric'
+  | 'college_degree'
+  | 'tnpsc'
+  | 'upsc_central'
+  | 'entrance'
+  | 'skills'
+  | 'kids_skills';
+
 export interface CourseSubject {
   id: string;
   name: string;
@@ -12,6 +24,7 @@ export interface CourseSubject {
   icon: string;
   color: string;
   currentChapter: string;
+  code?: string;
 }
 
 export interface RoutineTaskTemplate {
@@ -26,17 +39,7 @@ export interface RoutineTaskTemplate {
 
 export interface CourseOption {
   id: string;
-  category:
-    | 'school_tnsb_en'
-    | 'school_tnsb_ta'
-    | 'school_cbse'
-    | 'school_matric'
-    | 'college_degree'
-    | 'tnpsc'
-    | 'upsc_central'
-    | 'entrance'
-    | 'skills'
-    | 'kids_skills';
+  category: CourseCategory;
   gradeLevel: 'primary' | 'middle' | 'high' | 'hsc' | 'college' | 'exam' | 'skill';
   title: string;
   subtitle: string;
@@ -51,12 +54,13 @@ export interface CourseOption {
   badgeColor: string;
   phaseTitle: string;
   phaseSub: string;
-  subjects: CourseSubject[];
+  subjects: (CourseSubject | any)[];
   tasks: RoutineTaskTemplate[];
   milestoneTitle: string;
   milestoneDesc: string;
   milestoneDaysLeft: number;
   parentGuidance?: string;
+  icon?: string;
 }
 
 export const ALL_COURSES: CourseOption[] = [
@@ -8401,7 +8405,977 @@ export const ALL_COURSES: CourseOption[] = [
     "milestoneTitle": "Kids Game Creator Master Medal",
     "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
     "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-psir",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Political Science & International Relations (PSIR)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC PSIR Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC PSIR",
+    "badgeColor": "#06b6d4",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-psir-s1",
+        "name": "Paper I (Sec A): Political Theory & Western/Indian Thought",
+        "completed": 1,
+        "total": 60,
+        "icon": "🏛️",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Theories of State, Justice (Rawls) & Equality"
+      },
+      {
+        "id": "upsc-psir-s2",
+        "name": "Paper I (Sec B): Indian Government, Nationalism & Politics",
+        "completed": 1,
+        "total": 60,
+        "icon": "⚖️",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Constituent Assembly, Federalism & Institutions"
+      },
+      {
+        "id": "upsc-psir-s3",
+        "name": "Paper II (Sec A): Comparative Politics & IR Theories",
+        "completed": 0,
+        "total": 60,
+        "icon": "🌐",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Realism, Liberalism, Constructivism & Global Order"
+      },
+      {
+        "id": "upsc-psir-s4",
+        "name": "Paper II (Sec B): India and the World & Foreign Policy",
+        "completed": 0,
+        "total": 60,
+        "icon": "🌍",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: Neighborhood First, SAGAR & Strategic Partnerships"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Political Theory: John Rawls Theory of Justice & Communitarian Critique",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "John Rawls Theory of Justice & Communitarian Critique",
+        "rawSubject": "Political Theory",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Western Thought: Plato Ideal State vs Aristotle Theory of Revolution",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Plato Ideal State vs Aristotle Theory of Revolution",
+        "rawSubject": "Western Thought",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "IR Theory: Realism (Morgenthau/Waltz) vs Liberal Institutionalism",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Realism (Morgenthau/Waltz) vs Liberal Institutionalism",
+        "rawSubject": "IR Theory",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC PSIR Optional Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC PSIR Optional Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC PSIR Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-soc",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Sociology (Paper I & II)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Sociology Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Sociology",
+    "badgeColor": "#10b981",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-soc-s1",
+        "name": "Paper I: Fundamentals of Sociology & Classical Thinkers",
+        "completed": 1,
+        "total": 60,
+        "icon": "📚",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Marx, Durkheim, Weber, Parsons & Merton"
+      },
+      {
+        "id": "upsc-soc-s2",
+        "name": "Paper I: Stratification, Politics, Religion & Kinship",
+        "completed": 1,
+        "total": 60,
+        "icon": "👥",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Class, Status, Work Organization & Social Change"
+      },
+      {
+        "id": "upsc-soc-s3",
+        "name": "Paper II: Indian Society - Structure, Caste & Tribes",
+        "completed": 0,
+        "total": 60,
+        "icon": "🏛️",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Indology (Ghurye), Srinivas & Agrarian Social Structure"
+      },
+      {
+        "id": "upsc-soc-s4",
+        "name": "Paper II: Social Changes in India & Transformation",
+        "completed": 0,
+        "total": 60,
+        "icon": "📈",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: Industrialization, Social Movements & Demography"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Sociological Thinkers: Durkheim Division of Labour & Suicide Analysis",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Durkheim Division of Labour & Suicide Analysis",
+        "rawSubject": "Sociological Thinkers",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Indian Society: Caste System Perspectives (Dumont vs Srinivas)",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Caste System Perspectives (Dumont vs Srinivas)",
+        "rawSubject": "Indian Society",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Social Stratification: Davis-Moore Functional Theory vs Marxist Critique",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Davis-Moore Functional Theory vs Marxist Critique",
+        "rawSubject": "Social Stratification",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Sociology Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Sociology Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Sociology Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-anthro",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Anthropology (Physical, Socio-Cultural & Tribal)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Anthropology Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Anthropology",
+    "badgeColor": "#8b5cf6",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-anthro-s1",
+        "name": "Paper I: Physical Anthropology, Human Evolution & Genetics",
+        "completed": 1,
+        "total": 60,
+        "icon": "🧬",
+        "color": "#8b5cf6",
+        "currentChapter": "Unit 1: Primates, Fossil Hominids & Population Genetics"
+      },
+      {
+        "id": "upsc-anthro-s2",
+        "name": "Paper I: Socio-Cultural Anthropology & Theories",
+        "completed": 1,
+        "total": 60,
+        "icon": "🛖",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Marriage, Family, Kinship & Anthropological Theories"
+      },
+      {
+        "id": "upsc-anthro-s3",
+        "name": "Paper II: Indian Anthropology & Civilizational Origins",
+        "completed": 0,
+        "total": 60,
+        "icon": "🏺",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Prehistoric Cultures, Caste System & Village Studies"
+      },
+      {
+        "id": "upsc-anthro-s4",
+        "name": "Paper II: Tribal India, Forest Policies & Tribal Movements",
+        "completed": 0,
+        "total": 60,
+        "icon": "🌲",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: PVTGs, 5th/6th Schedules, PESA & FRA Administration"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Physical Anthropology: Australopithecines & Neanderthal Phylogenetic Status",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Australopithecines & Neanderthal Phylogenetic Status",
+        "rawSubject": "Physical Anthropology",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Anthropological Theories: Functionalism (Malinowski) vs Structuralism (Levi-Strauss)",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Functionalism (Malinowski) vs Structuralism (Levi-Strauss)",
+        "rawSubject": "Anthropological Theories",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Tribal India: PVTGs Challenges, Land Alienation & PESA 1996 Safeguards",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "PVTGs Challenges, Land Alienation & PESA 1996 Safeguards",
+        "rawSubject": "Tribal India",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Anthropology Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Anthropology Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Anthropology Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-pubad",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Public Administration (Administrative Theory & India)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Pub Ad Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Pub Ad",
+    "badgeColor": "#f59e0b",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-pubad-s1",
+        "name": "Paper I: Administrative Theories & Thinkers",
+        "completed": 1,
+        "total": 60,
+        "icon": "🏛️",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Classical (Taylor/Fayol), Bureaucracy (Weber) & Simon"
+      },
+      {
+        "id": "upsc-pubad-s2",
+        "name": "Paper I: Organizations, Accountability, Policy & Finance",
+        "completed": 1,
+        "total": 60,
+        "icon": "📊",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: NPM, Citizen Charters, Public Policy & Budgeting"
+      },
+      {
+        "id": "upsc-pubad-s3",
+        "name": "Paper II: Indian Administration - Evolution & Union Framework",
+        "completed": 0,
+        "total": 60,
+        "icon": "⚖️",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Kautilya, British Legacy, PMO & Central Secretariat"
+      },
+      {
+        "id": "upsc-pubad-s4",
+        "name": "Paper II: State, District, Local Governance & Law and Order",
+        "completed": 0,
+        "total": 60,
+        "icon": "🛡️",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: District Collector, 73rd/74th Amendments & Police Reforms"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Administrative Thinkers: Max Weber Bureaucracy & Herbert Simon Bounded Rationality",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Max Weber Bureaucracy & Herbert Simon Bounded Rationality",
+        "rawSubject": "Administrative Thinkers",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "New Public Management (NPM) vs Good Governance Paradigms",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "New Public Management (NPM) vs Good Governance Paradigms",
+        "rawSubject": "Administrative Theory",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Indian Administration: District Collector Role Evolution & 2nd ARC Recommendations",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "District Collector Role Evolution & 2nd ARC Recommendations",
+        "rawSubject": "Indian Administration",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Public Administration Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Public Administration Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Public Administration Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-geo",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Geography (Principles & Geography of India)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Geography Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Geography",
+    "badgeColor": "#10b981",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-geo-s1",
+        "name": "Paper I (Sec A): Physical Geography & Geomorphology",
+        "completed": 1,
+        "total": 60,
+        "icon": "🌋",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Plate Tectonics, Climatology & Oceanography"
+      },
+      {
+        "id": "upsc-geo-s2",
+        "name": "Paper I (Sec B): Human Geography, Economic & Models",
+        "completed": 1,
+        "total": 60,
+        "icon": "🌐",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Population, Settlement, Regional Planning & Theories"
+      },
+      {
+        "id": "upsc-geo-s3",
+        "name": "Paper II: Physical Setting, Resources & Agriculture of India",
+        "completed": 0,
+        "total": 60,
+        "icon": "🌾",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Physiography, Monsoon Mechanisms & Agro-Climatic Zones"
+      },
+      {
+        "id": "upsc-geo-s4",
+        "name": "Paper II: Indian Industry, Transport, Cultural & Contemporary",
+        "completed": 0,
+        "total": 60,
+        "icon": "🗺️",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: Industrial Corridors, Urbanization & Disasters"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Geomorphology: Plate Tectonic Driving Mechanisms & Davis/Penck Geomorphic Cycle",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Plate Tectonic Driving Mechanisms & Davis/Penck Geomorphic Cycle",
+        "rawSubject": "Geomorphology",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Human Geography: Christaller Central Place Theory & Von Thunen Agriculture Model",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Christaller Central Place Theory & Von Thunen Agriculture Model",
+        "rawSubject": "Human Geography",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Geography of India: Monsoon Teleconnections (IOD/MJO) & River Interlinking Plan",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Monsoon Teleconnections (IOD/MJO) & River Interlinking Plan",
+        "rawSubject": "Geography of India",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Geography Optional Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Geography Optional Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Geography Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-history",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: History (Ancient, Medieval, Modern & World)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC History Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC History",
+    "badgeColor": "#8b5cf6",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-history-s1",
+        "name": "Paper I (Sec A): Ancient Indian History & Archaeology",
+        "completed": 1,
+        "total": 60,
+        "icon": "🏺",
+        "color": "#8b5cf6",
+        "currentChapter": "Unit 1: Prehistory, IVC, Vedic, Mauryas & Guptas"
+      },
+      {
+        "id": "upsc-history-s2",
+        "name": "Paper I (Sec B): Medieval India, Sultanate & Mughals",
+        "completed": 1,
+        "total": 60,
+        "icon": "🏰",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Delhi Sultanate, Vijayanagar, Akbar & Marathas"
+      },
+      {
+        "id": "upsc-history-s3",
+        "name": "Paper II (Sec A): Modern India & National Movement",
+        "completed": 0,
+        "total": 60,
+        "icon": "📜",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: British Conquest, 1857 Revolt & Gandhian Era"
+      },
+      {
+        "id": "upsc-history-s4",
+        "name": "Paper II (Sec B): World History & Global Revolutions",
+        "completed": 0,
+        "total": 60,
+        "icon": "🌍",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Industrial Revolution, World Wars & Cold War"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Ancient History: Mauryan Dhamma Policy & Inscriptional Decipherment",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Mauryan Dhamma Policy & Inscriptional Decipherment",
+        "rawSubject": "Ancient History",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Medieval History: Akbar Mansabdari & Zabti Revenue Administration",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Akbar Mansabdari & Zabti Revenue Administration",
+        "rawSubject": "Medieval History",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Modern History: Drain of Wealth Theory & Commercialization of Agriculture",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Drain of Wealth Theory & Commercialization of Agriculture",
+        "rawSubject": "Modern History",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC History Optional Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC History Optional Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC History Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-phil",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Philosophy (Indian, Western, Socio-Political & Religion)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Philosophy Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Philosophy",
+    "badgeColor": "#06b6d4",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-phil-s1",
+        "name": "Paper I (Sec A): Western Philosophy (Plato to Kant & Ayer)",
+        "completed": 1,
+        "total": 60,
+        "icon": "🏛️",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Rationalism, Empiricism, Kant & Existentialism"
+      },
+      {
+        "id": "upsc-phil-s2",
+        "name": "Paper I (Sec B): Indian Philosophy (Carvaka to Advaita Vedanta)",
+        "completed": 1,
+        "total": 60,
+        "icon": "🕉️",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Buddhism, Jainism, Nyaya-Vaisesika & Shankara"
+      },
+      {
+        "id": "upsc-phil-s3",
+        "name": "Paper II (Sec A): Socio-Political Philosophy",
+        "completed": 0,
+        "total": 60,
+        "icon": "⚖️",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Equality, Justice, Gender, Caste & Punishment"
+      },
+      {
+        "id": "upsc-phil-s4",
+        "name": "Paper II (Sec B): Philosophy of Religion",
+        "completed": 0,
+        "total": 60,
+        "icon": "🕊️",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: Proofs for God, Problem of Evil & Religious Language"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Indian Philosophy: Advaita Vedanta Maya Vivartavada vs Visistadvaita Parinamavada",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Advaita Vedanta Maya Vivartavada vs Visistadvaita Parinamavada",
+        "rawSubject": "Indian Philosophy",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Western Philosophy: Kant Synthetic A Priori & Transcendental Idealism",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Kant Synthetic A Priori & Transcendental Idealism",
+        "rawSubject": "Western Philosophy",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Philosophy of Religion: Problem of Evil, Theodicy & Otto Idea of Numinous",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Problem of Evil, Theodicy & Otto Idea of Numinous",
+        "rawSubject": "Philosophy of Religion",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Philosophy Optional Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Philosophy Optional Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Philosophy Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-eco",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Economics (Advanced Economic Theory & Indian Economy)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Economics Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Economics",
+    "badgeColor": "#f59e0b",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-eco-s1",
+        "name": "Paper I: Advanced Microeconomics & Macroeconomics",
+        "completed": 1,
+        "total": 60,
+        "icon": "📈",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Consumer Theory, Game Theory, IS-LM & Inflation"
+      },
+      {
+        "id": "upsc-eco-s2",
+        "name": "Paper I: Development, Public Finance & International Trade",
+        "completed": 1,
+        "total": 60,
+        "icon": "🌐",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Growth Models (Solow), Optimal Tax & Trade Theories"
+      },
+      {
+        "id": "upsc-eco-s3",
+        "name": "Paper II: Indian Economy - Pre-Independence & Planning",
+        "completed": 0,
+        "total": 60,
+        "icon": "📜",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Colonial Drain, Five-Year Plans & Agriculture"
+      },
+      {
+        "id": "upsc-eco-s4",
+        "name": "Paper II: Industry, Money, Banking & External Sector",
+        "completed": 0,
+        "total": 60,
+        "icon": "🏦",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: LPG Reforms, Monetary Policy, GST & BoP Management"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Microeconomics: Slutsky Equation, Compensated Demand & Pareto Optimality",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Slutsky Equation, Compensated Demand & Pareto Optimality",
+        "rawSubject": "Microeconomics",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Growth Economics: Solow-Swan Neoclassical Growth Model & Golden Rule",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Solow-Swan Neoclassical Growth Model & Golden Rule",
+        "rawSubject": "Growth Economics",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "International Trade: Heckscher-Ohlin & Stolper-Samuelson Factor Price Equalization",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Heckscher-Ohlin & Stolper-Samuelson Factor Price Equalization",
+        "rawSubject": "International Trade",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Economics Optional Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Economics Optional Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Economics Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-maths",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Mathematics (Pure & Applied Higher Mathematics)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Mathematics Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Maths",
+    "badgeColor": "#ec4899",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-maths-s1",
+        "name": "Paper I: Linear Algebra, Calculus, 3D & ODE",
+        "completed": 1,
+        "total": 60,
+        "icon": "📐",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: Vector Spaces, Cayley-Hamilton, Curvature & ODEs"
+      },
+      {
+        "id": "upsc-maths-s2",
+        "name": "Paper I: Vector Analysis, Statics & Dynamics",
+        "completed": 1,
+        "total": 60,
+        "icon": "⚡",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Stokes/Gauss Theorems, Catenary & Central Orbits"
+      },
+      {
+        "id": "upsc-maths-s3",
+        "name": "Paper II: Real & Complex Analysis, Abstract Algebra & PDE",
+        "completed": 0,
+        "total": 60,
+        "icon": "🧮",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Cauchy Sequences, Contour Integration & Group Theory"
+      },
+      {
+        "id": "upsc-maths-s4",
+        "name": "Paper II: Numerical Analysis, Mechanics & Fluid Dynamics",
+        "completed": 0,
+        "total": 60,
+        "icon": "🌊",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Runge-Kutta, Lagrange Equations & Navier-Stokes"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Linear Algebra: Cayley-Hamilton Theorem & Matrix Diagonalization Proofs",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Cayley-Hamilton Theorem & Matrix Diagonalization Proofs",
+        "rawSubject": "Linear Algebra",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Complex Analysis: Cauchy Residue Theorem & Contour Integration on Real Line",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Cauchy Residue Theorem & Contour Integration on Real Line",
+        "rawSubject": "Complex Analysis",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "Fluid Dynamics: Navier-Stokes Equations & Potential Flow Sources/Sinks",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "Navier-Stokes Equations & Potential Flow Sources/Sinks",
+        "rawSubject": "Fluid Dynamics",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 20-Mark Higher Mathematics Problem Solution Drill",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "20-Mark Higher Mathematics Problem Solution Drill",
+        "rawSubject": "Problem Solving",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Mathematics Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
+  },
+  {
+    "id": "exam-upsc-opt-law",
+    "category": "upsc_central",
+    "gradeLevel": "exam",
+    "title": "UPSC Mains Optional: Law (Constitutional, International, Crimes & Contracts)",
+    "subtitle": "360-Day Comprehensive Professional Master Program",
+    "short": "UPSC Law Optional",
+    "medium": "English",
+    "board": "National",
+    "totalDays": 360,
+    "currentDayDefault": 1,
+    "streakDefault": 1,
+    "xpDefault": 50,
+    "badge": "UPSC Law",
+    "badgeColor": "#06b6d4",
+    "phaseTitle": "Phase 1: Foundation, Advanced Core & Mock Tests",
+    "phaseSub": "Day 1 of 360 • Daily Routine & Problem Solving",
+    "subjects": [
+      {
+        "id": "upsc-law-s1",
+        "name": "Paper I: Constitutional & Administrative Law",
+        "completed": 1,
+        "total": 60,
+        "icon": "⚖️",
+        "color": "#06b6d4",
+        "currentChapter": "Unit 1: Fundamental Rights, Judicial Review & Natural Justice"
+      },
+      {
+        "id": "upsc-law-s2",
+        "name": "Paper I: International Law (UNCLOS, Treaties & Dispute Settlement)",
+        "completed": 1,
+        "total": 60,
+        "icon": "🌐",
+        "color": "#10b981",
+        "currentChapter": "Unit 1: Sources, UNCLOS Maritime Zones & Extradition"
+      },
+      {
+        "id": "upsc-law-s3",
+        "name": "Paper II: Law of Crimes (BNS/IPC) & Law of Torts",
+        "completed": 0,
+        "total": 60,
+        "icon": "🛡️",
+        "color": "#f59e0b",
+        "currentChapter": "Unit 1: Mens Rea, Homicide vs Murder, Negligence & Strict Liability"
+      },
+      {
+        "id": "upsc-law-s4",
+        "name": "Paper II: Law of Contracts, Mercantile Law & Arbitration",
+        "completed": 0,
+        "total": 60,
+        "icon": "📜",
+        "color": "#ec4899",
+        "currentChapter": "Unit 1: Offer/Acceptance, Frustration, Partnership & NI Act"
+      }
+    ],
+    "tasks": [
+      {
+        "title": "Constitutional Law: Basic Structure Doctrine Evolution & Judicial Review Scope",
+        "subtitle": "Core Concept & Interactive Tutorial",
+        "rawTopic": "Basic Structure Doctrine Evolution & Judicial Review Scope",
+        "rawSubject": "Constitutional Law",
+        "duration": "15 Min",
+        "xp": 20,
+        "type": "notes"
+      },
+      {
+        "title": "Law of Crimes: Culpable Homicide vs Murder (Section 299 vs 300 IPC/BNS)",
+        "subtitle": "Video Masterclass & Live Walkthrough",
+        "rawTopic": "Culpable Homicide vs Murder (Section 299 vs 300 IPC/BNS)",
+        "rawSubject": "Law of Crimes",
+        "duration": "12 Min",
+        "xp": 20,
+        "type": "video"
+      },
+      {
+        "title": "International Law: UNCLOS Maritime Zones & Extradition Political Offence Exception",
+        "subtitle": "Targeted Practice & 5-Question Daily Test",
+        "rawTopic": "UNCLOS Maritime Zones & Extradition Political Offence Exception",
+        "rawSubject": "International Law",
+        "duration": "10 Min",
+        "xp": 20,
+        "type": "quiz"
+      },
+      {
+        "title": "Daily 250-Word UPSC Law Optional Answer Writing Practice",
+        "subtitle": "Daily Challenge & Bedtime Summary",
+        "rawTopic": "250-Word UPSC Law Optional Answer Writing",
+        "rawSubject": "Answer Writing",
+        "duration": "8 Min",
+        "xp": 15,
+        "type": "code"
+      }
+    ],
+    "milestoneTitle": "UPSC Law Optional Master Medal",
+    "milestoneDesc": "Complete the rigorous program syllabus and build rock-solid mastery.",
+    "milestoneDaysLeft": 5
   }
-];
+]
 
 export const DEFAULT_COURSE: CourseOption = ALL_COURSES.find((c) => c.id === 'tnsb-en-1') || ALL_COURSES[0];
