@@ -4,6 +4,8 @@
  * Covers all 86 courses across all academic days (Day 1 to 200/360) and subject periods (P1 to P6).
  */
 
+import { resolveAuthenticEducationalVideo } from './educationalVideoRegistry';
+
 export interface PeriodSyllabusItem {
   taskNumber: number;
   subject: string;
@@ -14,6 +16,13 @@ export interface PeriodSyllabusItem {
   formulaOrLaw: string;
   tamilTitle: string;
   tamilIntro: string;
+  youtubeVideoId: string;
+  videoMeta?: {
+    youtubeVideoId: string;
+    videoTitle: string;
+    channelName: string;
+    duration: string;
+  };
   keyConcepts: Array<{
     heading: string;
     content: string;
@@ -47,7 +56,7 @@ export const TNSB_CLASS_7_TAMIL_SYLLABUS = [
   { chapter: 'இயல் 4: கல்வி', poem: 'கலங்கரை விளக்கம் (கடியலூர் உருத்திரங்கண்ணனார்)', prose: 'செல்வத்துள் செல்வம் (வாழ்க்கைக் கல்வி)', grammar: 'இலக்கிய வகைச் சொற்கள் (இயற்சொல், திரிசொல், திசைச்சொல், வடசொல்)', extra: 'கவின்மிகு கப்பல் (மருதன் இளநாகனார்)' },
   { chapter: 'இயல் 5: கலை & பண்பாடு', poem: 'இன்பத்தமிழ்க் கல்வி (பாரதிதாசன்)', prose: 'தமிழர் சமையல் & மரபு கலைகள்', grammar: 'ஓரெழுத்து ஒருமொழி, பகுபதம், பகாப்பதம்', extra: 'எதிர்நீச்சல் & ஆழ்கடலின் அடியில்' },
   { chapter: 'இயல் 6: நாகரிகம் & தொழில்', poem: 'ஒரு வேண்டுகோள் (தேனரசன்)', prose: 'தஞ்சைப் பெரிய கோயில் கட்டிடக்கலை', grammar: 'தொழிற்பெயர் (விகுதி பெற்ற தொழிற்பெயர், முதனிலை திரிந்த தொழிற்பெயர்)', extra: 'கீழடி அகழாய்வு' },
-  { chapter: 'இயல் 7: திருக்குறள்', poem: 'அழுக்காறாமை, புறங்கூறாமை, அருளுடைமை', prose: 'அறநெறி முதன்மை', grammar: 'அணி இலக்கணம் (உவமை அணி, எடுத்துக்காட்டு உவமை அணி, உருவக அணி)', extra: 'வாய்மை & தீவினையச்சம்' },
+  { chapter: 'இயல் 7: வாழ்வியல் (திருக்குறள்)', poem: 'அழுக்காறாமை, புறங்கூறாமை, அருளுடைமை', prose: 'அறநெறி முதன்மை', grammar: 'அணி இலக்கணம் (உவமை அணி, எடுத்துக்காட்டு உவமை அணி, உருவக அணி)', extra: 'வாய்மை & தீவினையச்சம்' },
   { chapter: 'இயல் 8: அறிவியல்', poem: 'புதுமை வேட்டல் (திரு. வி. கலியாணசுந்தரனார்)', prose: 'கண்ணினிய கணினி & செயற்கை நுண்ணறிவு', grammar: 'புணர்ச்சி (உயிர் ஈறு, மெய் ஈறு, இயல்பு, விகாரம்)', extra: 'அறிவியல் ஆத்திசூடி' },
   { chapter: 'இயல் 9: மனிதநேயம்', poem: 'மலைப்பொழிவு (கண்ணதாசன்)', prose: 'சான்றோர் சித்திரம் — அன்னை தெரசா & காயிதே மில்லத்', grammar: 'ஆகுபெயர் (பொருளாகுபெயர், இடவாகுபெயர், காலவாகுபெயர், சினையாகுபெயர்)', extra: 'தன்னம்பிக்கை கதைகள்' }
 ];
@@ -109,6 +118,7 @@ export function resolveMasterSequentialSyllabus(
 
     if (safeTask === 1) {
       const topic = `தமிழ்: ${curTamil.chapter} — ${curTamil.poem}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'தமிழ்', topic, 1);
       return {
         taskNumber: 1,
         subject: 'தமிழ் மொழி & செய்யுள்',
@@ -119,6 +129,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'இலக்கண விதி: குற்றியலுகரம் (கு, சு, டு, து, பு, று)',
         tamilTitle: topic,
         tamilIntro: `இன்றைய தமிழ் பாடத்தில் ${curTamil.poem} செய்யுள் நயங்களையும், ${curTamil.grammar} இலக்கண விதிகளையும் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. செய்யுள் நயவுரை: ${curTamil.poem}`, content: `செய்யுள் வரிகளின் பொருள், சொல்லும் பொருளும், எதுகை, மோனை, இயைபு நயங்கள்.`, example: `பாடலின் முக்கிய வரிகள் மற்றும் ஆசிரியரின் வாழ்வியல் செய்தி.` },
           { heading: `2. உரைநடை & விரிவானம்: ${curTamil.prose}`, content: `பாடக் கருத்துகள், வரலாற்றுச் சான்றுகள் மற்றும் வினா விடை விளக்கங்கள்.`, example: `மாதிரி வினாக்கள் மற்றும் 2-மதிப்பெண் விடை எழுதும் முறை.` },
@@ -138,6 +155,7 @@ export function resolveMasterSequentialSyllabus(
     } else if (safeTask === 2) {
       const mathSubTopic = curMath.topics[(safeDay - 1) % curMath.topics.length];
       const topic = `கணிதம்: ${curMath.unit} — ${mathSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'கணிதம்', topic, 2);
       return {
         taskNumber: 2,
         subject: 'கணிதம் (Mathematics)',
@@ -148,6 +166,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'விகிதசம விதி: a : b = c : d => ad = bc | பரப்பளவு சமன்பாடுகள்',
         tamilTitle: topic,
         tamilIntro: `இன்றைய கணிதப் பாடத்தில் ${mathSubTopic} தொடர்பான சூத்திரங்கள் மற்றும் விரைவுத் தீர்வு முறைகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. அடிப்படைக் கோட்பாடுகள்: ${mathSubTopic}`, content: `பாடத்தின் வரையறைகள், அடிப்படை விதிகள் மற்றும் நிபந்தனைகள்.`, example: `எண் கோடு அல்லது வரைபட மாதிரிகள்.` },
           { heading: `2. மாதிரி வினாக்கள் & படிப்படியான தீர்வு`, content: `தேர்வு வினாக்களை பிழையின்றி தீர்க்கும் படிநிலைகள் மற்றும் சூத்திர பயன்பாடு.`, example: `மாதிரி கணக்கு தீர்வு மற்றும் சரிபார்த்தல்.` },
@@ -167,6 +192,7 @@ export function resolveMasterSequentialSyllabus(
     } else if (safeTask === 3) {
       const sciSubTopic = curSci.topics[(safeDay - 1) % curSci.topics.length];
       const topic = `அறிவியல்: ${curSci.unit} — ${sciSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'அறிவியல்', topic, 3);
       return {
         taskNumber: 3,
         subject: 'அறிவியல் (Science)',
@@ -177,6 +203,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'அடர்த்தி d = m / V | SI அலகு: kg/m³ | வேகம் v = s / t',
         tamilTitle: topic,
         tamilIntro: `இன்றைய அறிவியல் பாடத்தில் ${sciSubTopic} தொடர்பான அறிவியல் கோட்பாடுகள் மற்றும் அன்றாட பயன்பாடுகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. அறிவியல் கொள்கைகள்: ${sciSubTopic}`, content: `அறிவியல் வரையறைகள், விதிகள் மற்றும் தத்துவார்த்த விளக்கங்கள்.`, example: `ஆய்வக சோதனை மற்றும் அறிவியல் மாதிரி.` },
           { heading: `2. அன்றாட வாழ்வியல் பயன்பாடுகள்`, content: `நமது அன்றாட வாழ்வில் இந்த அறிவியல் தத்துவம் எவ்வாறு பயன்படுகிறது என்பதற்கான விளக்கங்கள்.`, example: `இயற்கை நிகழ்வுகள் மற்றும் தொழில்நுட்ப சாதனங்கள்.` },
@@ -196,6 +229,7 @@ export function resolveMasterSequentialSyllabus(
     } else if (safeTask === 4) {
       const socSubTopic = curSoc.topics[(safeDay - 1) % curSoc.topics.length];
       const topic = `சமூக அறிவியல்: ${curSoc.unit} — ${socSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'சமூக அறிவியல்', topic, 4);
       return {
         taskNumber: 4,
         subject: 'சமூக அறிவியல் (Social Science)',
@@ -206,6 +240,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'வரலாற்று சான்றுகள் & அரசியலமைப்பு அடிப்படை உரிமைகள்',
         tamilTitle: topic,
         tamilIntro: `இன்றைய சமூக அறிவியல் பாடத்தில் ${socSubTopic} பற்றிய முக்கிய வரலாற்று மற்றும் புவியியல் நிகழ்வுகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. வரலாற்று நிகழ்வுகள் & சான்றுகள்: ${socSubTopic}`, content: `முக்கிய வரலாற்று காலக்கட்டங்கள், மன்னர்கள், போர்கள் மற்றும் கல்வெட்டு சான்றுகள்.`, example: `வரலாற்று காலக்கோடு (Timeline) மற்றும் வரைபட இடங்கள்.` },
           { heading: `2. புவியியல் சூழல் & இயற்கை வளங்கள்`, content: `புவியியல் அமைப்புகள், தட்பவெப்பநிலை மற்றும் மனித சமூகத்தின் மீதான தாக்கம்.`, example: `உலக மற்றும் இந்திய நிலவரைபடம்.` },
@@ -225,6 +266,7 @@ export function resolveMasterSequentialSyllabus(
     } else {
       const engSubTopic = curEng.topics[(safeDay - 1) % curEng.topics.length];
       const topic = `English: ${curEng.unit} — ${engSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'English', topic, 5);
       return {
         taskNumber: 5,
         subject: 'English Language & Lit',
@@ -235,6 +277,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'Grammar Rule: Subject-Verb Agreement & Tense Structures',
         tamilTitle: `ஆங்கில பாடம்: ${curEng.unit} — ${engSubTopic}`,
         tamilIntro: `இன்றைய ஆங்கில பாடத்தில் ${engSubTopic} பற்றிய விரிவான பாடப்பகுதி மற்றும் இலக்கண விதிகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. Literary & Reading Comprehension: ${engSubTopic}`, content: `Detailed analysis of characters, themes, poetic devices, and central moral ideas.`, example: `Vocabulary words with contextual meanings and antonyms.` },
           { heading: `2. Applied Grammar & Sentence Mechanics`, content: `Tense usage, modal auxiliaries, active/passive voice transformations, and error spotting.`, example: `Model sentence transformations with explanations.` },
@@ -294,6 +343,8 @@ export function resolveMasterSequentialSyllabus(
     formula = '(a + b)^2 = a^2 + 2ab + b^2';
   }
 
+  const videoRef = resolveAuthenticEducationalVideo(courseId, subjectName, topicTitle, safeTask);
+
   return {
     taskNumber: safeTask,
     subject: subjectName,
@@ -304,6 +355,13 @@ export function resolveMasterSequentialSyllabus(
     formulaOrLaw: formula,
     tamilTitle: isTamil ? topicTitle : `${topicTitle} (தமிழ் விளக்கம்)`,
     tamilIntro: `நாள் ${safeDay}, பிரிவு ${safeTask} (${subjectName}): ${chapterName} பற்றிய தெளிவான பாடக்குறிப்பு மற்றும் தேர்வு உத்திகள்.`,
+    youtubeVideoId: videoRef.youtubeVideoId,
+    videoMeta: {
+      youtubeVideoId: videoRef.youtubeVideoId,
+      videoTitle: videoRef.videoTitle,
+      channelName: videoRef.channelName,
+      duration: videoRef.duration
+    },
     keyConcepts: [
       { heading: `1. Core Theoretical Foundations: ${chapterName}`, content: `Detailed conceptual breakdown of ${chapterName}. Master fundamental definitions, underlying principles, and key textbook laws.`, example: `Standard textbook problem and real-world application model.` },
       { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm to solve exam questions on ${chapterName}. Step-by-step presentation, proofs, and working notes.`, example: `Worked model question highlighting scoring points.` },

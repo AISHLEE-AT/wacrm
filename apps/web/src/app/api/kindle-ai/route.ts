@@ -133,12 +133,12 @@ function synthesizeDaySpecificCurriculum(courseId: string, courseTitle: string, 
     formulasAndMnemonics: [
       { name: `${sequential.topicTitle} Master Rule`, formula: sequential.formulaOrLaw, mnemonic: 'Active Recall Examination Rule' }
     ],
-    videoMeta: {
-      youtubeVideoId: '0TgLtF3PMOc',
+    videoMeta: sequential.videoMeta || {
+      youtubeVideoId: sequential.youtubeVideoId || 'LgCg_1yP6_M',
       videoTitle: `${sequential.topicTitle} Masterclass`,
-      channelName: 'TeachO 1-on-1 Tuition'
+      channelName: 'TeachO Masterclass'
     },
-    videoId: '0TgLtF3PMOc'
+    videoId: sequential.youtubeVideoId || 'LgCg_1yP6_M'
   };
 }
 

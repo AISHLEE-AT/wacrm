@@ -15,6 +15,7 @@
 
 import { lmsSupabase as aishleeSupabase } from './lms-supabase';
 import { resolveCanonicalTopic } from './canonicalTopicResolver';
+import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
 
 export interface VideoMeta {
   channel: string;
@@ -1594,14 +1595,14 @@ export async function getCoursePlayerContent(
             standardOrExam: courseTitle,
             category: json.category || subject,
             videoMeta: {
-              channel: json.videoMeta?.channelName || 'TeachO 1-on-1 Tuition',
+              channel: json.videoMeta?.channelName || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).channelName || 'TeachO Masterclass',
               channelUrl: 'https://youtube.com/@TeachO',
-              youtubeVideoId: json.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
-              videoTitle: json.videoMeta?.videoTitle || topicTitle,
-              durationMinutes: 15,
+              youtubeVideoId: json.videoMeta?.youtubeVideoId || json.videoId || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).youtubeVideoId || 'LgCg_1yP6_M',
+              videoTitle: json.videoMeta?.videoTitle || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).videoTitle || topicTitle,
+              durationMinutes: resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).durationMinutes || 18,
               isOfficialAishlee: true,
-              channelName: json.videoMeta?.channelName || 'TeachO 1-on-1 Tuition',
-              duration: json.videoMeta?.duration || '15:00',
+              channelName: json.videoMeta?.channelName || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).channelName || 'TeachO Masterclass',
+              duration: json.videoMeta?.duration || resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle).duration || '18 Min',
               keyTimestamps: json.videoMeta?.keyTimestamps || [{ time: '0:00', label: 'Concept Overview' }]
             },
             notes: json.notes || {

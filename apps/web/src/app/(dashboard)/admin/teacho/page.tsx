@@ -109,13 +109,14 @@ export default function TeachOAdminStudioPage() {
 
     const curSection = daySections.find(s => s.taskNumber === sectionNum) || daySections[0];
     const activeSub = curSection?.title || 'Core Subject';
+    const curSequential = resolveMasterSequentialSyllabus(courseId, selectedCourse.title, day, sectionNum);
 
     // Reset formData immediately to prevent any stale previous day/section content
     setFormData({
-      topicTitle: `${selectedCourse.title} - Day ${day}: ${activeSub}`,
+      topicTitle: curSequential.topicTitle || `${selectedCourse.title} - Day ${day}: ${activeSub}`,
       category: activeSub,
-      youtubeVideoId: '0TgLtF3PMOc',
-      overview: `Loading Day ${day} section (${activeSub}) for ${selectedCourse.title}...`,
+      youtubeVideoId: curSequential.youtubeVideoId || 'LgCg_1yP6_M',
+      overview: curSequential.overview || `Loading Day ${day} section (${activeSub}) for ${selectedCourse.title}...`,
       coreConcepts: [
         { heading: `Day ${day} (${activeSub}): Core Theoretical Framework`, content: 'Loading conceptual foundations...', example: '' },
         { heading: `Day ${day} (${activeSub}): Step-by-Step Problem Solving`, content: 'Loading analytical methods...', example: '' },
@@ -270,7 +271,7 @@ export default function TeachOAdminStudioPage() {
         setFormData({
           topicTitle: data.topicTitle || `${selectedCourse.title} Day ${day} - ${activeSub}`,
           category: data.category || activeSub,
-          youtubeVideoId: data.videoId || data.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
+          youtubeVideoId: data.videoId || data.videoMeta?.youtubeVideoId || curSequential.youtubeVideoId || 'LgCg_1yP6_M',
           overview: data.overview || data.notes?.overview || (data.notes?.keyPoints ? data.notes.keyPoints.join(' ') : '') || '',
           coreConcepts: loadedConcepts,
           tamilExplanation: loadedTamil,

@@ -4,6 +4,8 @@
  * Covers all 86 courses across all academic days (Day 1 to 200/360) and subject periods (P1 to P6).
  */
 
+import { resolveAuthenticEducationalVideo } from './educationalVideoRegistry';
+
 export interface PeriodSyllabusItem {
   taskNumber: number;
   subject: string;
@@ -14,6 +16,13 @@ export interface PeriodSyllabusItem {
   formulaOrLaw: string;
   tamilTitle: string;
   tamilIntro: string;
+  youtubeVideoId: string;
+  videoMeta?: {
+    youtubeVideoId: string;
+    videoTitle: string;
+    channelName: string;
+    duration: string;
+  };
   keyConcepts: Array<{
     heading: string;
     content: string;
@@ -121,6 +130,7 @@ export function resolveMasterSequentialSyllabus(
 
     if (safeTask === 1) {
       const topic = `தமிழ்: ${curTamil.chapter} — ${curTamil.poem}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'தமிழ்', topic, 1);
       return {
         taskNumber: 1,
         subject: 'தமிழ் மொழி & செய்யுள்',
@@ -131,6 +141,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'இலக்கண விதி: குற்றியலுகரம் (கு, சு, டு, து, பு, று)',
         tamilTitle: topic,
         tamilIntro: `இன்றைய தமிழ் பாடத்தில் ${curTamil.poem} செய்யுள் நயங்களையும், ${curTamil.grammar} இலக்கண விதிகளையும் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. செய்யுள் நயவுரை: ${curTamil.poem}`, content: `செய்யுள் வரிகளின் பொருள், சொல்லும் பொருளும், எதுகை, மோனை, இயைபு நயங்கள்.`, example: `பாடலின் முக்கிய வரிகள் மற்றும் ஆசிரியரின் வாழ்வியல் செய்தி.` },
           { heading: `2. உரைநடை & விரிவானம்: ${curTamil.prose}`, content: `பாடக் கருத்துகள், வரலாற்றுச் சான்றுகள் மற்றும் வினா விடை விளக்கங்கள்.`, example: `மாதிரி வினாக்கள் மற்றும் 2-மதிப்பெண் விடை எழுதும் முறை.` },
@@ -150,6 +167,7 @@ export function resolveMasterSequentialSyllabus(
     } else if (safeTask === 2) {
       const mathSubTopic = curMath.topics[(safeDay - 1) % curMath.topics.length];
       const topic = `கணிதம்: ${curMath.unit} — ${mathSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'கணிதம்', topic, 2);
       return {
         taskNumber: 2,
         subject: 'கணிதம் (Mathematics)',
@@ -160,6 +178,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'விகிதசம விதி: a : b = c : d => ad = bc | பரப்பளவு சமன்பாடுகள்',
         tamilTitle: topic,
         tamilIntro: `இன்றைய கணிதப் பாடத்தில் ${mathSubTopic} தொடர்பான சூத்திரங்கள் மற்றும் விரைவுத் தீர்வு முறைகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. அடிப்படைக் கோட்பாடுகள்: ${mathSubTopic}`, content: `பாடத்தின் வரையறைகள், அடிப்படை விதிகள் மற்றும் நிபந்தனைகள்.`, example: `எண் கோடு அல்லது வரைபட மாதிரிகள்.` },
           { heading: `2. மாதிரி வினாக்கள் & படிப்படியான தீர்வு`, content: `தேர்வு வினாக்களை பிழையின்றி தீர்க்கும் படிநிலைகள் மற்றும் சூத்திர பயன்பாடு.`, example: `மாதிரி கணக்கு தீர்வு மற்றும் சரிபார்த்தல்.` },
@@ -179,6 +204,7 @@ export function resolveMasterSequentialSyllabus(
     } else if (safeTask === 3) {
       const sciSubTopic = curSci.topics[(safeDay - 1) % curSci.topics.length];
       const topic = `அறிவியல்: ${curSci.unit} — ${sciSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'அறிவியல்', topic, 3);
       return {
         taskNumber: 3,
         subject: 'அறிவியல் (Science)',
@@ -189,6 +215,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'அடர்த்தி d = m / V | SI அலகு: kg/m³ | வேகம் v = s / t',
         tamilTitle: topic,
         tamilIntro: `இன்றைய அறிவியல் பாடத்தில் ${sciSubTopic} தொடர்பான அறிவியல் கோட்பாடுகள் மற்றும் அன்றாட பயன்பாடுகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. அறிவியல் கொள்கைகள்: ${sciSubTopic}`, content: `அறிவியல் வரையறைகள், விதிகள் மற்றும் தத்துவார்த்த விளக்கங்கள்.`, example: `ஆய்வக சோதனை மற்றும் அறிவியல் மாதிரி.` },
           { heading: `2. அன்றாட வாழ்வியல் பயன்பாடுகள்`, content: `நமது அன்றாட வாழ்வில் இந்த அறிவியல் தத்துவம் எவ்வாறு பயன்படுகிறது என்பதற்கான விளக்கங்கள்.`, example: `இயற்கை நிகழ்வுகள் மற்றும் தொழில்நுட்ப சாதனங்கள்.` },
@@ -208,6 +241,7 @@ export function resolveMasterSequentialSyllabus(
     } else if (safeTask === 4) {
       const socSubTopic = curSoc.topics[(safeDay - 1) % curSoc.topics.length];
       const topic = `சமூக அறிவியல்: ${curSoc.unit} — ${socSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'சமூக அறிவியல்', topic, 4);
       return {
         taskNumber: 4,
         subject: 'சமூக அறிவியல் (Social Science)',
@@ -218,6 +252,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'வரலாற்று சான்றுகள் & அரசியலமைப்பு அடிப்படை உரிமைகள்',
         tamilTitle: topic,
         tamilIntro: `இன்றைய சமூக அறிவியல் பாடத்தில் ${socSubTopic} பற்றிய முக்கிய வரலாற்று மற்றும் புவியியல் நிகழ்வுகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. வரலாற்று நிகழ்வுகள் & சான்றுகள்: ${socSubTopic}`, content: `முக்கிய வரலாற்று காலக்கட்டங்கள், மன்னர்கள், போர்கள் மற்றும் கல்வெட்டு சான்றுகள்.`, example: `வரலாற்று காலக்கோடு (Timeline) மற்றும் வரைபட இடங்கள்.` },
           { heading: `2. புவியியல் சூழல் & இயற்கை வளங்கள்`, content: `புவியியல் அமைப்புகள், தட்பவெப்பநிலை மற்றும் மனித சமூகத்தின் மீதான தாக்கம்.`, example: `உலக மற்றும் இந்திய நிலவரைபடம்.` },
@@ -238,6 +279,7 @@ export function resolveMasterSequentialSyllabus(
       // safeTask === 5 (English)
       const engSubTopic = curEng.topics[(safeDay - 1) % curEng.topics.length];
       const topic = `English: ${curEng.unit} — ${engSubTopic}`;
+      const videoRef = resolveAuthenticEducationalVideo(courseId, 'English', topic, 5);
       return {
         taskNumber: 5,
         subject: 'English Language & Lit',
@@ -248,6 +290,13 @@ export function resolveMasterSequentialSyllabus(
         formulaOrLaw: 'Grammar Rule: Subject-Verb Agreement & Tense Structures',
         tamilTitle: `ஆங்கில பாடம்: ${curEng.unit} — ${engSubTopic}`,
         tamilIntro: `இன்றைய ஆங்கில பாடத்தில் ${engSubTopic} பற்றிய விரிவான பாடப்பகுதி மற்றும் இலக்கண விதிகளைக் கற்போம்.`,
+        youtubeVideoId: videoRef.youtubeVideoId,
+        videoMeta: {
+          youtubeVideoId: videoRef.youtubeVideoId,
+          videoTitle: videoRef.videoTitle,
+          channelName: videoRef.channelName,
+          duration: videoRef.duration
+        },
         keyConcepts: [
           { heading: `1. Literary & Reading Comprehension: ${engSubTopic}`, content: `Detailed analysis of characters, themes, poetic devices, and central moral ideas.`, example: `Vocabulary words with contextual meanings and antonyms.` },
           { heading: `2. Applied Grammar & Sentence Mechanics`, content: `Tense usage, modal auxiliaries, active/passive voice transformations, and error spotting.`, example: `Model sentence transformations with explanations.` },
@@ -267,7 +316,7 @@ export function resolveMasterSequentialSyllabus(
     }
   }
 
-  // 2. Competitive Exams (JEE, NEET, TNPSC, UPSC) & Default Dynamic Sequential Fallback
+  // Fallback Dynamic Resolver
   let subjectName = 'Core Academic Foundation';
   let chapterName = `Day ${safeDay} Standard Syllabus`;
   let topicTitle = `${subjectName}: Day ${safeDay} Chapter & Core Drills`;
@@ -277,42 +326,26 @@ export function resolveMasterSequentialSyllabus(
     const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Daily Problem Sprint'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    const chapters: Record<string, string[]> = {
-      Mathematics: ['Straight Lines & Coordinate Geometry', 'Complex Numbers & Quadratic Equations', 'Matrices & Determinants', 'Differential Calculus & Limits', 'Integral Calculus & Area Under Curves', 'Vectors & 3D Geometry', 'Probability & Statistics', 'Trigonometric Equations & Identities'],
-      Physics: ['Kinematics & Laws of Motion', 'Work, Energy, Power & Rotational Dynamics', 'Gravitation & Fluid Mechanics', 'Thermodynamics & Kinetic Theory', 'Electrostatics & Gauss Law', 'Current Electricity & Magnetism', 'Optics & Wave Optics', 'Modern Physics & Dual Nature'],
-      Chemistry: ['Chemical Bonding & Molecular Structure', 'Thermodynamics & Chemical Equilibrium', 'Solutions & Electrochemistry', 'Chemical Kinetics & Surface Chemistry', 'General Organic Chemistry (GOC)', 'Hydrocarbons & Reaction Mechanisms', 'Coordination Compounds & d-Block Elements', 'Biomolecules & Polymers'],
-      'Daily Problem Sprint': ['10-Question High-Speed JEE Sprint', 'Advanced Multi-Concept Integration', 'Previous Year Examination Drills', 'Error Elimination & Time Strategy']
-    };
-    const list = chapters[activeSub] || chapters.Mathematics;
-    chapterName = list[(Math.floor((safeDay - 1) / 2)) % list.length];
+    chapterName = `Chapter ${((safeDay - 1) % 10) + 1} Mastery`;
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-    formula = activeSub === 'Mathematics' ? 'Perpendicular Distance: d = |ax1 + by1 + c| / sqrt(a^2 + b^2)' : (activeSub === 'Physics' ? 'Work-Energy: W_net = Delta K = 1/2 m(v^2 - u^2)' : 'Equilibrium Constant: Delta G^0 = -RT ln(K_eq)');
+    formula = activeSub === 'Mathematics' ? 'Perpendicular Distance: d = |ax1 + by1 + c| / sqrt(a^2 + b^2)' : (activeSub === 'Physics' ? 'Work-Energy: W_net = Delta K' : 'Equilibrium: Delta G^0 = -RT ln(K)');
   } else if (courseId.includes('neet')) {
     const subjects = ['Botany & Plant Physiology', 'Zoology & Human Physiology', 'Physics', 'Chemistry'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    const chapters: Record<string, string[]> = {
-      'Botany & Plant Physiology': ['Cell Cycle & Division', 'Plant Physiology: Photosynthesis & Respiration', 'Plant Kingdom & Morphology', 'Ecology & Environmental Issues'],
-      'Zoology & Human Physiology': ['Human Digestion & Respiration', 'Circulation & Excretory System', 'Neural Control & Coordination', 'Genetics & Molecular Evolution'],
-      Physics: ['Kinematics & Dynamics', 'Thermodynamics & Heat Transfer', 'Ray Optics & Wave Optics', 'Electrostatics & Magnetic Effects'],
-      Chemistry: ['Atomic Structure & Periodic Trends', 'Chemical Thermodynamics & Solutions', 'Organic Reactions & Mechanisms', 'Coordination Chemistry & Biomolecules']
-    };
-    const list = chapters[activeSub] || chapters['Botany & Plant Physiology'];
-    chapterName = list[(Math.floor((safeDay - 1) / 2)) % list.length];
+    chapterName = `Chapter ${((safeDay - 1) % 10) + 1} NCERT Core`;
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-    formula = activeSub.includes('Botany') || activeSub.includes('Zoology') ? 'Hardy-Weinberg Principle: p^2 + 2pq + q^2 = 1' : 'Snell Law: n1 sin(i) = n2 sin(r)';
+    formula = 'Hardy-Weinberg Principle: p^2 + 2pq + q^2 = 1';
   } else if (courseId.includes('tnpsc') || courseId.includes('upsc')) {
     const subjects = isTamil
       ? ['பொதுத்தமிழ் & செய்யுள்', 'இந்திய அரசியலமைப்பு (Polity)', 'இந்திய வரலாறு & தமிழ்நாடு பண்பாடு', 'பொது அறிவியல் & பொருளாதாரம்', 'திறனறிவும் மனக்கணக்கும் (Aptitude)']
       : ['General English & Lit', 'Indian Polity & Constitution', 'History & Culture of India', 'General Science & Economy', 'Aptitude & Mental Ability'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    const polityChapters = ['Preamble & Salient Features', 'Fundamental Rights (Articles 14–32)', 'Directive Principles (DPSP)', 'Union Executive (President & PM)', 'Parliament & Legislative Process', 'Judiciary & Judicial Review', 'Constitutional Bodies'];
-    chapterName = polityChapters[(safeDay - 1) % polityChapters.length];
+    chapterName = `Unit ${((safeDay - 1) % 10) + 1} High-Yield Modules`;
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-    formula = activeSub.includes('Aptitude') || activeSub.includes('திறனறிவும்') ? 'Simple Interest: SI = (P * N * R) / 100' : 'Article 32: Constitutional Remedies (Writs)';
+    formula = 'Article 32: Constitutional Remedies';
   } else {
-    // School generic (Classes 1 to 12)
     const subjects = isTamil
       ? ['தமிழ் மொழி & செய்யுள்', 'கணிதம்', 'அறிவியல்', 'சமூக அறிவியல்', 'ஆங்கிலம்']
       : ['Language Lit', 'Mathematics', 'Science & EVS', 'Social Science', 'English & Phonics'];
@@ -320,8 +353,10 @@ export function resolveMasterSequentialSyllabus(
     subjectName = activeSub;
     chapterName = `Chapter ${((safeDay - 1) % 10) + 1} Foundations & Applications`;
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
-    formula = activeSub.includes('Math') || activeSub.includes('கணிதம்') ? '(a + b)^2 = a^2 + 2ab + b^2' : 'Speed = Distance / Time';
+    formula = '(a + b)^2 = a^2 + 2ab + b^2';
   }
+
+  const videoRef = resolveAuthenticEducationalVideo(courseId, subjectName, topicTitle, safeTask);
 
   return {
     taskNumber: safeTask,
@@ -333,6 +368,13 @@ export function resolveMasterSequentialSyllabus(
     formulaOrLaw: formula,
     tamilTitle: isTamil ? topicTitle : `${topicTitle} (தமிழ் விளக்கம்)`,
     tamilIntro: `நாள் ${safeDay}, பிரிவு ${safeTask} (${subjectName}): ${chapterName} பற்றிய தெளிவான பாடக்குறிப்பு மற்றும் தேர்வு உத்திகள்.`,
+    youtubeVideoId: videoRef.youtubeVideoId,
+    videoMeta: {
+      youtubeVideoId: videoRef.youtubeVideoId,
+      videoTitle: videoRef.videoTitle,
+      channelName: videoRef.channelName,
+      duration: videoRef.duration
+    },
     keyConcepts: [
       { heading: `1. Core Theoretical Foundations: ${chapterName}`, content: `Detailed conceptual breakdown of ${chapterName}. Master fundamental definitions, underlying principles, and key textbook laws.`, example: `Standard textbook problem and real-world application model.` },
       { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm to solve exam questions on ${chapterName}. Step-by-step presentation, proofs, and working notes.`, example: `Worked model question highlighting scoring points.` },

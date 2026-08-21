@@ -15,6 +15,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { resolveCanonicalTopic } from './canonicalTopicResolver';
+import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
 
 export interface VideoMeta {
   channel: string;
