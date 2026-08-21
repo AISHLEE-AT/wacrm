@@ -17,7 +17,10 @@ import {
   ChevronRight,
   Award,
   Video,
-  FileText
+  FileText,
+  ClipboardList,
+  Calculator,
+  Image as ImageIcon
 } from 'lucide-react';
 import { loadCoursePlayerContent, CoursePlayerContent } from '@/lib/coursePlayerEngine';
 
@@ -44,7 +47,7 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
 }) => {
   const [content, setContent] = useState<CoursePlayerContent | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'notes' | 'flashcards' | 'quiz' | 'recap'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'flashcards' | 'quiz' | 'bookback' | 'solved' | 'diagrams' | 'recap'>('notes');
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [isCardFlipped, setIsCardFlipped] = useState(false);
@@ -224,7 +227,10 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
               {[
                 { id: 'notes', label: 'Study Notes', icon: BookOpen },
                 { id: 'flashcards', label: 'Flashcards', icon: Sparkles },
-                { id: 'quiz', label: 'Practice Quiz (DPQ)', icon: HelpCircle },
+                { id: 'quiz', label: 'Practice Quiz', icon: HelpCircle },
+                { id: 'bookback', label: 'Book-Back Q&A', icon: ClipboardList },
+                { id: 'solved', label: 'Solved Problems', icon: Calculator },
+                { id: 'diagrams', label: 'Diagrams', icon: ImageIcon },
                 { id: 'recap', label: 'Bedtime Recap', icon: Moon },
               ].map(t => {
                 const Icon = t.icon;
@@ -438,7 +444,197 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
                     </div>
                   )}
 
-                  {/* TAB 4: BEDTIME RECAP */}
+                  {/* TAB 4: BOOK-BACK Q&A (குறுவினாக்கள் & நெடுவினாக்கள்) */}
+                  {activeTab === 'bookback' && (
+                    <div className="space-y-5">
+                      {/* 2-Mark Short Answers */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                          <ClipboardList className="w-4 h-4" /> 2-Mark Short Answers (குறுவினாக்கள்)
+                        </h4>
+                        {(content as any)?.bookBackSolutions?.twoMarkShortAnswers?.length > 0 ? (
+                          (content as any).bookBackSolutions.twoMarkShortAnswers.map((qa: any, idx: number) => (
+                            <div key={idx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-2">
+                              <div className="flex items-start gap-2">
+                                <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold text-[10px]">
+                                  {qa.marks} Marks
+                                </span>
+                                <p className="text-xs font-bold text-white leading-relaxed">{qa.question}</p>
+                              </div>
+                              <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/20 text-xs text-emerald-300 leading-relaxed whitespace-pre-line">
+                                <span className="text-[10px] font-bold text-emerald-400 block mb-1">📝 Model Answer:</span>
+                                {qa.modelAnswer}
+                              </div>
+                              {qa.keyPoints && (
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  {qa.keyPoints.map((kp: string, kIdx: number) => (
+                                    <span key={kIdx} className="px-2 py-0.5 rounded-full bg-slate-800 text-[10px] text-slate-300">
+                                      🔑 {kp}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 rounded-2xl bg-[#111827] border border-slate-800 text-xs text-slate-400">
+                            {content?.twoMarkQuestions?.map((q: any, idx: number) => (
+                              <div key={idx} className="mb-4 last:mb-0">
+                                <p className="font-bold text-white mb-1">{q.question}</p>
+                                <p className="text-emerald-300 whitespace-pre-line">{q.modelAnswer}</p>
+                              </div>
+                            )) || 'Book-back questions will be generated for this topic.'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 5-Mark Essay Answers */}
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                          <FileText className="w-4 h-4" /> 5-Mark Essay Answers (நெடுவினாக்கள் / விரிவான விடை)
+                        </h4>
+                        {(content as any)?.bookBackSolutions?.fiveMarkEssayAnswers?.length > 0 ? (
+                          (content as any).bookBackSolutions.fiveMarkEssayAnswers.map((qa: any, idx: number) => (
+                            <div key={idx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-3">
+                              <div className="flex items-start gap-2">
+                                <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[10px]">
+                                  {qa.marks} Marks
+                                </span>
+                                <p className="text-xs font-bold text-white leading-relaxed">{qa.question}</p>
+                              </div>
+                              {qa.structuredOutline && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {qa.structuredOutline.map((point: string, pIdx: number) => (
+                                    <span key={pIdx} className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-300">
+                                      {pIdx + 1}. {point}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="p-3 rounded-xl bg-purple-950/20 border border-purple-500/20 text-xs text-slate-200 leading-relaxed whitespace-pre-line">
+                                <span className="text-[10px] font-bold text-purple-400 block mb-1">📖 Model Essay Answer:</span>
+                                {qa.modelAnswer}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 rounded-2xl bg-[#111827] border border-slate-800 text-xs text-slate-400">
+                            {content?.fiveMarkQuestions?.map((q: any, idx: number) => (
+                              <div key={idx} className="mb-4 last:mb-0">
+                                <p className="font-bold text-white mb-1">{q.question}</p>
+                                {q.stepByStepSolution?.map((step: string, sIdx: number) => (
+                                  <p key={sIdx} className="text-emerald-300 ml-2">• {step}</p>
+                                ))}
+                              </div>
+                            )) || 'Essay answers will be generated for this topic.'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 5: STEP-BY-STEP SOLVED PROBLEMS */}
+                  {activeTab === 'solved' && (
+                    <div className="space-y-5">
+                      <h4 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
+                        <Calculator className="w-4 h-4" /> Step-by-Step Solved Problems (படிப்படியான தீர்வு)
+                      </h4>
+                      {(content as any)?.solvedProblems?.length > 0 ? (
+                        (content as any).solvedProblems.map((prob: any, idx: number) => (
+                          <div key={idx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-2">
+                                <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold text-[10px] whitespace-nowrap">
+                                  Problem {idx + 1}
+                                </span>
+                                <p className="text-xs font-bold text-white leading-relaxed">{prob.problemStatement}</p>
+                              </div>
+                              {prob.difficulty && (
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
+                                  prob.difficulty === 'Challenge' ? 'bg-red-500/20 text-red-400' :
+                                  prob.difficulty === 'Medium' ? 'bg-amber-500/20 text-amber-400' :
+                                  'bg-emerald-500/20 text-emerald-400'
+                                }`}>
+                                  {prob.difficulty}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              {prob.steps?.map((step: string, sIdx: number) => (
+                                <div key={sIdx} className="flex items-start gap-2 p-2 rounded-xl bg-[#080d1a] border border-slate-800">
+                                  <span className="w-6 h-6 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-[10px] font-bold text-cyan-400 shrink-0">
+                                    {sIdx + 1}
+                                  </span>
+                                  <p className="text-xs text-slate-300 leading-relaxed">{step}</p>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-xs">
+                              <span className="text-[10px] font-bold text-cyan-400 block mb-1">✅ Answer:</span>
+                              <p className="text-white font-medium">{prob.answer}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 rounded-2xl bg-[#111827] border border-slate-800 text-xs text-slate-400 text-center">
+                          Solved problem sets will be populated for this topic upon content enrichment.
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB 6: DIAGRAMS & VISUAL MEMORIZATION MNEMONICS */}
+                  {activeTab === 'diagrams' && (
+                    <div className="space-y-5">
+                      <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" /> Diagrams & Visual Memorization (வரைபடங்கள் & நினைவு உத்திகள்)
+                      </h4>
+                      {(content as any)?.diagramsAndVisuals ? (
+                        <div className="p-5 rounded-2xl bg-[#111827] border border-slate-800 space-y-4">
+                          <h5 className="text-sm font-bold text-white">{(content as any).diagramsAndVisuals.diagramTitle}</h5>
+                          <p className="text-xs text-slate-300 leading-relaxed">{(content as any).diagramsAndVisuals.diagramDescription}</p>
+                          
+                          {/* Key Labels as Visual Cards */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {(content as any).diagramsAndVisuals.keyLabels?.map((label: string, lIdx: number) => (
+                              <div key={lIdx} className="p-3 rounded-xl bg-gradient-to-r from-rose-950/30 to-[#080d1a] border border-rose-500/20 text-xs text-white font-medium">
+                                {label}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Mnemonic Trick */}
+                          {(content as any).diagramsAndVisuals.mnemonicTrick && (
+                            <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/20 text-xs">
+                              <span className="text-[10px] font-bold text-amber-400 block mb-1">🧠 Memory Trick (நினைவு உத்தி):</span>
+                              <p className="text-amber-200 leading-relaxed">{(content as any).diagramsAndVisuals.mnemonicTrick}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="p-6 rounded-2xl bg-[#111827] border border-slate-800 text-xs text-slate-400 text-center space-y-2">
+                          <ImageIcon className="w-8 h-8 mx-auto text-slate-600" />
+                          <p>Diagram and visual memorization aids will be generated for this topic.</p>
+                        </div>
+                      )}
+
+                      {/* AI Doubt Solver Prompt */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/40 to-[#111827] border border-indigo-500/30 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-indigo-400" />
+                          <span className="text-xs font-bold text-indigo-400">Live AI Doubt Solver</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 leading-relaxed">
+                          🤖 Ask TeachO AI: &quot;இதை எனக்கு இன்னும் எளிமையாக விளக்கு&quot; (Explain this even simpler to me)
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          The Gemini AI chat integration is active in TeachO Studio for real-time doubt resolution.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 7: BEDTIME RECAP */}
                   {activeTab === 'recap' && (
                     <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-[#111827] to-[#080d1a] border border-indigo-500/30 shadow-xl space-y-4">
                       <div className="flex items-center gap-3">

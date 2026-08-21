@@ -53,7 +53,7 @@ interface TeachOCoursePlayerModalProps {
   onCompleteTask: (earnedXp: number) => void;
 }
 
-type PlayerTab = 'video' | 'notes' | 'oneline' | 'blanks' | 'mcq' | 'twoFiveMark' | 'essay';
+type PlayerTab = 'video' | 'notes' | 'oneline' | 'blanks' | 'mcq' | 'twoFiveMark' | 'essay' | 'bookback' | 'solved' | 'diagrams';
 
 function getEducationalFallbackVideoId(topic: string, subject: string): { videoId: string; title: string } {
   const t = (topic || '').toLowerCase();
@@ -576,6 +576,36 @@ export default function TeachOCoursePlayerModal({
                 Essay Type
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'bookback' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('bookback')}
+            >
+              <FileText size={14} color={activeTab === 'bookback' ? '#f59e0b' : '#94a3b8'} />
+              <Text style={[styles.tabButtonText, activeTab === 'bookback' && styles.tabButtonTextActive]}>
+                Book-Back Q&A
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'solved' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('solved')}
+            >
+              <CheckCircle2 size={14} color={activeTab === 'solved' ? '#06b6d4' : '#94a3b8'} />
+              <Text style={[styles.tabButtonText, activeTab === 'solved' && styles.tabButtonTextActive]}>
+                Solved Problems
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'diagrams' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('diagrams')}
+            >
+              <Sparkles size={14} color={activeTab === 'diagrams' ? '#f43f5e' : '#94a3b8'} />
+              <Text style={[styles.tabButtonText, activeTab === 'diagrams' && styles.tabButtonTextActive]}>
+                Diagrams & Mnemonics
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         </View>
 
@@ -1013,6 +1043,154 @@ export default function TeachOCoursePlayerModal({
                     <Text style={styles.modelEssayText}>{q.modelEssay}</Text>
                   </View>
                 ))}
+              </View>
+            )}
+
+            {/* ─── TAB: BOOK-BACK Q&A (குறுவினாக்கள் & நெடுவினாக்கள்) ─── */}
+            {activeTab === 'bookback' && (
+              <View style={styles.tabSection}>
+                <Text style={styles.sectionHeaderTitle}>📚 Book-Back Q&A (புத்தகத்தின் பின்புற வினா-விடைகள்)</Text>
+                
+                {/* 2-Mark Short Answers */}
+                <Text style={{ color: '#f59e0b', fontSize: 12, fontWeight: '700', marginTop: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  📝 2-Mark Short Answers (குறுவினாக்கள்)
+                </Text>
+                {(content as any)?.bookBackSolutions?.twoMarkShortAnswers?.length > 0 ? (
+                  (content as any).bookBackSolutions.twoMarkShortAnswers.map((qa: any, idx: number) => (
+                    <View key={idx} style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 16, marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                        <View style={{ backgroundColor: 'rgba(245,158,11,0.2)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                          <Text style={{ color: '#f59e0b', fontSize: 10, fontWeight: '700' }}>{qa.marks} Marks</Text>
+                        </View>
+                        <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700', flex: 1, lineHeight: 18 }}>{qa.question}</Text>
+                      </View>
+                      <View style={{ backgroundColor: 'rgba(16,185,129,0.1)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)', padding: 12 }}>
+                        <Text style={{ color: '#10b981', fontSize: 10, fontWeight: '700', marginBottom: 4 }}>📝 Model Answer:</Text>
+                        <Text style={{ color: '#d1fae5', fontSize: 12, lineHeight: 18 }}>{qa.modelAnswer}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  content.twoMarkQuestions.map((q, idx) => (
+                    <View key={idx} style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 16, marginBottom: 12 }}>
+                      <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700', marginBottom: 6 }}>{q.question}</Text>
+                      <Text style={{ color: '#10b981', fontSize: 12, lineHeight: 18 }}>{q.modelAnswer}</Text>
+                    </View>
+                  ))
+                )}
+
+                {/* 5-Mark Essay Answers */}
+                <Text style={{ color: '#a855f7', fontSize: 12, fontWeight: '700', marginTop: 16, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  📖 5-Mark Essay Answers (நெடுவினாக்கள் / விரிவான விடை)
+                </Text>
+                {(content as any)?.bookBackSolutions?.fiveMarkEssayAnswers?.length > 0 ? (
+                  (content as any).bookBackSolutions.fiveMarkEssayAnswers.map((qa: any, idx: number) => (
+                    <View key={idx} style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 16, marginBottom: 12 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                        <View style={{ backgroundColor: 'rgba(168,85,247,0.2)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                          <Text style={{ color: '#a855f7', fontSize: 10, fontWeight: '700' }}>{qa.marks} Marks</Text>
+                        </View>
+                        <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700', flex: 1, lineHeight: 18 }}>{qa.question}</Text>
+                      </View>
+                      <View style={{ backgroundColor: 'rgba(168,85,247,0.08)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(168,85,247,0.2)', padding: 12 }}>
+                        <Text style={{ color: '#a855f7', fontSize: 10, fontWeight: '700', marginBottom: 4 }}>📖 Model Essay Answer:</Text>
+                        <Text style={{ color: '#e2e8f0', fontSize: 12, lineHeight: 18 }}>{qa.modelAnswer}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  content.fiveMarkQuestions.map((q, idx) => (
+                    <View key={idx} style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 16, marginBottom: 12 }}>
+                      <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700', marginBottom: 6 }}>{q.question}</Text>
+                      {q.stepByStepSolution.map((step, sIdx) => (
+                        <Text key={sIdx} style={{ color: '#10b981', fontSize: 12, marginLeft: 8, lineHeight: 18 }}>• {step}</Text>
+                      ))}
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
+
+            {/* ─── TAB: STEP-BY-STEP SOLVED PROBLEMS ─── */}
+            {activeTab === 'solved' && (
+              <View style={styles.tabSection}>
+                <Text style={styles.sectionHeaderTitle}>🧮 Step-by-Step Solved Problems (படிப்படியான தீர்வு)</Text>
+                {(content as any)?.solvedProblems?.length > 0 ? (
+                  (content as any).solvedProblems.map((prob: any, idx: number) => (
+                    <View key={idx} style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 16, marginBottom: 16 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, flex: 1 }}>
+                          <View style={{ backgroundColor: 'rgba(6,182,212,0.2)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                            <Text style={{ color: '#06b6d4', fontSize: 10, fontWeight: '700' }}>Problem {idx + 1}</Text>
+                          </View>
+                          <Text style={{ color: '#ffffff', fontSize: 13, fontWeight: '700', flex: 1, lineHeight: 18 }}>{prob.problemStatement}</Text>
+                        </View>
+                        {prob.difficulty && (
+                          <View style={{ backgroundColor: prob.difficulty === 'Challenge' ? 'rgba(239,68,68,0.2)' : prob.difficulty === 'Medium' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8 }}>
+                            <Text style={{ color: prob.difficulty === 'Challenge' ? '#ef4444' : prob.difficulty === 'Medium' ? '#f59e0b' : '#10b981', fontSize: 10, fontWeight: '700' }}>{prob.difficulty}</Text>
+                          </View>
+                        )}
+                      </View>
+                      {prob.steps?.map((step: string, sIdx: number) => (
+                        <View key={sIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: '#080d1a', borderRadius: 12, borderWidth: 1, borderColor: '#1e293b', padding: 10, marginBottom: 6 }}>
+                          <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(6,182,212,0.2)', borderWidth: 1, borderColor: 'rgba(6,182,212,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ color: '#06b6d4', fontSize: 10, fontWeight: '700' }}>{sIdx + 1}</Text>
+                          </View>
+                          <Text style={{ color: '#cbd5e1', fontSize: 12, flex: 1, lineHeight: 18 }}>{step}</Text>
+                        </View>
+                      ))}
+                      <View style={{ backgroundColor: 'rgba(6,182,212,0.1)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(6,182,212,0.2)', padding: 12, marginTop: 8 }}>
+                        <Text style={{ color: '#06b6d4', fontSize: 10, fontWeight: '700', marginBottom: 4 }}>✅ Answer:</Text>
+                        <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }}>{prob.answer}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <View style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 20, alignItems: 'center' }}>
+                    <Text style={{ color: '#64748b', fontSize: 12 }}>Solved problem sets will be populated for this topic.</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* ─── TAB: DIAGRAMS & VISUAL MEMORIZATION MNEMONICS ─── */}
+            {activeTab === 'diagrams' && (
+              <View style={styles.tabSection}>
+                <Text style={styles.sectionHeaderTitle}>🎨 Diagrams & Visual Memorization (வரைபடங்கள் & நினைவு உத்திகள்)</Text>
+                {(content as any)?.diagramsAndVisuals ? (
+                  <View style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 16, marginBottom: 12 }}>
+                    <Text style={{ color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 8 }}>{(content as any).diagramsAndVisuals.diagramTitle}</Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 12, lineHeight: 18, marginBottom: 12 }}>{(content as any).diagramsAndVisuals.diagramDescription}</Text>
+                    
+                    {(content as any).diagramsAndVisuals.keyLabels?.map((label: string, lIdx: number) => (
+                      <View key={lIdx} style={{ backgroundColor: 'rgba(244,63,94,0.08)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)', padding: 12, marginBottom: 8 }}>
+                        <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600' }}>{label}</Text>
+                      </View>
+                    ))}
+
+                    {(content as any).diagramsAndVisuals.mnemonicTrick && (
+                      <View style={{ backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)', padding: 12, marginTop: 8 }}>
+                        <Text style={{ color: '#f59e0b', fontSize: 10, fontWeight: '700', marginBottom: 4 }}>🧠 Memory Trick (நினைவு உத்தி):</Text>
+                        <Text style={{ color: '#fde68a', fontSize: 12, lineHeight: 18 }}>{(content as any).diagramsAndVisuals.mnemonicTrick}</Text>
+                      </View>
+                    )}
+                  </View>
+                ) : (
+                  <View style={{ backgroundColor: '#111827', borderRadius: 16, borderWidth: 1, borderColor: '#1e293b', padding: 20, alignItems: 'center' }}>
+                    <Text style={{ color: '#64748b', fontSize: 12 }}>Diagram and visual memorization aids will be generated for this topic.</Text>
+                  </View>
+                )}
+
+                {/* AI Doubt Solver Prompt */}
+                <View style={{ backgroundColor: 'rgba(99,102,241,0.08)', borderRadius: 16, borderWidth: 1, borderColor: 'rgba(99,102,241,0.3)', padding: 16, marginTop: 12 }}>
+                  <Text style={{ color: '#818cf8', fontSize: 12, fontWeight: '700', marginBottom: 6 }}>🤖 Live AI Doubt Solver</Text>
+                  <Text style={{ color: '#cbd5e1', fontSize: 11, lineHeight: 16 }}>
+                    Ask TeachO AI: &quot;இதை எனக்கு இன்னும் எளிமையாக விளக்கு&quot; (Explain this even simpler to me)
+                  </Text>
+                  <Text style={{ color: '#64748b', fontSize: 10, marginTop: 4 }}>
+                    Gemini AI chat integration is active in TeachO Studio for real-time doubt resolution.
+                  </Text>
+                </View>
               </View>
             )}
 
