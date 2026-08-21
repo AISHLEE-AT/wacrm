@@ -14,6 +14,7 @@ import {
   PlayCircle,
   CheckCircle2,
   ChevronRight,
+  ChevronDown,
   Search,
   Flame,
   Star,
@@ -42,6 +43,7 @@ import {
 } from 'lucide-react';
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, CourseCategory } from '@/data/coursesCatalog';
 import { resolveMasterCurriculumPlan } from '@/data/curriculum';
+import { resolveCompleteCourseSyllabus } from '@/data/curriculum/courseSyllabusRegistry';
 import { TeachOCoursePickerModal } from '@/components/teacho/TeachOCoursePickerModal';
 import { TeachOCoursePlayerModal } from '@/components/teacho/TeachOCoursePlayerModal';
 
@@ -89,6 +91,23 @@ export default function TeachODashboard() {
   // Catalog Explorer Filter & Search
   const [exploreCategory, setExploreCategory] = useState<CourseCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Full Syllabus Explorer State
+  const [syllabusSearch, setSyllabusSearch] = useState('');
+  const [selectedSyllabusSubject, setSelectedSyllabusSubject] = useState<string>('all');
+  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+
+  // Resolve Full Micro-Granular Syllabus for Active Course
+  const fullSyllabus = useMemo(() => {
+    return resolveCompleteCourseSyllabus(activeCourse.id, activeCourse.title);
+  }, [activeCourse.id, activeCourse.title]);
+
+  const toggleChapter = (chapterKey: string) => {
+    setExpandedChapters(prev => ({
+      ...prev,
+      [chapterKey]: !prev[chapterKey]
+    }));
+  };
 
   // Resolve Daily Routine for Active Course & Day
   const dailyCurriculum = useMemo(() => {
@@ -567,30 +586,294 @@ export default function TeachODashboard() {
         {/* ================= TAB 3: FULL SYLLABUS & PHASES ================= */}
         {activeTab === 'syllabus' && (
           <div className="space-y-6">
-            <div className="bg-[#0c1322] border border-slate-800 rounded-3xl p-6 space-y-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>{activeCourse.icon}</span>
-                <span>{activeCourse.title} — Authentic Syllabus & Phases</span>
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-                Structured across {activeCourse.totalDays} days. Includes daily routine distribution, periodic revision checkpoints, and board mock examinations.
-              </p>
-
-              {/* Subject Breakdown Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                {activeCourse.subjects?.map((sub, sIdx) => (
-                  <div key={sIdx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-400">{typeof sub === 'string' ? sub : sub.name}</span>
-                      {typeof sub !== 'string' && sub.code && <span className="text-[10px] font-mono text-slate-500">{sub.code}</span>}
-                    </div>
-                    {typeof sub !== 'string' && sub.icon && <span className="text-xl block">{sub.icon}</span>}
-                    <p className="text-[11px] text-slate-400">
-                      Standard syllabus mapped to Day 1 through Day {activeCourse.totalDays}.
-                    </p>
+            {/* Header Hero Banner */}
+            <div className="bg-[#0c1322] border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-xl">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 rounded-xl text-xs font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      {activeCourse.badge}
+                    </span>
+                    <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800/80 text-slate-300 border border-slate-700">
+                      {fullSyllabus.board} • {fullSyllabus.medium} Medium
+                    </span>
+                    <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                      {activeCourse.totalDays} Days Structured Blueprint
+                    </span>
                   </div>
-                ))}
+                  <h3 className="text-xl md:text-2xl font-black text-white flex items-center gap-3">
+                    <span className="text-3xl">{activeCourse.icon}</span>
+                    <span>{activeCourse.title}</span>
+                  </h3>
+                  <p className="text-xs md:text-sm text-slate-400 max-w-3xl leading-relaxed">
+                    Official authentic curriculum mapped to micro-granular topics. Each micro-topic includes theoretical foundations, textbook formulas/laws, key exam points, and direct masterclass video lessons.
+                  </p>
+                </div>
+
+                {/* Key Metrics Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#111827] border border-slate-800/80 p-4 rounded-2xl shrink-0">
+                  <div className="text-center px-2">
+                    <span className="text-xs text-slate-400 block font-medium">Subjects</span>
+                    <span className="text-lg md:text-xl font-black text-emerald-400">{fullSyllabus.totalSubjects}</span>
+                  </div>
+                  <div className="text-center px-2 border-l border-slate-800">
+                    <span className="text-xs text-slate-400 block font-medium">Chapters</span>
+                    <span className="text-lg md:text-xl font-black text-cyan-400">{fullSyllabus.totalChapters}</span>
+                  </div>
+                  <div className="text-center px-2 border-l border-slate-800">
+                    <span className="text-xs text-slate-400 block font-medium">Micro-Topics</span>
+                    <span className="text-lg md:text-xl font-black text-amber-400">{fullSyllabus.totalMicroTopics}</span>
+                  </div>
+                  <div className="text-center px-2 border-l border-slate-800">
+                    <span className="text-xs text-slate-400 block font-medium">Duration</span>
+                    <span className="text-lg md:text-xl font-black text-purple-400">{activeCourse.totalDays}d</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Controls Bar: Search & Subject Filters */}
+              <div className="pt-4 border-t border-slate-800/80 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+                {/* Subject Selector Tabs */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedSyllabusSubject('all')}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      selectedSyllabusSubject === 'all'
+                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                        : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                    }`}
+                  >
+                    <span>All Subjects</span>
+                    <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-slate-950/40">
+                      {fullSyllabus.totalSubjects}
+                    </span>
+                  </button>
+
+                  {fullSyllabus.subjects.map(s => {
+                    const isSelected = selectedSyllabusSubject === s.subjectId;
+                    return (
+                      <button
+                        key={s.subjectId}
+                        onClick={() => setSelectedSyllabusSubject(s.subjectId)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                            : 'bg-slate-800/70 hover:bg-slate-800 text-slate-300'
+                        }`}
+                      >
+                        <span>{s.icon}</span>
+                        <span className="line-clamp-1 max-w-[180px]">{s.subjectName.split('(')[0]}</span>
+                        <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-slate-950/40">
+                          {s.totalMicroTopics}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Micro-Topic Search Input */}
+                <div className="relative min-w-[260px] md:w-72">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={syllabusSearch}
+                    onChange={e => setSyllabusSearch(e.target.value)}
+                    placeholder="Search micro-topics, formulas, acts..."
+                    className="w-full bg-[#111827] border border-slate-800 rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  />
+                  {syllabusSearch && (
+                    <button
+                      onClick={() => setSyllabusSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Subject-Wise Deep Micro-Granular Syllabus Tree */}
+            <div className="space-y-6">
+              {fullSyllabus.subjects
+                .filter(s => selectedSyllabusSubject === 'all' || s.subjectId === selectedSyllabusSubject)
+                .map(subject => {
+                  const query = syllabusSearch.toLowerCase().trim();
+
+                  // Filter chapters based on search query
+                  const filteredChapters = subject.chapters
+                    .map(chap => {
+                      const matchedTopics = chap.microTopics.filter(t => {
+                        if (!query) return true;
+                        return (
+                          t.topicTitle.toLowerCase().includes(query) ||
+                          t.subtopic.toLowerCase().includes(query) ||
+                          t.keyFormulaOrLaw.toLowerCase().includes(query) ||
+                          t.keyPoints.some(kp => kp.toLowerCase().includes(query))
+                        );
+                      });
+                      return { ...chap, microTopics: matchedTopics };
+                    })
+                    .filter(chap => chap.microTopics.length > 0);
+
+                  if (filteredChapters.length === 0) return null;
+
+                  return (
+                    <div
+                      key={subject.subjectId}
+                      className="bg-[#0c1322] border border-slate-800 rounded-3xl p-6 space-y-5 shadow-lg"
+                    >
+                      {/* Subject Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl p-2.5 rounded-2xl bg-[#111827] border border-slate-800">
+                            {subject.icon}
+                          </span>
+                          <div>
+                            <h4 className="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                              <span>{subject.subjectName}</span>
+                            </h4>
+                            <p className="text-xs text-slate-400">
+                              {subject.totalChapters} Core Chapters • {subject.totalMicroTopics} Micro-Topics mapped to Daily Routine
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                            {subject.totalMicroTopics} Topics
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Chapters Accordion / List */}
+                      <div className="space-y-4">
+                        {filteredChapters.map(chapter => {
+                          const chapterKey = `${subject.subjectId}_ch_${chapter.chapterNumber}`;
+                          const isExpanded = expandedChapters[chapterKey] !== false; // Default expanded
+
+                          return (
+                            <div
+                              key={chapter.chapterNumber}
+                              className="bg-[#111827] border border-slate-800/90 rounded-2xl overflow-hidden transition"
+                            >
+                              {/* Chapter Header Toggle */}
+                              <button
+                                onClick={() => toggleChapter(chapterKey)}
+                                className="w-full p-4 flex items-center justify-between gap-4 text-left hover:bg-slate-800/30 transition"
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-800 text-slate-300 border border-slate-700">
+                                      Unit {chapter.chapterNumber}
+                                    </span>
+                                    <h5 className="text-sm md:text-base font-bold text-white line-clamp-1">
+                                      {chapter.chapterTitle}
+                                    </h5>
+                                  </div>
+                                  <p className="text-xs text-slate-400 line-clamp-1">{chapter.description}</p>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-xs text-slate-400 hidden sm:inline">
+                                    {chapter.microTopics.length} Micro-Topics
+                                  </span>
+                                  <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300">
+                                    {isExpanded ? (
+                                      <ChevronDown className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4" />
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+
+                              {/* Micro-Topics Grid */}
+                              {isExpanded && (
+                                <div className="p-4 pt-0 border-t border-slate-800/60 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                  {chapter.microTopics.map(topic => (
+                                    <div
+                                      key={topic.id}
+                                      className="p-4 rounded-xl bg-[#0b101b] border border-slate-800/80 hover:border-emerald-500/40 transition flex flex-col justify-between space-y-3 group"
+                                    >
+                                      <div className="space-y-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800/80 text-emerald-400 border border-slate-700">
+                                            Day {topic.dayNumber} · Period {topic.periodNumber}
+                                          </span>
+                                          <span
+                                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                              topic.importance === 'High-Yield'
+                                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                                : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                                            }`}
+                                          >
+                                            ★ {topic.importance}
+                                          </span>
+                                        </div>
+
+                                        <h6 className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
+                                          {topic.topicTitle}
+                                        </h6>
+                                        <p className="text-xs text-slate-400 leading-relaxed">{topic.subtopic}</p>
+
+                                        {/* Formula / Governing Rule Badge */}
+                                        {topic.keyFormulaOrLaw && (
+                                          <div className="p-2.5 rounded-lg bg-[#141d2e] border border-slate-800 text-[11px] font-mono text-cyan-300">
+                                            <span className="text-[10px] text-slate-500 block font-sans font-bold uppercase mb-0.5">
+                                              📐 Governing Law / Formula / Rule:
+                                            </span>
+                                            {topic.keyFormulaOrLaw}
+                                          </div>
+                                        )}
+
+                                        {/* Key Exam Points */}
+                                        {topic.keyPoints && topic.keyPoints.length > 0 && (
+                                          <div className="space-y-1 pt-1">
+                                            <span className="text-[10px] text-slate-500 font-bold uppercase block">
+                                              🎯 Core Scoring Points:
+                                            </span>
+                                            {topic.keyPoints.map((kp, idx) => (
+                                              <div key={idx} className="text-[11px] text-slate-300 flex items-start gap-1.5">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                                                <span>{kp}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Interactive Start Lesson Action */}
+                                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                                        <span className="text-[10px] font-mono text-slate-500">ID: {topic.id}</span>
+                                        <button
+                                          onClick={() =>
+                                            setActivePlayerTask({
+                                              topicTitle: topic.topicTitle,
+                                              subject: subject.subjectName,
+                                              courseTitle: activeCourse.title,
+                                              courseId: activeCourse.id,
+                                              dayNumber: topic.dayNumber,
+                                              taskNumber: topic.periodNumber,
+                                            })
+                                          }
+                                          className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-500/10"
+                                        >
+                                          <PlayCircle className="w-3.5 h-3.5" />
+                                          <span>Study Lesson</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           </div>
         )}
