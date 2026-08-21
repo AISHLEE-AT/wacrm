@@ -317,43 +317,175 @@ export function resolveMasterSequentialSyllabus(
   }
 
   // Fallback Dynamic Resolver
+  // ── 3. COMPREHENSIVE SUBJECT & MICRO-TOPIC MATRICES (JEE, NEET, TNPSC, TNUSRB, UPSC, SCHOOL) ──
   let subjectName = 'Core Academic Foundation';
   let chapterName = `Day ${safeDay} Standard Syllabus`;
   let topicTitle = `${subjectName}: Day ${safeDay} Chapter & Core Drills`;
   let formula = 'Standard Curriculum Equation / Law';
 
+  const cycle10 = (safeDay - 1) % 10;
+
   if (courseId.includes('jee')) {
     const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Daily Problem Sprint'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    chapterName = `Chapter ${((safeDay - 1) % 10) + 1} Mastery`;
+    if (activeSub === 'Mathematics') {
+      const mathsTopics = [
+        'Straight Lines & Coordinate Geometry', 'Complex Numbers & Quadratic Equations', 'Matrices & Determinants', 'Calculus: Limits & Continuity',
+        'Differentiation & Applications of Derivatives', 'Definite & Indefinite Integrals', 'Differential Equations', 'Vector Algebra & 3D Geometry',
+        'Permutations, Combinations & Probability', 'Trigonometric Equations & Inverse Functions'
+      ];
+      chapterName = mathsTopics[cycle10];
+      formula = 'Perpendicular Distance: d = |ax1 + by1 + c| / sqrt(a^2 + b^2)';
+    } else if (activeSub === 'Physics') {
+      const phyTopics = [
+        'Kinematics & Projectile Motion', 'Newton\'s Laws of Motion & Friction', 'Work, Power & Energy', 'Rotational Dynamics & Moment of Inertia',
+        'Gravitation & Satellite Motion', 'Thermodynamics & Heat Transfer', 'Electrostatics & Gauss Law', 'Current Electricity & Kirchhoff\'s Laws',
+        'Magnetism & Electromagnetic Induction', 'Ray Optics & Wave Optics'
+      ];
+      chapterName = phyTopics[cycle10];
+      formula = 'Work-Energy Theorem: W_net = Delta K = 1/2*m*(v^2 - u^2)';
+    } else if (activeSub === 'Chemistry') {
+      const chemTopics = [
+        'Atomic Structure & Quantum Numbers', 'Periodic Table & Chemical Bonding', 'Thermodynamics & Thermochemistry', 'Chemical Equilibrium & Le Chatelier Principle',
+        'Ionic Equilibrium & Buffer Solutions', 'Electrochemistry & Nernst Equation', 'Chemical Kinetics & Rate Laws', 'Organic: Reaction Mechanisms & Hydrocarbons',
+        'Coordination Compounds & Crystal Field Theory', 'Biomolecules & Polymers'
+      ];
+      chapterName = chemTopics[cycle10];
+      formula = 'Equilibrium Constant: Delta G^0 = -RT ln(K_eq)';
+    } else {
+      chapterName = `Speed & Accuracy MCQ Sprint ${cycle10 + 1}`;
+      formula = 'Speed Formula: Elimination of Distractors & Dimensional Analysis';
+    }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-    formula = activeSub === 'Mathematics' ? 'Perpendicular Distance: d = |ax1 + by1 + c| / sqrt(a^2 + b^2)' : (activeSub === 'Physics' ? 'Work-Energy: W_net = Delta K' : 'Equilibrium: Delta G^0 = -RT ln(K)');
   } else if (courseId.includes('neet')) {
     const subjects = ['Botany & Plant Physiology', 'Zoology & Human Physiology', 'Physics', 'Chemistry'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    chapterName = `Chapter ${((safeDay - 1) % 10) + 1} NCERT Core`;
+    if (activeSub.includes('Botany')) {
+      const botany = ['Plant Kingdom & Classification', 'Morphology & Anatomy of Flowering Plants', 'Cell: The Unit of Life & Cell Cycle', 'Photosynthesis in Higher Plants', 'Respiration in Plants', 'Plant Growth & Hormones', 'Sexual Reproduction in Flowering Plants', 'Principles of Inheritance & Variation', 'Molecular Basis of Inheritance', 'Ecology & Biodiversity Conservation'];
+      chapterName = botany[cycle10];
+      formula = 'Hardy-Weinberg Equilibrium: p^2 + 2pq + q^2 = 1';
+    } else if (activeSub.includes('Zoology')) {
+      const zoology = ['Animal Kingdom & Non-Chordates', 'Structural Organisation in Animals', 'Biomolecules & Enzymes', 'Digestion & Absorption', 'Breathing & Exchange of Gases', 'Body Fluids & Circulation', 'Excretory Products & Elimination', 'Locomotion & Movement', 'Neural Control & Chemical Coordination', 'Human Reproduction & Reproductive Health'];
+      chapterName = zoology[cycle10];
+      formula = 'Cardiac Output = Stroke Volume x Heart Rate (72 x 70 = 5040 mL/min)';
+    } else if (activeSub.includes('Physics')) {
+      chapterName = ['Units & Measurements', 'Motion in a Straight Line', 'Laws of Motion', 'Work Energy Power', 'Gravitation', 'Mechanical Properties of Fluids', 'Thermodynamics', 'Electrostatics', 'Current Electricity', 'Optics'][cycle10];
+      formula = 'Ohm\'s Law: V = IR | Electric Power: P = VI = I^2*R';
+    } else {
+      chapterName = ['Some Basic Concepts of Chemistry', 'Structure of Atom', 'Chemical Bonding', 'Thermodynamics', 'Equilibrium', 'Redox Reactions', 'Organic Chemistry Basics', 'Hydrocarbons', 'Solutions & Colligative Properties', 'Electrochemistry'][cycle10];
+      formula = 'Ideal Gas Law: PV = nRT';
+    }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-    formula = 'Hardy-Weinberg Principle: p^2 + 2pq + q^2 = 1';
-  } else if (courseId.includes('tnpsc') || courseId.includes('upsc')) {
+  } else if (courseId.includes('tnpsc') || courseId.includes('upsc') || courseId.includes('si') || courseId.includes('police')) {
     const subjects = isTamil
       ? ['பொதுத்தமிழ் & செய்யுள்', 'இந்திய அரசியலமைப்பு (Polity)', 'இந்திய வரலாறு & தமிழ்நாடு பண்பாடு', 'பொது அறிவியல் & பொருளாதாரம்', 'திறனறிவும் மனக்கணக்கும் (Aptitude)']
       : ['General English & Lit', 'Indian Polity & Constitution', 'History & Culture of India', 'General Science & Economy', 'Aptitude & Mental Ability'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    chapterName = `Unit ${((safeDay - 1) % 10) + 1} High-Yield Modules`;
+
+    if (activeSub.includes('Polity') || activeSub.includes('அரசியலமைப்பு')) {
+      const polityChapters = [
+        'இந்திய அரசியலமைப்பு முகப்புரை & குடியுரிமை (Preamble & Citizenship)',
+        'அடிப்படை உரிமைகள் (Fundamental Rights - Articles 12-35)',
+        'அரசு வழிகாட்டு நெறிமுறைகள் & அடிப்படை கடமைகள் (DPSP & Duties Art 36-51A)',
+        'மத்திய அரசு: குடியரசுத் தலைவர் & பிரதமர் (Union Executive)',
+        'இந்திய நாடாளுமன்றம்: மக்களவை & மாநிலங்களவை (Parliament: Lok Sabha & Rajya Sabha)',
+        'மாநில அரசு: ஆளுநர் & முதலமைச்சர் (State Executive: Governor & CM)',
+        'நீதித்துறை: உச்சநீதிமன்றம் & உயர்நீதிமன்றங்கள் (Supreme Court & High Courts)',
+        'உள்ளாட்சி அமைப்புகள்: பஞ்சாயத்து ராஜ் & நகராட்சிகள் (73rd & 74th Amendments)',
+        'அரசியலமைப்பு அமைப்புகள்: தேர்தல் ஆணையம், UPSC, TNPSC & CAG',
+        'அரசியலமைப்பு திருத்தங்கள் & சிறப்புச் சட்டங்கள் (Article 368 & Emergency Provisions)'
+      ];
+      chapterName = polityChapters[cycle10];
+      formula = 'Article 32: நீதிப்பேராணைகள் (Writs: ஆட்கொணர்வு, கட்டளையுறுத்தும், தடையுறுத்தும், தகுதிமுறை வினவும், ஆவணக்கேட்பு)';
+    } else if (activeSub.includes('Science') || activeSub.includes('அறிவியல்')) {
+      const sciChapters = [
+        'இயக்கவியல் & நியூட்டனின் மூன்று இயக்க விதிகள் (Newton\'s Laws of Motion)',
+        'ஒளியியல் & எதிரொளிப்பு விதிகள் (Optics, Reflection & Refraction)',
+        'மின்னியல் & காந்தவியல் (Electricity, Magnetism & Ohm\'s Law)',
+        'வேதியியல்: தனிம வரிசை அட்டவணை & வேதிப்பிணைப்புகள் (Periodic Table)',
+        'அமிலங்கள், காரங்கள் மற்றும் உப்புகள் (Acids, Bases, Salts & pH Scale)',
+        'மனித உடல் உறுப்பு மண்டலங்கள் & நோய்கள் (Human Anatomy & Physiology)',
+        'தாவரவியல்: ஒளிச்சேர்க்கை & சுவாசம் (Plant Photosynthesis & Respiration)',
+        'மரபியல் & பரிணாமக் கொள்கைகள் (Genetics & Mendel\'s Laws)',
+        'சுற்றுச்சூழலியல் & இயற்கை வளங்கள் (Ecology & Climate Change)',
+        'இந்திய விண்வெளி & அறிவியல் தொழில்நுட்ப சாதனைகள் (ISRO Space Missions & AI)'
+      ];
+      chapterName = sciChapters[cycle10];
+      formula = 'நியூட்டனின் இரண்டாம் விதி: F = ma | ஓம் விதி: V = IR | pH = -log[H+]';
+    } else if (activeSub.includes('History') || activeSub.includes('வரலாறு')) {
+      const histChapters = [
+        'சிந்து சமவெளி நாகரிகம் & வேத காலம் (Indus Valley Civilization & Vedic Age)',
+        'மௌரியப் பேரரசு & குப்தர்களின் பொற்காலம் (Mauryas & Gupta Empire)',
+        'தென்னிந்திய அரசுகள்: சேர, சோழ, பாண்டியர் & பல்லவர் வரலாறு (Sangam & Chola Heritage)',
+        'தில்லி சுல்தானியம் & முகலாயப் பேரரசு (Delhi Sultanate & Mughals)',
+        'விஜயநகரப் பேரரசு & மராத்தியர்கள் (Vijayanagara & Marathas)',
+        'ஐரோப்பியர் வருகை & ஆங்கிலேயர் ஆட்சி விரிவாக்கம் (Advent of Europeans & British Rule)',
+        '1857 பெரும் புரட்சி & இந்திய விடுதலை இயக்கம் (1857 Revolt & Freedom Struggle)',
+        'சமூக சீர்திருத்த இயக்கங்கள்: தந்தை பெரியார், பாரதியார், அம்பேத்கர் (Social Reform Movements)',
+        'இந்திய தேசிய காங்கிரஸ் & காந்தியடிகளின் தலைமை (Gandhian Era 1915-1947)',
+        'விடுதலைக்கு பிந்தைய இந்தியா & தமிழக அரசியல் தலைவர்களின் சாதனைகள் (Post-Independence TN)'
+      ];
+      chapterName = histChapters[cycle10];
+      formula = 'வரலாற்று காலக்கோடு & சான்றுகள் (கல்வெட்டுகள், நாணயங்கள், இலக்கியங்கள்)';
+    } else if (activeSub.includes('Aptitude') || activeSub.includes('திறனறிவும்')) {
+      const aptChapters = [
+        'எண் தொடர் வரிசை & சுருக்குதல் (Simplification & BODMAS)',
+        'மீ.சி.ம மற்றும் மீ.பொ.வ (HCF & LCM Core Concepts)',
+        'விழுக்காடு & இலாப நட்டம் (Percentage, Profit & Loss)',
+        'தனிவட்டி மற்றும் கூட்டுவட்டி (Simple & Compound Interest)',
+        'விகிதம் மற்றும் விகிதாசாரம் (Ratio & Proportion)',
+        'நேரம் மற்றும் வேலை (Time & Work Equations)',
+        'நேரம், வேகம் மற்றும் தூரம் (Time, Speed & Distance)',
+        'பரப்பளவு மற்றும் கனஅளவு (Mensuration 2D & 3D Formulas)',
+        'தர்க்கரீதியான காரணமறிதல் & பகடை கணக்குகள் (Logical Reasoning & Dice)',
+        'விவரங்களை விளக்குதல் & நிகழ்தகவு (Data Interpretation & Probability)'
+      ];
+      chapterName = aptChapters[cycle10];
+      formula = 'தனிவட்டி: SI = (P x N x R) / 100 | கூட்டுவட்டி: A = P(1 + R/100)^N';
+    } else {
+      const tamilChapters = [
+        'பகுதி அ: தமிழ் இலக்கணம் - எழுத்து, சொல், பொருள், யாப்பு, அணி',
+        'பகுதி ஆ: திருக்குறள் (அறத்துப்பால், பொருட்பால் 25 அதிகாரங்கள்)',
+        'பகுதி ஆ: எட்டுத்தொகை & பத்துப்பாட்டு சங்க இலக்கிய நயவுரை',
+        'பகுதி ஆ: பதினெண்கீழ்க்கணக்கு & நாலடியார் நீதி நூல்கள்',
+        'பகுதி ஆ: ஐம்பெருங்காப்பியங்கள் (சிலப்பதிகாரம், மணிமேகலை)',
+        'பகுதி ஆ: பக்தி இலக்கியம் (தேவாரம், திருவாசகம், திவ்யப்பிரபந்தம்)',
+        'பகுதி இ: மகாகவி பாரதியார் & பாரதிதாசன் கவிதைச் சிறப்புகள்',
+        'பகுதி இ: நாமக்கல் கவிஞர், கவிமணி & கண்ணதாசன் பாடல்கள்',
+        'பகுதி இ: உ.வே.சாமிநாதையர், பரிதிமாற்கலைஞர் தமிழ்த் தொண்டு',
+        'பகுதி இ: தற்காலத் தமிழ் உரைநடை & நாட்டுப்புறக் கலைகள்'
+      ];
+      chapterName = tamilChapters[cycle10];
+      formula = 'இலக்கண விதி: வல்லினம் மிகும் இடங்கள் & புணர்ச்சி விதிகள்';
+    }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
-    formula = 'Article 32: Constitutional Remedies';
   } else {
+    // School courses (State Board, CBSE, Matric)
     const subjects = isTamil
       ? ['தமிழ் மொழி & செய்யுள்', 'கணிதம்', 'அறிவியல்', 'சமூக அறிவியல்', 'ஆங்கிலம்']
       : ['Language Lit', 'Mathematics', 'Science & EVS', 'Social Science', 'English & Phonics'];
     const activeSub = subjects[(safeTask - 1) % subjects.length];
     subjectName = activeSub;
-    chapterName = `Chapter ${((safeDay - 1) % 10) + 1} Foundations & Applications`;
+    if (activeSub.includes('கணிதம்') || activeSub.includes('Math')) {
+      const maths = ['எண்கள் & எண் கணிதம் (Number System)', 'இயற்கணிதம் & சமன்பாடுகள் (Algebra)', 'வடிவியல் & கோணங்கள் (Geometry)', 'அளவைகள் & பரப்பளவு (Mensuration)', 'புள்ளியியல் & நிகழ்தகவு (Statistics)'];
+      chapterName = maths[cycle10 % maths.length];
+      formula = '(a + b)^2 = a^2 + 2ab + b^2 | பரப்பளவு = நீளம் x அகலம்';
+    } else if (activeSub.includes('அறிவியல்') || activeSub.includes('Science')) {
+      const science = ['தாவரங்கள் & விலங்குகள் உலகம் (Living World)', 'நம்மைச் சுற்றியுள்ள பருப்பொருட்கள் (Matter Around Us)', 'விசையும் இயக்கமும் (Force & Motion)', 'ஒளியும் ஒலியும் (Light & Sound)', 'மனித உடல் நலமும் சுகாதாரமும் (Health & Hygiene)'];
+      chapterName = science[cycle10 % science.length];
+      formula = 'ஒளிச்சேர்க்கை சமன்பாடு: 6CO2 + 6H2O → C6H12O6 + 6O2';
+    } else if (activeSub.includes('சமூக') || activeSub.includes('Social')) {
+      const social = ['பண்டைய தமிழக வரலாறு & நாகரிகங்கள்', 'புவியியல்: நிலத்தோற்றங்கள் & வளங்கள்', 'குடிமையியல்: மக்களாட்சி & சமத்துவம்', 'பொருளாதாரம் ஓர் அறிமுகம்', 'பேரிடர் மேலாண்மை & சாலைப் பாதுகாப்பு'];
+      chapterName = social[cycle10 % social.length];
+      formula = 'அரசியலமைப்பு அடிப்படை கடமைகள் & சுற்றுச்சூழல் பாதுகாப்பு';
+    } else {
+      chapterName = `Chapter ${((safeDay - 1) % 10) + 1} Foundations & Language Drills`;
+      formula = 'Subject + Verb + Object Agreement Rule';
+    }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
-    formula = '(a + b)^2 = a^2 + 2ab + b^2';
   }
 
   const videoRef = resolveAuthenticEducationalVideo(courseId, subjectName, topicTitle, safeTask);
