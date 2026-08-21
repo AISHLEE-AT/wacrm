@@ -82,6 +82,41 @@ export default function TeachOAdminStudioPage() {
     setSaveStatus('idle');
     const userKey = getUserGeminiKey();
 
+    // Reset formData immediately to prevent any stale previous day content
+    const courseSubjects = selectedCourse.subjects || [];
+    const activeSub = courseSubjects[(day - 1) % (courseSubjects.length || 1)]?.name || 'Core Subject';
+
+    setFormData({
+      topicTitle: `${selectedCourse.title} - Day ${day}`,
+      category: activeSub,
+      youtubeVideoId: '0TgLtF3PMOc',
+      overview: `Loading Day ${day} syllabus lesson for ${selectedCourse.title}...`,
+      coreConcepts: [
+        { heading: `Day ${day}: Core Theoretical Framework`, content: 'Loading conceptual foundations...', example: '' },
+        { heading: `Day ${day}: Step-by-Step Problem Solving`, content: 'Loading analytical methods...', example: '' },
+        { heading: `Day ${day}: High-Yield Exam Formulas`, content: 'Loading memory rules and formulas...', example: '' }
+      ],
+      tamilExplanation: {
+        simpleTitle: `${selectedCourse.title} - நாள் ${day}`,
+        colloquialIntro: `நாள் ${day} பாடக்குறிப்பு ஏற்றப்படுகிறது...`,
+        everydayAnalogy: '',
+        keyPointsTamil: ['', '', '']
+      },
+      formulasAndMnemonics: [
+        { name: `Day ${day} Master Formula`, formula: '', mnemonic: '' }
+      ],
+      vsaqs: [
+        { question: `Day ${day} Question 1`, answer: '', marks: 2 },
+        { question: `Day ${day} Question 2`, answer: '', marks: 2 }
+      ],
+      mcqs: [
+        { question: `Day ${day} Diagnostic Question 1`, options: ['', '', '', ''], correctAnswer: 0, explanation: '' },
+        { question: `Day ${day} Diagnostic Question 2`, options: ['', '', '', ''], correctAnswer: 0, explanation: '' },
+        { question: `Day ${day} Diagnostic Question 3`, options: ['', '', '', ''], correctAnswer: 0, explanation: '' },
+        { question: `Day ${day} Diagnostic Question 4`, options: ['', '', '', ''], correctAnswer: 0, explanation: '' }
+      ]
+    });
+
     try {
       const res = await fetch('/api/kindle-ai', {
         method: 'POST',
