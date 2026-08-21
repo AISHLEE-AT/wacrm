@@ -68,20 +68,35 @@ export default function TeachOAdminStudioPage() {
     loadLessonForDay(selectedCourse.id, dayNumber);
   }, [selectedCourse, dayNumber]);
 
+  function getUserGeminiKey(): string {
+    if (typeof window === 'undefined') return '';
+    return (
+      localStorage.getItem('user_gemini_api_key') ||
+      localStorage.getItem('gemini_api_key') ||
+      ''
+    ).trim();
+  }
+
   async function loadLessonForDay(courseId: string, day: number) {
     setLoading(true);
     setSaveStatus('idle');
+    const userKey = getUserGeminiKey();
+
     try {
       const res = await fetch('/api/kindle-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userKey ? { 'x-user-gemini-key': userKey } : {})
+        },
         body: JSON.stringify({
           courseId,
           dayNumber: day,
           topicTitle: `${selectedCourse.title} Day ${day}`,
           courseTitle: selectedCourse.title,
           board: selectedCourse.board,
-          standard: selectedCourse.title
+          standard: selectedCourse.title,
+          userGeminiKey: userKey
         })
       });
 
@@ -89,52 +104,109 @@ export default function TeachOAdminStudioPage() {
         const data = await res.json();
         setIsVerifiedByAdmin(Boolean(data._meta?.isAdminVerified));
         
+        // Extract Core Concepts from studyNotes or coreConcepts
+        let loadedConcepts = data.coreConcepts;
+        if (!loadedConcepts?.length && data.studyNotes?.length) {
+          loadedConcepts = data.studyNotes.map((sn: any) => ({
+            heading: sn.sectionTitle || 'Core Concept',
+            content: sn.content || '',
+            example: sn.example || ''
+          }));
+        }
+        if (!loadedConcepts?.length) {
+          loadedConcepts = [
+            { heading: '1. Core Theoretical Foundations', content: 'Detailed conceptual explanation.', example: 'Model application.' },
+            { heading: '2. Step-by-Step Methodology', content: 'Standard analytical approach.', example: 'Worked example.' },
+            { heading: '3. Exam Shortcuts & Formulas', content: 'Key exam recall tips.', example: 'Fast calculation.' }
+          ];
+        }
+
+        // Extract MCQs from mcqs or practiceQuiz
+        let loadedMcqs = data.mcqs;
+        if (!loadedMcqs?.length && data.practiceQuiz?.length) {
+          loadedMcqs = data.practiceQuiz.map((pq: any) => ({
+            question: pq.question || '',
+            options: pq.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctAnswer: pq.correctIndex ?? pq.correctAnswer ?? 0,
+            explanation: pq.explanation || ''
+          }));
+        }
+        if (!loadedMcqs?.length) {
+          loadedMcqs = [
+            { question: 'Which option represents the primary principle of this topic?', options: ['Option A', 'Option B', 'Option C', 'Option D'], correctAnswer: 0, explanation: 'Option A is the verified core definition.' },
+            { question: 'What is the governing equation or formula?', options: ['Formula A', 'Formula B', 'Formula C', 'Formula D'], correctAnswer: 0, explanation: 'Standard textbook formulation.' },
+            { question: 'In competitive examinations, this topic carries:', options: ['High weightage', 'Moderate weightage', 'Not included', 'Optional only'], correctAnswer: 0, explanation: 'Essential syllabus topic.' },
+            { question: 'What is the most common exam pitfall to avoid?', options: ['Unit mismatch', 'Calculation error', 'Formula confusion', 'All of the above'], correctAnswer: 3, explanation: 'Careful step-by-step verification prevents errors.' }
+          ];
+        }
+
+        // Extract VSAQs from vsaqs or flashcards
+        let loadedVsaqs = data.vsaqs;
+        if (!loadedVsaqs?.length && data.flashcards?.length) {
+          loadedVsaqs = data.flashcards.map((fc: any) => ({
+            question: fc.front || 'Key Question',
+            answer: fc.back || '',
+            marks: 2
+          }));
+        }
+        if (!loadedVsaqs?.length) {
+          loadedVsaqs = [
+            { question: 'Define the core principle of this lesson.', answer: 'Core textbook definition.', marks: 2 },
+            { question: 'State the key formula or theorem.', answer: 'Standard mathematical formula.', marks: 2 }
+          ];
+        }
+
+        // Extract Formulas
+        const loadedFormulas = data.formulasAndMnemonics?.length ? data.formulasAndMnemonics : [
+          { name: `${data.topicTitle || 'Lesson'} Master Rule`, formula: 'Standard Method', mnemonic: 'Active Recall Rule' }
+        ];
+
         setFormData({
-          topicTitle: data.topicTitle || `${selectedCourse.title} Lesson ${day}`,
-          category: data.category || selectedCourse.subjects?.[0]?.name || 'Core Subject',
-          youtubeVideoId: data.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
+          topicTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
+          category: data.category || data.subject || selectedCourse.subjects?.[0]?.name || 'Core Subject',
+          youtubeVideoId: data.videoId || data.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
           overview: data.overview || data.notes?.overview || '',
-          coreConcepts: (data.coreConcepts || data.notes?.coreConcepts || [
-            { heading: 'Core Principle', content: 'Detailed conceptual explanation.', example: 'Real-world model.' },
-            { heading: 'Application & Methods', content: 'Practical problem solving techniques.', example: 'Standard example.' },
-            { heading: 'Exam Shortcuts', content: 'Formulas and calculation tips.', example: 'Fast shortcut.' }
-          ]),
+          coreConcepts: loadedConcepts,
           tamilExplanation: data.tamilExplanation || data.notes?.tamilExplanation || {
             simpleTitle: data.topicTitle || '',
             colloquialIntro: 'பாடத்தின் சுருக்கம் மற்றும் எளிய விளக்கம்.',
             everydayAnalogy: 'வாழ்வியல் ஒப்பீடு.',
             keyPointsTamil: ['முக்கிய குறிப்பு 1', 'முக்கிய குறிப்பு 2', 'முக்கிய குறிப்பு 3']
           },
-          formulasAndMnemonics: data.formulasAndMnemonics || data.notes?.formulasAndMnemonics || [
-            { name: 'Master Equation', formula: 'F = ma', mnemonic: 'Key invariant relationship.' }
-          ],
-          vsaqs: data.vsaqs || data.notes?.vsaqs || [
-            { question: 'Define the core principle.', answer: 'Core textbook definition.', marks: 2 },
-            { question: 'State the key formula.', answer: 'Standard mathematical formula.', marks: 2 }
-          ],
-          mcqs: data.mcqs || [
-            { question: 'Which option correctly represents this concept?', options: ['Option A', 'Option B', 'Option C', 'Option D'], correctAnswer: 0, explanation: 'Option A is the verified correct definition.' },
-            { question: 'What is the primary governing formula?', options: ['Formula A', 'Formula B', 'Formula C', 'Formula D'], correctAnswer: 0, explanation: 'Standard textbook formulation.' },
-            { question: 'How is this applied in problem solving?', options: ['Method 1', 'Method 2', 'Method 3', 'Method 4'], correctAnswer: 0, explanation: 'Direct step-by-step evaluation.' },
-            { question: 'In competitive examinations, this topic carries:', options: ['High weightage', 'Low weightage', 'Not included', 'Optional only'], correctAnswer: 0, explanation: 'Essential syllabus topic.' }
-          ]
+          formulasAndMnemonics: loadedFormulas,
+          vsaqs: loadedVsaqs,
+          mcqs: loadedMcqs
         });
+
+        if (data._meta?.source === 'cache') {
+          setStatusMessage(`✅ Loaded from Supabase LMS Database (${data._meta?.isAdminVerified ? 'Admin Verified' : 'Auto-Saved'})`);
+        } else if (data._meta?.source === 'local-file-bundle') {
+          setStatusMessage(`📦 Loaded from Offline Multi-Day Harvest Archive. Ready to edit or publish.`);
+        } else if (data._meta?.source === 'jit-generated') {
+          setStatusMessage(`✨ Generated live with Gemini (${data._meta?.keySource || 'Active Pool'}). Review and click Publish.`);
+        }
       }
     } catch (e) {
       console.warn('Failed to load lesson for day:', e);
+      setStatusMessage('Notice: Content ready for drafting or manual input.');
     } finally {
       setLoading(false);
     }
   }
 
-  // 1-Click AI Auto-Draft with Gemini
+  // 1-Click AI Auto-Draft with Gemini (using Profile API Key)
   async function handleAiDraft() {
     setAiDrafting(true);
     setSaveStatus('idle');
+    const userKey = getUserGeminiKey();
+
     try {
       const res = await fetch('/api/kindle-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userKey ? { 'x-user-gemini-key': userKey } : {})
+        },
         body: JSON.stringify({
           courseId: selectedCourse.id,
           dayNumber,
@@ -142,26 +214,48 @@ export default function TeachOAdminStudioPage() {
           courseTitle: selectedCourse.title,
           board: selectedCourse.board,
           standard: selectedCourse.title,
+          userGeminiKey: userKey,
           forceRefresh: true
         })
       });
 
       if (res.ok) {
         const data = await res.json();
+        
+        let loadedConcepts = data.coreConcepts;
+        if (!loadedConcepts?.length && data.studyNotes?.length) {
+          loadedConcepts = data.studyNotes.map((sn: any) => ({
+            heading: sn.sectionTitle || 'Core Concept',
+            content: sn.content || '',
+            example: sn.example || ''
+          }));
+        }
+
+        let loadedMcqs = data.mcqs;
+        if (!loadedMcqs?.length && data.practiceQuiz?.length) {
+          loadedMcqs = data.practiceQuiz.map((pq: any) => ({
+            question: pq.question || '',
+            options: pq.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctAnswer: pq.correctIndex ?? pq.correctAnswer ?? 0,
+            explanation: pq.explanation || ''
+          }));
+        }
+
         setFormData(prev => ({
           ...prev,
           topicTitle: data.topicTitle || prev.topicTitle,
-          category: data.category || prev.category,
+          category: data.category || data.subject || prev.category,
           overview: data.overview || prev.overview,
-          coreConcepts: data.coreConcepts?.length ? data.coreConcepts : prev.coreConcepts,
+          coreConcepts: loadedConcepts?.length ? loadedConcepts : prev.coreConcepts,
           tamilExplanation: data.tamilExplanation || prev.tamilExplanation,
           formulasAndMnemonics: data.formulasAndMnemonics?.length ? data.formulasAndMnemonics : prev.formulasAndMnemonics,
           vsaqs: data.vsaqs?.length ? data.vsaqs : prev.vsaqs,
-          mcqs: data.mcqs?.length ? data.mcqs : prev.mcqs
+          mcqs: loadedMcqs?.length ? loadedMcqs : prev.mcqs
         }));
-        setStatusMessage('AI draft generated successfully! Review and click Publish.');
+        setStatusMessage('✨ AI draft generated successfully! Review below and click Publish to Supabase.');
       } else {
-        setStatusMessage('AI draft failed. Please check Gemini API keys.');
+        const err = await res.json().catch(() => ({}));
+        setStatusMessage(`AI draft notice: ${err.error || 'Please ensure your Gemini key in Profile is active.'}`);
       }
     } catch (e: any) {
       setStatusMessage(`Error: ${e.message}`);
@@ -170,9 +264,53 @@ export default function TeachOAdminStudioPage() {
     }
   }
 
+  // AI Polish & Enhance Helper
+  async function handleAiPolish() {
+    if (!formData.overview && !formData.topicTitle) return;
+    setAiDrafting(true);
+    const userKey = getUserGeminiKey();
+
+    try {
+      const res = await fetch('/api/kindle-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userKey ? { 'x-user-gemini-key': userKey } : {})
+        },
+        body: JSON.stringify({
+          courseId: selectedCourse.id,
+          dayNumber,
+          topicTitle: formData.topicTitle,
+          courseTitle: selectedCourse.title,
+          board: selectedCourse.board,
+          standard: selectedCourse.title,
+          userGeminiKey: userKey,
+          forceRefresh: true
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({
+          ...prev,
+          overview: data.overview || prev.overview,
+          coreConcepts: data.coreConcepts?.length ? data.coreConcepts : prev.coreConcepts,
+          tamilExplanation: data.tamilExplanation || prev.tamilExplanation
+        }));
+        setStatusMessage('✨ Successfully polished academic content with Gemini AI!');
+      }
+    } catch (e: any) {
+      setStatusMessage(`Polish error: ${e.message}`);
+    } finally {
+      setAiDrafting(false);
+    }
+  }
+
   // Direct Save & Publish to Supabase LMS
   async function handlePublish() {
     setSaveStatus('saving');
+    const userKey = getUserGeminiKey();
+
     try {
       const payload = {
         ...formData,
@@ -198,21 +336,25 @@ export default function TeachOAdminStudioPage() {
 
       const res = await fetch('/api/kindle-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userKey ? { 'x-user-gemini-key': userKey } : {})
+        },
         body: JSON.stringify({
           courseId: selectedCourse.id,
           dayNumber,
           topicTitle: formData.topicTitle,
           courseTitle: selectedCourse.title,
           isAdminEdit: true,
-          adminContent: payload
+          adminContent: payload,
+          userGeminiKey: userKey
         })
       });
 
       if (res.ok) {
         setSaveStatus('saved');
         setIsVerifiedByAdmin(true);
-        setStatusMessage(`Successfully published Day ${dayNumber} to Supabase LMS!`);
+        setStatusMessage(`🎉 Successfully published Day ${dayNumber} to Supabase LMS!`);
       } else {
         setSaveStatus('error');
         setStatusMessage('Failed to publish. Please check database permissions.');
@@ -531,12 +673,33 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
               <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
                 <div>
                   <h2 className="text-lg font-bold">{selectedCourse.title}</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Editing <span className="font-semibold text-emerald-600">Day {dayNumber}</span> &bull; Key: <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">{selectedCourse.id}_day_{dayNumber}</code>
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-xs text-muted-foreground">
+                      Editing <span className="font-semibold text-emerald-600">Day {dayNumber}</span> &bull; Key: <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">{selectedCourse.id}_day_{dayNumber}</code>
+                    </p>
+                    {getUserGeminiKey() ? (
+                      <span className="text-[10px] bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        🔑 Profile Key Active
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        🌐 System Key Pool
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleAiPolish}
+                    disabled={aiDrafting || loading || !formData.overview}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border shadow-sm disabled:opacity-50"
+                    title="Optimize overview and concepts with AI"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    AI Polish
+                  </button>
+
                   <button
                     onClick={handleAiDraft}
                     disabled={aiDrafting || loading}
@@ -559,9 +722,9 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
 
               {statusMessage && (
                 <div className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                  saveStatus === 'saved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-                  saveStatus === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-200' :
-                  'bg-blue-50 text-blue-800 border border-blue-200'
+                  saveStatus === 'saved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' :
+                  saveStatus === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' :
+                  'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
                 }`}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   {statusMessage}

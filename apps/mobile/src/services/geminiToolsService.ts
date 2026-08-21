@@ -9,21 +9,28 @@ export interface ToolResponse {
 
 // Supported Google Gemini Models
 export const GEMINI_MODELS = {
+  FLASH_31: 'gemini-3.1-flash-lite',
+  FLASH_31_PREVIEW: 'gemini-3.1-flash-lite-preview',
+  FLASH_LATEST: 'gemini-flash-lite-latest',
   FLASH_25: 'gemini-2.5-flash',
-  FLASH_15: 'gemini-1.5-flash',
   FLASH_LITE: 'gemini-2.5-flash-lite',
   PRO_25: 'gemini-2.5-pro',
 };
 
 const CANDIDATE_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
   'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
   'gemini-1.5-flash',
-  'gemini-2.0-flash-exp',
   'gemini-2.5-pro',
-  'gemini-1.5-pro',
 ];
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const FALLBACK_KEYS = (process.env.EXPO_PUBLIC_GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
+
+const DEFAULT_MODEL = 'gemini-3.1-flash-lite';
 const CLOUD_AI_API = 'https://watscrm.vercel.app/api/ai';
 
 export const geminiToolsService = {
@@ -42,6 +49,9 @@ export const geminiToolsService = {
       try {
         effectiveKey = ((await SecureStore.getItemAsync('gemini-api-key')) || '').trim();
       } catch (e) {}
+    }
+    if (!effectiveKey) {
+      effectiveKey = FALLBACK_KEYS[0];
     }
 
     const langInstructions =

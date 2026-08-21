@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
 
 // ── Supabase LMS client (server-side) ──────────────────────────
 const LMS_URL = process.env.NEXT_PUBLIC_LMS_SUPABASE_URL || 'https://jjgdatjthyeesmgunnlp.supabase.co';
@@ -9,23 +11,86 @@ const lms = createClient(LMS_URL, LMS_KEY);
 
 // ── Gemini model fallback hierarchy ────────────────────────────
 const CANDIDATE_MODELS = [
-  'gemini-2.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
   'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
   'gemini-1.5-flash',
   'gemini-2.5-pro',
   'gemini-1.5-pro',
 ];
 
-// ── Round-robin key rotation ──────────────────────────────────
-let keyIndex = 0;
-function getNextApiKey(): string {
+// ── Key pool builder with user-saved profile key priority ───────
+function getCandidateApiKeys(userProvidedKey?: string | null): string[] {
+  const keys: string[] = [];
+  if (userProvidedKey && userProvidedKey.trim().length > 10) {
+    keys.push(userProvidedKey.trim());
+  }
   const pool = process.env.GEMINI_API_KEYS?.split(',').map(k => k.trim()).filter(Boolean) || [];
   const primary = process.env.GEMINI_API_KEY?.trim();
   if (primary && !pool.includes(primary)) pool.unshift(primary);
-  if (pool.length === 0) throw new Error('No Gemini API keys configured');
-  const key = pool[keyIndex % pool.length];
-  keyIndex++;
-  return key;
+  
+  // Known active fallback key pool
+  // Load from server environment
+  const envPool = (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
+  envPool.forEach(k => {
+    if (!pool.includes(k)) pool.push(k);
+  });
+
+  pool.forEach(k => {
+    if (!keys.includes(k)) keys.push(k);
+  });
+  return keys;
+}
+
+// ── Helper to normalize cached item to Admin & Player schema ──
+function normalizeLessonItem(raw: any, primaryKey: string) {
+  if (!raw) return null;
+  const coreConcepts = raw.coreConcepts?.length ? raw.coreConcepts : (raw.studyNotes || []).map((sn: any) => ({
+    heading: sn.sectionTitle || 'Core Concept',
+    content: sn.content || '',
+    example: sn.example || ''
+  }));
+
+  const mcqs = raw.mcqs?.length ? raw.mcqs : (raw.practiceQuiz || []).map((pq: any, i: number) => ({
+    id: `q${i + 1}`,
+    question: pq.question || '',
+    options: pq.options || ['A', 'B', 'C', 'D'],
+    correctAnswer: pq.correctIndex ?? pq.correctAnswer ?? 0,
+    explanation: pq.explanation || ''
+  }));
+
+  const vsaqs = raw.vsaqs?.length ? raw.vsaqs : (raw.flashcards || []).map((fc: any) => ({
+    question: fc.front || 'Key Question',
+    answer: fc.back || '',
+    marks: 2
+  }));
+
+  const formulasAndMnemonics = raw.formulasAndMnemonics?.length ? raw.formulasAndMnemonics : [
+    { name: raw.topicTitle || 'Core Formula', formula: 'Key Principles & Steps', mnemonic: 'Active Recall Rule' }
+  ];
+
+  return {
+    ...raw,
+    topicTitle: raw.topicTitle || raw.title || '',
+    category: raw.category || raw.subject || 'Academic',
+    overview: raw.overview || raw.notes?.overview || '',
+    coreConcepts,
+    studyNotes: raw.studyNotes || coreConcepts.map((c: any) => ({ sectionTitle: c.heading, content: c.content })),
+    mcqs,
+    practiceQuiz: raw.practiceQuiz || mcqs.map((m: any) => ({ question: m.question, options: m.options, correctIndex: m.correctAnswer, explanation: m.explanation })),
+    vsaqs,
+    flashcards: raw.flashcards || vsaqs.map((v: any) => ({ front: v.question, back: v.answer })),
+    formulasAndMnemonics,
+    videoMeta: raw.videoMeta || {
+      youtubeVideoId: raw.videoId || '0TgLtF3PMOc',
+      videoTitle: raw.videoTitle || raw.topicTitle || 'Masterclass',
+      channelName: 'TeachO 1-on-1 Tuition'
+    },
+    videoId: raw.videoId || raw.videoMeta?.youtubeVideoId || '0TgLtF3PMOc'
+  };
 }
 
 // ── Structured prompt for micro-topic content ─────────────────
@@ -116,8 +181,12 @@ export async function POST(req: NextRequest) {
       standard,
       forceRefresh = false,
       isAdminEdit = false,
-      adminContent = null
+      adminContent = null,
+      userGeminiKey = null,
     } = body;
+
+    const headerUserKey = req.headers.get('x-user-gemini-key');
+    const effectiveUserKey = userGeminiKey || headerUserKey;
 
     if (!topicTitle && !adminContent) {
       return NextResponse.json({ error: 'topicTitle or adminContent is required' }, { status: 400 });
@@ -162,42 +231,89 @@ export async function POST(req: NextRequest) {
     // ── Step 1: Check Supabase cache (unless forceRefresh) ─────
     if (!forceRefresh) {
       try {
-        const { data: cached } = await lms
-          .from('kindle_content_cache')
-          .select('kindle_json, model_used')
-          .eq('topic_key', primaryKey)
-          .single();
+        const candidateKeys = [
+          primaryKey,
+          courseId && dayNumber ? `${courseId}_day_${dayNumber}` : null,
+          courseId && dayNumber ? `${courseId}_day_${dayNumber}_task_1` : null,
+        ].filter(Boolean) as string[];
 
-        if (cached?.kindle_json) {
-          const item = cached.kindle_json;
-          // If valid rich content or admin verified, return immediately (0ms)
-          if (item && item.overview && item.mcqs && item.mcqs.length > 0) {
-            const elapsed = Date.now() - startTime;
-            return NextResponse.json({
-              ...item,
-              _meta: {
-                source: 'cache',
-                isAdminVerified: Boolean(item.is_admin_verified || cached.model_used === 'admin-studio'),
-                latencyMs: elapsed,
-                cacheKey: primaryKey
-              }
-            });
+        for (const cKey of candidateKeys) {
+          const { data: cached } = await lms
+            .from('kindle_content_cache')
+            .select('kindle_json, model_used')
+            .eq('topic_key', cKey)
+            .maybeSingle();
+
+          if (cached?.kindle_json) {
+            const normalized = normalizeLessonItem(cached.kindle_json, cKey);
+            if (normalized && (normalized.overview || normalized.studyNotes?.length || normalized.coreConcepts?.length)) {
+              const elapsed = Date.now() - startTime;
+              return NextResponse.json({
+                ...normalized,
+                _meta: {
+                  source: 'cache',
+                  isAdminVerified: Boolean(normalized.is_admin_verified || cached.model_used === 'admin-studio'),
+                  latencyMs: elapsed,
+                  cacheKey: cKey
+                }
+              });
+            }
           }
         }
-      } catch {
+
+        // Check local bundle & harvest fallback files
+        const localCandidates = [
+          path.join(process.cwd(), 'src/data/generated_catalog', `${primaryKey}.json`),
+          courseId && dayNumber ? path.join(process.cwd(), 'src/data/generated_catalog', `${courseId}_day_${dayNumber}.json`) : null,
+          courseId && dayNumber ? path.join(process.cwd(), 'src/data/generated_catalog', `${courseId}_day_${dayNumber}_task_1.json`) : null,
+          courseId && dayNumber ? `D:/doc/MULTI_DAY_HARVEST/json_by_day/${courseId}_day_${dayNumber}.json` : null,
+        ].filter(Boolean) as string[];
+
+        for (const fPath of localCandidates) {
+          if (fs.existsSync(fPath)) {
+            try {
+              const fileContent = JSON.parse(fs.readFileSync(fPath, 'utf8'));
+              const normalized = normalizeLessonItem(fileContent, primaryKey);
+              if (normalized) {
+                const elapsed = Date.now() - startTime;
+                return NextResponse.json({
+                  ...normalized,
+                  _meta: {
+                    source: 'local-file-bundle',
+                    isAdminVerified: false,
+                    latencyMs: elapsed,
+                    cacheKey: primaryKey
+                  }
+                });
+              }
+            } catch {}
+          }
+        }
+      } catch (err) {
         // Cache miss — proceed to live JIT generation
       }
     }
 
-    // ── Step 2: Live JIT Generation with Gemini API ────────────
+    // ── Step 2: Live JIT Generation with Candidate Keys ────────
+    const candidateKeys = getCandidateApiKeys(effectiveUserKey);
+    if (candidateKeys.length === 0) {
+      return NextResponse.json({
+        error: 'No Gemini API key available. Please add your Gemini API key in your Profile.',
+        fallback: true
+      }, { status: 400 });
+    }
+
+    const prompt = buildPrompt(cleanTopic, cleanCourse, cleanBoard, cleanStandard, dayNumber);
     let generatedJson: any = null;
     let usedModel = '';
+    let usedKeyType = '';
     let lastError: any = null;
 
-    try {
-      const apiKey = getNextApiKey();
+    // Try keys starting with user's personal key
+    for (let kIdx = 0; kIdx < candidateKeys.length; kIdx++) {
+      const apiKey = candidateKeys[kIdx];
+      const isUserKey = Boolean(effectiveUserKey && apiKey === effectiveUserKey.trim());
       const genAI = new GoogleGenerativeAI(apiKey);
-      const prompt = buildPrompt(cleanTopic, cleanCourse, cleanBoard, cleanStandard, dayNumber);
 
       for (const modelName of CANDIDATE_MODELS) {
         try {
@@ -220,19 +336,20 @@ export async function POST(req: NextRequest) {
 
           generatedJson = JSON.parse(text);
           usedModel = modelName;
+          usedKeyType = isUserKey ? 'user-profile-key' : 'system-key-pool';
           break;
         } catch (err: any) {
           lastError = err;
-          console.warn(`[Kindle JIT AI] Model ${modelName} attempt failed:`, err.message?.substring(0, 100));
+          console.warn(`[Kindle JIT AI] Key #${kIdx} (${isUserKey ? 'user' : 'system'}) Model ${modelName} attempt failed:`, err.message?.substring(0, 100));
         }
       }
-    } catch (keyErr: any) {
-      lastError = keyErr;
+
+      if (generatedJson) break; // Successfully generated
     }
 
     if (!generatedJson) {
       return NextResponse.json({
-        error: 'AI generation failed across all models',
+        error: 'AI generation failed across all available keys and models',
         fallback: true,
         details: lastError?.message
       }, { status: 503 });
@@ -249,7 +366,7 @@ export async function POST(req: NextRequest) {
         course_title: cleanCourse,
         kindle_json: generatedJson,
         generated_at: new Date().toISOString(),
-        model_used: usedModel || 'gemini-jit-live',
+        model_used: `${usedModel} (${usedKeyType})`,
       }, { onConflict: 'topic_key' });
     } catch (cacheErr: any) {
       console.warn('[Kindle AI] Cache write failed (non-fatal):', cacheErr.message);
@@ -258,7 +375,13 @@ export async function POST(req: NextRequest) {
     const elapsed = Date.now() - startTime;
     return NextResponse.json({
       ...generatedJson,
-      _meta: { source: 'jit-generated', model: usedModel, latencyMs: elapsed, cacheKey: primaryKey }
+      _meta: {
+        source: 'jit-generated',
+        model: usedModel,
+        keySource: usedKeyType,
+        latencyMs: elapsed,
+        cacheKey: primaryKey
+      }
     });
 
   } catch (error: any) {

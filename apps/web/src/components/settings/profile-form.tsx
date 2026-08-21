@@ -40,6 +40,7 @@ export function ProfileForm() {
   const [pincode, setPincode] = useState('');
   const [location, setLocation] = useState('');
   const [phone, setPhone] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -49,12 +50,18 @@ export function ProfileForm() {
 
   // Seed form state once the profile loads.
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const localKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key') || '';
+      if (localKey) setGeminiApiKey(localKey);
+    }
     if (!profile) return;
     setFullName(profile.full_name ?? '');
     setEmail(profile.email ?? '');
     setPincode((profile as unknown as Record<string, unknown>).pincode as string ?? '');
     setLocation((profile as unknown as Record<string, unknown>).location as string ?? '');
     setPhone((profile as unknown as Record<string, unknown>).phone as string ?? (profile as unknown as Record<string, unknown>).whatsapp as string ?? '');
+    const profileKey = (profile as unknown as Record<string, unknown>).gemini_api_key as string ?? '';
+    if (profileKey) setGeminiApiKey(profileKey);
   }, [profile]);
 
   const handleAutoFetchLocation = () => {
@@ -202,8 +209,19 @@ export function ProfileForm() {
           location: location.trim() || null,
           phone: phone.trim() || null,
           whatsapp: phone.trim() || null,
+          ...(geminiApiKey.trim() ? { gemini_api_key: geminiApiKey.trim() } : {})
         })
         .eq('id', user.id);
+
+      if (typeof window !== 'undefined') {
+        if (geminiApiKey.trim()) {
+          localStorage.setItem('user_gemini_api_key', geminiApiKey.trim());
+          localStorage.setItem('gemini_api_key', geminiApiKey.trim());
+        } else {
+          localStorage.removeItem('user_gemini_api_key');
+          localStorage.removeItem('gemini_api_key');
+        }
+      }
       if (updateError) {
         throw new Error(`Save failed: ${updateError.message}`);
       }
@@ -408,6 +426,26 @@ export function ProfileForm() {
                   maxLength={15}
                   disabled={saving}
                 />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="profile-gemini-key" className="text-foreground flex items-center gap-1.5 font-medium">
+                    <span className="text-purple-600 font-bold">✨ Personal Google Gemini API Key</span>
+                    <span className="text-xs text-muted-foreground font-normal">(Used for your TeachO JIT generation &amp; AI Tutor)</span>
+                  </Label>
+                </div>
+                <Input
+                  id="profile-gemini-key"
+                  type="password"
+                  value={geminiApiKey}
+                  onChange={(e) => setGeminiApiKey(e.target.value)}
+                  placeholder="AIzaSy... (leave blank to use default system key pool)"
+                  disabled={saving}
+                  className="font-mono text-xs"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Your custom key is saved to your profile and used first for all on-demand course day generation and 1-on-1 tutoring sessions.
+                </p>
               </div>
             </div>
           </div>

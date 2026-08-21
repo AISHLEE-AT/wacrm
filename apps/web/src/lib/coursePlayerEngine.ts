@@ -23,6 +23,9 @@ export interface VideoMeta {
   videoTitle: string;
   durationMinutes: number;
   isOfficialAishlee: boolean;
+  channelName?: string;
+  duration?: string;
+  keyTimestamps?: { time: string; label: string }[];
 }
 
 export interface CoursePlayerNote {
@@ -99,23 +102,83 @@ export interface CoursePlayerContent {
   twoMarkQuestions: TwoMarkQuestion[];
   fiveMarkQuestions: FiveMarkQuestion[];
   essayQuestions: EssayQuestion[];
+  xpReward?: number;
+  category?: string;
+  flashcards?: any[];
 }
 
 // ─── ROTATING GEMINI API KEY POOL ─────────────────────────────────────────────
-const GEMINI_API_KEYS = [
-  'AIzaSyCjagu5qgBIdlX45x0O5HaMfj8E3a55Q_M',
-  'AIzaSyBbQb2mmAGu1VoyJmrpO17tFMk8bXvECzk',
-];
+function getCandidatePool(): string[] {
+  if (typeof window !== 'undefined') {
+    const userKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key');
+    if (userKey) return [userKey];
+  }
+  const envKeys = (process.env.GEMINI_API_KEYS || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
+  if (envKeys.length > 0) return envKeys;
+  return [(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim()].filter(Boolean);
+}
 
 let currentKeyIndex = 0;
 function getNextGeminiKey(): string {
-  const key = GEMINI_API_KEYS[currentKeyIndex % GEMINI_API_KEYS.length];
+  const keys = getCandidatePool();
+  if (keys.length === 0) return '';
+  const key = keys[currentKeyIndex % keys.length];
   currentKeyIndex++;
   return key;
 }
 
+
+
 // Memory cache to ensure instantaneous subsequent access
 const inMemoryContentCache = new Map<string, CoursePlayerContent>();
+
+/**
+ * Unified content persistence helper.
+ * Saves content to all 3 layers: in-memory, localStorage, and Supabase.
+ */
+async function persistContent(
+  content: CoursePlayerContent,
+  keys: { daySpecificKey: string; cacheKey: string; directIdKey?: string },
+  meta: { topicTitle: string; courseTitle: string; modelUsed: string }
+): Promise<CoursePlayerContent> {
+  // 1. In-memory cache (instant 0ms)
+  inMemoryContentCache.set(keys.daySpecificKey, content);
+  inMemoryContentCache.set(keys.cacheKey, content);
+  if (keys.directIdKey) inMemoryContentCache.set(keys.directIdKey, content);
+
+  // 2. localStorage (fast offline access)
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(keys.cacheKey, JSON.stringify(content));
+    }
+  } catch (e) {
+    // Quota exceeded or private browsing
+  }
+
+  // 3. Supabase cloud persistence (with 1 retry)
+  const upsertData = {
+    topic_key: keys.daySpecificKey,
+    topic_title: meta.topicTitle,
+    course_title: meta.courseTitle,
+    kindle_json: content,
+    generated_at: new Date().toISOString(),
+    model_used: meta.modelUsed,
+  };
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { error } = await aishleeSupabase
+        .from('kindle_content_cache')
+        .upsert(upsertData, { onConflict: 'topic_key' });
+      if (!error) break;
+      if (attempt === 0) console.warn('[TeachO Persist] Supabase upsert retry after:', error.message);
+    } catch (e) {
+      if (attempt === 0) console.warn('[TeachO Persist] Supabase upsert error, retrying:', e);
+    }
+  }
+
+  return content;
+}
 
 /**
  * Calls Gemini Flash to generate 100% topic-specific academic content
@@ -1394,11 +1457,10 @@ export function synthesizeFallbackContent(
  * Main Content Resolver:
  * 1. Resolves Canonical Micro-Topic Key for Cross-Course Deduplication & Reuse
  * 2. Checks In-Memory Cache (Instant 0ms)
- * 3. Checks Bundled Static Catalog (Instant 0ms)
- * 4. Checks Supabase LMS Database (kindle_content_cache)
- * 5. Checks Local localStorage Cache
- * 6. (Optional) Generates Live with Gemini Flash AI if explicitly requested
- * 7. Returns 100% topic-matched deterministic academic content and persists to Supabase
+ * 3. Checks Supabase LMS Database (kindle_content_cache)
+ * 4. Checks Local localStorage Cache
+ * 5. On-Demand JIT API Fetcher
+ * 6. Returns 100% topic-matched deterministic academic content and persists to Supabase & localStorage
  */
 export async function getCoursePlayerContent(
   topicTitle: string,
@@ -1410,12 +1472,13 @@ export async function getCoursePlayerContent(
 ): Promise<CoursePlayerContent | null> {
   const courseId = typeof courseIdOrAi === 'string' ? courseIdOrAi : '';
   const allowAiGeneration = typeof courseIdOrAi === 'boolean' ? courseIdOrAi : (allowAi ?? false);
-  const directIdKey = courseId ? `${courseId}_day_${dayNumber}` : '';
+  const directIdKey = courseId ? `${courseId}_day_${dayNumber}` : undefined;
   const canonicalDef = resolveCanonicalTopic(topicTitle, subject, courseTitle);
   const canonicalKey = canonicalDef.canonicalKey;
-  // Day-specific keys to prevent Day 7 returning Day 1 content
   const daySpecificKey = `${canonicalKey}_day_${dayNumber}`;
   const cacheKey = `teacho_content_${courseTitle}_${subject}_${topicTitle}_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+
+  const persistKeys = { daySpecificKey, cacheKey, directIdKey };
 
   // 1. Check In-Memory Cache (Instant 0ms) — day-specific first
   if (directIdKey && inMemoryContentCache.has(directIdKey)) {
@@ -1428,7 +1491,7 @@ export async function getCoursePlayerContent(
     return inMemoryContentCache.get(cacheKey)!;
   }
 
-    // 2. Check Supabase LMS Database (kindle_content_cache) — day-specific first
+  // 2. Check Supabase LMS Database (kindle_content_cache) — day-specific first
   try {
     if (directIdKey) {
       const { data: idData, error: idError } = await aishleeSupabase
@@ -1440,14 +1503,16 @@ export async function getCoursePlayerContent(
       if (!idError && idData && idData.length > 0 && idData[0].kindle_json) {
         const item = idData[0].kindle_json as CoursePlayerContent;
         if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
+          // Persist to in-memory + localStorage (Supabase already has it)
           inMemoryContentCache.set(directIdKey, item);
           inMemoryContentCache.set(daySpecificKey, item);
           inMemoryContentCache.set(cacheKey, item);
+          try { if (typeof window !== 'undefined') localStorage.setItem(cacheKey, JSON.stringify(item)); } catch (e) {}
           return item;
         }
       }
     }
-    // Try day-specific key first
+    // Try day-specific key
     const { data: dayData, error: dayError } = await aishleeSupabase
       .from('kindle_content_cache')
       .select('kindle_json')
@@ -1459,7 +1524,7 @@ export async function getCoursePlayerContent(
       if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
         inMemoryContentCache.set(daySpecificKey, item);
         inMemoryContentCache.set(cacheKey, item);
-        localStorage.setItem(cacheKey, JSON.stringify(item)).catch(() => {});
+        try { if (typeof window !== 'undefined') localStorage.setItem(cacheKey, JSON.stringify(item)); } catch (e) {}
         return item;
       }
     }
@@ -1474,11 +1539,10 @@ export async function getCoursePlayerContent(
     if (!error && data && data.length > 0 && data[0].kindle_json) {
       const item = data[0].kindle_json as CoursePlayerContent;
       if (item && item.notes && item.mcqs && item.mcqs.length > 0) {
-        // Override dayNumber in returned content to match actual day
         const dayAdjusted = { ...item, dayNumber, topicKey: daySpecificKey };
         inMemoryContentCache.set(daySpecificKey, dayAdjusted);
         inMemoryContentCache.set(cacheKey, dayAdjusted);
-        localStorage.setItem(cacheKey, JSON.stringify(dayAdjusted)).catch(() => {});
+        try { if (typeof window !== 'undefined') localStorage.setItem(cacheKey, JSON.stringify(dayAdjusted)); } catch (e) {}
         return dayAdjusted;
       }
     }
@@ -1486,9 +1550,9 @@ export async function getCoursePlayerContent(
     // Non-blocking
   }
 
-  // 4. Check Local localStorage Cache
+  // 3. Check Local localStorage Cache
   try {
-    const localCached = (typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null);
+    const localCached = (typeof window !== 'undefined' ? localStorage.getItem(cacheKey) : null);
     if (localCached) {
       const parsed = JSON.parse(localCached) as CoursePlayerContent;
       if (parsed && parsed.notes && parsed.mcqs && parsed.mcqs.length > 0) {
@@ -1499,17 +1563,22 @@ export async function getCoursePlayerContent(
     }
   } catch (e) {}
 
-  // 5. On-Demand Just-In-Time (JIT) API Fetcher
+  // 4. On-Demand Just-In-Time (JIT) API Fetcher
   try {
     if (typeof window !== 'undefined') {
+      const userGeminiKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key') || undefined;
       const res = await fetch('/api/kindle-ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(userGeminiKey ? { 'x-user-gemini-key': userGeminiKey } : {})
+        },
         body: JSON.stringify({
           topicTitle,
           courseTitle,
           courseId,
           dayNumber,
+          userGeminiKey,
           board: courseTitle.includes('CBSE') ? 'CBSE' : courseTitle.includes('Matric') ? 'Matric' : 'TNSB',
           standard: courseTitle
         })
@@ -1520,26 +1589,27 @@ export async function getCoursePlayerContent(
         if (json && (json.notes || json.coreConcepts) && json.mcqs && json.mcqs.length > 0) {
           const transformed: CoursePlayerContent = {
             topicTitle: json.topicTitle || topicTitle,
+            courseTitle: courseTitle,
+            subject: subject,
+            standardOrExam: courseTitle,
             category: json.category || subject,
             videoMeta: {
+              channel: json.videoMeta?.channelName || 'TeachO 1-on-1 Tuition',
+              channelUrl: 'https://youtube.com/@TeachO',
               youtubeVideoId: json.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
               videoTitle: json.videoMeta?.videoTitle || topicTitle,
+              durationMinutes: 15,
+              isOfficialAishlee: true,
               channelName: json.videoMeta?.channelName || 'TeachO 1-on-1 Tuition',
               duration: json.videoMeta?.duration || '15:00',
               keyTimestamps: json.videoMeta?.keyTimestamps || [{ time: '0:00', label: 'Concept Overview' }]
             },
             notes: json.notes || {
               overview: json.overview || '',
+              keyPoints: json.keyPoints || [],
               coreConcepts: json.coreConcepts || [],
-              tamilExplanation: json.tamilExplanation || {
-                simpleTitle: topicTitle,
-                colloquialIntro: '',
-                everydayAnalogy: '',
-                keyPointsTamil: []
-              },
-              vsaqs: json.vsaqs || [],
-              shortAnswers: json.shortAnswers || [],
-              formulasAndMnemonics: json.formulasAndMnemonics || []
+              bilingualExplanation: json.bilingualExplanation,
+              formulasAndShortcuts: json.formulasAndShortcuts || json.formulasAndMnemonics || []
             },
             flashcards: json.flashcards || (json.coreConcepts || []).map((c: any, i: number) => ({
               id: `fc_${i+1}`,
@@ -1547,14 +1617,36 @@ export async function getCoursePlayerContent(
               back: c.content || `Explanation for ${c.heading}`,
               tamilHint: json.tamilExplanation?.keyPointsTamil?.[i] || ''
             })),
-            mcqs: json.mcqs || [],
+            oneLineQnA: json.vsaqs?.map((v: any) => ({
+              question: v.question,
+              answer: v.answer
+            })) || json.oneLineQnA || [],
+            fillInTheBlanks: json.fillInTheBlanks || [],
+            mcqs: json.mcqs?.map((m: any) => ({
+              question: m.question,
+              options: m.options || [],
+              correctIndex: typeof m.correctAnswer === 'number' ? m.correctAnswer : (typeof m.correctIndex === 'number' ? m.correctIndex : 0),
+              explanation: m.explanation || 'Verified answer.'
+            })) || [],
+            twoMarkQuestions: json.vsaqs?.map((v: any) => ({
+              question: v.question,
+              marks: v.marks || 2,
+              modelAnswer: v.answer,
+              keyPointsToInclude: [v.answer]
+            })) || [],
+            fiveMarkQuestions: json.shortAnswers?.map((s: any) => ({
+              question: s.question,
+              marks: s.marks || 5,
+              stepByStepSolution: s.points || s.solutionSteps || [],
+              diagramOrFormulaNote: s.keyTips
+            })) || [],
+            essayQuestions: json.essayQuestions || [],
             dayNumber,
             topicKey: directIdKey || daySpecificKey
           };
 
-          if (directIdKey) inMemoryContentCache.set(directIdKey, transformed);
-          inMemoryContentCache.set(daySpecificKey, transformed);
-          inMemoryContentCache.set(cacheKey, transformed);
+          // Persist JIT results immediately to all 3 layers
+          await persistContent(transformed, persistKeys, { topicTitle, courseTitle, modelUsed: 'jit-kindle-ai' });
           return transformed;
         }
       }
@@ -1563,30 +1655,13 @@ export async function getCoursePlayerContent(
     // Fallback gracefully to deterministic offline syllabus
   }
 
-  // 6. High-Precision Topic & Day Matched Fallback Engine (0ms instant response)
+  // 5. High-Precision Topic & Day Matched Fallback Engine (0ms instant response)
   const fallback = synthesizeFallbackContent(topicTitle, subject, courseTitle, dayNumber);
   if (fallback) {
-    // Ensure dayNumber is correctly set in fallback content
     fallback.dayNumber = dayNumber;
     fallback.topicKey = daySpecificKey;
-    inMemoryContentCache.set(daySpecificKey, fallback);
-    inMemoryContentCache.set(cacheKey, fallback);
-    localStorage.setItem(cacheKey, JSON.stringify(fallback)).catch(() => {});
-
-    // Asynchronously save to Supabase with day-specific key
-    Promise.resolve(
-      aishleeSupabase
-        .from('kindle_content_cache')
-        .upsert({
-          topic_key: daySpecificKey,
-          topic_title: topicTitle,
-          course_title: courseTitle,
-          kindle_json: fallback,
-          generated_at: new Date().toISOString(),
-          model_used: 'deterministic-academic-engine-v2'
-        }, { onConflict: 'topic_key' })
-    ).then(() => {}, () => {});
-
+    // Persist immediately to all 3 layers
+    await persistContent(fallback, persistKeys, { topicTitle, courseTitle, modelUsed: 'deterministic-academic-engine-v2' });
     return fallback;
   }
 
@@ -1595,3 +1670,4 @@ export async function getCoursePlayerContent(
 
 
 export const loadCoursePlayerContent = getCoursePlayerContent;
+

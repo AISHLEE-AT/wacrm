@@ -535,7 +535,7 @@ export default function TeachODashboard() {
                           {course.subjects.slice(0, 2).map((s, idx) => (
                             <div key={idx} className="text-[11px] text-slate-300 flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                              <span className="line-clamp-1">{s.name || s}</span>
+                              <span className="line-clamp-1">{typeof s === 'string' ? s : s.name}</span>
                             </div>
                           ))}
                         </div>
@@ -579,10 +579,10 @@ export default function TeachODashboard() {
                 {activeCourse.subjects?.map((sub, sIdx) => (
                   <div key={sIdx} className="p-4 rounded-2xl bg-[#111827] border border-slate-800 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-400">{sub.name || sub}</span>
-                      {sub.code && <span className="text-[10px] font-mono text-slate-500">{sub.code}</span>}
+                      <span className="text-xs font-bold text-emerald-400">{typeof sub === 'string' ? sub : sub.name}</span>
+                      {typeof sub !== 'string' && sub.code && <span className="text-[10px] font-mono text-slate-500">{sub.code}</span>}
                     </div>
-                    {sub.icon && <span className="text-xl block">{sub.icon}</span>}
+                    {typeof sub !== 'string' && sub.icon && <span className="text-xl block">{sub.icon}</span>}
                     <p className="text-[11px] text-slate-400">
                       Standard syllabus mapped to Day 1 through Day {activeCourse.totalDays}.
                     </p>

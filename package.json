@@ -1,6 +1,6 @@
 {
   "name": "wacrm-monorepo",
-  "version": "3.2.1",
+  "version": "3.3.0-beta",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -15,5 +15,8 @@
   "devDependencies": {
     "turbo": "latest"
   },
-  "packageManager": "npm@11.9.0"
+  "packageManager": "npm@11.9.0",
+  "dependencies": {
+    "docx": "^9.7.1"
+  }
 }

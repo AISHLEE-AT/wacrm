@@ -193,7 +193,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
                           {course.subjects.slice(0, 2).map((s, sIdx) => (
                             <div key={sIdx} className="text-[11px] text-slate-300 flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                              <span className="line-clamp-1">{s.name || s}</span>
+                              <span className="line-clamp-1">{typeof s === 'string' ? s : s.name}</span>
                             </div>
                           ))}
                         </div>

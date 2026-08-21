@@ -4,6 +4,18 @@
  * TNPSC, UPSC, NEET, JEE, College Degrees, and Tech/Kids Skills.
  */
 
+export type CourseCategory =
+  | 'school_tnsb_en'
+  | 'school_tnsb_ta'
+  | 'school_cbse'
+  | 'school_matric'
+  | 'college_degree'
+  | 'tnpsc'
+  | 'upsc_central'
+  | 'entrance'
+  | 'skills'
+  | 'kids_skills';
+
 export interface CourseSubject {
   id: string;
   name: string;
@@ -12,6 +24,7 @@ export interface CourseSubject {
   icon: string;
   color: string;
   currentChapter: string;
+  code?: string;
 }
 
 export interface RoutineTaskTemplate {
@@ -26,17 +39,7 @@ export interface RoutineTaskTemplate {
 
 export interface CourseOption {
   id: string;
-  category:
-    | 'school_tnsb_en'
-    | 'school_tnsb_ta'
-    | 'school_cbse'
-    | 'school_matric'
-    | 'college_degree'
-    | 'tnpsc'
-    | 'upsc_central'
-    | 'entrance'
-    | 'skills'
-    | 'kids_skills';
+  category: CourseCategory;
   gradeLevel: 'primary' | 'middle' | 'high' | 'hsc' | 'college' | 'exam' | 'skill';
   title: string;
   subtitle: string;
@@ -51,12 +54,13 @@ export interface CourseOption {
   badgeColor: string;
   phaseTitle: string;
   phaseSub: string;
-  subjects: CourseSubject[];
+  subjects: (CourseSubject | any)[];
   tasks: RoutineTaskTemplate[];
   milestoneTitle: string;
   milestoneDesc: string;
   milestoneDaysLeft: number;
   parentGuidance?: string;
+  icon?: string;
 }
 
 export const ALL_COURSES: CourseOption[] = [
