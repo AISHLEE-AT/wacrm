@@ -1042,8 +1042,27 @@ export default function TeachOCoursePlayerModal({
 
                       {hasAnswered && (
                         <View style={styles.explanationBox}>
-                          <Text style={styles.explanationTitle}>💡 Explanation:</Text>
+                          <Text style={styles.explanationTitle}>💡 Detailed Concept Breakdown & Rationale:</Text>
                           <Text style={styles.explanationText}>{mcq.explanation}</Text>
+                          
+                          {mcq.optionExplanations && (
+                            <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#334155' }}>
+                              <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700', marginBottom: 6 }}>Option-by-Option Analysis:</Text>
+                              {['optionA', 'optionB', 'optionC', 'optionD'].map((optKey, oIdx) => {
+                                const expText = (mcq.optionExplanations as any)?.[optKey];
+                                if (!expText) return null;
+                                const isThisOptCorrect = mcq.correctIndex === oIdx;
+                                return (
+                                  <View key={optKey} style={{ marginBottom: 6, backgroundColor: isThisOptCorrect ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.05)', padding: 8, borderRadius: 8, borderWidth: 1, borderColor: isThisOptCorrect ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.1)' }}>
+                                    <Text style={{ color: isThisOptCorrect ? '#34d399' : '#f87171', fontSize: 11, fontWeight: '700' }}>
+                                      {String.fromCharCode(65 + oIdx)}: {isThisOptCorrect ? '✓ Correct Answer' : '✗ Distractor'}
+                                    </Text>
+                                    <Text style={{ color: '#cbd5e1', fontSize: 11, marginTop: 2, lineHeight: 16 }}>{expText}</Text>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          )}
                         </View>
                       )}
                     </View>

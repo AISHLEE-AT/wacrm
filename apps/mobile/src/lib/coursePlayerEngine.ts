@@ -1583,7 +1583,9 @@ export function normalizeCoursePlayerPayload(
     question: m.question || `Question ${i + 1}`,
     options: Array.isArray(m.options) && m.options.length >= 2 ? m.options : ['Option A', 'Option B', 'Option C', 'Option D'],
     correctIndex: typeof m.correctIndex === 'number' ? m.correctIndex : (typeof m.correctAnswer === 'number' ? m.correctAnswer : 0),
-    explanation: m.explanation || 'Verified curriculum standard answer.'
+    explanation: m.explanation || m.explanations?.overallSummary || 'Verified curriculum standard answer.',
+    optionExplanations: m.optionExplanations || m.explanations || {},
+    difficulty: m.difficulty || 'Medium'
   }));
 
   // Extract VSAQs / 1-Line QnA
