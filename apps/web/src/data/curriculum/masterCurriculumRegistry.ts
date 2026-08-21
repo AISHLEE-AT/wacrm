@@ -462,8 +462,67 @@ export function resolveMasterSequentialSyllabus(
       formula = 'இலக்கண விதி: வல்லினம் மிகும் இடங்கள் & புணர்ச்சி விதிகள்';
     }
     topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Section ${safeTask})`;
+  } else if (courseId.includes('lkg') || courseId.includes('ukg') || courseId.includes('kindergarten')) {
+    // ── KINDERGARTEN & EARLY CHILDHOOD FOUNDATIONS (LKG & UKG) ──
+    const subjects = isTamil
+      ? ['தமிழ் மழலையர் பாடல் & உயிர் எழுத்துக்கள்', 'ஆங்கில எழுத்துக்கள் & ஒலியியல் (Phonics A-Z)', 'எளிய எண்கணிதம் & வடிவங்கள் (Numbers 1-20)', 'சுற்றுச்சூழல் & விலங்கு உலகம் (EVS Living World)', 'வண்ணங்கள், கதை & வரைதல் (Rhymes & Art)']
+      : ['Tamil Rhymes & Vowels', 'English Phonics & Alphabet (A-Z)', 'Fun Maths & Numbers (1-20)', 'EVS, Animals & Nature', 'Colors, Shapes & Moral Stories'];
+    const activeSub = subjects[(safeTask - 1) % subjects.length];
+    subjectName = activeSub;
+
+    if (activeSub.includes('தமிழ்') || activeSub.includes('Tamil')) {
+      const tamilKg = ['அ முதல் ஔ வரை உயிர் எழுத்துக்கள் அறிமுகம்', 'மழலையர் பாடல்: நிலா நிலா ஓடி வா', 'மழலையர் பாடல்: கைவீசம்மா கைவீசு', 'மெய் எழுத்துக்கள் (க் முதல் ன் வரை)', 'எளிய சொற்கள்: அம்மா, அப்பா, அணில், ஆடு', 'உயிர்மெய் எழுத்துக்கள் தொடக்கம்', 'ஆத்திசூடி முதல் 5 வரிகள்', 'காய்கறிகள் & பழங்கள் பெயர்கள்', 'விலங்குகள் & பறவைகள் பெயர்கள்', 'குடும்ப உறவுகள் & நல்ல பழக்கங்கள்'];
+      chapterName = tamilKg[cycle10];
+      formula = 'உயிர் எழுத்துக்கள் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ';
+    } else if (activeSub.includes('ஆங்கிலம்') || activeSub.includes('English') || activeSub.includes('Phonics')) {
+      const engKg = ['Phonics Sounds: Letters A, B, C, D (Apple, Ball, Cat, Dog)', 'Phonics Sounds: Letters E, F, G, H (Elephant, Fish, Grapes, Hat)', 'Phonics Sounds: Letters I, J, K, L (Igloo, Jug, Kite, Lion)', 'Phonics Sounds: Letters M, N, O, P (Mango, Nest, Orange, Parrot)', 'Phonics Sounds: Letters Q, R, S, T (Queen, Rabbit, Sun, Tiger)', 'Phonics Sounds: Letters U, V, W, X, Y, Z (Umbrella, Van, Watch, Xylophone, Yak, Zebra)', 'Nursery Rhyme: Twinkle Twinkle Little Star', 'Nursery Rhyme: Baa Baa Black Sheep & Johny Johny', 'Sight Words: I, My, The, In, On, At', 'Simple Action Words: Clap, Jump, Run, Smile'];
+      chapterName = engKg[cycle10];
+      formula = 'Alphabet Phonics: A for Apple 🍎 | B for Ball ⚽ | C for Cat 🐱';
+    } else if (activeSub.includes('கணிதம்') || activeSub.includes('Math') || activeSub.includes('Number')) {
+      const mathKg = ['Numbers 1 to 5: Counting with Fun Objects', 'Numbers 6 to 10: Count & Match Activity', 'Numbers 11 to 20: Number Train', 'Basic Shapes: Circle ⚪, Square ⬛, Triangle 🔺', 'Comparisons: Big vs Small 🐘🐁', 'Comparisons: Tall vs Short 🦒🐰', 'Pattern Recognition: Red, Blue, Red, Blue', 'Simple Counting Addition with Fingers (1+1=2)', 'Before and After Numbers (1 to 10)', 'Fun with Shapes: Rectangle & Star ⭐'];
+      chapterName = mathKg[cycle10];
+      formula = 'Counting Magic: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 🔢';
+    } else if (activeSub.includes('சுற்றுச்சூழல்') || activeSub.includes('EVS') || activeSub.includes('Nature') || activeSub.includes('அறிவியல்')) {
+      const evsKg = ['My Body Parts: Eyes, Ears, Nose, Hands & Legs', 'My Five Senses: Sight, Smell, Hearing, Taste, Touch', 'Domestic Animals: Dog, Cat, Cow, Goat', 'Wild Animals: Lion, Tiger, Elephant, Monkey', 'Birds & Flying Friends: Parrot, Peacock, Pigeon', 'Fruits: Apple, Banana, Mango, Grapes', 'Vegetables: Carrot, Tomato, Potato, Brinjal', 'Good Habits: Brushing, Hand Washing & Bathing', 'Day & Night: Sun ☀️ and Moon 🌙', 'Water & Plants: Watering little green friends 🌱'];
+      chapterName = evsKg[cycle10];
+      formula = 'Five Senses: 👀 Eyes to See | 👂 Ears to Hear | 👃 Nose to Smell';
+    } else {
+      const artKg = ['Primary Colors: Red 🔴, Blue 🔵, Yellow 🟡', 'Secondary Colors: Green 🟢, Orange 🟠, Purple 🟣', 'Coloring inside the Lines (Sun & Tree)', 'Action Song: If You\'re Happy and You Know It', 'Moral Story: The Thirsty Crow', 'Moral Story: The Tortoise and the Hare', 'Finger Painting & Fun Doodling', 'Animal Sounds: Woof Woof, Meow Meow, Moo Moo', 'Magic Words: Please, Thank You, Sorry', 'Celebration: Rhymes & Dancing Activity'];
+      chapterName = artKg[cycle10];
+      formula = 'Magic Words: "Please" 🙏 | "Thank You" 💖 | "Sorry" 🤝';
+    }
+    topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
+  } else if (courseId.includes('-1') || courseId.includes('-2') || courseId.includes('-3') || courseId.includes('-4') || courseId.includes('-5')) {
+    // ── PRIMARY SCHOOL (CLASS 1 TO 5) ──
+    const subjects = isTamil
+      ? ['தமிழ் மொழி & செய்யுள்', 'கணிதம் (Basic Math)', 'அறிவியல் & சூழ்நிலையியல் (Science & EVS)', 'சமூக அறிவியல் (Social Studies)', 'ஆங்கிலம் (English Grammar & Story)']
+      : ['Tamil / Regional Language', 'Mathematics & Mental Math', 'General Science & EVS', 'Social Studies & Geography', 'English Grammar & Reading'];
+    const activeSub = subjects[(safeTask - 1) % subjects.length];
+    subjectName = activeSub;
+    if (activeSub.includes('கணிதம்') || activeSub.includes('Math')) {
+      const mathP = ['எண்கள் & கூட்டல் (Addition & Place Value)', 'கழித்தல் & எளிய பெருக்கல் (Subtraction & Multiplication Tables 1-10)', 'வடிவங்கள் & சமச்சீர் தன்மை (2D Shapes & Patterns)', 'அளவைகள்: நீளம், எடை, கொள்ளளவு (Length & Weight)', 'பணம் & நேரக் கணக்கீடுகள் (Money, Clock & Calendar)'];
+      chapterName = mathP[cycle10 % mathP.length];
+      formula = 'வாய்ப்பாடு: 2 x 5 = 10 | 1 மீட்டர் = 100 செ.மீ | 1 ரூபாய் = 100 காசுகள்';
+    } else if (activeSub.includes('அறிவியல்') || activeSub.includes('Science') || activeSub.includes('EVS')) {
+      const sciP = ['தாவரங்களின் பாகங்கள் & பயன்கள் (Parts of Plants)', 'விலங்குகளின் வாழிடங்கள் & உணவு முறைகள் (Animals & Food Habits)', 'நமது உடலும் ஆரோக்கிய உணவும் (Food & Nutrition)', 'காற்று, நீர் மற்றும் வானிலை (Air, Water & Weather)', 'பொருட்கள் & அவற்றின் பண்புகள் (Solid, Liquid & Gas)'];
+      chapterName = sciP[cycle10 % sciP.length];
+      formula = 'தாவரத்தின் பாகங்கள்: வேர், தண்டு, இலை, பூ, காய், கனி';
+    } else if (activeSub.includes('சமூக') || activeSub.includes('Social')) {
+      const socP = ['நமது குடும்பமும் சமூகமும் (Family & Community Helpers)', 'நமது சுற்றுப்புறமும் கிராம நிர்வாகமும் (Our Neighborhood & Village)', 'போக்குவரத்து & சாலைப் பாதுகாப்பு (Transport & Road Safety)', 'திசைகளும் நில வரைபடமும் (Directions & Compass)', 'பாரம்பரிய விழாக்கள் & தேசிய சின்னங்கள் (National Symbols & Festivals)'];
+      chapterName = socP[cycle10 % socP.length];
+      formula = 'தேசிய சின்னங்கள்: தேசிய கொடி (மூவர்ணம்), தேசிய கீதம் (ஜன கண மன)';
+    } else if (activeSub.includes('ஆங்கிலம்') || activeSub.includes('English')) {
+      const engP = ['Nouns & Pronouns: Naming Words (He, She, It, They)', 'Verbs & Action Words: Doing Words (Run, Read, Play)', 'Adjectives: Describing Words (Big, Small, Sweet, Bright)', 'Simple Present Tense & Daily Routine Sentences', 'Short Story Reading Comprehension & Vocabulary'];
+      chapterName = engP[cycle10 % engP.length];
+      formula = 'Grammar Rule: Singular Noun + "is" | Plural Noun + "are"';
+    } else {
+      const tamP = ['இனியவை நாற்பது & திருக்குறள் கதைகள்', 'பாப்பா பாட்டு: ஓடி விளையாடு பாப்பா (பாரதியார்)', 'இலக்கணம்: திணை (உயர்திணை, அஃறிணை) & பால்', 'சொற்களஞ்சியம்: பிரித்து எழுதுக & எதிர்ச்சொல்', 'நீதிக் கதைகள்: ஒற்றுமையே பலம்'];
+      chapterName = tamP[cycle10 % tamP.length];
+      formula = 'திணை 2 வகை: உயர்திணை (மக்கள், தேவர்), அஃறிணை (விலங்குகள், பொருட்கள்)';
+    }
+    topicTitle = `${activeSub}: ${chapterName} (Day ${safeDay} · Period ${safeTask})`;
   } else {
-    // School courses (State Board, CBSE, Matric)
+    // ── SECONDARY & HIGHER SECONDARY (CLASS 6 TO 12) ──
     const subjects = isTamil
       ? ['தமிழ் மொழி & செய்யுள்', 'கணிதம்', 'அறிவியல்', 'சமூக அறிவியல்', 'ஆங்கிலம்']
       : ['Language Lit', 'Mathematics', 'Science & EVS', 'Social Science', 'English & Phonics'];
@@ -490,16 +549,58 @@ export function resolveMasterSequentialSyllabus(
 
   const videoRef = resolveAuthenticEducationalVideo(courseId, subjectName, topicTitle, safeTask);
 
+  const isKindergarten = courseId.includes('lkg') || courseId.includes('ukg') || courseId.includes('kindergarten');
+
+  const keyConcepts = isKindergarten
+    ? [
+        { heading: `1. Fun Learning & Visual Discovery: ${chapterName}`, content: `Interactive, colorful pictures and playful songs to easily understand ${chapterName}.`, example: formula },
+        { heading: `2. Singing, Rhymes & Action Practice`, content: `Sing along with teacher and perform simple hand clapping actions.`, example: `Sing aloud and repeat 3 times with smile!` },
+        { heading: `3. Good Habits & Daily Memory Magic`, content: `Simple everyday habit to practice at home with parents and friends.`, example: `Say "${formula}" with happiness!` }
+      ]
+    : [
+        { heading: `1. Core Theoretical Foundations: ${chapterName}`, content: `Detailed conceptual breakdown of ${chapterName}. Master fundamental definitions, underlying principles, and key textbook laws.`, example: `Standard textbook problem and real-world application model.` },
+        { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm to solve exam questions on ${chapterName}. Step-by-step presentation, proofs, and working notes.`, example: `Worked model question highlighting scoring points.` },
+        { heading: `3. High-Yield Formulas, Mnemonics & Exam Shortcuts`, content: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules.`, example: formula }
+      ];
+
+  const vsaqs = isKindergarten
+    ? [
+        { question: `What did we learn today in ${subjectName}?`, answer: `We learned ${chapterName} with fun songs and pictures!` },
+        { question: `Can you say the magic line for today?`, answer: formula }
+      ]
+    : [
+        { question: `State the primary definition or law governing ${chapterName}.`, answer: `Standard academic definition and governing conditions for ${chapterName}.` },
+        { question: `Write the governing mathematical formula or rule for this lesson.`, answer: formula }
+      ];
+
+  const mcqs = isKindergarten
+    ? [
+        { question: `What is the core topic of today's fun lesson?`, options: [`A) ${chapterName}`, 'B) Difficult calculations', 'C) Silence time', 'D) None'], correctAnswer: 0, explanation: `Today's fun topic is ${chapterName}.` },
+        { question: `Which of the following belongs to this lesson?`, options: [`A) ${formula}`, 'B) Wrong item', 'C) Something else', 'D) None'], correctAnswer: 0, explanation: `Correct answer: ${formula}` },
+        { question: 'What is the best way to practice this lesson?', options: ['A) Sing and play happily', 'B) Cry and sleep', 'C) Throw books', 'D) None'], correctAnswer: 0, explanation: 'Playful practice makes learning fun and memorable!' },
+        { question: 'Who helps us learn this at home?', options: ['A) Loving Parents and Teachers', 'B) Strangers', 'C) Nobody', 'D) None'], correctAnswer: 0, explanation: 'Parents and teachers support our wonderful learning journey.' }
+      ]
+    : [
+        { question: `Which option represents the primary governing principle of ${chapterName}?`, options: ['A) Primary Governing Principle', 'B) Secondary Approximate Rule', 'C) Special Case Exception', 'D) None of the above'], correctAnswer: 0, explanation: 'Option A is the verified core definition according to standard textbook curriculum.' },
+        { question: `What is the governing equation or formula for ${chapterName}?`, options: [`A) ${formula}`, 'B) Inverted Variable Ratio', 'C) Non-Standard Expression', 'D) Empirical Constant Only'], correctAnswer: 0, explanation: `The exact formulation is: ${formula}.` },
+        { question: 'In standard board and competitive examinations, this concept carries:', options: ['A) High weightage with recurring questions', 'B) Negligible weightage', 'C) Optional reading only', 'D) Non-evaluated section'], correctAnswer: 0, explanation: 'This is an essential core syllabus component with recurring questions.' },
+        { question: 'What is the most frequent examination error to avoid in this topic?', options: ['A) Calculation and sign errors', 'B) Incorrect unit conversion', 'C) Formula misapplication', 'D) All of the above'], correctAnswer: 3, explanation: 'Step-by-step verification of signs, units, and boundary conditions prevents common marks deduction.' }
+      ];
+
   return {
     taskNumber: safeTask,
     subject: subjectName,
     topicTitle: topicTitle,
     subtopic: chapterName,
     chapterTitle: chapterName,
-    overview: `Day ${safeDay} (Section ${safeTask}): Comprehensive syllabus lesson on ${topicTitle}. Designed with 100% adherence to standard textbook curriculum, official exam blueprints, and structured learning objectives.`,
+    overview: isKindergarten
+      ? `மழலையர் பாலர் கல்வி நாள் ${safeDay} (பிரிவு ${safeTask}): ${topicTitle} பற்றிய எளிய, மகிழ்ச்சியான மழலையர் பாடக்குறிப்பு மற்றும் செயல்முறைப் பயிற்சி.`
+      : `Day ${safeDay} (Section ${safeTask}): Comprehensive syllabus lesson on ${topicTitle}. Designed with 100% adherence to standard textbook curriculum, official exam blueprints, and structured learning objectives.`,
     formulaOrLaw: formula,
     tamilTitle: isTamil ? topicTitle : `${topicTitle} (தமிழ் விளக்கம்)`,
-    tamilIntro: `நாள் ${safeDay}, பிரிவு ${safeTask} (${subjectName}): ${chapterName} பற்றிய தெளிவான பாடக்குறிப்பு மற்றும் தேர்வு உத்திகள்.`,
+    tamilIntro: isKindergarten
+      ? `அன்பான குழந்தைகளே! இன்றைய பாடத்தில் ${chapterName} பற்றி பாடல்கள் மற்றும் படங்கள் மூலம் மகிழ்ச்சியாகக் கற்போம்.`
+      : `நாள் ${safeDay}, பிரிவு ${safeTask} (${subjectName}): ${chapterName} பற்றிய தெளிவான பாடக்குறிப்பு மற்றும் தேர்வு உத்திகள்.`,
     youtubeVideoId: videoRef.youtubeVideoId,
     videoMeta: {
       youtubeVideoId: videoRef.youtubeVideoId,
@@ -507,20 +608,8 @@ export function resolveMasterSequentialSyllabus(
       channelName: videoRef.channelName,
       duration: videoRef.duration
     },
-    keyConcepts: [
-      { heading: `1. Core Theoretical Foundations: ${chapterName}`, content: `Detailed conceptual breakdown of ${chapterName}. Master fundamental definitions, underlying principles, and key textbook laws.`, example: `Standard textbook problem and real-world application model.` },
-      { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm to solve exam questions on ${chapterName}. Step-by-step presentation, proofs, and working notes.`, example: `Worked model question highlighting scoring points.` },
-      { heading: `3. High-Yield Formulas, Mnemonics & Exam Shortcuts`, content: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules.`, example: formula }
-    ],
-    vsaqs: [
-      { question: `State the primary definition or law governing ${chapterName}.`, answer: `Standard academic definition and governing conditions for ${chapterName}.` },
-      { question: `Write the governing mathematical formula or rule for this lesson.`, answer: formula }
-    ],
-    mcqs: [
-      { question: `Which option represents the primary governing principle of ${chapterName}?`, options: ['A) Primary Governing Principle', 'B) Secondary Approximate Rule', 'C) Special Case Exception', 'D) None of the above'], correctAnswer: 0, explanation: 'Option A is the verified core definition according to standard textbook curriculum.' },
-      { question: `What is the governing equation or formula for ${chapterName}?`, options: [`A) ${formula}`, 'B) Inverted Variable Ratio', 'C) Non-Standard Expression', 'D) Empirical Constant Only'], correctAnswer: 0, explanation: `The exact formulation is: ${formula}.` },
-      { question: 'In standard board and competitive examinations, this concept carries:', options: ['A) High weightage with recurring questions', 'B) Negligible weightage', 'C) Optional reading only', 'D) Non-evaluated section'], correctAnswer: 0, explanation: 'This is an essential core syllabus component with recurring questions.' },
-      { question: 'What is the most frequent examination error to avoid in this topic?', options: ['A) Calculation and sign errors', 'B) Incorrect unit conversion', 'C) Formula misapplication', 'D) All of the above'], correctAnswer: 3, explanation: 'Step-by-step verification of signs, units, and boundary conditions prevents common marks deduction.' }
-    ]
+    keyConcepts,
+    vsaqs,
+    mcqs
   };
 }
