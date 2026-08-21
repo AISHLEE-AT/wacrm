@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { 
   BookOpen, Sparkles, Save, Upload, Download, Eye, CheckCircle2, 
   AlertCircle, ArrowLeft, RefreshCw, Layers, Video, FileText, 
-  HelpCircle, Languages, Database, Search, ChevronRight
+  HelpCircle, Languages, Database, Search, ChevronRight, Check
 } from 'lucide-react';
 import { ALL_COURSES, CourseOption } from '@/data/coursesCatalog';
 
@@ -102,77 +102,114 @@ export default function TeachOAdminStudioPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setIsVerifiedByAdmin(Boolean(data._meta?.isAdminVerified));
+        setIsVerifiedByAdmin(Boolean(data._meta?.isAdminVerified || data.is_admin_verified));
         
-        // Extract Core Concepts from studyNotes or coreConcepts
-        let loadedConcepts = data.coreConcepts;
-        if (!loadedConcepts?.length && data.studyNotes?.length) {
-          loadedConcepts = data.studyNotes.map((sn: any) => ({
-            heading: sn.sectionTitle || 'Core Concept',
-            content: sn.content || '',
-            example: sn.example || ''
+        // 1. Extract Core Concepts
+        let loadedConcepts = data.coreConcepts || data.notes?.coreConcepts;
+        if (!loadedConcepts?.length && (data.studyNotes?.length || data.notes?.studyNotes?.length)) {
+          const notes = data.studyNotes || data.notes?.studyNotes;
+          loadedConcepts = notes.map((sn: any) => ({
+            heading: sn.sectionTitle || sn.heading || 'Core Concept',
+            content: sn.content || sn.body || '',
+            example: sn.example || sn.formulaOrExample || ''
           }));
         }
         if (!loadedConcepts?.length) {
           loadedConcepts = [
-            { heading: '1. Core Theoretical Foundations', content: 'Detailed conceptual explanation.', example: 'Model application.' },
-            { heading: '2. Step-by-Step Methodology', content: 'Standard analytical approach.', example: 'Worked example.' },
-            { heading: '3. Exam Shortcuts & Formulas', content: 'Key exam recall tips.', example: 'Fast calculation.' }
+            { heading: '1. Theoretical Foundations & Scope', content: 'Detailed conceptual explanation and core principles.', example: 'Model scenario application.' },
+            { heading: '2. Methodologies & Derivations', content: 'Standard analytical approach, laws, and equations.', example: 'Step-by-step problem breakdown.' },
+            { heading: '3. Exam Shortcuts & High-Yield Tips', content: 'Key exam recall tips, common traps, and rapid calculation rules.', example: 'Board examination memory trigger.' }
           ];
         }
 
-        // Extract MCQs from mcqs or practiceQuiz
-        let loadedMcqs = data.mcqs;
-        if (!loadedMcqs?.length && data.practiceQuiz?.length) {
-          loadedMcqs = data.practiceQuiz.map((pq: any) => ({
-            question: pq.question || '',
-            options: pq.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-            correctAnswer: pq.correctIndex ?? pq.correctAnswer ?? 0,
-            explanation: pq.explanation || ''
+        // 2. Extract MCQs
+        let loadedMcqs = data.mcqs || data.practiceQuiz;
+        if (loadedMcqs?.length) {
+          loadedMcqs = loadedMcqs.map((m: any, i: number) => ({
+            question: m.question || `Question ${i + 1}`,
+            options: Array.isArray(m.options) && m.options.length >= 2 ? m.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+            correctAnswer: m.correctAnswer !== undefined ? m.correctAnswer : (m.correctIndex !== undefined ? m.correctIndex : 0),
+            explanation: m.explanation || 'Verified curriculum standard answer.'
           }));
-        }
-        if (!loadedMcqs?.length) {
+        } else {
           loadedMcqs = [
-            { question: 'Which option represents the primary principle of this topic?', options: ['Option A', 'Option B', 'Option C', 'Option D'], correctAnswer: 0, explanation: 'Option A is the verified core definition.' },
-            { question: 'What is the governing equation or formula?', options: ['Formula A', 'Formula B', 'Formula C', 'Formula D'], correctAnswer: 0, explanation: 'Standard textbook formulation.' },
-            { question: 'In competitive examinations, this topic carries:', options: ['High weightage', 'Moderate weightage', 'Not included', 'Optional only'], correctAnswer: 0, explanation: 'Essential syllabus topic.' },
-            { question: 'What is the most common exam pitfall to avoid?', options: ['Unit mismatch', 'Calculation error', 'Formula confusion', 'All of the above'], correctAnswer: 3, explanation: 'Careful step-by-step verification prevents errors.' }
+            { question: 'Which option represents the primary governing principle of this topic?', options: ['Option A: Fundamental Principle', 'Option B: Secondary Rule', 'Option C: Exceptions Only', 'Option D: None of the above'], correctAnswer: 0, explanation: 'Option A gives the verified core definition.' },
+            { question: 'What is the standard formula or governing equation?', options: ['Standard Formula A', 'Variant Equation B', 'Empirical Rule C', 'Alternative Form D'], correctAnswer: 0, explanation: 'Standard textbook formulation.' },
+            { question: 'In board and competitive examinations, this concept carries:', options: ['High weightage', 'Moderate weightage', 'Not included', 'Optional only'], correctAnswer: 0, explanation: 'Essential syllabus high-yield component.' },
+            { question: 'What is the most common exam pitfall to avoid?', options: ['Calculation error', 'Formula confusion', 'Unit mismatch', 'All of the above'], correctAnswer: 3, explanation: 'Careful step-by-step verification prevents errors.' }
           ];
         }
 
-        // Extract VSAQs from vsaqs or flashcards
+        // 3. Extract VSAQs / Flashcards / 2-Mark questions
         let loadedVsaqs = data.vsaqs;
-        if (!loadedVsaqs?.length && data.flashcards?.length) {
+        if (!loadedVsaqs?.length && data.twoMarkQuestions?.length) {
+          loadedVsaqs = data.twoMarkQuestions.map((tm: any) => ({
+            question: tm.question || '2-Mark Question',
+            answer: tm.modelAnswer || (tm.keyPointsToInclude ? tm.keyPointsToInclude.join(' ') : 'Model answer.'),
+            marks: 2
+          }));
+        } else if (!loadedVsaqs?.length && data.flashcards?.length) {
           loadedVsaqs = data.flashcards.map((fc: any) => ({
             question: fc.front || 'Key Question',
-            answer: fc.back || '',
+            answer: fc.back || 'Model answer.',
+            marks: 2
+          }));
+        } else if (!loadedVsaqs?.length && data.oneLineQnA?.length) {
+          loadedVsaqs = data.oneLineQnA.map((ol: any) => ({
+            question: ol.question || 'Key Question',
+            answer: ol.answer || 'Model answer.',
             marks: 2
           }));
         }
         if (!loadedVsaqs?.length) {
           loadedVsaqs = [
-            { question: 'Define the core principle of this lesson.', answer: 'Core textbook definition.', marks: 2 },
-            { question: 'State the key formula or theorem.', answer: 'Standard mathematical formula.', marks: 2 }
+            { question: 'Define the core principle of this lesson.', answer: 'Fundamental textbook definition and primary application.', marks: 2 },
+            { question: 'State the key formula, theorem, or rule.', answer: 'Standard mathematical formula with defined units.', marks: 2 }
           ];
         }
 
-        // Extract Formulas
-        const loadedFormulas = data.formulasAndMnemonics?.length ? data.formulasAndMnemonics : [
-          { name: `${data.topicTitle || 'Lesson'} Master Rule`, formula: 'Standard Method', mnemonic: 'Active Recall Rule' }
-        ];
+        // 4. Extract Formulas & Mnemonics
+        let loadedFormulas = data.formulasAndMnemonics;
+        if (!loadedFormulas?.length && data.notes?.formulasAndShortcuts?.length) {
+          loadedFormulas = data.notes.formulasAndShortcuts.map((f: any) => ({
+            name: f.name || 'Key Formula',
+            formula: f.formula || 'Master Equation',
+            mnemonic: f.tip || f.mnemonic || 'Exam recall tip'
+          }));
+        }
+        if (!loadedFormulas?.length) {
+          loadedFormulas = [
+            { name: `${data.topicTitle || 'Lesson'} Master Rule`, formula: 'Standard Method / Equation', mnemonic: 'Active Recall Memory Rule' }
+          ];
+        }
+
+        // 5. Extract Tamil Explanation
+        const rawTamil = data.tamilExplanation || data.notes?.tamilExplanation;
+        let loadedTamil = rawTamil;
+        if (!loadedTamil && data.notes?.bilingualExplanation?.tamil) {
+          loadedTamil = {
+            simpleTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
+            colloquialIntro: data.notes.bilingualExplanation.tamil,
+            everydayAnalogy: 'எளிய வாழ்வியல் ஒப்பீடு.',
+            keyPointsTamil: [data.notes.bilingualExplanation.tamil, 'முக்கிய கருத்துகள்', 'தேர்வுக்கான குறிப்புகள்']
+          };
+        }
+        if (!loadedTamil) {
+          loadedTamil = {
+            simpleTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
+            colloquialIntro: 'பாடத்தின் சுருக்கம் மற்றும் எளிய தமிழ் விளக்கம்.',
+            everydayAnalogy: 'வாழ்வியல் உதாரணம்.',
+            keyPointsTamil: ['முக்கிய குறிப்பு 1', 'முக்கிய குறிப்பு 2', 'முக்கிய குறிப்பு 3']
+          };
+        }
 
         setFormData({
           topicTitle: data.topicTitle || `${selectedCourse.title} Day ${day}`,
           category: data.category || data.subject || selectedCourse.subjects?.[0]?.name || 'Core Subject',
           youtubeVideoId: data.videoId || data.videoMeta?.youtubeVideoId || '0TgLtF3PMOc',
-          overview: data.overview || data.notes?.overview || '',
+          overview: data.overview || data.notes?.overview || (data.notes?.keyPoints ? data.notes.keyPoints.join(' ') : '') || '',
           coreConcepts: loadedConcepts,
-          tamilExplanation: data.tamilExplanation || data.notes?.tamilExplanation || {
-            simpleTitle: data.topicTitle || '',
-            colloquialIntro: 'பாடத்தின் சுருக்கம் மற்றும் எளிய விளக்கம்.',
-            everydayAnalogy: 'வாழ்வியல் ஒப்பீடு.',
-            keyPointsTamil: ['முக்கிய குறிப்பு 1', 'முக்கிய குறிப்பு 2', 'முக்கிய குறிப்பு 3']
-          },
+          tamilExplanation: loadedTamil,
           formulasAndMnemonics: loadedFormulas,
           vsaqs: loadedVsaqs,
           mcqs: loadedMcqs
@@ -222,7 +259,7 @@ export default function TeachOAdminStudioPage() {
       if (res.ok) {
         const data = await res.json();
         
-        let loadedConcepts = data.coreConcepts;
+        let loadedConcepts = data.coreConcepts || data.notes?.coreConcepts;
         if (!loadedConcepts?.length && data.studyNotes?.length) {
           loadedConcepts = data.studyNotes.map((sn: any) => ({
             heading: sn.sectionTitle || 'Core Concept',
@@ -231,12 +268,12 @@ export default function TeachOAdminStudioPage() {
           }));
         }
 
-        let loadedMcqs = data.mcqs;
-        if (!loadedMcqs?.length && data.practiceQuiz?.length) {
-          loadedMcqs = data.practiceQuiz.map((pq: any) => ({
+        let loadedMcqs = data.mcqs || data.practiceQuiz;
+        if (loadedMcqs?.length) {
+          loadedMcqs = loadedMcqs.map((pq: any) => ({
             question: pq.question || '',
             options: pq.options || ['Option A', 'Option B', 'Option C', 'Option D'],
-            correctAnswer: pq.correctIndex ?? pq.correctAnswer ?? 0,
+            correctAnswer: pq.correctAnswer !== undefined ? pq.correctAnswer : (pq.correctIndex !== undefined ? pq.correctIndex : 0),
             explanation: pq.explanation || ''
           }));
         }
@@ -245,9 +282,9 @@ export default function TeachOAdminStudioPage() {
           ...prev,
           topicTitle: data.topicTitle || prev.topicTitle,
           category: data.category || data.subject || prev.category,
-          overview: data.overview || prev.overview,
+          overview: data.overview || data.notes?.overview || prev.overview,
           coreConcepts: loadedConcepts?.length ? loadedConcepts : prev.coreConcepts,
-          tamilExplanation: data.tamilExplanation || prev.tamilExplanation,
+          tamilExplanation: data.tamilExplanation || data.notes?.tamilExplanation || prev.tamilExplanation,
           formulasAndMnemonics: data.formulasAndMnemonics?.length ? data.formulasAndMnemonics : prev.formulasAndMnemonics,
           vsaqs: data.vsaqs?.length ? data.vsaqs : prev.vsaqs,
           mcqs: loadedMcqs?.length ? loadedMcqs : prev.mcqs
@@ -293,9 +330,9 @@ export default function TeachOAdminStudioPage() {
         const data = await res.json();
         setFormData(prev => ({
           ...prev,
-          overview: data.overview || prev.overview,
+          overview: data.overview || data.notes?.overview || prev.overview,
           coreConcepts: data.coreConcepts?.length ? data.coreConcepts : prev.coreConcepts,
-          tamilExplanation: data.tamilExplanation || prev.tamilExplanation
+          tamilExplanation: data.tamilExplanation || data.notes?.tamilExplanation || prev.tamilExplanation
         }));
         setStatusMessage('✨ Successfully polished academic content with Gemini AI!');
       }
@@ -499,38 +536,41 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
   });
 
   return (
-    <div className="flex h-full flex-col p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 p-4 md:p-8 space-y-6 max-w-7xl mx-auto font-sans">
+      
       {/* Header & Nav */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link href="/admin" className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1">
-              <ArrowLeft className="w-4 h-4" /> Back to Admin
+          <div className="flex items-center gap-2 mb-1.5">
+            <Link href="/admin" className="text-slate-400 hover:text-white text-xs font-semibold flex items-center gap-1 transition-colors">
+              <ArrowLeft className="w-3.5 h-3.5" /> Back to Admin Dashboard
             </Link>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <BookOpen className="w-7 h-7 text-emerald-600" />
+          <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20">
+              <BookOpen className="w-5 h-5" />
+            </div>
             TeachO Teacher Studio &amp; Curriculum CMS
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-slate-400 mt-1">
             Manage, edit, AI-draft, and publish day-wise academic lessons across all 86 courses directly to Supabase LMS.
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border">
+        <div className="flex items-center bg-[#0c1322] p-1 rounded-xl border border-slate-800">
           <button
             onClick={() => setActiveTab('editor')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${
-              activeTab === 'editor' ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm' : 'text-muted-foreground'
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'editor' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             Single Lesson Editor
           </button>
           <button
             onClick={() => setActiveTab('bulk')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-all ${
-              activeTab === 'bulk' ? 'bg-white dark:bg-slate-900 text-emerald-600 shadow-sm' : 'text-muted-foreground'
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'bulk' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             📊 Bulk CSV / JSON Importer
@@ -540,36 +580,37 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
 
       {activeTab === 'editor' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* LEFT: 86 COURSES & DAY SELECTOR (4 Cols) */}
+          
+          {/* ─── LEFT: 86 COURSES & DAY SELECTOR (4 Cols) ─────────────────── */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm space-y-3">
+            <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-emerald-400" />
                   Select Course ({filteredCourses.length}/86)
                 </h3>
               </div>
 
               {/* Search & Filter */}
               <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-muted-foreground" />
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search 86 courses..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-sm border rounded-lg bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-700 bg-[#070b14] text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 placeholder:text-slate-500"
                 />
               </div>
 
               {/* Category Pills */}
-              <div className="flex gap-1 overflow-x-auto pb-1 text-xs">
+              <div className="flex gap-1 overflow-x-auto pb-1 text-[11px] scrollbar-none">
                 {['all', 'tnsb', 'cbse', 'matric', 'tnpsc', 'entrance', 'degree', 'skill'].map(cat => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 py-1 rounded-full whitespace-nowrap capitalize ${
-                      selectedCategory === cat ? 'bg-emerald-600 text-white font-medium' : 'bg-slate-100 dark:bg-slate-800 text-muted-foreground'
+                    className={`px-2.5 py-1 rounded-full whitespace-nowrap capitalize font-medium transition-all ${
+                      selectedCategory === cat ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
                     }`}
                   >
                     {cat}
@@ -578,7 +619,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
               </div>
 
               {/* Course List */}
-              <div className="max-h-[380px] overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="max-h-[360px] overflow-y-auto space-y-1 pr-1 divide-y divide-slate-800/50 scrollbar-thin scrollbar-thumb-slate-700">
                 {filteredCourses.map(c => {
                   const isSelected = selectedCourse.id === c.id;
                   return (
@@ -588,20 +629,20 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         setSelectedCourse(c);
                         setDayNumber(1);
                       }}
-                      className={`w-full text-left p-2.5 rounded-lg transition-all flex items-center justify-between gap-2 ${
+                      className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center justify-between gap-2 ${
                         isSelected 
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200' 
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                          ? 'bg-emerald-500/15 border border-emerald-500/70 text-emerald-300 shadow-inner' 
+                          : 'hover:bg-slate-800/60 text-slate-300 border border-transparent'
                       }`}
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold truncate">{c.title}</div>
-                        <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                          <span className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.2 rounded text-[10px]">{c.board}</span>
+                        <div className="text-xs font-bold truncate text-white">{c.title}</div>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                          <span className="bg-slate-800 px-1.5 py-0.2 rounded text-[9px] text-slate-300">{c.board}</span>
                           <span>{c.totalDays} Days</span>
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 shrink-0 ${isSelected ? 'text-emerald-600' : 'text-slate-300'}`} />
+                      <ChevronRight className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-emerald-400' : 'text-slate-600'}`} />
                     </button>
                   );
                 })}
@@ -609,18 +650,18 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
             </div>
 
             {/* DAY SELECTOR */}
-            <div className="bg-white dark:bg-slate-900 border rounded-xl p-4 shadow-sm space-y-3">
+            <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Database className="w-4 h-4 text-blue-600" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-blue-400" />
                   Day Number ({dayNumber} / {selectedCourse.totalDays || 200})
                 </h3>
                 {isVerifiedByAdmin ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
                     <CheckCircle2 className="w-3 h-3" /> Admin Verified
                   </span>
                 ) : (
-                  <span className="text-[11px] bg-slate-100 dark:bg-slate-800 text-muted-foreground px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-medium">
                     Auto-Cached
                   </span>
                 )}
@@ -629,7 +670,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setDayNumber(Math.max(1, dayNumber - 1))}
-                  className="px-3 py-1.5 border rounded-lg hover:bg-slate-50 text-sm font-bold"
+                  className="px-3.5 py-1.5 border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
                 >
                   -
                 </button>
@@ -639,11 +680,11 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                   max={selectedCourse.totalDays || 360}
                   value={dayNumber}
                   onChange={e => setDayNumber(Math.max(1, parseInt(e.target.value || '1', 10)))}
-                  className="flex-1 text-center py-1.5 border rounded-lg font-bold text-sm bg-slate-50 dark:bg-slate-800"
+                  className="flex-1 text-center py-1.5 border border-slate-700 font-bold text-sm bg-[#070b14] text-white rounded-lg focus:ring-1 focus:ring-emerald-500"
                 />
                 <button
                   onClick={() => setDayNumber(Math.min(selectedCourse.totalDays || 360, dayNumber + 1))}
-                  className="px-3 py-1.5 border rounded-lg hover:bg-slate-50 text-sm font-bold"
+                  className="px-3.5 py-1.5 border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors"
                 >
                   +
                 </button>
@@ -651,12 +692,14 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
 
               {/* Quick Jump Days */}
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {[1, 5, 10, 25, 50, 100, 150, 200].filter(d => d <= (selectedCourse.totalDays || 360)).map(d => (
+                {[1, 2, 3, 4, 5, 10, 25, 50, 100, 200].filter(d => d <= (selectedCourse.totalDays || 360)).map(d => (
                   <button
                     key={d}
                     onClick={() => setDayNumber(d)}
-                    className={`px-2 py-0.5 text-xs rounded border ${
-                      dayNumber === d ? 'bg-emerald-600 text-white font-bold border-emerald-600' : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800'
+                    className={`px-2 py-0.5 text-[11px] rounded-md border transition-all ${
+                      dayNumber === d 
+                        ? 'bg-emerald-600 text-white font-bold border-emerald-500 shadow-sm' 
+                        : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-700'
                     }`}
                   >
                     Day {d}
@@ -666,23 +709,24 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
             </div>
           </div>
 
-          {/* RIGHT: RICH LESSON EDITOR (8 Cols) */}
+          {/* ─── RIGHT: RICH LESSON EDITOR (8 Cols) ───────────────────────── */}
           <div className="lg:col-span-8 space-y-4">
-            <div className="bg-white dark:bg-slate-900 border rounded-xl p-5 shadow-sm space-y-5">
+            <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-5">
+              
               {/* Action Toolbar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                 <div>
-                  <h2 className="text-lg font-bold">{selectedCourse.title}</h2>
+                  <h2 className="text-base md:text-lg font-black text-white">{selectedCourse.title}</h2>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-muted-foreground">
-                      Editing <span className="font-semibold text-emerald-600">Day {dayNumber}</span> &bull; Key: <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">{selectedCourse.id}_day_{dayNumber}</code>
+                    <p className="text-xs text-slate-400">
+                      Editing <span className="font-bold text-emerald-400">Day {dayNumber}</span> &bull; Key: <code className="text-xs bg-[#070b14] border border-slate-800 px-1.5 py-0.5 rounded font-mono text-slate-300">{selectedCourse.id}_day_{dayNumber}</code>
                     </p>
                     {getUserGeminiKey() ? (
-                      <span className="text-[10px] bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                         🔑 Profile Key Active
                       </span>
                     ) : (
-                      <span className="text-[10px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="text-[10px] bg-slate-800 text-slate-300 font-medium px-2 py-0.5 rounded-full flex items-center gap-1 border border-slate-700">
                         🌐 System Key Pool
                       </span>
                     )}
@@ -693,17 +737,17 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                   <button
                     onClick={handleAiPolish}
                     disabled={aiDrafting || loading || !formData.overview}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border shadow-sm disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm disabled:opacity-50 transition-colors"
                     title="Optimize overview and concepts with AI"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     AI Polish
                   </button>
 
                   <button
                     onClick={handleAiDraft}
                     disabled={aiDrafting || loading}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 shadow-sm disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:opacity-90 shadow-md shadow-purple-600/20 disabled:opacity-50 transition-all"
                   >
                     <Sparkles className={`w-3.5 h-3.5 ${aiDrafting ? 'animate-spin' : ''}`} />
                     {aiDrafting ? 'Drafting with Gemini...' : '✨ AI Auto-Draft'}
@@ -712,7 +756,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                   <button
                     onClick={handlePublish}
                     disabled={saveStatus === 'saving' || loading}
-                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all"
                   >
                     <Save className="w-3.5 h-3.5" />
                     {saveStatus === 'saving' ? 'Publishing...' : '💾 Publish to Supabase'}
@@ -720,77 +764,91 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                 </div>
               </div>
 
+              {/* Status Message Banner */}
               {statusMessage && (
-                <div className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                  saveStatus === 'saved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' :
-                  saveStatus === 'error' ? 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' :
-                  'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 border ${
+                  saveStatus === 'saved' ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40' :
+                  saveStatus === 'error' ? 'bg-rose-950/60 text-rose-300 border-rose-500/40' :
+                  'bg-blue-950/60 text-blue-300 border-blue-500/40'
                 }`}>
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   {statusMessage}
                 </div>
               )}
 
-              {/* Form Fields */}
+              {/* Form Fields: Topic & Category */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Topic Title</label>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Topic Title
+                  </label>
                   <input
                     type="text"
                     value={formData.topicTitle}
                     onChange={e => setFormData({ ...formData, topicTitle: e.target.value })}
-                    className="w-full p-2 text-sm border rounded-lg bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500"
+                    placeholder="e.g. Mechanics & Laws of Motion"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Subject / Category</label>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Subject / Category
+                  </label>
                   <input
                     type="text"
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full p-2 text-sm border rounded-lg bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full p-2.5 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500"
+                    placeholder="e.g. Physics / Polity"
                   />
                 </div>
               </div>
 
+              {/* YouTube Video ID */}
               <div>
-                <label className="block text-xs font-semibold mb-1">YouTube Video ID (or URL)</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  YouTube Video ID (or URL)
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={formData.youtubeVideoId}
                     onChange={e => setFormData({ ...formData, youtubeVideoId: e.target.value })}
-                    className="flex-1 p-2 text-sm border rounded-lg bg-slate-50 dark:bg-slate-800 font-mono"
+                    className="flex-1 p-2.5 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     placeholder="e.g. 0TgLtF3PMOc"
                   />
                   <a
                     href={`https://www.youtube.com/watch?v=${formData.youtubeVideoId}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-xs font-semibold rounded-lg flex items-center gap-1 hover:bg-slate-200"
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors border border-slate-700"
                   >
-                    <Video className="w-3.5 h-3.5 text-red-600" /> Watch
+                    <Video className="w-4 h-4 text-red-400" /> Watch
                   </a>
                 </div>
               </div>
 
+              {/* Academic Overview */}
               <div>
-                <label className="block text-xs font-semibold mb-1">Academic Overview (120–180 Words)</label>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Academic Overview (120–180 Words)
+                </label>
                 <textarea
                   rows={4}
                   value={formData.overview}
                   onChange={e => setFormData({ ...formData, overview: e.target.value })}
-                  className="w-full p-2.5 text-sm border rounded-lg bg-slate-50 dark:bg-slate-800 leading-relaxed"
+                  className="w-full p-3 text-sm border border-slate-700 bg-[#070b14] text-white rounded-xl leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-500"
+                  placeholder="Comprehensive high-yield overview of the lesson..."
                 />
               </div>
 
               {/* 3 Core Concepts */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" /> 3 Core Conceptual Frameworks
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-emerald-400" /> 3 Core Conceptual Frameworks
                 </h4>
                 {formData.coreConcepts.map((concept, idx) => (
-                  <div key={idx} className="p-3 border rounded-lg bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+                  <div key={idx} className="p-4 border border-slate-800 rounded-xl bg-[#090e1a] space-y-2.5">
                     <input
                       type="text"
                       placeholder={`Concept ${idx + 1} Heading`}
@@ -800,7 +858,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         updated[idx].heading = e.target.value;
                         setFormData({ ...formData, coreConcepts: updated });
                       }}
-                      className="w-full p-1.5 text-xs font-bold border rounded bg-white dark:bg-slate-900"
+                      className="w-full p-2 text-xs font-bold border border-slate-700 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                     <textarea
                       rows={2}
@@ -811,7 +869,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         updated[idx].content = e.target.value;
                         setFormData({ ...formData, coreConcepts: updated });
                       }}
-                      className="w-full p-1.5 text-xs border rounded bg-white dark:bg-slate-900"
+                      className="w-full p-2 text-xs border border-slate-700 rounded-lg bg-[#070b14] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 leading-relaxed"
                     />
                     <input
                       type="text"
@@ -822,20 +880,20 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         updated[idx].example = e.target.value;
                         setFormData({ ...formData, coreConcepts: updated });
                       }}
-                      className="w-full p-1.5 text-xs border rounded bg-white dark:bg-slate-900 text-muted-foreground"
+                      className="w-full p-2 text-xs border border-slate-700/60 rounded-lg bg-[#070b14] text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 ))}
               </div>
 
               {/* Tamil Explanation */}
-              <div className="p-4 border rounded-lg bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
-                <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
-                  <Languages className="w-3.5 h-3.5" /> Tamil Colloquial Guidance (தமிழ் விளக்கம்)
+              <div className="p-4 border border-amber-500/30 rounded-xl bg-amber-950/20 space-y-3">
+                <h4 className="text-xs font-bold text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Languages className="w-4 h-4 text-amber-400" /> Tamil Colloquial Guidance (தமிழ் விளக்கம்)
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-300 mb-1">எளிய தலைப்பு</label>
+                    <label className="block text-[11px] font-bold text-amber-300 mb-1">எளிய தலைப்பு</label>
                     <input
                       type="text"
                       value={formData.tamilExplanation.simpleTitle}
@@ -843,11 +901,11 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         ...formData,
                         tamilExplanation: { ...formData.tamilExplanation, simpleTitle: e.target.value }
                       })}
-                      className="w-full p-1.5 text-xs border rounded bg-white dark:bg-slate-900"
+                      className="w-full p-2 text-xs border border-amber-500/40 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-300 mb-1">வாழ்வியல் ஒப்பீடு (Everyday Analogy)</label>
+                    <label className="block text-[11px] font-bold text-amber-300 mb-1">வாழ்வியல் ஒப்பீடு (Everyday Analogy)</label>
                     <input
                       type="text"
                       value={formData.tamilExplanation.everydayAnalogy}
@@ -855,12 +913,12 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         ...formData,
                         tamilExplanation: { ...formData.tamilExplanation, everydayAnalogy: e.target.value }
                       })}
-                      className="w-full p-1.5 text-xs border rounded bg-white dark:bg-slate-900"
+                      className="w-full p-2 text-xs border border-amber-500/40 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-amber-900 dark:text-amber-300 mb-1">தமிழ் உரை (Colloquial Intro)</label>
+                  <label className="block text-[11px] font-bold text-amber-300 mb-1">தமிழ் உரை (Colloquial Intro)</label>
                   <textarea
                     rows={2}
                     value={formData.tamilExplanation.colloquialIntro}
@@ -868,18 +926,18 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                       ...formData,
                       tamilExplanation: { ...formData.tamilExplanation, colloquialIntro: e.target.value }
                     })}
-                    className="w-full p-1.5 text-xs border rounded bg-white dark:bg-slate-900"
+                    className="w-full p-2 text-xs border border-amber-500/40 rounded-lg bg-[#070b14] text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500 leading-relaxed"
                   />
                 </div>
               </div>
 
               {/* MCQs */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <HelpCircle className="w-3.5 h-3.5" /> 4 High-Yield Daily MCQs
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <HelpCircle className="w-4 h-4 text-emerald-400" /> 4 High-Yield Daily MCQs
                 </h4>
                 {formData.mcqs.map((mcq, mIdx) => (
-                  <div key={mIdx} className="p-3 border rounded-lg bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+                  <div key={mIdx} className="p-4 border border-slate-800 rounded-xl bg-[#090e1a] space-y-3">
                     <input
                       type="text"
                       placeholder={`Question ${mIdx + 1}`}
@@ -889,11 +947,11 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         updated[mIdx].question = e.target.value;
                         setFormData({ ...formData, mcqs: updated });
                       }}
-                      className="w-full p-1.5 text-xs font-semibold border rounded bg-white dark:bg-slate-900"
+                      className="w-full p-2 text-xs font-bold border border-slate-700 rounded-lg bg-[#070b14] text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {mcq.options.map((opt, oIdx) => (
-                        <div key={oIdx} className="flex items-center gap-1.5">
+                        <div key={oIdx} className="flex items-center gap-2 p-1.5 rounded-lg border border-slate-800 bg-[#070b14]">
                           <input
                             type="radio"
                             name={`correct_${mIdx}`}
@@ -903,6 +961,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                               updated[mIdx].correctAnswer = oIdx;
                               setFormData({ ...formData, mcqs: updated });
                             }}
+                            className="text-emerald-500 focus:ring-emerald-500 h-4 w-4 bg-slate-900 border-slate-700"
                           />
                           <input
                             type="text"
@@ -913,7 +972,7 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                               updated[mIdx].options[oIdx] = e.target.value;
                               setFormData({ ...formData, mcqs: updated });
                             }}
-                            className="flex-1 p-1 text-xs border rounded bg-white dark:bg-slate-900"
+                            className="flex-1 p-1 text-xs bg-transparent text-slate-200 focus:outline-none"
                           />
                         </div>
                       ))}
@@ -927,18 +986,18 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
                         updated[mIdx].explanation = e.target.value;
                         setFormData({ ...formData, mcqs: updated });
                       }}
-                      className="w-full p-1 text-xs border rounded bg-white dark:bg-slate-900 text-muted-foreground"
+                      className="w-full p-2 text-xs border border-slate-700/60 rounded-lg bg-[#070b14] text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
                 ))}
               </div>
 
               {/* Bottom Publish Button */}
-              <div className="pt-4 border-t flex justify-end">
+              <div className="pt-4 border-t border-slate-800 flex justify-end">
                 <button
                   onClick={handlePublish}
                   disabled={saveStatus === 'saving' || loading}
-                  className="flex items-center gap-2 px-6 py-2.5 font-bold text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-md disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-2.5 font-bold text-xs rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg shadow-emerald-600/30 disabled:opacity-50 transition-all"
                 >
                   <Save className="w-4 h-4" />
                   {saveStatus === 'saving' ? 'Publishing to Supabase...' : 'Save & Publish to Supabase Database'}
@@ -949,35 +1008,35 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
         </div>
       ) : (
         /* BULK CSV / JSON IMPORTER TAB */
-        <div className="bg-white dark:bg-slate-900 border rounded-xl p-6 shadow-sm space-y-6 max-w-4xl mx-auto">
-          <div className="flex items-center justify-between border-b pb-4">
+        <div className="bg-[#0c1322] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6 max-w-4xl mx-auto">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <div>
-              <h2 className="text-lg font-bold flex items-center gap-2">
-                <Upload className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-base md:text-lg font-black text-white flex items-center gap-2">
+                <Upload className="w-5 h-5 text-emerald-400" />
                 Bulk CSV / JSON Curriculum Importer
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Upload entire spreadsheets of 200 or 360-day syllabus lessons directly into Supabase LMS.
               </p>
             </div>
             <button
               onClick={handleDownloadSampleCsv}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-colors"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-600" /> Download Sample CSV
+              <Download className="w-3.5 h-3.5 text-emerald-400" /> Download Sample CSV
             </button>
           </div>
 
           {/* Upload Area */}
-          <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center space-y-3 bg-slate-50/50 dark:bg-slate-800/30">
-            <Upload className="w-10 h-10 text-slate-400 mx-auto" />
+          <div className="border-2 border-dashed border-slate-700 rounded-2xl p-8 text-center space-y-3 bg-[#070b14]/50">
+            <Upload className="w-10 h-10 text-slate-500 mx-auto" />
             <div>
-              <label htmlFor="csv-upload" className="cursor-pointer font-bold text-sm text-emerald-600 hover:underline">
+              <label htmlFor="csv-upload" className="cursor-pointer font-bold text-sm text-emerald-400 hover:underline">
                 Click to browse
               </label>{' '}
-              <span className="text-sm text-muted-foreground">or drag and drop your .csv or .json file here</span>
+              <span className="text-sm text-slate-300">or drag and drop your .csv or .json file here</span>
             </div>
-            <p className="text-xs text-slate-400">Supports UTF-8 CSV with course_id, day_number, topic_title, overview, formulas, mcqs</p>
+            <p className="text-xs text-slate-500">Supports UTF-8 CSV with course_id, day_number, topic_title, overview, formulas, mcqs</p>
             <input
               id="csv-upload"
               type="file"
@@ -988,17 +1047,17 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
           </div>
 
           {bulkFile && (
-            <div className="p-4 border rounded-lg bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+            <div className="p-4 border border-slate-800 rounded-xl bg-[#070b14] flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold">{bulkFile.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  Parsed <span className="font-semibold text-emerald-600">{bulkRows.length} lesson rows</span> ready for import.
+                <div className="text-xs font-bold text-white">{bulkFile.name}</div>
+                <div className="text-[11px] text-slate-400">
+                  Parsed <span className="font-bold text-emerald-400">{bulkRows.length} lesson rows</span> ready for import.
                 </div>
               </div>
               <button
                 onClick={handleExecuteBulkImport}
                 disabled={bulkImporting || !bulkRows.length}
-                className="px-5 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
               >
                 {bulkImporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                 {bulkImporting ? `Importing (${bulkProgress}%)...` : 'Start Bulk Import'}
@@ -1008,19 +1067,19 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
 
           {bulkImporting && (
             <div className="space-y-1.5">
-              <div className="flex justify-between text-xs font-semibold">
+              <div className="flex justify-between text-xs font-bold text-slate-300">
                 <span>Importing to Supabase...</span>
                 <span>{bulkProgress}%</span>
               </div>
-              <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                <div className="bg-emerald-600 h-full transition-all duration-300" style={{ width: `${bulkProgress}%` }} />
+              <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div className="bg-emerald-500 h-full transition-all duration-300" style={{ width: `${bulkProgress}%` }} />
               </div>
             </div>
           )}
 
           {bulkResult && (
-            <div className="p-4 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="p-4 rounded-xl bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
               {bulkResult}
             </div>
           )}
@@ -1028,26 +1087,26 @@ exam-neet-ug,1,NEET Physics,Kinematics & Projectile Motion,"Standard derivations
           {/* Table Preview */}
           {bulkRows.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Preview Parsed Rows (First 5)</h3>
-              <div className="overflow-x-auto border rounded-lg">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Preview Parsed Rows (First 5)</h3>
+              <div className="overflow-x-auto border border-slate-800 rounded-xl bg-[#070b14]">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  <thead className="bg-[#0c1322] text-slate-300 border-b border-slate-800">
                     <tr>
-                      <th className="p-2">Course ID</th>
-                      <th className="p-2">Day</th>
-                      <th className="p-2">Subject</th>
-                      <th className="p-2">Topic Title</th>
-                      <th className="p-2">Formula</th>
+                      <th className="p-2.5 font-bold">Course ID</th>
+                      <th className="p-2.5 font-bold">Day</th>
+                      <th className="p-2.5 font-bold">Subject</th>
+                      <th className="p-2.5 font-bold">Topic Title</th>
+                      <th className="p-2.5 font-bold">Formula</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
                     {bulkRows.slice(0, 5).map((r, i) => (
-                      <tr key={i}>
-                        <td className="p-2 font-mono">{r.course_id || '-'}</td>
-                        <td className="p-2 font-bold">{r.day_number || '-'}</td>
-                        <td className="p-2">{r.subject || '-'}</td>
-                        <td className="p-2 font-medium">{r.topic_title || '-'}</td>
-                        <td className="p-2 font-mono text-muted-foreground">{r.formula || '-'}</td>
+                      <tr key={i} className="hover:bg-slate-800/30">
+                        <td className="p-2.5 font-mono text-emerald-400">{r.course_id || '-'}</td>
+                        <td className="p-2.5 font-bold text-white">{r.day_number || '-'}</td>
+                        <td className="p-2.5">{r.subject || '-'}</td>
+                        <td className="p-2.5 font-medium text-white">{r.topic_title || '-'}</td>
+                        <td className="p-2.5 font-mono text-slate-400">{r.formula || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
