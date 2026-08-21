@@ -50,6 +50,8 @@ interface TeachOCoursePlayerModalProps {
   subject: string;
   courseTitle: string;
   dayNumber: number;
+  courseId?: string;
+  taskNumber?: number;
   onCompleteTask: (earnedXp: number) => void;
 }
 
@@ -239,6 +241,8 @@ export default function TeachOCoursePlayerModal({
   subject,
   courseTitle,
   dayNumber,
+  courseId,
+  taskNumber,
   onCompleteTask,
 }: TeachOCoursePlayerModalProps) {
   const insets = useSafeAreaInsets();
@@ -264,7 +268,7 @@ export default function TeachOCoursePlayerModal({
   useEffect(() => {
     if (visible && topicTitle) {
       setLoading(true);
-      getCoursePlayerContent(topicTitle, subject, courseTitle, dayNumber, false)
+      getCoursePlayerContent(topicTitle, subject, courseTitle, dayNumber, courseId || '', false, taskNumber)
         .then((res) => {
           setContent(res);
           setLoading(false);
@@ -274,7 +278,7 @@ export default function TeachOCoursePlayerModal({
           setLoading(false);
         });
     }
-  }, [visible, topicTitle, subject, courseTitle, dayNumber]);
+  }, [visible, topicTitle, subject, courseTitle, dayNumber, courseId, taskNumber]);
 
   const handleGenerateAiOnDemand = async () => {
     setIsGeneratingAi(true);

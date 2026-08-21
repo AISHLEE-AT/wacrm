@@ -56,6 +56,7 @@ export default function TeachOScreen() {
     topicTitle: string;
     subject: string;
     taskType: string;
+    taskNumber?: number;
   } | null>(null);
 
   // Load user saved course and progress on initial mount
@@ -94,7 +95,7 @@ export default function TeachOScreen() {
     let isMounted = true;
     async function fetchPlan() {
       try {
-        const plan = await getDayPlanForCourse(selectedCourse.title, selectedCourse.category, currentDay);
+        const plan = await getDayPlanForCourse(selectedCourse as any, selectedCourse.category, currentDay);
         if (isMounted && plan) {
           setActiveDayPlan(plan);
         }
@@ -216,6 +217,7 @@ export default function TeachOScreen() {
       topicTitle: task.rawTopic || task.title,
       subject: task.rawSubject || selectedCourse.title,
       taskType: task.type,
+      taskNumber: task.stepNumber || 1,
     });
     setIsPlayerOpen(true);
   };
@@ -375,6 +377,8 @@ export default function TeachOScreen() {
         subject={activePlayerTask?.subject || selectedCourse.title}
         courseTitle={selectedCourse.title}
         dayNumber={currentDay}
+        courseId={selectedCourse.id}
+        taskNumber={activePlayerTask?.taskNumber}
         onClose={() => setIsPlayerOpen(false)}
         onCompleteTask={handleFinishLesson}
       />

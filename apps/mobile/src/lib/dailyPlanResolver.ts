@@ -456,12 +456,12 @@ import { resolveMasterCurriculumPlan } from '../data/curriculum';
 
 // ─── 5. MASTER ENTRY RESOLVER ────────────────────────────────────────────────
 export async function getDayPlanForCourse(
-  courseTitle: string,
+  courseOrTitle: any,
   category: string,
   targetDay: number = 1
 ): Promise<DayPlan> {
   // Leverage the authentic master curriculum registry
-  return resolveMasterCurriculumPlan(courseTitle, category, targetDay);
+  return resolveMasterCurriculumPlan(courseOrTitle, category, targetDay);
 }
 
 
