@@ -1876,6 +1876,41 @@ export async function getCoursePlayerContent(
     // Non-blocking fallback
   }
 
+  // 2.5. Check Cloudflare R2 Primary DB (CDN Edge Direct)
+  if (courseId) {
+    const r2CandidateUrls = [
+      `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}_task_${resolvedTaskNum}.json`,
+      `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}_task_1.json`,
+      `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}.json`
+    ];
+
+    for (const r2Url of r2CandidateUrls) {
+      try {
+        const r2Res = await fetch(r2Url);
+        if (r2Res.ok) {
+          const r2Json = await r2Res.json();
+          if (r2Json && (r2Json.notes || r2Json.overview || r2Json.mcqs)) {
+            const normalized = normalizeCoursePlayerPayload(
+              r2Json,
+              topicTitle,
+              subject,
+              courseTitle,
+              dayNumber,
+              courseId,
+              resolvedTaskNum
+            );
+            inMemoryContentCache.set(daySpecificKey, normalized);
+            inMemoryContentCache.set(cacheKey, normalized);
+            if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
+            return normalized;
+          }
+        }
+      } catch (r2Err) {
+        // Non-blocking fallback
+      }
+    }
+  }
+
   // 3. Check Local localStorage Cache
   try {
     if (typeof window !== 'undefined') {

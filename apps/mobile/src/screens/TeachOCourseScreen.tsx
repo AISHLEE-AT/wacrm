@@ -44,15 +44,75 @@ import { geminiToolsService } from '../services/geminiToolsService';
 import { getCourseSyllabus, SyllabusUnit } from '../lib/courseCatalogMaster';
 import { generateKindleBook } from '../lib/kindleContentEngine';
 
-function generateCacheKey(topicTitle: string, courseTitle: string): string {
-  const raw = `${(topicTitle || '').trim().toLowerCase()}::${(courseTitle || '').trim().toLowerCase()}`;
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    const char = raw.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return `kindle_${Math.abs(hash).toString(36)}`;
+function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle: string): any {
+  if (!raw) return null;
+  const overview = raw.notes?.overview || raw.overview || 'Comprehensive lesson module notes and core conceptual breakdown.';
+  const coreConcepts = (raw.notes?.coreConcepts && Array.isArray(raw.notes.coreConcepts) && raw.notes.coreConcepts.length > 0)
+    ? raw.notes.coreConcepts
+    : (raw.coreConcepts || []);
+  const keyPoints = (raw.notes?.keyPoints && Array.isArray(raw.notes.keyPoints) && raw.notes.keyPoints.length > 0)
+    ? raw.notes.keyPoints
+    : (raw.keyPoints || []);
+
+  // Tamil Explanation & Analogies
+  const tamilExplanation = raw.tamilExplanation || (raw.notes?.bilingualExplanation?.tamil ? {
+    colloquialIntro: raw.notes.bilingualExplanation.tamil,
+    everydayAnalogy: raw.notes.bilingualExplanation.tamil
+  } : {
+    colloquialIntro: 'பாடத்தின் அடிப்படைக் கருத்துக்களை எளிமையாகப் புரிந்து கொள்ளவும்.',
+    everydayAnalogy: 'நடைமுறை வாழ்க்கையோடு ஒப்பிட்டுப் படிக்கும் போது நினைவில் எளிதாக நிற்கும்!'
+  });
+
+  // VSAQs (1-mark Q&A / Flashcards)
+  const vsaqs = (raw.oneLineQnA && Array.isArray(raw.oneLineQnA) && raw.oneLineQnA.length > 0)
+    ? raw.oneLineQnA
+    : (raw.vsaqs || [
+        { question: `What is the core definition of ${topicTitle}?`, answer: `Fundamental concept for ${courseTitle}.` },
+        { question: `What is the primary exam takeaway?`, answer: 'Focus on root concepts, formulas, and verified steps.' }
+      ]);
+
+  // Short Answers (2 & 5 marks)
+  const shortAnswers = (raw.twoMarkQuestions && Array.isArray(raw.twoMarkQuestions) && raw.twoMarkQuestions.length > 0)
+    ? raw.twoMarkQuestions.map((q: any) => ({
+        question: q.question,
+        marks: `${q.marks || 2} Marks`,
+        solutionSteps: q.keyPointsToInclude || [q.modelAnswer || ''],
+        keyTips: 'Ensure exact definitions, step clarity, and diagram labeling.'
+      }))
+    : (raw.shortAnswers || []);
+
+  // 30 MCQs / CBT Questions
+  const mcqs = (raw.mcqs && Array.isArray(raw.mcqs) && raw.mcqs.length > 0)
+    ? raw.mcqs.map((m: any) => ({
+        question: m.question,
+        options: m.options || [],
+        correct: typeof m.correctIndex === 'number' ? m.correctIndex : (typeof m.correct === 'number' ? m.correct : 0),
+        explanation: m.explanation || 'Refer to verified syllabus rationale.'
+      }))
+    : (raw.practiceMCQs || []);
+
+  // Formulas & Shortcuts
+  const formulasAndMnemonics = (raw.notes?.formulasAndShortcuts && Array.isArray(raw.notes.formulasAndShortcuts) && raw.notes.formulasAndShortcuts.length > 0)
+    ? raw.notes.formulasAndShortcuts.map((f: any) => ({
+        formula: f.formula || f.name,
+        meaning: f.name || 'Governing Rule',
+        mnemonic: f.tip || f.mnemonic || ''
+      }))
+    : (raw.formulasAndMnemonics || []);
+
+  return {
+    topicTitle: raw.topicTitle || topicTitle,
+    courseTitle: raw.courseTitle || courseTitle,
+    readingTime: '8 min read',
+    overview,
+    coreConcepts,
+    keyPoints,
+    tamilExplanation,
+    vsaqs,
+    shortAnswers,
+    mcqs,
+    formulasAndMnemonics
+  };
 }
 
 export default function TeachOCourseScreen() {
@@ -64,7 +124,7 @@ export default function TeachOCourseScreen() {
   // Dedicated Course Syllabus with Master Resolver Fallback
   const courseUnits: SyllabusUnit[] = (course.metadata?.syllabus && Array.isArray(course.metadata.syllabus) && course.metadata.syllabus.length > 0)
     ? course.metadata.syllabus
-    : getCourseSyllabus(course.title_name, course.category);
+    : getCourseSyllabus(course.id || course.title_name, course.category);
 
   const [activeCourseTab, setActiveCourseTab] = useState<'curriculum' | 'notes' | 'mindmap' | 'forum'>('curriculum');
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
@@ -111,36 +171,80 @@ export default function TeachOCourseScreen() {
     return generateKindleBook(cleanTopic, cleanCourse, course?.category || '');
   };
 
-  const openCoursePlayer = async (topic: string, initialTab: 'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas' = 'theory') => {
+  const openCoursePlayer = async (
+    topic: string,
+    initialTab: 'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas' = 'theory',
+    dayNumber: number = 1,
+    explicitTopicKey?: string
+  ) => {
     const cleanTopic = topic || 'Core Fundamentals';
     setPlayerTab(initialTab);
     setUserMcqAnswers({});
     setRevealedVsaq({});
     setPlayerLoading(true);
 
-    try {
-      const cacheKey = generateCacheKey(cleanTopic, course.title_name);
-      const { data, error } = await aishleeSupabase
-        .from('kindle_content_cache')
-        .select('kindle_json, model_used')
-        .eq('topic_key', cacheKey)
-        .single();
+    const courseId = course.id || course.title_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const candidateKeys = [
+      explicitTopicKey,
+      `${courseId}_day_${dayNumber}_task_1`,
+      `${courseId}_day_${dayNumber}`,
+      `${course.title_name}_day_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+    ].filter(Boolean) as string[];
 
-      if (!error && data && data.kindle_json) {
-        setPlayerBook(data.kindle_json);
-        setPlayerSource('cache');
-      } else {
-        const fallbackBook = generateCoursePlayerFallback(cleanTopic, course.title_name);
-        setPlayerBook(fallbackBook);
-        setPlayerSource('fallback');
+    let loadedPayload: any = null;
+
+    // 1. Check Supabase LMS DB (kindle_content_cache)
+    try {
+      for (const key of candidateKeys) {
+        const { data, error } = await aishleeSupabase
+          .from('kindle_content_cache')
+          .select('kindle_json, model_used')
+          .eq('topic_key', key)
+          .limit(1);
+
+        if (!error && data && data.length > 0 && data[0].kindle_json) {
+          loadedPayload = data[0].kindle_json;
+          setPlayerSource('cache');
+          break;
+        }
       }
     } catch (e) {
+      // Non-blocking fallback
+    }
+
+    // 2. Check Cloudflare R2 Primary DB (CDN Edge Direct)
+    if (!loadedPayload && courseId) {
+      const r2Urls = [
+        `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}_task_1.json`,
+        `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}.json`
+      ];
+
+      for (const r2Url of r2Urls) {
+        try {
+          const res = await fetch(r2Url);
+          if (res.ok) {
+            const r2Json = await res.json();
+            if (r2Json && (r2Json.notes || r2Json.overview || r2Json.mcqs)) {
+              loadedPayload = r2Json;
+              setPlayerSource('cache');
+              break;
+            }
+          }
+        } catch (r2Err) {
+          // Non-blocking fallback
+        }
+      }
+    }
+
+    if (loadedPayload) {
+      const normalized = normalizeMobileCoursePayload(loadedPayload, cleanTopic, course.title_name);
+      setPlayerBook(normalized);
+    } else {
       const fallbackBook = generateCoursePlayerFallback(cleanTopic, course.title_name);
       setPlayerBook(fallbackBook);
       setPlayerSource('fallback');
-    } finally {
-      setPlayerLoading(false);
     }
+    setPlayerLoading(false);
   };
 
   const exportCoursePlayerPDF = async (book: any) => {
@@ -370,7 +474,7 @@ export default function TeachOCourseScreen() {
               </View>
               <TouchableOpacity
                 style={{ backgroundColor: '#10b981', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
-                onPress={() => openCoursePlayer(unit.title, 'theory')}
+                onPress={() => openCoursePlayer(unit.title, 'theory', (unit as any).dayNumber || uIdx + 1, (unit as any).topicKey)}
               >
                 <Text style={{ color: '#022c22', fontSize: 10, fontWeight: 'bold' }}>📱 Course Player</Text>
               </TouchableOpacity>

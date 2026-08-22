@@ -35,11 +35,32 @@ import {
   X,
   Volume2,
   ShoppingCart,
+  ShieldCheck,
+  Flame,
+  Zap,
+  GraduationCap,
+  Users,
+  CheckCircle2,
+  Layers,
+  FileText,
+  BookOpen,
 } from 'lucide-react-native';
+
+const EXAM_CATEGORIES = [
+  { id: 'all', label: 'All Exams', icon: Layers },
+  { id: 'neet_jee', label: 'NEET & JEE', icon: Zap },
+  { id: 'tnpsc_govt', label: 'TNPSC & Govt', icon: Award },
+  { id: 'ssc_bank', label: 'SSC & Banking', icon: FileCheck2 },
+  { id: 'school', label: 'School 8–12', icon: GraduationCap },
+  { id: 'tech', label: 'Tech & Coding', icon: Sparkles },
+  { id: 'pyq', label: 'PYQ Papers', icon: BookOpen },
+];
 
 export default function TestOHubScreen({ route }: any) {
   const [sections, setSections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isTestPassPurchased, setIsTestPassPurchased] = useState(false);
   const [searchQuery, setSearchQuery] = useState(route?.params?.searchQuery || route?.params?.topic || '');
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -250,23 +271,68 @@ export default function TestOHubScreen({ route }: any) {
   };
 
   const filteredSections = useMemo(() => {
-    if (!searchQuery.trim()) return sections;
-    const q = searchQuery.toLowerCase();
+    let result = sections;
 
-    return sections
-      .map(sec => ({
-        ...sec,
-        data: sec.data.filter(
-          (t: any) =>
-            (t.displayTitle && t.displayTitle.toLowerCase().includes(q)) ||
-            (t.title_name && t.title_name.toLowerCase().includes(q)) ||
-            (sec.title && sec.title.toLowerCase().includes(q))
-        ),
-      }))
-      .filter(sec => sec.data.length > 0);
-  }, [sections, searchQuery]);
+    if (selectedCategory !== 'all') {
+      result = result
+        .map(sec => {
+          const secTitle = (sec.title || '').toLowerCase();
+          const matchesCategory = (t: any) => {
+            const title = ((t.displayTitle || '') + ' ' + (t.title_name || '')).toLowerCase();
+            if (selectedCategory === 'neet_jee') {
+              return title.includes('neet') || title.includes('jee') || secTitle.includes('neet') || secTitle.includes('jee');
+            }
+            if (selectedCategory === 'tnpsc_govt') {
+              return title.includes('tnpsc') || title.includes('vao') || title.includes('upsc') || secTitle.includes('tnpsc') || secTitle.includes('govt');
+            }
+            if (selectedCategory === 'ssc_bank') {
+              return title.includes('ssc') || title.includes('bank') || title.includes('rrb') || title.includes('ibps') || title.includes('sbi');
+            }
+            if (selectedCategory === 'school') {
+              return title.includes('class') || title.includes('samacheer') || title.includes('cbse') || secTitle.includes('class');
+            }
+            if (selectedCategory === 'tech') {
+              return title.includes('python') || title.includes('code') || title.includes('web') || title.includes('data') || title.includes('cyber');
+            }
+            if (selectedCategory === 'pyq') {
+              return title.includes('pyq') || title.includes('previous') || title.includes('202') || title.includes('exam');
+            }
+            return true;
+          };
+
+          return {
+            ...sec,
+            data: sec.data.filter(matchesCategory),
+          };
+        })
+        .filter(sec => sec.data.length > 0);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result
+        .map(sec => ({
+          ...sec,
+          data: sec.data.filter(
+            (t: any) =>
+              (t.displayTitle && t.displayTitle.toLowerCase().includes(q)) ||
+              (t.title_name && t.title_name.toLowerCase().includes(q)) ||
+              (sec.title && sec.title.toLowerCase().includes(q))
+          ),
+        }))
+        .filter(sec => sec.data.length > 0);
+    }
+
+    return result;
+  }, [sections, selectedCategory, searchQuery]);
 
   const renderTestCard = ({ item }: { item: any }) => {
+    const qCount = item.questionCount || 25;
+    const maxMarks = qCount * 4;
+    const isNeetJee = (item.title_name || '').toLowerCase().includes('neet') || (item.title_name || '').toLowerCase().includes('jee');
+    const isGovt = (item.title_name || '').toLowerCase().includes('tnpsc') || (item.title_name || '').toLowerCase().includes('ssc');
+    const markingScheme = isNeetJee ? '+4 / -1' : isGovt ? '+1.5 / -0' : '+1 / -0.25';
+
     return (
       <TouchableOpacity
         style={styles.card}
@@ -275,27 +341,53 @@ export default function TestOHubScreen({ route }: any) {
           navigation.navigate('TestOExamScreen', {
             testId: item.id,
             title: item.displayTitle || item.title_name,
+            questionCount: qCount,
+            markingScheme,
           })
         }
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.cardTitle}>{item.displayTitle || item.title_name}</Text>
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <View style={styles.cbtPill}>
+                <Text style={styles.cbtPillText}>CBT MOCK</Text>
+              </View>
+              <View style={styles.markingPill}>
+                <Text style={styles.markingPillText}>{markingScheme}</Text>
+              </View>
+            </View>
+            <Text style={styles.cardTitle}>{item.displayTitle || item.title_name}</Text>
+          </View>
           <View style={styles.badge}>
             <Award size={11} color="#10b981" style={{ marginRight: 4 }} />
-            <Text style={styles.badgeText}>{item.questionCount || 0} Qs</Text>
+            <Text style={styles.badgeText}>{qCount} Qs</Text>
           </View>
         </View>
 
         <Text style={styles.cardDescription} numberOfLines={2}>
           {item.description_purpose ||
             item.description ||
-            'Timed examination with instant scorecard analytics & verifiable certificate.'}
+            'Timed examination with instant scorecard analytics, negative marking & verifiable certificate.'}
         </Text>
 
-        <View style={styles.cardFooter}>
+        <View style={styles.cardMetaRow}>
           <View style={styles.timeInfo}>
-            <Clock size={12} color="#64748b" style={{ marginRight: 4 }} />
-            <Text style={styles.timeText}>15–30 Mins</Text>
+            <Clock size={11} color="#64748b" style={{ marginRight: 3 }} />
+            <Text style={styles.timeText}>30 Mins</Text>
+          </View>
+          <Text style={styles.metaDot}>•</Text>
+          <Text style={styles.metaSubText}>{maxMarks} Marks</Text>
+          <Text style={styles.metaDot}>•</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Users size={11} color="#64748b" style={{ marginRight: 3 }} />
+            <Text style={styles.metaSubText}>3.8k attempts</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardFooter}>
+          <View style={styles.freeBadge}>
+            <CheckCircle2 size={11} color="#10b981" style={{ marginRight: 3 }} />
+            <Text style={styles.freeBadgeText}>Free Solution & Certificate</Text>
           </View>
 
           <TouchableOpacity
@@ -304,11 +396,13 @@ export default function TestOHubScreen({ route }: any) {
               navigation.navigate('TestOExamScreen', {
                 testId: item.id,
                 title: item.displayTitle || item.title_name,
+                questionCount: qCount,
+                markingScheme,
               })
             }
           >
-            <FileCheck2 size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
-            <Text style={styles.startBtnText}>Start Exam</Text>
+            <FileCheck2 size={13} color="#0a0f1e" style={{ marginRight: 4 }} />
+            <Text style={styles.startBtnText}>Start Test</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -338,7 +432,7 @@ export default function TestOHubScreen({ route }: any) {
     <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* Navigation Header (Positioned cleanly below status bar / punch hole camera) */}
+      {/* Navigation Header */}
       <View
         style={[
           styles.navBar,
@@ -401,6 +495,75 @@ export default function TestOHubScreen({ route }: any) {
         >
           <Mic size={18} color="#10b981" />
         </TouchableOpacity>
+      </View>
+
+      {/* 🏷️ Horizontal Exam Category Filter Pills */}
+      <View style={{ marginBottom: 12 }}>
+        <SectionList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          sections={[{ title: '', data: EXAM_CATEGORIES }]}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+          renderItem={({ item }) => {
+            const isSelected = selectedCategory === item.id;
+            const IconComp = item.icon;
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.categoryPill,
+                  isSelected && styles.categoryPillActive,
+                ]}
+                onPress={() => setSelectedCategory(item.id)}
+                activeOpacity={0.7}
+              >
+                <IconComp size={12} color={isSelected ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
+                <Text style={[styles.categoryPillText, isSelected && styles.categoryPillTextActive]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+
+      {/* 🔥 All-India Free Daily Live Mock Test Banner */}
+      <View style={styles.liveMockCard}>
+        <View style={styles.liveMockHeader}>
+          <View style={styles.liveTag}>
+            <Flame size={12} color="#ef4444" />
+            <Text style={styles.liveTagText}>TODAY'S ALL-INDIA LIVE MOCK</Text>
+          </View>
+          <Text style={styles.liveTimerText}>⏳ Ends in 04h 30m</Text>
+        </View>
+        <Text style={styles.liveMockTitle}>National Standard General Aptitude & Core Concepts (CBT)</Text>
+        <View style={styles.liveMockDetails}>
+          <Text style={styles.liveMockDetailText}>📝 30 Questions • ⏰ 30 Mins • 🏆 All India Live Ranking</Text>
+        </View>
+        <View style={styles.liveMockFooter}>
+          <View style={styles.liveUsersRow}>
+            <Users size={12} color="#10b981" />
+            <Text style={styles.liveUsersText}>14,890 Students Registered</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.liveAttemptBtn}
+            onPress={() => {
+              if (sections.length > 0 && sections[0].data.length > 0) {
+                const firstTest = sections[0].data[0];
+                navigation.navigate('TestOExamScreen', {
+                  testId: firstTest.id,
+                  title: 'All-India Live Free Mock Test 2026',
+                  questionCount: 30,
+                  markingScheme: '+4 / -1',
+                });
+              } else {
+                Alert.alert('Live Test', 'Loading live test server. Please tap on any test below.');
+              }
+            }}
+          >
+            <Text style={styles.liveAttemptBtnText}>Take Free Test ⚡</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 💳 Test Series Pass Unlock Banner */}
@@ -973,6 +1136,158 @@ const styles = StyleSheet.create({
   topPassUnlockText: {
     color: '#0B1120',
     fontSize: 10,
+    fontWeight: '900',
+  },
+  cbtPill: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  cbtPillText: {
+    color: '#10b981',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  markingPill: {
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  markingPillText: {
+    color: '#fbbf24',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  cardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 4,
+  },
+  metaDot: {
+    color: '#475569',
+    fontSize: 12,
+  },
+  metaSubText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  freeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  freeBadgeText: {
+    color: '#10b981',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  categoryPillActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  categoryPillText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  categoryPillTextActive: {
+    color: '#0a0f1e',
+    fontWeight: '800',
+  },
+  liveMockCard: {
+    backgroundColor: '#111827',
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    backgroundColor: '#181216',
+  },
+  liveMockHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  liveTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  liveTagText: {
+    color: '#ef4444',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  liveTimerText: {
+    color: '#fbbf24',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  liveMockTitle: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  liveMockDetails: {
+    marginBottom: 10,
+  },
+  liveMockDetailText: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  liveMockFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#2d1c25',
+  },
+  liveUsersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  liveUsersText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  liveAttemptBtn: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  liveAttemptBtnText: {
+    color: '#ffffff',
+    fontSize: 11,
     fontWeight: '900',
   },
 });

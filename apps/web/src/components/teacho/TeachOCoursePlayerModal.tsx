@@ -321,6 +321,31 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
                         </div>
                       )}
 
+                      {/* 🌟 Colloquial Tamil & Real-World Everyday Analogy */}
+                      {((content as any)?.tamilExplanation || content?.notes?.bilingualExplanation?.tamil) && (
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-[#131f24] to-[#0f172a] border border-amber-500/30 text-xs leading-relaxed space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-[10px] uppercase tracking-wider">
+                              🌟 எளிய தமிழ் விளக்கம் & நடைமுறை உதாரணம்
+                            </span>
+                          </div>
+                          {(content as any)?.tamilExplanation?.colloquialIntro && (
+                            <p className="text-amber-100 font-medium leading-relaxed">
+                              {(content as any).tamilExplanation.colloquialIntro}
+                            </p>
+                          )}
+                          {(content as any)?.tamilExplanation?.everydayAnalogy && (
+                            <div className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/20 text-amber-200">
+                              <span className="font-bold text-[11px] block mb-1">💡 நிஜ வாழ்க்கை உதாரணம் (Everyday Analogy):</span>
+                              {(content as any).tamilExplanation.everydayAnalogy}
+                            </div>
+                          )}
+                          {content?.notes?.bilingualExplanation?.tamil && !(content as any)?.tamilExplanation && (
+                            <p className="text-slate-200">{content.notes.bilingualExplanation.tamil}</p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Core Concept Breakdown Sections */}
                       {content?.notes?.coreConcepts && content.notes.coreConcepts.map((sec, sIdx) => {
                         const bodyText = sec.body || (sec as any).content || content?.notes?.overview || '';

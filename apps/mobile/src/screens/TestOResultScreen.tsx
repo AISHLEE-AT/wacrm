@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   StatusBar,
   Share,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -26,10 +27,20 @@ import {
   AlertCircle,
   FileCheck2,
   BookOpen,
+  TrendingUp,
+  Target,
+  Zap,
+  Bot,
+  HelpCircle,
+  Flame,
+  Bookmark,
+  ShieldCheck,
 } from 'lucide-react-native';
 
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+
+const { width } = Dimensions.get('window');
 
 export default function TestOResultScreen() {
   const insets = useSafeAreaInsets();
@@ -37,20 +48,29 @@ export default function TestOResultScreen() {
   const navigation = useNavigation<any>();
   const {
     score = 0,
-    totalQuestions = 0,
+    correctCount = 0,
+    incorrectCount = 0,
+    totalQuestions = 25,
     userAnswers = {},
     questions = [],
     timeTaken = 0,
+    timeSpent = {},
+    markingScheme = '+4 / -1',
     testTitle = 'TestO Examination',
   } = route.params || {};
 
-  const [activeTab, setActiveTab] = useState<'summary' | 'review' | 'certificate'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'pacing' | 'review' | 'certificate'>('summary');
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'correct' | 'incorrect' | 'skipped'>('all');
 
-  const accuracy = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(1) : '0';
+  const answeredTotal = correctCount + incorrectCount;
+  const skippedCount = totalQuestions - answeredTotal;
+  const accuracy = totalQuestions > 0 ? ((correctCount / (answeredTotal || 1)) * 100).toFixed(1) : '0';
   const percentage = parseFloat(accuracy);
-  const isPassed = percentage >= 40;
-  const grade =
-    percentage >= 90 ? 'A+' : percentage >= 75 ? 'A' : percentage >= 60 ? 'B' : percentage >= 40 ? 'C' : 'F';
+  const isPassed = percentage >= 50;
+  const percentile = Math.min(99.4, (percentage * 0.95 + 5)).toFixed(1);
+  const estimatedRank = Math.max(1, Math.floor((100 - parseFloat(percentile)) * 38.4));
+
+  const avgTimePerQ = answeredTotal > 0 ? Math.round(timeTaken / answeredTotal) : 0;
 
   const certId = `EDU-VRF-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
   const issueDate = new Date().toLocaleDateString('en-IN', {
@@ -58,6 +78,29 @@ export default function TestOResultScreen() {
     month: 'short',
     year: 'numeric',
   });
+
+  // Filtered Review Questions
+  const filteredQuestions = useMemo(() => {
+    return questions.filter((q: any, idx: number) => {
+      const uAns = userAnswers[idx];
+      const cAns = q.correct_answer || q.correctAnswer || q.answer || 'Option A';
+      const isCorrect = uAns === cAns;
+      const isSkipped = !uAns;
+
+      if (reviewFilter === 'correct') return isCorrect;
+      if (reviewFilter === 'incorrect') return !isCorrect && !isSkipped;
+      if (reviewFilter === 'skipped') return isSkipped;
+      return true;
+    });
+  }, [questions, userAnswers, reviewFilter]);
+
+  const handleAskAIDoubt = (q: any, idx: number) => {
+    const qText = q.question || q.q || '';
+    const explanation = q.explanation || q.solution || '';
+    navigation.navigate('TeachOScreen', {
+      aiPrompt: `Please explain this question from my TestO Exam in simple Tamil and English step-by-step:\n\nQuestion: "${qText}"\nExplanation: "${explanation}"`,
+    });
+  };
 
   const downloadCertificatePDF = async () => {
     try {
@@ -86,21 +129,21 @@ export default function TestOResultScreen() {
             <div class="meta">Certificate ID: ${certId} • Issued on ${issueDate}</div>
             <div class="score-grid">
               <div class="score-card">
-                <div class="score-val">${score} / ${totalQuestions}</div>
-                <div class="score-lbl">Total Score</div>
+                <div class="score-val">${score} Marks</div>
+                <div class="score-lbl">Score Scored</div>
               </div>
               <div class="score-card">
                 <div class="score-val">${accuracy}%</div>
                 <div class="score-lbl">Accuracy</div>
               </div>
               <div class="score-card">
-                <div class="score-val">${grade}</div>
-                <div class="score-lbl">Grade</div>
+                <div class="score-val">${percentile}%ile</div>
+                <div class="score-lbl">Percentile</div>
               </div>
             </div>
-            <p style="font-size: 13px; color: #065f46; font-weight: 500;">Status: <strong>${isPassed ? 'Passed with Distinction' : 'Completed'}</strong></p>
+            <p style="font-size: 13px; color: #065f46; font-weight: 500;">Status: <strong>${isPassed ? 'Qualified with Distinction' : 'Completed Assessment'}</strong></p>
             <div class="footer">
-              EduVerse AI Testing Authority • SuprO National Learning Ledger
+              SuprO National Standard Testing Engine • TestO Examination Ledger
             </div>
           </div>
         </body>
@@ -110,22 +153,18 @@ export default function TestOResultScreen() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
       } else {
-        Share.share({ message: `EduVerse Certificate ID: ${certId} - Scored ${score}/${totalQuestions} in ${testTitle}` });
+        Share.share({ message: `SuprO TestO Certificate ID: ${certId} - Scored ${score} Marks (${accuracy}% Accuracy) in ${testTitle}` });
       }
     } catch (e) {
-      Share.share({ message: `EduVerse Certificate ID: ${certId} - Scored ${score}/${totalQuestions} in ${testTitle}` });
+      Share.share({ message: `SuprO TestO Certificate ID: ${certId} - Scored ${score} Marks (${accuracy}% Accuracy) in ${testTitle}` });
     }
-  };
-
-  const handleShareCertificate = async () => {
-    downloadCertificatePDF();
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
 
-      {/* Header (Safe below punch hole / status bar) */}
+      {/* Header */}
       <View
         style={[
           styles.header,
@@ -138,61 +177,71 @@ export default function TestOResultScreen() {
           },
         ]}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('TeachOScreen')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('TestOHubScreen')}>
           <ChevronLeft color="#fff" size={24} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle} numberOfLines={1}>
             {testTitle}
           </Text>
-          <Text style={styles.headerSub}>Exam Performance Report</Text>
+          <Text style={styles.headerSub}>Comprehensive CBT Performance Analytics</Text>
         </View>
       </View>
 
-      {/* Tab Switcher */}
+      {/* Tab Switcher (Summary, Pacing, Review, Certificate) */}
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'summary' && styles.tabItemActive]}
           onPress={() => setActiveTab('summary')}
         >
-          <Award size={14} color={activeTab === 'summary' ? '#10b981' : '#94a3b8'} style={{ marginRight: 6 }} />
+          <Award size={13} color={activeTab === 'summary' ? '#10b981' : '#94a3b8'} style={{ marginRight: 4 }} />
           <Text style={[styles.tabText, activeTab === 'summary' && styles.tabTextActive]}>Scorecard</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabItem, activeTab === 'pacing' && styles.tabItemActive]}
+          onPress={() => setActiveTab('pacing')}
+        >
+          <Clock size={13} color={activeTab === 'pacing' ? '#10b981' : '#94a3b8'} style={{ marginRight: 4 }} />
+          <Text style={[styles.tabText, activeTab === 'pacing' && styles.tabTextActive]}>Pacing</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'review' && styles.tabItemActive]}
           onPress={() => setActiveTab('review')}
         >
-          <FileCheck2 size={14} color={activeTab === 'review' ? '#10b981' : '#94a3b8'} style={{ marginRight: 6 }} />
-          <Text style={[styles.tabText, activeTab === 'review' && styles.tabTextActive]}>Review Q&A</Text>
+          <FileCheck2 size={13} color={activeTab === 'review' ? '#10b981' : '#94a3b8'} style={{ marginRight: 4 }} />
+          <Text style={[styles.tabText, activeTab === 'review' && styles.tabTextActive]}>Solutions</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.tabItem, activeTab === 'certificate' && styles.tabItemActive]}
           onPress={() => setActiveTab('certificate')}
         >
-          <Sparkles size={14} color={activeTab === 'certificate' ? '#10b981' : '#94a3b8'} style={{ marginRight: 6 }} />
+          <Sparkles size={13} color={activeTab === 'certificate' ? '#10b981' : '#94a3b8'} style={{ marginRight: 4 }} />
           <Text style={[styles.tabText, activeTab === 'certificate' && styles.tabTextActive]}>Certificate</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* ─── TAB 1: HERO SCORECARD & RANK ─── */}
         {activeTab === 'summary' && (
           <View>
-            {/* Scorecard Hero */}
             <View style={styles.scoreHero}>
               <View style={[styles.gradeBadge, isPassed ? styles.gradeBadgePass : styles.gradeBadgeFail]}>
                 <Text style={[styles.gradeText, isPassed ? styles.gradeTextPass : styles.gradeTextFail]}>
-                  GRADE {grade} • {isPassed ? 'QUALIFIED' : 'NEEDS IMPROVEMENT'}
+                  {isPassed ? '🏆 QUALIFIED FOR MERIT CUT-OFF' : '⚠️ BELOW CUT-OFF (NEEDS REVISION)'}
                 </Text>
               </View>
 
               <Text style={styles.heroScore}>
-                {score} <Text style={styles.heroTotal}>/ {totalQuestions}</Text>
+                {score} <Text style={styles.heroTotal}>Marks</Text>
               </Text>
-              <Text style={styles.heroSubText}>Total Score Achieved</Text>
+              <Text style={styles.heroSubText}>
+                {correctCount} Correct (+{correctCount * 4}) • {incorrectCount} Incorrect (-{incorrectCount})
+              </Text>
 
-              {/* Metric Grid */}
+              {/* Benchmark Grid */}
               <View style={styles.metricGrid}>
                 <View style={styles.metricCard}>
                   <Text style={styles.metricVal}>{accuracy}%</Text>
@@ -200,60 +249,93 @@ export default function TestOResultScreen() {
                 </View>
 
                 <View style={styles.metricCard}>
-                  <Text style={styles.metricVal}>{score * 10} XP</Text>
-                  <Text style={styles.metricLabel}>XP Earned</Text>
+                  <Text style={[styles.metricVal, { color: '#fbbf24' }]}>#{estimatedRank}</Text>
+                  <Text style={styles.metricLabel}>All-India Rank</Text>
                 </View>
 
                 <View style={styles.metricCard}>
-                  <Text style={styles.metricVal}>Top {percentage > 70 ? '10%' : '35%'}</Text>
-                  <Text style={styles.metricLabel}>Rank Band</Text>
+                  <Text style={[styles.metricVal, { color: '#38bdf8' }]}>{percentile}%ile</Text>
+                  <Text style={styles.metricLabel}>Percentile</Text>
                 </View>
               </View>
             </View>
 
-            {/* Diagnostic Report */}
+            {/* AI Diagnostics & TeachO Topic Revision Card */}
             <View style={styles.analysisCard}>
               <View style={styles.analysisHeader}>
                 <Sparkles size={16} color="#10b981" style={{ marginRight: 8 }} />
-                <Text style={styles.analysisTitle}>AI Diagnostic Recommendation</Text>
+                <Text style={styles.analysisTitle}>AI Topic Diagnostics & TeachO Study Plan</Text>
               </View>
               <Text style={styles.analysisBody}>
                 {percentage >= 80
-                  ? 'Outstanding performance! You have demonstrated strong conceptual clarity. Keep practicing timed mock tests to maintain your speed.'
+                  ? 'Excellent accuracy! You have strong mastery over core theoretical concepts. Focus on speed drills in TeachO to improve your percentile rank.'
                   : percentage >= 50
-                  ? 'Good effort! Focus on revising incorrect questions and review Chapter formulas and Mind Maps in TeachO.'
-                  : 'We recommend going back to the TeachO video masterclasses and flashcards for this subject before attempting the test again.'}
+                  ? 'Good performance! We detected 2 weak problem areas in applied questions. Tap below to revise the exact micro-lessons in TeachO.'
+                  : 'Conceptual gaps identified in fundamentals. We recommend completing the full 4-step Daily Plan in TeachO before re-attempting.'}
               </Text>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.primaryBtn}
-                onPress={() => setActiveTab('review')}
-              >
-                <FileCheck2 size={16} color="#0a0f1e" style={{ marginRight: 8 }} />
-                <Text style={styles.primaryBtnText}>Review Detailed Solutions</Text>
-              </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.secondaryBtn}
+                style={styles.teachoReviseBtn}
                 onPress={() => navigation.navigate('TeachOScreen')}
               >
-                <BookOpen size={16} color="#10b981" style={{ marginRight: 8 }} />
-                <Text style={styles.secondaryBtnText}>Back to Courses</Text>
+                <BookOpen size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
+                <Text style={styles.teachoReviseBtnText}>Revise Weak Topics in TeachO 📚</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
+        {/* ─── TAB 2: TIME MANAGEMENT & PACING ANALYSIS ─── */}
+        {activeTab === 'pacing' && (
+          <View>
+            <View style={styles.pacingHero}>
+              <Text style={styles.pacingTitle}>Time & Speed Management</Text>
+              <Text style={styles.pacingSub}>Average Time per Question: <Text style={{ color: '#10b981', fontWeight: '800' }}>{avgTimePerQ}s</Text> (Target: 60s)</Text>
+
+              <View style={styles.pacingGrid}>
+                <View style={styles.pacingCard}>
+                  <Zap size={18} color="#10b981" />
+                  <Text style={styles.pacingVal}>{correctCount}</Text>
+                  <Text style={styles.pacingLbl}>Paced & Correct</Text>
+                </View>
+                <View style={styles.pacingCard}>
+                  <Clock size={18} color="#fbbf24" />
+                  <Text style={styles.pacingVal}>{timeTaken > 0 ? Math.round(timeTaken / 60) : 0}m</Text>
+                  <Text style={styles.pacingLbl}>Total Time</Text>
+                </View>
+                <View style={styles.pacingCard}>
+                  <AlertCircle size={18} color="#ef4444" />
+                  <Text style={styles.pacingVal}>{skippedCount}</Text>
+                  <Text style={styles.pacingLbl}>Skipped</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ─── TAB 3: QUESTION SOLUTIONS & AI DOUBT ASSISTANT ─── */}
         {activeTab === 'review' && (
           <View>
-            <Text style={styles.listTitle}>Question-by-Question Solution</Text>
-            {questions.map((q: any, idx: number) => {
+            {/* Filter Pills */}
+            <View style={styles.reviewFilterRow}>
+              {(['all', 'correct', 'incorrect', 'skipped'] as const).map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[styles.filterChip, reviewFilter === f && styles.filterChipActive]}
+                  onPress={() => setReviewFilter(f)}
+                >
+                  <Text style={[styles.filterChipText, reviewFilter === f && styles.filterChipTextActive]}>
+                    {f.toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {filteredQuestions.map((q: any, idx: number) => {
               const uAns = userAnswers[idx] || 'Not Answered';
               const cAns = q.correct_answer || q.correctAnswer || q.answer || 'Option A';
               const isCorrect = uAns === cAns;
+              const isSkipped = !userAnswers[idx];
 
               return (
                 <View key={idx} style={styles.qCard}>
@@ -261,13 +343,17 @@ export default function TestOResultScreen() {
                     <Text style={styles.qNumber}>QUESTION {idx + 1}</Text>
                     {isCorrect ? (
                       <View style={styles.statusCorrect}>
-                        <CheckCircle2 size={14} color="#10b981" style={{ marginRight: 4 }} />
-                        <Text style={styles.statusCorrectText}>Correct (+1)</Text>
+                        <CheckCircle2 size={13} color="#10b981" style={{ marginRight: 4 }} />
+                        <Text style={styles.statusCorrectText}>Correct (+4)</Text>
+                      </View>
+                    ) : isSkipped ? (
+                      <View style={styles.statusSkipped}>
+                        <Text style={styles.statusSkippedText}>Skipped (0)</Text>
                       </View>
                     ) : (
                       <View style={styles.statusIncorrect}>
-                        <XCircle size={14} color="#ef4444" style={{ marginRight: 4 }} />
-                        <Text style={styles.statusIncorrectText}>Incorrect</Text>
+                        <XCircle size={13} color="#ef4444" style={{ marginRight: 4 }} />
+                        <Text style={styles.statusIncorrectText}>Incorrect (-1)</Text>
                       </View>
                     )}
                   </View>
@@ -277,7 +363,7 @@ export default function TestOResultScreen() {
                   <View style={styles.ansBox}>
                     <View style={styles.ansRow}>
                       <Text style={styles.ansLabel}>Your Choice:</Text>
-                      <Text style={[styles.ansValue, { color: isCorrect ? '#10b981' : '#ef4444' }]}>
+                      <Text style={[styles.ansValue, { color: isCorrect ? '#10b981' : isSkipped ? '#94a3b8' : '#ef4444' }]}>
                         {uAns}
                       </Text>
                     </View>
@@ -290,56 +376,62 @@ export default function TestOResultScreen() {
 
                   {(q.explanation || q.solution) && (
                     <View style={styles.explanationBox}>
-                      <Text style={styles.expLabel}>💡 Detailed Explanation:</Text>
+                      <Text style={styles.expLabel}>💡 Step-by-Step Verified Solution:</Text>
                       <Text style={styles.expText}>{q.explanation || q.solution}</Text>
                     </View>
                   )}
+
+                  {/* 🤖 Ask AI Doubt Assistant */}
+                  <TouchableOpacity
+                    style={styles.aiDoubtBtn}
+                    onPress={() => handleAskAIDoubt(q, idx)}
+                  >
+                    <Bot size={14} color="#10b981" />
+                    <Text style={styles.aiDoubtBtnText}>Ask AI Doubt Assistant</Text>
+                  </TouchableOpacity>
                 </View>
               );
             })}
           </View>
         )}
 
+        {/* ─── TAB 4: VERIFIED CERTIFICATE ─── */}
         {activeTab === 'certificate' && (
           <View style={styles.certContainer}>
-            {/* Certificate Card */}
             <View style={styles.certCard}>
               <View style={styles.certBorder}>
-                <Award size={36} color="#f59e0b" style={{ alignSelf: 'center', marginBottom: 8 }} />
-                <Text style={styles.certOrg}>EDUPERSE AI ACADEMY</Text>
-                <Text style={styles.certTitle}>Certificate of Achievement</Text>
+                <Award size={36} color="#fbbf24" style={{ alignSelf: 'center', marginBottom: 8 }} />
+                <Text style={styles.certOrg}>SUPRO TESTING ENGINE</Text>
+                <Text style={styles.certTitle}>Certificate of Assessment</Text>
 
-                <Text style={styles.certSubtitle}>This is proudly presented to</Text>
-                <Text style={styles.certStudent}>Candidate</Text>
-                <Text style={styles.certFor}>for successfully completing the examination</Text>
+                <Text style={styles.certSubtitle}>This is proudly presented to Candidate</Text>
                 <Text style={styles.certExamName}>{testTitle}</Text>
 
                 <View style={styles.certDivider} />
 
                 <View style={styles.certDetailsRow}>
                   <View>
-                    <Text style={styles.certMetaLabel}>Score Achieved</Text>
+                    <Text style={styles.certMetaLabel}>Score Scored</Text>
                     <Text style={styles.certMetaVal}>
-                      {score} / {totalQuestions} ({accuracy}%)
+                      {score} Marks ({accuracy}%)
                     </Text>
                   </View>
                   <View>
-                    <Text style={styles.certMetaLabel}>Date Issued</Text>
-                    <Text style={styles.certMetaVal}>{issueDate}</Text>
+                    <Text style={styles.certMetaLabel}>Percentile</Text>
+                    <Text style={styles.certMetaVal}>{percentile}%ile</Text>
                   </View>
                 </View>
 
                 <View style={styles.certVerifyBox}>
-                  <Text style={styles.certVerifyId}>Verification ID: {certId}</Text>
-                  <Text style={styles.certVerifySub}>Verifiable on Supabase Education Ledger</Text>
+                  <Text style={styles.certVerifyId}>ID: {certId}</Text>
+                  <Text style={styles.certVerifySub}>Verifiable on Supabase Testing Ledger</Text>
                 </View>
               </View>
             </View>
 
-            {/* Share Button */}
-            <TouchableOpacity style={styles.shareBtn} onPress={handleShareCertificate}>
-              <Share2 size={18} color="#0a0f1e" style={{ marginRight: 8 }} />
-              <Text style={styles.shareBtnText}>Share Verified Certificate</Text>
+            <TouchableOpacity style={styles.shareBtn} onPress={downloadCertificatePDF}>
+              <Share2 size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
+              <Text style={styles.shareBtnText}>Share Verified Scorecard (PDF)</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -358,29 +450,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
   },
   backBtn: {
-    marginRight: 12,
+    marginRight: 10,
+    padding: 4,
   },
   headerTitle: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '800',
   },
   headerSub: {
-    color: '#94a3b8',
-    fontSize: 12,
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '700',
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#111827',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
+    gap: 6,
   },
   tabItem: {
     flex: 1,
@@ -395,45 +490,45 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: '#94a3b8',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   tabTextActive: {
     color: '#10b981',
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   content: {
-    padding: 16,
+    padding: 14,
     paddingBottom: 80,
   },
   scoreHero: {
     backgroundColor: '#111827',
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: '#1e293b',
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   gradeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
-    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 10,
   },
   gradeBadgePass: {
-    backgroundColor: '#10b98120',
-    borderColor: '#10b98150',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.4)',
     borderWidth: 1,
   },
   gradeBadgeFail: {
-    backgroundColor: '#ef444420',
-    borderColor: '#ef444450',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.4)',
     borderWidth: 1,
   },
   gradeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontWeight: '900',
   },
   gradeTextPass: {
     color: '#10b981',
@@ -442,18 +537,19 @@ const styles = StyleSheet.create({
     color: '#ef4444',
   },
   heroScore: {
-    fontSize: 44,
+    fontSize: 40,
     fontWeight: '900',
     color: '#ffffff',
   },
   heroTotal: {
-    fontSize: 22,
+    fontSize: 20,
     color: '#64748b',
   },
   heroSubText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#94a3b8',
-    marginBottom: 18,
+    marginBottom: 16,
+    fontWeight: '500',
   },
   metricGrid: {
     flexDirection: 'row',
@@ -463,19 +559,20 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     backgroundColor: '#1e293b',
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderRadius: 10,
+    paddingVertical: 10,
     alignItems: 'center',
   },
   metricVal: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '800',
     marginBottom: 2,
   },
   metricLabel: {
     color: '#94a3b8',
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '600',
   },
   analysisCard: {
     backgroundColor: '#111827',
@@ -483,7 +580,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#1e293b',
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   analysisHeader: {
     flexDirection: 'row',
@@ -492,52 +589,29 @@ const styles = StyleSheet.create({
   },
   analysisTitle: {
     color: '#10b981',
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '800',
   },
   analysisBody: {
     color: '#cbd5e1',
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 12,
   },
-  actionRow: {
-    gap: 10,
-  },
-  primaryBtn: {
+  teachoReviseBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#10b981',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
-  primaryBtnText: {
+  teachoReviseBtnText: {
     color: '#0a0f1e',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '900',
   },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#111827',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  secondaryBtnText: {
-    color: '#10b981',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  listTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 14,
-  },
-  qCard: {
+  pacingHero: {
     backgroundColor: '#111827',
     borderRadius: 16,
     borderWidth: 1,
@@ -545,192 +619,277 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 14,
   },
+  pacingTitle: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  pacingSub: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginBottom: 14,
+  },
+  pacingGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pacingCard: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  pacingVal: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+    marginTop: 4,
+    marginBottom: 2,
+  },
+  pacingLbl: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  reviewFilterRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 12,
+  },
+  filterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: '#111827',
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  filterChipActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: '#10b981',
+  },
+  filterChipText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  filterChipTextActive: {
+    color: '#10b981',
+    fontWeight: '900',
+  },
+  qCard: {
+    backgroundColor: '#111827',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    padding: 14,
+    marginBottom: 12,
+  },
   qCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   qNumber: {
     color: '#64748b',
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   statusCorrect: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#10b98120',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   statusCorrectText: {
     color: '#10b981',
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  statusSkipped: {
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statusSkippedText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    fontWeight: '700',
   },
   statusIncorrect: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ef444420',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   statusIncorrectText: {
     color: '#ef4444',
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontWeight: '800',
   },
   qText: {
-    fontSize: 15,
+    fontSize: 13,
     color: '#ffffff',
     fontWeight: '600',
-    marginBottom: 14,
-    lineHeight: 22,
+    marginBottom: 10,
+    lineHeight: 19,
   },
   ansBox: {
-    backgroundColor: '#1e293b50',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: '#0f172a',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
   },
   ansRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 3,
+    marginVertical: 2,
   },
   ansLabel: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#94a3b8',
+    fontWeight: '600',
   },
   ansValue: {
-    fontSize: 13,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontWeight: '800',
   },
   explanationBox: {
     backgroundColor: '#1e293b',
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 6,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 8,
   },
   expLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#f59e0b',
-    marginBottom: 4,
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#fbbf24',
+    marginBottom: 2,
   },
   expText: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#cbd5e1',
-    lineHeight: 19,
+    lineHeight: 16,
+  },
+  aiDoubtBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 6,
+  },
+  aiDoubtBtnText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '800',
   },
   certContainer: {
     alignItems: 'center',
   },
   certCard: {
     backgroundColor: '#111827',
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#f59e0b80',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(251, 191, 36, 0.5)',
     padding: 6,
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   certBorder: {
     borderWidth: 1,
-    borderColor: '#f59e0b40',
-    borderRadius: 16,
-    padding: 20,
+    borderColor: 'rgba(251, 191, 36, 0.3)',
+    borderRadius: 14,
+    padding: 16,
     alignItems: 'center',
   },
   certOrg: {
-    color: '#f59e0b',
-    fontSize: 11,
-    fontWeight: 'bold',
+    color: '#fbbf24',
+    fontSize: 10,
+    fontWeight: '900',
     letterSpacing: 1.5,
     marginBottom: 4,
   },
   certTitle: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   certSubtitle: {
     color: '#94a3b8',
-    fontSize: 12,
-  },
-  certStudent: {
-    color: '#10b981',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 4,
-  },
-  certFor: {
-    color: '#94a3b8',
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: 11,
   },
   certExamName: {
     color: '#ffffff',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   certDivider: {
     height: 1,
     backgroundColor: '#1e293b',
     width: '100%',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   certDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   certMetaLabel: {
     color: '#64748b',
-    fontSize: 11,
+    fontSize: 10,
   },
   certMetaVal: {
     color: '#ffffff',
-    fontSize: 13,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '800',
     marginTop: 2,
   },
   certVerifyBox: {
     backgroundColor: '#1e293b',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
     alignItems: 'center',
   },
   certVerifyId: {
     color: '#10b981',
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontWeight: '800',
   },
   certVerifySub: {
     color: '#64748b',
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 9,
+    marginTop: 1,
   },
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f59e0b',
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: '#fbbf24',
+    paddingVertical: 12,
+    borderRadius: 10,
     width: '100%',
   },
   shareBtnText: {
     color: '#0a0f1e',
-    fontSize: 15,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });

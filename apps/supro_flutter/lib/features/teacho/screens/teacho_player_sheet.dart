@@ -402,9 +402,14 @@ class _TeachoPlayerSheetState extends State<TeachoPlayerSheet> with SingleTicker
 
   Widget _buildStudyNotesTab() {
     final notes = _content?.studyNotes ?? [];
+    final tamil = _content?.tamilExplanation;
+    final formulas = _content?.formulas ?? [];
+    final solved = _content?.solvedProblems ?? [];
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // 1. Lesson Overview
         if (_content?.overview != null && _content!.overview.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(14),
@@ -430,6 +435,66 @@ class _TeachoPlayerSheetState extends State<TeachoPlayerSheet> with SingleTicker
             ),
           ),
 
+        // 2. 🌟 Colloquial Tamil & Real-World Everyday Analogy
+        if (tamil != null)
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1B231B), Color(0xFF111827)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(LucideIcons.sparkles, size: 14, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 6),
+                    Text(
+                      tamil.simpleTitle,
+                      style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tamil.colloquialIntro,
+                  style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.5),
+                ),
+                if (tamil.everydayAnalogy.isNotEmpty && tamil.everydayAnalogy != tamil.colloquialIntro) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black38,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('💡 ', style: TextStyle(fontSize: 12)),
+                        Expanded(
+                          child: Text(
+                            tamil.everydayAnalogy,
+                            style: const TextStyle(color: Color(0xFFFDE68A), fontSize: 11, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+        // 3. Core Conceptual Sections
         ...notes.map((sec) => Container(
               padding: const EdgeInsets.all(14),
               margin: const EdgeInsets.only(bottom: 12),
@@ -450,9 +515,122 @@ class _TeachoPlayerSheetState extends State<TeachoPlayerSheet> with SingleTicker
                     sec.content,
                     style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
                   ),
+                  if (sec.example != null && sec.example!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '💡 ${sec.example!}',
+                        style: const TextStyle(color: Color(0xFF6EE7B7), fontSize: 11),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             )),
+
+        // 4. Formulas & Shortcuts
+        if (formulas.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(LucideIcons.calculator, size: 14, color: Color(0xFF38BDF8)),
+                    SizedBox(width: 6),
+                    Text(
+                      'KEY FORMULAS & SHORTCUTS',
+                      style: TextStyle(color: Color(0xFF38BDF8), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ...formulas.map((f) => Container(
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF080D1A),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(f.name, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 2),
+                          Text(f.formula, style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontFamily: 'monospace')),
+                          if (f.tip.isNotEmpty)
+                            Text('💡 ${f.tip}', style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                        ],
+                      ),
+                    )),
+              ],
+            ),
+          ),
+
+        // 5. Solved Problems (2 & 5 Marks)
+        if (solved.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFF1E293B)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'STEP-BY-STEP SOLVED QUESTIONS',
+                  style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                ...solved.map((s) => Container(
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF080D1A),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(s.question, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text('${s.marks}M', style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ...s.solutionSteps.map((step) => Text('• $step', style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.4))),
+                        ],
+                      ),
+                    )),
+              ],
+            ),
+          ),
       ],
     );
   }
