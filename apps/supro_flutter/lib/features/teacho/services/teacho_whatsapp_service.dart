@@ -1,5 +1,5 @@
 import 'package:url_launcher/url_launcher.dart';
-import '../data/curriculum_resolver.dart';
+import '../data/courses_catalog.dart';
 
 class TeachoWhatsAppService {
   /// Format and send daily syllabus routine & active session alert to student WhatsApp
@@ -8,7 +8,7 @@ class TeachoWhatsAppService {
     required String courseTitle,
     required int currentDay,
     required int totalDays,
-    required List<TeachoCurriculumTask> tasks,
+    required List<TeachoTask> tasks,
     int streak = 1,
     int xp = 50,
   }) {
@@ -39,7 +39,7 @@ class TeachoWhatsAppService {
     required String courseTitle,
     required int currentDay,
     required int totalDays,
-    required List<TeachoCurriculumTask> tasks,
+    required List<TeachoTask> tasks,
     int streak = 1,
     int xp = 50,
   }) async {

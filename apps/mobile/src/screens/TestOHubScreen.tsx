@@ -354,13 +354,32 @@ export default function TestOHubScreen({ route }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color="#ffffff" />
         </TouchableOpacity>
-        <View style={{ flex: 1, marginHorizontal: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.navTitle}>TestO</Text>
-            <View style={styles.eduBadge}>
-              <Sparkles size={10} color="#10b981" style={{ marginRight: 3 }} />
-              <Text style={styles.eduBadgeText}>Exam Engine</Text>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={styles.navTitle}>Test<Text style={{ color: '#10b981' }}>O</Text></Text>
+              <View style={styles.eduBadge}>
+                <Sparkles size={10} color="#10b981" style={{ marginRight: 3 }} />
+                <Text style={styles.eduBadgeText}>Exam Engine</Text>
+              </View>
             </View>
+
+            {/* Top TestO Purchase Status Pill */}
+            {isTestPassPurchased ? (
+              <View style={styles.topPassBadge}>
+                <ShieldCheck size={11} color="#10b981" />
+                <Text style={styles.topPassBadgeText}>PASS UNLOCKED</Text>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.topPassUnlockBtn}
+                onPress={() => setIsPaymentModalOpen(true)}
+                activeOpacity={0.85}
+              >
+                <ShoppingCart size={11} color="#0B1120" />
+                <Text style={styles.topPassUnlockText}>Pass ₹99</Text>
+              </TouchableOpacity>
+            )}
           </View>
           <Text style={styles.navSub}>National Standard Mock Tests & Assessments</Text>
         </View>
@@ -925,6 +944,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#e2e8f0',
+  },
+  topPassBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  topPassBadgeText: {
+    color: '#10b981',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  topPassUnlockBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#fbbf24',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  topPassUnlockText: {
+    color: '#0B1120',
+    fontSize: 10,
+    fontWeight: '900',
   },
 });
 

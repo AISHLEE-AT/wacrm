@@ -800,6 +800,84 @@ function ProfilePageInner() {
         )}
       </div>
 
+      {/* ─── Category-Wise Purchase & Order History Card ─── */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <CreditCard size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Purchase & Order History</p>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Category-Wise
+                </span>
+              </div>
+              <h3 className="text-base font-extrabold text-foreground mt-0.5">Enrolled Courses, Passes & Rented Assets</h3>
+              <p className="text-xs text-muted-foreground">Detailed order receipts, UPI transaction IDs, and active curriculum access validity.</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-emerald-400 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl self-start sm:self-auto">
+            3 Active Subscriptions
+          </span>
+        </div>
+
+        {/* Orders Table & Cards */}
+        <div className="space-y-3 pt-2">
+          {/* Order 1: School Tuition */}
+          <div className="p-4 bg-muted/40 border border-border/70 rounded-xl space-y-2 hover:border-emerald-500/30 transition">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                  School & Board Tuitions
+                </span>
+                <span className="text-xs font-bold text-foreground">+2 வணிகவியல் செண்டம் (Class 12 Commerce Centum)</span>
+              </div>
+              <span className="text-xs font-black text-amber-400">₹499 (Paid via UPI)</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40 gap-2">
+              <span className="font-mono">Order: ORD-2026-TCH-001 • Ref: UTR489201948201</span>
+              <span className="text-emerald-400 font-medium">✅ Full 360-Day Access Active</span>
+            </div>
+          </div>
+
+          {/* Order 2: TestO All-Access Exam Pass */}
+          <div className="p-4 bg-muted/40 border border-border/70 rounded-xl space-y-2 hover:border-purple-500/30 transition">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 text-[10px] font-bold border border-purple-500/30">
+                  TestO Exam Passes
+                </span>
+                <span className="text-xs font-bold text-foreground">TestO All-Access Exam Pass (All 500+ Tests)</span>
+              </div>
+              <span className="text-xs font-black text-amber-400">₹99 (Paid via UPI)</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40 gap-2">
+              <span className="font-mono">Order: ORD-2026-TST-002 • Ref: UTR782910394812</span>
+              <span className="text-emerald-400 font-medium">✅ All Tests Unlocked with Certification</span>
+            </div>
+          </div>
+
+          {/* Order 3: Competitive & Govt Exams */}
+          <div className="p-4 bg-muted/40 border border-border/70 rounded-xl space-y-2 hover:border-blue-500/30 transition">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 text-[10px] font-bold border border-blue-500/30">
+                  Competitive & Govt Exams
+                </span>
+                <span className="text-xs font-bold text-foreground">Bank PO & Clerk (IBPS & SBI) Master Tuition</span>
+              </div>
+              <span className="text-xs font-black text-amber-400">₹499 (Paid via UPI)</span>
+            </div>
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40 gap-2">
+              <span className="font-mono">Order: ORD-2026-GOV-003 • Ref: UTR192830192830</span>
+              <span className="text-emerald-400 font-medium">✅ Daily 4-Step Learning Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Support & Contribute to FAGO Card */}
       <div className="bg-gradient-to-br from-rose-500/10 via-purple-500/10 to-cyan-500/10 border border-rose-500/30 rounded-2xl p-6 space-y-4 shadow-md backdrop-blur-md">
         <div className="flex items-center justify-between">

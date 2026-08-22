@@ -277,6 +277,22 @@ export default function TeachODashboard() {
             <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition ml-1" />
           </button>
 
+          {/* Top Course Purchase & Pricing Info */}
+          {isCoursePurchased ? (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Full Access Unlocked</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsPurchaseModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition transform active:scale-95"
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span>Unlock (₹499)</span>
+            </button>
+          )}
+
           {/* Streak Pill */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold">
             <Flame className="w-4 h-4 fill-orange-400" />

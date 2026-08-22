@@ -238,6 +238,64 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
             ),
           ),
 
+          // Top Course Purchase & Pricing Info
+          if (_isCoursePurchased)
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(LucideIcons.shieldCheck, size: 12, color: Color(0xFF10B981)),
+                  SizedBox(width: 4),
+                  Text('UNLOCKED', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            )
+          else
+            GestureDetector(
+              onTap: () {
+                PaymentQrDialog.show(
+                  context,
+                  title: '${_activeCourse.title} (Full ${_activeCourse.totalDays} Days)',
+                  amount: 499,
+                  itemId: _activeCourse.id,
+                  itemType: 'course',
+                  onSuccess: () {
+                    setState(() => _isCoursePurchased = true);
+                  },
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.amber,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  children: [
+                    Icon(LucideIcons.shoppingCart, size: 12, color: Colors.black),
+                    SizedBox(width: 4),
+                    Text('₹499', style: TextStyle(color: Colors.black, fontSize: 10, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+            ),
+
+          const SizedBox(width: 6),
+
           // XP Badge
           Container(
             margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),

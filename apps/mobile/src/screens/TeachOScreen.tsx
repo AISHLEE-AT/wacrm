@@ -353,13 +353,18 @@ export default function TeachOScreen() {
       {/* 1. TOP HEADER & COURSE SWITCHER */}
       <TeachOHeader
         courseTitle={selectedCourse.short || selectedCourse.title}
+        fullCourseName={selectedCourse.title}
         gradeBadge={selectedCourse.badge || 'Tuition'}
         gradeColor={selectedCourse.badgeColor || '#06b6d4'}
         currentDay={currentDay}
         totalDays={totalDays}
         streak={streak}
         xp={xp}
+        isPurchased={isFullAccess}
+        price={499}
+        originalPrice={2999}
         onOpenCoursePicker={() => setIsCoursePickerOpen(true)}
+        onOpenPurchase={() => setIsPaymentModalOpen(true)}
       />
 
       {/* 2. SCROLLABLE CLEAN MAIN FEED */}

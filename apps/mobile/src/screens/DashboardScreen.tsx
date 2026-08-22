@@ -31,6 +31,7 @@ import { SecuritySection } from '../components/profile/SecuritySection';
 import { AppearanceSection } from '../components/profile/AppearanceSection';
 import { SetupChecklist } from '../components/profile/SetupChecklist';
 import { UserCategoryCard } from '../components/profile/UserCategoryCard';
+import { PurchaseOrderHistoryCard } from '../components/profile/PurchaseOrderHistoryCard';
 import { SupportCard } from '../components/profile/SupportCard';
 
 const endpoints = {
@@ -245,6 +246,12 @@ export default function DashboardScreen({ navigation }: any) {
         phone={phone || ''}
         navigation={navigation}
         onProfileUpdate={handleProfileUpdate}
+      />
+
+      {/* ──── 4. Category-wise Purchase & Order History ──── */}
+      <PurchaseOrderHistoryCard
+        phone={phone || ''}
+        userId={userId}
       />
 
       {/* ──── 5. Security (PIN Change) ──── */}

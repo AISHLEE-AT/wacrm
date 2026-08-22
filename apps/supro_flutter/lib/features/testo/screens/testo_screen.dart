@@ -127,8 +127,6 @@ class _TestoScreenState extends State<TestoScreen> {
     }
   }
 
-  String _searchQuery = '';
-
   List<Map<String, dynamic>> get _filteredSections {
     if (_searchQuery.trim().isEmpty) return sections;
     final q = _searchQuery.toLowerCase();
