@@ -6680,26 +6680,233 @@ export function findMasterCourse(courseIdOrTitle: string): MasterCourseDefinitio
   );
 }
 
-export function resolveMasterSequentialSyllabus(courseTitle: string, subject?: string, dayNumber: number = 1): {
+export interface MasterSyllabusItem {
   courseId: string;
   topicTitle: string;
   topicKey: string;
   dayNumber: number;
-} {
-  const course = findMasterCourse(courseTitle);
+  subject: string;
+  chapterTitle: string;
+  subtopic: string;
+  overview: string;
+  keyFormulaOrLaw: string;
+  keyPoints: string[];
+  keyConcepts: Array<{ heading: string; body: string; content: string; formulaOrExample: string; example?: string }>;
+}
+
+/**
+ * Primary resolver: bridges courseSyllabusRegistry micro-topics (rich, curriculum-accurate data 
+ * with real formulas, key points, Tamil content) into day plans and course player.
+ * 
+ * Resolution order:
+ * 1. courseSyllabusRegistry micro-topics matched by dayNumber + periodNumber (taskNumber)
+ * 2. MASTER_TEACHO_COURSES matched by course ID
+ * 3. Deterministic generic fallback
+ */
+export function resolveMasterSequentialSyllabus(
+  courseId: string,
+  courseTitle: string,
+  dayNumber: number = 1,
+  taskNumber: number = 1
+): MasterSyllabusItem {
+  const safeDay = Math.max(1, dayNumber);
+  const safeTask = Math.max(1, taskNumber);
+
+  // STEP 1: Try courseSyllabusRegistry (rich data with formulas, key points, subtopics)
+  try {
+    const { resolveCompleteCourseSyllabus } = require('./courseSyllabusRegistry');
+    const syllabus = resolveCompleteCourseSyllabus(courseId, courseTitle);
+    
+    if (syllabus && syllabus.subjects && syllabus.subjects.length > 0) {
+      // Collect ALL micro-topics from all subjects, flattened
+      const allTopics: Array<{ subject: string; chapterTitle: string; topic: any }> = [];
+      for (const subj of syllabus.subjects) {
+        for (const ch of subj.chapters || []) {
+          for (const mt of ch.microTopics || []) {
+            allTopics.push({ subject: subj.subjectName, chapterTitle: ch.chapterTitle, topic: mt });
+          }
+        }
+      }
+
+      if (allTopics.length > 0) {
+        // Strategy A: Exact dayNumber + periodNumber match
+        const exactMatch = allTopics.find(
+          t => t.topic.dayNumber === safeDay && t.topic.periodNumber === safeTask
+        );
+        
+        if (exactMatch) {
+          return buildSyllabusItem(courseId, exactMatch, safeDay, safeTask);
+        }
+
+        // Strategy B: Match by dayNumber, pick task by order within that day
+        const dayMatches = allTopics.filter(t => t.topic.dayNumber === safeDay);
+        if (dayMatches.length > 0) {
+          const picked = dayMatches[(safeTask - 1) % dayMatches.length];
+          return buildSyllabusItem(courseId, picked, safeDay, safeTask);
+        }
+
+        // Strategy C: Distribute topics across days cyclically
+        // Each day gets N subjects (one topic per subject per day)
+        const subjectCount = syllabus.subjects.length;
+        const topicsPerSubject = syllabus.subjects.map((s: any) => {
+          const topics: Array<{ subject: string; chapterTitle: string; topic: any }> = [];
+          for (const ch of s.chapters || []) {
+            for (const mt of ch.microTopics || []) {
+              topics.push({ subject: s.subjectName, chapterTitle: ch.chapterTitle, topic: mt });
+            }
+          }
+          return topics;
+        });
+
+        if (safeTask <= subjectCount && topicsPerSubject[safeTask - 1]) {
+          const subjectTopics = topicsPerSubject[safeTask - 1];
+          if (subjectTopics.length > 0) {
+            const topicIndex = (safeDay - 1) % subjectTopics.length;
+            return buildSyllabusItem(courseId, subjectTopics[topicIndex], safeDay, safeTask);
+          }
+        }
+
+        // Strategy D: Flat sequential distribution across all topics
+        const flatIndex = ((safeDay - 1) * Math.max(subjectCount, safeTask) + (safeTask - 1)) % allTopics.length;
+        return buildSyllabusItem(courseId, allTopics[flatIndex], safeDay, safeTask);
+      }
+    }
+  } catch (e) {
+    // Non-blocking — fall through to MASTER_TEACHO_COURSES
+  }
+
+  // STEP 2: Try MASTER_TEACHO_COURSES (165 courses with real topic titles from R2 catalog)
+  const course = findMasterCourse(courseId) || findMasterCourse(courseTitle);
   if (course && course.days.length > 0) {
-    const day = course.days.find(d => d.dayNumber === dayNumber) || course.days[0];
+    const dayEntry = course.days.find(d => d.dayNumber === safeDay);
+    if (dayEntry) {
+      return {
+        courseId: course.id,
+        topicTitle: dayEntry.topicTitle,
+        topicKey: dayEntry.topicKey,
+        dayNumber: dayEntry.dayNumber,
+        subject: course.subject || 'Core Subject',
+        chapterTitle: dayEntry.topicTitle,
+        subtopic: dayEntry.overview ? dayEntry.overview.substring(0, 120) : '',
+        overview: dayEntry.overview || '',
+        keyFormulaOrLaw: '',
+        keyPoints: [],
+        keyConcepts: [{
+          heading: `1. ${dayEntry.topicTitle}`,
+          body: dayEntry.overview || `Key concepts and exam-oriented study material for ${dayEntry.topicTitle}.`,
+          content: dayEntry.overview || `Key concepts and exam-oriented study material for ${dayEntry.topicTitle}.`,
+          formulaOrExample: ''
+        }]
+      };
+    }
+    // Cycle through available days
+    const cycledDay = course.days[(safeDay - 1) % course.days.length];
     return {
       courseId: course.id,
-      topicTitle: day.topicTitle,
-      topicKey: day.topicKey,
-      dayNumber: day.dayNumber
+      topicTitle: cycledDay.topicTitle,
+      topicKey: cycledDay.topicKey,
+      dayNumber: safeDay,
+      subject: course.subject || 'Core Subject',
+      chapterTitle: cycledDay.topicTitle,
+      subtopic: cycledDay.overview ? cycledDay.overview.substring(0, 120) : '',
+      overview: cycledDay.overview || '',
+      keyFormulaOrLaw: '',
+      keyPoints: [],
+      keyConcepts: [{
+        heading: `1. ${cycledDay.topicTitle}`,
+        body: cycledDay.overview || `Key concepts and exam-oriented study material for ${cycledDay.topicTitle}.`,
+        content: cycledDay.overview || `Key concepts and exam-oriented study material for ${cycledDay.topicTitle}.`,
+        formulaOrExample: ''
+      }]
     };
   }
+
+  // STEP 3: Generic fallback (should rarely reach here)
+  const cleanId = courseId ? courseId.toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'general';
   return {
-    courseId: courseTitle.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
-    topicTitle: 'Core Concept & Exam Mastery',
-    topicKey: `${courseTitle}_day_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
-    dayNumber
+    courseId: cleanId,
+    topicTitle: `${courseTitle || 'Academic'} — Day ${safeDay} Module ${safeTask}`,
+    topicKey: `${cleanId}_day_${safeDay}_task_${safeTask}`,
+    dayNumber: safeDay,
+    subject: courseTitle || 'Core Subject',
+    chapterTitle: `Day ${safeDay} Study Module`,
+    subtopic: '',
+    overview: `Study material for ${courseTitle || 'this course'}, Day ${safeDay}, Period ${safeTask}.`,
+    keyFormulaOrLaw: '',
+    keyPoints: [],
+    keyConcepts: []
   };
 }
+
+/** Build a rich MasterSyllabusItem from a syllabus registry micro-topic match */
+function buildSyllabusItem(
+  courseId: string,
+  match: { subject: string; chapterTitle: string; topic: any },
+  dayNumber: number,
+  taskNumber: number
+): MasterSyllabusItem {
+  const t = match.topic;
+  const keyPoints = Array.isArray(t.keyPoints) ? t.keyPoints : [];
+  const formula = t.keyFormulaOrLaw || '';
+
+  // Build rich coreConcepts from the micro-topic data
+  const keyConcepts: MasterSyllabusItem['keyConcepts'] = [];
+
+  // Concept 1: Main topic with subtopic detail
+  keyConcepts.push({
+    heading: `1. ${t.topicTitle}`,
+    body: t.subtopic
+      ? `${t.subtopic}. ${keyPoints.join('. ')}`
+      : keyPoints.length > 0
+        ? keyPoints.join('. ')
+        : `Core concepts of ${t.topicTitle} — ${match.chapterTitle}.`,
+    content: t.subtopic
+      ? `${t.subtopic}. ${keyPoints.join('. ')}`
+      : keyPoints.length > 0
+        ? keyPoints.join('. ')
+        : `Core concepts of ${t.topicTitle} — ${match.chapterTitle}.`,
+    formulaOrExample: formula,
+    example: formula
+  });
+
+  // Concept 2: Key formulas & shortcuts (if available)
+  if (formula) {
+    keyConcepts.push({
+      heading: `2. Key Formulas & Exam Shortcuts`,
+      body: `${formula}. ${keyPoints.length > 1 ? keyPoints[1] : ''}`.trim(),
+      content: `${formula}. ${keyPoints.length > 1 ? keyPoints[1] : ''}`.trim(),
+      formulaOrExample: formula,
+      example: keyPoints.length > 0 ? keyPoints[0] : ''
+    });
+  }
+
+  // Concept 3: Additional key points
+  if (keyPoints.length > 0) {
+    keyConcepts.push({
+      heading: `${formula ? '3' : '2'}. Important Points & Exam Tips`,
+      body: keyPoints.join('\n• '),
+      content: keyPoints.join('\n• '),
+      formulaOrExample: keyPoints[keyPoints.length - 1] || '',
+      example: ''
+    });
+  }
+
+  return {
+    courseId,
+    topicTitle: t.topicTitle || 'Core Topic',
+    topicKey: t.id || `${courseId}_day_${dayNumber}_task_${taskNumber}`,
+    dayNumber,
+    subject: match.subject,
+    chapterTitle: match.chapterTitle,
+    subtopic: t.subtopic || '',
+    overview: t.subtopic
+      ? `${t.topicTitle}: ${t.subtopic}. ${keyPoints.length > 0 ? keyPoints[0] : ''}`
+      : keyPoints.length > 0
+        ? `${t.topicTitle}. ${keyPoints.join('. ')}`
+        : `${t.topicTitle} — ${match.chapterTitle}`,
+    keyFormulaOrLaw: formula,
+    keyPoints,
+    keyConcepts
+  };
+}
+

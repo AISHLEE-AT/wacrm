@@ -1472,28 +1472,78 @@ export function normalizeCoursePlayerPayload(
 ): CoursePlayerContent {
   const fallbackVideo = resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle);
   
-  // Extract overview
-  const overview = 
-    raw?.overview || 
-    raw?.notes?.overview || 
-    (Array.isArray(raw?.notes?.keyPoints) ? raw.notes.keyPoints.join(' ') : '') || 
-    (Array.isArray(raw?.keyPoints) ? raw.keyPoints.join(' ') : '') || 
-    `Day ${dayNumber}: Comprehensive syllabus lesson on ${topicTitle}. Designed with 100% adherence to standard textbook curriculum, official exam blueprints, and structured learning objectives.`;
-
-  // Extract core concepts
-  let rawConcepts = raw?.coreConcepts || raw?.notes?.coreConcepts || raw?.studyNotes || raw?.notes?.studyNotes || [];
-  if (!Array.isArray(rawConcepts) || rawConcepts.length === 0) {
-    const seq = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, taskNumber || 1);
-    rawConcepts = seq.keyConcepts || [
-      { heading: `1. Core Theoretical Foundations: ${topicTitle}`, content: overview, body: overview, example: 'Standard textbook principle.' },
-      { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm and step-by-step presentation to solve exam questions on ${topicTitle}.`, body: `Systematic algorithm and step-by-step presentation to solve exam questions on ${topicTitle}.`, example: 'Worked model question highlighting scoring points.' },
-      { heading: `3. High-Yield Formulas, Mnemonics & Exam Shortcuts`, content: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules for ${topicTitle}.`, body: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules for ${topicTitle}.`, example: 'Active Recall Examination Tip' }
+  // Boilerplate detection — these patterns indicate template/placeholder text, not real content
+  const isBoilerplate = (text: string | undefined): boolean => {
+    if (!text || text.length < 10) return true;
+    const patterns = [
+      /Comprehensive syllabus lesson on/i,
+      /Detailed conceptual breakdown of/i,
+      /Designed with 100% adherence to standard textbook/i,
+      /Master fundamental definitions, underlying principles/i,
+      /Systematic algorithm and step-by-step presentation/i,
+      /Crucial memory aids, formula derivations, unit conversions/i,
+      /Core Concept & Exam Mastery/i,
+      /Core concepts, interactive video explanation/i,
     ];
+    return patterns.some(p => p.test(text));
+  };
+
+  // Get rich syllabus data as alternative source
+  let syllabusItem: any = null;
+  try {
+    syllabusItem = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, taskNumber || 1);
+  } catch (e) {}
+
+  // Extract overview — prefer non-boilerplate raw data, then syllabus data
+  let rawOverview = raw?.overview || raw?.notes?.overview || 
+    (Array.isArray(raw?.notes?.keyPoints) ? raw.notes.keyPoints.join(' ') : '') ||
+    (Array.isArray(raw?.keyPoints) ? raw.keyPoints.join(' ') : '');
+  
+  const overview = (!rawOverview || isBoilerplate(rawOverview))
+    ? (syllabusItem?.overview || `${topicTitle} — ${subject || courseTitle}. Day ${dayNumber} study material.`)
+    : rawOverview;
+
+  // Extract core concepts — prefer non-boilerplate raw data, then syllabus keyConcepts
+  let rawConcepts = raw?.coreConcepts || raw?.notes?.coreConcepts || raw?.studyNotes || raw?.notes?.studyNotes || [];
+  
+  // Check if rawConcepts bodies are boilerplate
+  const conceptsAreBoilerplate = !Array.isArray(rawConcepts) || rawConcepts.length === 0 ||
+    rawConcepts.every((c: any) => isBoilerplate(c?.body || c?.content || ''));
+
+  if (conceptsAreBoilerplate) {
+    // Use syllabus registry keyConcepts (real formulas, key points, subtopic data)
+    if (syllabusItem?.keyConcepts && syllabusItem.keyConcepts.length > 0) {
+      rawConcepts = syllabusItem.keyConcepts;
+    } else {
+      rawConcepts = [
+        { heading: `1. ${topicTitle}`, content: overview, body: overview, formulaOrExample: syllabusItem?.keyFormulaOrLaw || '' },
+      ];
+      if (syllabusItem?.keyPoints && syllabusItem.keyPoints.length > 0) {
+        rawConcepts.push({
+          heading: '2. Important Points & Exam Tips',
+          content: syllabusItem.keyPoints.join('\n• '),
+          body: syllabusItem.keyPoints.join('\n• '),
+          formulaOrExample: ''
+        });
+      }
+      if (syllabusItem?.keyFormulaOrLaw) {
+        rawConcepts.push({
+          heading: `${rawConcepts.length + 1}. Key Formulas & Shortcuts`,
+          content: syllabusItem.keyFormulaOrLaw,
+          body: syllabusItem.keyFormulaOrLaw,
+          formulaOrExample: syllabusItem.keyFormulaOrLaw
+        });
+      }
+    }
   }
 
   const coreConcepts = rawConcepts.map((c: any, i: number) => {
     const heading = c.heading || c.sectionTitle || `Concept ${i + 1}`;
-    const textContent = c.body || c.content || c.explanation || overview;
+    let textContent = c.body || c.content || c.explanation || '';
+    // Replace boilerplate body with overview if needed
+    if (isBoilerplate(textContent)) {
+      textContent = overview;
+    }
     const formulaOrExample = c.formulaOrExample || c.example || '';
     return {
       heading,

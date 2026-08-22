@@ -25,6 +25,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { loadCoursePlayerContent, CoursePlayerContent } from '@/lib/coursePlayerEngine';
+import { resolveAuthenticEducationalVideo } from '@/data/curriculum/educationalVideoRegistry';
 import { getStepAiPrompt } from '@/data/curriculum';
 
 interface TeachOCoursePlayerModalProps {
@@ -107,9 +108,10 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
   if (!isOpen) return null;
 
   const rawVideoId = content?.videoMeta?.youtubeVideoId;
-  const isVideoValid = rawVideoId && rawVideoId !== '0TgLtF3PMOc' && rawVideoId !== 'xqgCwgvInDU' && rawVideoId !== '2p8x9K4jW7Q';
-  const videoId = isVideoValid ? rawVideoId : 'LgCg_1yP6_M';
-  const videoTitle = content?.videoMeta?.videoTitle || topicTitle;
+  const isVideoValid = rawVideoId && rawVideoId !== '0TgLtF3PMOc' && rawVideoId !== 'xqgCwgvInDU' && rawVideoId !== '2p8x9K4jW7Q' && rawVideoId !== 'LgCg_1yP6_M';
+  const registryVideo = !isVideoValid ? resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle) : null;
+  const videoId = isVideoValid ? rawVideoId : (registryVideo?.youtubeVideoId || 'EpdTHQ0s6oM');
+  const videoTitle = content?.videoMeta?.videoTitle || registryVideo?.videoTitle || topicTitle;
 
   const handlePlayPause = () => {
     if (!iframeRef.current?.contentWindow) return;
