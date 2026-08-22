@@ -6,8 +6,8 @@
  * - Middle Stage: Class 6, Class 7, Class 8 (Ages 11–14)
  * - Secondary Stage: Class 9, Class 10 (Ages 14–16)
  */
-import { UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData.ts';
-import { NEET_UG_OFFICIAL_SUBJECTS, JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS, TNPSC_UNIFIED_OFFICIAL_SUBJECTS } from './officialExhaustiveSyllabi.ts';
+import { UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData';
+import { NEET_UG_OFFICIAL_SUBJECTS, JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS, TNPSC_UNIFIED_OFFICIAL_SUBJECTS } from './officialExhaustiveSyllabi';
 
 export interface SyllabusMicroTopic {
   id: string;

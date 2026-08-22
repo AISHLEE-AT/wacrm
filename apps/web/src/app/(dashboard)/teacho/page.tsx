@@ -107,8 +107,24 @@ export default function TeachODashboard() {
 
   // Resolve Full Micro-Granular Syllabus for Active Course
   const fullSyllabus = useMemo(() => {
-    return getAugmentedCourseSyllabus(activeCourse.id, activeCourse.title);
-  }, [activeCourse.id, activeCourse.title]);
+    try {
+      return getAugmentedCourseSyllabus(activeCourse?.id || 'tnsb-en-1', activeCourse?.title || 'Class 1 English');
+    } catch (err) {
+      console.warn('Error resolving full syllabus:', err);
+      return {
+        courseId: activeCourse?.id || 'tnsb-en-1',
+        courseTitle: activeCourse?.title || 'Master Course',
+        category: 'school_primary',
+        board: 'TNSB',
+        medium: 'English',
+        totalDays: 200,
+        totalSubjects: 4,
+        totalChapters: 16,
+        totalMicroTopics: 64,
+        subjects: [],
+      };
+    }
+  }, [activeCourse?.id, activeCourse?.title]);
 
   const toggleChapter = (chapterKey: string) => {
     setExpandedChapters(prev => ({
@@ -119,7 +135,34 @@ export default function TeachODashboard() {
 
   // Resolve Daily Routine for Active Course & Day
   const dailyCurriculum = useMemo(() => {
-    return resolveMasterCurriculumPlan(activeCourse, courseDay);
+    try {
+      return resolveMasterCurriculumPlan(activeCourse || DEFAULT_COURSE, courseDay || 1) || {
+        dayNumber: 1,
+        day: 1,
+        blockNumber: 1,
+        phaseTitle: 'Phase 1: Foundation Building',
+        themeTitle: 'Day 1: Concept Foundations & Daily Practice',
+        totalDurationMins: 80,
+        totalMinutes: 80,
+        tasks: [],
+        dailyRevision: 'Daily revision session.',
+        dailyTestSummary: { questionCount: 4, testType: 'mcq' as const, focusArea: 'Day 1 Concept Mastery' },
+      };
+    } catch (err) {
+      console.warn('Error resolving daily curriculum plan:', err);
+      return {
+        dayNumber: 1,
+        day: 1,
+        blockNumber: 1,
+        phaseTitle: 'Phase 1: Foundation Building',
+        themeTitle: 'Day 1: Concept Foundations & Daily Practice',
+        totalDurationMins: 80,
+        totalMinutes: 80,
+        tasks: [],
+        dailyRevision: 'Daily revision session.',
+        dailyTestSummary: { questionCount: 4, testType: 'mcq' as const, focusArea: 'Day 1 Concept Mastery' },
+      };
+    }
   }, [activeCourse, courseDay]);
 
   // Load Saved Progress from LocalStorage
@@ -132,9 +175,15 @@ export default function TeachODashboard() {
         if (found) setActiveCourse(found);
       }
       const savedDay = localStorage.getItem('teacho_course_day');
-      if (savedDay) setCourseDay(parseInt(savedDay, 10));
+      if (savedDay) {
+        const parsed = parseInt(savedDay, 10);
+        if (!isNaN(parsed) && parsed > 0) setCourseDay(parsed);
+      }
       const savedXP = localStorage.getItem('teacho_course_xp');
-      if (savedXP) setCourseXP(parseInt(savedXP, 10));
+      if (savedXP) {
+        const parsed = parseInt(savedXP, 10);
+        if (!isNaN(parsed)) setCourseXP(parsed);
+      }
     } catch (e) {}
   }, []);
 

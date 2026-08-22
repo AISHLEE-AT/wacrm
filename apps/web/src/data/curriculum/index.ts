@@ -3,7 +3,7 @@
  * Dynamically resolves 100% authentic, chapter-by-chapter curriculum for all 96+ courses!
  */
 
-import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry.ts';
+import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry';
 
 export interface DailySubjectTask {
   id: string;
