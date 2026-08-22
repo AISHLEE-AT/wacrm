@@ -39,24 +39,114 @@ const CATEGORIES = [
 
 function getTestCategory(t: any): string {
   const cat = (t.category || '').toLowerCase();
-  const title = (t.title_name || '').toLowerCase();
+  const title = (t.title_name || t.title || '').toLowerCase();
+  const desc = (t.description || t.description_purpose || '').toLowerCase();
+  const combined = `${cat} ${title} ${desc}`;
 
-  if (cat.includes('neet') || cat.includes('jee') || /\b(neet|jee|iit|cuet|gate)\b/i.test(title)) {
+  if (
+    combined.includes('neet') ||
+    combined.includes('jee') ||
+    combined.includes('iit') ||
+    combined.includes('cuet') ||
+    combined.includes('gate') ||
+    /physics - class 1[12]|chemistry - class 1[12]|biology - class 1[12]|mathematics - (class 1[12]|advanced)|physics - advanced|chemistry - advanced/i.test(combined)
+  ) {
     return 'entrance';
   }
-  if (cat.includes('tnpsc') || cat.includes('govt') || cat.includes('upsc') || /\b(tnpsc|upsc|ssc|cgl|chsl|rrb|ntpc|police|constable|si|forest|defence|nda|cds|agniveer)\b/i.test(title)) {
+  if (
+    combined.includes('tnpsc') ||
+    combined.includes('upsc') ||
+    combined.includes('ssc') ||
+    combined.includes('cgl') ||
+    combined.includes('chsl') ||
+    combined.includes('cpo') ||
+    combined.includes('rrb') ||
+    combined.includes('ntpc') ||
+    combined.includes('police') ||
+    combined.includes('constable') ||
+    combined.includes('vao') ||
+    combined.includes('si') ||
+    combined.includes('prelims') ||
+    combined.includes('mains') ||
+    combined.includes('csat') ||
+    combined.includes('polity') ||
+    combined.includes('history') ||
+    combined.includes('geography') ||
+    combined.includes('economy') ||
+    combined.includes('ethics') ||
+    combined.includes('current affairs') ||
+    combined.includes('aptitude') ||
+    combined.includes('indus valley') ||
+    combined.includes('general intelligence') ||
+    combined.includes('general knowledge') ||
+    combined.includes('elementary mathematics')
+  ) {
     return 'govt';
   }
-  if (cat.includes('grade') || cat.includes('school') || /\b(class 8|class 9|class 10|class 11|class 12|8th|9th|10th|11th|12th|samacheer|cbse)\b/i.test(title)) {
+  if (
+    combined.includes('grade') ||
+    combined.includes('school') ||
+    combined.includes('10th') ||
+    combined.includes('12th') ||
+    combined.includes('kindergarten') ||
+    combined.includes('lkg') ||
+    combined.includes('ukg') ||
+    combined.includes('samacheer') ||
+    combined.includes('cbse') ||
+    combined.includes('matric') ||
+    /class [1-9]|class 1[0-2]|8th|9th|10th|11th|12th|std/i.test(combined) ||
+    cat.includes('academic')
+  ) {
     return 'school';
   }
-  if (cat.includes('tech') || /\b(python|javascript|data|cloud|aws|cyber|software|mobile app|programming)\b/i.test(title)) {
+  if (
+    combined.includes('tech') ||
+    combined.includes('programming') ||
+    combined.includes('python') ||
+    combined.includes('javascript') ||
+    combined.includes('data') ||
+    combined.includes('cloud') ||
+    combined.includes('aws') ||
+    combined.includes('cyber') ||
+    combined.includes('software') ||
+    combined.includes('mobile app') ||
+    combined.includes('ai')
+  ) {
     return 'skills';
   }
-  if (cat.includes('ug') || cat.includes('college') || /\b(spoken english|degree|engineering)\b/i.test(title)) {
+  if (
+    combined.includes('ug') ||
+    combined.includes('college') ||
+    combined.includes('degree') ||
+    combined.includes('engineering') ||
+    combined.includes('bcom') ||
+    combined.includes('bba') ||
+    combined.includes('bca') ||
+    combined.includes('bsc') ||
+    combined.includes('btech') ||
+    combined.includes('commerce') ||
+    combined.includes('spoken english')
+  ) {
     return 'college';
   }
   return 'others';
+}
+
+function getTestBadge(t: any): { label: string; color: string } {
+  const cat = getTestCategory(t);
+  const title = (t.title_name || t.title || '').toLowerCase();
+  
+  if (title.includes('tnpsc')) return { label: 'TNPSC EXAM', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
+  if (title.includes('upsc') || title.includes('prelims') || title.includes('mains') || title.includes('csat')) return { label: 'UPSC IAS', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
+  if (title.includes('neet')) return { label: 'NEET UG', color: 'bg-rose-500/10 text-rose-400 border-rose-500/30' };
+  if (title.includes('jee')) return { label: 'JEE MAIN', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
+  if (title.includes('10th')) return { label: 'CLASS 10 SSLC', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' };
+  if (title.includes('12th')) return { label: 'CLASS 12 HSC', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
+  if (title.includes('ssc')) return { label: 'SSC CGL/CPO', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' };
+  if (title.includes('kindergarten') || title.includes('lkg') || title.includes('ukg')) return { label: 'EARLY YEARS', color: 'bg-pink-500/10 text-pink-400 border-pink-500/30' };
+  if (cat === 'skills') return { label: 'TECH & SKILL', color: 'bg-violet-500/10 text-violet-400 border-violet-500/30' };
+  if (cat === 'college') return { label: 'DEGREE & UG', color: 'bg-orange-500/10 text-orange-400 border-orange-500/30' };
+  return { label: 'MOCK EXAM', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
 }
 
 export default function TestoWebPage() {
@@ -178,6 +268,8 @@ export default function TestoWebPage() {
     return () => clearInterval(interval);
   }, [activeTest, isExamCompleted]);
 
+  const [displayLimit, setDisplayLimit] = useState(36);
+
   const fetchTests = async () => {
     try {
       setLoading(true);
@@ -185,18 +277,31 @@ export default function TestoWebPage() {
         .from('unified_master_data')
         .select('*')
         .eq('item_type', 'o_test')
-        .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(1000);
 
       if (data && data.length > 0) {
-        setTests(data);
+        // Sort tests: prioritize tests with pre-parsed questions in additional_info
+        const sorted = [...data].sort((a, b) => {
+          const aHasQ = a.additional_info && (
+            (typeof a.additional_info === 'string' && a.additional_info.includes('"questions"')) ||
+            (typeof a.additional_info === 'object' && a.additional_info?.questions?.length > 0)
+          );
+          const bHasQ = b.additional_info && (
+            (typeof b.additional_info === 'string' && b.additional_info.includes('"questions"')) ||
+            (typeof b.additional_info === 'object' && b.additional_info?.questions?.length > 0)
+          );
+          if (aHasQ && !bHasQ) return -1;
+          if (!aHasQ && bHasQ) return 1;
+          return 0;
+        });
+        setTests(sorted);
       } else {
         // Fallback to Courses with test capability
         const { data: courses } = await lmsSupabase
           .from('unified_master_data')
           .select('*')
           .eq('item_type', 'COURSE')
-          .limit(50);
+          .limit(100);
         if (courses) setTests(courses);
       }
     } catch (e) {
@@ -205,6 +310,15 @@ export default function TestoWebPage() {
       setLoading(false);
     }
   };
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: tests.length };
+    tests.forEach(t => {
+      const cat = getTestCategory(t);
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [tests]);
 
   const filteredTests = useMemo(() => {
     let items = tests;
@@ -216,11 +330,16 @@ export default function TestoWebPage() {
       items = items.filter(
         t =>
           (t.title_name && t.title_name.toLowerCase().includes(q)) ||
-          (t.category && t.category.toLowerCase().includes(q))
+          (t.category && t.category.toLowerCase().includes(q)) ||
+          (t.description && t.description.toLowerCase().includes(q))
       );
     }
     return items;
   }, [tests, activeCategory, searchQuery]);
+
+  const visibleTests = useMemo(() => {
+    return filteredTests.slice(0, displayLimit);
+  }, [filteredTests, displayLimit]);
 
   const handleStartExam = (test: any) => {
     setActiveTest(test);
@@ -445,10 +564,14 @@ export default function TestoWebPage() {
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
+            const count = categoryCounts[cat.id] || 0;
             return (
               <button
                 key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
+                onClick={() => {
+                  setActiveCategory(cat.id);
+                  setDisplayLimit(36);
+                }}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                   isActive
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
@@ -457,16 +580,27 @@ export default function TestoWebPage() {
               >
                 <Icon className="w-4 h-4" />
                 <span>{cat.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-purple-700 text-purple-100' : 'bg-slate-800 text-slate-400'}`}>
+                  {count}
+                </span>
               </button>
             );
           })}
+        </div>
+
+        {/* Total Count Header */}
+        <div className="flex items-center justify-between mb-4 text-xs font-bold text-slate-400">
+          <span>Showing {visibleTests.length} of {filteredTests.length} mock tests</span>
+          {searchQuery && (
+            <span className="text-purple-400">Filtered by &quot;{searchQuery}&quot;</span>
+          )}
         </div>
 
         {/* Test Grid */}
         {loading ? (
           <div className="py-20 text-center text-slate-400">
             <div className="inline-block animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mb-4" />
-            <p>Loading TestO Mock Examinations...</p>
+            <p>Loading TestO Mock Examinations from database...</p>
           </div>
         ) : filteredTests.length === 0 ? (
           <div className="py-20 text-center text-slate-500">
@@ -474,35 +608,59 @@ export default function TestoWebPage() {
             <p>No tests found in this category.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTests.map(test => (
-              <div
-                key={test.id}
-                className="bg-[#111827] border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 flex flex-col justify-between transition"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30">
-                      MOCK EXAM
-                    </span>
-                    <span className="text-xs text-slate-500 flex items-center gap-1 font-mono">
-                      <Clock className="w-3.5 h-3.5" /> 15 Mins
-                    </span>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleTests.map(test => {
+                const badge = getTestBadge(test);
+                let ai = test.additional_info;
+                if (typeof ai === 'string') {
+                  try { ai = JSON.parse(ai); } catch(e) {}
+                }
+                const qCount = Array.isArray(ai) ? ai.length : (ai?.questions?.length || 30);
+
+                return (
+                  <div
+                    key={test.id}
+                    className="bg-[#111827] border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 flex flex-col justify-between transition shadow-md hover:shadow-purple-500/10"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3 gap-2">
+                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border truncate ${badge.color}`}>
+                          {badge.label}
+                        </span>
+                        <span className="text-xs text-slate-400 flex items-center gap-1 font-mono shrink-0">
+                          <Clock className="w-3.5 h-3.5 text-slate-500" /> {qCount} Qs • 15 Mins
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-white mb-2 line-clamp-2 leading-snug">{test.title_name || test.title}</h3>
+                      <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed">
+                        {test.description || test.description_purpose || 'Comprehensive timed mock test series with instant score analysis & solutions.'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleStartExam(test)}
+                      className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-purple-600/20 active:scale-95"
+                    >
+                      <FileCheck2 className="w-4 h-4" /> Start Mock Test
+                    </button>
                   </div>
-                  <h3 className="text-base font-bold text-white mb-2 line-clamp-2">{test.title_name}</h3>
-                  <p className="text-xs text-slate-400 line-clamp-2 mb-4">
-                    {test.description_purpose || 'Comprehensive timed mock test series with instant score analysis & solutions.'}
-                  </p>
-                </div>
+                );
+              })}
+            </div>
+
+            {/* Load More Button */}
+            {visibleTests.length < filteredTests.length && (
+              <div className="mt-10 text-center">
                 <button
-                  onClick={() => handleStartExam(test)}
-                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-purple-600/20"
+                  onClick={() => setDisplayLimit(prev => prev + 36)}
+                  className="px-6 py-3 bg-[#111827] hover:bg-slate-800 border border-slate-700 hover:border-purple-500 text-white font-bold rounded-2xl text-xs transition shadow-lg inline-flex items-center gap-2"
                 >
-                  <FileCheck2 className="w-4 h-4" /> Start Mock Test
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  Load More Tests ({filteredTests.length - visibleTests.length} remaining)
                 </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
 
