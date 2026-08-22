@@ -13,10 +13,10 @@
  */
 
 
-import { lmsSupabase as aishleeSupabase } from './lms-supabase.ts';
-import { resolveCanonicalTopic } from './canonicalTopicResolver.ts';
-import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry.ts';
-import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry.ts';
+import { lmsSupabase as aishleeSupabase } from './lms-supabase';
+import { resolveCanonicalTopic } from './canonicalTopicResolver';
+import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
+import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry';
 
 export interface VideoMeta {
   channel: string;
@@ -1835,9 +1835,81 @@ export async function getCoursePlayerContent(
     }
   }
 
-  // 2. Check Supabase LMS Database (kindle_content_cache)
+  // 2. Check Unified Master Data (o_course_micro_topic_content) in Supabase
   try {
-    // Strictly prioritize courseId-specific and day-specific keys to prevent cross-course content collision
+    const { data: umdRows, error: umdErr } = await aishleeSupabase
+      .from('unified_master_data')
+      .select('additional_info, title_name, category')
+      .eq('item_type', 'o_course_micro_topic_content')
+      .or(`category.eq.${courseId || 'unknown'},title_name.ilike.%${courseId || 'none'}%,title_name.ilike.%${topicTitle.slice(0, 20)}%`)
+      .limit(15);
+
+    if (!umdErr && umdRows && umdRows.length > 0) {
+      for (const row of umdRows) {
+        let rawPayload: any = null;
+        try {
+          rawPayload = typeof row.additional_info === 'string' ? JSON.parse(row.additional_info) : row.additional_info;
+        } catch (e) {}
+
+        const contentObj = rawPayload?.content || rawPayload;
+        if (contentObj) {
+          const matchKey = contentObj.topicKey || rawPayload?.topicKey || '';
+          const matchDay = contentObj.dayNumber || rawPayload?.dayNumber;
+          
+          if (
+            (directTaskKey && matchKey === directTaskKey) ||
+            (directIdKey && matchKey === directIdKey) ||
+            (matchDay === dayNumber && (matchKey.includes(`task_${resolvedTaskNum}`) || !directTaskKey))
+          ) {
+            const normalized = normalizeCoursePlayerPayload(
+              contentObj,
+              topicTitle,
+              subject,
+              courseTitle,
+              dayNumber,
+              courseId,
+              resolvedTaskNum
+            );
+            inMemoryContentCache.set(daySpecificKey, normalized);
+            if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
+            return normalized;
+          }
+        }
+      }
+    }
+  } catch (umdError) {
+    // Non-blocking fallback
+  }
+
+  // 2.5. Check Local / API Kindle Micro-Topic Endpoint (/api/kindle-ai)
+  if (typeof window !== 'undefined' && courseId) {
+    try {
+      const apiUrl = `/api/kindle-ai?courseId=${encodeURIComponent(courseId)}&dayNumber=${dayNumber}&taskNumber=${resolvedTaskNum}&topicTitle=${encodeURIComponent(topicTitle)}&board=${encodeURIComponent(courseTitle)}`;
+      const apiRes = await fetch(apiUrl);
+      if (apiRes.ok) {
+        const apiJson = await apiRes.json();
+        if (apiJson && (apiJson.notes || apiJson.studyNotes || apiJson.overview || apiJson.mcqs || apiJson.coreConcepts)) {
+          const normalized = normalizeCoursePlayerPayload(
+            apiJson,
+            topicTitle,
+            subject,
+            courseTitle,
+            dayNumber,
+            courseId,
+            resolvedTaskNum
+          );
+          inMemoryContentCache.set(daySpecificKey, normalized);
+          if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
+          return normalized;
+        }
+      }
+    } catch (apiErr) {
+      // Non-blocking fallback
+    }
+  }
+
+  // 3. Check Supabase LMS Database (kindle_content_cache legacy table)
+  try {
     const candidateKeys = [
       directTaskKey,
       directIdKey,
@@ -1876,42 +1948,7 @@ export async function getCoursePlayerContent(
     // Non-blocking fallback
   }
 
-  // 2.5. Check Cloudflare R2 Primary DB (CDN Edge Direct)
-  if (courseId) {
-    const r2CandidateUrls = [
-      `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}_task_${resolvedTaskNum}.json`,
-      `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}_task_1.json`,
-      `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}.json`
-    ];
-
-    for (const r2Url of r2CandidateUrls) {
-      try {
-        const r2Res = await fetch(r2Url);
-        if (r2Res.ok) {
-          const r2Json = await r2Res.json();
-          if (r2Json && (r2Json.notes || r2Json.overview || r2Json.mcqs)) {
-            const normalized = normalizeCoursePlayerPayload(
-              r2Json,
-              topicTitle,
-              subject,
-              courseTitle,
-              dayNumber,
-              courseId,
-              resolvedTaskNum
-            );
-            inMemoryContentCache.set(daySpecificKey, normalized);
-            inMemoryContentCache.set(cacheKey, normalized);
-            if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
-            return normalized;
-          }
-        }
-      } catch (r2Err) {
-        // Non-blocking fallback
-      }
-    }
-  }
-
-  // 3. Check Local localStorage Cache
+  // 4. Check Local localStorage Cache
   try {
     if (typeof window !== 'undefined') {
       const localCached = localStorage.getItem(cacheKey);
@@ -1927,7 +1964,7 @@ export async function getCoursePlayerContent(
     }
   } catch (e) {}
 
-  // 4. If AI generation is requested on-demand, generate high-quality custom lesson content
+  // 5. If AI generation is requested on-demand, generate high-quality custom lesson content
   if (allowAiGeneration) {
     try {
       const generated = await generateContentWithGeminiAI(topicTitle, subject, courseTitle, dayNumber);
@@ -1941,8 +1978,27 @@ export async function getCoursePlayerContent(
     }
   }
 
-  // 5. If no authentic DB content exists and AI not triggered, return null (clean blank state with WhatsApp support)
-  return null;
+  // 6. 100% Deterministic Authentic Master Sequential Syllabus Resolution (Guaranteed Rich Content)
+  try {
+    const seq = resolveMasterSequentialSyllabus(courseId || courseTitle, courseTitle, dayNumber, resolvedTaskNum);
+    const deterministicNormalized = normalizeCoursePlayerPayload(
+      seq,
+      topicTitle,
+      subject,
+      courseTitle,
+      dayNumber,
+      courseId,
+      resolvedTaskNum
+    );
+    inMemoryContentCache.set(daySpecificKey, deterministicNormalized);
+    if (directTaskKey) inMemoryContentCache.set(directTaskKey, deterministicNormalized);
+    return deterministicNormalized;
+  } catch (seqErr) {
+    console.warn('Deterministic syllabus fallback error:', seqErr);
+  }
+
+  // Fallback Domain Expert
+  return synthesizePolityContent(topicTitle, subject, courseTitle, dayNumber);
 }
 
 export const loadCoursePlayerContent = getCoursePlayerContent;
