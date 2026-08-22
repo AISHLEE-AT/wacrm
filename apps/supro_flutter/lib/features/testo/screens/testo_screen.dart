@@ -1,560 +1,336 @@
-import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../../../shared/widgets/payment_qr_dialog.dart';
-
-const String _eduSupabaseUrl = 'https://jjgdatjthyeesmgunnlp.supabase.co';
-const String _eduAnonKey =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqZ2RhdGp0aHllZXNtZ3VubmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzU5NTYsImV4cCI6MjEwMDIxMTk1Nn0.iuSdvxW9VEtn_1yVLmf9ZN24CeXFxmF3aeVHEn-Dgcs';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'dart:async';
 
 class TestoScreen extends StatefulWidget {
-  final String? initialSearch;
-  const TestoScreen({super.key, this.initialSearch});
+  const TestoScreen({super.key});
 
   @override
   State<TestoScreen> createState() => _TestoScreenState();
 }
 
 class _TestoScreenState extends State<TestoScreen> {
+  // 'hub' | 'exam' | 'result'
+  String viewMode = 'hub';
+
+  // Hub
   List<Map<String, dynamic>> sections = [];
   bool isLoading = true;
-  String _searchQuery = '';
+  String searchQuery = '';
+
+  // Exam State
+  dynamic activeTest;
+  List<dynamic> questions = [];
+  int currentIdx = 0;
+  Map<int, String> answers = {};
+  Map<int, String> qStatus = {}; // 'NOT_VISITED' | 'NOT_ANSWERED' | 'ANSWERED' | 'REVIEW'
+  int timeLeft = 30 * 60;
+  Timer? examTimer;
+
+  // Results State
+  int score = 0;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
-      _searchQuery = widget.initialSearch!;
-    }
     _fetchTests();
-  }
-
-  Future<void> _fetchTests() async {
-    try {
-      final testsUri = Uri.parse('$_eduSupabaseUrl/rest/v1/unified_master_data?item_type=eq.o_test&limit=500');
-      final res = await http.get(testsUri, headers: {
-        'apikey': _eduAnonKey,
-        'Authorization': 'Bearer $_eduAnonKey',
-      });
-
-      Map<String, List<dynamic>> groups = {};
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List<dynamic>;
-        for (var item in data) {
-          dynamic ai = item['additional_info'] ?? item['metadata'];
-          if (ai is String) {
-            try {
-              ai = jsonDecode(ai);
-            } catch (_) {}
-          }
-
-          if (ai != null && ai['questions'] != null && (ai['questions'] as List).isNotEmpty) {
-            String title = item['title_name'] ?? '';
-            String courseName = 'General Tests';
-            String testName = title;
-
-            if (title.contains(':')) {
-              var parts = title.split(':');
-              courseName = parts[0].trim();
-              testName = parts.sublist(1).join(':').trim();
-            }
-
-            item['displayTitle'] = testName;
-            item['questionsList'] = ai['questions'];
-            item['questionCount'] = (ai['questions'] as List).length;
-
-            if (!groups.containsKey(courseName)) {
-              groups[courseName] = [];
-            }
-            groups[courseName]!.add(item);
-          }
-        }
-      }
-
-      // Fallback high-yield mock tests if DB is empty
-      if (groups.isEmpty) {
-        groups['TNPSC General Studies'] = [
-          {
-            'displayTitle': 'Tamil Nadu History & Culture Mock Test 1',
-            'questionCount': 5,
-            'questionsList': [
-              {
-                'question': 'Which Chola king built the Brihadeeswarar Temple in Thanjavur?',
-                'options': ['Rajaraja Chola I', 'Rajendra Chola I', 'Karikala Chola', 'Kulothunga Chola'],
-                'correctAnswer': 'Rajaraja Chola I',
-                'explanation': 'Rajaraja Chola I built the famous Brihadeeswarar Temple (Big Temple) in Thanjavur around 1010 CE.'
-              },
-              {
-                'question': 'What is the state animal of Tamil Nadu?',
-                'options': ['Spotted Deer', 'Nilgiri Tahr', 'Bengal Tiger', 'Indian Elephant'],
-                'correctAnswer': 'Nilgiri Tahr',
-                'explanation': 'The Nilgiri Tahr is the state animal of Tamil Nadu, endemic to the Western Ghats.'
-              },
-              {
-                'question': 'Which river is known as the "Dakshin Ganga" or lifeline of Tamil Nadu?',
-                'options': ['Vaigai', 'Palar', 'Cauvery', 'Thamirabarani'],
-                'correctAnswer': 'Cauvery',
-                'explanation': 'The Cauvery river is the principal river of Tamil Nadu.'
-              },
-              {
-                'question': 'Who composed the Tamil national anthem "Thamizh Thaai Vaazhthu"?',
-                'options': ['Subramania Bharati', 'Manonmaniam Sundaram Pillai', 'Bharathidasan', 'Kavimani Desigavinayagam'],
-                'correctAnswer': 'Manonmaniam Sundaram Pillai',
-                'explanation': 'Manonmaniam Sundaram Pillai composed Thamizh Thaai Vaazhthu.'
-              },
-              {
-                'question': 'Which port city was the ancient capital of the Early Pandyas?',
-                'options': ['Korkai', 'Poompuhar', 'Muziris', 'Kaveripoompattinam'],
-                'correctAnswer': 'Korkai',
-                'explanation': 'Korkai was the primary ancient seaport of the Early Pandyan Kingdom.'
-              }
-            ]
-          }
-        ];
-      }
-
-      if (mounted) {
-        setState(() {
-          sections = groups.entries.map((e) => {'title': e.key, 'data': e.value}).toList();
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
-  List<Map<String, dynamic>> get _filteredSections {
-    if (_searchQuery.trim().isEmpty) return sections;
-    final q = _searchQuery.toLowerCase();
-
-    return sections
-        .map((sec) {
-          final tests = (sec['data'] as List<dynamic>).where((t) {
-            final title = (t['displayTitle'] ?? t['title_name'] ?? '').toString().toLowerCase();
-            final sTitle = (sec['title'] ?? '').toString().toLowerCase();
-            return title.contains(q) || sTitle.contains(q);
-          }).toList();
-
-          return {'title': sec['title'], 'data': tests};
-        })
-        .where((sec) => (sec['data'] as List).isNotEmpty)
-        .toList();
-  }
-
-  void _openExamEngine(dynamic test) {
-    final questions = test['questionsList'] as List<dynamic>? ?? [];
-    if (questions.isEmpty) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ExamEngineScreen(
-          testTitle: test['displayTitle'] ?? 'Mock Test',
-          questions: questions,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final displaySections = _filteredSections;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1E),
-      appBar: AppBar(
-        title: const Text('TestO Examination Hub', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF111827),
-        elevation: 0,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
-          : Column(
-              children: [
-                // 💳 Test Series Pass Unlock Banner
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.purple.withValues(alpha: 0.2),
-                          const Color(0xFF111827),
-                          Colors.amber.withValues(alpha: 0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(LucideIcons.shoppingCart, color: Colors.purpleAccent, size: 18),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Text(
-                                    'TestO All-Access Pass',
-                                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                    decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(4)),
-                                    child: const Text('₹99', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold)),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Instant 1-Tap UPI Pay with GPay/PhonePe or coupon.',
-                                style: TextStyle(color: Colors.white54, fontSize: 10),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            PaymentQrDialog.show(
-                              context,
-                              title: 'TestO All-Access Exam Pass',
-                              amount: 99,
-                              itemId: 'testo_all_access_pass',
-                              itemType: 'o_test',
-                              onSuccess: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('🎉 All Test Series unlocked with instant scoring!'),
-                                    backgroundColor: Color(0xFF10B981),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF8B5CF6),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: const Text('Unlock', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Search Input
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111827),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF1E293B)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(LucideIcons.search, color: Color(0xFF94A3B8), size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            style: const TextStyle(color: Colors.white, fontSize: 14),
-                            decoration: const InputDecoration(
-                              hintText: 'Search mock tests, TNPSC, Banking...',
-                              hintStyle: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-                              border: InputBorder.none,
-                            ),
-                            onChanged: (v) => setState(() => _searchQuery = v),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Tests List
-                Expanded(
-                  child: displaySections.isEmpty
-                      ? const Center(
-                          child: Text('No mock tests match your search.', style: TextStyle(color: Color(0xFF64748B))),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          itemCount: displaySections.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 20),
-                          itemBuilder: (context, sIdx) {
-                            final section = displaySections[sIdx];
-                            final tests = section['data'] as List<dynamic>;
-
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  section['title'],
-                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                    const SizedBox(height: 12),
-                    ...tests.map((t) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF111827),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFF1E293B)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: const BoxDecoration(
-                                  color: Color(0x2610B981),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(LucideIcons.fileCheck2, color: Color(0xFF10B981), size: 24),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      t['displayTitle'],
-                                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${t['questionCount']} Questions • 15 Mins',
-                                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => _openExamEngine(t),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF10B981),
-                                  foregroundColor: const Color(0xFF0A0F1E),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: const Text('Start', style: TextStyle(fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                        )),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── INTERACTIVE EXAM ENGINE SCREEN ───
-class ExamEngineScreen extends StatefulWidget {
-  final String testTitle;
-  final List<dynamic> questions;
-
-  const ExamEngineScreen({super.key, required this.testTitle, required this.questions});
-
-  @override
-  State<ExamEngineScreen> createState() => _ExamEngineScreenState();
-}
-
-class _ExamEngineScreenState extends State<ExamEngineScreen> {
-  int _currentIndex = 0;
-  final Map<int, String> _userAnswers = {};
-  int _secondsRemaining = 15 * 60;
-  Timer? _timer;
-  bool _isSubmitted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    examTimer?.cancel();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_secondsRemaining <= 1) {
-        t.cancel();
+  Future<void> _fetchTests() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('unified_master_data')
+          .select('*')
+          .eq('item_type', 'o_test')
+          .limit(2000);
+
+      Map<String, List<dynamic>> groups = {};
+
+      for (var item in (response as List<dynamic>)) {
+        dynamic ai = item['additional_info'];
+        if (ai is String) {
+          try { ai = jsonDecode(ai); } catch (e) {}
+        }
+
+        if (ai != null && ai['questions'] != null && (ai['questions'] as List).isNotEmpty) {
+          String title = item['title_name'] ?? '';
+          String courseName = 'General Tests';
+          String testName = title;
+
+          if (title.contains(':')) {
+            var parts = title.split(':');
+            courseName = parts[0].trim();
+            testName = parts.sublist(1).join(':').trim();
+          }
+
+          item['displayTitle'] = testName;
+          item['questionCount'] = (ai['questions'] as List).length;
+
+          if (!groups.containsKey(courseName)) {
+            groups[courseName] = [];
+          }
+          groups[courseName]!.add(item);
+        }
+      }
+
+      List<Map<String, dynamic>> formattedSections = groups.entries.map((e) => {
+        'title': e.key,
+        'data': e.value
+      }).toList();
+
+      setState(() {
+        sections = formattedSections;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching tests: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _startExam(dynamic test) {
+    dynamic ai = test['additional_info'];
+    if (ai is String) {
+      try { ai = jsonDecode(ai); } catch (e) {}
+    }
+
+    List<dynamic> qs = [];
+    if (ai != null && ai['questions'] is List) {
+      qs = ai['questions'];
+    }
+
+    if (qs.isEmpty) {
+      qs = [
+        {
+          'question': 'Sample Question 1: What is the primary function of chlorophyll in plants?',
+          'options': ['Photosynthesis', 'Transpiration', 'Respiration', 'Absorption'],
+          'correct_answer': 'Photosynthesis',
+          'explanation': 'Chlorophyll absorbs light energy for photosynthesis.'
+        }
+      ];
+    }
+
+    Map<int, String> initialStatus = {};
+    for (int i = 0; i < qs.length; i++) {
+      initialStatus[i] = i == 0 ? 'NOT_ANSWERED' : 'NOT_VISITED';
+    }
+
+    setState(() {
+      activeTest = test;
+      questions = qs;
+      currentIdx = 0;
+      answers = {};
+      qStatus = initialStatus;
+      timeLeft = qs.length * 60;
+      viewMode = 'exam';
+    });
+
+    examTimer?.cancel();
+    examTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (timeLeft <= 1) {
+        timer.cancel();
         _submitExam();
       } else {
-        setState(() => _secondsRemaining--);
+        setState(() {
+          timeLeft--;
+        });
       }
     });
   }
 
   void _submitExam() {
-    _timer?.cancel();
-    setState(() => _isSubmitted = true);
-  }
-
-  int get _score {
-    int total = 0;
-    for (int i = 0; i < widget.questions.length; i++) {
-      final q = widget.questions[i];
-      final correct = (q['correct_answer'] ?? q['correctAnswer'] ?? q['answer'] ?? '').toString();
-      if (_userAnswers[i] != null && _userAnswers[i] == correct) {
-        total++;
+    examTimer?.cancel();
+    int calculatedScore = 0;
+    for (int i = 0; i < questions.length; i++) {
+      final q = questions[i];
+      final uAns = answers[i];
+      final cAns = q['correct_answer'] ?? q['correctAnswer'] ?? q['answer'];
+      if (uAns != null && cAns != null && uAns.toString().trim().toLowerCase() == cAns.toString().trim().toLowerCase()) {
+        calculatedScore++;
       }
     }
-    return total;
+
+    setState(() {
+      score = calculatedScore;
+      viewMode = 'result';
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isSubmitted) {
-      return _buildScoreReportView();
-    }
+  String _formatTime(int secs) {
+    int m = secs ~/ 60;
+    int s = secs % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
 
-    final q = widget.questions[_currentIndex];
-    final qText = q['question'] ?? q['q'] ?? 'Question Text';
-    final options = (q['options'] as List<dynamic>? ?? ['Option A', 'Option B', 'Option C', 'Option D']).map((e) => e.toString()).toList();
-    final selectedOption = _userAnswers[_currentIndex];
-
-    final mins = _secondsRemaining ~/ 60;
-    final secs = _secondsRemaining % 60;
+  // --- CBT EXAM UI ---
+  Widget _buildExamScreen() {
+    final currentQ = questions[currentIdx];
+    final options = (currentQ['options'] as List? ?? []);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF111827),
-        title: Text(widget.testTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1E293B),
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: const Color(0xFF1E293B),
+                title: const Text('Exit Exam?', style: TextStyle(color: Colors.white)),
+                content: const Text('Your current progress will be lost.', style: TextStyle(color: Color(0xFF94A3B8))),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white70))),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      examTimer?.cancel();
+                      setState(() => viewMode = 'hub');
+                    },
+                    child: const Text('Exit', style: TextStyle(color: Colors.redAccent)),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(activeTest?['displayTitle'] ?? 'Mock Exam', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text('Q ${currentIdx + 1} of ${questions.length}', style: const TextStyle(fontSize: 11, color: Color(0xFF8B5CF6))),
+          ],
+        ),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: const Color(0xFF1E293B), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0F1E),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: timeLeft < 300 ? Colors.redAccent : const Color(0xFF8B5CF6)),
+            ),
             child: Row(
               children: [
-                const Icon(LucideIcons.timer, color: Color(0xFF10B981), size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
+                Icon(LucideIcons.clock, size: 14, color: timeLeft < 300 ? Colors.redAccent : const Color(0xFF8B5CF6)),
+                const SizedBox(width: 4),
+                Text(_formatTime(timeLeft), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: timeLeft < 300 ? Colors.redAccent : Colors.white)),
               ],
             ),
-          )
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.layoutGrid, color: Colors.white),
+            onPressed: () => _openPaletteSheet(),
+          ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Question ${_currentIndex + 1} of ${widget.questions.length}',
-              style: const TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold),
+            // Question Prompt Card
+            Card(
+              color: const Color(0xFF1E293B),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  currentQ['question'] ?? 'No question text',
+                  style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.4, fontWeight: FontWeight.w600),
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              qText,
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600, height: 1.4),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Options List
             Expanded(
-              child: ListView.separated(
+              child: ListView.builder(
                 itemCount: options.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, oIdx) {
-                  final opt = options[oIdx];
-                  final isSelected = selectedOption == opt;
-                  return GestureDetector(
-                    onTap: () => setState(() => _userAnswers[_currentIndex] = opt),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0x2610B981) : const Color(0xFF111827),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSelected ? const Color(0xFF10B981) : const Color(0xFF1E293B),
-                          width: isSelected ? 2 : 1,
+                itemBuilder: (context, idx) {
+                  final opt = options[idx].toString();
+                  final isSelected = answers[currentIdx] == opt;
+
+                  return Card(
+                    color: isSelected ? const Color(0xFF8B5CF6).withOpacity(0.2) : const Color(0xFF1E293B),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF334155)),
+                    ),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      onTap: () {
+                        setState(() {
+                          answers[currentIdx] = opt;
+                          qStatus[currentIdx] = 'ANSWERED';
+                        });
+                      },
+                      leading: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF334155),
+                        child: Text(
+                          String.fromCharCode(65 + idx),
+                          style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFF1E293B),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                String.fromCharCode(65 + oIdx),
-                                style: TextStyle(color: isSelected ? const Color(0xFF0A0F1E) : const Color(0xFF94A3B8), fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              opt,
-                              style: TextStyle(color: isSelected ? Colors.white : const Color(0xFFCBD5E1), fontSize: 15),
-                            ),
-                          ),
-                        ],
-                      ),
+                      title: Text(opt, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFFE2E8F0), fontSize: 14)),
+                      trailing: isSelected ? const Icon(LucideIcons.checkCircle2, color: Color(0xFF8B5CF6)) : null,
                     ),
                   );
                 },
               ),
             ),
 
-            // Footer Stepper Controls
+            // Bottom Exam Bar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (_currentIndex > 0)
-                  OutlinedButton(
-                    onPressed: () => setState(() => _currentIndex--),
-                    style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF1E293B))),
-                    child: const Text('Previous', style: TextStyle(color: Colors.white)),
-                  )
-                else
-                  const SizedBox.shrink(),
-                if (_currentIndex < widget.questions.length - 1)
-                  ElevatedButton(
-                    onPressed: () => setState(() => _currentIndex++),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: const Color(0xFF0A0F1E)),
-                    child: const Text('Next Question', style: TextStyle(fontWeight: FontWeight.bold)),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: _submitExam,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF59E0B), foregroundColor: const Color(0xFF0A0F1E)),
-                    child: const Text('Submit Test', style: TextStyle(fontWeight: FontWeight.bold)),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      qStatus[currentIdx] = 'REVIEW';
+                    });
+                  },
+                  icon: const Icon(LucideIcons.alertTriangle, size: 14, color: Color(0xFFA855F7)),
+                  label: const Text('Review', style: TextStyle(color: Color(0xFFA855F7), fontSize: 12)),
+                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFA855F7))),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      answers.remove(currentIdx);
+                      qStatus[currentIdx] = 'NOT_ANSWERED';
+                    });
+                  },
+                  child: const Text('Clear', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                ),
+                if (currentIdx > 0)
+                  IconButton(
+                    icon: const Icon(LucideIcons.chevronLeft, color: Colors.white),
+                    onPressed: () => setState(() => currentIdx--),
                   ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (currentIdx < questions.length - 1) {
+                      setState(() => currentIdx++);
+                    } else {
+                      _showSubmitConfirm();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                  child: Text(currentIdx < questions.length - 1 ? 'Save & Next' : 'Finish', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
               ],
             ),
           ],
@@ -563,137 +339,270 @@ class _ExamEngineScreenState extends State<ExamEngineScreen> {
     );
   }
 
-  Widget _buildScoreReportView() {
-    final score = _score;
-    final total = widget.questions.length;
-    final pct = total > 0 ? ((score / total) * 100).round() : 0;
-    final isPassed = pct >= 40;
-    final certId = 'EDU-VRF-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1E),
-      appBar: AppBar(
-        title: const Text('Performance Report', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF111827),
-      ),
-      body: SingleChildScrollView(
+  void _openPaletteSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Scorecard
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isPassed ? const Color(0xFF10B981) : Colors.redAccent),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    isPassed ? LucideIcons.award : LucideIcons.alertTriangle,
-                    size: 54,
-                    color: isPassed ? const Color(0xFF10B981) : Colors.redAccent,
-                  ),
-                  const SizedBox(height: 12),
-                  Text('$score / $total', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
-                  Text('Accuracy: $pct%', style: TextStyle(color: isPassed ? const Color(0xFF10B981) : Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text(
-                    isPassed ? 'GRADE A • QUALIFIED' : 'GRADE F • NEEDS IMPROVEMENT',
-                    style: TextStyle(color: isPassed ? const Color(0xFF10B981) : Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
+            const Text('Question Palette', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(questions.length, (idx) {
+                final st = qStatus[idx] ?? 'NOT_VISITED';
+                Color bg = const Color(0xFF334155);
+                if (st == 'ANSWERED') bg = const Color(0xFF10B981);
+                if (st == 'NOT_ANSWERED') bg = const Color(0xFFEF4444);
+                if (st == 'REVIEW') bg = const Color(0xFFA855F7);
 
-            // Verifiable Digital Certificate Box
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF111827),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x80F59E0B)),
-              ),
-              child: Column(
-                children: [
-                  const Text('🏆 EDUPERSE AI VERIFIED CERTIFICATE', style: TextStyle(color: Color(0xFFF59E0B), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                  const SizedBox(height: 4),
-                  Text(widget.testTitle, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text('Certificate ID: $certId', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
-                ],
-              ),
+                return InkWell(
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    setState(() => currentIdx = idx);
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: bg,
+                      borderRadius: BorderRadius.circular(8),
+                      border: currentIdx == idx ? Border.all(color: Colors.white, width: 2) : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                );
+              }),
             ),
             const SizedBox(height: 20),
-
-            // Question Solutions Review Header
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Detailed Question Solutions', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(height: 10),
-
-            // Solutions List
-            ...List.generate(widget.questions.length, (idx) {
-              final q = widget.questions[idx];
-              final uAns = _userAnswers[idx] ?? 'Not Answered';
-              final cAns = (q['correct_answer'] ?? q['correctAnswer'] ?? q['answer'] ?? '').toString();
-              final isCorrect = uAns == cAns;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF1E293B)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Q${idx + 1}', style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
-                        Text(isCorrect ? 'Correct (+1)' : 'Incorrect', style: TextStyle(color: isCorrect ? const Color(0xFF10B981) : Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(q['question'] ?? q['q'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    Text('Your Answer: $uAns', style: TextStyle(color: isCorrect ? const Color(0xFF10B981) : Colors.redAccent, fontSize: 12)),
-                    Text('Correct Answer: $cAns', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
-                    if (q['explanation'] != null) ...[
-                      const SizedBox(height: 6),
-                      Text('💡 ${q['explanation']}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                    ],
-                  ],
-                ),
-              );
-            }),
-
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: const Color(0xFF0A0F1E),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: const Text('Back to TestO Hub', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-              ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _showSubmitConfirm();
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), minimumSize: const Size.fromHeight(44)),
+              child: const Text('Submit Exam', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
       ),
     );
   }
-}
 
+  void _showSubmitConfirm() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text('Submit Test?', style: TextStyle(color: Colors.white)),
+        content: Text('You have answered ${answers.length} out of ${questions.length} questions.', style: const TextStyle(color: Color(0xFF94A3B8))),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Continue Test', style: TextStyle(color: Colors.white70))),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _submitExam();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
+            child: const Text('Yes, Submit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- RESULTS UI ---
+  Widget _buildResultScreen() {
+    final accuracy = questions.isNotEmpty ? ((score / questions.length) * 100).toStringAsFixed(1) : '0';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0F1E),
+      appBar: AppBar(
+        title: const Text('Exam Results', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF1E293B),
+        leading: IconButton(
+          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+          onPressed: () => setState(() => viewMode = 'hub'),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            color: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: const Color(0xFF8B5CF6).withOpacity(0.2),
+                    child: Text('$accuracy%', style: const TextStyle(color: Color(0xFF8B5CF6), fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Score: $score / ${questions.length}', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Text('Completed successfully', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => _startExam(activeTest),
+                        icon: const Icon(LucideIcons.rotateCcw, size: 16, color: Colors.white),
+                        label: const Text('Retake', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton(
+                        onPressed: () => setState(() => viewMode = 'hub'),
+                        child: const Text('Back to Hub', style: TextStyle(color: Color(0xFF94A3B8))),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text('Detailed Review', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          const SizedBox(height: 12),
+          ...List.generate(questions.length, (idx) {
+            final q = questions[idx];
+            final uAns = answers[idx];
+            final cAns = q['correct_answer'] ?? q['correctAnswer'] ?? q['answer'];
+            final isCorrect = uAns != null && cAns != null && uAns.toString().trim().toLowerCase() == cAns.toString().trim().toLowerCase();
+
+            return Card(
+              color: const Color(0xFF1E293B),
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: BorderSide(color: isCorrect ? const Color(0xFF10B981).withOpacity(0.5) : const Color(0xFFEF4444).withOpacity(0.5)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Q${idx + 1}. ${q['question']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(height: 8),
+                    Text('Your Answer: ${uAns ?? 'Not Answered'}', style: TextStyle(color: isCorrect ? const Color(0xFF10B981) : const Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('Correct Answer: $cAns', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+                    if (q['explanation'] != null) ...[
+                      const SizedBox(height: 6),
+                      Text('Explanation: ${q['explanation']}', style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  // --- HUB UI ---
+  @override
+  Widget build(BuildContext context) {
+    if (viewMode == 'exam') return _buildExamScreen();
+    if (viewMode == 'result') return _buildResultScreen();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0F1E),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Icon(LucideIcons.award, color: Color(0xFF8B5CF6)),
+            const SizedBox(width: 8),
+            const Text('TestO Hub', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+              ),
+              child: const Text('தேர்வு', style: TextStyle(fontSize: 10, color: Color(0xFFC4B5FD), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0A0F1E),
+        elevation: 0,
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
+          : sections.isEmpty
+              ? const Center(child: Text('No tests available right now.', style: TextStyle(color: Colors.white)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: sections.length,
+                  itemBuilder: (context, index) {
+                    final section = sections[index];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  section['title'],
+                                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Text(
+                                '${section['data'].length} Tests',
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ...((section['data'] as List<dynamic>).map((test) => Card(
+                          color: const Color(0xFF1E293B),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          child: ListTile(
+                            onTap: () => _startExam(test),
+                            leading: const CircleAvatar(
+                              backgroundColor: Color(0xFF27272A),
+                              child: Icon(LucideIcons.fileCheck, color: Color(0xFF8B5CF6), size: 18),
+                            ),
+                            title: Text(
+                              test['displayTitle'] ?? test['title_name'],
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              '${test['questionCount']} Questions • ~30m',
+                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                            ),
+                            trailing: ElevatedButton(
+                              onPressed: () => _startExam(test),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF8B5CF6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              ),
+                              child: const Text('Start', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                            ),
+                          ),
+                        )).toList()),
+                      ],
+                    );
+                  },
+                ),
+    );
+  }
+}

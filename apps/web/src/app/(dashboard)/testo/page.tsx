@@ -84,9 +84,45 @@ export default function TestoWebPage() {
   const [timeLeft, setTimeLeft] = useState(900); // 15 mins
   const [isExamCompleted, setIsExamCompleted] = useState(false);
 
-  // Mock Question Pool
+  // Dynamic Real Question Pool from Database
   const mockQuestions = useMemo(() => {
     if (!activeTest) return [];
+    
+    let ai = activeTest.additional_info;
+    if (typeof ai === 'string') {
+      try { ai = JSON.parse(ai); } catch(e) {}
+    }
+
+    let qs: any[] = [];
+    if (Array.isArray(ai)) {
+      qs = ai;
+    } else if (ai?.questions && Array.isArray(ai.questions)) {
+      qs = ai.questions;
+    } else if (ai?.data && Array.isArray(ai.data)) {
+      qs = ai.data;
+    }
+
+    if (qs.length > 0) {
+      return qs.map((q: any) => {
+        const options: string[] = Array.isArray(q.options) ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'];
+        const correctText = q.correct_answer || q.correctAnswer || q.answer;
+        let correctIdx = 0;
+        if (typeof correctText === 'string') {
+          const found = options.findIndex((o: string) => o.trim().toLowerCase() === correctText.trim().toLowerCase());
+          if (found !== -1) correctIdx = found;
+        } else if (typeof correctText === 'number') {
+          correctIdx = correctText;
+        }
+
+        return {
+          question: q.question || q.q || 'Question',
+          options,
+          correct: correctIdx,
+          explanation: q.explanation || 'Refer to textbook and syllabus definitions.',
+        };
+      });
+    }
+
     const t = activeTest.title_name || 'Subject';
     return [
       {
