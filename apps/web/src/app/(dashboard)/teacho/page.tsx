@@ -40,12 +40,16 @@ import {
   AlertCircle,
   HelpCircle,
   Laptop,
+  Bot,
+  ShoppingCart,
 } from 'lucide-react';
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, CourseCategory } from '@/data/coursesCatalog';
 import { resolveMasterCurriculumPlan } from '@/data/curriculum';
 import { resolveCompleteCourseSyllabus, getAugmentedCourseSyllabus } from '@/data/curriculum/courseSyllabusRegistry';
 import { TeachOCoursePickerModal } from '@/components/teacho/TeachOCoursePickerModal';
 import { TeachOCoursePlayerModal } from '@/components/teacho/TeachOCoursePlayerModal';
+import { PaymentQRModal } from '@/components/PaymentQRModal';
+import TeachOWhatsAppService from '@/lib/TeachOWhatsAppService';
 
 export default function TeachODashboard() {
   // Active Course & Enrolled List
@@ -56,6 +60,10 @@ export default function TeachODashboard() {
     'tnpsc-grp4',
     'skill-python',
   ]);
+
+  // Payment Modal State
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isCoursePurchased, setIsCoursePurchased] = useState(false);
 
   // Daily Progression State
   const [courseDay, setCourseDay] = useState(1);
@@ -376,6 +384,83 @@ export default function TeachODashboard() {
         {/* ================= TAB 1: TODAY'S ROUTINE ================= */}
         {activeTab === 'routine' && (
           <div className="space-y-6">
+            
+            {/* 👑 Course Master Access / Unlock Banner */}
+            {isCoursePurchased ? (
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-emerald-300 uppercase tracking-wider">Premium Access Active</h4>
+                    <p className="text-xs text-slate-300">All {activeCourse.totalDays} days, test series & AI tutor unlocked.</p>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 bg-emerald-500 text-slate-950 rounded-lg text-xs font-black">UNLOCKED 🔓</span>
+              </div>
+            ) : (
+              <div className="p-4 bg-gradient-to-r from-amber-500/15 via-[#0e172a] to-emerald-500/15 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                    <ShoppingCart className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white">Unlock Full {activeCourse.totalDays}-Day Master Program</h4>
+                      <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded">₹499</span>
+                    </div>
+                    <p className="text-xs text-slate-400">1-Tap Instant UPI Pay with GPay/PhonePe or apply coupon code. Unlocks all lessons & mock exams.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsPaymentOpen(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black rounded-xl transition shadow-md shrink-0 flex items-center justify-center gap-1.5"
+                >
+                  <Sparkles className="w-4 h-4" /> Unlock Course (₹499)
+                </button>
+              </div>
+            )}
+
+            {/* 📲 WhatsApp CRM Daily Study Alert Sync Bar */}
+            <div className="p-4 bg-[#0c1322] border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                  <MessageSquare className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-white">WhatsApp CRM Daily Study Sync</h4>
+                    <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-bold text-[9px] rounded-full border border-emerald-500/30">
+                      Auto-Notify Active
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Send Day {courseDay} 4-step syllabus breakdown, AI doubt solver link & TestO quiz directly to student WhatsApp.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  TeachOWhatsAppService.sendDayPlanAlert({
+                    studentPhone: '9486335870',
+                    studentName: 'Learner',
+                    courseTitle: activeCourse.title,
+                    courseId: activeCourse.id,
+                    currentDay: courseDay,
+                    totalDays: activeCourse.totalDays,
+                    tasks: dailyCurriculum.tasks,
+                    streak: courseStreak,
+                    xp: courseXP,
+                  });
+                }}
+                className="px-3.5 py-2 bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/40 text-[#25D366] text-xs font-bold rounded-xl transition shrink-0 flex items-center justify-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" /> Dispatch Day {courseDay} Alert
+              </button>
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base md:text-lg font-bold text-white">
@@ -434,8 +519,29 @@ export default function TeachODashboard() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500 font-mono">Module #{idx + 1}</span>
+                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+                      {/* Contextual Deep-Links: AI Doubt & TestO */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            const prompt = `I am studying "${task.rawSubject || activeCourse.title}" - Topic: "${task.rawTopic || task.title}" (Day ${courseDay}, Module #${idx + 1} of course "${activeCourse.title}"). Please explain this topic step-by-step with key concepts, rules/formulas, practical examples, and 3 high-yield exam tips in Tamil & English.`;
+                            setChatInput(prompt);
+                            setActiveTab('ai_tutor');
+                          }}
+                          className="px-2.5 py-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition"
+                          title="Ask AI Doubt for this topic"
+                        >
+                          <Bot className="w-3.5 h-3.5 text-purple-400" /> Ask AI Doubt
+                        </button>
+
+                        <Link
+                          href={`/testo?search=${encodeURIComponent(task.rawTopic || task.rawSubject || task.title)}`}
+                          className="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition"
+                          title="Practice Test for this heading"
+                        >
+                          <Award className="w-3.5 h-3.5 text-amber-400" /> Test Heading
+                        </Link>
+                      </div>
                       
                       <button
                         onClick={() => {
@@ -1008,6 +1114,22 @@ export default function TeachODashboard() {
           }}
         />
       )}
+
+      {/* ─── 6. MODAL: PAYMENT QR & UNLOCK MODAL ────────────────────────────── */}
+      <PaymentQRModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        onSuccess={() => setIsCoursePurchased(true)}
+        title={`${activeCourse.title} (Full ${activeCourse.totalDays} Days)`}
+        amount={499}
+        itemId={activeCourse.id}
+        itemType="course"
+        userId="web-user"
+        userName="Learner"
+        userPhone="9486335870"
+        upiId="9486335870@hdfcbank"
+        payeeName="AISHLEE TECHNOLOGY"
+      />
 
     </div>
   );

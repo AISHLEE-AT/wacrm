@@ -329,7 +329,7 @@ const TOOL_CONFIGS: Record<string, {
   },
 };
 
-export default function AishleeToolsScreen({ navigation }: any) {
+export default function AishleeToolsScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const { geminiApiKey: contextKey, setGeminiApiKey, user, themeMode, themeVer } = useContext(AppContext);
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
@@ -379,6 +379,29 @@ export default function AishleeToolsScreen({ navigation }: any) {
 
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
+
+  // ─── Handle incoming TeachO Day Plan & contextual prompts ───
+  useEffect(() => {
+    if (route?.params?.initialPrompt) {
+      const incomingPrompt = route.params.initialPrompt;
+      const targetTool = route.params.tool || 'Notes Maker';
+      const targetCat = CATEGORIES.find((c) => c.id === 'education') || CATEGORIES[3];
+
+      setActiveCategory(targetCat);
+      setActiveTool(targetTool);
+      setInput(incomingPrompt);
+
+      if (route.params.autoRun) {
+        setTimeout(() => {
+          handleGenerate(incomingPrompt, targetTool);
+        }, 350);
+      } else {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 200);
+      }
+    }
+  }, [route?.params]);
 
   useEffect(() => {
     if (contextKey && !apiKey) {

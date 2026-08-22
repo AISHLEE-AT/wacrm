@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NativeSpeech from '../lib/NativeSpeech';
 import VoiceSpeechBridge, { VoiceSpeechBridgeRef } from '../components/VoiceSpeechBridge';
+import PaymentQRModal from '../components/PaymentQRModal';
 import {
   ChevronLeft,
   Search,
@@ -33,13 +34,15 @@ import {
   MicOff,
   X,
   Volume2,
+  ShoppingCart,
 } from 'lucide-react-native';
 
-export default function TestOHubScreen() {
+export default function TestOHubScreen({ route }: any) {
   const [sections, setSections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(route?.params?.searchQuery || route?.params?.topic || '');
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceLang, setVoiceLang] = useState<'ta-IN' | 'en-IN'>('ta-IN');
   const [voiceTranscript, setVoiceTranscript] = useState('');
@@ -48,6 +51,17 @@ export default function TestOHubScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+
+  // Handle incoming route params when navigated
+  useEffect(() => {
+    if (route?.params?.searchQuery) {
+      setSearchQuery(route.params.searchQuery);
+    } else if (route?.params?.topic) {
+      setSearchQuery(route.params.topic);
+    } else if (route?.params?.courseTitle) {
+      setSearchQuery(route.params.courseTitle);
+    }
+  }, [route?.params]);
 
   // ─── Pulse Animation for Voice Mic ───
   useEffect(() => {
@@ -370,6 +384,28 @@ export default function TestOHubScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* 💳 Test Series Pass Unlock Banner */}
+      <TouchableOpacity
+        style={styles.testoUnlockBanner}
+        onPress={() => setIsPaymentModalOpen(true)}
+        activeOpacity={0.85}
+      >
+        <View style={styles.testoUnlockIconBox}>
+          <ShoppingCart size={16} color="#fbbf24" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={styles.testoUnlockTitle}>Unlock All Test Series (₹99)</Text>
+            <View style={styles.testoUnlockPriceBadge}>
+              <Text style={styles.testoUnlockPriceText}>Instant Pass</Text>
+            </View>
+          </View>
+          <Text style={styles.testoUnlockDesc}>
+            1-Tap UPI / GPay unlock for all standard & chapter exams with certificate.
+          </Text>
+        </View>
+      </TouchableOpacity>
+
       <SectionList
         sections={filteredSections}
         keyExtractor={item => item.id}
@@ -513,11 +549,72 @@ export default function TestOHubScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* 💳 Test Series UPI Unlock Modal */}
+      <PaymentQRModal
+        visible={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSuccess={() => {
+          setIsPaymentModalOpen(false);
+          Alert.alert('Unlocked! 🎉', 'All Test Series unlocked with instant scoring and certificate access.');
+        }}
+        title="TestO All-Access Exam Pass"
+        amount={99}
+        itemId="testo_all_access_pass"
+        itemType="o_test"
+        userId="student-user"
+        userName="Student"
+        userPhone="9486335870"
+        upiId="9486335870@hdfcbank"
+        payeeName="AISHLEE TECHNOLOGY"
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  testoUnlockBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.35)',
+    gap: 10,
+  },
+  testoUnlockIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  testoUnlockTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  testoUnlockPriceBadge: {
+    backgroundColor: '#fbbf24',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  testoUnlockPriceText: {
+    color: '#0a0f1e',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  testoUnlockDesc: {
+    fontSize: 10,
+    color: '#94a3b8',
+    marginTop: 2,
+    lineHeight: 13,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#0a0f1e',

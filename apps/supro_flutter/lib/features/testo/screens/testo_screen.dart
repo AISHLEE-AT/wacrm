@@ -3,13 +3,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../shared/widgets/payment_qr_dialog.dart';
 
 const String _eduSupabaseUrl = 'https://jjgdatjthyeesmgunnlp.supabase.co';
 const String _eduAnonKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqZ2RhdGp0aHllZXNtZ3VubmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzU5NTYsImV4cCI6MjEwMDIxMTk1Nn0.iuSdvxW9VEtn_1yVLmf9ZN24CeXFxmF3aeVHEn-Dgcs';
 
 class TestoScreen extends StatefulWidget {
-  const TestoScreen({super.key});
+  final String? initialSearch;
+  const TestoScreen({super.key, this.initialSearch});
 
   @override
   State<TestoScreen> createState() => _TestoScreenState();
@@ -18,10 +20,14 @@ class TestoScreen extends StatefulWidget {
 class _TestoScreenState extends State<TestoScreen> {
   List<Map<String, dynamic>> sections = [];
   bool isLoading = true;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchQuery = widget.initialSearch!;
+    }
     _fetchTests();
   }
 
@@ -171,6 +177,90 @@ class _TestoScreenState extends State<TestoScreen> {
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
           : Column(
               children: [
+                // 💳 Test Series Pass Unlock Banner
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.purple.withValues(alpha: 0.2),
+                          const Color(0xFF111827),
+                          Colors.amber.withValues(alpha: 0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(LucideIcons.shoppingCart, color: Colors.purpleAccent, size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Text(
+                                    'TestO All-Access Pass',
+                                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                    decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(4)),
+                                    child: const Text('₹99', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Instant 1-Tap UPI Pay with GPay/PhonePe or coupon.',
+                                style: TextStyle(color: Colors.white54, fontSize: 10),
+                              ),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            PaymentQrDialog.show(
+                              context,
+                              title: 'TestO All-Access Exam Pass',
+                              amount: 99,
+                              itemId: 'testo_all_access_pass',
+                              itemType: 'o_test',
+                              onSuccess: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('🎉 All Test Series unlocked with instant scoring!'),
+                                    backgroundColor: Color(0xFF10B981),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Unlock', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 // Search Input
                 Padding(
                   padding: const EdgeInsets.all(16.0),

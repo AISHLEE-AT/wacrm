@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../shared/widgets/payment_qr_dialog.dart';
 import '../data/courses_catalog.dart';
 import '../data/curriculum_resolver.dart';
+import '../services/teacho_whatsapp_service.dart';
 import 'teacho_player_sheet.dart';
 
 class TeachoScreen extends StatefulWidget {
@@ -67,11 +69,14 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
+  bool _isCoursePurchased = false;
+
   Future<void> _loadSavedState() async {
     final prefs = await SharedPreferences.getInstance();
     final savedId = prefs.getString('teacho_active_course_id');
     final savedDay = prefs.getInt('teacho_course_day');
     final savedXP = prefs.getInt('teacho_course_xp');
+    final isPurchased = prefs.getBool('purchased_course_${savedId ?? _activeCourse.id}') ?? false;
 
     setState(() {
       if (savedId != null) {
@@ -83,6 +88,7 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
       }
       if (savedDay != null) _courseDay = savedDay;
       if (savedXP != null) _courseXP = savedXP;
+      _isCoursePurchased = isPurchased;
     });
   }
 
@@ -101,6 +107,14 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
       }
     });
     _saveState();
+
+    // Auto dispatch registration welcome alert on WhatsApp
+    TeachoWhatsAppService.sendCourseRegistrationWelcome(
+      studentPhone: '9486335870',
+      studentName: 'Learner',
+      courseTitle: course.title,
+      totalDays: course.totalDays,
+    );
   }
 
   void _handleCompleteTask(String taskId, int xp) {
@@ -288,18 +302,193 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
   // ─── TAB 1: TODAY'S ROUTINE ────────────────────────────────────────────────
   Widget _buildDailyRoutineTab(DailyPlan plan) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        // Hero Active Course Card
+        // 👑 Course Master Access Unlock Banner
+        if (_isCoursePurchased)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+            ),
+            child: const Row(
+              children: [
+                Icon(LucideIcons.shieldCheck, color: Color(0xFF10B981), size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'PREMIUM ACCESS UNLOCKED • All Days & Tests Accessible',
+                    style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber.withValues(alpha: 0.15),
+                  const Color(0xFF0F172A),
+                  const Color(0xFF10B981).withValues(alpha: 0.12),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(LucideIcons.shoppingCart, color: Colors.amber, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Unlock Full Master Course',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(color: Colors.amber, borderRadius: BorderRadius.circular(4)),
+                            child: const Text('₹499', style: TextStyle(color: Colors.black, fontSize: 9, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Instant 1-Tap UPI Pay with GPay/PhonePe or coupon.',
+                        style: TextStyle(color: Colors.white54, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    PaymentQrDialog.show(
+                      context,
+                      title: '${_activeCourse.title} (Full ${_activeCourse.totalDays} Days)',
+                      amount: 499,
+                      itemId: _activeCourse.id,
+                      itemType: 'course',
+                      onSuccess: () {
+                        setState(() => _isCoursePurchased = true);
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFBBF24),
+                    foregroundColor: const Color(0xFF0A0F1D),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Unlock', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+
+        // 📲 WhatsApp CRM Daily Study Sync Card
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0C1322),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF1E293B)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(LucideIcons.messageSquare, color: Color(0xFF25D366), size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'WhatsApp CRM Study Sync',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                          ),
+                          child: const Text('Auto-Notify', style: TextStyle(color: Color(0xFF10B981), fontSize: 8, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Send Day $_courseDay 4-step micro-lessons to student WhatsApp.',
+                      style: const TextStyle(color: Colors.white54, fontSize: 10),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  TeachoWhatsAppService.sendDayPlanAlert(
+                    studentPhone: '9486335870',
+                    studentName: 'Learner',
+                    courseTitle: _activeCourse.title,
+                    currentDay: _courseDay,
+                    totalDays: _activeCourse.totalDays,
+                    tasks: plan.tasks,
+                    streak: _courseStreak,
+                    xp: _courseXP,
+                  );
+                },
+                icon: const Icon(LucideIcons.send, size: 11, color: Color(0xFF25D366)),
+                label: const Text('Send Alert', style: TextStyle(fontSize: 10, color: Color(0xFF25D366), fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: const Color(0xFF25D366).withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Hero Course Summary Card
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF0F172A), Color(0xFF111827)],
+              colors: [Color(0xFF0F172A), Color(0xFF0B1120)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(color: const Color(0xFF1E293B)),
           ),
           child: Column(
@@ -313,6 +502,7 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       _activeCourse.badge,
@@ -410,7 +600,9 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
         const SizedBox(height: 12),
 
         // Task Cards List
-        ...plan.tasks.map((task) {
+        ...plan.tasks.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final task = entry.value;
           final isDone = _completedTaskIds.contains(task.id);
 
           return Container(
@@ -483,30 +675,88 @@ class _TeachoScreenState extends State<TeachoScreen> with SingleTickerProviderSt
                   ],
                 ),
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      TeachoPlayerSheet.show(
-                        context,
-                        topicTitle: task.title,
-                        subject: task.rawSubject,
-                        courseTitle: _activeCourse.title,
-                        courseId: _activeCourse.id,
-                        dayNumber: _courseDay,
-                        onComplete: (xp) => _handleCompleteTask(task.id, xp),
-                      );
-                    },
-                    icon: const Icon(LucideIcons.playCircle, size: 14),
-                    label: Text(isDone ? 'Review Lesson' : 'Start Lesson'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDone ? const Color(0xFF1E293B) : const Color(0xFF10B981),
-                      foregroundColor: isDone ? const Color(0xFF10B981) : const Color(0xFF022C22),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Contextual Action Chips: Ask AI Doubt & Test Heading
+                    Row(
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            final prompt = 'I am studying "${task.rawSubject.isNotEmpty ? task.rawSubject : _activeCourse.title}" - Topic: "${task.rawTopic.isNotEmpty ? task.rawTopic : task.title}" (Day $_courseDay, Module #${idx + 1} of course "${_activeCourse.title}"). Please explain this topic step-by-step with key concepts, rules/formulas, practical examples, and 3 high-yield exam tips in Tamil & English.';
+                            _chatController.text = prompt;
+                            _tabController.animateTo(3);
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(LucideIcons.bot, size: 12, color: Colors.purpleAccent),
+                                SizedBox(width: 4),
+                                Text('Ask AI Doubt', style: TextStyle(color: Colors.purpleAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Practice tests for: "${task.rawTopic.isNotEmpty ? task.rawTopic : task.title}"'),
+                                backgroundColor: const Color(0xFF1E293B),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(LucideIcons.award, size: 12, color: Colors.amber),
+                                SizedBox(width: 4),
+                                Text('Test Heading', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        TeachoPlayerSheet.show(
+                          context,
+                          topicTitle: task.title,
+                          subject: task.rawSubject,
+                          courseTitle: _activeCourse.title,
+                          courseId: _activeCourse.id,
+                          dayNumber: _courseDay,
+                          onComplete: (xp) => _handleCompleteTask(task.id, xp),
+                        );
+                      },
+                      icon: const Icon(LucideIcons.playCircle, size: 14),
+                      label: Text(isDone ? 'Review' : 'Start'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDone ? const Color(0xFF1E293B) : const Color(0xFF10B981),
+                        foregroundColor: isDone ? const Color(0xFF10B981) : const Color(0xFF022C22),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

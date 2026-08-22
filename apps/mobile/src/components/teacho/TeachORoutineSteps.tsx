@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { CheckCircle2, Play, Lock, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { CheckCircle2, Play, Lock, ChevronLeft, ChevronRight, Bot, Award, Sparkles } from 'lucide-react-native';
 
 export interface RoutineTask {
   id: string;
@@ -13,6 +13,7 @@ export interface RoutineTask {
   status: 'completed' | 'in_progress' | 'locked';
   xp: number;
   actionLabel: string;
+  stepNumber?: number;
 }
 
 interface TeachORoutineStepsProps {
@@ -21,6 +22,8 @@ interface TeachORoutineStepsProps {
   tasks: RoutineTask[];
   onSelectDay: (day: number) => void;
   onTaskPress: (task: RoutineTask) => void;
+  onAskAi?: (task: RoutineTask) => void;
+  onTakeTest?: (task: RoutineTask) => void;
 }
 
 export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
@@ -29,6 +32,8 @@ export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
   tasks,
   onSelectDay,
   onTaskPress,
+  onAskAi,
+  onTakeTest,
 }) => {
   return (
     <View style={styles.sectionContainer}>
@@ -75,7 +80,7 @@ export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
           const isLocked = task.status === 'locked';
 
           return (
-            <TouchableOpacity
+            <View
               key={task.id || `step-${index}`}
               style={[
                 styles.taskCard,
@@ -83,70 +88,96 @@ export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
                 isCurrent && styles.taskCardCurrent,
                 isLocked && styles.taskCardLocked,
               ]}
-              onPress={() => onTaskPress(task)}
-              activeOpacity={isLocked ? 1 : 0.75}
             >
-              {/* Step Status Indicator Icon */}
-              <View
-                style={[
-                  styles.statusIconBox,
-                  isDone && styles.statusIconBoxDone,
-                  isCurrent && styles.statusIconBoxCurrent,
-                  isLocked && styles.statusIconBoxLocked,
-                ]}
+              {/* Main Step Clickable Header Row */}
+              <TouchableOpacity
+                style={styles.taskMainRow}
+                onPress={() => onTaskPress(task)}
+                activeOpacity={isLocked ? 1 : 0.75}
               >
-                {isDone ? (
-                  <CheckCircle2 size={20} color="#10b981" />
-                ) : isCurrent ? (
-                  <Play size={18} color="#06b6d4" fill="#06b6d4" />
-                ) : (
-                  <Lock size={16} color="#64748b" />
-                )}
-              </View>
-
-              {/* Task Details */}
-              <View style={styles.taskInfo}>
-                <View style={styles.taskMetaRow}>
-                  <View style={styles.stepBadge}>
-                    <Text style={styles.stepBadgeText}>Step {index + 1}</Text>
-                  </View>
-                  <Text style={styles.durationText}>⏱ {task.duration}</Text>
-                  <Text style={styles.xpText}>+{task.xp} XP</Text>
+                {/* Step Status Indicator Icon */}
+                <View
+                  style={[
+                    styles.statusIconBox,
+                    isDone && styles.statusIconBoxDone,
+                    isCurrent && styles.statusIconBoxCurrent,
+                    isLocked && styles.statusIconBoxLocked,
+                  ]}
+                >
+                  {isDone ? (
+                    <CheckCircle2 size={20} color="#10b981" />
+                  ) : isCurrent ? (
+                    <Play size={18} color="#06b6d4" fill="#06b6d4" />
+                  ) : (
+                    <Lock size={16} color="#64748b" />
+                  )}
                 </View>
 
-                <Text
-                  style={[
-                    styles.taskTitle,
-                    isDone && styles.taskTitleDone,
-                    isLocked && styles.taskTitleLocked,
-                  ]}
-                  numberOfLines={2}
-                >
-                  {task.title}
-                </Text>
-              </View>
+                {/* Task Details */}
+                <View style={styles.taskInfo}>
+                  <View style={styles.taskMetaRow}>
+                    <View style={styles.stepBadge}>
+                      <Text style={styles.stepBadgeText}>Step {index + 1}</Text>
+                    </View>
+                    <Text style={styles.durationText}>⏱ {task.duration}</Text>
+                    <Text style={styles.xpText}>+{task.xp} XP</Text>
+                  </View>
 
-              {/* Action Button / Pill */}
-              <View
-                style={[
-                  styles.actionPill,
-                  isDone && styles.actionPillDone,
-                  isCurrent && styles.actionPillCurrent,
-                  isLocked && styles.actionPillLocked,
-                ]}
-              >
-                <Text
+                  <Text
+                    style={[
+                      styles.taskTitle,
+                      isDone && styles.taskTitleDone,
+                      isLocked && styles.taskTitleLocked,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {task.title}
+                  </Text>
+                </View>
+
+                {/* Action Button / Pill */}
+                <View
                   style={[
-                    styles.actionPillText,
-                    isDone && styles.actionPillTextDone,
-                    isCurrent && styles.actionPillTextCurrent,
-                    isLocked && styles.actionPillTextLocked,
+                    styles.actionPill,
+                    isDone && styles.actionPillDone,
+                    isCurrent && styles.actionPillCurrent,
+                    isLocked && styles.actionPillLocked,
                   ]}
                 >
-                  {isDone ? 'Review' : isCurrent ? 'Start' : 'Locked'}
-                </Text>
+                  <Text
+                    style={[
+                      styles.actionPillText,
+                      isDone && styles.actionPillTextDone,
+                      isCurrent && styles.actionPillTextCurrent,
+                      isLocked && styles.actionPillTextLocked,
+                    ]}
+                  >
+                    {isDone ? 'Review' : isCurrent ? 'Start' : 'Locked'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Contextual Deep-Links: AI Helper Prompt & TestO Practice */}
+              <View style={styles.quickToolsRow}>
+                <TouchableOpacity
+                  style={styles.stepToolBtn}
+                  onPress={() => onAskAi && onAskAi(task)}
+                  activeOpacity={0.75}
+                >
+                  <Bot size={13} color="#c084fc" />
+                  <Text style={styles.stepToolBtnText}>Ask AI Doubt</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.stepToolBtn, styles.stepToolTestBtn]}
+                  onPress={() => onTakeTest && onTakeTest(task)}
+                  activeOpacity={0.75}
+                >
+                  <Award size={13} color="#fbbf24" />
+                  <Text style={[styles.stepToolBtnText, styles.stepToolTestBtnText]}>Test Heading</Text>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           );
         })}
       </View>
@@ -207,13 +238,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   taskCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#131e32',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
     borderColor: '#1e293b',
+    gap: 8,
   },
   taskCardDone: {
     borderColor: 'rgba(16, 185, 129, 0.4)',
@@ -225,6 +255,10 @@ const styles = StyleSheet.create({
   },
   taskCardLocked: {
     opacity: 0.6,
+  },
+  taskMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   statusIconBox: {
     width: 36,
@@ -315,5 +349,36 @@ const styles = StyleSheet.create({
   },
   actionPillTextLocked: {
     color: '#64748b',
+  },
+  quickToolsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  stepToolBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(168, 85, 247, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(168, 85, 247, 0.25)',
+  },
+  stepToolTestBtn: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
+  },
+  stepToolBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#d8b4fe',
+  },
+  stepToolTestBtnText: {
+    color: '#fde68a',
   },
 });

@@ -23,7 +23,9 @@ import {
   MicOff,
   Printer,
   ShieldAlert,
+  ShoppingCart,
 } from 'lucide-react';
+import { PaymentQRModal } from '@/components/PaymentQRModal';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Mock Tests', icon: FileCheck2 },
@@ -62,6 +64,18 @@ export default function TestoWebPage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+
+  // Read URL search params on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('search') || params.get('topic') || params.get('q');
+      if (q) {
+        setSearchQuery(q);
+      }
+    }
+  }, []);
 
   // Live Exam State
   const [activeTest, setActiveTest] = useState<any | null>(null);
@@ -351,6 +365,30 @@ export default function TestoWebPage() {
           </button>
         </div>
 
+        {/* 💳 Test Series Pass Unlock Banner */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-900/40 via-[#111827] to-amber-950/30 border border-purple-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold shrink-0">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-white">TestO All-Access Exam Pass</h4>
+                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded">₹99</span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Unlock all national standard mock exams, timed chapter tests, and verifiable certificates via 1-Tap UPI Pay.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsPaymentOpen(true)}
+            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white text-xs font-bold rounded-xl transition shadow-md shrink-0 flex items-center justify-center gap-1.5"
+          >
+            <Sparkles className="w-4 h-4" /> Unlock Exam Pass (₹99)
+          </button>
+        </div>
+
         {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
           {CATEGORIES.map(cat => {
@@ -602,6 +640,25 @@ export default function TestoWebPage() {
           </div>
         </div>
       )}
+
+      {/* 💳 Test Series UPI Unlock Modal */}
+      <PaymentQRModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        onSuccess={() => {
+          setIsPaymentOpen(false);
+          alert('🎉 All Test Series unlocked with instant scoring and certificate access!');
+        }}
+        title="TestO All-Access Exam Pass"
+        amount={99}
+        itemId="testo_all_access_pass"
+        itemType="o_test"
+        userId="web-student"
+        userName="Student"
+        userPhone="9486335870"
+        upiId="9486335870@hdfcbank"
+        payeeName="AISHLEE TECHNOLOGY"
+      />
     </div>
   );
 }
