@@ -285,7 +285,7 @@ export default function TeachODashboard() {
             </div>
           ) : (
             <button
-              onClick={() => setIsPurchaseModalOpen(true)}
+              onClick={() => setIsPaymentOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition transform active:scale-95"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
