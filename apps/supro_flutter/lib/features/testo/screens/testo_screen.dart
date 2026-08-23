@@ -25,6 +25,69 @@ class _TestoScreenState extends State<TestoScreen> {
 
   final List<Map<String, dynamic>> syllabusCourses = [
     {
+      'id': 'class_10_tn',
+      'title': 'Class 10 (SSLC 10th)',
+      'sub': 'Science (Bio/Phy/Chem), Maths, Tamil, English, Social',
+      'units': [
+        {
+          'subject': 'Biology (உயிரியல்)',
+          'title': 'Unit 3: Life Processes & Genetics (வாழ்க்கைச் செயல்கள்)',
+          'topics': [
+            {'title': 'Photosynthesis & Plant Physiology (ஒளிச்சேர்க்கை)', 'law': '6CO₂ + 6H₂O + Sunlight -> C₆H₁₂O₆ + 6O₂ (Light & Dark Reactions)'},
+            {'title': 'Human Heart & Double Circulation (மனித இதயம்)', 'law': '4 Chambers, Tricuspid/Bicuspid Valves, BP = 120/80 mmHg'},
+            {'title': 'Nephron & Excretory System (நெஃப்ரான் கழிவுநீக்கம்)', 'law': 'Glomerular Ultrafiltration & Selective Tubular Reabsorption'},
+            {'title': 'Human Brain & Reflex Action (மனித மூளை)', 'law': 'Cerebrum, Cerebellum, Medulla & Reflex Arc Action'},
+            {'title': 'Plant Hormones (தாவர ஹார்மோன்கள் - ஆக்சின், எத்திலீன்)', 'law': 'Auxin = Shoot Growth | Cytokinin = Cell Division | Ethylene = Ripening'},
+            {'title': "Mendel's Laws of Inheritance (மெண்டலின் மரபியல்)", 'law': 'Monohybrid Cross 3:1 | Dihybrid Cross 9:3:3:1'},
+            {'title': 'DNA Structure - Watson & Crick Model (DNA இரட்டைச் சுருள்)', 'law': 'Double Helix with A=T and G≡C Complementary Base Pairs'}
+          ]
+        },
+        {
+          'subject': 'Physics (இயற்பியல்)',
+          'title': 'Unit 1: Laws of Motion, Optics & Electricity',
+          'topics': [
+            {'title': "Newton's Laws of Motion (நியூட்டனின் இயக்க விதிகள்)", 'law': 'F = ma | Momentum p = mv | Recoil v = -(m/M)u'},
+            {'title': 'Optics & Lens Formula (ஒளியியல் & லென்ஸ் சூத்திரம்)', 'law': '1/v - 1/u = 1/f | Power of Lens P = 1/f(m) Dioptre'},
+            {'title': "Electricity & Ohm's Law (மின்னியல் & ஓம் விதி)", 'law': 'V = IR | Series R_s = R₁ + R₂ | Joule Heat H = I²Rt'},
+            {'title': 'Nuclear Physics & Radioactivity (அணுக்கரு இயற்பியல்)', 'law': 'E = mc² | Nuclear Fission & Fusion Energy'}
+          ]
+        },
+        {
+          'subject': 'Chemistry (வேதியியல்)',
+          'title': 'Unit 2: Atoms, Solutions & Carbon Compounds',
+          'topics': [
+            {'title': 'Mole Concept & Avogadro Number (மோல் தத்துவம்)', 'law': 'Mole n = Mass / Molar Mass | N_A = 6.023 × 10²³'},
+            {'title': 'pH Scale & Acid-Base Indicators (pH அளவீடு)', 'law': 'pH = -log₁₀[H⁺] | Acidic < 7 | Neutral = 7 | Basic > 7'},
+            {'title': 'Carbon Compounds & Esterification (கார்பன் சேர்மங்கள்)', 'law': 'CH₃COOH + C₂H₅OH -> CH₃COOC₂H₅ (Ester) + H₂O'}
+          ]
+        },
+        {
+          'subject': 'Mathematics (கணிதம்)',
+          'title': 'Unit 1: Numbers, Algebra, Geometry & Trigonometry',
+          'topics': [
+            {'title': "Euclid's Division Lemma (யூக்ளிட் வகுத்தல் வழிமுறை)", 'law': 'a = bq + r (0 ≤ r < b) for HCF Algorithm'},
+            {'title': 'Arithmetic Progression AP (கூட்டுத்தொடர் AP)', 'law': 't_n = a + (n - 1)d | S_n = n/2 [2a + (n - 1)d]'},
+            {'title': 'Geometric Progression GP (பெருக்குத்தொடர் GP)', 'law': 't_n = a rⁿ⁻¹ | S_n = a(rⁿ - 1)/(r - 1)'},
+            {'title': 'Quadratic Nature of Roots (இருபடிச் சமன்பாடுகள்)', 'law': 'D = b² - 4ac | x = [-b ± √(b² - 4ac)] / (2a)'},
+            {'title': 'Thales Theorem & BPT (தேல்ஸ் தேற்றம்)', 'law': 'AD/DB = AE/EC in triangle with parallel line'},
+            {'title': 'Trigonometric Identities (முக்கோணவியல்)', 'law': 'sin²θ + cos²θ = 1 | 1 + tan²θ = sec²θ'}
+          ]
+        },
+        {
+          'subject': 'Tamil (தமிழ்)',
+          'title': 'இயல் 1 முதல் 5: செய்யுள், உரைநடை & இலக்கணம்',
+          'topics': [
+            {'title': 'அன்னை மொழியே (பாவலேறு பெருஞ்சித்திரனார்)', 'law': 'கணிச்சாறு: நறுங்கனியே செந்தமிழே வாழ்த்துப் பாடல்'},
+            {'title': 'காற்றே வா (மகாகவி பாரதியார் வசன கவிதை)', 'law': 'மகரந்தத் தூளைச் சுமந்து வரும் தென்றல் காற்று'},
+            {'title': 'முல்லைப்பாட்டு (நப்பூதனார் சங்க இலக்கியம்)', 'law': 'பத்துப்பாட்டு: முல்லை நில உரிப்பொருள் & விரிச்சி கேட்டல்'},
+            {'title': 'தொகைநிலைத் தொடர்கள் (6 வகைகள்)', 'law': 'வேற்றுமை, வினை, பண்பு, உவமை, உம்மை, அன்மொழித்தொகை'},
+            {'title': 'தொகாநிலைத் தொடர்கள் (9 வகைகள்)', 'law': 'எழுவாய், விளி, வினைமுற்று, பெயரெச்ச, வினையெச்சத் தொடர்'},
+            {'title': 'வழு, வழாநிலை & வழுவமைதி (இலக்கணம்)', 'law': 'திணை, பால், இடம், கால, மரபு வழுவமைதி 5 வகை'}
+          ]
+        }
+      ]
+    },
+    {
       'id': 'class_12_tn',
       'title': 'Class 12 Board Exam',
       'sub': 'Maths, Physics, Chem, Bio, CS, Commerce, Accounts, Tamil',

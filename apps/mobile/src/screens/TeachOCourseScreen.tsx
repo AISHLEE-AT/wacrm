@@ -829,12 +829,35 @@ export default function TeachOCourseScreen() {
                                     </View>
                                   </TouchableOpacity>
 
-                                  <TouchableOpacity
-                                    style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 6 }}
-                                    onPress={() => openCoursePlayer(mTitle, 'theory')}
-                                  >
-                                    <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
-                                  </TouchableOpacity>
+                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 6 }}>
+                                    <TouchableOpacity
+                                      style={{ backgroundColor: '#f59e0b15', borderColor: '#f59e0b', borderWidth: 1, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6 }}
+                                      onPress={() => {
+                                        navigation.navigate('TestOExamScreen', {
+                                          examConfig: {
+                                            id: `cbt_${micro.id || mIdx}`,
+                                            title: `${mTitle} (10-Q CBT)`,
+                                            subject: courseTitle,
+                                            totalQuestions: 10,
+                                            durationMinutes: 15,
+                                            totalMarks: 40,
+                                            passPercentage: 40,
+                                            topicFilter: mTitle,
+                                            isOfficialMock: false
+                                          }
+                                        });
+                                      }}
+                                    >
+                                      <Text style={{ fontSize: 10, color: '#f59e0b', fontWeight: 'bold' }}>10-Q CBT</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                      style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
+                                      onPress={() => openCoursePlayer(mTitle, 'theory')}
+                                    >
+                                      <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
+                                    </TouchableOpacity>
+                                  </View>
                                 </View>
                               );
                             })}

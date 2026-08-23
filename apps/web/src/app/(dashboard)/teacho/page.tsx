@@ -961,77 +961,86 @@ export default function TeachODashboard() {
 
                               {/* Micro-Topics Grid */}
                               {isExpanded && (
-                                <div className="p-4 pt-0 border-t border-slate-800/60 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <div className="p-4 pt-0 border-t border-slate-800/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                                   {chapter.microTopics.map(topic => (
                                     <div
                                       key={topic.id}
-                                      className="p-4 rounded-xl bg-[#0b101b] border border-slate-800/80 hover:border-emerald-500/40 transition flex flex-col justify-between space-y-3 group"
+                                      className="p-4 rounded-2xl bg-[#0b101b] border border-slate-800/80 hover:border-emerald-500/50 hover:bg-[#0e1626] transition flex flex-col justify-between space-y-3 group shadow-md"
                                     >
-                                      <div className="space-y-2">
+                                      <div className="space-y-2.5">
                                         <div className="flex items-center justify-between gap-2">
-                                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800/80 text-emerald-400 border border-slate-700">
-                                            Day {topic.dayNumber} · Period {topic.periodNumber}
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700/80">
+                                            Day {topic.dayNumber || 1} · Period {topic.periodNumber || 1}
                                           </span>
                                           <span
-                                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
                                               topic.importance === 'High-Yield'
-                                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                                                : 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                                : 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
                                             }`}
                                           >
-                                            ★ {topic.importance}
+                                            ★ {topic.importance || 'Core Concept'}
                                           </span>
                                         </div>
 
-                                        <h6 className="text-sm font-bold text-white group-hover:text-emerald-300 transition">
-                                          {topic.topicTitle}
+                                        {/* Clean Head Title */}
+                                        <h6 className="text-sm font-bold text-white group-hover:text-emerald-300 transition line-clamp-2 leading-snug">
+                                          {topic.topicTitle || topic.title}
                                         </h6>
-                                        <p className="text-xs text-slate-400 leading-relaxed">{topic.subtopic}</p>
+                                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{topic.subtopic}</p>
 
                                         {/* Formula / Governing Rule Badge */}
                                         {topic.keyFormulaOrLaw && (
-                                          <div className="p-2.5 rounded-lg bg-[#141d2e] border border-slate-800 text-[11px] font-mono text-cyan-300">
-                                            <span className="text-[10px] text-slate-500 block font-sans font-bold uppercase mb-0.5">
-                                              📐 Governing Law / Formula / Rule:
+                                          <div className="p-2.5 rounded-xl bg-[#131d2e] border border-slate-800 text-[11px] font-mono text-cyan-300">
+                                            <span className="text-[9px] text-slate-400 block font-sans font-bold uppercase tracking-wider mb-0.5">
+                                              📐 Core Formula / Law:
                                             </span>
-                                            {topic.keyFormulaOrLaw}
+                                            <span className="line-clamp-2">{topic.keyFormulaOrLaw}</span>
                                           </div>
                                         )}
 
                                         {/* Key Exam Points */}
                                         {topic.keyPoints && topic.keyPoints.length > 0 && (
                                           <div className="space-y-1 pt-1">
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase block">
-                                              🎯 Core Scoring Points:
+                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">
+                                              🎯 Key Highlights:
                                             </span>
-                                            {topic.keyPoints.map((kp, idx) => (
-                                              <div key={idx} className="text-[11px] text-slate-300 flex items-start gap-1.5">
+                                            {topic.keyPoints.slice(0, 2).map((kp, idx) => (
+                                              <div key={idx} className="text-[11px] text-slate-300 flex items-start gap-1.5 line-clamp-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
-                                                <span>{kp}</span>
+                                                <span className="line-clamp-1">{kp}</span>
                                               </div>
                                             ))}
                                           </div>
                                         )}
                                       </div>
 
-                                      {/* Interactive Start Lesson Action */}
-                                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                                        <span className="text-[10px] font-mono text-slate-500">ID: {topic.id}</span>
+                                      {/* Interactive Start Lesson & CBT Actions */}
+                                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                                        <Link
+                                          href={`/testo?search=${encodeURIComponent(topic.topicTitle || topic.title || '')}`}
+                                          className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition flex items-center gap-1 shrink-0"
+                                          title="10-Q CBT Practice Test for this micro-topic"
+                                        >
+                                          <Award className="w-3.5 h-3.5 text-amber-400" />
+                                          <span>10-Q CBT</span>
+                                        </Link>
+
                                         <button
                                           onClick={() =>
                                             setActivePlayerTask({
-                                              topicTitle: topic.topicTitle,
+                                              topicTitle: topic.topicTitle || topic.title || 'Micro-Topic',
                                               subject: subject.subjectName,
                                               courseTitle: activeCourse.title,
                                               courseId: activeCourse.id,
-                                              dayNumber: topic.dayNumber,
-                                              taskNumber: topic.periodNumber,
+                                              dayNumber: topic.dayNumber || 1,
+                                              taskNumber: topic.periodNumber || 1,
                                             })
                                           }
-                                          className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-emerald-500/10"
+                                          className="flex-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/10"
                                         >
                                           <PlayCircle className="w-3.5 h-3.5" />
-                                          <span>Study Lesson</span>
+                                          <span>Player ➔</span>
                                         </button>
                                       </div>
                                     </div>

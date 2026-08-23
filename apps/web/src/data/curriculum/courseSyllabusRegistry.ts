@@ -1061,13 +1061,14 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               microTopics: [
                 { id: 'sec_t_1', title: 'செய்யுள்: அன்னை மொழியே (பாவலேறு பெருஞ்சித்திரனார் — கணிச்சாறு)', keyAxiom: 'நறுங்கனியே! செந்தமிழே! நற்கணக்கின் நற்பொருளே! திருக்குறளின் மாபெருமையே!' },
                 { id: 'sec_t_2', title: 'உரைநடை: தமிழ்ச் சொல்வளம் (தேவநேயப் பாவாணர் — சொல்லாராய்ச்சி)', keyAxiom: 'தாவரத்தின் அடி வகை, கிளைப் பிரிவு, காய்ந்த இலை, பிஞ்சு வகை, மணி வகை தமிழ்ச் சொல்வளம்' },
-                { id: 'sec_t_3', title: 'செய்யுள்: இரட்டுற மொழிதல் (சந்தக்கவிமணி தமிழழகனார் — சிலேடை)', keyAxiom: 'தமிழுக்கும் கடலுக்கும் அமைந்த சிலேடை ஒப்புமை' },
-                { id: 'sec_t_4', title: 'கற்கண்டு: எழுத்து (உயிரளபெடை, ஒற்றளபெடை) & சொல் (மூவகை மொழி)', keyAxiom: 'உயிரளபெடை 3 வகை (செய்யுளிசை, இன்னிசை, சொல்லிசை); சொல் 3 வகை (தனிமொழி, தொடர்மொழி, பொதுமொழி)' }
+                { id: 'sec_t_3', title: 'கற்கண்டு: எழுத்து (உயிரளபெடை, ஒற்றளபெடை) & சொல் (மூவகை மொழி)', keyAxiom: 'உயிரளபெடை 3 வகை (செய்யுளிசை, இன்னிசை, சொல்லிசை); சொல் 3 வகை (தனிமொழி, தொடர்மொழி, பொதுமொழி)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_t_1', topicTitle: 'இயல் 1: அன்னை மொழியே, தமிழ்ச் சொல்வளம் & உயிரளபெடை (3 வகை)', subtopic: 'செய்யுளிசை / இசைநிறை, இன்னிசை, சொல்லிசை அளபெடைகள் மற்றும் மூவகை மொழிகள்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'உயிரளபெடை: செய்யுளிசை (ஓஒதல்), இன்னிசை (கெடுப்பதூஉம்), சொல்லிசை (உரனசையீ) | சொல்: தனிமொழி, தொடர்மொழி, பொதுமொழி', keyPoints: ['பெருஞ்சித்திரனாரின் இதழ்கள்: தென்மொழி, தமிழ்ச்சிட்டு', 'மொழிஞாயிறு என்று அழைக்கப்படுபவர் தேவநேயப் பாவாணர்', 'ஒற்றளபெடையில் அளபெடுக்கும் மெய் எழுத்துகள் 10 + ஆய்தம் 1 = 11'], type: 'concept', importance: 'High-Yield' }
+            { id: 'sec_t_1', topicTitle: 'அன்னை மொழியே (பாவலேறு பெருஞ்சித்திரனார்)', subtopic: 'செந்தமிழே நறுங்கனியே — தமிழின் பெருமை மற்றும் வாழ்த்துப் பாடல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'கணிச்சாறு தொகுதி 1: "அன்னை மொழியே! அழகார்ந்த செந்தமிழே! முன்னைக்கு முன்னை முகிழ்த்த நறுங்கனியே!"', keyPoints: ['பெருஞ்சித்திரனாரின் இயற்பெயர் துரை. மாணிக்கம்', 'தென்மொழி, தமிழ்ச்சிட்டு இதழ்கள் வாயிலாகத் தமிழ் உணர்வை ஊட்டியவர்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_2', topicTitle: 'தமிழ்ச் சொல்வளம் (தேவநேயப் பாவாணர்)', subtopic: 'தாவரங்களின் அடி, கிளை, இலை, கொழுந்து, பிஞ்சு மற்றும் தானிய சொற்கள்', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'மொழிஞாயிறு தேவநேயப் பாவாணர்: "தமிழ் சொல்வளமும் சொல்லாராய்ச்சியும் மிக்க மொழி"', keyPoints: ['நாடும் மொழியும் நமதிரு கண்கள் என்று பாடியவர் பாரதியார்', 'செந்தமிழ்ச் சொற்பிறப்பியல் அகரமுதலித் திட்ட இயக்குநராகப் பணியாற்றியவர் பாவாணர்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_3', topicTitle: 'எழுத்து & சொல் இலக்கணம் (உயிரளபெடை & ஒற்றளபெடை)', subtopic: 'செய்யுளிசை (இசைநிறை), இன்னிசை, சொல்லிசை அளபெடைகள் & தனி, தொடர், பொது மொழிகள்', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'உயிரளபெடை 3 வகை | ஒற்றளபெடை மெய்கள் 10 + ஃ = 11 | சொல்: தனிமொழி, தொடர்மொழி, பொதுமொழி', keyPoints: ['செய்யுளில் ஓசை குறையும் போது அளபெடுப்பது செய்யுளிசை அளபெடை (ஓஒதல் வேண்டும்)', 'பெயர்ச்சொல் வினையெச்சப் பொருளில் திரிந்து அளபெடுப்பது சொல்லிசை அளபெடை (உரனசையீ)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
@@ -1079,14 +1080,16 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_t_sub2',
               title: 'இயற்கை & தொடர் இலக்கணம்',
               microTopics: [
-                { id: 'sec_t_5', title: 'செய்யுள்: காற்றே வா (மகாகவி பாரதியார் வசன கவிதை)', keyAxiom: 'காற்றே வா! மகரந்தத் தூளைச் சுமந்துகொண்டு மனத்தை மயலுறுத்துகின்ற இனிய வாசனையுடன் வா!' },
-                { id: 'sec_t_6', title: 'செய்யுள்: முல்லைப்பாட்டு (நப்பூதனார் — பத்துப்பாட்டு)', keyAxiom: 'சிறுதாம்பு தொடுத்த பயலைக் கோவலர் — முல்லை நிலக் கார் கால மாலைப் பொழுது' },
-                { id: 'sec_t_7', title: 'கற்கண்டு: தொகைநிலைத் தொடர்கள் 6 வகை (வேற்றுமை முதல் அன்மொழித்தொகை)', keyAxiom: 'வேற்றுமை, வினை, பண்பு, உவமை, உம்மை, அன்மொழித்தொகை' }
+                { id: 'sec_t_4', title: 'செய்யுள்: காற்றே வா (மகாகவி பாரதியார் வசன கவிதை)', keyAxiom: 'காற்றே வா! மகரந்தத் தூளைச் சுமந்துகொண்டு மனத்தை மயலுறுத்துகின்ற இனிய வாசனையுடன் வா!' },
+                { id: 'sec_t_5', title: 'செய்யுள்: முல்லைப்பாட்டு (நப்பூதனார் — பத்துப்பாட்டு)', keyAxiom: 'சிறுதாம்பு தொடுத்த பயலைக் கோவலர் — முல்லை நிலக் கார் கால மாலைப் பொழுது' },
+                { id: 'sec_t_6', title: 'கற்கண்டு: தொகைநிலைத் தொடர்கள் 6 வகை (வேற்றுமை முதல் அன்மொழித்தொகை)', keyAxiom: 'வேற்றுமை, வினை, பண்பு, உவமை, உம்மை, அன்மொழித்தொகை' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_t_5', topicTitle: 'இயல் 2: முல்லைப்பாட்டு, பாரதியார் காற்று & தொகைநிலைத் தொடர்கள் (6 வகை)', subtopic: 'வேற்றுமைத்தொகை, வினைத்தொகை (முக்காலம்), பண்புத்தொகை, உவமைத்தொகை, உம்மைத்தொகை, அன்மொழித்தொகை', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'தொகைநிலைத் தொடர்கள் 6: வேற்றுமைத்தொகை (கரும்பு தின்றான்), வினைத்தொகை (ஊறுகாய்), பண்புத்தொகை (செந்தாமரை), உவமைத்தொகை (மலர்க்கை), உம்மைத்தொகை (தாய்சேய்), அன்மொழித்தொகை (சிவப்பு சட்டை பேசினார்)', keyPoints: ['பத்துப்பாட்டில் குறைந்த அடிகளை உடைய நூல் முல்லைப்பாட்டு (103 அடிகள்)', 'முல்லை நில தெய்வம் மாயோன் (திருமால்)'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_t_4', topicTitle: 'காற்றே வா (மகாகவி பாரதியார் வசன கவிதை)', subtopic: 'மகரந்தத் தூளைச் சுமந்து வரும் தென்றல் காற்று மற்றும் உயிர் மூச்சு', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'பாரதியார்: "காற்றே வா! எமது உயிர் நெருப்பை நீடித்து நின்று நல்ஒளி தருமாறு நன்றாக வீசு"', keyPoints: ['வசன கவிதை வடிவத்தை தமிழில் அறிமுகப்படுத்தியவர் பாரதியார்', 'திசைகளின் பெயர்கள்: கிழக்கு (குணக்கு), மேற்கு (குடக்கு), வடக்கு (வாடை), தெற்கு (தென்றல்)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_5', topicTitle: 'முல்லைப்பாட்டு (நப்பூதனார் சங்க இலக்கியம்)', subtopic: 'நனந்தலை உலகம் வளைஇ — முல்லை நிலத்து விரிச்சி கேட்டல்', dayNumber: 4, periodNumber: 2, keyFormulaOrLaw: 'பத்துப்பாட்டு: முல்லை நிலத்தின் உரிப்பொருள் (இருத்தலும் இருத்தல் நிமித்தமும்)', keyPoints: ['பத்துப்பாட்டில் மிகக் குறைந்த அடிகளை உடைய நூல் முல்லைப்பாட்டு (103 அடிகள்)', 'முல்லை நில தெய்வம் திருமால்; பெரும் பொழுது கார்காலம் (ஆவணி, புரட்டாசி)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_6', topicTitle: 'தொகைநிலைத் தொடர்கள் (6 வகைகள்)', subtopic: 'வேற்றுமை, வினை, பண்பு, உவமை, உம்மை மற்றும் அன்மொழித்தொகை', dayNumber: 4, periodNumber: 3, keyFormulaOrLaw: 'தொகைநிலைத் தொடர் = 6 வகை (உருபுகள் மறைந்து நின்று பொருள் தருவது)', keyPoints: ['வினைத்தொகை: முக்காலமும் பொருந்தும் (எ.கா: ஊறுகாய், கொள்புலி, ஆடுகொடி)', 'பண்புத்தொகை: மை விகுதியும் ஆகிய, ஆன உருபுகளும் மறைந்து வருவது (எ.கா: செந்தாமரை)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
@@ -1098,14 +1101,16 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_t_sub3',
               title: 'விருந்தோம்பல் & தொகாநிலைத் தொடர்கள்',
               microTopics: [
-                { id: 'sec_t_8', title: 'உரைநடை: விருந்தோம்பல் போற்றுதும் (விருந்தே தானும் புதுவது புனைந்த யாப்பின் மேற்றே)', keyAxiom: 'விருந்து புறத்ததாத் தானுண்டல் சாவா மருந்தெனினும் வேண்டற்பாற் றன்று' },
-                { id: 'sec_t_9', title: 'செய்யுள்: காசிகாண்டம் (அதிவீரராம பாண்டியர் — விருந்தோம்பல் ஒன்பது ஒழுக்கங்கள்)', keyAxiom: 'விருந்தினர் முகம் மலர நன்மொழி கூறுதல், இன்சொல் பேசுதல், வழியனுப்புதல்' },
-                { id: 'sec_t_10', title: 'கற்கண்டு: தொகாநிலைத் தொடர்கள் 9 வகை (எழுவாய் முதல் அடுக்குத்தொடர்)', keyAxiom: 'எழுவாய், விளி, வினைமுற்று, பெயரெச்ச, வினையெச்ச, வேற்றுமை, இடைச்சொல், உரிச்சொல், அடுக்குத்தொடர்' }
+                { id: 'sec_t_7', title: 'உரைநடை: விருந்தோம்பல் போற்றுதும் (விருந்தே தானும் புதுவது புனைந்த யாப்பின் மேற்றே)', keyAxiom: 'விருந்து புறத்ததாத் தானுண்டல் சாவா மருந்தெனினும் வேண்டற்பாற் றன்று' },
+                { id: 'sec_t_8', title: 'செய்யுள்: காசிகாண்டம் (அதிவீரராம பாண்டியர் — விருந்தோம்பல் ஒழுக்கம்)', keyAxiom: 'விருந்தினர் முகம் மலர நன்மொழி கூறுதல், இன்சொல் பேசுதல், வழியனுப்புதல்' },
+                { id: 'sec_t_9', title: 'கற்கண்டு: தொகாநிலைத் தொடர்கள் 9 வகை (எழுவாய் முதல் அடுக்குத்தொடர்)', keyAxiom: 'எழுவாய், விளி, வினைமுற்று, பெயரெச்ச, வினையெச்ச, வேற்றுமை, இடைச்சொல், உரிச்சொல், அடுக்குத்தொடர்' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_t_8', topicTitle: 'இயல் 3: காசிகாண்டம், மலைபடுகடாம் & தொகாநிலைத் தொடர்கள் (9 வகை)', subtopic: 'எழுவாய், விளி, பெயரெச்ச, வினையெச்ச, வேற்றுமை, இடை, உரி, அடுக்குத்தொடர்', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'தொகாநிலைத் தொடர்கள் 9 வகை | வெற்றிவேற்கை (நறுந்தொகை) ஆசிரியர் அதிவீரராம பாண்டியர்', keyPoints: ['கூத்தராற்றுப்படை என்று அழைக்கப்படும் நூல் மலைபடுகடாம் (583 அடிகள்)', 'நன்னன் சேய் நன்னனைப் பாட்டுடைத் தலைவனாகக் கொண்டது மலைபடுகடாம்'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_t_7', topicTitle: 'காசிகாண்டம் & விருந்தோம்பல் மரபு (அதிவீரராம பாண்டியர்)', subtopic: 'விருந்தினரை எதிர்கொள்ளும் 9 ஒழுக்க முறைகள் மற்றும் நன்மொழி கூறல்', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'காசிகாண்டம் விருந்தோம்பல்: "இன்சொல் பேசி முகம் மலர்ந்து வழியனுப்ப ஏழடி பின்செல்லல்"', keyPoints: ['அதிவீரராம பாண்டியரின் பட்டப்பெயர் சீவலமாறன்', 'வெற்றிவேற்கை (நறுந்தொகை), நைடதம் நூல்களின் ஆசிரியரும் இவரே'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_8', topicTitle: 'மலைபடுகடாம் & கூத்தராற்றுப்படை (பெருங்கௌசிகனார்)', subtopic: 'நன்னன் சேய் நன்னன் புகழ் மற்றும் இரணிய முட்டத்துப் பெருங்குன்றூர் பெருங்கௌசிகனார்', dayNumber: 7, periodNumber: 2, keyFormulaOrLaw: 'மலைபடுகடாம் (583 அடிகள்): மலையை யானையாக உருவகம் செய்து ஓசைகளை கடாம் எனல்', keyPoints: ['பத்துப்பாட்டு நூல்களுள் ஒன்று; பாட்டுடைத் தலைவன் குறுநில மன்னன் நன்னன்', 'ஆற்றுப்படை என்பது வழிகாட்டும் இலக்கிய வகை'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_9', topicTitle: 'தொகாநிலைத் தொடர்கள் (9 வகைகள்)', subtopic: 'எழுவாய், விளி, வினைமுற்று, பெயரெச்ச, வினையெச்ச, வேற்றுமை, இடை, உரி, அடுக்குத்தொடர்', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'தொகாநிலைத் தொடர் = 9 வகை (உருபுகள் வெளிப்படையாக நின்று பொருள் தருவது)', keyPoints: ['எழுவாய்த் தொடர்: மல்லிகை பூத்தது | விளித்தொடர்: நண்பா எழுது', 'அடுக்குத்தொடர் பிரித்தால் பொருள் தரும் (பாம்பு பாம்பு); இரட்டைக்கிளவி பிரித்தால் பொருள் தராது (சலசல)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
@@ -1117,14 +1122,16 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_t_sub4',
               title: 'அறிவியல் தமிழ் & வழுவமைதி',
               microTopics: [
-                { id: 'sec_t_11', title: 'உரைநடை: செயற்கை நுண்ணறிவு (AI) & ஸ்டீபன் ஹாக்கிங் வாழ்க்கை', keyAxiom: 'செயற்கை நுண்ணறிவு உலகை ஆளும் நான்காவது தொழிற்புரட்சி' },
-                { id: 'sec_t_12', title: 'செய்யுள்: பரிபாடல் (கீரந்தையார் — பேரண்ட தோற்றம் & பெருவெடிப்பு)', keyAxiom: 'விசும்பில் ஊழி ஊழ் ஊழ் செல்ல — ஐம்பூதங்களின் தோற்றம்' },
-                { id: 'sec_t_13', title: 'கற்கண்டு: வழு (7), வழாநிலை (6) & வழுவமைதி (5 வகைகள்)', keyAxiom: 'திணை, பால், இடம், காலம், வினா, விடை, மரபு வழு மற்றும் வழுவமைதி' }
+                { id: 'sec_t_10', title: 'உரைநடை: செயற்கை நுண்ணறிவு (AI) & ஸ்டீபன் ஹாக்கிங் வாழ்க்கை', keyAxiom: 'செயற்கை நுண்ணறிவு உலகை ஆளும் நான்காவது தொழிற்புரட்சி' },
+                { id: 'sec_t_11', title: 'செய்யுள்: பரிபாடல் (கீரந்தையார் — பேரண்ட தோற்றம் & பெருவெடிப்பு)', keyAxiom: 'விசும்பில் ஊழி ஊழ் ஊழ் செல்ல — ஐம்பூதங்களின் தோற்றம்' },
+                { id: 'sec_t_12', title: 'கற்கண்டு: வழு (7), வழாநிலை (6) & வழுவமைதி (5 வகைகள்)', keyAxiom: 'திணை, பால், இடம், காலம், வினா, விடை, மரபு வழு மற்றும் வழுவமைதி' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_t_11', topicTitle: 'இயல் 4: செயற்கை நுண்ணறிவு, பரிபாடல் & வழு, வழாநிலை, வழுவமைதி', subtopic: 'திணை, பால், இடம், காலம், மரபு வழுவமைதி இலக்கணம்', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'வழு = 7 வகை | வழாநிலை = 6 வகை | வழுவமைதி = 5 வகை (திணை, பால், இடம், கால, மரபு வழுவமைதி)', keyPoints: ['பெருமாள் திருமொழி பாடியவர் குலசேகர ஆழ்வார் (முதலாயிரத்தில் உள்ளது)', 'எட்டுத்தொகை நூல்களுள் பண்ணோடு பாடப்பட்ட நூல் பரிபாடல்'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_t_10', topicTitle: 'பரிபாடல் — பேரண்ட தோற்றம் (கீரந்தையார்)', subtopic: 'விசும்பில் ஊழி ஊழ் ஊழ் செல்ல — ஐம்பூதங்களின் தோற்றமும் பெருவெடிப்பும் (Big Bang)', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'பரிபாடல்: "விசும்பில் ஊழி ஊழ் ஊழ் செல்லக் கருவளர் வானத்து இசையோடு தோன்றிய..."', keyPoints: ['எட்டுத்தொகை நூல்களுள் பண்ணோடு பாடப்பட்ட ஒரே நூல் பரிபாடல்', 'அமெரிக்க வானியலாளர் எட்வின் ஹப்பிள் கூறிய அண்ட விரிவுக் கொள்கை பரிபாடலில் உள்ளது'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_11', topicTitle: 'செயற்கை நுண்ணறிவு & அறிவியல் தமிழ் (AI Revolution)', subtopic: 'ஸ்டீபன் ஹாக்கிங், நான்காவது தொழிற்புரட்சி & இயல்பு மொழி செயலாக்கம் (NLP)', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'செயற்கை நுண்ணறிவு (AI): தரவுகளை பகுப்பாய்வு செய்து தானாக முடிவெடுக்கும் தொழில்நுட்பம்', keyPoints: ['ஸ்டீபன் ஹாக்கிங்கின் புகழ்பெற்ற நூல்: காலத்தின் சுருக்கமான வரலாறு (A Brief History of Time)', 'இயற்கை மொழி செயலாக்கம் (Natural Language Processing) மூலம் தமிழ் கணிப்பொறி வளர்ச்சி'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_12', topicTitle: 'வழு, வழாநிலை & வழுவமைதி (இலக்கண வகைகள்)', subtopic: 'திணை, பால், இடம், காலம், வினா, விடை, மரபு வழுவமைதி 5 வகைகள்', dayNumber: 10, periodNumber: 3, keyFormulaOrLaw: 'வழு = 7 வகை | வழாநிலை = 6 வகை | வழுவமைதி = 5 வகை', keyPoints: ['இலக்கண முறைப்படி பிழையுடையதாயினும் ஏதேனும் ஒரு காரணம் கருதி ஏற்றுக் கொள்ளப்படுவது வழுவமைதி', 'என் அம்மை வந்தாள் என்று மாட்டைப் பார்த்து கூறுவது திணை வழுவமைதி'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
@@ -1136,13 +1143,14 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_t_sub5',
               title: 'மொழிபெயர்ப்பு & வினா விடை வகைகள்',
               microTopics: [
-                { id: 'sec_t_14', title: 'செய்யுள்: திருவிளையாடற் புராணம் (பரஞ்சோதி முனிவர் — இடைக்காடன் பிணக்கு)', keyAxiom: 'இறைவன் இடைக்காடனாருக்கு காட்சி தந்து மன்னன் பிழையை உணர்த்துதல்' },
-                { id: 'sec_t_15', title: 'கற்கண்டு: வினா வகைகள் (6), விடை வகைகள் (8) & பொருள்கோள் (8)', keyAxiom: 'வினா 6; விடை 8 (சுட்டு, நேர், மறை, ஏவல், வினா எதிர்வினாதல், உற்றது உரைத்தல், உறுவது கூறல், இனமொழி)' }
+                { id: 'sec_t_13', title: 'செய்யுள்: திருவிளையாடற் புராணம் (பரஞ்சோதி முனிவர் — இடைக்காடன் பிணக்கு)', keyAxiom: 'இறைவன் இடைக்காடனாருக்கு காட்சி தந்து மன்னன் பிழையை உணர்த்துதல்' },
+                { id: 'sec_t_14', title: 'கற்கண்டு: வினா வகைகள் (6), விடை வகைகள் (8) & பொருள்கோள் (8)', keyAxiom: 'வினா 6; விடை 8 (சுட்டு, நேர், மறை, ஏவல், வினா எதிர்வினாதல், உற்றது உரைத்தல், உறுவது கூறல், இனமொழி)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_t_14', topicTitle: 'இயல் 5: திருவிளையாடற் புராணம், வினா 6 வகை, விடை 8 வகை, பொருள்கோள் 8 வகை', subtopic: 'அறிவினா, அறியாவினா, ஐயவினா, கொளல்வினா, கொடைவினா, ஏவல்வினா மற்றும் ஆற்றுநீர்ப் பொருள்கோள்', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'வினா = 6 | விடை = 8 (வெளிப்படை விடைகள் 3, குறிப்பு விடைகள் 5) | பொருள்கோள் = 8 வகை', keyPoints: ['சதாவதானி செய்குதம்பி பாவலர் (100 செயல்களை ஒரே நேரத்தில் நினைவில் கொள்ளும் திறன்)', 'திருவிளையாடற் புராணம் 3 காண்டங்கள் (மதுரைக் காண்டம், கூடற் காண்டம், திருவாலவாய்க் காண்டம்) 64 படலங்கள் கொண்டது'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_t_13', topicTitle: 'திருவிளையாடற் புராணம் (பரஞ்சோதி முனிவர்)', subtopic: 'இடைக்காடனார் பிணக்கு தீர்த்த படலம் — புலவரின் சொல்லுக்கு இறைவன் செவிசாய்த்தல்', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'பரஞ்சோதி முனிவர்: 3 காண்டங்கள் (மதுரை, கூடல், திருவாலவாய்), 64 படலங்கள், 3363 விருத்தப்பாக்கள்', keyPoints: ['குசேல பாண்டியன் இடைக்காடனார் பாடலை அவமதித்ததால் இறைவன் வடதிருவாலவாய்க்கு இடம் பெயர்ந்தார்', 'சதாவதானி செய்குதம்பி பாவலர் நீதி வெண்பா இயற்றியவர்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_t_14', topicTitle: 'வினா (6 வகை), விடை (8 வகை) & பொருள்கோள் (8 வகை)', subtopic: 'சுட்டு, நேர், மறை விடைகள் மற்றும் ஆற்றுநீர், நிரல்நிறை, விற்பூட்டுப் பொருள்கோள்', dayNumber: 13, periodNumber: 2, keyFormulaOrLaw: 'வினா = 6 வகை | விடை = 8 வகை (வெளிப்படை 3, குறிப்பு 5) | பொருள்கோள் = 8 வகை', keyPoints: ['அறிவினா, அறியாவினா, ஐயவினா, கொளல்வினா, கொடைவினா, ஏவல்வினா என வினா 6 வகைப்படும்', 'செய்யுளில் சொற்களைப் பொருளுக்கு ஏற்றவாறு சேர்த்து பொருள் கொள்ளும் முறை பொருள்கோள்'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -1270,33 +1278,38 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_m_sub1',
               title: 'உறவுகள், சார்புகள் & தொடர்வரிசைகள்',
               microTopics: [
-                { id: 'sec_m_1', title: 'கார்டீசியன் பெருக்கல் & சார்புகளின் வகைகள் (ஒன்றுக்கொன்று, மேற்கோர்த்தல்)', keyAxiom: 'f: A -> B is a function if every element in A has unique image in B' },
-                { id: 'sec_m_2', title: 'யூக்ளிட் வகுத்தல் வழிமுறை: a = bq + r (0 ≤ r < b)', keyAxiom: 'Euclid Lemma gives HCF of two positive integers' },
-                { id: 'sec_m_3', title: 'கூட்டுத்தொடர் AP (t_n & S_n) மற்றும் பெருக்குத்தொடர் GP (t_n & S_n)', keyAxiom: 'AP: a_n = a + (n-1)d, S_n = n/2(2a + (n-1)d) | GP: t_n = ar^(n-1), S_n = a(r^n - 1)/(r - 1)' },
-                { id: 'sec_m_4', title: 'சிறப்புத் தொடர்கள்: Σn = n(n+1)/2, Σn² = n(n+1)(2n+1)/6, Σn³ = [n(n+1)/2]²', keyAxiom: 'Sum of first n natural numbers and their squares and cubes' }
+                { id: 'sec_m_1', title: 'கார்டீசியன் பெருக்கல் & சார்புகளின் வகைகள் (Cartesian Product & Functions)', keyAxiom: 'f: A -> B is a function if every element in A has unique image in B' },
+                { id: 'sec_m_2', title: 'யூக்ளிட் வகுத்தல் வழிமுறை (Euclid\'s Division Lemma: a = bq + r)', keyAxiom: 'Euclid Lemma gives HCF of two positive integers' },
+                { id: 'sec_m_3', title: 'கூட்டுத்தொடர் (Arithmetic Progression AP: t_n & S_n)', keyAxiom: 'AP: a_n = a + (n-1)d, S_n = n/2(2a + (n-1)d)' },
+                { id: 'sec_m_4', title: 'பெருக்குத்தொடர் (Geometric Progression GP: t_n & S_n)', keyAxiom: 'GP: t_n = ar^(n-1), S_n = a(r^n - 1)/(r - 1)' },
+                { id: 'sec_m_5', title: 'சிறப்புத் தொடர்கள் (Special Series: Σn, Σn², Σn³)', keyAxiom: 'Sum of first n natural numbers, squares and cubes' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_m_1', topicTitle: isTa ? 'யூக்ளிட் வகுத்தல் வழிமுறை, கூட்டுத்தொடர் (AP) & பெருக்குத்தொடர் (GP)' : 'Euclid Division Lemma, AP, GP & Special Series Sum', subtopic: isTa ? 't_n = a + (n-1)d, S_n = n/2[2a+(n-1)d] மற்றும் Σn, Σn², Σn³' : 'General term of AP/GP, Special summation series formulas', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'AP Sum S_n = n/2 [2a + (n - 1)d] | GP Sum S_n = a(rⁿ - 1)/(r - 1) | Σn³ = (Σn)²', keyPoints: ['Fundamental Theorem of Arithmetic: Every composite number has unique prime factorization', 'If a, b, c are in AP, then 2b = a + c | If in GP, then b² = ac'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_m_1', topicTitle: 'Euclid\'s Division Lemma & HCF (யூக்ளிட் வகுத்தல் வழிமுறை)', subtopic: 'Fundamental Theorem of Arithmetic, Divisibility & HCF Algorithm', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'a = bq + r (where 0 ≤ r < b) | HCF(a, b) = HCF(b, r)', keyPoints: ['Every composite number can be uniquely expressed as product of primes', 'Used to find HCF of large integers systematically'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_2', topicTitle: 'Arithmetic Progression AP (கூட்டுத்தொடர் AP)', subtopic: 'General Term t_n = a + (n-1)d and Sum of n Terms S_n', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 't_n = a + (n - 1)d | S_n = n/2 [2a + (n - 1)d] = n/2 (a + l)', keyPoints: ['Common difference d = t₂ - t₁ = t₃ - t₂', 'Three terms in AP are taken as (a - d), a, (a + d)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_3', topicTitle: 'Geometric Progression GP (பெருக்குத்தொடர் GP)', subtopic: 'General Term t_n = ar^(n-1) and Sum of n Terms S_n', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 't_n = a rⁿ⁻¹ | S_n = a(rⁿ - 1) / (r - 1) for r > 1', keyPoints: ['Common ratio r = t₂ / t₁ = t₃ / t₂', 'Sum to infinity S_∞ = a / (1 - r) for |r| < 1'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_4', topicTitle: 'Special Series Summation (சிறப்புத் தொடர்கள்)', subtopic: 'Sum of First n Natural Numbers, Squares and Cubes', dayNumber: 3, periodNumber: 4, keyFormulaOrLaw: 'Σn = n(n+1)/2 | Σn² = n(n+1)(2n+1)/6 | Σn³ = [n(n+1)/2]²', keyPoints: ['The sum of first n odd natural numbers = n²', 'Sum of cubes equals square of sum of natural numbers: Σn³ = (Σn)²'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'இயற்கணிதம்: இருபடிச் சமன்பாடுகள், மூலங்களின் தன்மை & அணிகள் (Matrices)' : 'Algebra: Quadratic Equations, Roots & Matrices',
+          chapterTitle: isTa ? 'இயற்கணிதம்: இருபடிச் சமன்பாடுகள் & அணிகள் (Matrices)' : 'Algebra: Quadratic Equations, Roots & Matrices',
           description: isTa ? 'மூன்று மாறிகளில் ஒருபடிச் சமன்பாடுகள், பல்லுறுப்புக் கோவை வர்க்கமூலம், இருபடி சூத்திரம் x = (-b ± √D)/(2a), அணிகள் கூட்டல் & பெருக்கல்' : 'Linear systems in 3 variables, Square root of polynomials, Quadratic formula, Nature of roots, Matrix multiplication & transpose',
           subtopics: [
             {
               id: 'sec_m_sub2',
               title: 'இருபடிச் சமன்பாடுகள் & அணிகள்',
               microTopics: [
-                { id: 'sec_m_5', title: 'இருபடிச் சமன்பாடுகள் மூலங்களின் தன்மை: D = b² - 4ac', keyAxiom: 'D > 0 Real & Distinct | D = 0 Real & Equal | D < 0 No Real Roots' },
-                { id: 'sec_m_6', title: 'அணிகள் (Matrices): கூட்டல், கழித்தல் & அணிப் பெருக்கல் விதிகள்', keyAxiom: 'Multiplication condition: Columns of A = Rows of B (Order (m×n)(n×p) = m×p)' }
+                { id: 'sec_m_6', title: 'இருபடிச் சமன்பாடுகள் மூலங்களின் தன்மை (Nature of Roots: D = b² - 4ac)', keyAxiom: 'D > 0 Real & Distinct | D = 0 Real & Equal | D < 0 No Real Roots' },
+                { id: 'sec_m_7', title: 'அணிகள் பெருக்கல் & இடமாற்று அணி (Matrix Multiplication & Transpose)', keyAxiom: '(AB)ᵀ = Bᵀ Aᵀ | Multiplication requires cols(A) = rows(B)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_m_5', topicTitle: isTa ? 'இருபடிச் சமன்பாடுகள் மூலங்களின் தன்மை (D = b² - 4ac) & அணிப் பெருக்கல்' : 'Quadratic Nature of Roots & Matrix Multiplication Properties', subtopic: isTa ? 'மூலங்களின் கூடுதல் α+β = -b/a, பெருக்கல் αβ = c/a மற்றும் (AB)ᵀ = Bᵀ Aᵀ' : 'Discriminant D, Vieta formulas, Matrix Transpose properties', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Quadratic: x = [-b ± √(b² - 4ac)] / (2a) | Transpose: (AB)ᵀ = Bᵀ Aᵀ | (Aᵀ)ᵀ = A', keyPoints: ['Matrix multiplication is associative A(BC) = (AB)C but generally NOT commutative (AB ≠ BA)', 'Null matrix is additive identity; Identity matrix I is multiplicative identity'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_m_5', topicTitle: 'Nature of Roots & Quadratic Formula (இருபடிச் சமன்பாடுகள்)', subtopic: 'Discriminant D = b² - 4ac, Vieta Sum/Product of Roots', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'x = [-b ± √(b² - 4ac)] / (2a) | α + β = -b/a | αβ = c/a', keyPoints: ['If D > 0, roots are real and unequal; If D = 0, roots are real and equal', 'Quadratic equation form: x² - (Sum of roots)x + (Product of roots) = 0'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_6', topicTitle: 'Matrices Operations & Multiplication (அணிகள் & அணிப் பெருக்கல்)', subtopic: 'Matrix Addition, Scalar Multiplication, Product Rule & Transpose Properties', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: '(AB)ᵀ = Bᵀ Aᵀ | (A + B)ᵀ = Aᵀ + Bᵀ | AI = IA = A', keyPoints: ['Matrix multiplication is not commutative in general: AB ≠ BA', 'Square matrix A is symmetric if Aᵀ = A, and skew-symmetric if Aᵀ = -A'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
@@ -1308,13 +1321,14 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_m_sub3',
               title: 'வடிவியல் தேற்றங்கள் & சாய்வு சூத்திரங்கள்',
               microTopics: [
-                { id: 'sec_m_7', title: 'தேல்ஸ் தேற்றம் (அடிப்படை விகிதசமத் தேற்றம் — BPT)', keyAxiom: 'ஒரு முக்கோணத்தின் ஒரு பக்கத்திற்கு இணையாக வரையப்படும் கோடு மற்ற இரு பக்கங்களையும் சம விகிதத்தில் பிரிக்கும்' },
-                { id: 'sec_m_8', title: 'கோட்டின் சாய்வு m = (y₂-y₁)/(x₂-x₁) & சமன்பாடு y - y₁ = m(x - x₁)', keyAxiom: 'Parallel lines: m₁ = m₂ | Perpendicular lines: m₁ × m₂ = -1' }
+                { id: 'sec_m_8', title: 'தேல்ஸ் தேற்றம் & அடிப்படை விகிதசமத் தேற்றம் (Thales Theorem - BPT)', keyAxiom: 'AD/DB = AE/EC in triangle with parallel line to base' },
+                { id: 'sec_m_9', title: 'கோட்டின் சாய்வு & நேர்க்கோட்டு சமன்பாடுகள் (Straight Line Slope & Equation)', keyAxiom: 'Parallel lines: m₁ = m₂ | Perpendicular lines: m₁ × m₂ = -1' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_m_7', topicTitle: isTa ? 'தேல்ஸ் தேற்றம், கோண இருசமவெட்டி & கோட்டின் சமன்பாடுகள்' : 'Thales Theorem, ABT, Pythagoras & Straight Line Slope', subtopic: isTa ? 'BPT தேற்றம் மற்றும் இணைக்கோடுகள் m₁ = m₂, செங்குத்து கோடுகள் m₁ m₂ = -1' : 'Geometric proof of Thales theorem, Equation of line y = mx + c', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Thales: AD/DB = AE/EC | Slope m = tan θ = (y₂ - y₁)/(x₂ - x₁) | Perpendicular: m₁ m₂ = -1', keyPoints: ['Angle Bisector Theorem: BD/DC = AB/AC', 'Area of triangle formed by 3 points = ½ |x₁(y₂-y₃) + x₂(y₃-y₁) + x₃(y₁-y₂)|'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_m_7', topicTitle: 'Thales Theorem & Basic Proportionality (தேல்ஸ் தேற்றம்)', subtopic: 'BPT Proof, Converse of BPT & Angle Bisector Theorem (ABT)', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Thales: AD / DB = AE / EC | ABT: BD / DC = AB / AC', keyPoints: ['If a line is drawn parallel to one side of a triangle, it divides the other two sides in the same ratio', 'Pythagoras Theorem: In a right triangle, Hypotenuse² = Base² + Altitude²'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_8', topicTitle: 'Coordinate Geometry & Line Slope (ஆயத்தொலை வடிவியல் & சாய்வு)', subtopic: 'Slope of Straight Line, Parallel & Perpendicular Conditions, Line Equations', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: 'Slope m = (y₂ - y₁) / (x₂ - x₁) | y - y₁ = m(x - x₁) | m₁ m₂ = -1', keyPoints: ['Area of triangle with vertices (x₁,y₁), (x₂,y₂), (x₃,y₃) = ½ |Σ x₁(y₂ - y₃)|', 'If 3 points are collinear, the area of triangle formed by them is 0'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
@@ -1326,14 +1340,18 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
               id: 'sec_m_sub4',
               title: 'முக்கோணவியல், அளவியல் & நிகழ்தகவு',
               microTopics: [
-                { id: 'sec_m_9', title: 'முக்கோணவியல் முற்றொருமைகள் & ஏற்ற/இறக்கக் கோணம்', keyAxiom: 'sin²θ + cos²θ = 1 | 1 + tan²θ = sec²θ | tan θ = Height / Distance' },
-                { id: 'sec_m_10', title: 'திட்டவிலக்கம் σ = √[Σd²/n] & மாறுபாட்டுக் கெழு CV = (σ/x̄) × 100', keyAxiom: 'More consistent data has smaller Coefficient of Variation (CV)' },
-                { id: 'sec_m_11', title: 'நிகழ்தகவு கூட்டல் தேற்றம்: P(A ∪ B) = P(A) + P(B) - P(A ∩ B)', keyAxiom: 'For mutually exclusive events: P(A ∩ B) = 0, so P(A ∪ B) = P(A) + P(B)' }
+                { id: 'sec_m_10', title: 'முக்கோணவியல் முற்றொருமைகள் (Trigonometric Identities: sin²θ+cos²θ=1)', keyAxiom: 'sin²θ + cos²θ = 1 | 1 + tan²θ = sec²θ | 1 + cot²θ = cosec²θ' },
+                { id: 'sec_m_11', title: 'அளவியல்: உருளை, கூம்பு, கோளம் & இடைக்கண்டம் (Mensuration Formulas)', keyAxiom: 'Cylinder V = πr²h | Cone V = ⅓πr²h | Sphere V = ⁴⁄₃πr³' },
+                { id: 'sec_m_12', title: 'திட்டவிலக்கம் σ & மாறுபாட்டுக் கெழு (Standard Deviation & CV)', keyAxiom: 'σ = √[Σd²/n] | CV = (σ/x̄) × 100%' },
+                { id: 'sec_m_13', title: 'நிகழ்தகவு கூட்டல் தேற்றம் (Probability Addition Theorem: P(A∪B))', keyAxiom: 'P(A ∪ B) = P(A) + P(B) - P(A ∩ B)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_m_9', topicTitle: isTa ? 'முக்கோணவியல் முற்றொருமைகள், கூம்பு/உருளை அளவியல் & திட்டவிலக்கம் σ' : 'Trigonometric Identities, Mensuration (Cone/Cylinder) & Probability Theorem', subtopic: isTa ? 'sin²θ + cos²θ = 1, கூம்பு V = ⅓πr²h, திட்டவிலக்கம் மற்றும் P(A∪B)' : 'Heights/distances, Frustum volume, Standard deviation & CV formulas', dayNumber: 12, periodNumber: 3, keyFormulaOrLaw: 'Cylinder V = πr²h | Cone V = ⅓πr²h | Sphere V = ⁴⁄₃πr³ | CV = (σ / x̄) × 100 | P(A∪B) = P(A)+P(B)-P(A∩B)', keyPoints: ['Volume of cone is exactly one-third the volume of cylinder with same base and height', 'Total probability of all mutually exclusive exhaustive events = 1'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_m_9', topicTitle: 'Trigonometric Identities (முக்கோணவியல் முற்றொருமைகள்)', subtopic: 'Fundamental Identities, Proofs & Heights and Distances Angle of Elevation', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'sin²θ + cos²θ = 1 | 1 + tan²θ = sec²θ | 1 + cot²θ = cosec²θ', keyPoints: ['tan θ = Opposite / Adjacent = Height / Distance', 'Angle of elevation equals angle of depression when viewed between two parallel lines'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_10', topicTitle: 'Mensuration - Cylinder, Cone, Sphere (அளவியல் கனஅளவுகள்)', subtopic: 'Curved Surface Area, Total Surface Area & Volume of Combined Solids', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Cylinder V = πr²h | Cone V = ⅓πr²h | Sphere V = ⁴⁄₃πr³ | Frustum V = ⅓πh(R² + r² + Rr)', keyPoints: ['Volume of cone is exactly ⅓ of volume of cylinder having same radius and height', 'Total surface area of solid hemisphere = 3πr²'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_11', topicTitle: 'Statistics & Standard Deviation (திட்டவிலக்கம் σ & CV)', subtopic: 'Standard Deviation, Mean Deviation & Coefficient of Variation Consistency', dayNumber: 12, periodNumber: 3, keyFormulaOrLaw: 'σ = √[Σd² / n] | Coefficient of Variation CV = (σ / x̄) × 100%', keyPoints: ['Standard deviation is always non-negative (σ ≥ 0)', 'Data series with smaller Coefficient of Variation (CV) is more consistent and stable'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_m_12', topicTitle: 'Probability Addition Theorem (நிகழ்தகவு கூட்டல் தேற்றம்)', subtopic: 'Sample Space, Independent Events & Addition Theorem for 2 and 3 Events', dayNumber: 12, periodNumber: 4, keyFormulaOrLaw: 'P(A ∪ B) = P(A) + P(B) - P(A ∩ B) | P(E) + P(E\') = 1', keyPoints: ['Probability of any event satisfies 0 ≤ P(E) ≤ 1', 'For mutually exclusive events: P(A ∩ B) = 0, hence P(A ∪ B) = P(A) + P(B)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -1348,56 +1366,75 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'இயற்பியல்: இயக்க விதிகள், ஒளியியல், மின்னியல் & அணுக்கரு இயற்பியல்' : 'Physics: Laws of Motion, Optics, Electricity & Nuclear Physics',
-          description: isTa ? 'நியூட்டனின் 3 இயக்க விதிகள் (F=ma), லென்ஸ் சூத்திரம் (1/v - 1/u = 1/f), ஓம் விதி (V=IR), அணுக்கரு இணைவு & பிளவு, E = mc²' : 'Newton laws, Momentum conservation, Lens & Mirror formulas, Ohm\'s law, Series/Parallel circuits, Nuclear fission & fusion (E=mc²)',
+          chapterTitle: isTa ? 'இயற்பியல் (Physics — இயக்க விதிகள், ஒளியியல், மின்னியல் & அணுக்கரு இயற்பியல்)' : 'Physics (Laws of Motion, Optics, Electricity & Nuclear Physics)',
+          description: isTa ? 'நியூட்டனின் இயக்க விதிகள் (F=ma), லென்ஸ் சூத்திரம் (1/v - 1/u = 1/f), ஓம் விதி (V=IR), அணுக்கரு இணைவு & பிளவு, E = mc²' : 'Newton laws, Momentum conservation, Lens & Mirror formulas, Ohm\'s law, Series/Parallel circuits, Nuclear fission & fusion (E=mc²)',
           subtopics: [
             {
               id: 'sec_s_sub1',
               title: 'இயற்பியல் விதிகள் & சூத்திரங்கள்',
               microTopics: [
-                { id: 'sec_p_1', title: 'நியூட்டனின் இயக்க விதிகள் & உந்த அழிவின்மை விதி: F = ma', keyAxiom: 'Inertia of rest/motion/direction | Recoil velocity of gun v = -(m/M)u' },
-                { id: 'sec_p_2', title: 'ஒளியியல் லென்ஸ் சூத்திரம் & மின்னியல் ஓம் விதி (V = IR)', keyAxiom: 'Lens: 1/v - 1/u = 1/f | Joule Heating: H = I²Rt | Nuclear: E = mc²' }
+                { id: 'sec_p_1', title: 'நியூட்டனின் இயக்க விதிகள் (Newton\'s Laws of Motion: F = ma)', keyAxiom: 'Inertia of rest/motion/direction | Recoil velocity of gun v = -(m/M)u' },
+                { id: 'sec_p_2', title: 'ஒளியியல் & லென்ஸ் சூத்திரம் (Optics & Lens Formula: 1/v - 1/u = 1/f)', keyAxiom: 'Lens: 1/v - 1/u = 1/f | Power of Lens P = 1/f(m)' },
+                { id: 'sec_p_3', title: 'மின்னியல் & ஓம் விதி (Electricity & Ohm\'s Law: V = IR)', keyAxiom: 'Ohm\'s Law: V = IR | Joule Heating: H = I²Rt | Electric Power: P = VI' },
+                { id: 'sec_p_4', title: 'அணுக்கரு இயற்பியல் & கதிர்வீச்சு (Nuclear Physics & Radioactivity: E = mc²)', keyAxiom: 'Nuclear Fission & Fusion (Sun/Stars) | Mass Energy Equivalence: E = mc²' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_p_1', topicTitle: isTa ? 'இயக்க விதிகள் (F=ma), லென்ஸ் சூத்திரம், ஓம் விதி & அணுக்கரு இயற்பியல்' : 'Newton Laws, Optics (1/v-1/u=1/f), Electricity (V=IR) & Nuclear Physics', subtopic: isTa ? 'F = ma, லென்ஸ் திறன் P = 1/f(m), மின்தடை இணைப்புகள் மற்றும் ஆல்பா பீட்டா காமா சிதைவு' : 'Laws of motion, Snell\'s law, Ohm\'s law, Nuclear energy E = mc²', dayNumber: 13, periodNumber: 4, keyFormulaOrLaw: 'F = ma | 1/v - 1/u = 1/f | V = IR | H = I² R t | E = mc²', keyPoints: ['Nuclear fusion powers the Sun and stars (Hydrogen to Helium)', 'Safety fuse wire has high resistance and low melting point'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_p_1', topicTitle: 'Newton\'s Laws of Motion (நியூட்டனின் இயக்க விதிகள்)', subtopic: 'First, Second (F=ma), Third Law & Momentum Conservation', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'F = ma | Momentum p = mv | Recoil v = -(m/M)u', keyPoints: ['Impulse J = F × t = Change in Momentum', 'Action and reaction act on two different bodies simultaneously'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_p_2', topicTitle: 'Optics & Lens Formula (ஒளியியல் & லென்ஸ் சூத்திரம்)', subtopic: 'Convex/Concave Lenses, Refraction & Power of Lens', dayNumber: 13, periodNumber: 2, keyFormulaOrLaw: '1/v - 1/u = 1/f | Magnification m = v/u | Power P = 1/f(in metres) Dioptre', keyPoints: ['Convex lens is converging; Concave lens is diverging', 'Myopia corrected by concave lens; Hypermetropia by convex lens'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_p_3', topicTitle: 'Electricity & Ohm\'s Law (மின்னியல் & ஓம் விதி)', subtopic: 'Current, Potential Difference, Resistors in Series & Parallel, Joule Heating', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'V = IR | Series: R_s = R₁ + R₂ | Parallel: 1/R_p = 1/R₁ + 1/R₂ | H = I²Rt', keyPoints: ['Electric current measured by ammeter in series; Voltmeter in parallel', 'Domestic wiring is always in parallel connection at 220V AC'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_p_4', topicTitle: 'Nuclear Physics & Radioactivity (அணுக்கரு இயற்பியல்)', subtopic: 'Alpha/Beta/Gamma Rays, Nuclear Fission, Fusion & Mass-Energy', dayNumber: 13, periodNumber: 4, keyFormulaOrLaw: 'E = mc² | 1 a.m.u = 931 MeV | Radioactive Half-Life T₁/₂ = 0.693 / λ', keyPoints: ['Nuclear fusion produces energy in Sun (Hydrogen -> Helium)', 'Control rods (Boron, Cadmium) absorb excess neutrons in nuclear reactor'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'வேதியியல்: அணுக்களும் மூலக்கூறுகளும், கரைசல்கள் & கார்பன் சேர்மங்கள்' : 'Chemistry: Atoms & Molecules, Solutions, Reactions & Carbon Compounds',
+          chapterTitle: isTa ? 'வேதியியல் (Chemistry — அணுக்கள், மூலக்கூறுகள், கரைசல்கள் & கார்பன் சேர்மங்கள்)' : 'Chemistry (Atoms & Molecules, Solutions, Reactions & Carbon Compounds)',
           description: isTa ? 'மோல் தத்துவம் (Avogadro 6.023 × 10²³), pH அளவீடு, நிறை சதவீதம், ஹைட்ரோகார்பன்கள், எத்தனால் & எத்தனாயிக் அமிலம்' : 'Mole concept, Avogadro number, Concentration of solution, Chemical reaction types, Covalent bonding, Esterification & Soaps',
           subtopics: [
             {
               id: 'sec_s_sub2',
               title: 'வேதியியல் கோட்பாடுகள்',
               microTopics: [
-                { id: 'sec_c_1', title: 'மோல் தத்துவம்: மோல் எண்ணிக்கை n = நிறை / மூலக்கூறு நிறை', keyAxiom: '1 Mole = 6.023 × 10²³ particles (Avogadro Constant N_A)' },
-                { id: 'sec_c_2', title: 'pH அளவீடு & கார்பனும் அதன் சேர்மங்களும் (எஸ்டராக்குதல்)', keyAxiom: 'pH = -log₁₀[H⁺] | Esterification: CH₃COOH + C₂H₅OH -> CH₃COOC₂H₅ + H₂O' }
+                { id: 'sec_c_1', title: 'மோல் தத்துவம் & அவகாட்ரோ எண் (Mole Concept & Avogadro Number: n = m/M)', keyAxiom: '1 Mole = 6.023 × 10²³ particles (Avogadro Constant N_A)' },
+                { id: 'sec_c_2', title: 'pH அளவீடு & அமில-கார சமநிலை (pH Scale & Acid-Base Chemistry: pH = -log[H+])', keyAxiom: 'pH = -log₁₀[H⁺] | pH < 7 Acidic | pH = 7 Neutral | pH > 7 Basic' },
+                { id: 'sec_c_3', title: 'கார்பன் சேர்மங்கள், எத்தனால் & எஸ்டராக்குதல் (Carbon Compounds & Esterification)', keyAxiom: 'Esterification: Carboxylic Acid + Alcohol -> Fruity smelling Ester + Water' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_c_1', topicTitle: isTa ? 'மோல் தத்துவம் (Avogadro 6.023×10²³), pH அளவீடு & எஸ்டராக்குதல்' : 'Mole Concept, pH Scale & Carbon Compounds (Esterification)', subtopic: isTa ? 'மோல் எண்ணிக்கை n = நிறை / மூலக்கூறு நிறை மற்றும் சோப்பு தயாரித்தல் (சவர்க்காரமாக்கல்)' : 'Avogadro number calculations, pH scale 0–14, Saponification reaction', dayNumber: 14, periodNumber: 4, keyFormulaOrLaw: 'Mole n = Mass / Molar Mass | pH = -log₁₀[H⁺] | Ester: Carboxylic acid + Alcohol -> Ester + Water', keyPoints: ['At STP, 1 mole of any ideal gas occupies 22.4 litres of volume', 'Soap molecules form spherical clusters called micelles in water to trap dirt/grease'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_c_1', topicTitle: 'Mole Concept & Avogadro Number (மோல் தத்துவம்)', subtopic: 'Gram Molecular Mass, Mole Calculations & Molar Volume', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Mole n = Mass / Molar Mass = Number of Particles / 6.023×10²³', keyPoints: ['At STP, 1 mole of any ideal gas occupies 22.4 litres', 'Relative Molecular Mass of Water H₂O = 18 g/mol; Carbon Dioxide CO₂ = 44 g/mol'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_c_2', topicTitle: 'pH Scale & Acid-Base Indicators (pH அளவீடு & அமில-காரங்கள்)', subtopic: 'pH Calculation, Universal Indicator, Acid Rain & Soil pH', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'pH = -log₁₀[H⁺] | pOH = -log₁₀[OH⁻] | pH + pOH = 14', keyPoints: ['Human blood pH range is tightly regulated between 7.35 and 7.45', 'Acid rain occurs when rainwater pH falls below 5.6'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_c_3', topicTitle: 'Carbon Compounds & Esterification (கார்பன் சேர்மங்கள் & எஸ்டராக்குதல்)', subtopic: 'Ethanol, Ethanoic Acid, Functional Groups & Saponification (Soap Making)', dayNumber: 14, periodNumber: 3, keyFormulaOrLaw: 'CH₃COOH + C₂H₅OH (conc. H₂SO₄) -> CH₃COOC₂H₅ (Ester) + H₂O', keyPoints: ['Esters have pleasant, fruity fragrances used in perfumes and flavouring agents', 'Saponification produces soap and glycerol by alkaline hydrolysis of fats'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'உயிரியல்: தாவர உடலியல், நரம்பு மண்டலம், மரபியல் & சுற்றுச்சூழல்' : 'Biology: Plant/Animal Physiology, Nervous System & Genetics',
-          description: isTa ? 'ஒளிச்சேர்க்கை, மனித இதயம் (இரட்டை ரத்த ஓட்டம்), மூளை & நியூரான், மெண்டலின் மரபியல் விதிகள் (3:1, 9:3:3:1), DNA இரட்டிப்பாதல்' : 'Light & Dark reactions, Human Heart & Nephron, Reflex action, Human Brain, Mendel\'s inheritance ratios, DNA Watson-Crick model',
+          chapterTitle: isTa ? 'உயிரியல் (Biology — வாழ்க்கைச் செயல்கள், மனித உடலியல், மரபியல் & DNA)' : 'Biology (Life Processes, Physiology, Genetics & DNA)',
+          description: isTa ? 'ஒளிச்சேர்க்கை, மனித இதயம் (இரட்டை ரத்த ஓட்டம்), சிறுநீரகம் & நெஃப்ரான், மூளை & நரம்பு மண்டலம், தாவர ஹார்மோன்கள், மெண்டலின் மரபியல் (3:1, 9:3:3:1), DNA இரட்டைச் சுருள்' : 'Photosynthesis, Human Heart & Circulation, Nephron & Excretion, Human Brain, Plant Hormones, Mendel Inheritance Ratios, DNA Double Helix Model',
           subtopics: [
             {
               id: 'sec_s_sub3',
-              title: 'உயிரியல் வாழ்க்கைச் செயல்கள்',
+              title: 'உயிரியல் வாழ்க்கைச் செயல்கள் & மரபியல்',
               microTopics: [
-                { id: 'sec_b_1', title: 'மனித இதயம், இரட்டை ரத்த ஓட்டம் & நெஃப்ரான் கழிவுநீக்கம்', keyAxiom: 'Heart pumps blood via Pulmonary and Systemic loops; Nephron filters urea' },
-                { id: 'sec_b_2', title: 'மெண்டலின் மரபியல்: ஒருபண்பு கலப்பு (3:1) & இருபண்பு கலப்பு (9:3:3:1)', keyAxiom: 'Dominant vs Recessive alleles; Law of Segregation and Law of Independent Assortment' }
+                { id: 'sec_b_1', title: 'ஒளிச்சேர்க்கை & தாவர உடலியல் (Photosynthesis & Plant Physiology)', keyAxiom: '6CO₂ + 6H₂O + Sunlight -> C₆H₁₂O₆ + 6O₂ (Light & Dark Reactions)' },
+                { id: 'sec_b_2', title: 'மனித இதயம் & இரட்டை இரத்த ஓட்டம் (Human Heart & Double Circulation)', keyAxiom: '4 Chambers (2 Atria, 2 Ventricles) | Blood Pressure = 120/80 mmHg' },
+                { id: 'sec_b_3', title: 'சிறுநீரகம் & நெஃப்ரான் கழிவுநீக்கம் (Nephron & Excretory System)', keyAxiom: 'Nephron filters blood in Glomerulus; Bowman\'s capsule forms urine' },
+                { id: 'sec_b_4', title: 'மனித மூளை & நரம்பு மண்டலம் (Human Brain & Nervous System)', keyAxiom: 'Cerebrum (Cognition), Cerebellum (Equilibrium), Medulla (Vital centers)' },
+                { id: 'sec_b_5', title: 'தாவர ஹார்மோன்கள் (Plant Hormones — ஆக்சின், சைட்டோகைனின், எத்திலீன்)', keyAxiom: 'Auxin promotes shoot growth; Cytokinin cell division; Ethylene fruit ripening' },
+                { id: 'sec_b_6', title: 'மெண்டலின் மரபியல் விதிகள் (Mendel\'s Laws of Genetics — 3:1 & 9:3:3:1)', keyAxiom: 'Monohybrid Cross Phenotypic Ratio = 3:1 | Dihybrid Cross Ratio = 9:3:3:1' },
+                { id: 'sec_b_7', title: 'DNA அமைப்பு & இரட்டைச் சுருள் (DNA Structure — Watson & Crick Model)', keyAxiom: 'Double Helix with Adenine-Thymine (A=T) & Guanine-Cytosine (G≡C) base pairs' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_b_1', topicTitle: isTa ? 'மனித இதயம், இரட்டை ரத்த ஓட்டம், நெஃப்ரான் & மெண்டலின் மரபியல் (3:1 & 9:3:3:1)' : 'Human Circulation, Nephron Kidney Function & Mendel Genetics Ratios', subtopic: isTa ? 'சைட்டோகைனின், ஆக்சின் ஹார்மோன்கள் மற்றும் DNA இரட்டைச் சுருள் அமைப்பு' : 'Heart chambers, Double circulation, Nephron filtration, Mendel laws 3:1 & 9:3:3:1', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Monohybrid Ratio = 3 : 1 (Genotypic 1:2:1) | Dihybrid Ratio = 9 : 3 : 3 : 1 | Blood Pressure = 120/80 mmHg', keyPoints: ['DNA double helix structure discovered by James Watson and Francis Crick (1953)', 'Pituitary gland is called the Master Gland of endocrine system'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_b_1', topicTitle: 'Photosynthesis & Plant Physiology (ஒளிச்சேர்க்கை)', subtopic: 'Chloroplast, Light & Dark Reaction, Calvin Cycle & Stomatal Transpiration', dayNumber: 15, periodNumber: 1, keyFormulaOrLaw: '6CO₂ + 6H₂O + Sunlight (Chlorophyll) -> C₆H₁₂O₆ + 6O₂ + 6H₂O', keyPoints: ['Light reaction takes place in Thylakoid Grana producing ATP and NADPH', 'Dark reaction (Calvin cycle) takes place in Stroma fixing CO₂ into glucose'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_b_2', topicTitle: 'Human Heart & Double Circulation (மனித இதயம் & இரத்த ஓட்டம்)', subtopic: '4 Chambers, Tricuspid/Bicuspid Valves, Pulmonary & Systemic Circulation', dayNumber: 15, periodNumber: 2, keyFormulaOrLaw: 'Double Circulation: Heart -> Lungs (Pulmonary) & Heart -> Body (Systemic) | BP = 120/80 mmHg', keyPoints: ['Sinoatrial (SA) node acts as natural pacemaker of the heart', 'Left ventricle has thickest muscular wall to pump oxygenated blood throughout the body'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_b_3', topicTitle: 'Nephron & Kidney Function (நெஃப்ரான் & கழிவுநீக்க மண்டலம்)', subtopic: 'Glomerular Ultrafiltration, Tubular Reabsorption, Henle Loop & Urine Formation', dayNumber: 15, periodNumber: 3, keyFormulaOrLaw: 'Urine Formation: Ultrafiltration + Selective Reabsorption + Tubular Secretion', keyPoints: ['Nephron is structural and functional unit of kidney (~1 million per kidney)', 'Antidiuretic Hormone (ADH / Vasopressin) regulates water reabsorption in collecting duct'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_b_4', topicTitle: 'Human Brain & Reflex Action (மனித மூளை & நரம்பு மண்டலம்)', subtopic: 'Forebrain (Cerebrum), Midbrain, Hindbrain (Cerebellum, Medulla) & Reflex Arc', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Reflex Arc: Receptor -> Sensory Neuron -> Spinal Cord -> Motor Neuron -> Effector Organ', keyPoints: ['Cerebrum is the seat of memory, intelligence, and voluntary actions', 'Cerebellum maintains body posture and equilibrium; Medulla regulates heartbeat and respiration'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_b_5', topicTitle: 'Plant Hormones & Growth Regulators (தாவர ஹார்மோன்கள்)', subtopic: 'Auxin, Cytokinin, Gibberellins, Abscisic Acid (Stress Hormone) & Ethylene', dayNumber: 15, periodNumber: 5, keyFormulaOrLaw: 'Auxin = Apical Dominance | Cytokinin = Cell Division | Ethylene = Fruit Ripening', keyPoints: ['Auxin promotes phototropism (stem bending towards light)', 'Abscisic Acid (ABA) induces stomatal closure during water stress condition'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_b_6', topicTitle: 'Mendel\'s Laws of Inheritance (மெண்டலின் மரபியல் விதிகள்)', subtopic: 'Monohybrid (3:1 Phenotype, 1:2:1 Genotype) & Dihybrid Cross (9:3:3:1)', dayNumber: 15, periodNumber: 6, keyFormulaOrLaw: 'Monohybrid Cross = 3 : 1 | Dihybrid Cross = 9 : 3 : 3 : 1 | Law of Segregation', keyPoints: ['Gregor Johann Mendel is known as the Father of Genetics', 'Phenotype is physical appearance; Genotype is genetic makeup of organism'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_b_7', topicTitle: 'DNA Structure - Watson & Crick Model (DNA இரட்டைச் சுருள்)', subtopic: 'Nucleotides, Sugar-Phosphate Backbone, Complementary Base Pairs (A=T, G≡C)', dayNumber: 15, periodNumber: 7, keyFormulaOrLaw: 'Chargaff\'s Rule: [A] + [G] = [T] + [C] (Purines = Pyrimidines)', keyPoints: ['James Watson and Francis Crick proposed double helix model in 1953 (Nobel Prize 1962)', 'Adenine pairs with Thymine via 2 hydrogen bonds; Guanine with Cytosine via 3 hydrogen bonds'], type: 'concept', importance: 'High-Yield' }
           ]
         }
       ]
