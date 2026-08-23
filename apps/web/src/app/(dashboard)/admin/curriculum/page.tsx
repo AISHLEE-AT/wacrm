@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { ALL_COURSES } from '@/data/coursesCatalog';
 import { getAugmentedCourseSyllabus, SyllabusUnit } from '@/data/curriculum/courseSyllabusRegistry';
-import { supabase } from '@/lib/supabaseClient';
+import { lmsSupabase as supabase } from '@/lib/lms-supabase';
 
 export default function AdminCurriculumManagementPage() {
   const [selectedCourseId, setSelectedCourseId] = useState(ALL_COURSES[0]?.id || 'class_12_tamil_nadu');
