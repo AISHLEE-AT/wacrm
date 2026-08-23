@@ -351,7 +351,7 @@ export default function TeachOCourseScreen() {
       setPlayerSource('fallback');
     }
 
-    // 3. 🧠 AI Smart Brain Database Matcher (Pre-generated PDFs, CBT Questions, Notes, Solutions)
+    // 3. 🧠 AI Smart Brain Database Matcher (Structured DB Content Ingested via PDF & Curriculum Pipelines)
     try {
       const dbMatch = await matchStoredContentForTopic(cleanTopic, courseTitle, category);
       if (dbMatch.hasStoredMcqs && dbMatch.mcqs && dbMatch.mcqs.length > 0) {

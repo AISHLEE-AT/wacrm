@@ -2344,8 +2344,9 @@ export interface MatchedDatabaseTopicContent {
 
 /**
  * 🧠 AI Smart Brain Database Content & Test Matcher Engine
- * Scans unified_master_data to link pre-generated PDFs, CBT questions, notes, and tests
- * to any course micro-topic across all standards and competitive exams.
+ * Scans unified_master_data to link structured curriculum notes, theory, CBT questions,
+ * formulas, and step-by-step solutions created via PDF/curriculum ingestion pipelines
+ * and stored directly on the database, mapping them to each micro-topic across all courses.
  */
 export async function matchStoredContentForTopic(
   topicTitle: string,
