@@ -2,6 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { CheckCircle2, Play, Lock, ChevronLeft, ChevronRight, Bot, Award, Sparkles } from 'lucide-react-native';
 
+function cleanUnicodeString(val: any): string {
+  if (typeof val !== 'string') return '';
+  return val
+    .replace(/[\uFFFD\u0080-\u009F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export interface RoutineTask {
   id: string;
   type: 'video' | 'notes' | 'quiz' | 'code';

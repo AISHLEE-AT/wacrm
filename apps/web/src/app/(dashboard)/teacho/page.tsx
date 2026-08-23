@@ -47,6 +47,7 @@ import { ALL_COURSES, DEFAULT_COURSE, CourseOption, CourseCategory } from '@/dat
 import { resolveMasterCurriculumPlan } from '@/data/curriculum';
 import { resolveCompleteCourseSyllabus, getAugmentedCourseSyllabus } from '@/data/curriculum/courseSyllabusRegistry';
 import { TeachOCoursePickerModal } from '@/components/teacho/TeachOCoursePickerModal';
+import { TeachOSearchModal } from '@/components/teacho/TeachOSearchModal';
 import { TeachOCoursePlayerModal } from '@/components/teacho/TeachOCoursePlayerModal';
 import { PaymentQRModal } from '@/components/PaymentQRModal';
 import TeachOWhatsAppService from '@/lib/TeachOWhatsAppService';
@@ -76,6 +77,7 @@ export default function TeachODashboard() {
 
   // Modals State
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [activePlayerTask, setActivePlayerTask] = useState<{
     topicTitle: string;
     subject: string;

@@ -20,6 +20,8 @@ import { TeachOTodayHero } from '../components/teacho/TeachOTodayHero';
 import { TeachORoutineSteps, RoutineTask } from '../components/teacho/TeachORoutineSteps';
 import { TeachOQuickHub } from '../components/teacho/TeachOQuickHub';
 import { TeachOCoursePickerSheet } from '../components/teacho/TeachOCoursePickerSheet';
+import { TeachOSearchModal } from '../components/teacho/TeachOSearchModal';
+import { ContentSearchResult } from '../services/teachoSearchService';
 import TeachOCoursePlayerModal from '../components/TeachOCoursePlayerModal';
 import PaymentQRModal from '../components/PaymentQRModal';
 
@@ -46,6 +48,7 @@ export default function TeachOScreen() {
   // ─── Active Single-Course State ───────────────────────────────────────────
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
   const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // ─── Purchase & Unlock State ──────────────────────────────────────────────
   const [isCoursePurchased, setIsCoursePurchased] = useState(false);
@@ -325,6 +328,24 @@ export default function TeachOScreen() {
     }
   };
 
+  const handleSelectSearchedContent = (item: ContentSearchResult) => {
+    setActivePlayerTask({
+      topicTitle: item.topicTitle,
+      subject: item.subject,
+      taskType: 'notes',
+      taskNumber: item.periodNumber || 1,
+    });
+    setIsPlayerOpen(true);
+  };
+
+  const handleSearchOpenTestO = (topicTitle: string, courseTitle?: string) => {
+    handleTakeTestForStep(topicTitle, courseTitle || selectedCourse.title);
+  };
+
+  const handleSearchAskAi = (topicTitle: string) => {
+    handleAskAiForStep(topicTitle);
+  };
+
   const handleOpenAiTutor = () => {
     const prompt = `Explain today's Day ${currentDay} curriculum for "${selectedCourse.title}": Focus topic "${activeDayPlan?.themeTitle || selectedCourse.phaseTitle || 'Core Lessons'}". Please provide study notes, key formulas, and exam tips in Tamil & English.`;
     navigateToAiTutor(prompt, activeDayPlan?.themeTitle, selectedCourse.title);
@@ -375,6 +396,7 @@ export default function TeachOScreen() {
         onOpenCoursePicker={() => setIsCoursePickerOpen(true)}
         onOpenPurchase={() => setIsPaymentModalOpen(true)}
         onOpenSyllabus={() => navigation.navigate('TeachOCourseScreen', { course: selectedCourse })}
+        onOpenSearch={() => setIsSearchOpen(true)}
       />
 
       {/* 2. SCROLLABLE CLEAN MAIN FEED */}
@@ -482,6 +504,15 @@ export default function TeachOScreen() {
           isWhatsAppAlertEnabled={true}
         />
       </ScrollView>
+
+      {/* 🔍 UNIVERSAL CONTENT & QUESTION BANK SEARCH MODAL */}
+      <TeachOSearchModal
+        visible={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onSelectContent={handleSelectSearchedContent}
+        onOpenTestO={handleSearchOpenTestO}
+        onAskAi={handleSearchAskAi}
+      />
 
       {/* 3. COURSE PICKER BOTTOM SHEET */}
       <TeachOCoursePickerSheet

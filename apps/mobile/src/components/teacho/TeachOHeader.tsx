@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronDown, Flame, Sparkles, BookOpen, ShieldCheck, ShoppingCart } from 'lucide-react-native';
+import { ChevronDown, Flame, Sparkles, BookOpen, ShieldCheck, ShoppingCart, Search } from 'lucide-react-native';
 
 interface TeachOHeaderProps {
   courseTitle: string;
@@ -18,6 +18,7 @@ interface TeachOHeaderProps {
   onOpenCoursePicker: () => void;
   onOpenPurchase?: () => void;
   onOpenSyllabus?: () => void;
+  onOpenSearch?: () => void;
 }
 
 export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
@@ -35,6 +36,7 @@ export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
   onOpenCoursePicker,
   onOpenPurchase,
   onOpenSyllabus,
+  onOpenSearch,
 }) => {
   const insets = useSafeAreaInsets();
   const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
@@ -77,6 +79,24 @@ export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
           </View>
         </View>
       </View>
+
+      
+      {/* 🔍 Universal Search Bar Trigger */}
+      {onOpenSearch && (
+        <TouchableOpacity
+          style={styles.searchTriggerBar}
+          onPress={onOpenSearch}
+          activeOpacity={0.8}
+        >
+          <Search size={15} color="#06b6d4" />
+          <Text style={styles.searchPlaceholderText} numberOfLines={1}>
+            Search concepts, formulas, chapters & MCQs...
+          </Text>
+          <View style={styles.searchBadge}>
+            <Text style={styles.searchBadgeText}>Search</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* Course Switcher Card */}
       <TouchableOpacity
@@ -237,6 +257,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  searchTriggerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#131b2e',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  searchPlaceholderText: {
+    flex: 1,
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  searchBadge: {
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  searchBadgeText: {
+    color: '#06b6d4',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
   courseSwitcher: {
     flexDirection: 'row',
     alignItems: 'center',

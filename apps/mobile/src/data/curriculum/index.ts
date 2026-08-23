@@ -5,6 +5,14 @@
 
 import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry';
 
+export function cleanUnicodeString(val: any): string {
+  if (typeof val !== 'string') return '';
+  return val
+    .replace(/[\uFFFD\u0080-\u009F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export interface DailySubjectTask {
   id: string;
   title: string;
@@ -87,24 +95,30 @@ export function resolveMasterCurriculumPlan(
 
   for (let tNum = 1; tNum <= taskCount; tNum++) {
     const item = resolveMasterSequentialSyllabus(courseId, courseTitle, safeDay, tNum);
+    const subName = cleanUnicodeString(item.subject);
+    const topTitle = cleanUnicodeString(item.topicTitle);
+    const chapTitle = cleanUnicodeString(item.chapterTitle);
+    const subTop = cleanUnicodeString(item.subtopic);
+    const ovView = cleanUnicodeString(item.overview);
+
     tasks.push({
       id: `task_${safeDay}_${tNum}`,
-      title: item.topicTitle,
-      subtitle: item.subtopic ? `${item.chapterTitle} • ${item.subtopic}` : item.overview.substring(0, 70),
-      subject: item.subject,
-      topic: item.topicTitle,
-      subtopic: item.subtopic,
-      rawSubject: item.subject,
-      rawTopic: item.topicTitle,
-      aiPrompt: (item as any).aiPrompt || '',
-      keyFormula: (item as any).formula || (item as any).formulaOrLaw || '',
-      learningObjective: (item as any).overview || '',
+      title: topTitle,
+      subtitle: subTop ? `${chapTitle} • ${subTop}` : ovView.substring(0, 70),
+      subject: subName,
+      topic: topTitle,
+      subtopic: subTop,
+      rawSubject: subName,
+      rawTopic: topTitle,
+      aiPrompt: cleanUnicodeString((item as any).aiPrompt || ''),
+      keyFormula: cleanUnicodeString((item as any).formula || (item as any).formulaOrLaw || ''),
+      learningObjective: ovView,
       durationMinutes: tNum === taskCount ? 15 : 20,
       duration: tNum === taskCount ? '15 Min' : '20 Min',
       taskType: taskTypes[(tNum - 1) % taskTypes.length],
       type: taskTypes[(tNum - 1) % taskTypes.length],
       icon: icons[(tNum - 1) % icons.length],
-      activityPrompt: `Day ${safeDay} (Period ${tNum}): Master ${item.topicTitle} with standard textbook exercises.`
+      activityPrompt: `Day ${safeDay} (Period ${tNum}): Master ${topTitle} with standard textbook exercises.`
     });
   }
 
@@ -114,7 +128,7 @@ export function resolveMasterCurriculumPlan(
   // Generate high-impact, unique day milestone heading
   const uniqueDailyTopics = tasks.map(t => {
     const raw = t.subtopic || t.topic || '';
-    return raw
+    return cleanUnicodeString(raw)
       .replace(/\s*\(Day\s+\d+.*?\)/i, '')
       .replace(/^[A-Za-z0-9\s&—\-()]*(?:Core|SSLC|Tuition|Foundation|Special):\s*/i, '')
       .trim();
