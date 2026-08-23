@@ -67,13 +67,13 @@ export interface CourseFullSyllabus {
 // 1. FOUNDATIONAL STAGE: CLASS 1 & CLASS 2 (AGES 6â€“8)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
-  const isTa = courseTitle.includes('à®¤à®®à®¿à®´à¯') || courseId.includes('-ta-');
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
 
   const subjects: SyllabusSubject[] = [
     {
       subjectId: 'fnd_tamil',
       subjectName: 'à®¤à®®à®¿à®´à¯ (Tamil â€” à®‰à®¯à®¿à®°à¯, à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ & à®®à®´à®²à¯ˆà®¯à®°à¯ à®ªà®¾à®Ÿà®²à¯)',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#ec4899',
       totalChapters: 4,
       totalMicroTopics: 12,
@@ -153,7 +153,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
     {
       subjectId: 'fnd_english',
       subjectName: 'English (Phonics, Sight Words & Foundational Literacy)',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#3b82f6',
       totalChapters: 4,
       totalMicroTopics: 12,
@@ -173,7 +173,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
             }
           ],
           microTopics: [
-            { id: 'fnd_e_1', topicTitle: 'Letters A to Z Phonics & CVC Word Blends', subtopic: 'Bat, Cat, Mat, Hen, Pen, Tin, Pin, Pot, Dot, Sun, Run', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /b/ + /Ã¦/ + /t/ = Bat | CVC Blending Pattern', keyPoints: ['Short vowel sounds (a, e, i, o, u)', 'Visual word cards and picture matching'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_e_1', topicTitle: 'Letters A to Z Phonics & CVC Word Blends', subtopic: 'Bat, Cat, Mat, Hen, Pen, Tin, Pin, Pot, Dot, Sun, Run', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /b/ + /æ/ + /t/ = Bat | CVC Blending Pattern', keyPoints: ['Short vowel sounds (a, e, i, o, u)', 'Visual word cards and picture matching'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
@@ -360,13 +360,13 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
 // 2. PREPARATORY STAGE: CLASS 3 TO CLASS 5 (AGES 8â€“11)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
-  const isTa = courseTitle.includes('à®¤à®®à®¿à®´à¯') || courseId.includes('-ta-');
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
 
   const subjects: SyllabusSubject[] = [
     {
       subjectId: 'prep_tamil',
       subjectName: 'à®¤à®®à®¿à®´à¯ (Tamil â€” à®šà¯†à®¯à¯à®¯à¯à®³à¯, à®‰à®°à¯ˆà®¨à®Ÿà¯ˆ, à®¤à¯à®£à¯ˆà®ªà¯à®ªà®¾à®Ÿà®®à¯ & à®•à®±à¯à®•à®£à¯à®Ÿà¯ à®‡à®²à®•à¯à®•à®£à®®à¯)',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#ec4899',
       totalChapters: 4,
       totalMicroTopics: 14,
@@ -447,7 +447,7 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
     {
       subjectId: 'prep_english',
       subjectName: 'English (Prose, Poetry, Supplementary Reader & Grammar)',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#3b82f6',
       totalChapters: 4,
       totalMicroTopics: 14,
@@ -697,13 +697,13 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
 // 3. MIDDLE STAGE: CLASS 6 TO CLASS 8 (AGES 11â€“14 â€” SAMACHEER KALVI 9 IYAL)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
-  const isTa = courseTitle.includes('à®¤à®®à®¿à®´à¯') || courseId.includes('-ta-');
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
 
   const subjects: SyllabusSubject[] = [
     {
       subjectId: 'mid_tamil',
       subjectName: 'à®¤à®®à®¿à®´à¯ (Tamil â€” à®šà®®à®šà¯à®šà¯€à®°à¯ à®•à®²à¯à®µà®¿ 9 à®‡à®¯à®²à¯à®•à®³à¯ à®®à¯à®´à¯à®ªà¯ à®ªà®¾à®Ÿà®¤à¯à®¤à®¿à®Ÿà¯à®Ÿà®®à¯)',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#ec4899',
       totalChapters: 3,
       totalMicroTopics: 17,
@@ -792,7 +792,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     {
       subjectId: 'mid_english',
       subjectName: 'English (Samacheer Kalvi Units 1 to 7 Full Curriculum)',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#3b82f6',
       totalChapters: 7,
       totalMicroTopics: 21,
@@ -966,7 +966,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     {
       subjectId: 'mid_science',
       subjectName: isTa ? 'à®…à®±à®¿à®µà®¿à®¯à®²à¯ (Physics, Chemistry & Biology Core)' : 'Science (Physics, Chemistry & Biology Core)',
-      icon: 'âš¡',
+      icon: '⚡',
       color: '#10b981',
       totalChapters: 3,
       totalMicroTopics: 22,
@@ -1109,7 +1109,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
 // 4. SECONDARY STAGE: CLASS 9 & CLASS 10 (SSLC â€” 9 IYAL TAMIL & 7 UNITS ENGLISH)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: string): any {
-  const isTa = courseTitle.includes('à®¤à®®à®¿à®´à¯') || courseId.includes('-ta-');
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
 
   const subjects = [
     {
@@ -1492,7 +1492,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
     {
       subjectId: 'sec_tamil',
       subjectName: 'Tamil',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#ec4899',
       totalChapters: 9,
       chapters: [
@@ -1564,7 +1564,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
     {
       subjectId: 'sec_english',
       subjectName: 'English',
-      icon: 'ðŸ”¤',
+      icon: '🔤',
       color: '#3b82f6',
       totalChapters: 7,
       chapters: [
@@ -1687,7 +1687,7 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
       description: 'Evolution from 1773-1947 Acts, Preamble, Fundamental Rights (12-35), DPSPs, Basic Structure, Comparison with UK, USA, France',
       microTopics: [
         { id: 'upsc_gs2_1', topicTitle: 'Constitutional Philosophy, Basic Structure Doctrine & Major Amendments', subtopic: 'Kesavananda Bharati case 1973, 42nd/44th/86th/101st GST/103rd EWS/106th Nari Shakti Vandan Amendments, Judicial Review', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Basic Structure Doctrine: Parliament amending power under Article 368 cannot alter the core identity of the Constitution', keyPoints: ['Article 21 expanded to include Right to Privacy (Puttaswamy 2017), Clean Environment, Education (21A)', 'Harmonious construction between Fundamental Rights and DPSPs (Minerva Mills 1980)'], type: 'concept', importance: 'High-Yield' },
-        { id: 'upsc_gs2_2', topicTitle: 'Comparison of Indian Constitutional Scheme with UK, USA & France', subtopic: 'Parliamentary sovereignty vs Constitutional supremacy, US Strict Separation of Powers vs Indian Checks and Balances, French LaÃ¯citÃ© secularism', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'UK: Unwritten Constitution & Parliamentary Sovereignty | USA: Presidential & Due Process | India: Procedure Established by Law (evolving to Due Process)', keyPoints: ['India combines British parliamentary model with American fundamental rights and judicial review', 'US states have separate constitutions and dual citizenship; India has single citizenship'], type: 'concept', importance: 'High-Yield' }
+        { id: 'upsc_gs2_2', topicTitle: 'Comparison of Indian Constitutional Scheme with UK, USA & France', subtopic: 'Parliamentary sovereignty vs Constitutional supremacy, US Strict Separation of Powers vs Indian Checks and Balances, French Laïcité secularism', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'UK: Unwritten Constitution & Parliamentary Sovereignty | USA: Presidential & Due Process | India: Procedure Established by Law (evolving to Due Process)', keyPoints: ['India combines British parliamentary model with American fundamental rights and judicial review', 'US states have separate constitutions and dual citizenship; India has single citizenship'], type: 'concept', importance: 'High-Yield' }
       ]
     },
     {
@@ -1823,8 +1823,8 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
     { subjectId: 'upsc_gs1', subjectName: 'UPSC GS Paper I: Heritage, History, Geography & Society (GS-1)', icon: 'ðŸ›ï¸', color: '#10b981', totalChapters: gs1Chapters.length, totalMicroTopics: gs1Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs1Chapters },
     { subjectId: 'upsc_gs2', subjectName: 'UPSC GS Paper II: Governance, Constitution, Polity, Social Justice & IR (GS-2)', icon: 'âš–ï¸', color: '#06b6d4', totalChapters: gs2Chapters.length, totalMicroTopics: gs2Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs2Chapters },
     { subjectId: 'upsc_gs3', subjectName: 'UPSC GS Paper III: Technology, Economy, Environment & Internal Security (GS-3)', icon: 'ðŸ“ˆ', color: '#f59e0b', totalChapters: gs3Chapters.length, totalMicroTopics: gs3Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs3Chapters },
-    { subjectId: 'upsc_gs4', subjectName: 'UPSC GS Paper IV: Ethics, Integrity, Aptitude & Case Studies (GS-4)', icon: 'ðŸ’¡', color: '#8b5cf6', totalChapters: gs4Chapters.length, totalMicroTopics: gs4Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs4Chapters },
-    { subjectId: 'upsc_csat', subjectName: 'UPSC CSAT Paper II: Reading Comprehension & Quantitative Reasoning', icon: 'ðŸŽ¯', color: '#ec4899', totalChapters: csatChapters.length, totalMicroTopics: csatChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: csatChapters }
+    { subjectId: 'upsc_gs4', subjectName: 'UPSC GS Paper IV: Ethics, Integrity, Aptitude & Case Studies (GS-4)', icon: '💡', color: '#8b5cf6', totalChapters: gs4Chapters.length, totalMicroTopics: gs4Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs4Chapters },
+    { subjectId: 'upsc_csat', subjectName: 'UPSC CSAT Paper II: Reading Comprehension & Quantitative Reasoning', icon: '🎯', color: '#ec4899', totalChapters: csatChapters.length, totalMicroTopics: csatChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: csatChapters }
   ];
 
   return {
@@ -2007,7 +2007,7 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'cbse_acc', subjectName: 'Accountancy (Financial Accounting Part 1 & 2)', icon: 'ðŸ“Š', color: '#10b981', totalChapters: accountancyChapters.length, totalMicroTopics: accountancyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: accountancyChapters },
+    { subjectId: 'cbse_acc', subjectName: 'Accountancy (Financial Accounting Part 1 & 2)', icon: '📊', color: '#10b981', totalChapters: accountancyChapters.length, totalMicroTopics: accountancyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: accountancyChapters },
     { subjectId: 'cbse_bst', subjectName: 'Business Studies (Foundations & Finance)', icon: 'ðŸ’¼', color: '#06b6d4', totalChapters: businessStudiesChapters.length, totalMicroTopics: businessStudiesChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: businessStudiesChapters },
     { subjectId: 'cbse_eco', subjectName: 'Economics (Microeconomics & Statistics)', icon: 'ðŸ“ˆ', color: '#f59e0b', totalChapters: economicsChapters.length, totalMicroTopics: economicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: economicsChapters }
   ];
@@ -2030,7 +2030,7 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
 // 9B. HIGHER SECONDARY SCIENCE (+1 & +2 BIO-MATHS / COMPUTER SCIENCE)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
-  const isTa = courseTitle.includes('à®¤à®®à®¿à®´à¯') || courseId.includes('-ta-');
+  const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
 
   const physicsChapters: SyllabusChapter[] = [
     {
@@ -2174,9 +2174,9 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'hsc_tamil', subjectName: 'à®ªà¯Šà®¤à¯à®¤à¯ à®¤à®®à®¿à®´à¯ (General Tamil â€” HSC 8 à®‡à®¯à®²à¯à®•à®³à¯)', icon: 'ðŸ”¤', color: '#ec4899', totalChapters: generalTamilChapters.length, totalMicroTopics: generalTamilChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalTamilChapters },
-    { subjectId: 'hsc_english', subjectName: 'General English (HSC Units 1 to 6 Core)', icon: 'ðŸ”¤', color: '#3b82f6', totalChapters: generalEnglishChapters.length, totalMicroTopics: generalEnglishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalEnglishChapters },
-    { subjectId: 'hsc_physics', subjectName: isTa ? 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ (Physics Core â€” HSC / Board)' : 'Physics (Senior Secondary Core)', icon: 'âš¡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: physicsChapters },
+    { subjectId: 'hsc_tamil', subjectName: 'à®ªà¯Šà®¤à¯à®¤à¯ à®¤à®®à®¿à®´à¯ (General Tamil â€” HSC 8 à®‡à®¯à®²à¯à®•à®³à¯)', icon: '🔤', color: '#ec4899', totalChapters: generalTamilChapters.length, totalMicroTopics: generalTamilChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalTamilChapters },
+    { subjectId: 'hsc_english', subjectName: 'General English (HSC Units 1 to 6 Core)', icon: '🔤', color: '#3b82f6', totalChapters: generalEnglishChapters.length, totalMicroTopics: generalEnglishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalEnglishChapters },
+    { subjectId: 'hsc_physics', subjectName: isTa ? 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ (Physics Core â€” HSC / Board)' : 'Physics (Senior Secondary Core)', icon: '⚡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: physicsChapters },
     { subjectId: 'hsc_chemistry', subjectName: isTa ? 'à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ (Chemistry Core â€” HSC / Board)' : 'Chemistry (Senior Secondary Core)', icon: 'ðŸ§ª', color: '#10b981', totalChapters: chemistryChapters.length, totalMicroTopics: chemistryChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: chemistryChapters },
     { subjectId: 'hsc_mathematics', subjectName: isTa ? 'à®•à®£à®¿à®¤à®®à¯ (Mathematics Core â€” HSC / Board)' : 'Mathematics (Senior Secondary Calculus & Vectors)', icon: 'ðŸ“', color: '#f59e0b', totalChapters: mathematicsChapters.length, totalMicroTopics: mathematicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: mathematicsChapters }
   ];
@@ -2325,7 +2325,7 @@ export function getCollegeAndTechSkillsCompleteSyllabus(courseId: string, course
   const subjects: SyllabusSubject[] = [
     { subjectId: 'tech_fullstack', subjectName: 'Full-Stack Web & Mobile Architecture (React, Node, TypeScript)', icon: 'ðŸ’»', color: '#06b6d4', totalChapters: fullstackChapters.length, totalMicroTopics: fullstackChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: fullstackChapters },
     { subjectId: 'tech_python_ai', subjectName: 'Python 3.12, Data Science & Generative AI Engineering', icon: 'ðŸ', color: '#10b981', totalChapters: pythonAiChapters.length, totalMicroTopics: pythonAiChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pythonAiChapters },
-    { subjectId: 'tech_dsa', subjectName: 'Data Structures & Algorithms (LeetCode Master Patterns)', icon: 'âš¡', color: '#8b5cf6', totalChapters: dsaChapters.length, totalMicroTopics: dsaChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: dsaChapters }
+    { subjectId: 'tech_dsa', subjectName: 'Data Structures & Algorithms (LeetCode Master Patterns)', icon: '⚡', color: '#8b5cf6', totalChapters: dsaChapters.length, totalMicroTopics: dsaChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: dsaChapters }
   ];
 
   return {
@@ -2464,7 +2464,7 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'pol_tamil', subjectName: 'à®¤à®®à®¿à®´à¯ à®®à¯Šà®´à®¿à®¤à¯ à®¤à®•à¯à®¤à®¿à®¤à¯ à®¤à¯‡à®°à¯à®µà¯ (Tamil Eligibility â€” 100 Marks)', icon: 'ðŸ”¤', color: '#ec4899', totalChapters: tamilEligibilityChapters.length, totalMicroTopics: tamilEligibilityChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: tamilEligibilityChapters },
+    { subjectId: 'pol_tamil', subjectName: 'à®¤à®®à®¿à®´à¯ à®®à¯Šà®´à®¿à®¤à¯ à®¤à®•à¯à®¤à®¿à®¤à¯ à®¤à¯‡à®°à¯à®µà¯ (Tamil Eligibility â€” 100 Marks)', icon: '🔤', color: '#ec4899', totalChapters: tamilEligibilityChapters.length, totalMicroTopics: tamilEligibilityChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: tamilEligibilityChapters },
     { subjectId: 'pol_gk', subjectName: 'à®ªà¯Šà®¤à¯ à®…à®±à®¿à®µà¯ & à®…à®±à®¿à®µà®¿à®¯à®²à¯ (General Knowledge & Science Core)', icon: 'ðŸ›ï¸', color: '#06b6d4', totalChapters: generalKnowledgeChapters.length, totalMicroTopics: generalKnowledgeChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalKnowledgeChapters },
     { subjectId: 'pol_psy', subjectName: 'à®‰à®³à®µà®¿à®¯à®²à¯ & à®¤à®°à¯à®•à¯à®•à®•à¯ à®•à®¾à®°à®£à®µà®¿à®¯à®²à¯ (Psychology & Logical Analysis)', icon: 'ðŸ§ ', color: '#8b5cf6', totalChapters: psychologyChapters.length, totalMicroTopics: psychologyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: psychologyChapters }
   ];
@@ -2821,7 +2821,7 @@ export function getTrbAndTeacherExamsCompleteSyllabus(courseId?: string, courseT
 
   const subjects: SyllabusSubject[] = [
     { subjectId: 'trb_child_dev', subjectName: 'à®•à¯à®´à®¨à¯à®¤à¯ˆ à®®à¯‡à®®à¯à®ªà®¾à®Ÿà¯à®®à¯ à®•à®±à¯à®±à®²à¯ à®‰à®³à®µà®¿à®¯à®²à¯à®®à¯ (Child Development & Pedagogy)', icon: 'ðŸ‘¶', color: '#ec4899', totalChapters: childDevChapters.length, totalMicroTopics: childDevChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: childDevChapters },
-    { subjectId: 'trb_pedagogy', subjectName: 'à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®®à¯à®±à¯ˆà®•à®³à¯à®®à¯ à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯à®®à¯ (Teaching Methodology & CCE)', icon: 'ðŸ“š', color: '#06b6d4', totalChapters: pedagogyChapters.length, totalMicroTopics: pedagogyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pedagogyChapters }
+    { subjectId: 'trb_pedagogy', subjectName: 'à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®®à¯à®±à¯ˆà®•à®³à¯à®®à¯ à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯à®®à¯ (Teaching Methodology & CCE)', icon: '📚', color: '#06b6d4', totalChapters: pedagogyChapters.length, totalMicroTopics: pedagogyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pedagogyChapters }
   ];
 
   return {
@@ -2989,7 +2989,7 @@ export function getKidsSkillsCompleteSyllabus(courseId: string, courseTitle: str
 
   const subjects: SyllabusSubject[] = [
     { subjectId: 'kid_scratch', subjectName: 'Scratch 3.0 Block Coding & Game Studio', icon: 'ðŸ±', color: '#f59e0b', totalChapters: scratchChapters.length, totalMicroTopics: scratchChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: scratchChapters },
-    { subjectId: 'kid_vedic', subjectName: 'Vedic Maths & Lightning Speed Calculations', icon: 'âš¡', color: '#06b6d4', totalChapters: vedicMathsChapters.length, totalMicroTopics: vedicMathsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: vedicMathsChapters },
+    { subjectId: 'kid_vedic', subjectName: 'Vedic Maths & Lightning Speed Calculations', icon: '⚡', color: '#06b6d4', totalChapters: vedicMathsChapters.length, totalMicroTopics: vedicMathsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: vedicMathsChapters },
     { subjectId: 'kid_robotics', subjectName: 'Robotics, Electronics & Smart IoT Studio', icon: 'ðŸ¤–', color: '#10b981', totalChapters: roboticsChapters.length, totalMicroTopics: roboticsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: roboticsChapters }
   ];
 
@@ -3016,7 +3016,7 @@ export function resolveCompleteCourseSyllabus(
 ): CourseFullSyllabus {
   const c = (courseId || '').toLowerCase();
   const title = courseTitle || 'Standard Curriculum';
-  const isTa = title.includes('à®¤à®®à®¿à®´à¯') || c.includes('-ta-');
+  const isTa = title.includes('தமிழ்') || c.includes('-ta-');
 
   // 1. UPSC Mains Optionals Track (Top 10 Subjects)
   if (c.includes('exam-upsc-opt-') || c.includes('-opt-')) {
@@ -3094,7 +3094,7 @@ export function resolveCompleteCourseSyllabus(
       {
         subjectId: 'kg_tamil',
         subjectName: isTa ? 'à®¤à®®à®¿à®´à¯ à®®à®´à®²à¯ˆà®¯à®°à¯ à®ªà®¾à®Ÿà®²à¯ & à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à¯à®•à®³à¯' : 'Tamil Rhymes & Vowels (Uyir Ezhuthukkal)',
-        icon: 'ðŸ”¤',
+        icon: '🔤',
         color: '#ec4899',
         totalChapters: 2,
         totalMicroTopics: 6,
@@ -3112,7 +3112,7 @@ export function resolveCompleteCourseSyllabus(
       {
         subjectId: 'kg_english',
         subjectName: 'English Phonics & Alphabets (A to Z)',
-        icon: 'ðŸ”¤',
+        icon: '🔤',
         color: '#3b82f6',
         totalChapters: 2,
         totalMicroTopics: 6,
@@ -3122,7 +3122,7 @@ export function resolveCompleteCourseSyllabus(
             chapterTitle: 'Phonics Sounds: Letters A to Z & Classic Nursery Rhymes',
             description: 'Letter sounds, picture matching, and CVC 3-letter word blending',
             microTopics: [
-              { id: 'kg_e_1', topicTitle: 'Letters A to Z Phonics & Nursery Rhymes', subtopic: 'Apple, Ball, Cat, Dog, Elephant phonics sounds and Twinkle Twinkle rhyme', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /Ã¦/ /b/ /k/ /d/ | 26 English Alphabets A to Z', keyPoints: ['Letter tracing inside lines', 'Object recognition'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_e_1', topicTitle: 'Letters A to Z Phonics & Nursery Rhymes', subtopic: 'Apple, Ball, Cat, Dog, Elephant phonics sounds and Twinkle Twinkle rhyme', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z', keyPoints: ['Letter tracing inside lines', 'Object recognition'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -3252,7 +3252,7 @@ export function getAugmentedCourseSyllabus(
         subj = {
           subjectId: `custom_subj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
           subjectName: item.subjectName,
-          icon: item.subjectIcon || 'ðŸ“š',
+          icon: item.subjectIcon || '📚',
           color: item.subjectColor || '#06b6d4',
           totalChapters: 1,
           totalMicroTopics: 1,
