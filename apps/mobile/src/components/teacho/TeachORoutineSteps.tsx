@@ -157,7 +157,7 @@ export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
                 </View>
               </TouchableOpacity>
 
-              {/* Contextual Deep-Links: AI Helper Prompt & TestO Practice */}
+              {/* Contextual Deep-Links: AI Helper Prompt, TestO Practice & WhatsApp */}
               <View style={styles.quickToolsRow}>
                 <TouchableOpacity
                   style={styles.stepToolBtn}
@@ -174,7 +174,7 @@ export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
                   activeOpacity={0.75}
                 >
                   <Award size={13} color="#fbbf24" />
-                  <Text style={[styles.stepToolBtnText, styles.stepToolTestBtnText]}>Test Heading</Text>
+                  <Text style={[styles.stepToolBtnText, styles.stepToolTestBtnText]}>Take Test in TestO</Text>
                 </TouchableOpacity>
               </View>
             </View>

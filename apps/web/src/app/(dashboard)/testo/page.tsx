@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { lmsSupabase } from '@/lib/lms-supabase';
+import Link from 'next/link';
 import {
   FileCheck2,
   Sparkles,
@@ -13,248 +13,96 @@ import {
   CheckCircle2,
   XCircle,
   ChevronRight,
+  ChevronDown,
   Search,
   Timer,
   RotateCcw,
   BookOpen,
   Share2,
   X,
-  Mic,
-  MicOff,
-  Printer,
-  ShieldAlert,
-  ShoppingCart,
+  Bot,
+  MessageCircle,
+  Calendar,
+  Layers as LayersIcon,
+  Flame,
+  ArrowRight,
 } from 'lucide-react';
-import { PaymentQRModal } from '@/components/PaymentQRModal';
-
-const CATEGORIES = [
-  { id: 'all', label: 'All Mock Tests', icon: FileCheck2 },
-  { id: 'entrance', label: 'NEET & JEE', icon: Zap },
-  { id: 'govt', label: 'Govt & TNPSC', icon: Award },
-  { id: 'school', label: 'School (Class 8–12)', icon: GraduationCap },
-  { id: 'skills', label: 'Tech & Programming', icon: Sparkles },
-  { id: 'college', label: 'College & Degree', icon: BookOpen },
-  { id: 'others', label: 'Others', icon: Layers },
-];
-
-function getTestCategory(t: any): string {
-  const cat = (t.category || '').toLowerCase();
-  const title = (t.title_name || t.title || '').toLowerCase();
-  const desc = (t.description || t.description_purpose || '').toLowerCase();
-  const combined = `${cat} ${title} ${desc}`;
-
-  if (
-    combined.includes('neet') ||
-    combined.includes('jee') ||
-    combined.includes('iit') ||
-    combined.includes('cuet') ||
-    combined.includes('gate') ||
-    /physics - class 1[12]|chemistry - class 1[12]|biology - class 1[12]|mathematics - (class 1[12]|advanced)|physics - advanced|chemistry - advanced/i.test(combined)
-  ) {
-    return 'entrance';
-  }
-  if (
-    combined.includes('tnpsc') ||
-    combined.includes('upsc') ||
-    combined.includes('ssc') ||
-    combined.includes('cgl') ||
-    combined.includes('chsl') ||
-    combined.includes('cpo') ||
-    combined.includes('rrb') ||
-    combined.includes('ntpc') ||
-    combined.includes('police') ||
-    combined.includes('constable') ||
-    combined.includes('vao') ||
-    combined.includes('si') ||
-    combined.includes('prelims') ||
-    combined.includes('mains') ||
-    combined.includes('csat') ||
-    combined.includes('polity') ||
-    combined.includes('history') ||
-    combined.includes('geography') ||
-    combined.includes('economy') ||
-    combined.includes('ethics') ||
-    combined.includes('current affairs') ||
-    combined.includes('aptitude') ||
-    combined.includes('indus valley') ||
-    combined.includes('general intelligence') ||
-    combined.includes('general knowledge') ||
-    combined.includes('elementary mathematics')
-  ) {
-    return 'govt';
-  }
-  if (
-    combined.includes('grade') ||
-    combined.includes('school') ||
-    combined.includes('10th') ||
-    combined.includes('12th') ||
-    combined.includes('kindergarten') ||
-    combined.includes('lkg') ||
-    combined.includes('ukg') ||
-    combined.includes('samacheer') ||
-    combined.includes('cbse') ||
-    combined.includes('matric') ||
-    /class [1-9]|class 1[0-2]|8th|9th|10th|11th|12th|std/i.test(combined) ||
-    cat.includes('academic')
-  ) {
-    return 'school';
-  }
-  if (
-    combined.includes('tech') ||
-    combined.includes('programming') ||
-    combined.includes('python') ||
-    combined.includes('javascript') ||
-    combined.includes('data') ||
-    combined.includes('cloud') ||
-    combined.includes('aws') ||
-    combined.includes('cyber') ||
-    combined.includes('software') ||
-    combined.includes('mobile app') ||
-    combined.includes('ai')
-  ) {
-    return 'skills';
-  }
-  if (
-    combined.includes('ug') ||
-    combined.includes('college') ||
-    combined.includes('degree') ||
-    combined.includes('engineering') ||
-    combined.includes('bcom') ||
-    combined.includes('bba') ||
-    combined.includes('bca') ||
-    combined.includes('bsc') ||
-    combined.includes('btech') ||
-    combined.includes('commerce') ||
-    combined.includes('spoken english')
-  ) {
-    return 'college';
-  }
-  return 'others';
-}
-
-function getTestBadge(t: any): { label: string; color: string } {
-  const cat = getTestCategory(t);
-  const title = (t.title_name || t.title || '').toLowerCase();
-  
-  if (title.includes('tnpsc')) return { label: 'TNPSC EXAM', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' };
-  if (title.includes('upsc') || title.includes('prelims') || title.includes('mains') || title.includes('csat')) return { label: 'UPSC IAS', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30' };
-  if (title.includes('neet')) return { label: 'NEET UG', color: 'bg-rose-500/10 text-rose-400 border-rose-500/30' };
-  if (title.includes('jee')) return { label: 'JEE MAIN', color: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
-  if (title.includes('10th')) return { label: 'CLASS 10 SSLC', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' };
-  if (title.includes('12th')) return { label: 'CLASS 12 HSC', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
-  if (title.includes('ssc')) return { label: 'SSC CGL/CPO', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' };
-  if (title.includes('kindergarten') || title.includes('lkg') || title.includes('ukg')) return { label: 'EARLY YEARS', color: 'bg-pink-500/10 text-pink-400 border-pink-500/30' };
-  if (cat === 'skills') return { label: 'TECH & SKILL', color: 'bg-violet-500/10 text-violet-400 border-violet-500/30' };
-  if (cat === 'college') return { label: 'DEGREE & UG', color: 'bg-orange-500/10 text-orange-400 border-orange-500/30' };
-  return { label: 'MOCK EXAM', color: 'bg-purple-500/10 text-purple-400 border-purple-500/30' };
-}
+import { ALL_COURSES, CourseOption } from '@/data/coursesCatalog';
+import { resolveMasterCurriculumPlan } from '@/data/curriculum';
+import { getAugmentedCourseSyllabus } from '@/data/curriculum/courseSyllabusRegistry';
+import { TeachOCoursePickerModal } from '@/components/teacho/TeachOCoursePickerModal';
+import { lmsSupabase } from '@/lib/lms-supabase';
 
 export default function TestoWebPage() {
-  const [tests, setTests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('all');
+  // Active Course & Picker
+  const [activeCourse, setActiveCourse] = useState<CourseOption>(ALL_COURSES[0]);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'day_plan' | 'syllabus'>('day_plan');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [currentDay, setCurrentDay] = useState(1);
+  const [expandedSubjects, setExpandedSubjects] = useState<Record<string, boolean>>({});
 
-  // Read URL search params on mount
+  // Live CBT Exam State
+  const [activeTestTopic, setActiveTestTopic] = useState<{ topicTitle: string; subjectTitle: string } | null>(null);
+  const [examQuestions, setExamQuestions] = useState<any[]>([]);
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
+  const [timeLeft, setTimeLeft] = useState(600); // 10 mins default
+  const [isExamCompleted, setIsExamCompleted] = useState(false);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+  // 1. Read URL search params & storage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const q = params.get('search') || params.get('topic') || params.get('q');
-      if (q) {
-        setSearchQuery(q);
+      const courseId = params.get('courseId');
+      const topic = params.get('topic');
+      const subject = params.get('subject');
+      const day = params.get('day');
+
+      if (courseId) {
+        const found = ALL_COURSES.find(c => c.id === courseId);
+        if (found) setActiveCourse(found);
+      } else {
+        const saved = localStorage.getItem('teacho_active_course_id');
+        if (saved) {
+          const found = ALL_COURSES.find(c => c.id === saved);
+          if (found) setActiveCourse(found);
+        }
+      }
+
+      if (day) {
+        const parsed = parseInt(day, 10);
+        if (!isNaN(parsed) && parsed > 0) setCurrentDay(parsed);
+      }
+
+      if (topic) {
+        launchCbtForTopic(topic, subject || activeCourse.title);
       }
     }
   }, []);
 
-  // Live Exam State
-  const [activeTest, setActiveTest] = useState<any | null>(null);
-  const [currentQIndex, setCurrentQIndex] = useState(0);
-  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
-  const [timeLeft, setTimeLeft] = useState(900); // 15 mins
-  const [isExamCompleted, setIsExamCompleted] = useState(false);
-
-  // Dynamic Real Question Pool from Database
-  const mockQuestions = useMemo(() => {
-    if (!activeTest) return [];
-    
-    let ai = activeTest.additional_info;
-    if (typeof ai === 'string') {
-      try { ai = JSON.parse(ai); } catch(e) {}
+  // 2. Day Plan
+  const activeDayPlan = useMemo(() => {
+    try {
+      return resolveMasterCurriculumPlan(activeCourse, currentDay);
+    } catch (e) {
+      return null;
     }
+  }, [activeCourse, currentDay]);
 
-    let qs: any[] = [];
-    if (Array.isArray(ai)) {
-      qs = ai;
-    } else if (ai?.questions && Array.isArray(ai.questions)) {
-      qs = ai.questions;
-    } else if (ai?.data && Array.isArray(ai.data)) {
-      qs = ai.data;
+  // 3. Full Syllabus
+  const fullSyllabus = useMemo(() => {
+    try {
+      return getAugmentedCourseSyllabus(activeCourse.id, activeCourse.title);
+    } catch (e) {
+      return [];
     }
+  }, [activeCourse.id, activeCourse.title]);
 
-    if (qs.length > 0) {
-      return qs.map((q: any) => {
-        const options: string[] = Array.isArray(q.options) ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'];
-        const correctText = q.correct_answer || q.correctAnswer || q.answer;
-        let correctIdx = 0;
-        if (typeof correctText === 'string') {
-          const found = options.findIndex((o: string) => o.trim().toLowerCase() === correctText.trim().toLowerCase());
-          if (found !== -1) correctIdx = found;
-        } else if (typeof correctText === 'number') {
-          correctIdx = correctText;
-        }
-
-        return {
-          question: q.question || q.q || 'Question',
-          options,
-          correct: correctIdx,
-          explanation: q.explanation || 'Refer to textbook and syllabus definitions.',
-        };
-      });
-    }
-
-    const t = activeTest.title_name || 'Subject';
-    return [
-      {
-        question: `In ${t}, what is the foundational governing principle or standard equation?`,
-        options: ['A) Direct Linear Proportionality Law', 'B) Conservation of Energy & Momentum', 'C) Standard Inverse Quadratic Formulation', 'D) Equilibrium Thermodynamic Boundary'],
-        correct: 1,
-        explanation: 'Fundamental conservation theorems govern state transformations and balance equations across standard curricula.',
-      },
-      {
-        question: 'Which technique is recommended for maximum accuracy in competitive timed examinations?',
-        options: ['A) Blind Guessing All Options', 'B) Dimensional Verification & Elimination of Traps', 'C) Skipping All Problem Statements', 'D) Random Option Marking'],
-        correct: 1,
-        explanation: 'Eliminating impossible units and verifying boundary values cuts answering time by over 50%.',
-      },
-      {
-        question: 'What is the primary prerequisite concept required before attempting advanced numericals?',
-        options: ['A) Core Axioms & SI Unit Consistency', 'B) Complex Multi-Variable Integrals only', 'C) External Calculator Usage', 'D) Non-standard Assumptions'],
-        correct: 0,
-        explanation: 'Unit consistency and foundational definitions are critical before advancing to multi-step problem solving.',
-      },
-      {
-        question: 'When analyzing graphical data in this domain, what does the area under the curve represent?',
-        options: ['A) Cumulative Accumulation or Work Done', 'B) Zero Physical Meaning', 'C) Random Variance', 'D) Instantaneous Derivative'],
-        correct: 0,
-        explanation: 'The integral (area under curve) provides the total accumulated physical quantity.',
-      },
-      {
-        question: 'What is the key takeaway for achieving top percentile in this module?',
-        options: ['A) Daily Rapid PYQ Problem Drills & Mock Tests', 'B) Passive Reading Without Practice', 'C) Memorizing Without Derivations', 'D) Ignoring Diagnostic Feedback'],
-        correct: 0,
-        explanation: 'Consistent timed problem drills and reviewing diagnostic error logs maximize performance retention.',
-      },
-    ];
-  }, [activeTest]);
-
+  // 4. Timer
   useEffect(() => {
-    fetchTests();
-  }, []);
-
-  // Timer Hook
-  useEffect(() => {
-    if (!activeTest || isExamCompleted) return;
+    if (!activeTestTopic || isExamCompleted) return;
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
@@ -266,646 +114,592 @@ export default function TestoWebPage() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [activeTest, isExamCompleted]);
+  }, [activeTestTopic, isExamCompleted]);
 
-  const [displayLimit, setDisplayLimit] = useState(36);
-
-  const fetchTests = async () => {
-    try {
-      setLoading(true);
-      const { data } = await lmsSupabase
-        .from('unified_master_data')
-        .select('*')
-        .eq('item_type', 'o_test')
-        .limit(1000);
-
-      if (data && data.length > 0) {
-        // Sort tests: prioritize tests with pre-parsed questions in additional_info
-        const sorted = [...data].sort((a, b) => {
-          const aHasQ = a.additional_info && (
-            (typeof a.additional_info === 'string' && a.additional_info.includes('"questions"')) ||
-            (typeof a.additional_info === 'object' && a.additional_info?.questions?.length > 0)
-          );
-          const bHasQ = b.additional_info && (
-            (typeof b.additional_info === 'string' && b.additional_info.includes('"questions"')) ||
-            (typeof b.additional_info === 'object' && b.additional_info?.questions?.length > 0)
-          );
-          if (aHasQ && !bHasQ) return -1;
-          if (!aHasQ && bHasQ) return 1;
-          return 0;
-        });
-        setTests(sorted);
-      } else {
-        // Fallback to Courses with test capability
-        const { data: courses } = await lmsSupabase
-          .from('unified_master_data')
-          .select('*')
-          .eq('item_type', 'COURSE')
-          .limit(100);
-        if (courses) setTests(courses);
-      }
-    } catch (e) {
-      console.error('Error fetching TestO Web tests:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: tests.length };
-    tests.forEach(t => {
-      const cat = getTestCategory(t);
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return counts;
-  }, [tests]);
-
-  const filteredTests = useMemo(() => {
-    let items = tests;
-    if (activeCategory !== 'all') {
-      items = tests.filter(t => getTestCategory(t) === activeCategory);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      items = items.filter(
-        t =>
-          (t.title_name && t.title_name.toLowerCase().includes(q)) ||
-          (t.category && t.category.toLowerCase().includes(q)) ||
-          (t.description && t.description.toLowerCase().includes(q))
-      );
-    }
-    return items;
-  }, [tests, activeCategory, searchQuery]);
-
-  const visibleTests = useMemo(() => {
-    return filteredTests.slice(0, displayLimit);
-  }, [filteredTests, displayLimit]);
-
-  const handleStartExam = (test: any) => {
-    setActiveTest(test);
+  // 5. CBT Test Launch Handler
+  const launchCbtForTopic = async (topicTitle: string, subjectTitle: string) => {
+    setActiveTestTopic({ topicTitle, subjectTitle });
     setCurrentQIndex(0);
     setUserAnswers({});
-    setTimeLeft(900);
+    setTimeLeft(600);
     setIsExamCompleted(false);
+    setLoadingQuestions(true);
+
+    try {
+      // Query Supabase for authentic questions
+      const { data } = await lmsSupabase
+        .from('kindle_content_cache')
+        .select('content_json')
+        .ilike('topic_title', `%${topicTitle}%`)
+        .limit(1);
+
+      let qs: any[] = [];
+      if (data && data.length > 0 && data[0].content_json) {
+        const parsed = typeof data[0].content_json === 'string' ? JSON.parse(data[0].content_json) : data[0].content_json;
+        if (Array.isArray(parsed.mcqs) && parsed.mcqs.length > 0) {
+          qs = parsed.mcqs.map((m: any) => ({
+            question: m.question || 'Question',
+            options: m.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+            correct: typeof m.correctAnswer === 'number' ? m.correctAnswer : 0,
+            explanation: m.explanation || 'Refer to syllabus and standard textbook rules.',
+          }));
+        }
+      }
+
+      if (qs.length === 0) {
+        qs = [
+          {
+            question: `In "${topicTitle}", what is the foundational governing principle or definition?`,
+            options: [
+              `A) Standard Primary Formulation for ${topicTitle}`,
+              'B) Arbitrary Secondary Approximation',
+              'C) Inverted Boundary Value',
+              'D) Null Variance State',
+            ],
+            correct: 0,
+            explanation: `Standard syllabus theorem defines ${topicTitle} according to core curriculum rules.`,
+          },
+          {
+            question: `Which formula or rule is standard for problem solving in "${topicTitle}"?`,
+            options: [
+              'A) Unrelated Empirical Constant',
+              `B) Verified Canonical Relationship for ${subjectTitle}`,
+              'C) Random Linear Deviation',
+              'D) Non-deterministic Parameter',
+            ],
+            correct: 1,
+            explanation: 'Direct standard equation application ensures precise mathematical solutions.',
+          },
+          {
+            question: `What is the most frequent high-yield exam pitfall in "${topicTitle}"?`,
+            options: [
+              'A) Ignoring sign conventions and standard units',
+              'B) Writing step-by-step solutions',
+              'C) Double-checking calculation bounds',
+              'D) Following textbook definitions',
+            ],
+            correct: 0,
+            explanation: 'Unit conversion and sign traps are the most common cause of negative marks.',
+          },
+          {
+            question: `How is the principle of "${topicTitle}" applied in practical systems?`,
+            options: [
+              `A) Core real-world implementation in ${subjectTitle} frameworks`,
+              'B) It has zero practical applicability',
+              'C) Purely theoretical without models',
+              'D) Only in non-physical simulations',
+            ],
+            correct: 0,
+            explanation: 'Modern curricula emphasize real-world practical analogies and system modeling.',
+          },
+          {
+            question: `To secure maximum score (Centum) in this section, what should a student prioritize?`,
+            options: [
+              'A) Speed drills, clear diagrams, and standard formula derivations',
+              'B) Passive textbook skimming',
+              'C) Leaving calculations unverified',
+              'D) Ignoring model answer structures',
+            ],
+            correct: 0,
+            explanation: 'Structured model answers and timed mock practice ensure 100% examination marks.',
+          },
+        ];
+      }
+
+      setExamQuestions(qs);
+    } catch (e) {
+      console.warn('Error loading questions:', e);
+    } finally {
+      setLoadingQuestions(false);
+    }
   };
 
-  const handleSelectOption = (optIndex: number) => {
-    setUserAnswers(prev => ({ ...prev, [currentQIndex]: optIndex }));
-  };
-
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  const calculatedScore = useMemo(() => {
-    if (!mockQuestions.length) return { score: 0, total: 0, accuracy: 0, correct: 0, wrong: 0 };
+  // Score Calculation
+  const scoreStats = useMemo(() => {
     let correct = 0;
-    let wrong = 0;
-    mockQuestions.forEach((q, idx) => {
-      const ans = userAnswers[idx];
-      if (ans !== undefined) {
-        if (ans === q.correct) correct++;
-        else wrong++;
+    let incorrect = 0;
+    examQuestions.forEach((q, idx) => {
+      const userAns = userAnswers[idx];
+      if (userAns !== undefined) {
+        if (userAns === q.correct) correct++;
+        else incorrect++;
       }
     });
-    const total = mockQuestions.length;
-    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-    return { score: correct * 4 - wrong * 1, total: total * 4, accuracy, correct, wrong };
-  }, [mockQuestions, userAnswers]);
+    const total = examQuestions.length;
+    const answered = correct + incorrect;
+    const accuracy = total > 0 ? Math.round((correct / (answered || 1)) * 100) : 0;
+    const score = correct * 4 - incorrect * 1;
+    const maxScore = total * 4;
 
-  // Persist Exam Marks & Score to User Database & Offline Cache
-  useEffect(() => {
-    if (isExamCompleted && activeTest && mockQuestions.length > 0) {
-      const recordExamAttempt = async () => {
-        try {
-          const payload = {
-            test_id: activeTest.id || activeTest.title_name,
-            test_title: activeTest.title_name || activeTest.title,
-            category: activeTest.category,
-            score: calculatedScore.score,
-            total_marks: calculatedScore.total,
-            accuracy: calculatedScore.accuracy,
-            correct_count: calculatedScore.correct,
-            wrong_count: calculatedScore.wrong,
-            completed_at: new Date().toISOString()
-          };
-          if (typeof window !== 'undefined') {
-            const history = JSON.parse(localStorage.getItem('testo_user_attempts') || '[]');
-            history.unshift(payload);
-            localStorage.setItem('testo_user_attempts', JSON.stringify(history.slice(0, 100)));
-          }
-          await lmsSupabase.from('user_learning_progress').insert([{
-            module_id: `test_${activeTest.id || 'exam'}`,
-            module_title: activeTest.title_name || activeTest.title,
-            score: calculatedScore.score,
-            total: calculatedScore.total,
-            completed: true,
-            metadata: payload
-          }]).select();
-        } catch (err) {
-          console.warn('Exam attempt recorded to local cache:', err);
-        }
-      };
-      recordExamAttempt();
-    }
-  }, [isExamCompleted, activeTest, mockQuestions, calculatedScore]);
+    return { correct, incorrect, answered, total, accuracy, score, maxScore };
+  }, [examQuestions, userAnswers]);
 
-  // Anti-cheat Focus/Tab blur listener
-  const [blurCount, setBlurCount] = useState(0);
-  const [isListening, setIsListening] = useState(false);
-
-  useEffect(() => {
-    if (!activeTest || isExamCompleted) return;
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setBlurCount(prev => prev + 1);
-        alert('⚠️ Anti-Cheat Warning: Tab switching is monitored during live mock exams. Please remain on the examination screen.');
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [activeTest, isExamCompleted]);
-
-  const startVoiceSearch = () => {
-    if (typeof window === 'undefined') return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Voice speech recognition is supported in Google Chrome, Microsoft Edge, and modern browsers.');
-      return;
-    }
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-IN';
-      recognition.interimResults = false;
-      setIsListening(true);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {
-          setSearchQuery(transcript);
-        }
-        setIsListening(false);
-      };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
-      recognition.start();
-    } catch {
-      setIsListening(false);
-    }
-  };
-
-  const printScorecard = () => {
-    if (typeof window === 'undefined' || !activeTest) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Scorecard - ${activeTest.title_name}</title>
-        <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; text-align: center; }
-          .cert-box { border: 4px double #8b5cf6; padding: 40px; border-radius: 20px; background: #faf5ff; }
-          .badge { display: inline-block; background: #8b5cf6; color: #ffffff; font-weight: bold; font-size: 12px; padding: 6px 14px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
-          h1 { color: #581c87; margin: 10px 0; font-size: 26px; }
-          .score-grid { display: flex; justify-content: center; gap: 20px; margin: 30px 0; }
-          .score-card { background: #ffffff; border: 1px solid #e9d5ff; padding: 16px 24px; border-radius: 12px; min-width: 120px; }
-          .score-val { font-size: 24px; font-weight: 900; color: #7c3aed; }
-          .score-lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: bold; }
-          .footer { margin-top: 30px; font-size: 11px; color: #9ca3af; }
-        </style>
-      </head>
-      <body>
-        <div class="cert-box">
-          <span class="badge">Official TestO Examination Scorecard</span>
-          <h1>${activeTest.title_name}</h1>
-          <p style="color: #6b7280; font-size: 13px;">Date: ${new Date().toLocaleDateString()} • SuprO National Testing Engine</p>
-          <div class="score-grid">
-            <div class="score-card">
-              <div class="score-val">${calculatedScore.score} / ${calculatedScore.total}</div>
-              <div class="score-lbl">Total Score</div>
-            </div>
-            <div class="score-card">
-              <div class="score-val">${calculatedScore.accuracy}%</div>
-              <div class="score-lbl">Accuracy</div>
-            </div>
-            <div class="score-card">
-              <div class="score-val">${calculatedScore.correct}</div>
-              <div class="score-lbl">Correct (+4)</div>
-            </div>
-            <div class="score-card">
-              <div class="score-val">${calculatedScore.wrong}</div>
-              <div class="score-lbl">Wrong (-1)</div>
-            </div>
-          </div>
-          <p style="font-size: 13px; color: #4b5563;">Performance Status: <strong>${calculatedScore.accuracy >= 70 ? 'Distinction Qualified' : 'Eligible for Retest'}</strong></p>
-          <div class="footer">
-            Verified by EduVerse AI Examination Authority • SuprO Platform
-          </div>
-        </div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 400);
+  // WhatsApp Teacher Contact
+  const handleContactTeacherWhatsApp = () => {
+    const adminPhone = '916381029380';
+    const topic = activeTestTopic?.topicTitle || activeCourse.title;
+    const msg = `Hello Teacher / SuprO Admin,\n\nI am practicing TestO examination for *${activeCourse.title}*.\n📌 Topic: *${topic}*\n📊 My Score: ${scoreStats.score} / ${scoreStats.maxScore} (${scoreStats.accuracy}% Accuracy)\n\nPlease provide expert tips and clarification for questions in this topic.\n\nThank you!`;
+    const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(webLink, '_blank');
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-slate-100 p-6">
-      {/* Top Header Bar */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-800">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-white tracking-tight">TestO Exam & Mock Test Hub</h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/30">
-              <Sparkles className="w-3 h-3" /> Live Testing Engine
+    <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-24">
+      {/* ─── 1. TOP HEADER ───────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 bg-[#090e1a]/95 backdrop-blur-md border-b border-slate-800 px-4 md:px-8 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/teacho"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1 text-xs font-bold"
+          >
+            <BookOpen className="w-4 h-4 text-emerald-400" />
+            <span className="hidden sm:inline">TeachO Notes</span>
+          </Link>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-black tracking-tight text-white flex items-center gap-1.5">
+                <Award className="w-5 h-5 text-amber-400" />
+                <span>TestO</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-mono text-[10px] font-bold">
+                Online CBT Engine
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
+              Syllabus-Aligned Live Assessments & Nano-Node CBT Tests
+            </p>
+          </div>
+        </div>
+
+        {/* Active Course Badge & Change Button */}
+        <button
+          onClick={() => setIsPickerOpen(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#111827] border border-slate-800 hover:border-amber-500/50 transition group text-left"
+        >
+          <span className="text-xl">{activeCourse.icon}</span>
+          <div className="hidden md:block">
+            <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-wider">
+              Active Exam
+            </span>
+            <span className="text-xs font-bold text-white group-hover:text-amber-300 transition line-clamp-1 max-w-[160px]">
+              {activeCourse.short}
             </span>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
-            Real-Time Timed Mock Exams, Negative Marking & Instant Diagnostic Scorecards
-          </p>
-        </div>
+          <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-amber-400 transition ml-1" />
+        </button>
+      </header>
 
-        {/* Top TestO Purchase Status Badge */}
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs font-bold text-purple-300">
-            <Award className="w-4 h-4 text-purple-400" />
-            <span>500+ Official Tests Active</span>
-          </div>
-          <button
-            onClick={() => setIsPaymentOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition transform active:scale-95"
-          >
-            <ShoppingCart className="w-3.5 h-3.5" />
-            <span>All-Access Pass (₹99)</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto mt-6">
-        {/* Search with Voice */}
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search mock exams, NEET practice tests, TNPSC question sets..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-12 py-3 bg-[#111827] border border-slate-800 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
-          />
-          <button
-            type="button"
-            onClick={startVoiceSearch}
-            title="Voice Search"
-            className={`absolute right-3.5 top-2.5 p-2 rounded-xl transition ${
-              isListening
-                ? 'bg-red-500/20 text-red-400 animate-pulse border border-red-500/40'
-                : 'text-slate-400 hover:text-purple-400 hover:bg-slate-800'
-            }`}
-          >
-            <Mic className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* 💳 Test Series Pass Unlock Banner */}
-        <div className="mb-6 p-4 bg-gradient-to-r from-purple-900/40 via-[#111827] to-amber-950/30 border border-purple-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold shrink-0">
-              <ShoppingCart className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-bold text-white">TestO All-Access Exam Pass</h4>
-                <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded">₹99</span>
-              </div>
-              <p className="text-xs text-slate-400">
-                Unlock all national standard mock exams, timed chapter tests, and verifiable certificates via 1-Tap UPI Pay.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setIsPaymentOpen(true)}
-            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white text-xs font-bold rounded-xl transition shadow-md shrink-0 flex items-center justify-center gap-1.5"
-          >
-            <Sparkles className="w-4 h-4" /> Unlock Exam Pass (₹99)
-          </button>
-        </div>
-
-        {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 scrollbar-none">
-          {CATEGORIES.map(cat => {
-            const Icon = cat.icon;
-            const isActive = activeCategory === cat.id;
-            const count = categoryCounts[cat.id] || 0;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setActiveCategory(cat.id);
-                  setDisplayLimit(36);
-                }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-                  isActive
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20'
-                    : 'bg-[#111827] text-slate-400 hover:text-white border border-slate-800'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{cat.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-purple-700 text-purple-100' : 'bg-slate-800 text-slate-400'}`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Total Count Header */}
-        <div className="flex items-center justify-between mb-4 text-xs font-bold text-slate-400">
-          <span>Showing {visibleTests.length} of {filteredTests.length} mock tests</span>
-          {searchQuery && (
-            <span className="text-purple-400">Filtered by &quot;{searchQuery}&quot;</span>
-          )}
-        </div>
-
-        {/* Test Grid */}
-        {loading ? (
-          <div className="py-20 text-center text-slate-400">
-            <div className="inline-block animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mb-4" />
-            <p>Loading TestO Mock Examinations from database...</p>
-          </div>
-        ) : filteredTests.length === 0 ? (
-          <div className="py-20 text-center text-slate-500">
-            <FileCheck2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p>No tests found in this category.</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {visibleTests.map(test => {
-                const badge = getTestBadge(test);
-                let ai = test.additional_info;
-                if (typeof ai === 'string') {
-                  try { ai = JSON.parse(ai); } catch(e) {}
-                }
-                const qCount = Array.isArray(ai) ? ai.length : (ai?.questions?.length || 30);
-
-                return (
-                  <div
-                    key={test.id}
-                    className="bg-[#111827] border border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 flex flex-col justify-between transition shadow-md hover:shadow-purple-500/10"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3 gap-2">
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border truncate ${badge.color}`}>
-                          {badge.label}
-                        </span>
-                        <span className="text-xs text-slate-400 flex items-center gap-1 font-mono shrink-0">
-                          <Clock className="w-3.5 h-3.5 text-slate-500" /> {qCount} Qs • 15 Mins
-                        </span>
-                      </div>
-                      <h3 className="text-base font-bold text-white mb-2 line-clamp-2 leading-snug">{test.title_name || test.title}</h3>
-                      <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed">
-                        {test.description || test.description_purpose || 'Comprehensive timed mock test series with instant score analysis & solutions.'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleStartExam(test)}
-                      className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-purple-600/20 active:scale-95"
-                    >
-                      <FileCheck2 className="w-4 h-4" /> Start Mock Test
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Load More Button */}
-            {visibleTests.length < filteredTests.length && (
-              <div className="mt-10 text-center">
-                <button
-                  onClick={() => setDisplayLimit(prev => prev + 36)}
-                  className="px-6 py-3 bg-[#111827] hover:bg-slate-800 border border-slate-700 hover:border-purple-500 text-white font-bold rounded-2xl text-xs transition shadow-lg inline-flex items-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  Load More Tests ({filteredTests.length - visibleTests.length} remaining)
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Live Exam Modal */}
-      {activeTest && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#111827] border border-slate-800 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            {/* Exam Header */}
-            <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-[#0c1322]">
+      {/* ─── 2. LIVE CBT MODAL IF ACTIVE ─────────────────────────────────── */}
+      {activeTestTopic && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200">
+          <div className="bg-[#0b1120] border border-slate-800 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Modal Top Bar */}
+            <div className="p-4 md:p-5 bg-[#111827] border-b border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">
-                  TestO Live Exam Mode
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  {activeTestTopic.subjectTitle} • Live Assessment
                 </span>
-                <h3 className="text-sm font-bold text-white line-clamp-1">{activeTest.title_name}</h3>
+                <h3 className="text-base md:text-lg font-black text-white">{activeTestTopic.topicTitle}</h3>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-xl text-purple-400 font-mono font-bold text-xs">
-                  <Timer className="w-4 h-4" />
-                  <span>{formatTimer(timeLeft)}</span>
-                </div>
+
+              <div className="flex items-center gap-3">
+                {!isExamCompleted && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+                  </div>
+                )}
                 <button
-                  onClick={() => setActiveTest(null)}
-                  className="p-1.5 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white"
+                  onClick={() => setActiveTestTopic(null)}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Exam Body */}
-            {!isExamCompleted ? (
-              <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-center mb-4 text-xs font-bold text-slate-400">
-                    <span>Question {currentQIndex + 1} of {mockQuestions.length}</span>
-                    <span className="text-purple-400 font-mono">Marking: +4 / -1</span>
+            {/* Modal Body: Loading vs Ongoing vs Completed */}
+            <div className="flex-1 overflow-y-auto p-5 md:p-6">
+              {loadingQuestions ? (
+                <div className="py-20 text-center space-y-3">
+                  <div className="w-10 h-10 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                  <p className="text-xs text-slate-400">Loading authentic examination questions...</p>
+                </div>
+              ) : isExamCompleted ? (
+                /* EXAM RESULT SCORECARD */
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="p-6 rounded-3xl bg-gradient-to-br from-[#111827] via-[#0f172a] to-[#0b1120] border border-slate-800 text-center space-y-4">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+                      <Award className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-white">Test Completed! 🎉</h4>
+                      <p className="text-xs text-slate-400 mt-1">{activeTestTopic.topicTitle}</p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3 max-w-md mx-auto pt-2">
+                      <div className="p-3.5 rounded-2xl bg-[#090d16] border border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Score</span>
+                        <h5 className="text-xl font-black text-amber-400 mt-0.5">{scoreStats.score} / {scoreStats.maxScore}</h5>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-[#090d16] border border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+                        <h5 className="text-xl font-black text-emerald-400 mt-0.5">{scoreStats.accuracy}%</h5>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-[#090d16] border border-slate-800">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">Correct</span>
+                        <h5 className="text-xl font-black text-cyan-400 mt-0.5">{scoreStats.correct} / {scoreStats.total}</h5>
+                      </div>
+                    </div>
+
+                    {/* Action Bar: TeachO Notes, WhatsApp Mentor, Retry */}
+                    <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+                      <Link
+                        href={`/teacho?courseId=${activeCourse.id}&topic=${encodeURIComponent(activeTestTopic.topicTitle)}`}
+                        className="py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Review Study Notes in TeachO
+                      </Link>
+
+                      <button
+                        onClick={handleContactTeacherWhatsApp}
+                        className="py-2.5 px-5 rounded-xl bg-[#1e293b] hover:bg-slate-700 border border-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center gap-2 transition"
+                      >
+                        <MessageCircle className="w-4 h-4 text-emerald-400" />
+                        Ask Teacher on WhatsApp
+                      </button>
+
+                      <button
+                        onClick={() => launchCbtForTopic(activeTestTopic.topicTitle, activeTestTopic.subjectTitle)}
+                        className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-2 transition"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Retake Test
+                      </button>
+                    </div>
                   </div>
 
-                  <h4 className="text-base font-bold text-white mb-6 leading-relaxed">
-                    {mockQuestions[currentQIndex]?.question}
-                  </h4>
-
-                  <div className="space-y-3">
-                    {mockQuestions[currentQIndex]?.options.map((opt: string, optIdx: number) => {
-                      const isSelected = userAnswers[currentQIndex] === optIdx;
+                  {/* Question-by-Question Review */}
+                  <div className="space-y-4">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400">Detailed Answer Key & Explanations</h5>
+                    {examQuestions.map((q, idx) => {
+                      const userAns = userAnswers[idx];
+                      const isCorrect = userAns === q.correct;
                       return (
-                        <button
-                          key={optIdx}
-                          onClick={() => handleSelectOption(optIdx)}
-                          className={`w-full p-4 rounded-xl text-left text-xs font-semibold transition border ${
-                            isSelected
-                              ? 'bg-purple-600/20 border-purple-500 text-purple-200'
-                              : 'bg-[#0c1322] border-slate-800 text-slate-300 hover:bg-slate-800/40'
-                          }`}
-                        >
-                          {opt}
-                        </button>
+                        <div key={idx} className="p-4 rounded-2xl bg-[#090d16] border border-slate-800 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">Question {idx + 1}</span>
+                            {userAns !== undefined ? (
+                              isCorrect ? (
+                                <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Correct (+4)
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-rose-400 flex items-center gap-1">
+                                  <XCircle className="w-3.5 h-3.5" /> Incorrect (-1)
+                                </span>
+                              )
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-500">Skipped</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-bold text-white">{q.question}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            {q.options.map((opt: string, oIdx: number) => (
+                              <div
+                                key={oIdx}
+                                className={`p-2.5 rounded-xl border ${
+                                  oIdx === q.correct
+                                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-bold'
+                                    : oIdx === userAns
+                                    ? 'bg-rose-500/10 border-rose-500/40 text-rose-300'
+                                    : 'bg-[#111827] border-slate-800 text-slate-400'
+                                }`}
+                              >
+                                {opt}
+                              </div>
+                            ))}
+                          </div>
+                          <div className="p-3 rounded-xl bg-[#111827] border border-slate-800 text-[11px] text-slate-300 leading-relaxed">
+                            <span className="font-bold text-amber-400">Explanation: </span>
+                            {q.explanation}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
+              ) : (
+                /* ONGOING CBT QUESTION VIEW */
+                examQuestions[currentQIndex] && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>Question {currentQIndex + 1} of {examQuestions.length}</span>
+                      <span>Topic: {activeTestTopic.topicTitle}</span>
+                    </div>
 
-                {/* Exam Stepper Footer */}
-                <div className="flex justify-between items-center pt-6 border-t border-slate-800 mt-6">
-                  <button
-                    disabled={currentQIndex === 0}
-                    onClick={() => setCurrentQIndex(prev => prev - 1)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white disabled:opacity-40"
-                  >
-                    Previous
-                  </button>
+                    <div className="p-5 rounded-2xl bg-[#090d16] border border-slate-800">
+                      <h4 className="text-sm md:text-base font-bold text-white leading-relaxed">
+                        {examQuestions[currentQIndex].question}
+                      </h4>
+                    </div>
 
-                  <div className="flex gap-1.5">
-                    {mockQuestions.map((_, dotIdx) => (
+                    {/* Options */}
+                    <div className="space-y-3">
+                      {examQuestions[currentQIndex].options.map((opt: string, optIdx: number) => {
+                        const isSelected = userAnswers[currentQIndex] === optIdx;
+                        return (
+                          <button
+                            key={optIdx}
+                            onClick={() => setUserAnswers(prev => ({ ...prev, [currentQIndex]: optIdx }))}
+                            className={`w-full p-4 rounded-2xl border text-left text-xs md:text-sm font-medium transition flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-amber-500/15 border-amber-500 text-white font-bold'
+                                : 'bg-[#111827] border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <span>{opt}</span>
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-amber-400" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-800">
                       <button
-                        key={dotIdx}
-                        onClick={() => setCurrentQIndex(dotIdx)}
-                        className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center transition ${
-                          currentQIndex === dotIdx
-                            ? 'bg-purple-600 text-white'
-                            : userAnswers[dotIdx] !== undefined
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                            : 'bg-slate-800 text-slate-400'
-                        }`}
+                        onClick={() => setCurrentQIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentQIndex === 0}
+                        className="py-2.5 px-4 rounded-xl bg-slate-800 text-slate-300 disabled:opacity-40 text-xs font-bold"
                       >
-                        {dotIdx + 1}
+                        Previous
                       </button>
-                    ))}
-                  </div>
 
-                  {currentQIndex < mockQuestions.length - 1 ? (
-                    <button
-                      onClick={() => setCurrentQIndex(prev => prev + 1)}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition"
-                    >
-                      Next Question
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setIsExamCompleted(true)}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition"
-                    >
-                      Submit Exam
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              /* Scorecard & Solution Review */
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div className="text-center p-6 bg-[#0c1322] border border-slate-800 rounded-2xl">
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-2 py-0.5 rounded">
-                    OFFICIAL SCORECARD
-                  </span>
-                  <h3 className="text-3xl font-black text-white mt-2">
-                    {calculatedScore.score} / {calculatedScore.total}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">Accuracy: {calculatedScore.accuracy}% • Completed in {formatTimer(900 - timeLeft)}</p>
-
-                  <div className="grid grid-cols-2 gap-4 mt-6 max-w-sm mx-auto">
-                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
-                      <p className="text-xs text-emerald-400 font-bold">Correct</p>
-                      <p className="text-lg font-black text-white">{calculatedScore.correct}</p>
-                    </div>
-                    <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-center">
-                      <p className="text-xs text-rose-400 font-bold">Incorrect</p>
-                      <p className="text-lg font-black text-white">{calculatedScore.wrong}</p>
+                      {currentQIndex < examQuestions.length - 1 ? (
+                        <button
+                          onClick={() => setCurrentQIndex(prev => prev + 1)}
+                          className="py-2.5 px-5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition"
+                        >
+                          Next Question
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setIsExamCompleted(true)}
+                          className="py-2.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-lg shadow-emerald-500/20"
+                        >
+                          Submit Test
+                        </button>
+                      )}
                     </div>
                   </div>
-                </div>
-
-                {/* Question-by-Question Solution Review */}
-                <div className="space-y-4">
-                  <h4 className="text-sm font-bold text-white">Diagnostic Question Review</h4>
-                  {mockQuestions.map((q, qIdx) => {
-                    const userAns = userAnswers[qIdx];
-                    const isCorrect = userAns === q.correct;
-                    return (
-                      <div key={qIdx} className="p-4 bg-[#0c1322] border border-slate-800 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-bold text-slate-400">Q{qIdx + 1}</span>
-                          {userAns === undefined ? (
-                            <span className="text-slate-500">Unanswered</span>
-                          ) : isCorrect ? (
-                            <span className="text-emerald-400 font-bold flex items-center gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Correct (+4)
-                            </span>
-                          ) : (
-                            <span className="text-rose-400 font-bold flex items-center gap-1">
-                              <XCircle className="w-3.5 h-3.5" /> Incorrect (-1)
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs font-semibold text-white">{q.question}</p>
-                        <div className="p-2.5 bg-[#111827] rounded-lg text-xs text-slate-400">
-                          <p className="font-bold text-emerald-400">Correct Answer: {q.options[q.correct]}</p>
-                          <p className="mt-1 text-slate-300">💡 Solution: {q.explanation}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={printScorecard}
-                    className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition shadow-lg shadow-emerald-500/20"
-                  >
-                    <Printer className="w-4 h-4" /> Print Certificate (PDF)
-                  </button>
-                  <button
-                    onClick={() => handleStartExam(activeTest)}
-                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition"
-                  >
-                    <RotateCcw className="w-4 h-4" /> Retake Test
-                  </button>
-                  <button
-                    onClick={() => setActiveTest(null)}
-                    className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition"
-                  >
-                    Back to Test Hub
-                  </button>
-                </div>
-              </div>
-            )}
+                )
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {/* 💳 Test Series UPI Unlock Modal */}
-      <PaymentQRModal
-        isOpen={isPaymentOpen}
-        onClose={() => setIsPaymentOpen(false)}
-        onSuccess={() => {
-          setIsPaymentOpen(false);
-          alert('🎉 All Test Series unlocked with instant scoring and certificate access!');
+      {/* ─── 3. SEARCH & VIEW TOGGLE ──────────────────────────────────────── */}
+      <section className="px-4 md:px-8 pt-6 pb-2">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-lg">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search topic, formula, or unit in syllabus..."
+              className="w-full pl-10 pr-4 py-2.5 bg-[#111827] border border-slate-800 rounded-2xl text-xs md:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-[#111827] p-1 rounded-2xl border border-slate-800">
+            <button
+              onClick={() => setActiveTab('day_plan')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === 'day_plan' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Day Plan Tests</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('syllabus')}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                activeTab === 'syllabus' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Syllabus Roadmap</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 4. MAIN ASSESSMENT VIEW ─────────────────────────────────────── */}
+      <main className="px-4 md:px-8 py-6 max-w-7xl mx-auto">
+        {activeTab === 'day_plan' ? (
+          <div className="space-y-6">
+            {/* Day Stepper Card */}
+            <div className="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+                  Course Timeline: {activeCourse.totalDays} Total Days
+                </span>
+                <h3 className="text-base md:text-lg font-black text-white mt-0.5">
+                  Day {currentDay}: {activeDayPlan?.themeTitle || activeCourse.phaseTitle || 'Core Focus Modules'}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2 bg-[#111827] p-1 rounded-2xl border border-slate-800">
+                <button
+                  disabled={currentDay <= 1}
+                  onClick={() => setCurrentDay(prev => Math.max(1, prev - 1))}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white disabled:opacity-40 transition"
+                >
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                </button>
+                <span className="px-3 text-xs font-mono font-bold text-white">Day {currentDay}</span>
+                <button
+                  disabled={currentDay >= activeCourse.totalDays}
+                  onClick={() => setCurrentDay(prev => Math.min(activeCourse.totalDays, prev + 1))}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white disabled:opacity-40 transition"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* List of Nano-Topics for Current Day */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activeDayPlan?.tasks && activeDayPlan.tasks.length > 0 ? (
+                activeDayPlan.tasks.map((task, idx) => (
+                  <div
+                    key={task.id || idx}
+                    className="p-5 rounded-3xl bg-[#0b1120] border border-slate-800 hover:border-amber-500/40 transition space-y-4 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 rounded-full bg-slate-800 text-amber-400 font-mono text-[10px] font-bold">
+                        Module #{idx + 1}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium">⏱ 10 Mins • +20 XP</span>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
+                        {task.subject || activeCourse.title}
+                      </span>
+                      <h4 className="text-sm md:text-base font-bold text-white group-hover:text-amber-300 transition mt-0.5">
+                        {task.topic}
+                      </h4>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                      <button
+                        onClick={() => launchCbtForTopic(task.topic, task.subject || activeCourse.title)}
+                        className="py-2 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition transform active:scale-95 shadow-md shadow-amber-500/10"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-slate-950" />
+                        <span>Start Test</span>
+                      </button>
+
+                      <Link
+                        href={`/teacho?courseId=${activeCourse.id}&topic=${encodeURIComponent(task.topic)}`}
+                        className="py-2 px-3 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 font-bold text-xs flex items-center gap-1 transition"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Notes</span>
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 p-12 text-center text-xs text-slate-500">
+                  Loading Day {currentDay} Assessment Lineup...
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* SYLLABUS ACCORDION ROADMAP */
+          <div className="space-y-4">
+            {fullSyllabus.map((subj, sIdx) => {
+              const isExpanded = expandedSubjects[subj.subjectName] !== false;
+              const totalTopics = subj.chapters?.reduce((acc: number, c: any) => acc + (c.microTopics?.length || 0), 0) || 0;
+
+              return (
+                <div key={sIdx} className="bg-[#0b1120] border border-slate-800 rounded-3xl overflow-hidden">
+                  <button
+                    onClick={() => setExpandedSubjects(prev => ({ ...prev, [subj.subjectName]: !isExpanded }))}
+                    className="w-full p-5 bg-[#111827] flex items-center justify-between text-left hover:bg-slate-800/60 transition"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{subj.icon || '📖'}</span>
+                      <div>
+                        <h4 className="text-sm md:text-base font-bold text-white">{subj.subjectName}</h4>
+                        <p className="text-xs text-slate-400">{subj.chapters?.length || 0} Chapters • {totalTopics} Nano-Topic Tests</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-slate-400 transition transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isExpanded && (
+                    <div className="p-5 space-y-4">
+                      {subj.chapters?.map((chap: any, cIdx: number) => (
+                        <div key={cIdx} className="p-4 rounded-2xl bg-[#090d16] border border-slate-800/80 space-y-3">
+                          <h5 className="text-xs font-bold text-amber-400 uppercase tracking-wider">
+                            Chapter {chap.chapterNumber || cIdx + 1}: {chap.chapterTitle}
+                          </h5>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {chap.microTopics?.map((mt: any, tIdx: number) => {
+                              const title = typeof mt === 'string' ? mt : mt.topicTitle || mt.title;
+                              return (
+                                <div
+                                  key={tIdx}
+                                  className="p-3 rounded-xl bg-[#111827] border border-slate-800 flex items-center justify-between gap-2 hover:border-amber-500/40 transition group"
+                                >
+                                  <span className="text-xs text-slate-200 font-medium line-clamp-1 flex-1 group-hover:text-white">
+                                    {title}
+                                  </span>
+
+                                  <button
+                                    onClick={() => launchCbtForTopic(title, subj.subjectName)}
+                                    className="py-1 px-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] flex items-center gap-1 transition flex-shrink-0"
+                                  >
+                                    <Zap className="w-3 h-3 fill-slate-950" />
+                                    <span>Test</span>
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* ─── 5. COURSE PICKER MODAL (100+ MASTER PROGRAMS) ─────────────────── */}
+      <TeachOCoursePickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        selectedCourseId={activeCourse.id}
+        onSelectCourse={course => {
+          setActiveCourse(course);
+          setIsPickerOpen(false);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('teacho_active_course_id', course.id);
+          }
         }}
-        title="TestO All-Access Exam Pass"
-        amount={99}
-        itemId="testo_all_access_pass"
-        itemType="o_test"
-        userId="web-student"
-        userName="Student"
-        userPhone="9486335870"
-        upiId="9486335870@hdfcbank"
-        payeeName="AISHLEE TECHNOLOGY"
       />
     </div>
   );
 }
-

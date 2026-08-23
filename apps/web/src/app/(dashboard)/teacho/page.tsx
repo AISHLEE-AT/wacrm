@@ -666,12 +666,25 @@ export default function TeachODashboard() {
                         </button>
 
                         <Link
-                          href={`/testo?search=${encodeURIComponent(task.rawTopic || task.rawSubject || task.title)}`}
+                          href={`/testo?courseId=${activeCourse.id}&topic=${encodeURIComponent(task.rawTopic || task.title)}&subject=${encodeURIComponent(task.rawSubject || 'Core Subject')}&day=${courseDay}`}
                           className="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition"
-                          title="Practice Test for this heading"
+                          title="Practice CBT Test in TestO"
                         >
-                          <Award className="w-3.5 h-3.5 text-amber-400" /> Test Heading
+                          <Award className="w-3.5 h-3.5 text-amber-400" /> Take Test in TestO
                         </Link>
+
+                        <button
+                          onClick={() => {
+                            const adminPhone = '916381029380';
+                            const msg = `Hello Teacher / SuprO Admin,\n\nI am studying *${activeCourse.title}* (Day ${courseDay}, Module #${idx + 1}).\n📌 Subject: *${task.rawSubject || 'Core Subject'}*\n📖 Topic: *${task.rawTopic || task.title}*\n\nPlease provide expert guidance, formulas, and notes for this topic.\n\nThank you!`;
+                            const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
+                            window.open(webLink, '_blank');
+                          }}
+                          className="px-2 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 rounded-lg text-[11px] font-bold flex items-center gap-1 transition"
+                          title="Chat with Mentor on WhatsApp"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+                        </button>
                       </div>
                       
                       <button

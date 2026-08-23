@@ -307,8 +307,22 @@ export default function TeachOScreen() {
   };
 
   const handleTakeTestForStep = (task: RoutineTask) => {
-    const query = task.rawTopic || task.rawSubject || task.title;
-    navigateToTestO(query, task.rawTopic || task.title);
+    const topic = task.rawTopic || task.title;
+    const subject = task.rawSubject || selectedCourse.title;
+    try {
+      navigation.navigate('TestOExamScreen', {
+        testId: `${selectedCourse.id}_day${currentDay}_step${task.stepNumber || 1}`,
+        title: `${subject}: ${topic}`,
+        topicTitle: topic,
+        subject: subject,
+        courseTitle: selectedCourse.title,
+        day: currentDay,
+        questionCount: 10,
+        markingScheme: '+4 / -1',
+      });
+    } catch (e) {
+      navigateToTestO(topic, topic);
+    }
   };
 
   const handleOpenAiTutor = () => {

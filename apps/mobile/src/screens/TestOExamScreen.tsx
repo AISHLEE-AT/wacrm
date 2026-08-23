@@ -101,17 +101,33 @@ export default function TestOExamScreen() {
     try {
       let info: any = {};
       
-      if (route.params?.localQuestions) {
+      if (route.params?.localQuestions && Array.isArray(route.params.localQuestions) && route.params.localQuestions.length > 0) {
         info = { questions: route.params.localQuestions };
-      } else {
+      } else if (route.params?.topicTitle || title) {
+        try {
+          const dynamicQs = await fetchTestOMcqsForTopic(
+            route.params?.topicTitle || title,
+            route.params?.courseTitle || 'Academic Course',
+            questionCount || 10
+          );
+          if (dynamicQs && dynamicQs.length > 0) {
+            info = { questions: dynamicQs };
+          }
+        } catch (fetchErr) {
+          console.warn('Error fetching dynamic topic MCQs:', fetchErr);
+        }
+      }
+
+      if (!info.questions && testId) {
         const { data, error } = await aishleeSupabase
           .from('unified_master_data')
           .select('*')
           .eq('id', testId)
           .single();
         
-        if (error) throw error;
-        info = data.additional_info || data.metadata || {};
+        if (!error && data) {
+          info = data.additional_info || data.metadata || {};
+        }
       }
       
       if (typeof info === 'string') {

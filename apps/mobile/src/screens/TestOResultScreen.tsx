@@ -12,6 +12,7 @@ import {
   Share,
   Alert,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -100,6 +101,13 @@ export default function TestOResultScreen() {
     navigation.navigate('TeachOScreen', {
       aiPrompt: `Please explain this question from my TestO Exam in simple Tamil and English step-by-step:\n\nQuestion: "${qText}"\nExplanation: "${explanation}"`,
     });
+  };
+
+  const handleContactTeacherWhatsApp = () => {
+    const adminPhone = '916381029380';
+    const msg = `Hello Teacher / SuprO Admin,\n\nI just completed the TestO exam *${testTitle}*.\n📊 My Score: ${score} Marks (${percentage}% Accuracy)\n✅ Correct: ${correctCount} | ❌ Incorrect: ${incorrectCount}\n\nPlease guide me on resolving my doubts and improving my score for this topic.\n\nThank you!`;
+    const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
+    Linking.openURL(webLink).catch(() => {});
   };
 
   const downloadCertificatePDF = async () => {
@@ -280,6 +288,14 @@ export default function TestOResultScreen() {
               >
                 <BookOpen size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
                 <Text style={styles.teachoReviseBtnText}>Revise Weak Topics in TeachO 📚</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.teachoReviseBtn, { backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#10b981', marginTop: 10 }]}
+                onPress={handleContactTeacherWhatsApp}
+              >
+                <Sparkles size={14} color="#10b981" style={{ marginRight: 6 }} />
+                <Text style={[styles.teachoReviseBtnText, { color: '#10b981' }]}>Ask Teacher Doubt on WhatsApp 💬</Text>
               </TouchableOpacity>
             </View>
           </View>

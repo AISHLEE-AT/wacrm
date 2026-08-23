@@ -744,20 +744,30 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
             </div>
 
             {/* Bottom Complete & Claim XP Footer */}
-            <div className="p-4 bg-[#111827] border-t border-slate-800 flex items-center justify-between">
+            <div className="p-4 bg-[#111827] border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>Day {dayNumber} Interactive Study Complete</span>
               </div>
 
-              <button
-                onClick={handleClaimCompletion}
-                disabled={isCompleted}
-                className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
-              >
-                <Award className="w-4 h-4" />
-                {isCompleted ? '✓ Completed!' : 'Mark Completed (+20 XP)'}
-              </button>
+              <div className="flex items-center gap-2">
+                <a
+                  href={`/testo?courseId=${courseId || ''}&topic=${encodeURIComponent(topicTitle)}&subject=${encodeURIComponent(subject)}&day=${dayNumber}`}
+                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-amber-500/20"
+                >
+                  <Award className="w-4 h-4" />
+                  <span>Take Test in TestO</span>
+                </a>
+
+                <button
+                  onClick={handleClaimCompletion}
+                  disabled={isCompleted}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
+                >
+                  <Award className="w-4 h-4" />
+                  {isCompleted ? '✓ Completed!' : 'Mark Completed (+20 XP)'}
+                </button>
+              </div>
             </div>
 
           </div>
