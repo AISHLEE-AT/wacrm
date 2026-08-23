@@ -283,6 +283,71 @@ class _TestoScreenState extends State<TestoScreen> {
           ]
         }
       ]
+    },
+    {
+      'id': 'jee_main_adv',
+      'title': 'JEE Main & Advanced Engineering',
+      'sub': 'Mathematics (Calculus, Algebra), Physics (Mechanics), Chemistry (Physical/Organic)',
+      'units': [
+        {
+          'subject': 'JEE Mathematics (கணிதம் — 216 Micro-Topics)',
+          'title': 'Unit 1–4: Calculus, Vectors & Coordinate Geometry',
+          'topics': [
+            {'title': 'Functions, Domain & Range', 'law': 'f(x) bijective, composite (g o f)(x) and inverse f⁻¹(x)'},
+            {'title': 'Limits, Continuity & Differentiability', 'law': 'L\'Hospital Rule: lim f(x)/g(x) = lim f\'(x)/g\'(x)'},
+            {'title': 'Definite Integration & Properties', 'law': 'King Property: ∫[a to b] f(x)dx = ∫[a to b] f(a+b-x)dx'},
+            {'title': 'Differential Equations & Integrating Factor', 'law': 'dy/dx + Py = Q -> IF = e^(∫ P dx)'},
+            {'title': 'Vectors & 3D Straight Line / Plane Equations', 'law': 'Dot a·b = |a||b|cosθ | Cross a×b = |a||b|sinθ n̂'}
+          ]
+        },
+        {
+          'subject': 'JEE Physics (இயற்பியல் — 295 Micro-Topics)',
+          'title': 'Unit 5–8: Mechanics, Electromagnetism & Modern Physics',
+          'topics': [
+            {'title': 'Rotational Dynamics & Moment of Inertia', 'law': 'Parallel Axis: I = I_cm + Md² | Torque τ = Iα'},
+            {'title': 'Simple Harmonic Motion & LC Oscillations', 'law': 'd²x/dt² + ω²x = 0 | T = 2π√(m/k) | ω = 1/√(LC)'},
+            {'title': 'Electromagnetic Induction & Faraday-Lenz Law', 'law': 'EMF ε = -dΦ/dt = -L(dI/dt) | Mutual M = k√(L₁L₂)'},
+            {'title': 'Wave Optics: Young Double Slit Fringe Width', 'law': 'β = λD/d | Path Diff Δx = d sinθ = nλ for Maxima'}
+          ]
+        },
+        {
+          'subject': 'JEE Chemistry (வேதியியல் — 453 Micro-Topics)',
+          'title': 'Unit 9–12: Physical, Inorganic & Organic Synthesis',
+          'topics': [
+            {'title': 'Chemical Thermodynamics & Gibbs Free Energy', 'law': 'ΔG = ΔH - TΔS | ΔG° = -RT ln K_eq'},
+            {'title': 'Electrochemistry & Nernst Equation', 'law': 'E_cell = E°_cell - (0.0591/n) log Q at 298K'},
+            {'title': 'Organic Reaction Mechanisms (SN1, SN2, E1, E2)', 'law': 'SN2 inversion of configuration | SN1 carbocation racemate'},
+            {'title': 'Aldol & Cannizzaro Named Reactions', 'law': 'Aldol with α-H enolate | Cannizzaro without α-H disproportionation'}
+          ]
+        }
+      ]
+    },
+    {
+      'id': 'upsc_civil_services',
+      'title': 'UPSC Civil Services (IAS / IPS / IFS)',
+      'sub': 'GS Paper I (Heritage/Geo), GS Paper II (Polity/IR), GS Paper III (Economy), GS Paper IV (Ethics), CSAT',
+      'units': [
+        {
+          'subject': 'GS Paper I & II (வரலாறு, புவியியல், அரசியலமைப்பு)',
+          'title': 'Unit 1–4: Heritage, Governance, Constitution & Social Justice',
+          'topics': [
+            {'title': 'Indian Heritage, Art & Culture (Temple Architecture)', 'law': 'Nagara, Dravida, Vesara styles & UNESCO World Heritage Sites'},
+            {'title': 'Indian Constitution & Basic Structure Doctrine', 'law': 'Kesavananda Bharati 1973 | Judicial Review Article 13 & 32'},
+            {'title': 'Parliamentary System vs Federal Structure (7th Schedule)', 'law': 'Union List (100), State List (61), Concurrent List (52)'},
+            {'title': 'Statutory & Regulatory Bodies (Election Commission, CAG, UPSC)', 'law': 'Article 324 (ECI) | Article 148 (CAG) | Article 315 (UPSC)'}
+          ]
+        },
+        {
+          'subject': 'GS Paper III & IV (பொருளாதாரம், சுற்றுச்சூழல், அறவியல்)',
+          'title': 'Unit 5–8: Economy, Environment, Security & Ethics',
+          'topics': [
+            {'title': 'Indian Economy & Inclusive Growth (GDP, Inflation, Banking)', 'law': 'Monetary Policy Committee (MPC) Repo Rate | Fiscal Deficit FRBM'},
+            {'title': 'Biodiversity, Climate Change & COP Summits', 'law': 'UNFCCC Paris Agreement 1.5°C | National Action Plan on Climate Change'},
+            {'title': 'Internal Security & Cyber Threats', 'law': 'Border Management | CERT-In | Digital Personal Data Protection Act'},
+            {'title': 'Ethics, Integrity & Case Studies (Aptitude & Probity in Governance)', 'law': 'Nolan Principles of Public Life: Selflessness, Integrity, Objectivity'}
+          ]
+        }
+      ]
     }
   ];
 

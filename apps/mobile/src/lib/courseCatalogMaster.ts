@@ -23544,13 +23544,10 @@ export function getCourseSyllabus(courseTitleOrId: string, category?: string): S
     c.title_name.toLowerCase() === clean ||
     clean.includes(c.id.toLowerCase())
   );
-  if (found && found.metadata?.syllabus?.length > 0) {
-    return found.metadata.syllabus;
-  }
 
-  // Dynamic Resolution from Master 2026 Micro-Topic Syllabus Registry
+  // Dynamic Resolution from Master 2026 Micro-Topic Syllabus Registry First
   try {
-    const full = resolveCompleteCourseSyllabus(courseTitleOrId, courseTitleOrId);
+    const full = resolveCompleteCourseSyllabus(courseTitleOrId, found?.title_name || courseTitleOrId);
     if (full && full.subjects && full.subjects.length > 0) {
       const units: SyllabusUnit[] = [];
       full.subjects.forEach((subj, sIdx) => {

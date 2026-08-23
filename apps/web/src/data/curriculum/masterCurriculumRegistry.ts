@@ -6667,6 +6667,114 @@ export const MASTER_TEACHO_COURSES: MasterCourseDefinition[] = [
         "overview": "Tamil Nadu, situated on the southeastern coast of India, experiences a predominantly tropical climate ranging from dry sub-humid to semi-arid. The geographical positioning of the state, particularly bounded by the Western Ghats to the west and the Bay of Bengal to the east, fundamentally dictates it..."
       }
     ]
+  },
+  {
+    "id": "exam-neet-ug",
+    "title": "NEET UG 2026 — National Medical Entrance Exam (NMC Official 50 Units)",
+    "category": "entrance_neet",
+    "subject": "Physics, Chemistry, Botany & Zoology",
+    "totalDays": 360,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "NEET Physics: SI Units & Dimensional Analysis", "topicKey": "neet_ug_day_1", "fallbackKey": "neet_ug_day_1", "overview": "SI Units, fundamental and derived units, dimensional analysis and applications" }]
+  },
+  {
+    "id": "exam-jee-main",
+    "title": "JEE Main & JEE Advanced 2026 — Engineering Entrance (NTA / IIT)",
+    "category": "entrance_jee",
+    "subject": "Mathematics, Physics, Chemistry",
+    "totalDays": 360,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "JEE Maths: Sets, Relations & Functions", "topicKey": "jee_main_day_1", "fallbackKey": "jee_main_day_1", "overview": "Sets, subsets, power set, Venn diagrams, relations, types of functions" }]
+  },
+  {
+    "id": "kindergarten-lkg",
+    "title": "LKG — Lower Kindergarten (Tamil & English Medium)",
+    "category": "kindergarten",
+    "subject": "Tamil Rhymes, English ABC, Numbers, EVS",
+    "totalDays": 200,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "உயிர் எழுத்து அ (Vowel Letter A)", "topicKey": "lkg_day_1", "fallbackKey": "lkg_day_1", "overview": "Tamil vowel அ — tracing, pronunciation, and rhyme" }]
+  },
+  {
+    "id": "kindergarten-ukg",
+    "title": "UKG — Upper Kindergarten (Tamil & English Medium)",
+    "category": "kindergarten",
+    "subject": "Tamil Words, English Sentences, Addition, EVS",
+    "totalDays": 200,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "மெய் எழுத்துகள் க் முதல் ன் வரை (Consonants)", "topicKey": "ukg_day_1", "fallbackKey": "ukg_day_1", "overview": "18 Tamil consonants — tracing, pronunciation, and word formation" }]
+  },
+  {
+    "id": "skill-python-fullstack",
+    "title": "Python Full-Stack Development & DSA (Professional Degree Track)",
+    "category": "professional_tech",
+    "subject": "Python, Django, React, PostgreSQL, DSA",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "Python: Variables, Data Types & Print Function", "topicKey": "python_day_1", "fallbackKey": "python_day_1", "overview": "Variables, int, float, str, bool data types, print(), input(), type casting" }]
+  },
+  {
+    "id": "degree-bca-bsc-cs",
+    "title": "BCA / B.Sc Computer Science — University Degree Programme",
+    "category": "professional_tech",
+    "subject": "Programming, DBMS, OS, Networks, Software Engineering",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "C Programming: Hello World, Compilation & Execution", "topicKey": "bca_day_1", "fallbackKey": "bca_day_1", "overview": "C program structure, #include, main(), printf(), scanf(), gcc compilation" }]
+  },
+  {
+    "id": "exam-upsc-civil-services",
+    "title": "UPSC Civil Services (IAS / IPS / IFS) — Prelims & Mains",
+    "category": "entrance_upsc",
+    "subject": "GS Paper I-IV, CSAT, Optional Subject",
+    "totalDays": 360,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "GS Paper I: Ancient India — Indus Valley Civilisation", "topicKey": "upsc_day_1", "fallbackKey": "upsc_day_1", "overview": "Harappan civilisation, town planning, drainage, seals, script, decline theories" }]
+  },
+  {
+    "id": "exam-ibps-sbi-banking",
+    "title": "Banking Exams (IBPS PO/Clerk, SBI PO/Clerk, RBI Assistant)",
+    "category": "entrance_banking",
+    "subject": "Quantitative Aptitude, Reasoning, English, GA, Computer",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "Quantitative Aptitude: Number System & HCF-LCM", "topicKey": "banking_day_1", "fallbackKey": "banking_day_1", "overview": "Types of numbers, divisibility rules, HCF by division, LCM by prime factorisation" }]
+  },
+  {
+    "id": "exam-ssc-cgl-chsl",
+    "title": "SSC CGL / CHSL / MTS & RRB NTPC / Group D Railway Exams",
+    "category": "entrance_ssc_rrb",
+    "subject": "GK, Reasoning, Quantitative Aptitude, English",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "Reasoning: Analogy & Classification", "topicKey": "ssc_day_1", "fallbackKey": "ssc_day_1", "overview": "Verbal and non-verbal analogy, odd one out, classification patterns" }]
+  },
+  {
+    "id": "exam-trb-tntet-teacher",
+    "title": "TRB PG/BT & TNTET Paper 1/2 — Teacher Eligibility Exams",
+    "category": "entrance_teaching",
+    "subject": "Child Development, Tamil, English, Maths, Science, Social Science",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "Child Development & Pedagogy: Piaget Cognitive Stages", "topicKey": "trb_day_1", "fallbackKey": "trb_day_1", "overview": "Sensorimotor, preoperational, concrete operational, formal operational stages" }]
+  },
+  {
+    "id": "exam-gate-engineering",
+    "title": "GATE Engineering — Graduate Aptitude Test in Engineering",
+    "category": "entrance_gate",
+    "subject": "Engineering Mathematics, Core Subject, General Aptitude",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "Engineering Maths: Linear Algebra — Matrices & Determinants", "topicKey": "gate_day_1", "fallbackKey": "gate_day_1", "overview": "Matrix operations, rank, eigenvalues, eigenvectors, Cayley-Hamilton theorem" }]
+  },
+  {
+    "id": "exam-tnusrb-police",
+    "title": "TNUSRB Police SI & Constable — Tamil Nadu Police Recruitment",
+    "category": "entrance_police",
+    "subject": "GK, Tamil, English, Aptitude, Constitution",
+    "totalDays": 180,
+    "r2UrlPrefix": "",
+    "days": [{ "dayNumber": 1, "taskNumber": 1, "topicTitle": "GK: Indian Constitution — Preamble & Fundamental Rights", "topicKey": "police_day_1", "fallbackKey": "police_day_1", "overview": "Preamble: sovereign, socialist, secular, democratic, republic. Articles 14-32 FR" }]
   }
 ];
 

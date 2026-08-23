@@ -375,6 +375,43 @@ export default function TestoWebPage() {
     return { score: correct * 4 - wrong * 1, total: total * 4, accuracy, correct, wrong };
   }, [mockQuestions, userAnswers]);
 
+  // Persist Exam Marks & Score to User Database & Offline Cache
+  useEffect(() => {
+    if (isExamCompleted && activeTest && mockQuestions.length > 0) {
+      const recordExamAttempt = async () => {
+        try {
+          const payload = {
+            test_id: activeTest.id || activeTest.title_name,
+            test_title: activeTest.title_name || activeTest.title,
+            category: activeTest.category,
+            score: calculatedScore.score,
+            total_marks: calculatedScore.total,
+            accuracy: calculatedScore.accuracy,
+            correct_count: calculatedScore.correct,
+            wrong_count: calculatedScore.wrong,
+            completed_at: new Date().toISOString()
+          };
+          if (typeof window !== 'undefined') {
+            const history = JSON.parse(localStorage.getItem('testo_user_attempts') || '[]');
+            history.unshift(payload);
+            localStorage.setItem('testo_user_attempts', JSON.stringify(history.slice(0, 100)));
+          }
+          await lmsSupabase.from('user_learning_progress').insert([{
+            module_id: `test_${activeTest.id || 'exam'}`,
+            module_title: activeTest.title_name || activeTest.title,
+            score: calculatedScore.score,
+            total: calculatedScore.total,
+            completed: true,
+            metadata: payload
+          }]).select();
+        } catch (err) {
+          console.warn('Exam attempt recorded to local cache:', err);
+        }
+      };
+      recordExamAttempt();
+    }
+  }, [isExamCompleted, activeTest, mockQuestions, calculatedScore]);
+
   // Anti-cheat Focus/Tab blur listener
   const [blurCount, setBlurCount] = useState(0);
   const [isListening, setIsListening] = useState(false);
