@@ -81,7 +81,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
         {
           chapterNumber: 1,
           chapterTitle: '�‰யிர் �Žழுத்து�•ள் (12) & �†ய்த �Žழுத்து (�ƒ)',
-          description: '�… முதல் �” வர�ˆ �‰ள்ள 12 �‰யிர் �Žழுத்து�•ள், �†ய்த �Žழுத்து �ƒ, ப�Ÿ�™்�•ள�ˆப் பார்த்து �Žழுத்து�•ள�ˆ �…�Ÿ�ˆயாளம் �•ாணுதல்',
+          description: '�… முதல் �” வர�ˆ �‰ள்ள 12 �‰யிர் �Žழுத்து�•ள், �†ய்த �Žழுத்து �ƒ, ப�Ÿ�™்�•ள�ˆப் பார்த்து �Žழுத்து�•ள�ˆ �…�Ÿ�ˆயாளம் �காணுதல்',
           subtopics: [
             {
               id: 'fnd_t_sub1',
@@ -93,7 +93,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
             }
           ],
           microTopics: [
-            { id: 'fnd_t_1', topicTitle: '�•ுறில் மற்றும் ந�†�Ÿில் �‰யிர் �Žழுத்து�•ள் (�… முதல் �” வர�ˆ)', subtopic: 'ப�Ÿ�™்�•ள�ˆ பார்த்து �Žழுத்து�•ள�ˆ �…றிதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '�‰யிர் �Žழுத்து�•்�•ள்: �…, �†, �‡, �ˆ, �‰, �Š, �Ž, ஏ, ஐ, �’, �“, �” (ம�Šத்தம் 12)', keyPoints: ['�… - �…ணில், �…ம்மா', '�† - �†�Ÿு, �†லமரம்', '�‡ - �‡ல�ˆ, �‡�ž்�šி', '�ˆ - �ˆ�Ÿ்�Ÿி, �ˆ�šல்'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_t_1', topicTitle: '�•ுறில் மற்றும் ந�†�Ÿில் �‰யிர் �Žழுத்து�•ள் (�… முதல் �” வர�ˆ)', subtopic: 'ப�Ÿ�™்�•ள�ˆ பார்த்து �Žழுத்து�•ள�ˆ �…றிதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '�‰யிர் �Žழுத்து�•்�•ள்: �…, �†, �‡, �ˆ, �‰, �Š, �Ž, ஏ, ஐ, �’, �“, �” (ம�Šத்தம் 12)', keyPoints: ['�… - �அணில், �அம்மா', '�† - �†�Ÿு, �ஆலமரம்', '�‡ - �‡ல�ˆ, �‡�ž்�šி', '�ˆ - �ˆ�Ÿ்�Ÿி, �ˆ�šல்'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
@@ -234,7 +234,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
     },
     {
       subjectId: 'fnd_math',
-      subjectName: isTa ? '�•ணிதம் (Mathematics Core & FLN)' : 'Mathematics & Number Sense (FLN)',
+      subjectName: isTa ? '�கணிதம் (Mathematics Core & FLN)' : 'Mathematics & Number Sense (FLN)',
       icon: '🔢',
       color: '#06b6d4',
       totalChapters: 3,
@@ -298,7 +298,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
     },
     {
       subjectId: 'fnd_science',
-      subjectName: isTa ? '�š�‚ழ்நில�ˆயியல் & �…றிவியல் (General Science & EVS)' : 'General Science & Environmental Studies',
+      subjectName: isTa ? '�š�‚ழ்நில�ˆயியல் & �அறிவியல் (General Science & EVS)' : 'General Science & Environmental Studies',
       icon: '🌿',
       color: '#10b981',
       totalChapters: 2,
@@ -528,8 +528,8 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
     },
     {
       subjectId: 'prep_math',
-      subjectName: isTa ? '�•ணிதம் & �…�Ÿிப்ப�Ÿ�ˆ �‡யற்�•ணிதம் (Mathematics Core)' : 'Mathematics & Computational Arithmetic',
-      icon: 'ðŸ“',
+      subjectName: isTa ? '�கணிதம் & �…�Ÿிப்ப�Ÿ�ˆ �‡யற்�கணிதம் (Mathematics Core)' : 'Mathematics & Computational Arithmetic',
+      icon: '📐',
       color: '#06b6d4',
       totalChapters: 3,
       totalMicroTopics: 12,
@@ -541,7 +541,7 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
           subtopics: [
             {
               id: 'prep_m_sub1',
-              title: '�Žண்�•ணிதம் & HCF/LCM',
+              title: '�Žண்�கணிதம் & HCF/LCM',
               microTopics: [
                 { id: 'prep_m_1', title: 'ப�•ா �Žண்�•ள் & ம�€ப்ப�†ரு ப�Šது �•ாரணி (HCF / LCM)', keyAxiom: 'Product of Two Numbers = HCF � LCM' },
                 { id: 'prep_m_2', title: 'பின்ன�™்�•ள் & த�šம �Žண்�•ள் �•�‚�Ÿ்�Ÿல்/�•ழித்தல்', keyAxiom: 'Like/Unlike fractions, Equivalent fractions' }
@@ -555,11 +555,11 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
         {
           chapterNumber: 2,
           chapterTitle: isTa ? 'ந�‡ர்வ�€த முற�ˆ, விழு�•்�•ா�Ÿு, �‡லாப ந�Ÿ்�Ÿம்' : 'Unitary Method, Percentages, Profit & Loss',
-          description: isTa ? '�’ரு ப�Šருளின் வில�ˆ �•�Šண்�Ÿு பல ப�Šரு�Ÿ்�•ளின் வில�ˆ �•ாணுதல், �šதவ�€த �•ண�•்�•�€�Ÿு�•ள்' : 'Unitary method problems, Percentage conversions, Profit = SP - CP, Loss = CP - SP',
+          description: isTa ? '�’ரு ப�Šருளின் வில�ˆ �•�Šண்�Ÿு பல ப�Šரு�Ÿ்�•ளின் வில�ˆ �காணுதல், �šதவ�€த �•ண�•்�•�€�Ÿு�•ள்' : 'Unitary method problems, Percentage conversions, Profit = SP - CP, Loss = CP - SP',
           subtopics: [
             {
               id: 'prep_m_sub2',
-              title: 'வியாபார�•் �•ணிதம்',
+              title: 'வியாபார�•் �கணிதம்',
               microTopics: [
                 { id: 'prep_m_3', title: 'ந�‡ர்வ�€த முற�ˆ & �Žளிய விழு�•்�•ா�Ÿு �•ண�•்�•�€�Ÿு', keyAxiom: 'Unit Cost = Total Cost / Total Units | Profit = SP - CP' }
               ]
@@ -590,8 +590,8 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
     },
     {
       subjectId: 'prep_science',
-      subjectName: isTa ? 'ப�Šது �…றிவியல் (General Science & Human Physiology)' : 'General Science & Human Organ Systems',
-      icon: 'ðŸ”¬',
+      subjectName: isTa ? 'ப�Šது �அறிவியல் (General Science & Human Physiology)' : 'General Science & Human Organ Systems',
+      icon: '🔬',
       color: '#10b981',
       totalChapters: 2,
       totalMicroTopics: 8,
@@ -621,7 +621,7 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
           subtopics: [
             {
               id: 'prep_s_sub2',
-              title: '�‡யற்பியல் & �šுற்று�š்�š�‚ழல்',
+              title: '�இயற்பியல் & �šுற்று�š்�š�‚ழல்',
               microTopics: [
                 { id: 'prep_s_3', title: 'ந�†ம்பு�•�‹ல் (Levers) 3 வ�•�ˆ�•ள் & தத்துவம்', keyAxiom: 'Load � Load Arm = Effort � Effort Arm' }
               ]
@@ -635,8 +635,8 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
     },
     {
       subjectId: 'prep_social',
-      subjectName: isTa ? '�šம�‚�• �…றிவியல் & �•ு�Ÿிம�ˆயியல் (Social Science & Civics)' : 'Social Science, History & Indian Polity Seed',
-      icon: 'ðŸŒ',
+      subjectName: isTa ? '�šம�‚�• �அறிவியல் & �•ு�Ÿிம�ˆயியல் (Social Science & Civics)' : 'Social Science, History & Indian Polity Seed',
+      icon: '🌍',
       color: '#f59e0b',
       totalChapters: 2,
       totalMicroTopics: 8,
@@ -874,15 +874,15 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     },
     {
       subjectId: 'mid_math',
-      subjectName: isTa ? '�•ணிதம் (Mathematics & Pre-Algebra)' : 'Mathematics, Pre-Algebra & Geometry',
-      icon: 'ðŸ“',
+      subjectName: isTa ? '�கணிதம் (Mathematics & Pre-Algebra)' : 'Mathematics, Pre-Algebra & Geometry',
+      icon: '📐',
       color: '#06b6d4',
       totalChapters: 3,
       totalMicroTopics: 18,
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? '�Žண்�•ணிதம் & வரி�š�ˆ: BODMAS, HCF & LCM நான�‹ தல�ˆப்பு�•ள்' : 'Arithmetic & Operations: BODMAS, HCF & LCM Nano-Topics',
+          chapterTitle: isTa ? '�Žண்�கணிதம் & வரி�š�ˆ: BODMAS, HCF & LCM நான�‹ தல�ˆப்பு�•ள்' : 'Arithmetic & Operations: BODMAS, HCF & LCM Nano-Topics',
           description: isTa ? '�š�†யல்பா�Ÿு�•ளின் வரி�š�ˆ BODMAS பிரா�•்�•�†�Ÿ்�Ÿு�•ள், வ�•ுத்தல் ப�†ரு�•்�•ல் முன்னுரிம�ˆ, ப�•ா �•ாரணி மரம், ய�‚�•்ளி�Ÿ் வழிமுற�ˆ, ம�€.ப�Š.வ மற்றும் ம�€.�šி.ம பயன்பா�Ÿ்�Ÿு�•் �•ண�•்�•ு�•ள்' : 'BODMAS bracket hierarchy, Division/Multiplication precedence, Prime factorization tree, Euclid long division, and Real-world HCF/LCM word problems',
           subtopics: [
             {
@@ -918,7 +918,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
           subtopics: [
             {
               id: 'mid_m_sub2',
-              title: 'புள்ளியியல் & வணி�•�•் �•ணிதம்',
+              title: 'புள்ளியியல் & வணி�•�•் �கணிதம்',
               microTopics: [
                 { id: 'mid_m_9', title: 'Arithmetic Mean: Ungrouped Raw Data Average (Day 9)', keyAxiom: 'Mean xÌ„ = (Σx) / N' },
                 { id: 'mid_m_10', title: 'Median: Finding Middle Term for ODD Dataset (Day 10)', keyAxiom: 'Median = [(n + 1)/2]áµ—Ê° term after sorting' },
@@ -965,7 +965,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     },
     {
       subjectId: 'mid_science',
-      subjectName: isTa ? '�…றிவியல் (Physics, Chemistry & Biology Core)' : 'Science (Physics, Chemistry & Biology Core)',
+      subjectName: isTa ? '�அறிவியல் (Physics, Chemistry & Biology Core)' : 'Science (Physics, Chemistry & Biology Core)',
       icon: '⚡',
       color: '#10b981',
       totalChapters: 3,
@@ -973,12 +973,12 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? '�‡யற்பியல் நான�‹ �…ல�•ு�•ள்: �‡ய�•்�•ம், வி�š�ˆ, �…ழுத்தம் & �’ளி' : 'Physics Nano-Units: Motion, Force, Pressure & Light',
+          chapterTitle: isTa ? '�இயற்பியல் நான�‹ �…ல�•ு�•ள்: �‡ய�•்�•ம், வி�š�ˆ, �…ழுத்தம் & �’ளி' : 'Physics Nano-Units: Motion, Force, Pressure & Light',
           description: isTa ? 'வ�‡�•ம், மு�Ÿு�•்�•ம், வி�š�ˆ F=ma, நிய�‚�Ÿ்�Ÿன் விதி�•ள் 1/2/3, �“ம் விதி, மின்த�Ÿ�ˆ த�Š�Ÿர்/ப�•்�• �‡ண�ˆப்பு, �’ளி �Žதிர�Šலிப்பு மற்றும் வில�•ல்' : 'Speed, Acceleration, Force F=ma, Newton 1st/2nd/3rd Laws, Ohm\'s Law, Series/Parallel Resistors, Reflection and Refraction',
           subtopics: [
             {
               id: 'mid_s_sub1',
-              title: '�‡யற்பியல் நான�‹ �…ல�•ு�•ள்',
+              title: '�இயற்பியல் நான�‹ �…ல�•ு�•ள்',
               microTopics: [
                 { id: 'mid_p_19', title: 'Speed vs Velocity vs Acceleration (Day 19)', keyAxiom: 'Speed = Distance/Time | a = (v - u)/t (m/s²)' },
                 { id: 'mid_p_20', title: 'Fluid Pressure: P = F/A & Liquid Depth P = Ïgh (Day 20)', keyAxiom: 'Pressure in liquid increases linearly with depth' },
@@ -1064,7 +1064,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     },
     {
       subjectId: 'mid_social',
-      subjectName: isTa ? '�šம�‚�• �…றிவியல் (History, Geography, Civics & Economics)' : 'Social Science (History, Geography, Civics & Economics)',
+      subjectName: isTa ? '�šம�‚�• �அறிவியல் (History, Geography, Civics & Economics)' : 'Social Science (History, Geography, Civics & Economics)',
       icon: 'ðŸ›ï¸',
       color: '#f59e0b',
       totalChapters: 3,
@@ -1115,7 +1115,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
     {
       subjectId: 'sec_math',
       subjectName: 'Mathematics',
-      icon: 'ðŸ“',
+      icon: '📐',
       color: '#06b6d4',
       totalChapters: 8,
       chapters: [
@@ -1229,7 +1229,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
     {
       subjectId: 'sec_science',
       subjectName: 'Science',
-      icon: 'ðŸ”¬',
+      icon: '🔬',
       color: '#10b981',
       totalChapters: 23,
       chapters: [
@@ -1399,7 +1399,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
     {
       subjectId: 'sec_social',
       subjectName: 'Social Science',
-      icon: 'ðŸŒ',
+      icon: '🌍',
       color: '#f59e0b',
       totalChapters: 12,
       chapters: [
@@ -2008,7 +2008,7 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
 
   const subjects: SyllabusSubject[] = [
     { subjectId: 'cbse_acc', subjectName: 'Accountancy (Financial Accounting Part 1 & 2)', icon: '📊', color: '#10b981', totalChapters: accountancyChapters.length, totalMicroTopics: accountancyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: accountancyChapters },
-    { subjectId: 'cbse_bst', subjectName: 'Business Studies (Foundations & Finance)', icon: 'ðŸ’¼', color: '#06b6d4', totalChapters: businessStudiesChapters.length, totalMicroTopics: businessStudiesChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: businessStudiesChapters },
+    { subjectId: 'cbse_bst', subjectName: 'Business Studies (Foundations & Finance)', icon: '💡¼', color: '#06b6d4', totalChapters: businessStudiesChapters.length, totalMicroTopics: businessStudiesChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: businessStudiesChapters },
     { subjectId: 'cbse_eco', subjectName: 'Economics (Microeconomics & Statistics)', icon: '📈', color: '#f59e0b', totalChapters: economicsChapters.length, totalMicroTopics: economicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: economicsChapters }
   ];
 
@@ -2077,19 +2077,19 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   const mathematicsChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: isTa ? '�…ணி�•ள், �…ணி�•்�•�‹வ�ˆ�•ள் & வ�•�ˆ நுண்�•ணிதம்' : 'Matrices, Determinants & Differential Calculus',
+      chapterTitle: isTa ? '�…ணி�•ள், �…ணி�•்�•�‹வ�ˆ�•ள் & வ�•�ˆ நுண்�கணிதம்' : 'Matrices, Determinants & Differential Calculus',
       description: isTa ? '�…ணியின் ந�‡ர்மாறு A⁻� = (1/|A|)adj(A), த�Š�Ÿர்�š்�šி மற்றும் வ�•�ˆயி�Ÿுதல், �Žல்ல�ˆ�•ள்' : 'Matrix inversion, Cramer\'s Rule, Continuity & Differentiability, Chain rule, Maxima & Minima (Second derivative test)',
       microTopics: [
         { id: 'hsc_m_1', topicTitle: isTa ? '�…ணி�•ள் & �…ணி�•்�•�‹வ�ˆ�•ள்: ந�‡ர்மாறு மற்றும் �•ிராமரின் விதி' : 'Matrices & Determinants: Inverse A⁻� & System of Linear Equations', subtopic: isTa ? 'A⁻� = (1/|A|) adj A மற்றும் AX = B த�€ர்வு முற�ˆ' : 'Properties of determinants, Adjoint of square matrix, Solution of non-homogeneous linear systems using matrix method and Cramer\'s rule', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Matrix Inverse: A⁻� = (1 / |A|) adj(A) | Product: A � adj(A) = |A| I_n | System: X = A⁻� B', keyPoints: ['A square matrix A is invertible if and only if |A| �‰� 0 (Non-singular matrix)', '|adj(A)| = |A|^(n-1) for a matrix of order n'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'hsc_m_2', topicTitle: isTa ? 'வ�•�ˆ நுண்�•ணிதம்: ப�†ருமம் மற்றும் �šிறுமம் (Maxima & Minima)' : 'Calculus: Derivatives, Mean Value Theorems & Maxima/Minima', subtopic: isTa ? 'dy/dx = 0 புள்ளி�•ள், d�y/dx� �š�‹தன�ˆ மற்றும் த�Š�Ÿர் ப�†ரு�•்�•ம்' : 'Rolle\'s & Lagrange\'s Mean Value Theorems, Tangents & Normals slope m = dy/dx, Critical points, Second derivative test for local maxima/minima', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Maxima Condition: f\'(x) = 0 and f\'\'(x) < 0 | Minima Condition: f\'(x) = 0 and f\'\'(x) > 0 | Chain Rule: d/dx[f(g(x))] = f\'(g(x)) � g\'(x)', keyPoints: ['If f\'\'(x) = 0 at critical point, use higher derivative test or first derivative sign test', 'Slope of normal to curve at (x�‚�, y�‚�) is -1 / (dy/dx)_(x�‚�,y�‚�)'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_m_2', topicTitle: isTa ? 'வ�•�ˆ நுண்�கணிதம்: ப�†ருமம் மற்றும் �šிறுமம் (Maxima & Minima)' : 'Calculus: Derivatives, Mean Value Theorems & Maxima/Minima', subtopic: isTa ? 'dy/dx = 0 புள்ளி�•ள், d�y/dx� �š�‹தன�ˆ மற்றும் த�Š�Ÿர் ப�†ரு�•்�•ம்' : 'Rolle\'s & Lagrange\'s Mean Value Theorems, Tangents & Normals slope m = dy/dx, Critical points, Second derivative test for local maxima/minima', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Maxima Condition: f\'(x) = 0 and f\'\'(x) < 0 | Minima Condition: f\'(x) = 0 and f\'\'(x) > 0 | Chain Rule: d/dx[f(g(x))] = f\'(g(x)) � g\'(x)', keyPoints: ['If f\'\'(x) = 0 at critical point, use higher derivative test or first derivative sign test', 'Slope of normal to curve at (x�‚�, y�‚�) is -1 / (dy/dx)_(x�‚�,y�‚�)'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: isTa ? 'த�Š�•�ˆ நுண்�•ணிதம், தி�š�ˆயன்�•ள் & நி�•ழ்த�•வு' : 'Integral Calculus, Vectors, 3D Geometry & Probability',
+      chapterTitle: isTa ? 'த�Š�•�ˆ நுண்�கணிதம், தி�š�ˆயன்�•ள் & நி�•ழ்த�•வு' : 'Integral Calculus, Vectors, 3D Geometry & Probability',
       description: isTa ? 'ப�•ுதிப் பின்ன�™்�•ள் ம�‚லம் த�Š�•�ˆயி�Ÿல், ப�†ர்ன�‹லி �š�‚த்திரம், தி�š�ˆயன் ப�†ரு�•்�•ல், ப�‡யஸ் த�‡ற்றம்' : 'Integration by parts �ˆ�u dv = uv - �ˆ�v du, Definite integral properties, Dot and Cross products, Shortest distance between skew lines, Bayes\' Theorem',
       microTopics: [
-        { id: 'hsc_m_3', topicTitle: isTa ? 'த�Š�•�ˆ நுண்�•ணிதம்: ப�•ுதி த�Š�•�ˆயி�Ÿல் & �•ுறிப்பி�Ÿ்�Ÿ த�Š�•�ˆய�€�Ÿு�•ள்' : 'Integral Calculus: Integration by Parts & Definite Properties', subtopic: isTa ? '�ˆ� u dv = uv - �ˆ� v du மற்றும் �ˆ��‚€�ƒ f(x)dx = �ˆ��‚€�ƒ f(a-x)dx' : 'Integration by substitution, partial fractions, Integration by parts ILATE rule, Definite integrals king property �ˆ��‚€�ƒ f(x)dx = �ˆ��‚€�ƒ f(a-x)dx, Area under curve', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'By Parts: �ˆ� u v dx = u �ˆ�v dx - �ˆ�[u\' (�ˆ�v dx)] dx | King Property: �ˆ��‚€�ƒ f(x) dx = �ˆ��‚€�ƒ f(a - x) dx', keyPoints: ['ILATE priority for choosing u: Inverse, Logarithmic, Algebraic, Trigonometric, Exponential', 'Area between curve y = f(x) and x-axis from a to b = �ˆ��‚��‡ |f(x)| dx'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'hsc_m_3', topicTitle: isTa ? 'த�Š�•�ˆ நுண்�கணிதம்: ப�•ுதி த�Š�•�ˆயி�Ÿல் & �•ுறிப்பி�Ÿ்�Ÿ த�Š�•�ˆய�€�Ÿு�•ள்' : 'Integral Calculus: Integration by Parts & Definite Properties', subtopic: isTa ? '�ˆ� u dv = uv - �ˆ� v du மற்றும் �ˆ��‚€�ƒ f(x)dx = �ˆ��‚€�ƒ f(a-x)dx' : 'Integration by substitution, partial fractions, Integration by parts ILATE rule, Definite integrals king property �ˆ��‚€�ƒ f(x)dx = �ˆ��‚€�ƒ f(a-x)dx, Area under curve', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'By Parts: �ˆ� u v dx = u �ˆ�v dx - �ˆ�[u\' (�ˆ�v dx)] dx | King Property: �ˆ��‚€�ƒ f(x) dx = �ˆ��‚€�ƒ f(a - x) dx', keyPoints: ['ILATE priority for choosing u: Inverse, Logarithmic, Algebraic, Trigonometric, Exponential', 'Area between curve y = f(x) and x-axis from a to b = �ˆ��‚��‡ |f(x)| dx'], type: 'solved_problem', importance: 'High-Yield' },
         { id: 'hsc_m_4', topicTitle: isTa ? 'தி�š�ˆயன்�•ள் (Vectors), முப்பரிமாண வ�Ÿிவியல் & ப�‡யஸ் த�‡ற்றம்' : 'Vectors, 3D Geometry (Skew Lines) & Bayes Theorem', subtopic: isTa ? 'a � b = |a||b|cos θ, a � b, �•�‹�Ÿு�•ளு�•்�•ு �‡�Ÿ�ˆப்ப�Ÿ்�Ÿ ம�€�š்�šிறு த�Šல�ˆவு, நிபந்தன�ˆ நி�•ழ்த�•வு' : 'Scalar triple product [a b c], Vector cross product, Shortest distance d = |(a�‚‚-a�‚�)�(b�‚��b�‚‚)| / |b�‚��b�‚‚|, Conditional probability P(A|B), Bayes\' Theorem calculation', dayNumber: 15, periodNumber: 3, keyFormulaOrLaw: 'Dot Product: a � b = a�‚�b�‚� + a�‚‚b�‚‚ + a�‚ƒb�‚ƒ | Cross Product: |a � b| = |a||b| sin θ | Bayes: P(A_i|B) = [P(A_i)P(B|A_i)] / Σ[P(A_j)P(B|A_j)]', keyPoints: ['Two non-zero vectors a and b are perpendicular if and only if a � b = 0', 'Shortest distance between two parallel lines r = a�‚� + λb and r = a�‚‚ + μb is |b � (a�‚‚ - a�‚�)| / |b|'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
@@ -2176,9 +2176,9 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   const subjects: SyllabusSubject[] = [
     { subjectId: 'hsc_tamil', subjectName: 'ப�Šதுத் தமிழ் (General Tamil — HSC 8 �‡யல்�•ள்)', icon: '��', color: '#ec4899', totalChapters: generalTamilChapters.length, totalMicroTopics: generalTamilChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalTamilChapters },
     { subjectId: 'hsc_english', subjectName: 'General English (HSC Units 1 to 6 Core)', icon: '🔤', color: '#3b82f6', totalChapters: generalEnglishChapters.length, totalMicroTopics: generalEnglishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalEnglishChapters },
-    { subjectId: 'hsc_physics', subjectName: isTa ? '�‡யற்பியல் (Physics Core — HSC / Board)' : 'Physics (Senior Secondary Core)', icon: '⚡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: physicsChapters },
+    { subjectId: 'hsc_physics', subjectName: isTa ? '�இயற்பியல் (Physics Core — HSC / Board)' : 'Physics (Senior Secondary Core)', icon: '⚡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: physicsChapters },
     { subjectId: 'hsc_chemistry', subjectName: isTa ? 'வ�‡தியியல் (Chemistry Core — HSC / Board)' : 'Chemistry (Senior Secondary Core)', icon: '�Ÿ��', color: '#10b981', totalChapters: chemistryChapters.length, totalMicroTopics: chemistryChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: chemistryChapters },
-    { subjectId: 'hsc_mathematics', subjectName: isTa ? '�•ணிதம் (Mathematics Core — HSC / Board)' : 'Mathematics (Senior Secondary Calculus & Vectors)', icon: '�Ÿ“�', color: '#f59e0b', totalChapters: mathematicsChapters.length, totalMicroTopics: mathematicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: mathematicsChapters }
+    { subjectId: 'hsc_mathematics', subjectName: isTa ? '�கணிதம் (Mathematics Core — HSC / Board)' : 'Mathematics (Senior Secondary Calculus & Vectors)', icon: '�Ÿ“�', color: '#f59e0b', totalChapters: mathematicsChapters.length, totalMicroTopics: mathematicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: mathematicsChapters }
   ];
 
   return {
@@ -2362,20 +2362,20 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
         }
       ],
       microTopics: [
-        { id: 'pol_t_1', topicTitle: 'பிரித்த�†ழுதுதல், �Žதிர்�š்�š�Šல், பிழ�ˆ திருத்தம் & �…�•ரவரி�š�ˆ', subtopic: '�šந்திப்பிழ�ˆ (�•், �š், த், ப்) ந�€�•்�•ுதல் மற்றும் வ�‡ர்�š்�š�Šல்லிலிருந்து வின�ˆய�†�š்�šம் �•ாணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'வ�‡ர்�š்�š�Šல் -> த�Šழிற்ப�†யர் (ந�Ÿ -> ந�Ÿத்தல்) | ப�†யர�†�š்�šம் (ந�Ÿந்த) | வின�ˆய�†�š்�šம் (ந�Ÿந்து)', keyPoints: ['தமிழ் த�•ுதித் த�‡ர்வில் 40% �•ுற�ˆந்தப�Ÿ்�š மதிப்ப�†ண் �•�Ÿ்�Ÿாயம்', '�…�•ரவரி�š�ˆப்ப�Ÿுத்துதல்: �…, �†, �‡ வரி�š�ˆ மற்றும் �•, �•ா, �•ி வரி�š�ˆ'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'pol_t_1', topicTitle: 'பிரித்த�†ழுதுதல், �Žதிர்�š்�š�Šல், பிழ�ˆ திருத்தம் & �…�•ரவரி�š�ˆ', subtopic: '�šந்திப்பிழ�ˆ (�•், �š், த், ப்) ந�€�•்�•ுதல் மற்றும் வ�‡ர்�š்�š�Šல்லிலிருந்து வின�ˆய�†�š்�šம் �காணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'வ�‡ர்�š்�š�Šல் -> த�Šழிற்ப�†யர் (ந�Ÿ -> ந�Ÿத்தல்) | ப�†யர�†�š்�šம் (ந�Ÿந்த) | வின�ˆய�†�š்�šம் (ந�Ÿந்து)', keyPoints: ['தமிழ் த�•ுதித் த�‡ர்வில் 40% �•ுற�ˆந்தப�Ÿ்�š மதிப்ப�†ண் �•�Ÿ்�Ÿாயம்', '�…�•ரவரி�š�ˆப்ப�Ÿுத்துதல்: �…, �†, �‡ வரி�š�ˆ மற்றும் �•, �•ா, �•ி வரி�š�ˆ'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
       chapterTitle: 'ப�•ுதி �† & �‡: தமிழ் �‡ல�•்�•ியம் மற்றும் தமிழ் �…றி�žர்�•ள்',
-      description: 'திரு�•்�•ுறள், �šிலப்பதி�•ாரம், �•ம்பராமாயணம், பாரதியார், பாரதிதா�šன், தந்த�ˆ ப�†ரியார், ப�‡ரறி�žர் �…ண்ணா',
+      description: 'திரு�•்�•ுறள், �šிலப்பதி�•ாரம், �•ம்பராமாயணம், பாரதியார், பாரதிதா�šன், தந்த�ˆ ப�†ரியார், ப�‡ரறி�žர் �அண்ணா',
       subtopics: [
         {
           id: 'pol_t_sub2',
           title: '�š�™்�• �‡ல�•்�•ியம் & �•வி�žர்�•ள்',
           microTopics: [
             { id: 'pol_t_3', title: 'திரு�•்�•ுறள், �Ž�Ÿ்�Ÿுத்த�Š�•�ˆ, பத்துப்பா�Ÿ்�Ÿு �šிறப்பு�•ள்', keyAxiom: 'திரு�•்�•ுறள் �…றத்துப்பால், ப�Šரு�Ÿ்பால், �•ாமத்துப்பால் 133 �…தி�•ார�™்�•ள்' },
-            { id: 'pol_t_4', title: 'பாரதியார், பாரதிதா�šன், ப�†ரியார், �…ண்ணா தமிழ்த்த�Šண்�Ÿு', keyAxiom: 'பாரதியார் பா�Ÿ்�Ÿு�•்�•�Šரு புலவன் | பாரதிதா�šன் புர�Ÿ்�šி�•் �•வி�žர்' }
+            { id: 'pol_t_4', title: 'பாரதியார், பாரதிதா�šன், ப�†ரியார், �அண்ணா தமிழ்த்த�Šண்�Ÿு', keyAxiom: 'பாரதியார் பா�Ÿ்�Ÿு�•்�•�Šரு புலவன் | பாரதிதா�šன் புர�Ÿ்�šி�•் �•வி�žர்' }
           ]
         }
       ],
@@ -2406,12 +2406,12 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'ப�Šது �…றிவியல்: �…ன்றா�Ÿ வாழ்வில் �‡யற்பியல், வ�‡தியியல் & �‰யிரியல்',
+      chapterTitle: 'ப�Šது �அறிவியல்: �…ன்றா�Ÿ வாழ்வில் �இயற்பியல், வ�‡தியியல் & �‰யிரியல்',
       description: '�‡ய�•்�• விதி�•ள், �’ளி-�’லி, �…மில�™்�•ள்-�•ார�™்�•ள், தனிம�™்�•ள், மனித �‰�Ÿல் �‰றுப்பு மண்�Ÿல�™்�•ள், வ�ˆ�Ÿ்�Ÿமின் �•ுற�ˆபா�Ÿு�•ள்',
       subtopics: [
         {
           id: 'pol_gk_sub2',
-          title: 'ப�Šது �…றிவியல் விதி�•ள்',
+          title: 'ப�Šது �அறிவியல் விதி�•ள்',
           microTopics: [
             { id: 'pol_gk_3', title: 'நிய�‚�Ÿ்�Ÿன் 3 விதி�•ள், ல�†ன்ஸ், மின்ன�‹�Ÿ்�Ÿம் & வ�‡தியியல் �•ார�™்�•ள்', keyAxiom: 'வி�š�ˆ F = ma | �…மில�™்�•ள் ந�€ல லி�Ÿ்மஸ�ˆ �šிவப்பா�• மாற்றும்' },
             { id: 'pol_gk_4', title: 'மனித �š�†ரிமானம், ரத்த �“�Ÿ்�Ÿம் & வ�ˆ�Ÿ்�Ÿமின்�•ள் �•ுற�ˆபா�Ÿு', keyAxiom: 'வ�ˆ�Ÿ்�Ÿமின் A (மால�ˆ�•்�•ண்), வ�ˆ�Ÿ்�Ÿமின் C (ஸ்�•ர்வி)' }
@@ -2419,7 +2419,7 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
         }
       ],
       microTopics: [
-        { id: 'pol_gk_3', topicTitle: 'நிய�‚�Ÿ்�Ÿன் விதி�•ள் (F=ma), �…மில�™்�•ள் �•ார�™்�•ள் & வ�ˆ�Ÿ்�Ÿமின்�•ள்', subtopic: '�‡யற்பியல் �…ல�•ு�•ள் (SI Units), தனிம�™்�•ளின் �•ுறிய�€�Ÿு�•ள், ரத்த வ�•�ˆ�•ள் (ABO)', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'F = ma | ரத்தத்தின் pH மதிப்பு = 7.4 | �…ன�ˆவரு�•்�•ும் ரத்தம் வழ�™்�•ும் பிரிவு: O ந�†�•�Ÿ்�Ÿிவ்', keyPoints: ['மனித �‰�Ÿலின் மி�•ப்ப�†ரிய �‰றுப்பு த�‹ல்; மி�•ப்ப�†ரிய �šுரப்பி �•ல்ல�€ரல்', 'வ�ˆ�Ÿ்�Ÿமின் D �š�‚ரிய �’ளியின் ம�‚லம் �‰�Ÿலில் தயாரா�•ிறது'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'pol_gk_3', topicTitle: 'நிய�‚�Ÿ்�Ÿன் விதி�•ள் (F=ma), �…மில�™்�•ள் �•ார�™்�•ள் & வ�ˆ�Ÿ்�Ÿமின்�•ள்', subtopic: '�இயற்பியல் �…ல�•ு�•ள் (SI Units), தனிம�™்�•ளின் �•ுறிய�€�Ÿு�•ள், ரத்த வ�•�ˆ�•ள் (ABO)', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'F = ma | ரத்தத்தின் pH மதிப்பு = 7.4 | �…ன�ˆவரு�•்�•ும் ரத்தம் வழ�™்�•ும் பிரிவு: O ந�†�•�Ÿ்�Ÿிவ்', keyPoints: ['மனித �‰�Ÿலின் மி�•ப்ப�†ரிய �‰றுப்பு த�‹ல்; மி�•ப்ப�†ரிய �šுரப்பி �•ல்ல�€ரல்', 'வ�ˆ�Ÿ்�Ÿமின் D �š�‚ரிய �’ளியின் ம�‚லம் �‰�Ÿலில் தயாரா�•ிறது'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2427,12 +2427,12 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
   const psychologyChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: '�‰ளவியல்: த�•வல் த�Š�Ÿர்புத் திறன் & �Žண் �•ணித நுண்ணறிவு',
+      chapterTitle: '�உளவியல்: த�•வல் த�Š�Ÿர்புத் திறன் & �Žண் �•ணித நுண்ணறிவு',
       description: '�Žண் த�Š�Ÿர், வி�Ÿுப�Ÿ்�Ÿ �Žழுத்து�•ள், �•ுறிய�€�Ÿ்�Ÿு முற�ˆ (Coding-Decoding), �‡ரத்த �‰றவு�•ள், தி�š�ˆ �…றிதல் �š�‹தன�ˆ�•ள்',
       subtopics: [
         {
           id: 'pol_psy_sub1',
-          title: '�Žண் �•ணிதம் & �•ுறிய�€�Ÿ்�Ÿு முற�ˆ',
+          title: '�Žண் �கணிதம் & �•ுறிய�€�Ÿ்�Ÿு முற�ˆ',
           microTopics: [
             { id: 'pol_psy_1', title: '�Žண் த�Š�Ÿர் & �•ுறிய�€�Ÿ்�Ÿு முற�ˆ (Coding-Decoding)', keyAxiom: 'A=1 to Z=26 �Žண் மதிப்ப�€�Ÿு�•ள்' },
             { id: 'pol_psy_2', title: '�‡ரத்த �‰றவு�•ள் & தி�š�ˆ �…றிதல் (வ�Ÿ�•்�•ு, �•ிழ�•்�•ு, த�†ற்�•ு, ம�‡ற்�•ு)', keyAxiom: 'பிதா�•ரஸ் த�‡ற்றம் வழி த�‚ரம் �•ண�•்�•ி�Ÿுதல்' }
@@ -2465,8 +2465,8 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
 
   const subjects: SyllabusSubject[] = [
     { subjectId: 'pol_tamil', subjectName: 'தமிழ் ம�Šழித் த�•ுதித் த�‡ர்வு (Tamil Eligibility — 100 Marks)', icon: '��', color: '#ec4899', totalChapters: tamilEligibilityChapters.length, totalMicroTopics: tamilEligibilityChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: tamilEligibilityChapters },
-    { subjectId: 'pol_gk', subjectName: 'ப�Šது �…றிவு & �…றிவியல் (General Knowledge & Science Core)', icon: '�Ÿ�›️', color: '#06b6d4', totalChapters: generalKnowledgeChapters.length, totalMicroTopics: generalKnowledgeChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalKnowledgeChapters },
-    { subjectId: 'pol_psy', subjectName: '�‰ளவியல் & தர்�•்�•�•் �•ாரணவியல் (Psychology & Logical Analysis)', icon: '�Ÿ��', color: '#8b5cf6', totalChapters: psychologyChapters.length, totalMicroTopics: psychologyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: psychologyChapters }
+    { subjectId: 'pol_gk', subjectName: 'ப�Šது �…றிவு & �அறிவியல் (General Knowledge & Science Core)', icon: '�Ÿ�›️', color: '#06b6d4', totalChapters: generalKnowledgeChapters.length, totalMicroTopics: generalKnowledgeChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalKnowledgeChapters },
+    { subjectId: 'pol_psy', subjectName: '�உளவியல் & தர்�•்�•�•் �காரணவியல் (Psychology & Logical Analysis)', icon: '�Ÿ��', color: '#8b5cf6', totalChapters: psychologyChapters.length, totalMicroTopics: psychologyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: psychologyChapters }
   ];
 
   return {
@@ -2735,7 +2735,7 @@ export function getSscAndRailwayCompleteSyllabus(courseId?: string, courseTitle?
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'ssc_quant', subjectName: 'Quantitative Aptitude & Pure Advance Maths', icon: 'ðŸ“', color: '#06b6d4', totalChapters: quantChapters.length, totalMicroTopics: quantChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: quantChapters },
+    { subjectId: 'ssc_quant', subjectName: 'Quantitative Aptitude & Pure Advance Maths', icon: '📐', color: '#06b6d4', totalChapters: quantChapters.length, totalMicroTopics: quantChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: quantChapters },
     { subjectId: 'ssc_reasoning', subjectName: 'General Intelligence & Reasoning (Verbal / Non-Verbal)', icon: '🧩', color: '#8b5cf6', totalChapters: reasoningChapters.length, totalMicroTopics: reasoningChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: reasoningChapters },
     { subjectId: 'ssc_english', subjectName: 'English Language & Comprehension', icon: '📖', color: '#3b82f6', totalChapters: englishChapters.length, totalMicroTopics: englishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: englishChapters },
     { subjectId: 'ssc_ga', subjectName: 'General Awareness & General Science Core', icon: 'ðŸ›ï¸', color: '#10b981', totalChapters: gsChapters.length, totalMicroTopics: gsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gsChapters }
@@ -2762,12 +2762,12 @@ export function getTrbAndTeacherExamsCompleteSyllabus(courseId?: string, courseT
   const childDevChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'Child Development & Learning Theories (�•ுழந்த�ˆ வளர்�š்�šி மற்றும் �•ற்றல் �•�‹�Ÿ்பா�Ÿு�•ள்)',
+      chapterTitle: 'Child Development & Learning Theories (�•ுழந்த�ˆ வளர்�š்�šி மற்றும் �கற்றல் �•�‹�Ÿ்பா�Ÿு�•ள்)',
       description: 'Jean Piaget 4 Cognitive Stages, Lev Vygotsky ZPD & Scaffolding, Kohlberg Moral Stages, Erikson Psychosocial Stages',
       subtopics: [
         {
           id: 'trb_cd_sub1',
-          title: 'வளர்�š்�šி நில�ˆ�•ள் & �•ற்றல் �•�‹�Ÿ்பா�Ÿு�•ள்',
+          title: 'வளர்�š்�šி நில�ˆ�•ள் & �கற்றல் �•�‹�Ÿ்பா�Ÿு�•ள்',
           microTopics: [
             { id: 'trb_cd_1', title: 'பியா�œ�‡ (Piaget) �…றிதிறன் வளர்�š்�šி 4 நில�ˆ�•ள்', keyAxiom: 'Sensorimotor (0-2), Preoperational (2-7), Concrete (7-11), Formal (11+)' },
             { id: 'trb_cd_2', title: 'வ�ˆ�•ா�Ÿ்ஸ்�•ி (Vygotsky) ZPD & �šார�•்�•�Ÿ்�Ÿு (Scaffolding)', keyAxiom: 'Zone of Proximal Development: Gap between actual and guided capability' }
@@ -2801,27 +2801,27 @@ export function getTrbAndTeacherExamsCompleteSyllabus(courseId?: string, courseT
   const pedagogyChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'ம�Šழி �•ற்பித்தல் முற�ˆ�•ள் & மதிப்ப�€�Ÿ்�Ÿு �‰த்தி�•ள் (Pedagogy & Assessment)',
-      description: 'LSRW திறன்�•ள் (�•�‡�Ÿ்�Ÿல், ப�‡�šுதல், ப�Ÿித்தல், �Žழுதுதல்), �š�†ய்யுள்/�‰ர�ˆந�Ÿ�ˆ �•ற்பித்தல், நுண்ணில�ˆ �•ற்பித்தல் (Micro-teaching), CCE த�Š�Ÿர் மதிப்ப�€�Ÿு',
+      chapterTitle: 'ம�Šழி �கற்பித்தல் முற�ˆ�•ள் & மதிப்ப�€�Ÿ்�Ÿு �‰த்தி�•ள் (Pedagogy & Assessment)',
+      description: 'LSRW திறன்�•ள் (�•�‡�Ÿ்�Ÿல், ப�‡�šுதல், ப�Ÿித்தல், �Žழுதுதல்), �š�†ய்யுள்/�‰ர�ˆந�Ÿ�ˆ �கற்பித்தல், நுண்ணில�ˆ �கற்பித்தல் (Micro-teaching), CCE த�Š�Ÿர் மதிப்ப�€�Ÿு',
       subtopics: [
         {
           id: 'trb_ped_sub1',
-          title: '�•ற்பித்தல் முற�ˆ�•ள் & நுண்ணில�ˆ �•ற்பித்தல்',
+          title: '�கற்பித்தல் முற�ˆ�•ள் & நுண்ணில�ˆ �கற்பித்தல்',
           microTopics: [
             { id: 'trb_ped_1', title: 'LSRW ம�Šழித்திறன்�•ள் & ம�Šழி �•ற்பி�•்�•ும் முற�ˆ�•ள்', keyAxiom: '�•�‡�Ÿ்�Ÿல் மற்றும் ப�Ÿித்தல் ஏற்புத் திறன்�•ள்; ப�‡�šுதல் மற்றும் �Žழுதுதல் வ�†ளிய�€�Ÿ்�Ÿுத் திறன்�•ள்' },
-            { id: 'trb_ped_2', title: 'நுண்ணில�ˆ �•ற்பித்தல் 6 ப�Ÿி�•ள் (Micro-Teaching Cycle)', keyAxiom: 'Teach (6m) -> Feedback (6m) -> Re-plan (12m) -> Re-teach (6m) -> Re-feedback (6m) = 36 mins' }
+            { id: 'trb_ped_2', title: 'நுண்ணில�ˆ �கற்பித்தல் 6 ப�Ÿி�•ள் (Micro-Teaching Cycle)', keyAxiom: 'Teach (6m) -> Feedback (6m) -> Re-plan (12m) -> Re-teach (6m) -> Re-feedback (6m) = 36 mins' }
           ]
         }
       ],
       microTopics: [
-        { id: 'trb_ped_1', topicTitle: 'LSRW ம�Šழித்திறன்�•ள், நுண்ணில�ˆ �•ற்பித்தல் �šுழற்�šி (36 நிமி�Ÿ�™்�•ள்) & CCE', subtopic: '�•ற்பித்தல் ப�Ÿி�•ள், பின்ன�‚�Ÿ்�Ÿம் மற்றும் த�Š�Ÿர் முழும�ˆயான மதிப்ப�€�Ÿு (CCE)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Micro-teaching Cycle: 36 Minutes (Plan -> Teach 6m -> Feedback 6m -> Re-plan 12m -> Re-teach 6m -> Re-feedback 6m)', keyPoints: ['Formative Assessment (�•ற்றலு�•்�•ான மதிப்ப�€�Ÿு) vs Summative Assessment (�•ற்றலின் மதிப்ப�€�Ÿு)', 'Micro-teaching was introduced by Dwight W. Allen at Stanford University (1963)'], type: 'concept', importance: 'High-Yield' }
+        { id: 'trb_ped_1', topicTitle: 'LSRW ம�Šழித்திறன்�•ள், நுண்ணில�ˆ �கற்பித்தல் �šுழற்�šி (36 நிமி�Ÿ�™்�•ள்) & CCE', subtopic: '�கற்பித்தல் ப�Ÿி�•ள், பின்ன�‚�Ÿ்�Ÿம் மற்றும் த�Š�Ÿர் முழும�ˆயான மதிப்ப�€�Ÿு (CCE)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Micro-teaching Cycle: 36 Minutes (Plan -> Teach 6m -> Feedback 6m -> Re-plan 12m -> Re-teach 6m -> Re-feedback 6m)', keyPoints: ['Formative Assessment (�•ற்றலு�•்�•ான மதிப்ப�€�Ÿு) vs Summative Assessment (�•ற்றலின் மதிப்ப�€�Ÿு)', 'Micro-teaching was introduced by Dwight W. Allen at Stanford University (1963)'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'trb_child_dev', subjectName: '�•ுழந்த�ˆ ம�‡ம்பா�Ÿும் �•ற்றல் �‰ளவியலும் (Child Development & Pedagogy)', icon: '�Ÿ‘�', color: '#ec4899', totalChapters: childDevChapters.length, totalMicroTopics: childDevChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: childDevChapters },
-    { subjectId: 'trb_pedagogy', subjectName: '�•ற்பித்தல் முற�ˆ�•ளும் மதிப்ப�€�Ÿும் (Teaching Methodology & CCE)', icon: '��', color: '#06b6d4', totalChapters: pedagogyChapters.length, totalMicroTopics: pedagogyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pedagogyChapters }
+    { subjectId: 'trb_child_dev', subjectName: '�•ுழந்த�ˆ ம�‡ம்பா�Ÿும் �கற்றல் �‰ளவியலும் (Child Development & Pedagogy)', icon: '�Ÿ‘�', color: '#ec4899', totalChapters: childDevChapters.length, totalMicroTopics: childDevChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: childDevChapters },
+    { subjectId: 'trb_pedagogy', subjectName: '�கற்பித்தல் முற�ˆ�•ளும் மதிப்ப�€�Ÿும் (Teaching Methodology & CCE)', icon: '��', color: '#06b6d4', totalChapters: pedagogyChapters.length, totalMicroTopics: pedagogyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pedagogyChapters }
   ];
 
   return {
@@ -2903,7 +2903,7 @@ export function getGateAndEngineeringCompleteSyllabus(courseId?: string, courseT
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'gate_math', subjectName: 'Engineering Mathematics & Discrete Math', icon: 'ðŸ“', color: '#06b6d4', totalChapters: engMathChapters.length, totalMicroTopics: engMathChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: engMathChapters },
+    { subjectId: 'gate_math', subjectName: 'Engineering Mathematics & Discrete Math', icon: '📐', color: '#06b6d4', totalChapters: engMathChapters.length, totalMicroTopics: engMathChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: engMathChapters },
     { subjectId: 'gate_cs', subjectName: 'Computer Science Core (OS, DBMS, Networks, TOC & Compilers)', icon: '💻', color: '#8b5cf6', totalChapters: csCoreChapters.length, totalMicroTopics: csCoreChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: csCoreChapters }
   ];
 
