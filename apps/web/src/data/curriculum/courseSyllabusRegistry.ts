@@ -1,10 +1,10 @@
 ﻿/**
  * TeachO Master Course Syllabus Registry
  * Complete Authentic Real-World Micro-Granular Curricula for all 86 Courses:
- * - Foundational Stage: LKG, UKG, Class 1, Class 2 (Ages 3â€“8)
- * - Preparatory Stage: Class 3, Class 4, Class 5 (Ages 8â€“11)
- * - Middle Stage: Class 6, Class 7, Class 8 (Ages 11â€“14)
- * - Secondary Stage: Class 9, Class 10 (Ages 14â€“16)
+ * - Foundational Stage: LKG, UKG, Class 1, Class 2 (Ages 3–8)
+ * - Preparatory Stage: Class 3, Class 4, Class 5 (Ages 8–11)
+ * - Middle Stage: Class 6, Class 7, Class 8 (Ages 11–14)
+ * - Secondary Stage: Class 9, Class 10 (Ages 14–16)
  */
 import { UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData';
 import { NEET_UG_OFFICIAL_SUBJECTS, JEE_MAIN_ADVANCED_OFFICIAL_SUBJECTS, TNPSC_UNIFIED_OFFICIAL_SUBJECTS } from './officialExhaustiveSyllabi';
@@ -64,7 +64,7 @@ export interface CourseFullSyllabus {
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 1. FOUNDATIONAL STAGE: CLASS 1 & CLASS 2 (AGES 6â€“8)
+// 1. FOUNDATIONAL STAGE: CLASS 1 & CLASS 2 (AGES 6–8)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
   const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
@@ -72,7 +72,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
   const subjects: SyllabusSubject[] = [
     {
       subjectId: 'fnd_tamil',
-      subjectName: 'à®¤à®®à®¿à®´à¯ (Tamil â€” à®‰à®¯à®¿à®°à¯, à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ & à®®à®´à®²à¯ˆà®¯à®°à¯ à®ªà®¾à®Ÿà®²à¯)',
+      subjectName: 'தமிழ் (Tamil — �‰யிர், ம�†ய் �Žழுத்து�•ள் & மழல�ˆயர் பா�Ÿல்)',
       icon: '🔤',
       color: '#ec4899',
       totalChapters: 4,
@@ -80,72 +80,72 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (12) & à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ (à®ƒ)',
-          description: 'à®… à®®à¯à®¤à®²à¯ à®” à®µà®°à¯ˆ à®‰à®³à¯à®³ 12 à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯, à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ à®ƒ, à®ªà®Ÿà®™à¯à®•à®³à¯ˆà®ªà¯ à®ªà®¾à®°à¯à®¤à¯à®¤à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ˆ à®…à®Ÿà¯ˆà®¯à®¾à®³à®®à¯ à®•à®¾à®£à¯à®¤à®²à¯',
+          chapterTitle: '�‰யிர் �Žழுத்து�•ள் (12) & �†ய்த �Žழுத்து (�ƒ)',
+          description: '�… முதல் �” வர�ˆ �‰ள்ள 12 �‰யிர் �Žழுத்து�•ள், �†ய்த �Žழுத்து �ƒ, ப�Ÿ�™்�•ள�ˆப் பார்த்து �Žழுத்து�•ள�ˆ �…�Ÿ�ˆயாளம் �•ாணுதல்',
           subtopics: [
             {
               id: 'fnd_t_sub1',
-              title: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®‰à®šà¯à®šà®°à®¿à®ªà¯à®ªà¯ & à®ªà®Ÿà®•à¯à®•à®¤à¯ˆ',
+              title: '�‰யிர் �Žழுத்து�•ள் �‰�š்�šரிப்பு & ப�Ÿ�•்�•த�ˆ',
               microTopics: [
-                { id: 'fnd_t_1', title: 'à®•à¯à®±à®¿à®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®¨à¯†à®Ÿà®¿à®²à¯ à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (à®…, à®†, à®‡, à®ˆ...)', keyAxiom: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ 12: à®•à¯à®±à®¿à®²à¯ 5 (à®…, à®‡, à®‰, à®Ž, à®’), à®¨à¯†à®Ÿà®¿à®²à¯ 7 (à®†, à®ˆ, à®Š, à®, à®, à®“, à®”)' },
-                { id: 'fnd_t_2', title: 'à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ (à®ƒ) â€” à®Žà®ƒà®•à¯, à®…à®ƒà®¤à¯ à®‰à®šà¯à®šà®°à®¿à®ªà¯à®ªà¯ & à®ªà®¯à®©à¯à®ªà®¾à®Ÿà¯', keyAxiom: 'à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®‡à®Ÿà¯ˆà®¯à®¿à®²à¯ à®®à®Ÿà¯à®Ÿà¯à®®à¯‡ à®µà®°à¯à®®à¯ à®¤à®©à®¿à®¨à®¿à®²à¯ˆ à®Žà®´à¯à®¤à¯à®¤à¯' }
+                { id: 'fnd_t_1', title: '�•ுறில் மற்றும் ந�†�Ÿில் �‰யிர் �Žழுத்து�•ள் (�…, �†, �‡, �ˆ...)', keyAxiom: '�‰யிர் �Žழுத்து�•ள் 12: �•ுறில் 5 (�…, �‡, �‰, �Ž, �’), ந�†�Ÿில் 7 (�†, �ˆ, �Š, ஏ, ஐ, �“, �”)' },
+                { id: 'fnd_t_2', title: '�†ய்த �Žழுத்து (�ƒ) — �Ž�ƒ�•ு, �…�ƒது �‰�š்�šரிப்பு & பயன்பா�Ÿு', keyAxiom: '�†ய்த �Žழுத்து �š�Šல்லின் �‡�Ÿ�ˆயில் ம�Ÿ்�Ÿும�‡ வரும் தனிநில�ˆ �Žழுத்து' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_t_1', topicTitle: 'à®•à¯à®±à®¿à®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®¨à¯†à®Ÿà®¿à®²à¯ à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (à®… à®®à¯à®¤à®²à¯ à®” à®µà®°à¯ˆ)', subtopic: 'à®ªà®Ÿà®™à¯à®•à®³à¯ˆ à®ªà®¾à®°à¯à®¤à¯à®¤à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ˆ à®…à®±à®¿à®¤à®²à¯', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à¯à®•à®³à¯: à®…, à®†, à®‡, à®ˆ, à®‰, à®Š, à®Ž, à®, à®, à®’, à®“, à®” (à®®à¯Šà®¤à¯à®¤à®®à¯ 12)', keyPoints: ['à®… - à®…à®£à®¿à®²à¯, à®…à®®à¯à®®à®¾', 'à®† - à®†à®Ÿà¯, à®†à®²à®®à®°à®®à¯', 'à®‡ - à®‡à®²à¯ˆ, à®‡à®žà¯à®šà®¿', 'à®ˆ - à®ˆà®Ÿà¯à®Ÿà®¿, à®ˆà®šà®²à¯'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_t_1', topicTitle: '�•ுறில் மற்றும் ந�†�Ÿில் �‰யிர் �Žழுத்து�•ள் (�… முதல் �” வர�ˆ)', subtopic: 'ப�Ÿ�™்�•ள�ˆ பார்த்து �Žழுத்து�•ள�ˆ �…றிதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '�‰யிர் �Žழுத்து�•்�•ள்: �…, �†, �‡, �ˆ, �‰, �Š, �Ž, ஏ, ஐ, �’, �“, �” (ம�Šத்தம் 12)', keyPoints: ['�… - �…ணில், �…ம்மா', '�† - �†�Ÿு, �†லமரம்', '�‡ - �‡ல�ˆ, �‡�ž்�šி', '�ˆ - �ˆ�Ÿ்�Ÿி, �ˆ�šல்'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: 'à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (18) â€” à®µà®²à¯à®²à®¿à®©à®®à¯, à®®à¯†à®²à¯à®²à®¿à®©à®®à¯, à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯',
-          description: 'à®•à¯ à®®à¯à®¤à®²à¯ à®©à¯ à®µà®°à¯ˆ à®‰à®³à¯à®³ 18 à®ªà¯à®³à¯à®³à®¿ à®µà¯ˆà®¤à¯à®¤ à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ 3 à®‡à®©à®ªà¯ à®ªà®¿à®°à®¿à®µà¯à®•à®³à¯',
+          chapterTitle: 'ம�†ய் �Žழுத்து�•ள் (18) — வல்லினம், ம�†ல்லினம், �‡�Ÿ�ˆயினம்',
+          description: '�•் முதல் ன் வர�ˆ �‰ள்ள 18 புள்ளி வ�ˆத்த ம�†ய் �Žழுத்து�•ள் மற்றும் 3 �‡னப் பிரிவு�•ள்',
           subtopics: [
             {
               id: 'fnd_t_sub2',
-              title: 'à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®®à¯‚à®µà®¿à®©à®ªà¯ à®ªà®¿à®°à®¿à®µà¯à®•à®³à¯',
+              title: 'ம�†ய் �Žழுத்து�•ள் ம�‚வினப் பிரிவு�•ள்',
               microTopics: [
-                { id: 'fnd_t_3', title: 'à®µà®²à¯à®²à®¿à®©à®®à¯ (à®•à®šà®Ÿà®¤à®ªà®± â€” à®•à¯, à®šà¯, à®Ÿà¯, à®¤à¯, à®ªà¯, à®±à¯) à®‰à®šà¯à®šà®°à®¿à®ªà¯à®ªà¯', keyAxiom: 'à®µà®²à¯à®²à®¿à®©à®®à¯ à®µà®©à¯à®®à¯ˆà®¯à®¾à®© à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' },
-                { id: 'fnd_t_4', title: 'à®®à¯†à®²à¯à®²à®¿à®©à®®à¯ (à®™à®žà®£à®¨à®®à®©) & à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯ (à®¯à®°à®²à®µà®´à®³)', keyAxiom: 'à®®à¯†à®²à¯à®²à®¿à®©à®®à¯ à®®à¯†à®©à¯à®®à¯ˆà®¯à®¾à®© à®“à®šà¯ˆ; à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯ à®‡à®Ÿà¯ˆà®ªà¯à®ªà®Ÿà¯à®Ÿ à®“à®šà¯ˆ' }
+                { id: 'fnd_t_3', title: 'வல்லினம் (�•�š�Ÿதபற — �•், �š், �Ÿ், த், ப், ற்) �‰�š்�šரிப்பு', keyAxiom: 'வல்லினம் வன்ம�ˆயான �“�š�ˆயு�Ÿ�ˆய �Žழுத்து�•ள்' },
+                { id: 'fnd_t_4', title: 'ம�†ல்லினம் (�™�žணநமன) & �‡�Ÿ�ˆயினம் (யரலவழள)', keyAxiom: 'ம�†ல்லினம் ம�†ன்ம�ˆயான �“�š�ˆ; �‡�Ÿ�ˆயினம் �‡�Ÿ�ˆப்ப�Ÿ்�Ÿ �“�š�ˆ' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_t_3', topicTitle: 'à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ 18 à®µà®•à¯ˆà®ªà¯à®ªà®¾à®Ÿà¯ (à®µà®²à¯à®²à®¿à®©à®®à¯, à®®à¯†à®²à¯à®²à®¿à®©à®®à¯, à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯)', subtopic: 'à®•à®šà®Ÿà®¤à®ªà®±, à®™à®žà®£à®¨à®®à®©, à®¯à®°à®²à®µà®´à®³ à®‰à®šà¯à®šà®°à®¿à®ªà¯à®ªà¯', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'à®µà®²à¯à®²à®¿à®©à®®à¯: à®•à¯ à®šà¯ à®Ÿà¯ à®¤à¯ à®ªà¯ à®±à¯ | à®®à¯†à®²à¯à®²à®¿à®©à®®à¯: à®™à¯ à®žà¯ à®£à¯ à®¨à¯ à®®à¯ à®©à¯ | à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯: à®¯à¯ à®°à¯ à®²à¯ à®µà¯ à®´à¯ à®³à¯', keyPoints: ['à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®ªà¯à®³à¯à®³à®¿ à®ªà¯†à®±à¯à®± à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯', 'à®®à¯Šà®¤à¯à®¤à®®à¯ 18 à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_t_3', topicTitle: 'ம�†ய் �Žழுத்து�•ள் 18 வ�•�ˆப்பா�Ÿு (வல்லினம், ம�†ல்லினம், �‡�Ÿ�ˆயினம்)', subtopic: '�•�š�Ÿதபற, �™�žணநமன, யரலவழள �‰�š்�šரிப்பு', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'வல்லினம்: �•் �š் �Ÿ் த் ப் ற் | ம�†ல்லினம்: �™் �ž் ண் ந் ம் ன் | �‡�Ÿ�ˆயினம்: ய் ர் ல் வ் ழ் ள்', keyPoints: ['ம�†ய் �Žழுத்து�•ள் புள்ளி ப�†ற்ற �Žழுத்து�•ள்', 'ம�Šத்தம் 18 ம�†ய் �Žழுத்து�•ள்'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: 'à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®…à®±à®¿à®®à¯à®•à®®à¯ & à®šà¯Šà®²à¯ à®µà®¿à®³à¯ˆà®¯à®¾à®Ÿà¯à®Ÿà¯',
-          description: 'à®‰à®¯à®¿à®°à¯ + à®®à¯†à®¯à¯ à®‡à®£à¯ˆà®¯à¯à®®à¯ à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (216) & à®Žà®³à®¿à®¯ 2, 3 à®Žà®´à¯à®¤à¯à®¤à¯à®šà¯ à®šà¯Šà®±à¯à®•à®³à¯',
+          chapterTitle: '�‰யிர்ம�†ய் �Žழுத்து�•ள் �…றிமு�•ம் & �š�Šல் விள�ˆயா�Ÿ்�Ÿு',
+          description: '�‰யிர் + ம�†ய் �‡ண�ˆயும் �‰யிர்ம�†ய் �Žழுத்து�•ள் (216) & �Žளிய 2, 3 �Žழுத்து�š் �š�Šற்�•ள்',
           subtopics: [
             {
               id: 'fnd_t_sub3',
-              title: 'à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯ à®‰à®°à¯à®µà®¾à®•à¯à®• à®µà®¾à®¯à¯à®ªà®¾à®Ÿà¯',
+              title: '�‰யிர்ம�†ய் �‰ருவா�•்�• வாய்பா�Ÿு',
               microTopics: [
-                { id: 'fnd_t_5', title: 'à®•à¯ + à®… = à®• à®µà®°à®¿à®šà¯ˆ à®®à¯à®¤à®²à¯ à®•à¯ + à®” = à®•à¯Œ à®µà®°à¯ˆ', keyAxiom: 'à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®®à¯Šà®¤à¯à®¤à®®à¯ 18 Ã— 12 = 216 à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' }
+                { id: 'fnd_t_5', title: '�•் + �… = �• வரி�š�ˆ முதல் �•் + �” = �•�Œ வர�ˆ', keyAxiom: '�‰யிர்ம�†ய் �Žழுத்து�•ள் ம�Šத்தம் 18 � 12 = 216 �Žழுத்து�•ள்' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_t_5', topicTitle: 'à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®…à®Ÿà¯à®Ÿà®µà®£à¯ˆ & à®Žà®³à®¿à®¯ à®šà¯Šà®±à¯à®•à®³à¯', subtopic: 'à®•à¯ + à®… = à®• à®µà®¾à®¯à¯à®ªà®¾à®Ÿà¯ à®®à®±à¯à®±à¯à®®à¯ à®ªà®Ÿà®šà¯à®šà¯Šà®±à¯à®•à®³à¯', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'à®‰à®¯à®¿à®°à¯ (12) + à®®à¯†à®¯à¯ (18) = à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯ (216) | à®¤à®®à®¿à®´à¯ à®®à¯Šà®¤à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ = 247', keyPoints: ['à®•à®²à¯, à®•à®£à¯, à®ªà®²à¯, à®®à®°à®®à¯, à®ªà®Ÿà®®à¯ à®ªà¯‹à®©à¯à®± à®Žà®³à®¿à®¯ à®šà¯Šà®±à¯à®•à®³à¯ˆ à®Žà®´à¯à®¤à¯à®¤à®²à¯'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_t_5', topicTitle: '�‰யிர்ம�†ய் �Žழுத்து�•ள் �…�Ÿ்�Ÿவண�ˆ & �Žளிய �š�Šற்�•ள்', subtopic: '�•் + �… = �• வாய்பா�Ÿு மற்றும் ப�Ÿ�š்�š�Šற்�•ள்', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: '�‰யிர் (12) + ம�†ய் (18) = �‰யிர்ம�†ய் (216) | தமிழ் ம�Šத்த �Žழுத்து�•ள் = 247', keyPoints: ['�•ல், �•ண், பல், மரம், ப�Ÿம் ப�‹ன்ற �Žளிய �š�Šற்�•ள�ˆ �Žழுதுதல்'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
           chapterNumber: 4,
-          chapterTitle: 'à®”à®µà¯ˆà®¯à®¾à®°à¯ à®†à®¤à¯à®¤à®¿à®šà¯‚à®Ÿà®¿, à®¨à¯€à®¤à®¿à®ªà¯à®ªà®¾à®Ÿà®²à¯à®•à®³à¯ & à®•à®¤à¯ˆà®•à®³à¯',
-          description: 'à®…à®±à®žà¯à®šà¯†à®¯ à®µà®¿à®°à¯à®®à¯à®ªà¯ à®®à¯à®¤à®²à¯ à®”à®µà®¿à®¯à®®à¯ à®ªà¯‡à®šà¯‡à®²à¯ à®µà®°à¯ˆ à®†à®¤à¯à®¤à®¿à®šà¯‚à®Ÿà®¿ à®µà®°à®¿à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®¨à®±à¯à®ªà®£à¯à®ªà¯à®•à®³à¯',
+          chapterTitle: '�”வ�ˆயார் �†த்தி�š�‚�Ÿி, ந�€திப்பா�Ÿல்�•ள் & �•த�ˆ�•ள்',
+          description: '�…ற�ž்�š�†ய விரும்பு முதல் �”வியம் ப�‡�š�‡ல் வர�ˆ �†த்தி�š�‚�Ÿி வரி�•ள் மற்றும் நற்பண்பு�•ள்',
           subtopics: [
             {
               id: 'fnd_t_sub4',
-              title: 'à®†à®¤à¯à®¤à®¿à®šà¯‚à®Ÿà®¿ à®¨à®±à¯à®ªà®£à¯à®ªà¯à®•à®³à¯ & à®•à®¤à¯ˆà®•à®³à¯',
+              title: '�†த்தி�š�‚�Ÿி நற்பண்பு�•ள் & �•த�ˆ�•ள்',
               microTopics: [
-                { id: 'fnd_t_6', title: 'à®…à®±à®žà¯à®šà¯†à®¯ à®µà®¿à®°à¯à®®à¯à®ªà¯, à®†à®±à¯à®µà®¤à¯ à®šà®¿à®©à®®à¯, à®‡à®¯à®²à¯à®µà®¤à¯ à®•à®°à®µà¯‡à®²à¯ à®µà®¿à®³à®•à¯à®•à®®à¯', keyAxiom: 'à®†à®¤à¯à®¤à®¿à®šà¯‚à®Ÿà®¿ à®ªà®¾à®Ÿà®¿à®¯à®µà®°à¯ à®”à®µà¯ˆà®¯à®¾à®°à¯ â€” à®Žà®³à®¿à®¯ à®¨à®©à¯à®©à¯†à®±à®¿ à®¨à¯€à®¤à®¿ à®¨à¯‚à®²à¯' }
+                { id: 'fnd_t_6', title: '�…ற�ž்�š�†ய விரும்பு, �†றுவது �šினம், �‡யல்வது �•ரவ�‡ல் விள�•்�•ம்', keyAxiom: '�†த்தி�š�‚�Ÿி பா�Ÿியவர் �”வ�ˆயார் — �Žளிய நன்ன�†றி ந�€தி ந�‚ல்' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_t_6', topicTitle: 'à®”à®µà¯ˆà®¯à®¾à®°à¯ à®†à®¤à¯à®¤à®¿à®šà¯‚à®Ÿà®¿ (12 à®µà®°à®¿à®•à®³à¯ & à®¨à®¯à®µà¯à®°à¯ˆ)', subtopic: 'à®…à®±à®žà¯à®šà¯†à®¯ à®µà®¿à®°à¯à®®à¯à®ªà¯ â€” à®Žà®ªà¯à®ªà¯‹à®¤à¯à®®à¯ à®¨à®²à¯à®² à®šà¯†à®¯à®²à¯à®•à®³à¯ˆà®šà¯ à®šà¯†à®¯à¯', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'à®†à®¤à¯à®¤à®¿à®šà¯‚à®Ÿà®¿: "à®…à®±à®žà¯à®šà¯†à®¯ à®µà®¿à®°à¯à®®à¯à®ªà¯", "à®†à®±à¯à®µà®¤à¯ à®šà®¿à®©à®®à¯", "à®ˆà®¯à®¤à¯ à®µà®¿à®²à®•à¯à®•à¯‡à®²à¯"', keyPoints: ['à®”à®µà¯ˆà®¯à®¾à®°à¯ à®…à®°à¯à®³à®¿à®¯ à®¨à¯€à®¤à®¿ à®¨à¯†à®±à®¿à®®à¯à®±à¯ˆà®•à®³à¯ˆ à®…à®©à¯à®±à®¾à®Ÿ à®µà®¾à®´à¯à®µà®¿à®²à¯ à®•à®Ÿà¯ˆà®ªà¯à®ªà®¿à®Ÿà®¿à®¤à¯à®¤à®²à¯'], type: 'memorization', importance: 'High-Yield' }
+            { id: 'fnd_t_6', topicTitle: '�”வ�ˆயார் �†த்தி�š�‚�Ÿி (12 வரி�•ள் & நயவுர�ˆ)', subtopic: '�…ற�ž்�š�†ய விரும்பு — �Žப்ப�‹தும் நல்ல �š�†யல்�•ள�ˆ�š் �š�†ய்', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: '�†த்தி�š�‚�Ÿி: "�…ற�ž்�š�†ய விரும்பு", "�†றுவது �šினம்", "�ˆயது வில�•்�•�‡ல்"', keyPoints: ['�”வ�ˆயார் �…ருளிய ந�€தி ந�†றிமுற�ˆ�•ள�ˆ �…ன்றா�Ÿ வாழ்வில் �•�Ÿ�ˆப்பி�Ÿித்தல்'], type: 'memorization', importance: 'High-Yield' }
           ]
         }
       ]
@@ -234,108 +234,108 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
     },
     {
       subjectId: 'fnd_math',
-      subjectName: isTa ? 'à®•à®£à®¿à®¤à®®à¯ (Mathematics Core & FLN)' : 'Mathematics & Number Sense (FLN)',
-      icon: 'ðŸ”¢',
+      subjectName: isTa ? '�•ணிதம் (Mathematics Core & FLN)' : 'Mathematics & Number Sense (FLN)',
+      icon: '🔢',
       color: '#06b6d4',
       totalChapters: 3,
       totalMicroTopics: 10,
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®Žà®£à¯à®•à®³à¯, à®‡à®Ÿà®®à®¤à®¿à®ªà¯à®ªà¯ & à®•à¯‚à®Ÿà¯à®Ÿà®²à¯/à®•à®´à®¿à®¤à¯à®¤à®²à¯' : 'Numbers (1â€“100), Place Value & Addition/Subtraction',
-          description: isTa ? '2 à®®à®±à¯à®±à¯à®®à¯ 3 à®‡à®²à®•à¯à®• à®Žà®£à¯à®•à®³à¯, à®ªà®¤à¯à®¤à¯à®•à®³à¯/à®’à®©à¯à®±à¯à®•à®³à¯ à®‡à®Ÿà®®à®¤à®¿à®ªà¯à®ªà¯, à®•à¯‚à®Ÿà¯à®Ÿà®²à¯ à®•à®´à®¿à®¤à¯à®¤à®²à¯ à®•à®£à®•à¯à®•à¯à®•à®³à¯' : '2 & 3-digit numbers, Tens/Ones place value, Skip counting (2s, 5s, 10s), Word problems',
+          chapterTitle: isTa ? '�Žண்�•ள், �‡�Ÿமதிப்பு & �•�‚�Ÿ்�Ÿல்/�•ழித்தல்' : 'Numbers (1–100), Place Value & Addition/Subtraction',
+          description: isTa ? '2 மற்றும் 3 �‡ல�•்�• �Žண்�•ள், பத்து�•ள்/�’ன்று�•ள் �‡�Ÿமதிப்பு, �•�‚�Ÿ்�Ÿல் �•ழித்தல் �•ண�•்�•ு�•ள்' : '2 & 3-digit numbers, Tens/Ones place value, Skip counting (2s, 5s, 10s), Word problems',
           subtopics: [
             {
               id: 'fnd_m_sub1',
-              title: 'à®Žà®£à¯à®•à®³à¯ & à®‡à®Ÿà®®à®¤à®¿à®ªà¯à®ªà¯ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ',
+              title: '�Žண்�•ள் & �‡�Ÿமதிப்பு �…�Ÿிப்ப�Ÿ�ˆ',
               microTopics: [
-                { id: 'fnd_m_1', title: 'à®‡à®Ÿà®®à®¤à®¿à®ªà¯à®ªà¯ & 2 à®‡à®²à®•à¯à®• à®Žà®£à¯à®•à®³à¯ (Tens & Ones)', keyAxiom: '1 Ten = 10 Ones | 1 Hundred = 10 Tens' },
-                { id: 'fnd_m_2', title: 'à®•à¯‚à®Ÿà¯à®Ÿà®²à¯ & à®•à®´à®¿à®¤à¯à®¤à®²à¯ à®Žà®³à®¿à®¯ à®•à®£à®•à¯à®•à¯à®•à®³à¯', keyAxiom: 'Addition combines (+) | Subtraction takes away (-)' }
+                { id: 'fnd_m_1', title: '�‡�Ÿமதிப்பு & 2 �‡ல�•்�• �Žண்�•ள் (Tens & Ones)', keyAxiom: '1 Ten = 10 Ones | 1 Hundred = 10 Tens' },
+                { id: 'fnd_m_2', title: '�•�‚�Ÿ்�Ÿல் & �•ழித்தல் �Žளிய �•ண�•்�•ு�•ள்', keyAxiom: 'Addition combines (+) | Subtraction takes away (-)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_m_1', topicTitle: isTa ? 'à®‡à®Ÿà®®à®¤à®¿à®ªà¯à®ªà¯ & 2 à®‡à®²à®•à¯à®• à®Žà®£à¯à®•à®³à¯ (Tens & Ones)' : 'Place Value & 2-Digit Numbers (Tens & Ones)', subtopic: isTa ? 'à®®à®£à®¿à®•à®³à¯ à®šà®Ÿà¯à®Ÿà®®à¯ à®®à¯‚à®²à®®à¯ à®‡à®Ÿà®®à®¤à®¿à®ªà¯à®ªà¯ à®…à®±à®¿à®¤à®²à¯' : 'Abacus representation, tens and ones grouping', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Place Value: 1 Ten = 10 Ones | 1 Hundred = 10 Tens', keyPoints: ['Grouping into bundles of tens', 'Expanded form: 47 = 40 + 7'], type: 'concept', importance: 'Foundational' },
-            { id: 'fnd_m_2', topicTitle: isTa ? 'à®•à¯‚à®Ÿà¯à®Ÿà®²à¯ & à®•à®´à®¿à®¤à¯à®¤à®²à¯ à®Žà®³à®¿à®¯ à®•à®£à®•à¯à®•à¯à®•à®³à¯' : 'Addition & Subtraction Word Problems', subtopic: isTa ? 'à®¨à®Ÿà¯ˆà®®à¯à®±à¯ˆ à®µà®¾à®´à¯à®•à¯à®•à¯ˆ à®•à®£à®•à¯à®•à¯€à®Ÿà¯à®•à®³à¯' : 'Single and double-digit operations with carry-over and borrowing', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Addition: Combine groups (+) | Subtraction: Take away (-)', keyPoints: ['Word problem keywords: Total, In all, Left, Difference', 'Checking subtraction using addition'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'fnd_m_1', topicTitle: isTa ? '�‡�Ÿமதிப்பு & 2 �‡ல�•்�• �Žண்�•ள் (Tens & Ones)' : 'Place Value & 2-Digit Numbers (Tens & Ones)', subtopic: isTa ? 'மணி�•ள் �š�Ÿ்�Ÿம் ம�‚லம் �‡�Ÿமதிப்பு �…றிதல்' : 'Abacus representation, tens and ones grouping', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Place Value: 1 Ten = 10 Ones | 1 Hundred = 10 Tens', keyPoints: ['Grouping into bundles of tens', 'Expanded form: 47 = 40 + 7'], type: 'concept', importance: 'Foundational' },
+            { id: 'fnd_m_2', topicTitle: isTa ? '�•�‚�Ÿ்�Ÿல் & �•ழித்தல் �Žளிய �•ண�•்�•ு�•ள்' : 'Addition & Subtraction Word Problems', subtopic: isTa ? 'ந�Ÿ�ˆமுற�ˆ வாழ்�•்�•�ˆ �•ண�•்�•�€�Ÿு�•ள்' : 'Single and double-digit operations with carry-over and borrowing', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Addition: Combine groups (+) | Subtraction: Take away (-)', keyPoints: ['Word problem keywords: Total, In all, Left, Difference', 'Checking subtraction using addition'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®ªà¯†à®°à¯à®•à¯à®•à®²à¯ à®µà®¾à®¯à¯à®ªà¯à®ªà®¾à®Ÿà¯à®•à®³à¯ (1â€“10) & à®¨à®¾à®£à®¯à®™à¯à®•à®³à¯' : 'Multiplication Tables (1â€“10) & Indian Currency',
-          description: isTa ? 'à®¤à¯Šà®Ÿà®°à¯ à®•à¯‚à®Ÿà¯à®Ÿà®²à¯‡ à®ªà¯†à®°à¯à®•à¯à®•à®²à¯, à®šà®®à®®à®¾à®•à®ªà¯ à®ªà®¿à®°à®¿à®¤à¯à®¤à®²à¯‡ à®µà®•à¯à®¤à¯à®¤à®²à¯, à®‡à®¨à¯à®¤à®¿à®¯ à®°à¯‚à®ªà®¾à®¯à¯ à®¨à¯‹à®Ÿà¯à®Ÿà¯à®•à®³à¯' : 'Multiplication as repeated addition, Division as sharing, Indian coins & notes',
+          chapterTitle: isTa ? 'ப�†ரு�•்�•ல் வாய்ப்பா�Ÿு�•ள் (1–10) & நாணய�™்�•ள்' : 'Multiplication Tables (1–10) & Indian Currency',
+          description: isTa ? 'த�Š�Ÿர் �•�‚�Ÿ்�Ÿல�‡ ப�†ரு�•்�•ல், �šமமா�•ப் பிரித்தல�‡ வ�•ுத்தல், �‡ந்திய ர�‚பாய் ந�‹�Ÿ்�Ÿு�•ள்' : 'Multiplication as repeated addition, Division as sharing, Indian coins & notes',
           subtopics: [
             {
               id: 'fnd_m_sub2',
-              title: 'à®ªà¯†à®°à¯à®•à¯à®•à®²à¯ à®µà®¾à®¯à¯à®ªà¯à®ªà®¾à®Ÿà¯ & à®¨à®¾à®£à®¯à®™à¯à®•à®³à¯',
+              title: 'ப�†ரு�•்�•ல் வாய்ப்பா�Ÿு & நாணய�™்�•ள்',
               microTopics: [
-                { id: 'fnd_m_3', title: 'à®ªà¯†à®°à¯à®•à¯à®•à®²à¯ à®µà®¾à®¯à¯à®ªà¯à®ªà®¾à®Ÿà¯à®•à®³à¯ (2, 3, 4, 5, 10)', keyAxiom: 'Multiplication is repeated addition: 3 Ã— 4 = 4 + 4 + 4 = 12' },
-                { id: 'fnd_m_4', title: 'à®‡à®¨à¯à®¤à®¿à®¯ à®¨à®¾à®£à®¯à®™à¯à®•à®³à¯ & à®°à¯‚à®ªà®¾à®¯à¯ à®¨à¯‹à®Ÿà¯à®Ÿà¯à®•à®³à¯ (â‚¹1 à®®à¯à®¤à®²à¯ â‚¹100)', keyAxiom: '1 Rupee (â‚¹1) = 100 Paise' }
+                { id: 'fnd_m_3', title: 'ப�†ரு�•்�•ல் வாய்ப்பா�Ÿு�•ள் (2, 3, 4, 5, 10)', keyAxiom: 'Multiplication is repeated addition: 3 � 4 = 4 + 4 + 4 = 12' },
+                { id: 'fnd_m_4', title: '�‡ந்திய நாணய�™்�•ள் & ர�‚பாய் ந�‹�Ÿ்�Ÿு�•ள் (�‚�1 முதல் �‚�100)', keyAxiom: '1 Rupee (�‚�1) = 100 Paise' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_m_3', topicTitle: isTa ? 'à®ªà¯†à®°à¯à®•à¯à®•à®²à¯ à®µà®¾à®¯à¯à®ªà¯à®ªà®¾à®Ÿà¯ & à®¤à¯Šà®Ÿà®°à¯ à®•à¯‚à®Ÿà¯à®Ÿà®²à¯' : 'Multiplication Tables & Repeated Addition', subtopic: isTa ? '2, 3, 5, 10 à®µà®¾à®¯à¯à®ªà¯à®ªà®¾à®Ÿà¯à®•à®³à¯ à®ªà®¯à®¿à®±à¯à®šà®¿' : 'Visual array grouping and tables 1 to 10', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Multiplication: 3 Ã— 4 = 4 + 4 + 4 = 12', keyPoints: ['Order of multiplication does not change product (a Ã— b = b Ã— a)', 'Multiplying any number by 0 gives 0; by 1 gives same number'], type: 'memorization', importance: 'High-Yield' }
+            { id: 'fnd_m_3', topicTitle: isTa ? 'ப�†ரு�•்�•ல் வாய்ப்பா�Ÿு & த�Š�Ÿர் �•�‚�Ÿ்�Ÿல்' : 'Multiplication Tables & Repeated Addition', subtopic: isTa ? '2, 3, 5, 10 வாய்ப்பா�Ÿு�•ள் பயிற்�šி' : 'Visual array grouping and tables 1 to 10', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Multiplication: 3 � 4 = 4 + 4 + 4 = 12', keyPoints: ['Order of multiplication does not change product (a � b = b � a)', 'Multiplying any number by 0 gives 0; by 1 gives same number'], type: 'memorization', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯ (2D Shapes), à®•à®¾à®²à®®à¯ & à®…à®³à®µà¯€à®Ÿà¯à®•à®³à¯' : 'Geometry (2D/3D Shapes), Time & Measurement',
-          description: isTa ? 'à®µà®Ÿà¯à®Ÿà®®à¯, à®šà®¤à¯à®°à®®à¯, à®šà¯†à®µà¯à®µà®•à®®à¯, à®®à¯à®•à¯à®•à¯‹à®£à®®à¯, à®•à®Ÿà®¿à®•à®¾à®° à®¨à¯‡à®°à®®à¯ à®ªà®¾à®°à¯à®¤à¯à®¤à®²à¯, à®¨à¯€à®³à®®à¯ à®Žà®Ÿà¯ˆ à®…à®³à®µà¯à®•à®³à¯' : 'Circle, Square, Rectangle, Triangle, Clock time reading, Length/Weight',
+          chapterTitle: isTa ? 'வ�Ÿிவியல் (2D Shapes), �•ாலம் & �…ளவ�€�Ÿு�•ள்' : 'Geometry (2D/3D Shapes), Time & Measurement',
+          description: isTa ? 'வ�Ÿ்�Ÿம், �šதுரம், �š�†வ்வ�•ம், மு�•்�•�‹ணம், �•�Ÿி�•ார ந�‡ரம் பார்த்தல், ந�€ளம் �Ž�Ÿ�ˆ �…ளவு�•ள்' : 'Circle, Square, Rectangle, Triangle, Clock time reading, Length/Weight',
           subtopics: [
             {
               id: 'fnd_m_sub3',
-              title: 'à®µà®Ÿà®¿à®µà®™à¯à®•à®³à¯ & à®•à®Ÿà®¿à®•à®¾à®° à®¨à¯‡à®°à®®à¯',
+              title: 'வ�Ÿிவ�™்�•ள் & �•�Ÿி�•ார ந�‡ரம்',
               microTopics: [
-                { id: 'fnd_m_5', title: '2D & 3D à®µà®Ÿà®¿à®µà®™à¯à®•à®³à®¿à®©à¯ à®ªà®•à¯à®•à®™à¯à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®®à¯à®©à¯ˆà®•à®³à¯', keyAxiom: 'Square (4 equal sides), Rectangle (opposite sides equal), Triangle (3 sides)' }
+                { id: 'fnd_m_5', title: '2D & 3D வ�Ÿிவ�™்�•ளின் ப�•்�•�™்�•ள் மற்றும் முன�ˆ�•ள்', keyAxiom: 'Square (4 equal sides), Rectangle (opposite sides equal), Triangle (3 sides)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_m_5', topicTitle: isTa ? 'à®µà®Ÿà®¿à®µà®™à¯à®•à®³à¯ (Shapes), à®•à®¾à®²à®®à¯ & à®…à®³à®µà¯€à®Ÿà¯à®•à®³à¯' : '2D Shapes, Clock Time & Measurement', subtopic: isTa ? 'à®šà®¤à¯à®°à®®à¯, à®šà¯†à®µà¯à®µà®•à®®à¯, à®®à¯à®•à¯à®•à¯‹à®£à®®à¯, à®µà®Ÿà¯à®Ÿà®®à¯' : 'Identifying shapes, Hour hand and Minute hand on clock', dayNumber: 12, periodNumber: 3, keyFormulaOrLaw: 'Clock: 1 Hour = 60 Minutes | 1 Day = 24 Hours', keyPoints: ['Short hand shows hours; long hand shows minutes', 'Square has 4 equal sides and 4 corners'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_m_5', topicTitle: isTa ? 'வ�Ÿிவ�™்�•ள் (Shapes), �•ாலம் & �…ளவ�€�Ÿு�•ள்' : '2D Shapes, Clock Time & Measurement', subtopic: isTa ? '�šதுரம், �š�†வ்வ�•ம், மு�•்�•�‹ணம், வ�Ÿ்�Ÿம்' : 'Identifying shapes, Hour hand and Minute hand on clock', dayNumber: 12, periodNumber: 3, keyFormulaOrLaw: 'Clock: 1 Hour = 60 Minutes | 1 Day = 24 Hours', keyPoints: ['Short hand shows hours; long hand shows minutes', 'Square has 4 equal sides and 4 corners'], type: 'concept', importance: 'Foundational' }
           ]
         }
       ]
     },
     {
       subjectId: 'fnd_science',
-      subjectName: isTa ? 'à®šà¯‚à®´à¯à®¨à®¿à®²à¯ˆà®¯à®¿à®¯à®²à¯ & à®…à®±à®¿à®µà®¿à®¯à®²à¯ (General Science & EVS)' : 'General Science & Environmental Studies',
-      icon: 'ðŸŒ¿',
+      subjectName: isTa ? '�š�‚ழ்நில�ˆயியல் & �…றிவியல் (General Science & EVS)' : 'General Science & Environmental Studies',
+      icon: '🌿',
       color: '#10b981',
       totalChapters: 2,
       totalMicroTopics: 8,
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®®à®©à®¿à®¤ à®‰à®Ÿà®²à¯ à®‰à®±à¯à®ªà¯à®ªà¯à®•à®³à¯, à®à®®à¯à®ªà¯à®²à®©à¯à®•à®³à¯ & à®šà¯à®•à®¾à®¤à®¾à®°à®®à¯' : 'My Body Organs, 5 Senses & Daily Hygiene',
-          description: isTa ? 'à®•à®£à¯, à®•à®¾à®¤à¯, à®®à¯‚à®•à¯à®•à¯, à®¨à®¾à®•à¯à®•à¯, à®¤à¯‹à®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®†à®°à¯‹à®•à¯à®•à®¿à®¯ à®‰à®£à®µà¯à®•à®³à¯' : '5 senses, Internal organs (Heart, Lungs, Brain), Clean habits',
+          chapterTitle: isTa ? 'மனித �‰�Ÿல் �‰றுப்பு�•ள், ஐம்புலன்�•ள் & �šு�•ாதாரம்' : 'My Body Organs, 5 Senses & Daily Hygiene',
+          description: isTa ? '�•ண், �•ாது, ம�‚�•்�•ு, நா�•்�•ு, த�‹ல் மற்றும் �†ர�‹�•்�•ிய �‰ணவு�•ள்' : '5 senses, Internal organs (Heart, Lungs, Brain), Clean habits',
           subtopics: [
             {
               id: 'fnd_s_sub1',
-              title: 'à®‰à®Ÿà®²à¯ à®‰à®±à¯à®ªà¯à®ªà¯à®•à®³à¯ & à®¨à®±à¯à®ªà®´à®•à¯à®•à®™à¯à®•à®³à¯',
+              title: '�‰�Ÿல் �‰றுப்பு�•ள் & நற்பழ�•்�•�™்�•ள்',
               microTopics: [
-                { id: 'fnd_s_1', title: 'à®à®®à¯à®ªà¯à®²à®©à¯à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®…à®µà®±à¯à®±à®¿à®©à¯ à®ªà®£à®¿à®•à®³à¯', keyAxiom: 'Eyes see, Ears hear, Nose smells, Tongue tastes, Skin feels' }
+                { id: 'fnd_s_1', title: 'ஐம்புலன்�•ள் மற்றும் �…வற்றின் பணி�•ள்', keyAxiom: 'Eyes see, Ears hear, Nose smells, Tongue tastes, Skin feels' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_s_1', topicTitle: isTa ? 'à®à®®à¯à®ªà¯à®²à®©à¯à®•à®³à¯ & à®®à®©à®¿à®¤ à®‰à®Ÿà®²à¯ à®‰à®±à¯à®ªà¯à®ªà¯à®•à®³à®¿à®©à¯ à®ªà®£à®¿à®•à®³à¯' : '5 Sense Organs & Daily Healthy Habits', subtopic: isTa ? 'à®ªà®¾à®°à¯à®µà¯ˆ, à®•à¯‡à®Ÿà¯à®Ÿà®²à¯, à®¨à¯à®•à®°à¯à®¤à®²à¯, à®šà¯à®µà¯ˆ, à®¤à¯Šà®Ÿà¯à®¤à®²à¯' : 'Eyes, Ears, Nose, Tongue, Skin functions; Hand hygiene', dayNumber: 13, periodNumber: 4, keyFormulaOrLaw: '5 Sense Organs | Wash hands with soap for 20 seconds', keyPoints: ['Eat healthy green vegetables and fresh fruits', 'Drink clean boiled water daily'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_s_1', topicTitle: isTa ? 'ஐம்புலன்�•ள் & மனித �‰�Ÿல் �‰றுப்பு�•ளின் பணி�•ள்' : '5 Sense Organs & Daily Healthy Habits', subtopic: isTa ? 'பார்வ�ˆ, �•�‡�Ÿ்�Ÿல், நு�•ர்தல், �šுவ�ˆ, த�Š�Ÿுதல்' : 'Eyes, Ears, Nose, Tongue, Skin functions; Hand hygiene', dayNumber: 13, periodNumber: 4, keyFormulaOrLaw: '5 Sense Organs | Wash hands with soap for 20 seconds', keyPoints: ['Eat healthy green vegetables and fresh fruits', 'Drink clean boiled water daily'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®¤à®¾à®µà®°à®™à¯à®•à®³à¯, à®µà®¿à®²à®™à¯à®•à¯à®•à®³à¯ & à®ªà®°à¯à®µà®•à®¾à®²à®™à¯à®•à®³à¯' : 'Plants, Animals & Weather Seasons',
-          description: isTa ? 'à®®à®°à®™à¯à®•à®³à¯, à®šà¯†à®Ÿà®¿à®•à®³à¯, à®µà¯€à®Ÿà¯à®Ÿà¯ à®®à®±à¯à®±à¯à®®à¯ à®•à®¾à®Ÿà¯à®Ÿà¯ à®µà®¿à®²à®™à¯à®•à¯à®•à®³à¯, à®•à¯‹à®Ÿà¯ˆ/à®®à®´à¯ˆ/à®•à¯à®³à®¿à®°à¯ à®ªà®°à¯à®µà®™à¯à®•à®³à¯' : 'Trees, Shrubs, Herbs, Animals, Weather and 4 seasons',
+          chapterTitle: isTa ? 'தாவர�™்�•ள், வில�™்�•ு�•ள் & பருவ�•ால�™்�•ள்' : 'Plants, Animals & Weather Seasons',
+          description: isTa ? 'மர�™்�•ள், �š�†�Ÿி�•ள், வ�€�Ÿ்�Ÿு மற்றும் �•ா�Ÿ்�Ÿு வில�™்�•ு�•ள், �•�‹�Ÿ�ˆ/மழ�ˆ/�•ுளிர் பருவ�™்�•ள்' : 'Trees, Shrubs, Herbs, Animals, Weather and 4 seasons',
           subtopics: [
             {
               id: 'fnd_s_sub2',
-              title: 'à®‡à®¯à®±à¯à®•à¯ˆ à®‰à®²à®•à®®à¯ & à®µà®¿à®²à®™à¯à®•à¯à®•à®³à¯',
+              title: '�‡யற்�•�ˆ �‰ல�•ம் & வில�™்�•ு�•ள்',
               microTopics: [
-                { id: 'fnd_s_2', title: 'à®¤à®¾à®µà®°à®™à¯à®•à®³à®¿à®©à¯ à®ªà®¾à®•à®™à¯à®•à®³à¯ (à®µà¯‡à®°à¯, à®¤à®£à¯à®Ÿà¯, à®‡à®²à¯ˆ, à®ªà¯‚, à®•à®¾à®¯à¯)', keyAxiom: 'Plants give food, oxygen, and shade to all living beings' }
+                { id: 'fnd_s_2', title: 'தாவர�™்�•ளின் பா�•�™்�•ள் (வ�‡ர், தண்�Ÿு, �‡ல�ˆ, ப�‚, �•ாய்)', keyAxiom: 'Plants give food, oxygen, and shade to all living beings' }
               ]
             }
           ],
           microTopics: [
-            { id: 'fnd_s_2', topicTitle: isTa ? 'à®¤à®¾à®µà®° à®ªà®¾à®•à®™à¯à®•à®³à¯ & à®µà¯€à®Ÿà¯à®Ÿà¯/à®•à®¾à®Ÿà¯à®Ÿà¯ à®µà®¿à®²à®™à¯à®•à¯à®•à®³à¯' : 'Plant Parts & Animal Habitats', subtopic: isTa ? 'à®µà¯‡à®°à¯, à®¤à®£à¯à®Ÿà¯, à®‡à®²à¯ˆ, à®ªà¯‚ à®®à®±à¯à®±à¯à®®à¯ à®µà®¿à®²à®™à¯à®•à¯ à®‰à®£à®µà¯à®•à®³à¯' : 'Root, Stem, Leaf, Flower; Herbivores and Carnivores', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Photosynthesis: Leaves prepare food using sunlight and water', keyPoints: ['Domestic animals: Cow, Goat, Dog, Cat', 'Wild animals: Lion, Tiger, Elephant, Deer'], type: 'concept', importance: 'Foundational' }
+            { id: 'fnd_s_2', topicTitle: isTa ? 'தாவர பா�•�™்�•ள் & வ�€�Ÿ்�Ÿு/�•ா�Ÿ்�Ÿு வில�™்�•ு�•ள்' : 'Plant Parts & Animal Habitats', subtopic: isTa ? 'வ�‡ர், தண்�Ÿு, �‡ல�ˆ, ப�‚ மற்றும் வில�™்�•ு �‰ணவு�•ள்' : 'Root, Stem, Leaf, Flower; Herbivores and Carnivores', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Photosynthesis: Leaves prepare food using sunlight and water', keyPoints: ['Domestic animals: Cow, Goat, Dog, Cat', 'Wild animals: Lion, Tiger, Elephant, Deer'], type: 'concept', importance: 'Foundational' }
           ]
         }
       ]
@@ -357,7 +357,7 @@ export function getFoundationalClass1to2Syllabus(courseId: string, courseTitle: 
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 2. PREPARATORY STAGE: CLASS 3 TO CLASS 5 (AGES 8â€“11)
+// 2. PREPARATORY STAGE: CLASS 3 TO CLASS 5 (AGES 8–11)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
   const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
@@ -365,7 +365,7 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
   const subjects: SyllabusSubject[] = [
     {
       subjectId: 'prep_tamil',
-      subjectName: 'à®¤à®®à®¿à®´à¯ (Tamil â€” à®šà¯†à®¯à¯à®¯à¯à®³à¯, à®‰à®°à¯ˆà®¨à®Ÿà¯ˆ, à®¤à¯à®£à¯ˆà®ªà¯à®ªà®¾à®Ÿà®®à¯ & à®•à®±à¯à®•à®£à¯à®Ÿà¯ à®‡à®²à®•à¯à®•à®£à®®à¯)',
+      subjectName: 'தமிழ் (Tamil — �š�†ய்யுள், �‰ர�ˆந�Ÿ�ˆ, துண�ˆப்பா�Ÿம் & �•ற்�•ண்�Ÿு �‡ல�•்�•ணம்)',
       icon: '🔤',
       color: '#ec4899',
       totalChapters: 4,
@@ -373,73 +373,73 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: 'à®šà¯†à®¯à¯à®¯à¯à®³à¯ à®ªà¯‡à®´à¯ˆ (à®‡à®©à¯à®ªà®¤à¯à®¤à®®à®¿à®´à¯, à®®à¯‚à®¤à¯à®°à¯ˆ & à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯)',
-          description: 'à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯ à®‡à®©à¯à®ªà®¤à¯à®¤à®®à®¿à®´à¯, à®”à®µà¯ˆà®¯à®¾à®°à¯ à®®à¯‚à®¤à¯à®°à¯ˆ (à®…à®Ÿà¯à®Ÿà®¾à®²à¯à®®à¯ à®ªà®¾à®²à¯à®šà¯à®µà¯ˆà®¯à®¿à®²à¯ à®•à¯à®©à¯à®±à®¾à®¤à¯), à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯ à®…à®©à¯à®ªà¯à®Ÿà¯ˆà®®à¯ˆ & à®‡à®©à®¿à®¯à®µà¯ˆ à®•à¯‚à®±à®²à¯',
+          chapterTitle: '�š�†ய்யுள் ப�‡ழ�ˆ (�‡ன்பத்தமிழ், ம�‚துர�ˆ & திரு�•்�•ுறள்)',
+          description: 'பாரதிதா�šன் �‡ன்பத்தமிழ், �”வ�ˆயார் ம�‚துர�ˆ (�…�Ÿ்�Ÿாலும் பால்�šுவ�ˆயில் �•ுன்றாது), திரு�•்�•ுறள் �…ன்பு�Ÿ�ˆம�ˆ & �‡னியவ�ˆ �•�‚றல்',
           subtopics: [
             {
               id: 'prep_t_sub1',
-              title: 'à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯ à®‡à®©à¯à®ªà®¤à¯à®¤à®®à®¿à®´à¯ & à®®à¯‚à®¤à¯à®°à¯ˆ',
+              title: 'பாரதிதா�šன் �‡ன்பத்தமிழ் & ம�‚துர�ˆ',
               microTopics: [
-                { id: 'prep_t_1', title: 'à®¤à®®à®¿à®´à¯à®•à¯à®•à¯à®®à¯ à®…à®®à¯à®¤à¯†à®©à¯à®±à¯ à®ªà¯‡à®°à¯ â€” à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯ à®•à®µà®¿à®¤à¯ˆ à®¨à®¯à®®à¯', keyAxiom: 'à®¤à®®à®¿à®´à¯ˆ à®‰à®¯à®¿à®°à¯à®•à¯à®•à¯ à®¨à¯‡à®°à®¾à®•à®ªà¯ à®ªà¯‹à®±à¯à®±à®¿à®¯ à®ªà¯à®°à®Ÿà¯à®šà®¿à®•à¯ à®•à®µà®¿à®žà®°à¯ à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯' },
-                { id: 'prep_t_2', title: 'à®”à®µà¯ˆà®¯à®¾à®°à¯ à®®à¯‚à®¤à¯à®°à¯ˆ â€” à®¨à®²à¯à®²à¯‹à®°à¯ à®¨à®Ÿà¯à®ªà®¿à®©à¯ à®šà®¿à®±à®ªà¯à®ªà¯ & à®®à®©à®ªà¯à®ªà®¾à®Ÿà®ªà¯ à®ªà®•à¯à®¤à®¿', keyAxiom: '"à®…à®Ÿà¯à®Ÿà®¾à®²à¯à®®à¯ à®ªà®¾à®²à¯à®šà¯à®µà¯ˆà®¯à®¿à®²à¯ à®•à¯à®©à¯à®±à®¾à®¤à¯" â€” à®…à®±à®¿à®žà®°à¯à®•à®³à¯ à®µà®±à¯à®®à¯ˆà®¯à®¿à®²à¯à®®à¯ à®¨à®±à¯à®ªà®£à¯à®ªà¯ à®¤à®µà®±à®¾à®°à¯' }
+                { id: 'prep_t_1', title: 'தமிழு�•்�•ும் �…முத�†ன்று ப�‡ர் — பாரதிதா�šன் �•வித�ˆ நயம்', keyAxiom: 'தமிழ�ˆ �‰யிரு�•்�•ு ந�‡ரா�•ப் ப�‹ற்றிய புர�Ÿ்�šி�•் �•வி�žர் பாரதிதா�šன்' },
+                { id: 'prep_t_2', title: '�”வ�ˆயார் ம�‚துர�ˆ — நல்ல�‹ர் ந�Ÿ்பின் �šிறப்பு & மனப்பா�Ÿப் ப�•ுதி', keyAxiom: '"�…�Ÿ்�Ÿாலும் பால்�šுவ�ˆயில் �•ுன்றாது" — �…றி�žர்�•ள் வறும�ˆயிலும் நற்பண்பு தவறார்' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_t_1', topicTitle: 'à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯ à®‡à®©à¯à®ªà®¤à¯à®¤à®®à®¿à®´à¯ & à®”à®µà¯ˆà®¯à®¾à®°à¯ à®®à¯‚à®¤à¯à®°à¯ˆ', subtopic: 'à®¤à®®à®¿à®´à¯à®•à¯à®•à¯à®®à¯ à®…à®®à¯à®¤à¯†à®©à¯à®±à¯ à®ªà¯‡à®°à¯ & à®…à®Ÿà¯à®Ÿà®¾à®²à¯à®®à¯ à®ªà®¾à®²à¯à®šà¯à®µà¯ˆà®¯à®¿à®²à¯ à®•à¯à®©à¯à®±à®¾à®¤à¯', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯: "à®¤à®®à®¿à®´à¯à®•à¯à®•à¯à®®à¯ à®…à®®à¯à®¤à¯†à®©à¯à®±à¯ à®ªà¯‡à®°à¯! à®…à®¨à¯à®¤à®¤à¯ à®¤à®®à®¿à®´à¯†à®©à¯à®ª à®ªà¯‡à®°à®¿à®©à¯à®ªà®¤à¯ à®¤à®®à®¿à®´à¯†à®™à¯à®•à®³à¯ à®‰à®¯à®¿à®°à¯à®•à¯à®•à¯ à®¨à¯‡à®°à¯!"', keyPoints: ['à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à®¿à®©à¯ à®‡à®¯à®±à¯à®ªà¯†à®¯à®°à¯ à®šà¯à®ªà¯à®ªà¯à®°à®¤à¯à®¤à®¿à®©à®®à¯', 'à®®à¯‚à®¤à¯à®°à¯ˆ à®¨à¯€à®¤à®¿ à®¨à¯‚à®²à¯ à®†à®šà®¿à®°à®¿à®¯à®°à¯ à®”à®µà¯ˆà®¯à®¾à®°à¯'], type: 'memorization', importance: 'High-Yield' }
+            { id: 'prep_t_1', topicTitle: 'பாரதிதா�šன் �‡ன்பத்தமிழ் & �”வ�ˆயார் ம�‚துர�ˆ', subtopic: 'தமிழு�•்�•ும் �…முத�†ன்று ப�‡ர் & �…�Ÿ்�Ÿாலும் பால்�šுவ�ˆயில் �•ுன்றாது', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'பாரதிதா�šன்: "தமிழு�•்�•ும் �…முத�†ன்று ப�‡ர்! �…ந்தத் தமிழ�†ன்ப ப�‡ரின்பத் தமிழ�†�™்�•ள் �‰யிரு�•்�•ு ந�‡ர்!"', keyPoints: ['பாரதிதா�šனின் �‡யற்ப�†யர் �šுப்புரத்தினம்', 'ம�‚துர�ˆ ந�€தி ந�‚ல் �†�šிரியர் �”வ�ˆயார்'], type: 'memorization', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: 'à®‰à®°à¯ˆà®¨à®Ÿà¯ˆ à®‰à®²à®•à®®à¯ (à®¤à®®à®¿à®´à®°à®¿à®©à¯ à®µà¯€à®° à®µà®¿à®³à¯ˆà®¯à®¾à®Ÿà¯à®Ÿà¯à®•à®³à¯ & à®•à®²à¯à®µà®¿à®•à¯à®•à®£à¯ à®¤à®¿à®±à®¨à¯à®¤ à®•à®¾à®®à®°à®¾à®šà®°à¯)',
-          description: 'à®à®±à¯à®¤à®´à¯à®µà¯à®¤à®²à¯ (à®œà®²à¯à®²à®¿à®•à¯à®•à®Ÿà¯à®Ÿà¯), à®šà®¿à®²à®®à¯à®ªà®¾à®Ÿà¯à®Ÿà®®à¯, à®•à®ªà®Ÿà®¿, à®•à®¾à®®à®°à®¾à®šà®°à®¿à®©à¯ à®•à®²à¯à®µà®¿à®ªà¯ à®ªà¯à®°à®Ÿà¯à®šà®¿ & à®‡à®²à®µà®š à®®à®¤à®¿à®¯ à®‰à®£à®µà¯à®¤à¯ à®¤à®¿à®Ÿà¯à®Ÿà®®à¯',
+          chapterTitle: '�‰ர�ˆந�Ÿ�ˆ �‰ல�•ம் (தமிழரின் வ�€ர விள�ˆயா�Ÿ்�Ÿு�•ள் & �•ல்வி�•்�•ண் திறந்த �•ாமரா�šர்)',
+          description: 'ஏறுதழுவுதல் (�œல்லி�•்�•�Ÿ்�Ÿு), �šிலம்பா�Ÿ்�Ÿம், �•ப�Ÿி, �•ாமரா�šரின் �•ல்விப் புர�Ÿ்�šி & �‡லவ�š மதிய �‰ணவுத் தி�Ÿ்�Ÿம்',
           subtopics: [
             {
               id: 'prep_t_sub2',
-              title: 'à®¤à®®à®¿à®´à®°à¯ à®®à®°à®ªà¯ & à®µà®°à®²à®¾à®±à¯à®±à¯ à®†à®³à¯à®®à¯ˆà®•à®³à¯',
+              title: 'தமிழர் மரபு & வரலாற்று �†ளும�ˆ�•ள்',
               microTopics: [
-                { id: 'prep_t_3', title: 'à®¤à®®à®¿à®´à®°à®¿à®©à¯ à®µà¯€à®° à®µà®¿à®³à¯ˆà®¯à®¾à®Ÿà¯à®Ÿà¯à®•à®³à¯ (à®à®±à¯à®¤à®´à¯à®µà¯à®¤à®²à¯ & à®šà®¿à®²à®®à¯à®ªà®®à¯)', keyAxiom: 'à®à®±à¯à®¤à®´à¯à®µà¯à®¤à®²à¯ à®¤à®®à®¿à®´à®°à®¿à®©à¯ à®‡à®°à®£à¯à®Ÿà®¾à®¯à®¿à®°à®®à¯ à®†à®£à¯à®Ÿà¯ à®¤à¯Šà®©à¯à®®à¯ˆà®¯à®¾à®© à®®à¯à®²à¯à®²à¯ˆ à®¨à®¿à®² à®µà¯€à®° à®µà®¿à®³à¯ˆà®¯à®¾à®Ÿà¯à®Ÿà¯' },
-                { id: 'prep_t_4', title: 'à®•à®¾à®®à®°à®¾à®šà®°à®¿à®©à¯ à®•à®²à¯à®µà®¿à®ªà¯ à®ªà®£à®¿à®•à®³à¯ â€” à®‡à®²à®µà®šà®•à¯ à®•à®²à¯à®µà®¿ & à®®à®¤à®¿à®¯ à®‰à®£à®µà¯', keyAxiom: 'à®ªà®Ÿà¯à®Ÿà®¿à®¤à¯Šà®Ÿà¯à®Ÿà®¿à®¯à¯†à®™à¯à®•à¯à®®à¯ à®ªà®³à¯à®³à®¿à®•à®³à¯ à®¤à®¿à®±à®¨à¯à®¤à¯ à®•à®²à¯à®µà®¿à®•à¯à®•à®£à¯ à®¤à®¿à®±à®¨à¯à®¤ à®ªà¯†à®°à¯à®¨à¯à®¤à®²à¯ˆà®µà®°à¯ à®•à®¾à®®à®°à®¾à®šà®°à¯' }
+                { id: 'prep_t_3', title: 'தமிழரின் வ�€ர விள�ˆயா�Ÿ்�Ÿு�•ள் (ஏறுதழுவுதல் & �šிலம்பம்)', keyAxiom: 'ஏறுதழுவுதல் தமிழரின் �‡ரண்�Ÿாயிரம் �†ண்�Ÿு த�Šன்ம�ˆயான முல்ல�ˆ நில வ�€ர விள�ˆயா�Ÿ்�Ÿு' },
+                { id: 'prep_t_4', title: '�•ாமரா�šரின் �•ல்விப் பணி�•ள் — �‡லவ�š�•் �•ல்வி & மதிய �‰ணவு', keyAxiom: 'ப�Ÿ்�Ÿித�Š�Ÿ்�Ÿிய�†�™்�•ும் பள்ளி�•ள் திறந்து �•ல்வி�•்�•ண் திறந்த ப�†ருந்தல�ˆவர் �•ாமரா�šர்' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_t_3', topicTitle: 'à®¤à®®à®¿à®´à®°à¯ à®µà¯€à®° à®µà®¿à®³à¯ˆà®¯à®¾à®Ÿà¯à®Ÿà¯à®•à®³à¯ & à®•à®¾à®®à®°à®¾à®šà®°à¯ à®•à®²à¯à®µà®¿à®¤à¯ à®¤à¯Šà®£à¯à®Ÿà¯', subtopic: 'à®à®±à¯à®¤à®´à¯à®µà¯à®¤à®²à¯, à®šà®¿à®²à®®à¯à®ªà®®à¯, à®•à®ªà®Ÿà®¿ à®®à®±à¯à®±à¯à®®à¯ à®®à®¤à®¿à®¯ à®‰à®£à®µà¯à®¤à¯ à®¤à®¿à®Ÿà¯à®Ÿà®®à¯', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'à®•à®¾à®®à®°à®¾à®šà®°à¯: à®•à®²à¯à®µà®¿à®•à¯à®•à®£à¯ à®¤à®¿à®±à®¨à¯à®¤ à®•à®¾à®®à®°à®¾à®šà®°à¯ | à®à®±à¯à®¤à®´à¯à®µà¯à®¤à®²à¯: à®®à¯à®²à¯à®²à¯ˆ à®¨à®¿à®²à®ªà¯ à®ªà®£à¯à®ªà®¾à®Ÿà¯à®Ÿà¯ à®…à®Ÿà¯ˆà®¯à®¾à®³à®®à¯', keyPoints: ['à®•à®¾à®®à®°à®¾à®šà®°à¯à®•à¯à®•à¯ à®ªà®¾à®°à®¤ à®°à®¤à¯à®©à®¾ à®µà®¿à®°à¯à®¤à¯ à®µà®´à®™à¯à®•à®ªà¯à®ªà®Ÿà¯à®Ÿ à®†à®£à¯à®Ÿà¯ 1976', 'à®œà®²à¯à®²à®¿à®•à¯à®•à®Ÿà¯à®Ÿà¯ à®ªà®±à¯à®±à®¿à®¯ à®•à¯à®±à®¿à®ªà¯à®ªà¯à®•à®³à¯ à®•à®²à®¿à®¤à¯à®¤à¯Šà®•à¯ˆà®¯à®¿à®²à¯ à®‰à®³à¯à®³à®©'], type: 'concept', importance: 'High-Yield' }
+            { id: 'prep_t_3', topicTitle: 'தமிழர் வ�€ர விள�ˆயா�Ÿ்�Ÿு�•ள் & �•ாமரா�šர் �•ல்வித் த�Šண்�Ÿு', subtopic: 'ஏறுதழுவுதல், �šிலம்பம், �•ப�Ÿி மற்றும் மதிய �‰ணவுத் தி�Ÿ்�Ÿம்', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: '�•ாமரா�šர்: �•ல்வி�•்�•ண் திறந்த �•ாமரா�šர் | ஏறுதழுவுதல்: முல்ல�ˆ நிலப் பண்பா�Ÿ்�Ÿு �…�Ÿ�ˆயாளம்', keyPoints: ['�•ாமரா�šரு�•்�•ு பாரத ரத்னா விருது வழ�™்�•ப்ப�Ÿ்�Ÿ �†ண்�Ÿு 1976', '�œல்லி�•்�•�Ÿ்�Ÿு பற்றிய �•ுறிப்பு�•ள் �•லித்த�Š�•�ˆயில் �‰ள்ளன'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: 'à®µà®¿à®°à®¿à®µà®¾à®©à®®à¯ / à®¤à¯à®£à¯ˆà®ªà¯à®ªà®¾à®Ÿà®®à¯ (à®®à¯à®¯à®²à¯ à®šà¯Šà®©à¯à®© à®•à®¤à¯ˆ & à®¤à®²à¯ˆà®®à¯ˆà®ªà¯ à®ªà®£à¯à®ªà¯)',
-          description: 'à®¨à¯€à®¤à®¿à®•à¯ à®•à®¤à¯ˆà®•à®³à¯, à®¨à®±à¯à®ªà®£à¯à®ªà¯à®•à®³à¯, à®¤à®²à¯ˆà®®à¯ˆà®¤à¯à®¤à¯à®µ à®•à¯à®£à®™à¯à®•à®³à¯, à®¨à®¾à®Ÿà¯à®Ÿà¯à®ªà¯à®ªà¯à®±à®•à¯ à®•à®¤à¯ˆà®•à®³à¯',
+          chapterTitle: 'விரிவானம் / துண�ˆப்பா�Ÿம் (முயல் �š�Šன்ன �•த�ˆ & தல�ˆம�ˆப் பண்பு)',
+          description: 'ந�€தி�•் �•த�ˆ�•ள், நற்பண்பு�•ள், தல�ˆம�ˆத்துவ �•ுண�™்�•ள், நா�Ÿ்�Ÿுப்புற�•் �•த�ˆ�•ள்',
           subtopics: [
             {
               id: 'prep_t_sub3',
-              title: 'à®¨à¯€à®¤à®¿à®•à¯ à®•à®¤à¯ˆà®•à®³à¯ & à®¨à®±à¯à®ªà®£à¯à®ªà¯ à®µà®³à®°à¯à®ªà¯à®ªà¯',
+              title: 'ந�€தி�•் �•த�ˆ�•ள் & நற்பண்பு வளர்ப்பு',
               microTopics: [
-                { id: 'prep_t_5', title: 'à®®à¯à®¯à®²à®¿à®©à¯ à®ªà¯à®¤à¯à®¤à®¿à®•à¯à®•à¯‚à®°à¯à®®à¯ˆ à®•à®¤à¯ˆ & à®¤à®²à¯ˆà®®à¯ˆà®ªà¯ à®ªà®£à¯à®ªà¯ à®¤à®¤à¯à®¤à¯à®µà®®à¯', keyAxiom: 'à®‰à®Ÿà®²à¯ à®ªà®²à®¤à¯à®¤à¯ˆ à®µà®¿à®Ÿ à®…à®±à®¿à®µà¯ à®ªà®²à®®à¯‡ à®šà®¿à®±à®¨à¯à®¤à®¤à¯' }
+                { id: 'prep_t_5', title: 'முயலின் புத்தி�•்�•�‚ர்ம�ˆ �•த�ˆ & தல�ˆம�ˆப் பண்பு தத்துவம்', keyAxiom: '�‰�Ÿல் பலத்த�ˆ வி�Ÿ �…றிவு பலம�‡ �šிறந்தது' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_t_5', topicTitle: 'à®¤à¯à®£à¯ˆà®ªà¯à®ªà®¾à®Ÿà®•à¯ à®•à®¤à¯ˆà®•à®³à¯ â€” à®šà®®à®¯à¯‹à®šà®¿à®¤ à®ªà¯à®¤à¯à®¤à®¿ & à®¤à®²à¯ˆà®®à¯ˆà®¤à¯à®¤à¯à®µà®®à¯', subtopic: 'à®®à¯à®¯à®²à¯ à®šà¯Šà®©à¯à®© à®•à®¤à¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®¤à®²à¯ˆà®®à¯ˆà®ªà¯ à®ªà®£à¯à®ªà¯ à®ªà®Ÿà®¿à®ªà¯à®ªà®¿à®©à¯ˆà®•à®³à¯', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'à®¨à¯€à®¤à®¿: "à®…à®±à®¿à®µà¯‡ à®†à®±à¯à®±à®²à¯" â€” à®¤à¯à®©à¯à®ªà®®à¯ à®µà®°à¯à®®à¯ à®µà¯‡à®³à¯ˆà®¯à®¿à®²à¯ à®…à®±à®¿à®µà¯à®•à¯à®•à¯‚à®°à¯à®®à¯ˆà®¯à¯à®Ÿà®©à¯ à®šà¯†à®¯à®²à¯à®ªà®Ÿ à®µà¯‡à®£à¯à®Ÿà¯à®®à¯', keyPoints: ['à®•à®¤à¯ˆà®¯à®¿à®©à¯ à®®à¯ˆà®¯à®•à¯ à®•à®°à¯à®¤à¯à®¤à¯ˆ à®‰à®£à®°à¯à®¨à¯à®¤à¯ à®šà¯Šà®¨à¯à®¤ à®¨à®Ÿà¯ˆà®¯à®¿à®²à¯ à®µà®¿à®µà®°à®¿à®¤à¯à®¤à®²à¯'], type: 'concept', importance: 'Foundational' }
+            { id: 'prep_t_5', topicTitle: 'துண�ˆப்பா�Ÿ�•் �•த�ˆ�•ள் — �šமய�‹�šித புத்தி & தல�ˆம�ˆத்துவம்', subtopic: 'முயல் �š�Šன்ன �•த�ˆ மற்றும் தல�ˆம�ˆப் பண்பு ப�Ÿிப்பின�ˆ�•ள்', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'ந�€தி: "�…றிவ�‡ �†ற்றல்" — துன்பம் வரும் வ�‡ள�ˆயில் �…றிவு�•்�•�‚ர்ம�ˆயு�Ÿன் �š�†யல்ப�Ÿ வ�‡ண்�Ÿும்', keyPoints: ['�•த�ˆயின் ம�ˆய�•் �•ருத்த�ˆ �‰ணர்ந்து �š�Šந்த ந�Ÿ�ˆயில் விவரித்தல்'], type: 'concept', importance: 'Foundational' }
           ]
         },
         {
           chapterNumber: 4,
-          chapterTitle: 'à®•à®±à¯à®•à®£à¯à®Ÿà¯ / à®‡à®²à®•à¯à®•à®£à®®à¯ (à®¤à®¿à®£à¯ˆ, à®ªà®¾à®²à¯, à®Žà®£à¯, à®‡à®Ÿà®®à¯ & à®•à®¾à®²à®™à¯à®•à®³à¯)',
-          description: 'à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ/à®…à®ƒà®±à®¿à®£à¯ˆ, à®à®®à¯à®ªà®¾à®²à¯ (à®†à®£à¯à®ªà®¾à®²à¯, à®ªà¯†à®£à¯à®ªà®¾à®²à¯, à®ªà®²à®°à¯à®ªà®¾à®²à¯, à®’à®©à¯à®±à®©à¯à®ªà®¾à®²à¯, à®ªà®²à®µà®¿à®©à¯à®ªà®¾à®²à¯), à®®à¯‚à®µà®¿à®Ÿà®®à¯, à®®à¯à®•à¯à®•à®¾à®²à®®à¯',
+          chapterTitle: '�•ற்�•ண்�Ÿு / �‡ல�•்�•ணம் (திண�ˆ, பால், �Žண், �‡�Ÿம் & �•ால�™்�•ள்)',
+          description: '�‰யர்திண�ˆ/�…�ƒறிண�ˆ, ஐம்பால் (�†ண்பால், ப�†ண்பால், பலர்பால், �’ன்றன்பால், பலவின்பால்), ம�‚வி�Ÿம், மு�•்�•ாலம்',
           subtopics: [
             {
               id: 'prep_t_sub4',
-              title: 'à®¤à®®à®¿à®´à¯ à®‡à®²à®•à¯à®•à®£ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆà®•à®³à¯',
+              title: 'தமிழ் �‡ல�•்�•ண �…�Ÿிப்ப�Ÿ�ˆ�•ள்',
               microTopics: [
-                { id: 'prep_t_6', title: 'à®¤à®¿à®£à¯ˆ (2) & à®à®®à¯à®ªà®¾à®²à¯ à®ªà®¾à®•à¯à®ªà®¾à®Ÿà¯', keyAxiom: 'à®¤à®¿à®£à¯ˆ: à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ (à®®à®©à®¿à®¤à®°à¯/à®¤à¯‡à®µà®°à¯), à®…à®ƒà®±à®¿à®£à¯ˆ (à®µà®¿à®²à®™à¯à®•à¯/à®ªà¯Šà®°à¯à®Ÿà¯à®•à®³à¯) | à®ªà®¾à®²à¯: à®†à®£à¯, à®ªà¯†à®£à¯, à®ªà®²à®°à¯, à®’à®©à¯à®±à¯, à®ªà®²' },
-                { id: 'prep_t_7', title: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯ (à®‡à®±à®¨à¯à®¤, à®¨à®¿à®•à®´à¯, à®Žà®¤à®¿à®°à¯à®•à®¾à®²à®®à¯) & à®®à®¯à®™à¯à®•à¯Šà®²à®¿à®•à®³à¯ (à®£, à®¨, à®© / à®², à®´, à®³)', keyAxiom: 'à®®à®¯à®™à¯à®•à¯Šà®²à®¿ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ 8: à®£-à®¨-à®©, à®²-à®´-à®³, à®°-à®±' }
+                { id: 'prep_t_6', title: 'திண�ˆ (2) & ஐம்பால் பா�•ுபா�Ÿு', keyAxiom: 'திண�ˆ: �‰யர்திண�ˆ (மனிதர்/த�‡வர்), �…�ƒறிண�ˆ (வில�™்�•ு/ப�Šரு�Ÿ்�•ள்) | பால்: �†ண், ப�†ண், பலர், �’ன்று, பல' },
+                { id: 'prep_t_7', title: 'மு�•்�•ாலம் (�‡றந்த, நி�•ழ், �Žதிர்�•ாலம்) & மய�™்�•�Šலி�•ள் (ண, ந, ன / ல, ழ, ள)', keyAxiom: 'மய�™்�•�Šலி �Žழுத்து�•ள் 8: ண-ந-ன, ல-ழ-ள, ர-ற' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_t_6', topicTitle: 'à®¤à®¿à®£à¯ˆ (2 à®µà®•à¯ˆ), à®ªà®¾à®²à¯ (5 à®µà®•à¯ˆ), à®‡à®Ÿà®®à¯ (3) & à®®à®¯à®™à¯à®•à¯Šà®²à®¿ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯', subtopic: 'à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ/à®…à®ƒà®±à®¿à®£à¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®£-à®¨-à®©, à®²-à®´-à®³ à®µà¯‡à®±à¯à®ªà®¾à®Ÿà¯à®•à®³à¯', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'à®¤à®¿à®£à¯ˆ: à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ, à®…à®ƒà®±à®¿à®£à¯ˆ | à®ªà®¾à®²à¯: à®†à®£à¯à®ªà®¾à®²à¯, à®ªà¯†à®£à¯à®ªà®¾à®²à¯, à®ªà®²à®°à¯à®ªà®¾à®²à¯, à®’à®©à¯à®±à®©à¯à®ªà®¾à®²à¯, à®ªà®²à®µà®¿à®©à¯à®ªà®¾à®²à¯', keyPoints: ['à®®à®©à®¿à®¤à®°à¯à®•à®³à¯ à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ; à®ªà®±à®µà¯ˆà®•à®³à¯, à®µà®¿à®²à®™à¯à®•à¯à®•à®³à¯, à®¤à®¾à®µà®°à®™à¯à®•à®³à¯ à®…à®ƒà®±à®¿à®£à¯ˆ', 'à®®à®´à¯ˆ (à®®à®¾à®°à®¿), à®®à®¾à®²à¯ˆ (à®…à®¨à¯à®¤à®¿à®ªà¯à®ªà¯Šà®´à¯à®¤à¯), à®®à®¾à®´à¯ˆ (à®‰à®²à¯‹à®•à®®à¯) à®ªà¯Šà®°à¯à®³à¯ à®µà¯‡à®±à¯à®ªà®¾à®Ÿà¯'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'prep_t_6', topicTitle: 'திண�ˆ (2 வ�•�ˆ), பால் (5 வ�•�ˆ), �‡�Ÿம் (3) & மய�™்�•�Šலி �Žழுத்து�•ள்', subtopic: '�‰யர்திண�ˆ/�…�ƒறிண�ˆ மற்றும் ண-ந-ன, ல-ழ-ள வ�‡றுபா�Ÿு�•ள்', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'திண�ˆ: �‰யர்திண�ˆ, �…�ƒறிண�ˆ | பால்: �†ண்பால், ப�†ண்பால், பலர்பால், �’ன்றன்பால், பலவின்பால்', keyPoints: ['மனிதர்�•ள் �‰யர்திண�ˆ; பறவ�ˆ�•ள், வில�™்�•ு�•ள், தாவர�™்�•ள் �…�ƒறிண�ˆ', 'மழ�ˆ (மாரி), மால�ˆ (�…ந்திப்ப�Šழுது), மாழ�ˆ (�‰ல�‹�•ம்) ப�Šருள் வ�‡றுபா�Ÿு'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -528,7 +528,7 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
     },
     {
       subjectId: 'prep_math',
-      subjectName: isTa ? 'à®•à®£à®¿à®¤à®®à¯ & à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ à®‡à®¯à®±à¯à®•à®£à®¿à®¤à®®à¯ (Mathematics Core)' : 'Mathematics & Computational Arithmetic',
+      subjectName: isTa ? '�•ணிதம் & �…�Ÿிப்ப�Ÿ�ˆ �‡யற்�•ணிதம் (Mathematics Core)' : 'Mathematics & Computational Arithmetic',
       icon: 'ðŸ“',
       color: '#06b6d4',
       totalChapters: 3,
@@ -536,61 +536,61 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®ªà¯†à®°à®¿à®¯ à®Žà®£à¯à®•à®³à¯, à®•à®¾à®°à®£à®¿ & à®®à®Ÿà®™à¯à®•à¯à®•à®³à¯ (HCF & LCM)' : 'Large Numbers, Factors, Multiples, HCF & LCM',
-          description: isTa ? '5â€“6 à®‡à®²à®•à¯à®• à®Žà®£à¯à®•à®³à¯, à®ªà®•à®¾ à®Žà®£à¯à®•à®³à¯, à®®à¯€.à®šà®¿.à®® & à®®à¯€.à®ªà¯Š.à®µ, à®‰à®°à¯‹à®®à®¾à®©à®¿à®¯ à®Žà®£à¯à®•à®³à¯' : '5 to 6-digit operations, Prime & Composite numbers, HCF & LCM, Roman Numerals',
+          chapterTitle: isTa ? 'ப�†ரிய �Žண்�•ள், �•ாரணி & ம�Ÿ�™்�•ு�•ள் (HCF & LCM)' : 'Large Numbers, Factors, Multiples, HCF & LCM',
+          description: isTa ? '5–6 �‡ல�•்�• �Žண்�•ள், ப�•ா �Žண்�•ள், ம�€.�šி.ம & ம�€.ப�Š.வ, �‰ர�‹மானிய �Žண்�•ள்' : '5 to 6-digit operations, Prime & Composite numbers, HCF & LCM, Roman Numerals',
           subtopics: [
             {
               id: 'prep_m_sub1',
-              title: 'à®Žà®£à¯à®•à®£à®¿à®¤à®®à¯ & HCF/LCM',
+              title: '�Žண்�•ணிதம் & HCF/LCM',
               microTopics: [
-                { id: 'prep_m_1', title: 'à®ªà®•à®¾ à®Žà®£à¯à®•à®³à¯ & à®®à¯€à®ªà¯à®ªà¯†à®°à¯ à®ªà¯Šà®¤à¯ à®•à®¾à®°à®£à®¿ (HCF / LCM)', keyAxiom: 'Product of Two Numbers = HCF Ã— LCM' },
-                { id: 'prep_m_2', title: 'à®ªà®¿à®©à¯à®©à®™à¯à®•à®³à¯ & à®¤à®šà®® à®Žà®£à¯à®•à®³à¯ à®•à¯‚à®Ÿà¯à®Ÿà®²à¯/à®•à®´à®¿à®¤à¯à®¤à®²à¯', keyAxiom: 'Like/Unlike fractions, Equivalent fractions' }
+                { id: 'prep_m_1', title: 'ப�•ா �Žண்�•ள் & ம�€ப்ப�†ரு ப�Šது �•ாரணி (HCF / LCM)', keyAxiom: 'Product of Two Numbers = HCF � LCM' },
+                { id: 'prep_m_2', title: 'பின்ன�™்�•ள் & த�šம �Žண்�•ள் �•�‚�Ÿ்�Ÿல்/�•ழித்தல்', keyAxiom: 'Like/Unlike fractions, Equivalent fractions' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_m_1', topicTitle: isTa ? 'à®ªà®•à®¾ à®Žà®£à¯à®•à®³à¯ & à®ªà®•à®¾ à®•à®¾à®°à®£à®¿à®ªà¯à®ªà®Ÿà¯à®¤à¯à®¤à¯à®¤à®²à¯ (HCF / LCM)' : 'Prime Factorization, HCF & LCM Fundamentals', subtopic: isTa ? 'à®®à¯€à®ªà¯à®ªà¯†à®°à¯ à®ªà¯Šà®¤à¯ à®•à®¾à®°à®£à®¿ à®®à®±à¯à®±à¯à®®à¯ à®®à¯€à®šà¯à®šà®¿à®±à¯ à®ªà¯Šà®¤à¯ à®®à®Ÿà®™à¯à®•à¯' : 'Factor tree method, division method, Product = HCF Ã— LCM formula', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Product of Two Numbers = HCF Ã— LCM | Prime Numbers have exactly 2 factors (1 and itself)', keyPoints: ['2 is the only even prime number', 'Co-prime numbers have HCF = 1'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'prep_m_1', topicTitle: isTa ? 'ப�•ா �Žண்�•ள் & ப�•ா �•ாரணிப்ப�Ÿுத்துதல் (HCF / LCM)' : 'Prime Factorization, HCF & LCM Fundamentals', subtopic: isTa ? 'ம�€ப்ப�†ரு ப�Šது �•ாரணி மற்றும் ம�€�š்�šிறு ப�Šது ம�Ÿ�™்�•ு' : 'Factor tree method, division method, Product = HCF � LCM formula', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Product of Two Numbers = HCF � LCM | Prime Numbers have exactly 2 factors (1 and itself)', keyPoints: ['2 is the only even prime number', 'Co-prime numbers have HCF = 1'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®¨à¯‡à®°à¯à®µà¯€à®¤ à®®à¯à®±à¯ˆ, à®µà®¿à®´à¯à®•à¯à®•à®¾à®Ÿà¯, à®‡à®²à®¾à®ª à®¨à®Ÿà¯à®Ÿà®®à¯' : 'Unitary Method, Percentages, Profit & Loss',
-          description: isTa ? 'à®’à®°à¯ à®ªà¯Šà®°à¯à®³à®¿à®©à¯ à®µà®¿à®²à¯ˆ à®•à¯Šà®£à¯à®Ÿà¯ à®ªà®² à®ªà¯Šà®°à¯à®Ÿà¯à®•à®³à®¿à®©à¯ à®µà®¿à®²à¯ˆ à®•à®¾à®£à¯à®¤à®²à¯, à®šà®¤à®µà¯€à®¤ à®•à®£à®•à¯à®•à¯€à®Ÿà¯à®•à®³à¯' : 'Unitary method problems, Percentage conversions, Profit = SP - CP, Loss = CP - SP',
+          chapterTitle: isTa ? 'ந�‡ர்வ�€த முற�ˆ, விழு�•்�•ா�Ÿு, �‡லாப ந�Ÿ்�Ÿம்' : 'Unitary Method, Percentages, Profit & Loss',
+          description: isTa ? '�’ரு ப�Šருளின் வில�ˆ �•�Šண்�Ÿு பல ப�Šரு�Ÿ்�•ளின் வில�ˆ �•ாணுதல், �šதவ�€த �•ண�•்�•�€�Ÿு�•ள்' : 'Unitary method problems, Percentage conversions, Profit = SP - CP, Loss = CP - SP',
           subtopics: [
             {
               id: 'prep_m_sub2',
-              title: 'à®µà®¿à®¯à®¾à®ªà®¾à®°à®•à¯ à®•à®£à®¿à®¤à®®à¯',
+              title: 'வியாபார�•் �•ணிதம்',
               microTopics: [
-                { id: 'prep_m_3', title: 'à®¨à¯‡à®°à¯à®µà¯€à®¤ à®®à¯à®±à¯ˆ & à®Žà®³à®¿à®¯ à®µà®¿à®´à¯à®•à¯à®•à®¾à®Ÿà¯ à®•à®£à®•à¯à®•à¯€à®Ÿà¯', keyAxiom: 'Unit Cost = Total Cost / Total Units | Profit = SP - CP' }
+                { id: 'prep_m_3', title: 'ந�‡ர்வ�€த முற�ˆ & �Žளிய விழு�•்�•ா�Ÿு �•ண�•்�•�€�Ÿு', keyAxiom: 'Unit Cost = Total Cost / Total Units | Profit = SP - CP' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_m_3', topicTitle: isTa ? 'à®¨à¯‡à®°à¯à®µà¯€à®¤ à®®à¯à®±à¯ˆ & à®Žà®³à®¿à®¯ à®µà®¿à®´à¯à®•à¯à®•à®¾à®Ÿà¯ à®•à®£à®•à¯à®•à¯€à®Ÿà¯' : 'Unitary Method & Basic Percentages', subtopic: isTa ? 'à®…à®Ÿà®•à¯à®• à®µà®¿à®²à¯ˆ, à®µà®¿à®±à¯à®± à®µà®¿à®²à¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®‡à®²à®¾à®ª à®¨à®Ÿà¯à®Ÿà®®à¯' : 'Find cost of 1 unit -> Multiply by desired quantity; % = (Value/Total) Ã— 100', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Unitary Rule: Unit Cost = Total Cost / Total Units | Profit = SP - CP (if SP > CP)', keyPoints: ['Profit% = (Profit / CP) Ã— 100', 'Discount = Marked Price - Selling Price'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'prep_m_3', topicTitle: isTa ? 'ந�‡ர்வ�€த முற�ˆ & �Žளிய விழு�•்�•ா�Ÿு �•ண�•்�•�€�Ÿு' : 'Unitary Method & Basic Percentages', subtopic: isTa ? '�…�Ÿ�•்�• வில�ˆ, விற்ற வில�ˆ மற்றும் �‡லாப ந�Ÿ்�Ÿம்' : 'Find cost of 1 unit -> Multiply by desired quantity; % = (Value/Total) � 100', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Unitary Rule: Unit Cost = Total Cost / Total Units | Profit = SP - CP (if SP > CP)', keyPoints: ['Profit% = (Profit / CP) � 100', 'Discount = Marked Price - Selling Price'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯: à®•à¯‹à®£à®™à¯à®•à®³à¯ & à®ªà®°à®ªà¯à®ªà®³à®µà¯ / à®šà¯à®±à¯à®±à®³à®µà¯' : 'Geometry: Angles, Perimeter & Area',
-          description: isTa ? 'à®šà¯†à®™à¯à®•à¯‹à®£à®®à¯, à®•à¯à®±à¯à®™à¯à®•à¯‹à®£à®®à¯, à®µà®¿à®°à®¿à®•à¯‹à®£à®®à¯, à®šà¯†à®µà¯à®µà®•à®®à¯/à®šà®¤à¯à®°à®®à¯ à®šà¯à®±à¯à®±à®³à®µà¯' : 'Acute, Right, Obtuse angles; Perimeter = Sum of all sides; Area of Rectangle = l Ã— w',
+          chapterTitle: isTa ? 'வ�Ÿிவியல்: �•�‹ண�™்�•ள் & பரப்பளவு / �šுற்றளவு' : 'Geometry: Angles, Perimeter & Area',
+          description: isTa ? '�š�†�™்�•�‹ணம், �•ுறு�™்�•�‹ணம், விரி�•�‹ணம், �š�†வ்வ�•ம்/�šதுரம் �šுற்றளவு' : 'Acute, Right, Obtuse angles; Perimeter = Sum of all sides; Area of Rectangle = l � w',
           subtopics: [
             {
               id: 'prep_m_sub3',
-              title: 'à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯ & à®…à®³à®µà®¿à®¯à®²à¯',
+              title: 'வ�Ÿிவியல் & �…ளவியல்',
               microTopics: [
-                { id: 'prep_m_4', title: 'à®•à¯‹à®£à®™à¯à®•à®³à®¿à®©à¯ à®µà®•à¯ˆà®•à®³à¯ & à®šà¯à®±à¯à®±à®³à®µà¯ à®ªà®°à®ªà¯à®ªà®³à®µà¯ à®šà¯‚à®¤à¯à®¤à®¿à®°à®™à¯à®•à®³à¯', keyAxiom: 'Rectangle: P = 2(l+w), A = lÃ—w | Square: P = 4a, A = aÂ²' }
+                { id: 'prep_m_4', title: '�•�‹ண�™்�•ளின் வ�•�ˆ�•ள் & �šுற்றளவு பரப்பளவு �š�‚த்திர�™்�•ள்', keyAxiom: 'Rectangle: P = 2(l+w), A = l�w | Square: P = 4a, A = a�' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_m_4', topicTitle: isTa ? 'à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯: à®•à¯‹à®£à®™à¯à®•à®³à¯ & à®ªà®°à®ªà¯à®ªà®³à®µà¯ / à®šà¯à®±à¯à®±à®³à®µà¯' : 'Geometry: Angles, Perimeter & Area', subtopic: isTa ? 'à®šà¯†à®™à¯à®•à¯‹à®£à®®à¯, à®•à¯à®±à¯à®™à¯à®•à¯‹à®£à®®à¯, à®µà®¿à®°à®¿à®•à¯‹à®£à®®à¯, à®šà¯†à®µà¯à®µà®•à®®à¯/à®šà®¤à¯à®°à®®à¯ à®šà¯à®±à¯à®±à®³à®µà¯' : 'Acute, Right, Obtuse angles; Perimeter = Sum of all sides; Area of Rectangle = l Ã— w', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Rectangle: Perimeter = 2(l + w), Area = l Ã— w | Square: Perimeter = 4a, Area = aÂ²', keyPoints: ['Right angle = 90Â°, Straight angle = 180Â°', 'Sum of angles in a triangle = 180Â°'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'prep_m_4', topicTitle: isTa ? 'வ�Ÿிவியல்: �•�‹ண�™்�•ள் & பரப்பளவு / �šுற்றளவு' : 'Geometry: Angles, Perimeter & Area', subtopic: isTa ? '�š�†�™்�•�‹ணம், �•ுறு�™்�•�‹ணம், விரி�•�‹ணம், �š�†வ்வ�•ம்/�šதுரம் �šுற்றளவு' : 'Acute, Right, Obtuse angles; Perimeter = Sum of all sides; Area of Rectangle = l � w', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Rectangle: Perimeter = 2(l + w), Area = l � w | Square: Perimeter = 4a, Area = a�', keyPoints: ['Right angle = 90�, Straight angle = 180�', 'Sum of angles in a triangle = 180�'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
     },
     {
       subjectId: 'prep_science',
-      subjectName: isTa ? 'à®ªà¯Šà®¤à¯ à®…à®±à®¿à®µà®¿à®¯à®²à¯ (General Science & Human Physiology)' : 'General Science & Human Organ Systems',
+      subjectName: isTa ? 'ப�Šது �…றிவியல் (General Science & Human Physiology)' : 'General Science & Human Organ Systems',
       icon: 'ðŸ”¬',
       color: '#10b981',
       totalChapters: 2,
@@ -598,44 +598,44 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®®à®©à®¿à®¤ à®‰à®±à¯à®ªà¯à®ªà¯ à®®à®£à¯à®Ÿà®²à®™à¯à®•à®³à¯ & à®Šà®Ÿà¯à®Ÿà®šà¯à®šà®¤à¯à®¤à¯' : 'Human Organ Systems & Nutrition',
-          description: isTa ? 'à®šà¯†à®°à®¿à®®à®¾à®© à®®à®£à¯à®Ÿà®²à®®à¯, à®šà¯à®µà®¾à®š à®®à®£à¯à®Ÿà®²à®®à¯, à®°à®¤à¯à®¤ à®“à®Ÿà¯à®Ÿ à®®à®£à¯à®Ÿà®²à®®à¯ & à®šà®°à®¿à®µà®¿à®•à®¿à®¤ à®‰à®£à®µà¯' : 'Digestive, Respiratory, Circulatory, Nervous systems; Balanced diet (Carbs, Proteins, Vitamins, Minerals)',
+          chapterTitle: isTa ? 'மனித �‰றுப்பு மண்�Ÿல�™்�•ள் & �Š�Ÿ்�Ÿ�š்�šத்து' : 'Human Organ Systems & Nutrition',
+          description: isTa ? '�š�†ரிமான மண்�Ÿலம், �šுவா�š மண்�Ÿலம், ரத்த �“�Ÿ்�Ÿ மண்�Ÿலம் & �šரிவி�•ித �‰ணவு' : 'Digestive, Respiratory, Circulatory, Nervous systems; Balanced diet (Carbs, Proteins, Vitamins, Minerals)',
           subtopics: [
             {
               id: 'prep_s_sub1',
-              title: 'à®‰à®±à¯à®ªà¯à®ªà¯ à®®à®£à¯à®Ÿà®²à®™à¯à®•à®³à¯ & à®•à¯à®±à¯ˆà®ªà®¾à®Ÿà¯à®Ÿà¯ à®¨à¯‹à®¯à¯à®•à®³à¯',
+              title: '�‰றுப்பு மண்�Ÿல�™்�•ள் & �•ுற�ˆபா�Ÿ்�Ÿு ந�‹ய்�•ள்',
               microTopics: [
-                { id: 'prep_s_1', title: 'à®šà¯†à®°à®¿à®®à®¾à®© & à®šà¯à®µà®¾à®š à®‰à®±à¯à®ªà¯à®ªà¯ à®®à®£à¯à®Ÿà®²à®™à¯à®•à®³à¯', keyAxiom: 'Respiration: Glucose + Oxygen -> Energy (ATP) + COâ‚‚ + Hâ‚‚O' },
-                { id: 'prep_s_2', title: 'à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯à®•à®³à¯ A, B, C, D à®•à¯à®±à¯ˆà®ªà®¾à®Ÿà¯à®Ÿà¯ à®¨à¯‹à®¯à¯à®•à®³à¯', keyAxiom: 'Vit A (Night blindness), Vit C (Scurvy), Vit D (Rickets), Iron (Anemia)' }
+                { id: 'prep_s_1', title: '�š�†ரிமான & �šுவா�š �‰றுப்பு மண்�Ÿல�™்�•ள்', keyAxiom: 'Respiration: Glucose + Oxygen -> Energy (ATP) + CO�‚‚ + H�‚‚O' },
+                { id: 'prep_s_2', title: 'வ�ˆ�Ÿ்�Ÿமின்�•ள் A, B, C, D �•ுற�ˆபா�Ÿ்�Ÿு ந�‹ய்�•ள்', keyAxiom: 'Vit A (Night blindness), Vit C (Scurvy), Vit D (Rickets), Iron (Anemia)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_s_1', topicTitle: isTa ? 'à®šà¯†à®°à®¿à®®à®¾à®© & à®šà¯à®µà®¾à®š à®‰à®±à¯à®ªà¯à®ªà¯ à®®à®£à¯à®Ÿà®²à®™à¯à®•à®³à¯' : 'Digestive & Respiratory System Anatomy', subtopic: isTa ? 'à®‰à®£à®µà¯à®•à¯à®•à¯à®´à®¾à®¯à¯, à®‡à®°à¯ˆà®ªà¯à®ªà¯ˆ, à®šà®¿à®±à¯à®•à¯à®Ÿà®²à¯, à®®à¯‚à®šà¯à®šà¯à®•à¯à®•à¯à®´à®¾à®¯à¯, à®¨à¯à®°à¯ˆà®¯à¯€à®°à®²à¯' : 'Alimentary canal stages, Enzyme digestion, Alveoli gas exchange (Oâ‚‚ in, COâ‚‚ out)', dayNumber: 12, periodNumber: 4, keyFormulaOrLaw: 'Respiration: Glucose + Oxygen -> Energy (ATP) + Carbon Dioxide + Water', keyPoints: ['Digestion begins in the mouth with salivary amylase', 'Villi in small intestine absorb digested nutrients into bloodstream'], type: 'concept', importance: 'High-Yield' }
+            { id: 'prep_s_1', topicTitle: isTa ? '�š�†ரிமான & �šுவா�š �‰றுப்பு மண்�Ÿல�™்�•ள்' : 'Digestive & Respiratory System Anatomy', subtopic: isTa ? '�‰ணவு�•்�•ுழாய், �‡ர�ˆப்ப�ˆ, �šிறு�•ு�Ÿல், ம�‚�š்�šு�•்�•ுழாய், நுர�ˆய�€ரல்' : 'Alimentary canal stages, Enzyme digestion, Alveoli gas exchange (O�‚‚ in, CO�‚‚ out)', dayNumber: 12, periodNumber: 4, keyFormulaOrLaw: 'Respiration: Glucose + Oxygen -> Energy (ATP) + Carbon Dioxide + Water', keyPoints: ['Digestion begins in the mouth with salivary amylase', 'Villi in small intestine absorb digested nutrients into bloodstream'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®µà®¿à®šà¯ˆ, à®†à®±à¯à®±à®²à¯, à®Žà®³à®¿à®¯ à®Žà®¨à¯à®¤à®¿à®°à®™à¯à®•à®³à¯ & à®šà¯à®±à¯à®±à¯à®šà¯à®šà¯‚à®´à®²à¯' : 'Forces, Simple Machines & Water Cycle',
-          description: isTa ? 'à®¨à¯†à®®à¯à®ªà¯à®•à¯‹à®²à¯ (Lever), à®•à®ªà¯à®ªà®¿ (Pulley), à®¨à¯€à®°à¯ à®šà¯à®´à®±à¯à®šà®¿ à®®à®±à¯à®±à¯à®®à¯ à®šà¯‚à®°à®¿à®¯ à®•à¯à®Ÿà¯à®®à¯à®ªà®®à¯' : 'Mechanical advantage, 1st/2nd/3rd Class Levers, Water cycle, 8 Planets',
+          chapterTitle: isTa ? 'வி�š�ˆ, �†ற்றல், �Žளிய �Žந்திர�™்�•ள் & �šுற்று�š்�š�‚ழல்' : 'Forces, Simple Machines & Water Cycle',
+          description: isTa ? 'ந�†ம்பு�•�‹ல் (Lever), �•ப்பி (Pulley), ந�€ர் �šுழற்�šி மற்றும் �š�‚ரிய �•ு�Ÿும்பம்' : 'Mechanical advantage, 1st/2nd/3rd Class Levers, Water cycle, 8 Planets',
           subtopics: [
             {
               id: 'prep_s_sub2',
-              title: 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ & à®šà¯à®±à¯à®±à¯à®šà¯à®šà¯‚à®´à®²à¯',
+              title: '�‡யற்பியல் & �šுற்று�š்�š�‚ழல்',
               microTopics: [
-                { id: 'prep_s_3', title: 'à®¨à¯†à®®à¯à®ªà¯à®•à¯‹à®²à¯ (Levers) 3 à®µà®•à¯ˆà®•à®³à¯ & à®¤à®¤à¯à®¤à¯à®µà®®à¯', keyAxiom: 'Load Ã— Load Arm = Effort Ã— Effort Arm' }
+                { id: 'prep_s_3', title: 'ந�†ம்பு�•�‹ல் (Levers) 3 வ�•�ˆ�•ள் & தத்துவம்', keyAxiom: 'Load � Load Arm = Effort � Effort Arm' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_s_3', topicTitle: isTa ? 'à®µà®¿à®šà¯ˆ à®µà®•à¯ˆà®•à®³à¯ & à®Žà®³à®¿à®¯ à®Žà®¨à¯à®¤à®¿à®°à®™à¯à®•à®³à¯ (Lever & Pulley)' : 'Forces & Simple Machines (Levers & Pulleys)', subtopic: isTa ? 'à®¨à¯†à®®à¯à®ªà¯à®•à¯‹à®²à¯ 3 à®µà®•à¯ˆà®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®¤à®¤à¯à®¤à¯à®µà®®à¯' : 'Mechanical advantage, 1st Class (Seesaw), 2nd Class (Wheelbarrow), 3rd Class (Tongs)', dayNumber: 14, periodNumber: 4, keyFormulaOrLaw: 'Work = Force Ã— Displacement | Lever Principle: Load Ã— Load Arm = Effort Ã— Effort Arm', keyPoints: ['Simple machines make work easier by changing force direction or magnitude', 'Friction opposes relative motion between surfaces'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'prep_s_3', topicTitle: isTa ? 'வி�š�ˆ வ�•�ˆ�•ள் & �Žளிய �Žந்திர�™்�•ள் (Lever & Pulley)' : 'Forces & Simple Machines (Levers & Pulleys)', subtopic: isTa ? 'ந�†ம்பு�•�‹ல் 3 வ�•�ˆ�•ள் மற்றும் தத்துவம்' : 'Mechanical advantage, 1st Class (Seesaw), 2nd Class (Wheelbarrow), 3rd Class (Tongs)', dayNumber: 14, periodNumber: 4, keyFormulaOrLaw: 'Work = Force � Displacement | Lever Principle: Load � Load Arm = Effort � Effort Arm', keyPoints: ['Simple machines make work easier by changing force direction or magnitude', 'Friction opposes relative motion between surfaces'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
     },
     {
       subjectId: 'prep_social',
-      subjectName: isTa ? 'à®šà®®à¯‚à®• à®…à®±à®¿à®µà®¿à®¯à®²à¯ & à®•à¯à®Ÿà®¿à®®à¯ˆà®¯à®¿à®¯à®²à¯ (Social Science & Civics)' : 'Social Science, History & Indian Polity Seed',
+      subjectName: isTa ? '�šம�‚�• �…றிவியல் & �•ு�Ÿிம�ˆயியல் (Social Science & Civics)' : 'Social Science, History & Indian Polity Seed',
       icon: 'ðŸŒ',
       color: '#f59e0b',
       totalChapters: 2,
@@ -643,36 +643,36 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®‡à®¨à¯à®¤à®¿à®¯ à®‡à®¯à®±à¯à®•à¯ˆ à®…à®®à¯ˆà®ªà¯à®ªà¯à®•à®³à¯, à®†à®±à¯à®•à®³à¯ & à®µà®°à¯ˆà®ªà®Ÿà®®à¯' : 'Physical Geography of India, Rivers & Maps',
-          description: isTa ? 'à®‡à®®à®¯à®®à®²à¯ˆ, à®•à®™à¯à®•à¯ˆ à®šà®®à®µà¯†à®³à®¿, à®¤à®•à¯à®•à®¾à®£ à®ªà¯€à®Ÿà®ªà¯‚à®®à®¿, à®•à®¾à®µà®¿à®°à®¿, à®µà¯ˆà®•à¯ˆ à®†à®±à¯à®•à®³à¯' : 'Himalayas, Northern Plains, Peninsular Plateau, Coastal Plains, Indian Rivers & Continents',
+          chapterTitle: isTa ? '�‡ந்திய �‡யற்�•�ˆ �…ம�ˆப்பு�•ள், �†று�•ள் & வர�ˆப�Ÿம்' : 'Physical Geography of India, Rivers & Maps',
+          description: isTa ? '�‡மயமல�ˆ, �•�™்�•�ˆ �šமவ�†ளி, த�•்�•ாண ப�€�Ÿப�‚மி, �•ாவிரி, வ�ˆ�•�ˆ �†று�•ள்' : 'Himalayas, Northern Plains, Peninsular Plateau, Coastal Plains, Indian Rivers & Continents',
           subtopics: [
             {
               id: 'prep_soc_sub1',
-              title: 'à®‡à®¨à¯à®¤à®¿à®¯ à®¨à®¿à®²à®ªà¯à®ªà®°à®ªà¯à®ªà¯ & à®†à®±à¯à®•à®³à¯',
+              title: '�‡ந்திய நிலப்பரப்பு & �†று�•ள்',
               microTopics: [
-                { id: 'prep_soc_1', title: 'à®‡à®®à®¯à®®à®²à¯ˆ, à®¤à®•à¯à®•à®¾à®£ à®ªà¯€à®Ÿà®ªà¯‚à®®à®¿ & à®•à®¾à®µà®¿à®°à®¿ à®¨à®¤à®¿ à®…à®®à¯ˆà®ªà¯à®ªà¯', keyAxiom: 'Cauvery originates at Talakaveri (Karnataka) and flows through Tamil Nadu' }
+                { id: 'prep_soc_1', title: '�‡மயமல�ˆ, த�•்�•ாண ப�€�Ÿப�‚மி & �•ாவிரி நதி �…ம�ˆப்பு', keyAxiom: 'Cauvery originates at Talakaveri (Karnataka) and flows through Tamil Nadu' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_soc_1', topicTitle: isTa ? 'à®‡à®¨à¯à®¤à®¿à®¯ à®‡à®¯à®±à¯à®•à¯ˆ à®…à®®à¯ˆà®ªà¯à®ªà¯à®•à®³à¯ & à®†à®±à¯à®•à®³à¯ (Cauvery, Vaigai)' : 'Physical Divisions of India & Major Rivers', subtopic: isTa ? 'à®‡à®®à®¯à®®à®²à¯ˆ, à®¤à®•à¯à®•à®¾à®£ à®ªà¯€à®Ÿà®ªà¯‚à®®à®¿, à®•à®¾à®µà®¿à®°à®¿, à®•à®™à¯à®•à¯ˆ' : 'Perennial Himalayan rivers (Ganga, Indus) vs Rain-fed Peninsular rivers (Cauvery, Godavari)', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Physical Divisions: Himalayas (North) | Plains (Central) | Plateau (South) | Deserts (West)', keyPoints: ['Cauvery originates at Talakaveri (Karnataka) and flows through Tamil Nadu', 'Continents: Asia is largest; Australia is smallest'], type: 'concept', importance: 'High-Yield' }
+            { id: 'prep_soc_1', topicTitle: isTa ? '�‡ந்திய �‡யற்�•�ˆ �…ம�ˆப்பு�•ள் & �†று�•ள் (Cauvery, Vaigai)' : 'Physical Divisions of India & Major Rivers', subtopic: isTa ? '�‡மயமல�ˆ, த�•்�•ாண ப�€�Ÿப�‚மி, �•ாவிரி, �•�™்�•�ˆ' : 'Perennial Himalayan rivers (Ganga, Indus) vs Rain-fed Peninsular rivers (Cauvery, Godavari)', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Physical Divisions: Himalayas (North) | Plains (Central) | Plateau (South) | Deserts (West)', keyPoints: ['Cauvery originates at Talakaveri (Karnataka) and flows through Tamil Nadu', 'Continents: Asia is largest; Australia is smallest'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®ªà®£à¯à®Ÿà¯ˆà®¯ à®µà®°à®²à®¾à®±à¯, à®®à¯‚à®µà¯‡à®¨à¯à®¤à®°à¯ & à®‡à®¨à¯à®¤à®¿à®¯ à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯' : 'Ancient History, Sangam Kings & Indian Constitution',
-          description: isTa ? 'à®šà®¿à®¨à¯à®¤à¯ à®šà®®à®µà¯†à®³à®¿ à®…à®±à®¿à®®à¯à®•à®®à¯, à®šà¯‡à®° à®šà¯‹à®´ à®ªà®¾à®£à¯à®Ÿà®¿à®¯à®°à¯, à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯ à®®à¯à®•à®ªà¯à®ªà¯à®°à¯ˆ' : 'Indus Valley Civilization intro, Sangam Age (Chera, Chola, Pandya), Indian Constitution & Preamble',
+          chapterTitle: isTa ? 'பண்�Ÿ�ˆய வரலாறு, ம�‚வ�‡ந்தர் & �‡ந்திய �…ர�šியலம�ˆப்பு' : 'Ancient History, Sangam Kings & Indian Constitution',
+          description: isTa ? '�šிந்து �šமவ�†ளி �…றிமு�•ம், �š�‡ர �š�‹ழ பாண்�Ÿியர், �…ர�šியலம�ˆப்பு மு�•ப்புர�ˆ' : 'Indus Valley Civilization intro, Sangam Age (Chera, Chola, Pandya), Indian Constitution & Preamble',
           subtopics: [
             {
               id: 'prep_soc_sub2',
-              title: 'à®µà®°à®²à®¾à®±à¯ & à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯',
+              title: 'வரலாறு & �…ர�šியலம�ˆப்பு',
               microTopics: [
-                { id: 'prep_soc_2', title: 'à®šà¯‡à®° à®šà¯‹à®´ à®ªà®¾à®£à¯à®Ÿà®¿à®¯à®°à¯ à®šà®¿à®©à¯à®©à®™à¯à®•à®³à¯ & à®‡à®¨à¯à®¤à®¿à®¯ à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯ à®®à¯à®•à®ªà¯à®ªà¯à®°à¯ˆ', keyAxiom: 'Chera (Bow), Chola (Tiger), Pandya (Fish) | Constitution Preamble: Justice, Liberty, Equality' }
+                { id: 'prep_soc_2', title: '�š�‡ர �š�‹ழ பாண்�Ÿியர் �šின்ன�™்�•ள் & �‡ந்திய �…ர�šியலம�ˆப்பு மு�•ப்புர�ˆ', keyAxiom: 'Chera (Bow), Chola (Tiger), Pandya (Fish) | Constitution Preamble: Justice, Liberty, Equality' }
               ]
             }
           ],
           microTopics: [
-            { id: 'prep_soc_2', topicTitle: isTa ? 'à®šà¯‡à®°, à®šà¯‹à®´, à®ªà®¾à®£à¯à®Ÿà®¿à®¯à®°à¯ à®µà®°à®²à®¾à®±à¯ & à®‡à®¨à¯à®¤à®¿à®¯ à®®à¯à®•à®ªà¯à®ªà¯à®°à¯ˆ' : 'Sangam Dynasties & Indian Constitution Preamble', subtopic: isTa ? 'à®®à¯‚à®µà¯‡à®¨à¯à®¤à®°à¯ à®šà®¿à®©à¯à®©à®™à¯à®•à®³à¯ & à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ' : 'Emblems (Bow-Arrow, Tiger, Fish), Dr. Ambedkar role, Preamble values (Justice, Liberty, Equality)', dayNumber: 16, periodNumber: 4, keyFormulaOrLaw: 'Constitution Day: 26 November | Republic Day: 26 January 1950', keyPoints: ['Chola capital: Uraiyur / Thanjavur | Pandya capital: Madurai', 'Fundamental Duties enshrined in Indian Constitution'], type: 'concept', importance: 'High-Yield' }
+            { id: 'prep_soc_2', topicTitle: isTa ? '�š�‡ர, �š�‹ழ, பாண்�Ÿியர் வரலாறு & �‡ந்திய மு�•ப்புர�ˆ' : 'Sangam Dynasties & Indian Constitution Preamble', subtopic: isTa ? 'ம�‚வ�‡ந்தர் �šின்ன�™்�•ள் & �…ர�šியலம�ˆப்பு �…�Ÿிப்ப�Ÿ�ˆ' : 'Emblems (Bow-Arrow, Tiger, Fish), Dr. Ambedkar role, Preamble values (Justice, Liberty, Equality)', dayNumber: 16, periodNumber: 4, keyFormulaOrLaw: 'Constitution Day: 26 November | Republic Day: 26 January 1950', keyPoints: ['Chola capital: Uraiyur / Thanjavur | Pandya capital: Madurai', 'Fundamental Duties enshrined in Indian Constitution'], type: 'concept', importance: 'High-Yield' }
           ]
         }
       ]
@@ -694,7 +694,7 @@ export function getPreparatoryClass3to5Syllabus(courseId: string, courseTitle: s
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 3. MIDDLE STAGE: CLASS 6 TO CLASS 8 (AGES 11â€“14 â€” SAMACHEER KALVI 9 IYAL)
+// 3. MIDDLE STAGE: CLASS 6 TO CLASS 8 (AGES 11–14 — SAMACHEER KALVI 9 IYAL)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string): CourseFullSyllabus {
   const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
@@ -702,7 +702,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
   const subjects: SyllabusSubject[] = [
     {
       subjectId: 'mid_tamil',
-      subjectName: 'à®¤à®®à®¿à®´à¯ (Tamil â€” à®šà®®à®šà¯à®šà¯€à®°à¯ à®•à®²à¯à®µà®¿ 9 à®‡à®¯à®²à¯à®•à®³à¯ à®®à¯à®´à¯à®ªà¯ à®ªà®¾à®Ÿà®¤à¯à®¤à®¿à®Ÿà¯à®Ÿà®®à¯)',
+      subjectName: 'தமிழ் (Tamil — �šம�š்�š�€ர் �•ல்வி 9 �‡யல்�•ள் முழுப் பா�Ÿத்தி�Ÿ்�Ÿம்)',
       icon: '🔤',
       color: '#ec4899',
       totalChapters: 3,
@@ -710,81 +710,81 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: 'à®¤à®®à®¿à®´à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯: à®‰à®¯à®¿à®°à¯, à®®à¯†à®¯à¯, à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ & à®†à®¯à¯à®¤à®®à¯ (Days 41â€“46)',
-          description: '5 à®•à¯à®±à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯, 7 à®¨à¯†à®Ÿà®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯, à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à¯†à®²à¯à®²à®¿à®©à®®à¯ à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯, à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ à®ƒ à®®à®±à¯à®±à¯à®®à¯ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®•à®¾à®² à®…à®³à®µà¯à®•à®³à¯',
+          chapterTitle: 'தமிழ் நான�‹ �…ல�•ு�•ள்: �‰யிர், ம�†ய், மாத்திர�ˆ & �†ய்தம் (Days 41–46)',
+          description: '5 �•ுறில் �Žழுத்து�•ள், 7 ந�†�Ÿில் �Žழுத்து�•ள், வல்லினம் ம�†ல்லினம் �‡�Ÿ�ˆயினம், �†ய்த �Žழுத்து �ƒ மற்றும் மாத்திர�ˆ �•ால �…ளவு�•ள்',
           subtopics: [
             {
               id: 'mid_t_sub1',
-              title: 'à®Žà®´à¯à®¤à¯à®¤à¯ à®‡à®²à®•à¯à®•à®£ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯',
+              title: '�Žழுத்து �‡ல�•்�•ண நான�‹ �…ல�•ு�•ள்',
               microTopics: [
-                { id: 'mid_t_41', title: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: 5 à®•à¯à®±à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (1 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ) (Day 41)', keyAxiom: 'à®…, à®‡, à®‰, à®Ž, à®’ â€” à®•à¯à®±à¯à®•à®¿à®¯ à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ 5 à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' },
-                { id: 'mid_t_42', title: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: 7 à®¨à¯†à®Ÿà®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (2 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ) (Day 42)', keyAxiom: 'à®†, à®ˆ, à®Š, à®, à®, à®“, à®” â€” à®¨à¯€à®£à¯à®Ÿ à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ 7 à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' },
-                { id: 'mid_t_43', title: 'à®µà®²à¯à®²à®¿à®© à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®•à®šà®Ÿà®¤à®ªà®± (Day 43)', keyAxiom: 'à®•à¯, à®šà¯, à®Ÿà¯, à®¤à¯, à®ªà¯, à®±à¯ â€” à®µà®©à¯à®®à¯ˆà®¯à®¾à®© à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ 6 à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' },
-                { id: 'mid_t_44', title: 'à®®à¯†à®²à¯à®²à®¿à®© à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®™à®žà®£à®¨à®®à®© (Day 44)', keyAxiom: 'à®™à¯, à®žà¯, à®£à¯, à®¨à¯, à®®à¯, à®©à¯ â€” à®®à¯†à®©à¯à®®à¯ˆà®¯à®¾à®© à®®à¯‚à®•à¯à®•à¯Šà®²à®¿à®¯à¯à®Ÿà¯ˆà®¯ 6 à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' },
-                { id: 'mid_t_45', title: 'à®‡à®Ÿà¯ˆà®¯à®¿à®© à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®¯à®°à®²à®µà®´à®³ (Day 45)', keyAxiom: 'à®¯à¯, à®°à¯, à®²à¯, à®µà¯, à®´à¯, à®³à¯ â€” à®‡à®Ÿà¯ˆà®ªà¯à®ªà®Ÿà¯à®Ÿ à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ 6 à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯' },
-                { id: 'mid_t_46', title: 'à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ (à®ƒ) à®ªà®¯à®©à¯à®ªà®¾à®Ÿà¯à®Ÿà¯ à®µà®¿à®¤à®¿à®•à®³à¯ (Day 46)', keyAxiom: 'à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®‡à®Ÿà¯ˆà®¯à®¿à®²à¯ à®®à®Ÿà¯à®Ÿà¯à®®à¯‡ à®µà®°à¯à®®à¯; à®Žà®ƒà®•à¯, à®…à®ƒà®¤à¯, à®‡à®ƒà®¤à¯' }
+                { id: 'mid_t_41', title: '�‰யிர் �Žழுத்து�•ள்: 5 �•ுறில் �Žழுத்து�•ள் (1 மாத்திர�ˆ) (Day 41)', keyAxiom: '�…, �‡, �‰, �Ž, �’ — �•ுறு�•ிய �“�š�ˆயு�Ÿ�ˆய 5 �‰யிர் �Žழுத்து�•ள்' },
+                { id: 'mid_t_42', title: '�‰யிர் �Žழுத்து�•ள்: 7 ந�†�Ÿில் �Žழுத்து�•ள் (2 மாத்திர�ˆ) (Day 42)', keyAxiom: '�†, �ˆ, �Š, ஏ, ஐ, �“, �” — ந�€ண்�Ÿ �“�š�ˆயு�Ÿ�ˆய 7 �‰யிர் �Žழுத்து�•ள்' },
+                { id: 'mid_t_43', title: 'வல்லின ம�†ய் �Žழுத்து�•ள்: �•�š�Ÿதபற (Day 43)', keyAxiom: '�•், �š், �Ÿ், த், ப், ற் — வன்ம�ˆயான �“�š�ˆயு�Ÿ�ˆய 6 ம�†ய் �Žழுத்து�•ள்' },
+                { id: 'mid_t_44', title: 'ம�†ல்லின ம�†ய் �Žழுத்து�•ள்: �™�žணநமன (Day 44)', keyAxiom: '�™், �ž், ண், ந், ம், ன் — ம�†ன்ம�ˆயான ம�‚�•்�•�Šலியு�Ÿ�ˆய 6 ம�†ய் �Žழுத்து�•ள்' },
+                { id: 'mid_t_45', title: '�‡�Ÿ�ˆயின ம�†ய் �Žழுத்து�•ள்: யரலவழள (Day 45)', keyAxiom: 'ய், ர், ல், வ், ழ், ள் — �‡�Ÿ�ˆப்ப�Ÿ்�Ÿ �“�š�ˆயு�Ÿ�ˆய 6 ம�†ய் �Žழுத்து�•ள்' },
+                { id: 'mid_t_46', title: '�†ய்த �Žழுத்து (�ƒ) பயன்பா�Ÿ்�Ÿு விதி�•ள் (Day 46)', keyAxiom: '�š�Šல்லின் �‡�Ÿ�ˆயில் ம�Ÿ்�Ÿும�‡ வரும்; �Ž�ƒ�•ு, �…�ƒது, �‡�ƒது' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_t_41', topicTitle: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: 5 à®•à¯à®±à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (Day 41)', subtopic: 'à®•à¯à®±à¯à®•à®¿à®¯ à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®…, à®‡, à®‰, à®Ž, à®’ (1 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®•à®¾à®² à®…à®³à®µà¯)', dayNumber: 41, periodNumber: 1, keyFormulaOrLaw: 'à®•à¯à®±à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ = 1 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ (à®’à®°à¯ à®®à¯à®±à¯ˆ à®•à®£à¯ à®‡à®®à¯ˆà®•à¯à®•à¯à®®à¯ à®…à®²à¯à®²à®¤à¯ à®•à¯ˆ à®¨à¯Šà®Ÿà®¿à®•à¯à®•à¯à®®à¯ à®¨à¯‡à®°à®®à¯)', keyPoints: ['à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à®¿à®²à¯ à®•à¯à®±à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®®à¯Šà®¤à¯à®¤à®®à¯ 5', 'à®•à¯à®±à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®®à¯à®¤à®²à®¿à®²à¯ à®‰à®¯à®¿à®°à®¾à®•à®µà¯à®®à¯, à®®à¯†à®¯à¯à®¯à¯à®Ÿà®©à¯ à®‡à®£à¯ˆà®¨à¯à®¤à¯ à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯à®•à¯ à®•à¯à®±à®¿à®²à®¾à®•à®µà¯à®®à¯ à®µà®°à¯à®®à¯'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_42', topicTitle: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: 7 à®¨à¯†à®Ÿà®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (Day 42)', subtopic: 'à®¨à¯€à®£à¯à®Ÿ à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®†, à®ˆ, à®Š, à®, à®, à®“, à®” (2 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®•à®¾à®² à®…à®³à®µà¯)', dayNumber: 42, periodNumber: 1, keyFormulaOrLaw: 'à®¨à¯†à®Ÿà®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ = 2 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ (à®‡à®°à®£à¯à®Ÿà¯ à®®à¯à®±à¯ˆ à®•à®£à¯ à®‡à®®à¯ˆà®•à¯à®•à¯à®®à¯ à®•à®¾à®² à®…à®³à®µà¯)', keyPoints: ['à® à®®à®±à¯à®±à¯à®®à¯ à®” à®†à®•à®¿à®¯ à®‡à®°à®£à¯à®Ÿà¯à®®à¯ à®¨à¯†à®Ÿà®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à®¾à®•à¯à®®à¯', 'à®¨à¯†à®Ÿà®¿à®²à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®¤à®©à®¿à®¤à¯à®¤à¯à®®à¯ à®®à¯†à®¯à¯à®¯à¯‹à®Ÿà¯ à®‡à®£à¯ˆà®¨à¯à®¤à¯à®®à¯ 2 à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®’à®²à®¿à®•à¯à®•à¯à®®à¯'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_43', topicTitle: 'à®µà®²à¯à®²à®¿à®© à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®•à®šà®Ÿà®¤à®ªà®± (Day 43)', subtopic: 'à®µà®©à¯à®®à¯ˆà®¯à®¾à®© à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®•à¯, à®šà¯, à®Ÿà¯, à®¤à¯, à®ªà¯, à®±à¯ (à®…à®°à¯ˆ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ)', dayNumber: 43, periodNumber: 1, keyFormulaOrLaw: 'à®µà®²à¯à®²à®¿à®©à®®à¯ = à®•à¯, à®šà¯, à®Ÿà¯, à®¤à¯, à®ªà¯, à®±à¯ | à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®…à®³à®µà¯ = Â½ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ', keyPoints: ['à®®à®¾à®°à¯à®ªà¯ˆà®¤à¯ à®¤à®²à¯ˆà®®à¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿà¯ à®ªà®¿à®±à®•à¯à®•à¯à®®à¯ à®µà®©à¯à®®à¯ˆà®¯à®¾à®© à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯', 'à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®‡à®±à¯à®¤à®¿à®¯à®¿à®²à¯ à®Ÿà¯, à®¤à¯, à®ªà¯ à®ªà¯‹à®©à¯à®± à®šà®¿à®² à®µà®²à¯à®²à®¿à®© à®®à¯†à®¯à¯à®•à®³à¯ à®µà®¾à®°à®¾'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_44', topicTitle: 'à®®à¯†à®²à¯à®²à®¿à®© à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®™à®žà®£à®¨à®®à®© (Day 44)', subtopic: 'à®®à¯†à®©à¯à®®à¯ˆà®¯à®¾à®© à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®™à¯, à®žà¯, à®£à¯, à®¨à¯, à®®à¯, à®©à¯ (à®…à®°à¯ˆ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ)', dayNumber: 44, periodNumber: 1, keyFormulaOrLaw: 'à®®à¯†à®²à¯à®²à®¿à®©à®®à¯ = à®™à¯, à®žà¯, à®£à¯, à®¨à¯, à®®à¯, à®©à¯ | à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®…à®³à®µà¯ = Â½ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ', keyPoints: ['à®®à¯‚à®•à¯à®•à¯ˆà®¤à¯ à®¤à®²à¯ˆà®®à¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿà¯ à®ªà®¿à®±à®•à¯à®•à¯à®®à¯ à®®à¯†à®²à¯à®²à®¿à®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯', 'à®µà®²à¯à®²à®¿à®© à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯à®•à¯à®•à¯ à®‡à®© à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à®¾à®• à®¨à®Ÿà¯à®ªà¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à®¾à®• à®…à®®à¯ˆà®•à®¿à®©à¯à®±à®© (à®™à¯-à®•à¯, à®žà¯-à®šà¯, à®£à¯-à®Ÿà¯, à®¨à¯-à®¤à¯, à®®à¯-à®ªà¯, à®©à¯-à®±à¯)'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_45', topicTitle: 'à®‡à®Ÿà¯ˆà®¯à®¿à®© à®®à¯†à®¯à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®¯à®°à®²à®µà®´à®³ (Day 45)', subtopic: 'à®‡à®Ÿà¯ˆà®ªà¯à®ªà®Ÿà¯à®Ÿ à®“à®šà¯ˆà®¯à¯à®Ÿà¯ˆà®¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯: à®¯à¯, à®°à¯, à®²à¯, à®µà¯, à®´à¯, à®³à¯ (à®…à®°à¯ˆ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ)', dayNumber: 45, periodNumber: 1, keyFormulaOrLaw: 'à®‡à®Ÿà¯ˆà®¯à®¿à®©à®®à¯ = à®¯à¯, à®°à¯, à®²à¯, à®µà¯, à®´à¯, à®³à¯ | à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ à®…à®³à®µà¯ = Â½ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ', keyPoints: ['à®•à®´à¯à®¤à¯à®¤à¯ˆà®¤à¯ à®¤à®²à¯ˆà®®à¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿà¯ à®µà®©à¯à®®à¯ˆà®•à¯à®•à¯à®®à¯ à®®à¯†à®©à¯à®®à¯ˆà®•à¯à®•à¯à®®à¯ à®‡à®Ÿà¯ˆà®ªà¯à®ªà®Ÿà¯à®Ÿà¯ à®ªà®¿à®±à®•à¯à®•à®¿à®©à¯à®±à®©', 'à®¤à®®à®¿à®´à¯ à®®à¯Šà®´à®¿à®•à¯à®•à¯‡ à®šà®¿à®±à®ªà¯à®ªà®¾à®© "à®´à¯" (à®šà®¿à®±à®ªà¯à®ªà¯ à®´à®•à®°à®®à¯) à®‡à®Ÿà¯ˆà®¯à®¿à®© à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à®¿à®²à¯ à®’à®©à¯à®±à®¾à®•à¯à®®à¯'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_46', topicTitle: 'à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ (à®ƒ) à®ªà®¯à®©à¯à®ªà®¾à®Ÿà¯à®Ÿà¯ à®µà®¿à®¤à®¿à®•à®³à¯ (Day 46)', subtopic: 'à®®à¯à®ªà¯à®ªà¯à®³à¯à®³à®¿, à®®à¯à®ªà¯à®ªà®¾à®±à¯à®ªà¯à®³à¯à®³à®¿, à®¤à®©à®¿à®¨à®¿à®²à¯ˆ (à®…à®°à¯ˆ à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ)', dayNumber: 46, periodNumber: 1, keyFormulaOrLaw: 'à®†à®¯à¯à®¤à®®à¯ = à®ƒ | à®®à®¾à®¤à¯à®¤à®¿à®°à¯ˆ = Â½ | à®µà®¿à®¤à®¿: à®¤à®©à®•à¯à®•à¯ à®®à¯à®©à¯ à®’à®°à¯ à®•à¯à®±à®¿à®²à¯ˆà®¯à¯à®®à¯ à®ªà®¿à®©à¯ à®’à®°à¯ à®µà®²à¯à®²à®¿à®© à®‰à®¯à®¿à®°à¯à®®à¯†à®¯à¯à®¯à¯ˆà®¯à¯à®®à¯ à®ªà¯†à®±à¯à®®à¯', keyPoints: ['à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®®à¯à®¤à®²à®¿à®²à¯‹ à®‡à®±à¯à®¤à®¿à®¯à®¿à®²à¯‹ à®µà®°à®¾à®¤à¯; à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®‡à®Ÿà¯ˆà®¯à®¿à®²à¯ à®®à®Ÿà¯à®Ÿà¯à®®à¯‡ à®µà®°à¯à®®à¯ (à®Ž.à®•à®¾: à®Žà®ƒà®•à¯, à®…à®ƒà®¤à¯, à®‡à®ƒà®¤à¯)', 'à®†à®¯à¯à®¤ à®Žà®´à¯à®¤à¯à®¤à¯ˆ à®®à¯à®¤à®©à¯à®®à¯ˆà®¯à®¾à®•à®•à¯ à®•à¯Šà®£à¯à®Ÿ à®šà¯Šà®²à¯ à®¤à®©à®¿à®¨à®¿à®²à¯ˆà®šà¯ à®šà¯Šà®²à¯ à®Žà®©à®ªà¯à®ªà®Ÿà¯à®®à¯'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_t_41', topicTitle: '�‰யிர் �Žழுத்து�•ள்: 5 �•ுறில் �Žழுத்து�•ள் (Day 41)', subtopic: '�•ுறு�•ிய �“�š�ˆயு�Ÿ�ˆய �Žழுத்து�•ள்: �…, �‡, �‰, �Ž, �’ (1 மாத்திர�ˆ �•ால �…ளவு)', dayNumber: 41, periodNumber: 1, keyFormulaOrLaw: '�•ுறில் �Žழுத்து மாத்திர�ˆ = 1 மாத்திர�ˆ (�’ரு முற�ˆ �•ண் �‡ம�ˆ�•்�•ும் �…ல்லது �•�ˆ ந�Š�Ÿி�•்�•ும் ந�‡ரம்)', keyPoints: ['�‰யிர் �Žழுத்து�•ளில் �•ுறில் �Žழுத்து�•ள் ம�Šத்தம் 5', '�•ுறில் �Žழுத்து�•ள் �š�Šல்லின் முதலில் �‰யிரா�•வும், ம�†ய்யு�Ÿன் �‡ண�ˆந்து �‰யிர்ம�†ய்�•் �•ுறிலா�•வும் வரும்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_42', topicTitle: '�‰யிர் �Žழுத்து�•ள்: 7 ந�†�Ÿில் �Žழுத்து�•ள் (Day 42)', subtopic: 'ந�€ண்�Ÿ �“�š�ˆயு�Ÿ�ˆய �Žழுத்து�•ள்: �†, �ˆ, �Š, ஏ, ஐ, �“, �” (2 மாத்திர�ˆ �•ால �…ளவு)', dayNumber: 42, periodNumber: 1, keyFormulaOrLaw: 'ந�†�Ÿில் �Žழுத்து மாத்திர�ˆ = 2 மாத்திர�ˆ (�‡ரண்�Ÿு முற�ˆ �•ண் �‡ம�ˆ�•்�•ும் �•ால �…ளவு)', keyPoints: ['ஐ மற்றும் �” �†�•ிய �‡ரண்�Ÿும் ந�†�Ÿில் �Žழுத்து�•ளா�•ும்', 'ந�†�Ÿில் �Žழுத்து�•ள் தனித்தும் ம�†ய்ய�‹�Ÿு �‡ண�ˆந்தும் 2 மாத்திர�ˆ �’லி�•்�•ும்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_43', topicTitle: 'வல்லின ம�†ய் �Žழுத்து�•ள்: �•�š�Ÿதபற (Day 43)', subtopic: 'வன்ம�ˆயான �“�š�ˆயு�Ÿ�ˆய �Žழுத்து�•ள்: �•், �š், �Ÿ், த், ப், ற் (�…ர�ˆ மாத்திர�ˆ)', dayNumber: 43, periodNumber: 1, keyFormulaOrLaw: 'வல்லினம் = �•், �š், �Ÿ், த், ப், ற் | மாத்திர�ˆ �…ளவு = � மாத்திர�ˆ', keyPoints: ['மார்ப�ˆத் தல�ˆம�ˆயா�•�•் �•�Šண்�Ÿு பிற�•்�•ும் வன்ம�ˆயான �Žழுத்து�•ள்', '�š�Šல்லின் �‡றுதியில் �Ÿ், த், ப் ப�‹ன்ற �šில வல்லின ம�†ய்�•ள் வாரா'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_44', topicTitle: 'ம�†ல்லின ம�†ய் �Žழுத்து�•ள்: �™�žணநமன (Day 44)', subtopic: 'ம�†ன்ம�ˆயான �“�š�ˆயு�Ÿ�ˆய �Žழுத்து�•ள்: �™், �ž், ண், ந், ம், ன் (�…ர�ˆ மாத்திர�ˆ)', dayNumber: 44, periodNumber: 1, keyFormulaOrLaw: 'ம�†ல்லினம் = �™், �ž், ண், ந், ம், ன் | மாத்திர�ˆ �…ளவு = � மாத்திர�ˆ', keyPoints: ['ம�‚�•்�•�ˆத் தல�ˆம�ˆயா�•�•் �•�Šண்�Ÿு பிற�•்�•ும் ம�†ல்லிய �Žழுத்து�•ள்', 'வல்லின �Žழுத்து�•ளு�•்�•ு �‡ன �Žழுத்து�•ளா�• ந�Ÿ்பு �Žழுத்து�•ளா�• �…ம�ˆ�•ின்றன (�™்-�•், �ž்-�š், ண்-�Ÿ், ந்-த், ம்-ப், ன்-ற்)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_45', topicTitle: '�‡�Ÿ�ˆயின ம�†ய் �Žழுத்து�•ள்: யரலவழள (Day 45)', subtopic: '�‡�Ÿ�ˆப்ப�Ÿ்�Ÿ �“�š�ˆயு�Ÿ�ˆய �Žழுத்து�•ள்: ய், ர், ல், வ், ழ், ள் (�…ர�ˆ மாத்திர�ˆ)', dayNumber: 45, periodNumber: 1, keyFormulaOrLaw: '�‡�Ÿ�ˆயினம் = ய், ர், ல், வ், ழ், ள் | மாத்திர�ˆ �…ளவு = � மாத்திர�ˆ', keyPoints: ['�•ழுத்த�ˆத் தல�ˆம�ˆயா�•�•் �•�Šண்�Ÿு வன்ம�ˆ�•்�•ும் ம�†ன்ம�ˆ�•்�•ும் �‡�Ÿ�ˆப்ப�Ÿ்�Ÿு பிற�•்�•ின்றன', 'தமிழ் ம�Šழி�•்�•�‡ �šிறப்பான "ழ்" (�šிறப்பு ழ�•ரம்) �‡�Ÿ�ˆயின �Žழுத்து�•ளில் �’ன்றா�•ும்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_46', topicTitle: '�†ய்த �Žழுத்து (�ƒ) பயன்பா�Ÿ்�Ÿு விதி�•ள் (Day 46)', subtopic: 'முப்புள்ளி, முப்பாற்புள்ளி, தனிநில�ˆ (�…ர�ˆ மாத்திர�ˆ)', dayNumber: 46, periodNumber: 1, keyFormulaOrLaw: '�†ய்தம் = �ƒ | மாத்திர�ˆ = � | விதி: தன�•்�•ு முன் �’ரு �•ுறில�ˆயும் பின் �’ரு வல்லின �‰யிர்ம�†ய்ய�ˆயும் ப�†றும்', keyPoints: ['�š�Šல்லின் முதலில�‹ �‡றுதியில�‹ வராது; �š�Šல்லின் �‡�Ÿ�ˆயில் ம�Ÿ்�Ÿும�‡ வரும் (�Ž.�•ா: �Ž�ƒ�•ு, �…�ƒது, �‡�ƒது)', '�†ய்த �Žழுத்த�ˆ முதன்ம�ˆயா�•�•் �•�Šண்�Ÿ �š�Šல் தனிநில�ˆ�š் �š�Šல் �Žனப்ப�Ÿும்'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: 'à®¤à®®à®¿à®´à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯: à®¤à®¿à®£à¯ˆ, à®ªà®¾à®²à¯ & à®®à¯à®•à¯à®•à®¾à®²à®®à¯ (Days 47â€“51)',
-          description: 'à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ à®…à®ƒà®±à®¿à®£à¯ˆ, à®†à®£à¯à®ªà®¾à®²à¯ à®ªà¯†à®£à¯à®ªà®¾à®²à¯ à®ªà®²à®°à¯à®ªà®¾à®²à¯ à®’à®©à¯à®±à®©à¯à®ªà®¾à®²à¯ à®ªà®²à®µà®¿à®©à¯à®ªà®¾à®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®‡à®±à®¨à¯à®¤, à®¨à®¿à®•à®´à¯à®•à®¾à®², à®Žà®¤à®¿à®°à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯',
+          chapterTitle: 'தமிழ் நான�‹ �…ல�•ு�•ள்: திண�ˆ, பால் & மு�•்�•ாலம் (Days 47–51)',
+          description: '�‰யர்திண�ˆ �…�ƒறிண�ˆ, �†ண்பால் ப�†ண்பால் பலர்பால் �’ன்றன்பால் பலவின்பால் மற்றும் �‡றந்த, நி�•ழ்�•ால, �Žதிர்�•ால �‡�Ÿ�ˆநில�ˆ�•ள்',
           subtopics: [
             {
               id: 'mid_t_sub2',
-              title: 'à®¤à®¿à®£à¯ˆ, à®ªà®¾à®²à¯, à®•à®¾à®² à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯',
+              title: 'திண�ˆ, பால், �•ால நான�‹ �…ல�•ு�•ள்',
               microTopics: [
-                { id: 'mid_t_47', title: 'à®¤à®¿à®£à¯ˆ à®ªà®¾à®•à¯à®ªà®¾à®Ÿà¯: à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ vs à®…à®ƒà®±à®¿à®£à¯ˆ (Day 47)', keyAxiom: 'à®ªà®•à¯à®¤à¯à®¤à®±à®¿à®µà¯à®³à¯à®³ à®®à®•à¯à®•à®³à¯ à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ; à®ªà®±à®µà¯ˆ, à®µà®¿à®²à®™à¯à®•à¯, à®¤à®¾à®µà®°à®™à¯à®•à®³à¯ à®…à®ƒà®±à®¿à®£à¯ˆ' },
-                { id: 'mid_t_48', title: 'à®à®®à¯à®ªà®¾à®²à¯ à®ªà®¾à®•à¯à®ªà®¾à®Ÿà¯ (à®†à®£à¯, à®ªà¯†à®£à¯, à®ªà®²à®°à¯, à®’à®©à¯à®±à¯, à®ªà®²) (Day 48)', keyAxiom: 'à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ 3 à®ªà®¾à®²à¯ (à®†à®£à¯, à®ªà¯†à®£à¯, à®ªà®²à®°à¯); à®…à®ƒà®±à®¿à®£à¯ˆ 2 à®ªà®¾à®²à¯ (à®’à®©à¯à®±à¯, à®ªà®²)' },
-                { id: 'mid_t_49', title: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯: à®‡à®±à®¨à¯à®¤ à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯ (à®¤à¯, à®Ÿà¯, à®±à¯, à®‡à®©à¯) (Day 49)', keyAxiom: 'à®šà¯†à®¯à¯à®¤à®¾à®©à¯ (à®¤à¯), à®‰à®£à¯à®Ÿà®¾à®©à¯ (à®Ÿà¯), à®•à®±à¯à®±à®¾à®©à¯ (à®±à¯), à®ªà®¾à®Ÿà®¿à®©à®¾à®©à¯ (à®‡à®©à¯)' },
-                { id: 'mid_t_50', title: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯: à®¨à®¿à®•à®´à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯ (à®•à®¿à®±à¯, à®•à®¿à®©à¯à®±à¯, à®†à®¨à®¿à®©à¯à®±à¯) (Day 50)', keyAxiom: 'à®šà¯†à®¯à¯à®•à®¿à®±à®¾à®©à¯ (à®•à®¿à®±à¯), à®‰à®£à¯à®•à®¿à®©à¯à®±à®¾à®©à¯ (à®•à®¿à®©à¯à®±à¯), à®µà®¾à®°à®¾à®¨à®¿à®©à¯à®±à®¾à®©à¯ (à®†à®¨à®¿à®©à¯à®±à¯)' },
-                { id: 'mid_t_51', title: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯: à®Žà®¤à®¿à®°à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯ (à®ªà¯, à®µà¯) (Day 51)', keyAxiom: 'à®ªà®Ÿà®¿à®ªà¯à®ªà®¾à®©à¯ (à®ªà¯), à®µà®°à¯à®µà®¾à®©à¯ (à®µà¯)' }
+                { id: 'mid_t_47', title: 'திண�ˆ பா�•ுபா�Ÿு: �‰யர்திண�ˆ vs �…�ƒறிண�ˆ (Day 47)', keyAxiom: 'ப�•ுத்தறிவுள்ள ம�•்�•ள் �‰யர்திண�ˆ; பறவ�ˆ, வில�™்�•ு, தாவர�™்�•ள் �…�ƒறிண�ˆ' },
+                { id: 'mid_t_48', title: 'ஐம்பால் பா�•ுபா�Ÿு (�†ண், ப�†ண், பலர், �’ன்று, பல) (Day 48)', keyAxiom: '�‰யர்திண�ˆ 3 பால் (�†ண், ப�†ண், பலர்); �…�ƒறிண�ˆ 2 பால் (�’ன்று, பல)' },
+                { id: 'mid_t_49', title: 'மு�•்�•ாலம்: �‡றந்த �•ால �‡�Ÿ�ˆநில�ˆ�•ள் (த், �Ÿ், ற், �‡ன்) (Day 49)', keyAxiom: '�š�†ய்தான் (த்), �‰ண்�Ÿான் (�Ÿ்), �•ற்றான் (ற்), பா�Ÿினான் (�‡ன்)' },
+                { id: 'mid_t_50', title: 'மு�•்�•ாலம்: நி�•ழ்�•ால �‡�Ÿ�ˆநில�ˆ�•ள் (�•ிறு, �•ின்று, �†நின்று) (Day 50)', keyAxiom: '�š�†ய்�•ிறான் (�•ிறு), �‰ண்�•ின்றான் (�•ின்று), வாராநின்றான் (�†நின்று)' },
+                { id: 'mid_t_51', title: 'மு�•்�•ாலம்: �Žதிர்�•ால �‡�Ÿ�ˆநில�ˆ�•ள் (ப், வ்) (Day 51)', keyAxiom: 'ப�Ÿிப்பான் (ப்), வருவான் (வ்)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_t_47', topicTitle: 'à®¤à®¿à®£à¯ˆ à®ªà®¾à®•à¯à®ªà®¾à®Ÿà¯: à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ vs à®…à®ƒà®±à®¿à®£à¯ˆ (Day 47)', subtopic: 'à®’à®´à¯à®•à¯à®•à®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®ªà®•à¯à®¤à¯à®¤à®±à®¿à®µà¯ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆà®¯à®¿à®²à¯ à®‡à®°à¯à®¤à®¿à®£à¯ˆ à®µà®•à¯ˆà®ªà¯à®ªà®¾à®Ÿà¯', dayNumber: 47, periodNumber: 1, keyFormulaOrLaw: 'à®¤à®¿à®£à¯ˆ 2: à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ (à®®à®©à®¿à®¤à®°à¯à®•à®³à¯, à®¤à¯‡à®µà®°à¯à®•à®³à¯, à®¨à®°à®•à®°à¯) | à®…à®ƒà®±à®¿à®£à¯ˆ (à®…à®²à¯ + à®¤à®¿à®£à¯ˆ = à®‰à®¯à®¿à®°à®±à¯à®±à®µà¯ˆ, à®µà®¿à®²à®™à¯à®•à¯à®•à®³à¯, à®¤à®¾à®µà®°à®™à¯à®•à®³à¯)', keyPoints: ['à®•à®£à¯à®£à®©à¯, à®†à®šà®¿à®°à®¿à®¯à®°à¯, à®®à®°à¯à®¤à¯à®¤à¯à®µà®°à¯ - à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ', 'à®®à®°à®®à¯, à®¨à®¾à®¯à¯, à®•à®Ÿà®²à¯, à®®à¯‡à®•à®®à¯, à®¨à®¿à®²à®¾ - à®…à®ƒà®±à®¿à®£à¯ˆ'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_48', topicTitle: 'à®à®®à¯à®ªà®¾à®²à¯ à®ªà®¾à®•à¯à®ªà®¾à®Ÿà¯ (Day 48)', subtopic: 'à®ªà®¾à®²à¯ à®Žà®©à¯à®ªà®¤à¯ à®¤à®¿à®£à¯ˆà®¯à®¿à®©à¯ à®‰à®Ÿà¯à®ªà®¿à®°à®¿à®µà¯ (5 à®µà®•à¯ˆà®•à®³à¯)', dayNumber: 48, periodNumber: 1, keyFormulaOrLaw: 'à®‰à®¯à®°à¯à®¤à®¿à®£à¯ˆ: à®†à®£à¯à®ªà®¾à®²à¯ (à®…à®©à¯), à®ªà¯†à®£à¯à®ªà®¾à®²à¯ (à®…à®³à¯), à®ªà®²à®°à¯à®ªà®¾à®²à¯ (à®…à®°à¯) | à®…à®ƒà®±à®¿à®£à¯ˆ: à®’à®©à¯à®±à®©à¯à®ªà®¾à®²à¯ (à®¤à¯), à®ªà®²à®µà®¿à®©à¯à®ªà®¾à®²à¯ (à®…)', keyPoints: ['à®®à®¾à®£à®µà®©à¯ (à®†à®£à¯à®ªà®¾à®²à¯), à®®à®¾à®£à®µà®¿ (à®ªà¯†à®£à¯à®ªà®¾à®²à¯), à®®à®¾à®£à®µà®°à¯à®•à®³à¯ (à®ªà®²à®°à¯à®ªà®¾à®²à¯)', 'à®•à¯à®¤à®¿à®°à¯ˆ à®µà®¨à¯à®¤à®¤à¯ (à®’à®©à¯à®±à®©à¯à®ªà®¾à®²à¯), à®•à¯à®¤à®¿à®°à¯ˆà®•à®³à¯ à®µà®¨à¯à®¤à®© (à®ªà®²à®µà®¿à®©à¯à®ªà®¾à®²à¯)'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_t_49', topicTitle: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯: à®‡à®±à®¨à¯à®¤ à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯ (Day 49)', subtopic: 'à®¨à®Ÿà®¨à¯à®¤à¯ à®®à¯à®Ÿà®¿à®¨à¯à®¤ à®šà¯†à®¯à®²à¯ˆà®•à¯ à®•à¯à®±à®¿à®•à¯à®•à¯à®®à¯ à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯: à®¤à¯, à®Ÿà¯, à®±à¯, à®‡à®©à¯', dayNumber: 49, periodNumber: 1, keyFormulaOrLaw: 'à®‡à®±à®¨à¯à®¤ à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯: à®¤à¯, à®Ÿà¯, à®±à¯, à®‡à®©à¯ (à®ªà®•à¯à®¤à®¿ + à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ + à®µà®¿à®•à¯à®¤à®¿)', keyPoints: ['à®šà¯†à®¯à¯à®¤à®¾à®©à¯ = à®šà¯†à®¯à¯ + à®¤à¯ + à®†à®©à¯ (à®¤à¯ = à®‡à®±à®¨à¯à®¤ à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ)', 'à®“à®Ÿà®¿à®©à®¾à®©à¯ = à®“à®Ÿà¯ + à®‡à®©à¯ + à®†à®©à¯ (à®‡à®©à¯ = à®‡à®±à®¨à¯à®¤ à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_50', topicTitle: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯: à®¨à®¿à®•à®´à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯ (Day 50)', subtopic: 'à®‡à®ªà¯à®ªà¯‹à®¤à¯ à®¨à®¿à®•à®´à¯à®®à¯ à®šà¯†à®¯à®²à¯ˆà®•à¯ à®•à¯à®±à®¿à®•à¯à®•à¯à®®à¯ à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯: à®•à®¿à®±à¯, à®•à®¿à®©à¯à®±à¯, à®†à®¨à®¿à®©à¯à®±à¯', dayNumber: 50, periodNumber: 1, keyFormulaOrLaw: 'à®¨à®¿à®•à®´à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯: à®•à®¿à®±à¯, à®•à®¿à®©à¯à®±à¯, à®†à®¨à®¿à®©à¯à®±à¯', keyPoints: ['à®ªà®Ÿà®¿à®•à¯à®•à®¿à®±à®¾à®©à¯ = à®ªà®Ÿà®¿ + à®•à¯ + à®•à®¿à®±à¯ + à®†à®©à¯ (à®•à®¿à®±à¯ = à®¨à®¿à®•à®´à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ)', 'à®‰à®£à¯à®•à®¿à®©à¯à®±à®¾à®©à¯ = à®‰à®£à¯ + à®•à®¿à®©à¯à®±à¯ + à®†à®©à¯ (à®•à®¿à®©à¯à®±à¯ = à®¨à®¿à®•à®´à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_51', topicTitle: 'à®®à¯à®•à¯à®•à®¾à®²à®®à¯: à®Žà®¤à®¿à®°à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯ (Day 51)', subtopic: 'à®‡à®©à®¿à®®à¯‡à®²à¯ à®¨à®Ÿà®•à¯à®•à®µà®¿à®°à¯à®•à¯à®•à¯à®®à¯ à®šà¯†à®¯à®²à¯ˆà®•à¯ à®•à¯à®±à®¿à®•à¯à®•à¯à®®à¯ à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯: à®ªà¯, à®µà¯', dayNumber: 51, periodNumber: 1, keyFormulaOrLaw: 'à®Žà®¤à®¿à®°à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆà®•à®³à¯: à®ªà¯, à®µà¯', keyPoints: ['à®•à®¾à®£à¯à®ªà®¾à®©à¯ = à®•à®¾à®£à¯ + à®ªà¯ + à®†à®©à¯ (à®ªà¯ = à®Žà®¤à®¿à®°à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ)', 'à®µà®°à¯à®µà®¾à®©à¯ = à®µà®¾(à®µà®°à¯) + à®µà¯ + à®†à®©à¯ (à®µà¯ = à®Žà®¤à®¿à®°à¯à®•à®¾à®² à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ)'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_t_47', topicTitle: 'திண�ˆ பா�•ுபா�Ÿு: �‰யர்திண�ˆ vs �…�ƒறிண�ˆ (Day 47)', subtopic: '�’ழு�•்�•ம் மற்றும் ப�•ுத்தறிவு �…�Ÿிப்ப�Ÿ�ˆயில் �‡ருதிண�ˆ வ�•�ˆப்பா�Ÿு', dayNumber: 47, periodNumber: 1, keyFormulaOrLaw: 'திண�ˆ 2: �‰யர்திண�ˆ (மனிதர்�•ள், த�‡வர்�•ள், நர�•ர்) | �…�ƒறிண�ˆ (�…ல் + திண�ˆ = �‰யிரற்றவ�ˆ, வில�™்�•ு�•ள், தாவர�™்�•ள்)', keyPoints: ['�•ண்ணன், �†�šிரியர், மருத்துவர் - �‰யர்திண�ˆ', 'மரம், நாய், �•�Ÿல், ம�‡�•ம், நிலா - �…�ƒறிண�ˆ'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_48', topicTitle: 'ஐம்பால் பா�•ுபா�Ÿு (Day 48)', subtopic: 'பால் �Žன்பது திண�ˆயின் �‰�Ÿ்பிரிவு (5 வ�•�ˆ�•ள்)', dayNumber: 48, periodNumber: 1, keyFormulaOrLaw: '�‰யர்திண�ˆ: �†ண்பால் (�…ன்), ப�†ண்பால் (�…ள்), பலர்பால் (�…ர்) | �…�ƒறிண�ˆ: �’ன்றன்பால் (து), பலவின்பால் (�…)', keyPoints: ['மாணவன் (�†ண்பால்), மாணவி (ப�†ண்பால்), மாணவர்�•ள் (பலர்பால்)', '�•ுதிர�ˆ வந்தது (�’ன்றன்பால்), �•ுதிர�ˆ�•ள் வந்தன (பலவின்பால்)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_49', topicTitle: 'மு�•்�•ாலம்: �‡றந்த �•ால �‡�Ÿ�ˆநில�ˆ�•ள் (Day 49)', subtopic: 'ந�Ÿந்து மு�Ÿிந்த �š�†யல�ˆ�•் �•ுறி�•்�•ும் �‡�Ÿ�ˆநில�ˆ�•ள்: த், �Ÿ், ற், �‡ன்', dayNumber: 49, periodNumber: 1, keyFormulaOrLaw: '�‡றந்த �•ால �‡�Ÿ�ˆநில�ˆ�•ள்: த், �Ÿ், ற், �‡ன் (ப�•ுதி + �‡�Ÿ�ˆநில�ˆ + வி�•ுதி)', keyPoints: ['�š�†ய்தான் = �š�†ய் + த் + �†ன் (த் = �‡றந்த �•ால �‡�Ÿ�ˆநில�ˆ)', '�“�Ÿினான் = �“�Ÿு + �‡ன் + �†ன் (�‡ன் = �‡றந்த �•ால �‡�Ÿ�ˆநில�ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_50', topicTitle: 'மு�•்�•ாலம்: நி�•ழ்�•ால �‡�Ÿ�ˆநில�ˆ�•ள் (Day 50)', subtopic: '�‡ப்ப�‹து நி�•ழும் �š�†யல�ˆ�•் �•ுறி�•்�•ும் �‡�Ÿ�ˆநில�ˆ�•ள்: �•ிறு, �•ின்று, �†நின்று', dayNumber: 50, periodNumber: 1, keyFormulaOrLaw: 'நி�•ழ்�•ால �‡�Ÿ�ˆநில�ˆ�•ள்: �•ிறு, �•ின்று, �†நின்று', keyPoints: ['ப�Ÿி�•்�•ிறான் = ப�Ÿி + �•் + �•ிறு + �†ன் (�•ிறு = நி�•ழ்�•ால �‡�Ÿ�ˆநில�ˆ)', '�‰ண்�•ின்றான் = �‰ண் + �•ின்று + �†ன் (�•ின்று = நி�•ழ்�•ால �‡�Ÿ�ˆநில�ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_51', topicTitle: 'மு�•்�•ாலம்: �Žதிர்�•ால �‡�Ÿ�ˆநில�ˆ�•ள் (Day 51)', subtopic: '�‡னிம�‡ல் ந�Ÿ�•்�•விரு�•்�•ும் �š�†யல�ˆ�•் �•ுறி�•்�•ும் �‡�Ÿ�ˆநில�ˆ�•ள்: ப், வ்', dayNumber: 51, periodNumber: 1, keyFormulaOrLaw: '�Žதிர்�•ால �‡�Ÿ�ˆநில�ˆ�•ள்: ப், வ்', keyPoints: ['�•ாண்பான் = �•ாண் + ப் + �†ன் (ப் = �Žதிர்�•ால �‡�Ÿ�ˆநில�ˆ)', 'வருவான் = வா(வரு) + வ் + �†ன் (வ் = �Žதிர்�•ால �‡�Ÿ�ˆநில�ˆ)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: 'à®¤à®®à®¿à®´à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯: à®¤à¯Šà®•à¯ˆà®¨à®¿à®²à¯ˆà®¤à¯ à®¤à¯Šà®Ÿà®°à¯à®•à®³à¯ & à®ªà¯à®£à®°à¯à®šà¯à®šà®¿ (Days 52â€“57)',
-          description: 'à®µà¯‡à®±à¯à®±à¯à®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ, à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ, à®ªà®£à¯à®ªà¯à®¤à¯à®¤à¯Šà®•à¯ˆ, à®‰à®µà®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ, à®‰à®®à¯à®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯/à®®à®¿à®•à®¾ à®‡à®Ÿà®™à¯à®•à®³à¯',
+          chapterTitle: 'தமிழ் நான�‹ �…ல�•ு�•ள்: த�Š�•�ˆநில�ˆத் த�Š�Ÿர்�•ள் & புணர்�š்�šி (Days 52–57)',
+          description: 'வ�‡ற்றும�ˆத்த�Š�•�ˆ, வின�ˆத்த�Š�•�ˆ, பண்புத்த�Š�•�ˆ, �‰வம�ˆத்த�Š�•�ˆ, �‰ம்ம�ˆத்த�Š�•�ˆ மற்றும் வல்லினம் மி�•ும்/மி�•ா �‡�Ÿ�™்�•ள்',
           subtopics: [
             {
               id: 'mid_t_sub3',
-              title: 'à®¤à¯Šà®•à¯ˆà®¨à®¿à®²à¯ˆ & à®ªà¯à®£à®°à¯à®šà¯à®šà®¿ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯',
+              title: 'த�Š�•�ˆநில�ˆ & புணர்�š்�šி நான�‹ �…ல�•ு�•ள்',
               microTopics: [
-                { id: 'mid_t_52', title: 'à®µà¯‡à®±à¯à®±à¯à®®à¯ˆà®¤à¯ à®¤à¯Šà®•à¯ˆ: à®, à®†à®²à¯, à®•à¯, à®‡à®©à¯, à®…à®¤à¯, à®•à®£à¯ à®®à®±à¯ˆà®¤à®²à¯ (Day 52)', keyAxiom: 'à®ªà®¾à®²à¯ à®•à¯à®Ÿà®¿à®¤à¯à®¤à®¾à®©à¯ = à®ªà®¾à®²à¯ˆà®•à¯ à®•à¯à®Ÿà®¿à®¤à¯à®¤à®¾à®©à¯ (2-à®†à®®à¯ à®µà¯‡à®±à¯à®±à¯à®®à¯ˆ à®‰à®°à¯à®ªà¯ à® à®®à®±à¯ˆà®¨à¯à®¤à®¤à¯)' },
-                { id: 'mid_t_53', title: 'à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ: à®®à¯à®•à¯à®•à®¾à®²à®®à¯à®®à¯ à®®à®±à¯ˆà®¨à¯à®¤à¯ à®µà®°à¯à®¤à®²à¯ (Day 53)', keyAxiom: 'à®Šà®±à¯à®•à®¾à®¯à¯ = à®Šà®±à®¿à®¯ à®•à®¾à®¯à¯, à®Šà®±à¯à®•à®¿à®©à¯à®± à®•à®¾à®¯à¯, à®Šà®±à¯à®®à¯ à®•à®¾à®¯à¯ (à®•à®¾à®²à®®à¯ à®•à®¾à®Ÿà¯à®Ÿà¯à®®à¯ à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ à®®à®±à¯ˆà®¨à¯à®¤à®¤à¯)' },
-                { id: 'mid_t_54', title: 'à®ªà®£à¯à®ªà¯à®¤à¯à®¤à¯Šà®•à¯ˆ: à®®à¯ˆ à®µà®¿à®•à¯à®¤à®¿à®¯à¯à®®à¯ à®†à®•à®¿à®¯, à®†à®© à®‰à®°à¯à®ªà¯à®•à®³à¯à®®à¯ à®®à®±à¯ˆà®¤à®²à¯ (Day 54)', keyAxiom: 'à®šà¯†à®¨à¯à®¤à®¾à®®à®°à¯ˆ = à®šà¯†à®®à¯à®®à¯ˆà®¯à®¾à®•à®¿à®¯ à®¤à®¾à®®à®°à¯ˆ | à®µà®Ÿà¯à®Ÿà®¤à¯à®¤à¯Šà®Ÿà¯à®Ÿà®¿ = à®µà®Ÿà¯à®Ÿà®®à®¾à®•à®¿à®¯ à®¤à¯Šà®Ÿà¯à®Ÿà®¿' },
-                { id: 'mid_t_55', title: 'à®‰à®µà®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ & à®‰à®®à¯à®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ (Day 55)', keyAxiom: 'à®®à®²à®°à¯à®µà®¿à®´à®¿ (à®ªà¯‹à®² à®®à®±à¯ˆà®¨à¯à®¤à®¤à¯) | à®¤à®¾à®¯à¯ à®¤à®¨à¯à®¤à¯ˆ (à®¤à®¾à®¯à¯à®®à¯ à®¤à®¨à¯à®¤à¯ˆà®¯à¯à®®à¯ - à®‰à®®à¯ à®®à®±à¯ˆà®¨à¯à®¤à®¤à¯)' },
-                { id: 'mid_t_56', title: 'à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯ à®‡à®Ÿà®™à¯à®•à®³à¯: à®…à®¨à¯à®¤, à®‡à®¨à¯à®¤ à®šà¯à®Ÿà¯à®Ÿà¯à®ªà¯à®ªà¯†à®¯à®°à¯à®•à®³à¯ à®ªà®¿à®©à¯ (Day 56)', keyAxiom: 'à®…à®¨à¯à®¤ + à®•à®¾à®Ÿà¯ = à®…à®¨à¯à®¤à®•à¯à®•à®¾à®Ÿà¯ | à®‡à®¨à¯à®¤ + à®ªà¯ˆà®¯à®©à¯ = à®‡à®¨à¯à®¤à®ªà¯à®ªà¯ˆà®¯à®©à¯' },
-                { id: 'mid_t_57', title: 'à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à®¾ à®‡à®Ÿà®™à¯à®•à®³à¯: à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ & à®…à®¤à¯, à®‡à®¤à¯ à®ªà®¿à®©à¯ (Day 57)', keyAxiom: 'à®•à¯à®Ÿà®¿ à®¤à®£à¯à®£à¯€à®°à¯ (à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ à®®à®¿à®•à®¾à®¤à¯) | à®…à®¤à¯ à®šà¯†à®©à¯à®±à®¤à¯ (à®®à®¿à®•à®¾à®¤à¯)' }
+                { id: 'mid_t_52', title: 'வ�‡ற்றும�ˆத் த�Š�•�ˆ: ஐ, �†ல், �•ு, �‡ன், �…து, �•ண் மற�ˆதல் (Day 52)', keyAxiom: 'பால் �•ு�Ÿித்தான் = பால�ˆ�•் �•ு�Ÿித்தான் (2-�†ம் வ�‡ற்றும�ˆ �‰ருபு ஐ மற�ˆந்தது)' },
+                { id: 'mid_t_53', title: 'வின�ˆத்த�Š�•�ˆ: மு�•்�•ாலமும் மற�ˆந்து வருதல் (Day 53)', keyAxiom: '�Šறு�•ாய் = �Šறிய �•ாய், �Šறு�•ின்ற �•ாய், �Šறும் �•ாய் (�•ாலம் �•ா�Ÿ்�Ÿும் �‡�Ÿ�ˆநில�ˆ மற�ˆந்தது)' },
+                { id: 'mid_t_54', title: 'பண்புத்த�Š�•�ˆ: ம�ˆ வி�•ுதியும் �†�•ிய, �†ன �‰ருபு�•ளும் மற�ˆதல் (Day 54)', keyAxiom: '�š�†ந்தாமர�ˆ = �š�†ம்ம�ˆயா�•ிய தாமர�ˆ | வ�Ÿ்�Ÿத்த�Š�Ÿ்�Ÿி = வ�Ÿ்�Ÿமா�•ிய த�Š�Ÿ்�Ÿி' },
+                { id: 'mid_t_55', title: '�‰வம�ˆத்த�Š�•�ˆ & �‰ம்ம�ˆத்த�Š�•�ˆ (Day 55)', keyAxiom: 'மலர்விழி (ப�‹ல மற�ˆந்தது) | தாய் தந்த�ˆ (தாயும் தந்த�ˆயும் - �‰ம் மற�ˆந்தது)' },
+                { id: 'mid_t_56', title: 'வல்லினம் மி�•ும் �‡�Ÿ�™்�•ள்: �…ந்த, �‡ந்த �šு�Ÿ்�Ÿுப்ப�†யர்�•ள் பின் (Day 56)', keyAxiom: '�…ந்த + �•ா�Ÿு = �…ந்த�•்�•ா�Ÿு | �‡ந்த + ப�ˆயன் = �‡ந்தப்ப�ˆயன்' },
+                { id: 'mid_t_57', title: 'வல்லினம் மி�•ா �‡�Ÿ�™்�•ள்: வின�ˆத்த�Š�•�ˆ & �…து, �‡து பின் (Day 57)', keyAxiom: '�•ு�Ÿி தண்ண�€ர் (வின�ˆத்த�Š�•�ˆ மி�•ாது) | �…து �š�†ன்றது (மி�•ாது)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_t_52', topicTitle: 'à®µà¯‡à®±à¯à®±à¯à®®à¯ˆà®¤à¯ à®¤à¯Šà®•à¯ˆ (Day 52)', subtopic: 'à®µà¯‡à®±à¯à®±à¯à®®à¯ˆ à®‰à®°à¯à®ªà¯à®•à®³à¯ (à®, à®†à®²à¯, à®•à¯, à®‡à®©à¯, à®…à®¤à¯, à®•à®£à¯) à®šà¯Šà®²à¯à®²à®¿à®©à¯ à®¨à®Ÿà¯à®µà®¿à®²à¯ à®®à®±à¯ˆà®¨à¯à®¤à¯ à®µà®°à¯à®¤à®²à¯', dayNumber: 52, periodNumber: 1, keyFormulaOrLaw: 'à®µà¯‡à®±à¯à®±à¯à®®à¯ˆà®¤à¯ à®¤à¯Šà®•à¯ˆ: à®ªà¯†à®¯à®°à¯à®šà¯à®šà¯Šà®²à¯ + à®ªà¯†à®¯à®°à¯à®šà¯à®šà¯Šà®²à¯ (à®µà¯‡à®±à¯à®±à¯à®®à¯ˆ à®‰à®°à¯à®ªà¯ à®®à®±à¯ˆà®µà¯)', keyPoints: ['à®•à®°à¯à®®à¯à®ªà¯ à®¤à®¿à®©à¯à®±à®¾à®©à¯ = à®•à®°à¯à®®à¯à®ªà¯ˆà®¤à¯ à®¤à®¿à®©à¯à®±à®¾à®©à¯ (2-à®†à®®à¯ à®µà¯‡à®±à¯à®±à¯à®®à¯ˆà®¤à¯ à®¤à¯Šà®•à¯ˆ)', 'à®¤à®²à¯ˆ à®µà®£à®™à¯à®•à®¿à®©à®¾à®©à¯ = à®¤à®²à¯ˆà®¯à®¾à®²à¯ à®µà®£à®™à¯à®•à®¿à®©à®¾à®©à¯ (3-à®†à®®à¯ à®µà¯‡à®±à¯à®±à¯à®®à¯ˆà®¤à¯ à®¤à¯Šà®•à¯ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_53', topicTitle: 'à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ: à®Šà®±à¯à®•à®¾à®¯à¯ (Day 53)', subtopic: 'à®µà®¿à®©à¯ˆà®ªà¯à®ªà®•à¯à®¤à®¿à®¯à¯à®®à¯ à®ªà¯†à®¯à®°à¯à®šà¯à®šà¯Šà®²à¯à®²à¯à®®à¯ à®‡à®£à¯ˆà®¨à¯à®¤à¯ à®®à¯à®•à¯à®•à®¾à®²à®®à¯à®®à¯ à®®à®±à¯ˆà®¨à¯à®¤à¯ à®¨à®¿à®©à¯à®±à¯ à®ªà¯Šà®°à¯à®³à¯ à®¤à®°à¯à®¤à®²à¯', dayNumber: 53, periodNumber: 1, keyFormulaOrLaw: 'à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ = à®µà®¿à®©à¯ˆà®ªà¯à®ªà®•à¯à®¤à®¿ (à®à®µà®²à¯) + à®ªà¯†à®¯à®°à¯à®šà¯à®šà¯Šà®²à¯ (à®•à®¾à®²à®®à¯ à®•à®°à®¨à¯à®¤ à®ªà¯†à®¯à®°à¯†à®šà¯à®šà®®à¯)', keyPoints: ['à®Šà®±à¯à®•à®¾à®¯à¯ = à®Šà®±à®¿à®¯ à®•à®¾à®¯à¯, à®Šà®±à¯à®•à®¿à®©à¯à®± à®•à®¾à®¯à¯, à®Šà®±à¯à®®à¯ à®•à®¾à®¯à¯', 'à®šà¯à®Ÿà¯à®šà¯‹à®±à¯, à®…à®²à¯ˆà®•à®Ÿà®²à¯, à®ªà®¾à®¯à¯à®ªà¯à®²à®¿, à®µà®³à®°à¯à®ªà®¿à®±à¯ˆ à®†à®•à®¿à®¯à®µà¯ˆ à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆà®•à®³à¯'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_54', topicTitle: 'à®ªà®£à¯à®ªà¯à®¤à¯à®¤à¯Šà®•à¯ˆ: à®šà¯†à®¨à¯à®¤à®¾à®®à®°à¯ˆ (Day 54)', subtopic: 'à®¨à®¿à®±à®®à¯, à®µà®Ÿà®¿à®µà®®à¯, à®šà¯à®µà¯ˆ, à®…à®³à®µà¯ à®†à®•à®¿à®¯ à®ªà®£à¯à®ªà¯à®•à®³à¯ˆ à®‰à®£à®°à¯à®¤à¯à®¤à®¿ "à®®à¯ˆ" à®µà®¿à®•à¯à®¤à®¿ à®®à®±à¯ˆà®¨à¯à®¤à¯ à®µà®°à¯à®¤à®²à¯', dayNumber: 54, periodNumber: 1, keyFormulaOrLaw: 'à®ªà®£à¯à®ªà¯à®¤à¯à®¤à¯Šà®•à¯ˆ = à®ªà®£à¯à®ªà¯à®ªà¯à®ªà¯†à®¯à®°à¯ + à®†à®•à®¿à®¯/à®†à®© à®‰à®°à¯à®ªà¯ à®®à®±à¯ˆà®µà¯', keyPoints: ['à®šà¯†à®¨à¯à®¤à®¾à®®à®°à¯ˆ = à®šà¯†à®®à¯à®®à¯ˆ + à®¤à®¾à®®à®°à¯ˆ (à®šà¯†à®®à¯à®®à¯ˆà®¯à®¾à®•à®¿à®¯ à®¤à®¾à®®à®°à¯ˆ)', 'à®µà¯†à®£à¯à®£à®¿à®²à®µà¯ = à®µà¯†à®£à¯à®®à¯ˆ + à®¨à®¿à®²à®µà¯ | à®•à®°à¯à®™à¯à®•à¯à®µà®³à¯ˆ = à®•à®°à¯à®®à¯ˆ + à®•à¯à®µà®³à¯ˆ'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_55', topicTitle: 'à®‰à®µà®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ & à®‰à®®à¯à®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ (Day 55)', subtopic: 'à®‰à®µà®® à®‰à®°à¯à®ªà¯ (à®ªà¯‹à®², à®ªà¯‹à®©à¯à®±) à®®à®±à¯à®±à¯à®®à¯ à®Žà®£à¯à®£à¯à®®à¯à®®à¯ˆ (à®‰à®®à¯) à®®à®±à¯ˆà®¨à¯à®¤à¯ à®µà®°à¯à®¤à®²à¯', dayNumber: 55, periodNumber: 1, keyFormulaOrLaw: 'à®‰à®µà®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ: à®‰à®µà®®à®¾à®©à®®à¯ + à®‰à®µà®®à¯‡à®¯à®®à¯ | à®‰à®®à¯à®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ: à®Žà®£à¯à®£à®²à¯/à®…à®³à®µà¯ˆà®šà¯ à®šà¯Šà®±à¯à®•à®³à®¿à®²à¯ "à®‰à®®à¯" à®®à®±à¯ˆà®µà¯', keyPoints: ['à®®à®²à®°à¯à®µà®¿à®´à®¿ = à®®à®²à®°à¯ à®ªà¯‹à®©à¯à®± à®µà®¿à®´à®¿ (à®‰à®µà®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ)', 'à®‡à®°à®µà¯à®ªà®•à®²à¯ = à®‡à®°à®µà¯à®®à¯ à®ªà®•à®²à¯à®®à¯ | à®…à®£à¯à®£à®©à¯ à®¤à®®à¯à®ªà®¿ = à®…à®£à¯à®£à®©à¯à®®à¯ à®¤à®®à¯à®ªà®¿à®¯à¯à®®à¯ (à®‰à®®à¯à®®à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_56', topicTitle: 'à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯ à®‡à®Ÿà®™à¯à®•à®³à¯ (Day 56)', subtopic: 'à®…, à®‡ à®šà¯à®Ÿà¯à®Ÿà¯†à®´à¯à®¤à¯à®¤à¯à®•à®³à®¿à®©à¯ à®ªà®¿à®©à¯à®©à¯à®®à¯, à®Ž à®µà®¿à®©à®¾à®µà¯†à®´à¯à®¤à¯à®¤à®¿à®©à¯ à®ªà®¿à®©à¯à®©à¯à®®à¯ à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯', dayNumber: 56, periodNumber: 1, keyFormulaOrLaw: 'à®µà®¿à®¤à®¿: à®…à®¨à¯à®¤, à®‡à®¨à¯à®¤, à®Žà®¨à¯à®¤ + à®µà®²à¯à®²à®¿à®© à®®à¯†à®¯à¯ (à®•à¯, à®šà¯, à®¤à¯, à®ªà¯) à®®à®¿à®•à¯à®®à¯', keyPoints: ['à®…à®¨à¯à®¤ + à®•à®¾à®Ÿà¯ = à®…à®¨à¯à®¤à®•à¯à®•à®¾à®Ÿà¯ | à®‡à®¨à¯à®¤ + à®šà®Ÿà¯à®Ÿà¯ˆ = à®‡à®¨à¯à®¤à®šà¯à®šà®Ÿà¯à®Ÿà¯ˆ', 'à®Žà®¨à¯à®¤ + à®ªà¯à®¤à¯à®¤à®•à®®à¯ = à®Žà®¨à¯à®¤à®ªà¯à®ªà¯à®¤à¯à®¤à®•à®®à¯'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_t_57', topicTitle: 'à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à®¾ à®‡à®Ÿà®™à¯à®•à®³à¯ (Day 57)', subtopic: 'à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆà®¯à®¿à®²à¯à®®à¯, à®…à®¤à¯, à®‡à®¤à¯, à®Žà®¤à¯ à®šà¯à®Ÿà¯à®Ÿà¯à®ªà¯ à®ªà¯†à®¯à®°à¯à®•à®³à®¿à®©à¯ à®ªà®¿à®©à¯à®©à¯à®®à¯ à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à®¾à®¤à¯', dayNumber: 57, periodNumber: 1, keyFormulaOrLaw: 'à®µà®¿à®¤à®¿: à®µà®¿à®©à¯ˆà®¤à¯à®¤à¯Šà®•à¯ˆà®¯à®¿à®²à¯ à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à®¾à®¤à¯ | à®…à®¤à¯, à®‡à®¤à¯, à®Žà®¤à¯ à®ªà®¿à®©à¯ à®®à®¿à®•à®¾à®¤à¯', keyPoints: ['à®•à¯à®Ÿà®¿ à®¤à®£à¯à®£à¯€à®°à¯ (à®•à¯à®Ÿà®¿à®¤à¯à®¤à®£à¯à®£à¯€à®°à¯ à®¤à®µà®±à¯)', 'à®…à®¤à¯ à®ªà®±à®¨à¯à®¤à®¤à¯ (à®…à®¤à¯à®ªà¯à®ªà®±à®¨à¯à®¤à®¤à¯ à®¤à®µà®±à¯) | à®Žà®¤à¯ à®•à®£à¯à®Ÿà®¾à®¯à¯ (à®Žà®¤à¯à®•à¯à®•à®£à¯à®Ÿà®¾à®¯à¯ à®¤à®µà®±à¯)'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_t_52', topicTitle: 'வ�‡ற்றும�ˆத் த�Š�•�ˆ (Day 52)', subtopic: 'வ�‡ற்றும�ˆ �‰ருபு�•ள் (ஐ, �†ல், �•ு, �‡ன், �…து, �•ண்) �š�Šல்லின் ந�Ÿுவில் மற�ˆந்து வருதல்', dayNumber: 52, periodNumber: 1, keyFormulaOrLaw: 'வ�‡ற்றும�ˆத் த�Š�•�ˆ: ப�†யர்�š்�š�Šல் + ப�†யர்�š்�š�Šல் (வ�‡ற்றும�ˆ �‰ருபு மற�ˆவு)', keyPoints: ['�•ரும்பு தின்றான் = �•ரும்ப�ˆத் தின்றான் (2-�†ம் வ�‡ற்றும�ˆத் த�Š�•�ˆ)', 'தல�ˆ வண�™்�•ினான் = தல�ˆயால் வண�™்�•ினான் (3-�†ம் வ�‡ற்றும�ˆத் த�Š�•�ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_53', topicTitle: 'வின�ˆத்த�Š�•�ˆ: �Šறு�•ாய் (Day 53)', subtopic: 'வின�ˆப்ப�•ுதியும் ப�†யர்�š்�š�Šல்லும் �‡ண�ˆந்து மு�•்�•ாலமும் மற�ˆந்து நின்று ப�Šருள் தருதல்', dayNumber: 53, periodNumber: 1, keyFormulaOrLaw: 'வின�ˆத்த�Š�•�ˆ = வின�ˆப்ப�•ுதி (ஏவல்) + ப�†யர்�š்�š�Šல் (�•ாலம் �•ரந்த ப�†யர�†�š்�šம்)', keyPoints: ['�Šறு�•ாய் = �Šறிய �•ாய், �Šறு�•ின்ற �•ாய், �Šறும் �•ாய்', '�šு�Ÿு�š�‹று, �…ல�ˆ�•�Ÿல், பாய்புலி, வளர்பிற�ˆ �†�•ியவ�ˆ வின�ˆத்த�Š�•�ˆ�•ள்'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_54', topicTitle: 'பண்புத்த�Š�•�ˆ: �š�†ந்தாமர�ˆ (Day 54)', subtopic: 'நிறம், வ�Ÿிவம், �šுவ�ˆ, �…ளவு �†�•ிய பண்பு�•ள�ˆ �‰ணர்த்தி "ம�ˆ" வி�•ுதி மற�ˆந்து வருதல்', dayNumber: 54, periodNumber: 1, keyFormulaOrLaw: 'பண்புத்த�Š�•�ˆ = பண்புப்ப�†யர் + �†�•ிய/�†ன �‰ருபு மற�ˆவு', keyPoints: ['�š�†ந்தாமர�ˆ = �š�†ம்ம�ˆ + தாமர�ˆ (�š�†ம்ம�ˆயா�•ிய தாமர�ˆ)', 'வ�†ண்ணிலவு = வ�†ண்ம�ˆ + நிலவு | �•ரு�™்�•ுவள�ˆ = �•ரும�ˆ + �•ுவள�ˆ'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_55', topicTitle: '�‰வம�ˆத்த�Š�•�ˆ & �‰ம்ம�ˆத்த�Š�•�ˆ (Day 55)', subtopic: '�‰வம �‰ருபு (ப�‹ல, ப�‹ன்ற) மற்றும் �Žண்ணும்ம�ˆ (�‰ம்) மற�ˆந்து வருதல்', dayNumber: 55, periodNumber: 1, keyFormulaOrLaw: '�‰வம�ˆத்த�Š�•�ˆ: �‰வமானம் + �‰வம�‡யம் | �‰ம்ம�ˆத்த�Š�•�ˆ: �Žண்ணல்/�…ளவ�ˆ�š் �š�Šற்�•ளில் "�‰ம்" மற�ˆவு', keyPoints: ['மலர்விழி = மலர் ப�‹ன்ற விழி (�‰வம�ˆத்த�Š�•�ˆ)', '�‡ரவுப�•ல் = �‡ரவும் ப�•லும் | �…ண்ணன் தம்பி = �…ண்ணனும் தம்பியும் (�‰ம்ம�ˆத்த�Š�•�ˆ)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_56', topicTitle: 'வல்லினம் மி�•ும் �‡�Ÿ�™்�•ள் (Day 56)', subtopic: '�…, �‡ �šு�Ÿ்�Ÿ�†ழுத்து�•ளின் பின்னும், �Ž வினாவ�†ழுத்தின் பின்னும் வல்லினம் மி�•ும்', dayNumber: 56, periodNumber: 1, keyFormulaOrLaw: 'விதி: �…ந்த, �‡ந்த, �Žந்த + வல்லின ம�†ய் (�•், �š், த், ப்) மி�•ும்', keyPoints: ['�…ந்த + �•ா�Ÿு = �…ந்த�•்�•ா�Ÿு | �‡ந்த + �š�Ÿ்�Ÿ�ˆ = �‡ந்த�š்�š�Ÿ்�Ÿ�ˆ', '�Žந்த + புத்த�•ம் = �Žந்தப்புத்த�•ம்'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_57', topicTitle: 'வல்லினம் மி�•ா �‡�Ÿ�™்�•ள் (Day 57)', subtopic: 'வின�ˆத்த�Š�•�ˆயிலும், �…து, �‡து, �Žது �šு�Ÿ்�Ÿுப் ப�†யர்�•ளின் பின்னும் வல்லினம் மி�•ாது', dayNumber: 57, periodNumber: 1, keyFormulaOrLaw: 'விதி: வின�ˆத்த�Š�•�ˆயில் வல்லினம் மி�•ாது | �…து, �‡து, �Žது பின் மி�•ாது', keyPoints: ['�•ு�Ÿி தண்ண�€ர் (�•ு�Ÿித்தண்ண�€ர் தவறு)', '�…து பறந்தது (�…துப்பறந்தது தவறு) | �Žது �•ண்�Ÿாய் (�Žது�•்�•ண்�Ÿாய் தவறு)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -874,7 +874,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     },
     {
       subjectId: 'mid_math',
-      subjectName: isTa ? 'à®•à®£à®¿à®¤à®®à¯ (Mathematics & Pre-Algebra)' : 'Mathematics, Pre-Algebra & Geometry',
+      subjectName: isTa ? '�•ணிதம் (Mathematics & Pre-Algebra)' : 'Mathematics, Pre-Algebra & Geometry',
       icon: 'ðŸ“',
       color: '#06b6d4',
       totalChapters: 3,
@@ -882,90 +882,90 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®Žà®£à¯à®•à®£à®¿à®¤à®®à¯ & à®µà®°à®¿à®šà¯ˆ: BODMAS, HCF & LCM à®¨à®¾à®©à¯‹ à®¤à®²à¯ˆà®ªà¯à®ªà¯à®•à®³à¯' : 'Arithmetic & Operations: BODMAS, HCF & LCM Nano-Topics',
-          description: isTa ? 'à®šà¯†à®¯à®²à¯à®ªà®¾à®Ÿà¯à®•à®³à®¿à®©à¯ à®µà®°à®¿à®šà¯ˆ BODMAS à®ªà®¿à®°à®¾à®•à¯à®•à¯†à®Ÿà¯à®Ÿà¯à®•à®³à¯, à®µà®•à¯à®¤à¯à®¤à®²à¯ à®ªà¯†à®°à¯à®•à¯à®•à®²à¯ à®®à¯à®©à¯à®©à¯à®°à®¿à®®à¯ˆ, à®ªà®•à®¾ à®•à®¾à®°à®£à®¿ à®®à®°à®®à¯, à®¯à¯‚à®•à¯à®³à®¿à®Ÿà¯ à®µà®´à®¿à®®à¯à®±à¯ˆ, à®®à¯€.à®ªà¯Š.à®µ à®®à®±à¯à®±à¯à®®à¯ à®®à¯€.à®šà®¿.à®® à®ªà®¯à®©à¯à®ªà®¾à®Ÿà¯à®Ÿà¯à®•à¯ à®•à®£à®•à¯à®•à¯à®•à®³à¯' : 'BODMAS bracket hierarchy, Division/Multiplication precedence, Prime factorization tree, Euclid long division, and Real-world HCF/LCM word problems',
+          chapterTitle: isTa ? '�Žண்�•ணிதம் & வரி�š�ˆ: BODMAS, HCF & LCM நான�‹ தல�ˆப்பு�•ள்' : 'Arithmetic & Operations: BODMAS, HCF & LCM Nano-Topics',
+          description: isTa ? '�š�†யல்பா�Ÿு�•ளின் வரி�š�ˆ BODMAS பிரா�•்�•�†�Ÿ்�Ÿு�•ள், வ�•ுத்தல் ப�†ரு�•்�•ல் முன்னுரிம�ˆ, ப�•ா �•ாரணி மரம், ய�‚�•்ளி�Ÿ் வழிமுற�ˆ, ம�€.ப�Š.வ மற்றும் ம�€.�šி.ம பயன்பா�Ÿ்�Ÿு�•் �•ண�•்�•ு�•ள்' : 'BODMAS bracket hierarchy, Division/Multiplication precedence, Prime factorization tree, Euclid long division, and Real-world HCF/LCM word problems',
           subtopics: [
             {
               id: 'mid_m_sub1',
               title: 'BODMAS & HCF/LCM Nano-Units',
               microTopics: [
                 { id: 'mid_m_1', title: 'BODMAS: Brackets Hierarchy (), {}, [] (Day 1)', keyAxiom: 'Innermost () first, then {}, finally outer []' },
-                { id: 'mid_m_2', title: 'BODMAS: Division & Multiplication Priority (Day 2)', keyAxiom: 'Ã· and Ã— have equal precedence; evaluate Left-to-Right' },
+                { id: 'mid_m_2', title: 'BODMAS: Division & Multiplication Priority (Day 2)', keyAxiom: 'Ã· and × have equal precedence; evaluate Left-to-Right' },
                 { id: 'mid_m_3', title: 'BODMAS: Addition & Subtraction Priority (Day 3)', keyAxiom: '+ and - have equal precedence; evaluate Left-to-Right' },
                 { id: 'mid_m_4', title: 'HCF: Prime Factorization Tree Method (Day 4)', keyAxiom: 'Product of lowest powers of common prime factors' },
                 { id: 'mid_m_5', title: 'HCF: Euclid Division / Long Division Method (Day 5)', keyAxiom: 'a = bq + r until remainder r = 0' },
                 { id: 'mid_m_6', title: 'LCM: Common Division Method (Day 6)', keyAxiom: 'Product of all prime divisors including remaining factors' },
-                { id: 'mid_m_7', title: 'HCF Ã— LCM = Product of Two Numbers Identity (Day 7)', keyAxiom: 'Numberâ‚ Ã— Numberâ‚‚ = HCF(a,b) Ã— LCM(a,b)' },
+                { id: 'mid_m_7', title: 'HCF × LCM = Product of Two Numbers Identity (Day 7)', keyAxiom: 'Numberâ‚ × Numberâ‚‚ = HCF(a,b) × LCM(a,b)' },
                 { id: 'mid_m_8', title: 'HCF & LCM Word Problems: Bells & Tiles (Day 8)', keyAxiom: 'HCF for largest tile size; LCM for simultaneous bell intervals' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_1', topicTitle: 'BODMAS: Brackets Hierarchy (), {}, [] (Day 1)', subtopic: 'Solving Innermost Round Brackets (), Curly Brackets {}, and Square Brackets []', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'BODMAS Order: () -> {} -> [] -> Orders -> Ã· -> Ã— -> + -> -', keyPoints: ['Always simplify expressions inside the innermost parentheses first', 'Nested brackets evaluate from inside out like peeling an onion'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_2', topicTitle: 'BODMAS: Division & Multiplication Precedence (Day 2)', subtopic: 'Left-to-Right Rule for Equal Precedence Operations in 24 Ã· 4 Ã— 2 vs 24 Ã— 4 Ã· 2', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'Rule: Division and Multiplication have EQUAL priority; Evaluate Left-to-Right', keyPoints: ['In 24 Ã· 4 Ã— 2, do 24 Ã· 4 = 6 first, then 6 Ã— 2 = 12 (not 24 Ã· 8)', 'Never prioritize multiplication over division unless indicated by brackets'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_1', topicTitle: 'BODMAS: Brackets Hierarchy (), {}, [] (Day 1)', subtopic: 'Solving Innermost Round Brackets (), Curly Brackets {}, and Square Brackets []', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'BODMAS Order: () -> {} -> [] -> Orders -> Ã· -> × -> + -> -', keyPoints: ['Always simplify expressions inside the innermost parentheses first', 'Nested brackets evaluate from inside out like peeling an onion'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_2', topicTitle: 'BODMAS: Division & Multiplication Precedence (Day 2)', subtopic: 'Left-to-Right Rule for Equal Precedence Operations in 24 Ã· 4 × 2 vs 24 × 4 Ã· 2', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'Rule: Division and Multiplication have EQUAL priority; Evaluate Left-to-Right', keyPoints: ['In 24 Ã· 4 × 2, do 24 Ã· 4 = 6 first, then 6 × 2 = 12 (not 24 Ã· 8)', 'Never prioritize multiplication over division unless indicated by brackets'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_m_3', topicTitle: 'BODMAS: Addition & Subtraction Precedence (Day 3)', subtopic: 'Left-to-Right Evaluation and Grouping Positive and Negative Terms', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'Rule: Addition and Subtraction have EQUAL priority; Evaluate Left-to-Right', keyPoints: ['Group all positive numbers together and all negative numbers together', 'Subtract the sum of negative terms from the sum of positive terms'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_4', topicTitle: 'HCF: Prime Factorization Tree Method (Day 4)', subtopic: 'Breaking Numbers into Prime Factors and Taking Smallest Powers of Common Factors', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'HCF(a, b) = Product of smallest power of each common prime factor', keyPoints: ['For 24 (2Â³ Ã— 3) and 36 (2Â² Ã— 3Â²), HCF = 2Â² Ã— 3 = 12', 'HCF is always less than or equal to the smallest number'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_5', topicTitle: 'HCF: Euclid Division / Long Division Method (Day 5)', subtopic: 'Successive Division Algorithm: Dividend = Divisor Ã— Quotient + Remainder', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Euclid Algorithm: a = bq + r (0 â‰¤ r < b) | Last non-zero divisor is HCF', keyPoints: ['Efficient method for finding HCF of very large 3-digit and 4-digit numbers', 'When remainder becomes 0, the divisor at that stage is the exact HCF'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_4', topicTitle: 'HCF: Prime Factorization Tree Method (Day 4)', subtopic: 'Breaking Numbers into Prime Factors and Taking Smallest Powers of Common Factors', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'HCF(a, b) = Product of smallest power of each common prime factor', keyPoints: ['For 24 (2³ × 3) and 36 (2² × 3²), HCF = 2² × 3 = 12', 'HCF is always less than or equal to the smallest number'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_5', topicTitle: 'HCF: Euclid Division / Long Division Method (Day 5)', subtopic: 'Successive Division Algorithm: Dividend = Divisor × Quotient + Remainder', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Euclid Algorithm: a = bq + r (0 ≤ r < b) | Last non-zero divisor is HCF', keyPoints: ['Efficient method for finding HCF of very large 3-digit and 4-digit numbers', 'When remainder becomes 0, the divisor at that stage is the exact HCF'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_m_6', topicTitle: 'LCM: Common Division Method (Day 6)', subtopic: 'Simultaneous Division of Multiple Numbers by Common Prime Divisors', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'LCM(a, b) = Product of all prime divisors and undivided remainder quotients', keyPoints: ['LCM is the smallest positive number that is a multiple of all given numbers', 'LCM is always greater than or equal to the largest number'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_7', topicTitle: 'HCF Ã— LCM = a Ã— b Core Identity (Day 7)', subtopic: 'Finding One Unknown Number or HCF/LCM Using the Product Relationship Formula', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'Numberâ‚ Ã— Numberâ‚‚ = HCF(a, b) Ã— LCM(a, b) | Numberâ‚‚ = (HCF Ã— LCM) / Numberâ‚', keyPoints: ['Applicable strictly to any two positive integers', 'Given HCF = 6, LCM = 36, Numberâ‚ = 12 -> Numberâ‚‚ = (6 Ã— 36)/12 = 18'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_7', topicTitle: 'HCF × LCM = a × b Core Identity (Day 7)', subtopic: 'Finding One Unknown Number or HCF/LCM Using the Product Relationship Formula', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'Numberâ‚ × Numberâ‚‚ = HCF(a, b) × LCM(a, b) | Numberâ‚‚ = (HCF × LCM) / Numberâ‚', keyPoints: ['Applicable strictly to any two positive integers', 'Given HCF = 6, LCM = 36, Numberâ‚ = 12 -> Numberâ‚‚ = (6 × 36)/12 = 18'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_m_8', topicTitle: 'HCF & LCM Word Problems: Bells & Tiles (Day 8)', subtopic: 'Real-World Applications: Paving Floors with Minimum Square Tiles & Bell Intervals', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'Max Tile Side = HCF(Length, Breadth) | Next Toll Time = LCM(Intervalâ‚, Intervalâ‚‚)', keyPoints: ['Use HCF when dividing or partitioning into maximum equal sizes', 'Use LCM when synchronizing repeating cycles or periodic events'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®ªà¯à®³à¯à®³à®¿à®¯à®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®¤à®²à¯ˆà®ªà¯à®ªà¯à®•à®³à¯: Mean, Median, Mode, Range & CI' : 'Statistics & Commercial Nano-Topics: Mean, Median, Mode & CI',
-          description: isTa ? 'à®•à¯‚à®Ÿà¯à®Ÿà¯à®šà¯ à®šà®°à®¾à®šà®°à®¿ (Mean), à®’à®±à¯à®±à¯ˆà®ªà¯à®ªà®Ÿà¯ˆ/à®‡à®°à®Ÿà¯à®Ÿà¯ˆà®ªà¯à®ªà®Ÿà¯ˆ à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ (Median), à®®à¯à®•à®Ÿà¯ (Mode), à®µà¯€à®šà¯à®šà¯ (Range), à®•à¯‚à®Ÿà¯à®Ÿà¯à®µà®Ÿà¯à®Ÿà®¿' : 'Arithmetic Mean calculation, ODD/EVEN Median rules, Mode peak detection, Range spread, and Compound Interest',
+          chapterTitle: isTa ? 'புள்ளியியல் நான�‹ தல�ˆப்பு�•ள்: Mean, Median, Mode, Range & CI' : 'Statistics & Commercial Nano-Topics: Mean, Median, Mode & CI',
+          description: isTa ? '�•�‚�Ÿ்�Ÿு�š் �šரா�šரி (Mean), �’ற்ற�ˆப்ப�Ÿ�ˆ/�‡ர�Ÿ்�Ÿ�ˆப்ப�Ÿ�ˆ �‡�Ÿ�ˆநில�ˆ (Median), மு�•�Ÿு (Mode), வ�€�š்�šு (Range), �•�‚�Ÿ்�Ÿுவ�Ÿ்�Ÿி' : 'Arithmetic Mean calculation, ODD/EVEN Median rules, Mode peak detection, Range spread, and Compound Interest',
           subtopics: [
             {
               id: 'mid_m_sub2',
-              title: 'à®ªà¯à®³à¯à®³à®¿à®¯à®¿à®¯à®²à¯ & à®µà®£à®¿à®•à®•à¯ à®•à®£à®¿à®¤à®®à¯',
+              title: 'புள்ளியியல் & வணி�•�•் �•ணிதம்',
               microTopics: [
-                { id: 'mid_m_9', title: 'Arithmetic Mean: Ungrouped Raw Data Average (Day 9)', keyAxiom: 'Mean xÌ„ = (Î£x) / N' },
+                { id: 'mid_m_9', title: 'Arithmetic Mean: Ungrouped Raw Data Average (Day 9)', keyAxiom: 'Mean xÌ„ = (Σx) / N' },
                 { id: 'mid_m_10', title: 'Median: Finding Middle Term for ODD Dataset (Day 10)', keyAxiom: 'Median = [(n + 1)/2]áµ—Ê° term after sorting' },
                 { id: 'mid_m_11', title: 'Median: Finding Middle Average for EVEN Dataset (Day 11)', keyAxiom: 'Median = Average of (n/2)áµ—Ê° and (n/2 + 1)áµ—Ê° terms' },
                 { id: 'mid_m_12', title: 'Mode: Identifying Peak Frequency Values (Day 12)', keyAxiom: 'Mode = Most frequently occurring observation' },
                 { id: 'mid_m_13', title: 'Range & Coefficient of Range (Day 13)', keyAxiom: 'Range = Largest - Smallest | Coefficient = (L-S)/(L+S)' },
-                { id: 'mid_m_14', title: 'Empirical Formula: Mode â‰ˆ 3(Median) - 2(Mean) (Day 14)', keyAxiom: 'Mode = 3 Median - 2 Mean for moderately skewed distribution' }
+                { id: 'mid_m_14', title: 'Empirical Formula: Mode ≈ 3(Median) - 2(Mean) (Day 14)', keyAxiom: 'Mode = 3 Median - 2 Mean for moderately skewed distribution' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_9', topicTitle: 'Arithmetic Mean: Raw Data Average (Day 9)', subtopic: 'Calculation of Arithmetic Mean: Sum of Observations Divided by Total Count', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Mean xÌ„ = (Î£ x) / N = (xâ‚ + xâ‚‚ + ... + xâ‚™) / n', keyPoints: ['Mean is the mathematical center balance of numerical data', 'If each observation is increased by k, the new mean increases by k'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_9', topicTitle: 'Arithmetic Mean: Raw Data Average (Day 9)', subtopic: 'Calculation of Arithmetic Mean: Sum of Observations Divided by Total Count', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Mean xÌ„ = (Σ x) / N = (xâ‚ + xâ‚‚ + ... + xâ‚™) / n', keyPoints: ['Mean is the mathematical center balance of numerical data', 'If each observation is increased by k, the new mean increases by k'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_m_10', topicTitle: 'Median: Middle Term for ODD Dataset (Day 10)', subtopic: 'Sorting in Ascending Order and Selecting Exact Center Position [(n+1)/2]áµ—Ê°', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'For Odd n: Median = Value of [(n + 1) / 2]áµ—Ê° term', keyPoints: ['Always arrange data in ascending or descending order first', 'For 7 items, Median is the 4th item; 50% values lie below and 50% above'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_11', topicTitle: 'Median: Middle Average for EVEN Dataset (Day 11)', subtopic: 'Finding the Arithmetic Average of the Two Central Values for Even Count', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'For Even n: Median = Â½ [ (n/2)áµ—Ê° term + (n/2 + 1)áµ—Ê° term ]', keyPoints: ['For 8 items, Median is average of 4th and 5th items', 'Median is not affected by extreme outlier values unlike Mean'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_11', topicTitle: 'Median: Middle Average for EVEN Dataset (Day 11)', subtopic: 'Finding the Arithmetic Average of the Two Central Values for Even Count', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'For Even n: Median = ½ [ (n/2)áµ—Ê° term + (n/2 + 1)áµ—Ê° term ]', keyPoints: ['For 8 items, Median is average of 4th and 5th items', 'Median is not affected by extreme outlier values unlike Mean'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_m_12', topicTitle: 'Mode: Identifying Peak Frequency Values (Day 12)', subtopic: 'Finding the Most Frequently Occurring Observation; Unimodal and Bimodal Data', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'Mode = Observation with the highest frequency in the dataset', keyPoints: ['A dataset can have one mode (unimodal), two modes (bimodal), or no mode at all', 'Useful in manufacturing and business for identifying most popular shoe size or clothing item'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_m_13', topicTitle: 'Range & Coefficient of Range (Day 13)', subtopic: 'Measuring Data Dispersion: Difference Between Maximum and Minimum Values', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'Range R = Largest (L) - Smallest (S) | Coefficient of Range = (L - S) / (L + S)', keyPoints: ['Simplest measure of data dispersion and variability', 'Range depends only on extreme values and ignores all intermediate numbers'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_14', topicTitle: 'Empirical Relation: Mode, Median & Mean (Day 14)', subtopic: 'Karl Pearson Empirical Relationship Formula for Moderately Skewed Distributions', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Mode â‰ˆ 3(Median) - 2(Mean) | Mean - Mode = 3(Mean - Median)', keyPoints: ['Allows calculating any one statistic if the other two are known', 'In a perfectly symmetrical normal distribution: Mean = Median = Mode'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_14', topicTitle: 'Empirical Relation: Mode, Median & Mean (Day 14)', subtopic: 'Karl Pearson Empirical Relationship Formula for Moderately Skewed Distributions', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Mode ≈ 3(Median) - 2(Mean) | Mean - Mode = 3(Mean - Median)', keyPoints: ['Allows calculating any one statistic if the other two are known', 'In a perfectly symmetrical normal distribution: Mean = Median = Mode'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯ & à®…à®³à®µà®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®¤à®²à¯ˆà®ªà¯à®ªà¯à®•à®³à¯: à®ªà®¿à®¤à®¾à®•à®°à®¸à¯ & à®µà®Ÿà¯à®Ÿà®®à¯' : 'Geometry & Mensuration Nano-Topics: Pythagoras & Circle',
-          description: isTa ? 'à®ªà®¿à®¤à®¾à®•à®°à®¸à¯ à®¤à¯‡à®±à¯à®±à®®à¯, à®®à¯à®•à¯à®•à¯‹à®£ à®µà®¿à®•à®¿à®¤à®™à¯à®•à®³à¯, à®µà®Ÿà¯à®Ÿà®¤à¯à®¤à®¿à®©à¯ à®šà¯à®±à¯à®±à®³à®µà¯ 2Ï€r à®®à®±à¯à®±à¯à®®à¯ à®ªà®°à®ªà¯à®ªà®³à®µà¯ Ï€rÂ²' : 'Pythagorean theorem, Pythagorean triplets, Circle circumference (2Ï€r) and Circle area (Ï€rÂ²)',
+          chapterTitle: isTa ? 'வ�Ÿிவியல் & �…ளவியல் நான�‹ தல�ˆப்பு�•ள்: பிதா�•ரஸ் & வ�Ÿ்�Ÿம்' : 'Geometry & Mensuration Nano-Topics: Pythagoras & Circle',
+          description: isTa ? 'பிதா�•ரஸ் த�‡ற்றம், மு�•்�•�‹ண வி�•ித�™்�•ள், வ�Ÿ்�Ÿத்தின் �šுற்றளவு 2�€r மற்றும் பரப்பளவு �€r�' : 'Pythagorean theorem, Pythagorean triplets, Circle circumference (2�€r) and Circle area (�€r�)',
           subtopics: [
             {
               id: 'mid_m_sub3',
-              title: 'à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯ & à®…à®³à®µà®¿à®¯à®²à¯',
+              title: 'வ�Ÿிவியல் & �…ளவியல்',
               microTopics: [
-                { id: 'mid_m_15', title: 'Pythagoras Theorem: Finding Hypotenuse (Day 15)', keyAxiom: 'cÂ² = aÂ² + bÂ² (Hypotenuse = âˆš(BaseÂ² + HeightÂ²))' },
-                { id: 'mid_m_16', title: 'Pythagoras Triplets: 3-4-5, 5-12-13, 8-15-17 (Day 16)', keyAxiom: '(2m, mÂ² - 1, mÂ² + 1) generates right triangle integer sides' },
-                { id: 'mid_m_17', title: 'Circle: Circumference Formula 2Ï€r (Day 17)', keyAxiom: 'Circumference = 2 Ã— (22/7) Ã— radius' },
-                { id: 'mid_m_18', title: 'Circle: Area Formula Ï€rÂ² (Day 18)', keyAxiom: 'Area = (22/7) Ã— radiusÂ²' }
+                { id: 'mid_m_15', title: 'Pythagoras Theorem: Finding Hypotenuse (Day 15)', keyAxiom: 'c² = a² + b² (Hypotenuse = √(Base² + Height²))' },
+                { id: 'mid_m_16', title: 'Pythagoras Triplets: 3-4-5, 5-12-13, 8-15-17 (Day 16)', keyAxiom: '(2m, m² - 1, m² + 1) generates right triangle integer sides' },
+                { id: 'mid_m_17', title: 'Circle: Circumference Formula 2Ï€r (Day 17)', keyAxiom: 'Circumference = 2 × (22/7) × radius' },
+                { id: 'mid_m_18', title: 'Circle: Area Formula Ï€r² (Day 18)', keyAxiom: 'Area = (22/7) × radius²' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_15', topicTitle: 'Pythagoras Theorem: Finding Hypotenuse (Day 15)', subtopic: 'Right-Angled Triangle Side Calculation: HypotenuseÂ² = BaseÂ² + AltitudeÂ²', dayNumber: 15, periodNumber: 1, keyFormulaOrLaw: 'Hypotenuse c = âˆš(aÂ² + bÂ²) | aÂ² + bÂ² = cÂ²', keyPoints: ['Strictly applies only to 90-degree right-angled triangles', 'The hypotenuse is always the longest side opposite the 90Â° right angle'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_16', topicTitle: 'Pythagorean Triplets (3-4-5, 5-12-13, 8-15-17) (Day 16)', subtopic: 'Integer Side Combinations and Formula (2m, mÂ² - 1, mÂ² + 1)', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'Pythagorean Triplet: 2m, mÂ² - 1, mÂ² + 1 for any integer m > 1', keyPoints: ['Multiples of triplets also form right triangles (e.g. 6-8-10 is 2Ã— of 3-4-5)', 'Used in construction for verifying perfect 90-degree right-angle corners'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_17', topicTitle: 'Circle: Circumference Formula 2Ï€r (Day 17)', subtopic: 'Boundary Distance of Circle, Diameter Relation (C = Ï€d) & Wheel Rotations', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: 'Circumference C = 2Ï€r = Ï€d (where Ï€ â‰ˆ 22/7 or 3.14159)', keyPoints: ['Circumference is the distance traveled by a wheel in one complete revolution', 'Ratio of Circumference to Diameter is constant Ï€ for all circles'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_18', topicTitle: 'Circle: Area Formula Ï€rÂ² (Day 18)', subtopic: 'Calculating 2D Enclosed Surface Area of Circle and Semicircle (Â½Ï€rÂ²)', dayNumber: 18, periodNumber: 1, keyFormulaOrLaw: 'Circle Area A = Ï€rÂ² | Semicircle Area = Â½Ï€rÂ² | Quadrant Area = Â¼Ï€rÂ²', keyPoints: ['Area units are always square units (cmÂ², mÂ²)', 'Doubling the radius increases the circle area by 4 times (2Â² = 4)'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_15', topicTitle: 'Pythagoras Theorem: Finding Hypotenuse (Day 15)', subtopic: 'Right-Angled Triangle Side Calculation: Hypotenuse² = Base² + Altitude²', dayNumber: 15, periodNumber: 1, keyFormulaOrLaw: 'Hypotenuse c = √(a² + b²) | a² + b² = c²', keyPoints: ['Strictly applies only to 90-degree right-angled triangles', 'The hypotenuse is always the longest side opposite the 90° right angle'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_16', topicTitle: 'Pythagorean Triplets (3-4-5, 5-12-13, 8-15-17) (Day 16)', subtopic: 'Integer Side Combinations and Formula (2m, m² - 1, m² + 1)', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'Pythagorean Triplet: 2m, m² - 1, m² + 1 for any integer m > 1', keyPoints: ['Multiples of triplets also form right triangles (e.g. 6-8-10 is 2× of 3-4-5)', 'Used in construction for verifying perfect 90-degree right-angle corners'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_17', topicTitle: 'Circle: Circumference Formula 2Ï€r (Day 17)', subtopic: 'Boundary Distance of Circle, Diameter Relation (C = Ï€d) & Wheel Rotations', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: 'Circumference C = 2Ï€r = Ï€d (where Ï€ ≈ 22/7 or 3.14159)', keyPoints: ['Circumference is the distance traveled by a wheel in one complete revolution', 'Ratio of Circumference to Diameter is constant Ï€ for all circles'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_18', topicTitle: 'Circle: Area Formula Ï€r² (Day 18)', subtopic: 'Calculating 2D Enclosed Surface Area of Circle and Semicircle (½Ï€r²)', dayNumber: 18, periodNumber: 1, keyFormulaOrLaw: 'Circle Area A = Ï€r² | Semicircle Area = ½Ï€r² | Quadrant Area = ¼Ï€r²', keyPoints: ['Area units are always square units (cm², m²)', 'Doubling the radius increases the circle area by 4 times (2² = 4)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
     },
     {
       subjectId: 'mid_science',
-      subjectName: isTa ? 'à®…à®±à®¿à®µà®¿à®¯à®²à¯ (Physics, Chemistry & Biology Core)' : 'Science (Physics, Chemistry & Biology Core)',
+      subjectName: isTa ? '�…றிவியல் (Physics, Chemistry & Biology Core)' : 'Science (Physics, Chemistry & Biology Core)',
       icon: '⚡',
       color: '#10b981',
       totalChapters: 3,
@@ -973,14 +973,14 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯: à®‡à®¯à®•à¯à®•à®®à¯, à®µà®¿à®šà¯ˆ, à®…à®´à¯à®¤à¯à®¤à®®à¯ & à®’à®³à®¿' : 'Physics Nano-Units: Motion, Force, Pressure & Light',
-          description: isTa ? 'à®µà¯‡à®•à®®à¯, à®®à¯à®Ÿà¯à®•à¯à®•à®®à¯, à®µà®¿à®šà¯ˆ F=ma, à®¨à®¿à®¯à¯‚à®Ÿà¯à®Ÿà®©à¯ à®µà®¿à®¤à®¿à®•à®³à¯ 1/2/3, à®“à®®à¯ à®µà®¿à®¤à®¿, à®®à®¿à®©à¯à®¤à®Ÿà¯ˆ à®¤à¯Šà®Ÿà®°à¯/à®ªà®•à¯à®• à®‡à®£à¯ˆà®ªà¯à®ªà¯, à®’à®³à®¿ à®Žà®¤à®¿à®°à¯Šà®²à®¿à®ªà¯à®ªà¯ à®®à®±à¯à®±à¯à®®à¯ à®µà®¿à®²à®•à®²à¯' : 'Speed, Acceleration, Force F=ma, Newton 1st/2nd/3rd Laws, Ohm\'s Law, Series/Parallel Resistors, Reflection and Refraction',
+          chapterTitle: isTa ? '�‡யற்பியல் நான�‹ �…ல�•ு�•ள்: �‡ய�•்�•ம், வி�š�ˆ, �…ழுத்தம் & �’ளி' : 'Physics Nano-Units: Motion, Force, Pressure & Light',
+          description: isTa ? 'வ�‡�•ம், மு�Ÿு�•்�•ம், வி�š�ˆ F=ma, நிய�‚�Ÿ்�Ÿன் விதி�•ள் 1/2/3, �“ம் விதி, மின்த�Ÿ�ˆ த�Š�Ÿர்/ப�•்�• �‡ண�ˆப்பு, �’ளி �Žதிர�Šலிப்பு மற்றும் வில�•ல்' : 'Speed, Acceleration, Force F=ma, Newton 1st/2nd/3rd Laws, Ohm\'s Law, Series/Parallel Resistors, Reflection and Refraction',
           subtopics: [
             {
               id: 'mid_s_sub1',
-              title: 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯',
+              title: '�‡யற்பியல் நான�‹ �…ல�•ு�•ள்',
               microTopics: [
-                { id: 'mid_p_19', title: 'Speed vs Velocity vs Acceleration (Day 19)', keyAxiom: 'Speed = Distance/Time | a = (v - u)/t (m/sÂ²)' },
+                { id: 'mid_p_19', title: 'Speed vs Velocity vs Acceleration (Day 19)', keyAxiom: 'Speed = Distance/Time | a = (v - u)/t (m/s²)' },
                 { id: 'mid_p_20', title: 'Fluid Pressure: P = F/A & Liquid Depth P = Ïgh (Day 20)', keyAxiom: 'Pressure in liquid increases linearly with depth' },
                 { id: 'mid_p_21', title: 'Newton 1st Law: Inertia of Rest and Motion (Day 21)', keyAxiom: 'Objects resist change in velocity unless acted by net force' },
                 { id: 'mid_p_22', title: 'Newton 2nd Law: F = ma & Momentum Impulse (Day 22)', keyAxiom: 'Force equals mass times acceleration (F = dp/dt)' },
@@ -993,23 +993,23 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
           ],
           microTopics: [
             { id: 'mid_p_19', topicTitle: 'Speed, Velocity & Acceleration (Day 19)', subtopic: 'Scalar Speed, Vector Velocity and Rate of Change of Velocity Acceleration (a = Î”v/Î”t)', dayNumber: 19, periodNumber: 1, keyFormulaOrLaw: 'Speed = Distance / Time | Velocity = Displacement / Time | Acceleration a = (v - u) / t', keyPoints: ['Speed is scalar (no direction); Velocity is vector (magnitude and direction)', 'Deceleration / Retardation is negative acceleration when brakes are applied'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_p_20', topicTitle: 'Fluid Pressure & Atmospheric Barometer (Day 20)', subtopic: 'Pressure P = F/A (1 Pa = 1 N/mÂ²), Hydrostatic Pressure (P = hÏg) & Mercury Column', dayNumber: 20, periodNumber: 1, keyFormulaOrLaw: 'Pressure P = Force / Area (Pa) | Liquid Hydrostatic Pressure P = h Ã— Ï Ã— g', keyPoints: ['Dams are built wider at the bottom because liquid pressure increases with depth', 'Standard atmospheric pressure at sea level is 760 mm Hg (1.013 Ã— 10âµ Pa)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_p_21', topicTitle: 'Newton\'s 1st Law: Inertia of Rest & Motion (Day 21)', subtopic: 'Galileo Concept of Inertia, Inertia of Rest, Motion, Direction and Mass as Measure of Inertia', dayNumber: 21, periodNumber: 1, keyFormulaOrLaw: 'Newton\'s First Law: Î£ F = 0 -> Velocity is Constant (Inertia)', keyPoints: ['Passengers lean backwards when bus starts suddenly due to inertia of rest', 'Heavier objects have greater inertia because inertia is directly proportional to mass'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_p_22', topicTitle: 'Newton\'s 2nd Law: Force Formula F = ma (Day 22)', subtopic: 'Momentum (p = mv), Rate of Change of Momentum and Impulse (J = F Ã— Î”t)', dayNumber: 22, periodNumber: 1, keyFormulaOrLaw: 'Force F = m Ã— a = (mv - mu) / t | Impulse J = Force Ã— Time = Î”p', keyPoints: ['Fielder pulls hands backward while catching ball to increase time, reducing impact force', '1 Newton is the force that produces an acceleration of 1 m/sÂ² on a 1 kg mass'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_20', topicTitle: 'Fluid Pressure & Atmospheric Barometer (Day 20)', subtopic: 'Pressure P = F/A (1 Pa = 1 N/m²), Hydrostatic Pressure (P = hÏg) & Mercury Column', dayNumber: 20, periodNumber: 1, keyFormulaOrLaw: 'Pressure P = Force / Area (Pa) | Liquid Hydrostatic Pressure P = h × Ï × g', keyPoints: ['Dams are built wider at the bottom because liquid pressure increases with depth', 'Standard atmospheric pressure at sea level is 760 mm Hg (1.013 × 10âµ Pa)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_21', topicTitle: 'Newton\'s 1st Law: Inertia of Rest & Motion (Day 21)', subtopic: 'Galileo Concept of Inertia, Inertia of Rest, Motion, Direction and Mass as Measure of Inertia', dayNumber: 21, periodNumber: 1, keyFormulaOrLaw: 'Newton\'s First Law: Σ F = 0 -> Velocity is Constant (Inertia)', keyPoints: ['Passengers lean backwards when bus starts suddenly due to inertia of rest', 'Heavier objects have greater inertia because inertia is directly proportional to mass'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_p_22', topicTitle: 'Newton\'s 2nd Law: Force Formula F = ma (Day 22)', subtopic: 'Momentum (p = mv), Rate of Change of Momentum and Impulse (J = F × Î”t)', dayNumber: 22, periodNumber: 1, keyFormulaOrLaw: 'Force F = m × a = (mv - mu) / t | Impulse J = Force × Time = Î”p', keyPoints: ['Fielder pulls hands backward while catching ball to increase time, reducing impact force', '1 Newton is the force that produces an acceleration of 1 m/s² on a 1 kg mass'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_p_23', topicTitle: 'Newton\'s 3rd Law: Action & Reaction Pairs (Day 23)', subtopic: 'Simultaneous Force Pairs Acting on Different Bodies, Recoil of Gun and Rocket Propulsion', dayNumber: 23, periodNumber: 1, keyFormulaOrLaw: 'Force on A by B = - Force on B by A | Fâ‚â‚‚ = -Fâ‚‚â‚', keyPoints: ['Action and reaction never cancel each other because they act on two different bodies', 'Rocket moves upward as high-speed combustion exhaust gases push downward'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_p_24', topicTitle: 'Ohm\'s Law: Voltage, Current & Resistance V = IR (Day 24)', subtopic: 'Ohmic Conductors, V-I Linear Characteristic Graph and Resistance Concept', dayNumber: 24, periodNumber: 1, keyFormulaOrLaw: 'Potential Difference V = Current (I) Ã— Resistance (R) | R = V / I (Ohms Î©)', keyPoints: ['At constant temperature, current through metallic conductor is proportional to voltage', 'Slope of V-I graph represents electrical resistance of the conductor'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_24', topicTitle: 'Ohm\'s Law: Voltage, Current & Resistance V = IR (Day 24)', subtopic: 'Ohmic Conductors, V-I Linear Characteristic Graph and Resistance Concept', dayNumber: 24, periodNumber: 1, keyFormulaOrLaw: 'Potential Difference V = Current (I) × Resistance (R) | R = V / I (Ohms Ω)', keyPoints: ['At constant temperature, current through metallic conductor is proportional to voltage', 'Slope of V-I graph represents electrical resistance of the conductor'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_p_25', topicTitle: 'Resistors in Series: R_s = Râ‚ + Râ‚‚ + Râ‚ƒ (Day 25)', subtopic: 'Single Pathway Circuit, Same Current Through All Resistors & Voltage Division', dayNumber: 25, periodNumber: 1, keyFormulaOrLaw: 'Series Equivalent: R_s = Râ‚ + Râ‚‚ + Râ‚ƒ | Total Voltage V = Vâ‚ + Vâ‚‚ + Vâ‚ƒ', keyPoints: ['Equivalent series resistance is always greater than the largest individual resistor', 'If any one component in series breaks, the entire circuit stops working'], type: 'solved_problem', importance: 'High-Yield' },
             { id: 'mid_p_26', topicTitle: 'Resistors in Parallel: 1/R_p = 1/Râ‚ + 1/Râ‚‚ (Day 26)', subtopic: 'Multiple Current Branches, Same Voltage Across Resistors & Domestic Wiring', dayNumber: 26, periodNumber: 1, keyFormulaOrLaw: 'Parallel Equivalent: 1/R_p = 1/Râ‚ + 1/Râ‚‚ | Total Current I = Iâ‚ + Iâ‚‚', keyPoints: ['Equivalent parallel resistance is always smaller than the smallest individual resistor', 'Home appliances are connected in parallel so each operates independently at 220V'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯: à®…à®®à®¿à®²à®™à¯à®•à®³à¯, à®•à®¾à®°à®™à¯à®•à®³à¯, pH & à®…à®£à¯ à®…à®®à¯ˆà®ªà¯à®ªà¯' : 'Chemistry Nano-Units: Acids, Bases, pH & Atomic Structure',
-          description: isTa ? 'à®²à®¿à®Ÿà¯à®®à®¸à¯, à®¨à®Ÿà¯à®¨à®¿à®²à¯ˆà®¯à®¾à®•à¯à®•à®²à¯, pH à®…à®³à®µà¯€à®Ÿà¯ (0â€“14), à®ªà¯à®°à¯‹à®Ÿà¯à®Ÿà®¾à®©à¯, à®Žà®²à®•à¯à®Ÿà¯à®°à®¾à®©à¯, à®¨à®¿à®¯à¯‚à®Ÿà¯à®°à®¾à®©à¯, à®…à®£à¯ à®Žà®£à¯ Z à®®à®±à¯à®±à¯à®®à¯ à®¨à®¿à®±à¯ˆ à®Žà®£à¯ A' : 'Litmus indicators, Neutralization, pH scale (0 to 14), Subatomic particles, Atomic number Z and Mass number A',
+          chapterTitle: isTa ? 'வ�‡தியியல் நான�‹ �…ல�•ு�•ள்: �…மில�™்�•ள், �•ார�™்�•ள், pH & �…ணு �…ம�ˆப்பு' : 'Chemistry Nano-Units: Acids, Bases, pH & Atomic Structure',
+          description: isTa ? 'லி�Ÿ்மஸ், ந�Ÿுநில�ˆயா�•்�•ல், pH �…ளவ�€�Ÿு (0–14), புர�‹�Ÿ்�Ÿான், �Žல�•்�Ÿ்ரான், நிய�‚�Ÿ்ரான், �…ணு �Žண் Z மற்றும் நிற�ˆ �Žண் A' : 'Litmus indicators, Neutralization, pH scale (0 to 14), Subatomic particles, Atomic number Z and Mass number A',
           subtopics: [
             {
               id: 'mid_s_sub2',
-              title: 'à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯',
+              title: 'வ�‡தியியல் நான�‹ �…ல�•ு�•ள்',
               microTopics: [
                 { id: 'mid_c_27', title: 'Acids & Bases: Litmus Indicators (Day 27)', keyAxiom: 'Acids turn blue litmus red; Bases turn red litmus blue' },
                 { id: 'mid_c_28', title: 'Neutralization: Acid + Base -> Salt + Water (Day 28)', keyAxiom: 'HCl + NaOH -> NaCl + Hâ‚‚O + Heat energy' },
@@ -1022,17 +1022,17 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
             { id: 'mid_c_27', topicTitle: 'Acids & Bases: Litmus & Indicators (Day 27)', subtopic: 'Natural Indicators (Turmeric, China Rose, Red Cabbage) and Synthetic Indicators (Phenolphthalein)', dayNumber: 27, periodNumber: 1, keyFormulaOrLaw: 'Acids: Sour Taste, pH < 7, Blue Litmus -> Red | Bases: Bitter, Soapy, Red Litmus -> Blue', keyPoints: ['Phenolphthalein turns bright pink in basic solutions and remains colorless in acids', 'Methyl orange turns red in acidic solutions and yellow in basic solutions'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_c_28', topicTitle: 'Neutralization: Acid + Base -> Salt + Water (Day 28)', subtopic: 'Exothermic Neutralization Reaction, Salt Formation & Antacid Treatment', dayNumber: 28, periodNumber: 1, keyFormulaOrLaw: 'Neutralization: Acid + Base -> Salt + Water (e.g. HCl + NaOH -> NaCl + Hâ‚‚O)', keyPoints: ['Antacid tablets containing Magnesium Hydroxide Mg(OH)â‚‚ neutralize excess stomach acid', 'Bee sting is acidic (formic acid), treated by applying mild base like baking soda'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_c_29', topicTitle: 'pH Scale: 0 to 14 Acidity & Alkalinity (Day 29)', subtopic: 'Sorenson pH Scale, Hydrogen Ion Concentration & Universal Indicator Color Chart', dayNumber: 29, periodNumber: 1, keyFormulaOrLaw: 'pH = -logâ‚â‚€[Hâº] | Acidic: 0 to 6.9 | Neutral: 7.0 | Basic / Alkaline: 7.1 to 14', keyPoints: ['Human blood maintains strict homeostasis around pH 7.35 to 7.45', 'Acid rain occurs when atmospheric sulfur/nitrogen oxides drop rain pH below 5.6'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_c_30', topicTitle: 'Atomic Structure: Protons, Neutrons & Electrons (Day 30)', subtopic: 'Bohr-Rutherford Planetary Model, Atomic Number Z, Mass Number A & Shell Filling', dayNumber: 30, periodNumber: 1, keyFormulaOrLaw: 'Atomic Number Z = Protons = Electrons | Mass Number A = Protons + Neutrons', keyPoints: ['Protons (+1 charge) and Neutrons (0 charge) form the heavy central Nucleus', 'Electrons (-1 charge) revolve in discrete energy shells following the 2nÂ² rule (K=2, L=8, M=18)'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_c_30', topicTitle: 'Atomic Structure: Protons, Neutrons & Electrons (Day 30)', subtopic: 'Bohr-Rutherford Planetary Model, Atomic Number Z, Mass Number A & Shell Filling', dayNumber: 30, periodNumber: 1, keyFormulaOrLaw: 'Atomic Number Z = Protons = Electrons | Mass Number A = Protons + Neutrons', keyPoints: ['Protons (+1 charge) and Neutrons (0 charge) form the heavy central Nucleus', 'Electrons (-1 charge) revolve in discrete energy shells following the 2n² rule (K=2, L=8, M=18)'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'à®‰à®¯à®¿à®°à®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯: à®’à®³à®¿à®šà¯à®šà¯‡à®°à¯à®•à¯à®•à¯ˆ, à®‡à®¤à®¯à®®à¯, à®¨à¯†à®ƒà®ªà¯à®°à®¾à®©à¯ & à®®à¯‚à®³à¯ˆ' : 'Biology Nano-Units: Photosynthesis, Heart, Nephron & Brain',
-          description: isTa ? 'à®’à®³à®¿à®šà¯à®šà¯‡à®°à¯à®•à¯à®•à¯ˆ à®’à®³à®¿/à®‡à®°à¯à®³à¯ à®µà®¿à®©à¯ˆà®•à®³à¯, à®‡à®¤à®¯à®¤à¯à®¤à®¿à®©à¯ 4 à®…à®±à¯ˆà®•à®³à¯ & à®ªà¯‡à®¸à¯à®®à¯‡à®•à¯à®•à®°à¯, à®¨à¯†à®ƒà®ªà¯à®°à®¾à®©à¯ à®µà®Ÿà®¿à®•à®Ÿà¯à®Ÿà¯à®¤à®²à¯, à®®à¯‚à®³à¯ˆà®¯à®¿à®©à¯ à®ªà®•à¯à®¤à®¿à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®¤à®¾à®µà®° à®¹à®¾à®°à¯à®®à¯‹à®©à¯à®•à®³à¯' : 'Light & Dark photosynthesis, Heart 4 chambers & SA node, Nephron ultrafiltration, Brain regions and Plant hormones',
+          chapterTitle: isTa ? '�‰யிரியல் நான�‹ �…ல�•ு�•ள்: �’ளி�š்�š�‡ர்�•்�•�ˆ, �‡தயம், ந�†�ƒப்ரான் & ம�‚ள�ˆ' : 'Biology Nano-Units: Photosynthesis, Heart, Nephron & Brain',
+          description: isTa ? '�’ளி�š்�š�‡ர்�•்�•�ˆ �’ளி/�‡ருள் வின�ˆ�•ள், �‡தயத்தின் 4 �…ற�ˆ�•ள் & ப�‡ஸ்ம�‡�•்�•ர், ந�†�ƒப்ரான் வ�Ÿி�•�Ÿ்�Ÿுதல், ம�‚ள�ˆயின் ப�•ுதி�•ள் மற்றும் தாவர ஹார்ம�‹ன்�•ள்' : 'Light & Dark photosynthesis, Heart 4 chambers & SA node, Nephron ultrafiltration, Brain regions and Plant hormones',
           subtopics: [
             {
               id: 'mid_s_sub3',
-              title: 'à®‰à®¯à®¿à®°à®¿à®¯à®²à¯ à®¨à®¾à®©à¯‹ à®…à®²à®•à¯à®•à®³à¯',
+              title: '�‰யிரியல் நான�‹ �…ல�•ு�•ள்',
               microTopics: [
                 { id: 'mid_b_31', title: 'Photosynthesis: Light Reaction in Thylakoids (Day 31)', keyAxiom: 'Photolysis: 2Hâ‚‚O + Light -> 4Hâº + 4eâ» + Oâ‚‚ + ATP + NADPH' },
                 { id: 'mid_b_32', title: 'Photosynthesis: Dark Reaction Calvin Cycle (Day 32)', keyAxiom: 'RuBisCO fixes COâ‚‚ + ATP + NADPH into Glucose in Stroma' },
@@ -1050,9 +1050,9 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
           microTopics: [
             { id: 'mid_b_31', topicTitle: 'Photosynthesis: Light Reaction in Thylakoids (Day 31)', subtopic: 'Photolysis of Water, Chlorophyll Light Absorption, ATP and NADPH Energy Synthesis', dayNumber: 31, periodNumber: 1, keyFormulaOrLaw: 'Photolysis: 2Hâ‚‚O + Sunlight -> 4Hâº + 4eâ» + Oâ‚‚ (Oxygen Released) + ATP + NADPH', keyPoints: ['Occurs in the Thylakoid Grana membranes of Chloroplasts containing green chlorophyll', 'Solar energy is converted into chemical energy currencies ATP and NADPH'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_b_32', topicTitle: 'Photosynthesis: Dark Reaction Calvin Cycle (Day 32)', subtopic: 'Stroma Carbon Fixation, RuBisCO Enzyme and Glucose Câ‚†Hâ‚â‚‚Oâ‚† Synthesis', dayNumber: 32, periodNumber: 1, keyFormulaOrLaw: 'Calvin Cycle: 6COâ‚‚ + 18 ATP + 12 NADPH -> Câ‚†Hâ‚â‚‚Oâ‚† (Glucose) + 18 ADP + 12 NADPâº', keyPoints: ['Takes place in the fluid Stroma of Chloroplasts independent of direct light', 'RuBisCO is the most abundant enzyme on Earth responsible for fixing atmospheric COâ‚‚'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_b_33', topicTitle: 'Human Heart: SA Node Natural Pacemaker (Day 33)', subtopic: 'Sinoatrial Node Electrical Conduction, Atrial Depolarization & Cardiac Pulse', dayNumber: 33, periodNumber: 1, keyFormulaOrLaw: 'Cardiac Output = Stroke Volume (70 mL) Ã— Heart Rate (72 bpm) â‰ˆ 5.0 Litres/min', keyPoints: ['SA node located in the right atrium generates rhythmic electrical impulses spontaneously', 'Artificial electronic pacemakers are implanted when the natural SA node malfunctions'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_33', topicTitle: 'Human Heart: SA Node Natural Pacemaker (Day 33)', subtopic: 'Sinoatrial Node Electrical Conduction, Atrial Depolarization & Cardiac Pulse', dayNumber: 33, periodNumber: 1, keyFormulaOrLaw: 'Cardiac Output = Stroke Volume (70 mL) × Heart Rate (72 bpm) ≈ 5.0 Litres/min', keyPoints: ['SA node located in the right atrium generates rhythmic electrical impulses spontaneously', 'Artificial electronic pacemakers are implanted when the natural SA node malfunctions'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_b_34', topicTitle: 'Human Heart: Double Circulation Flow (Day 34)', subtopic: 'Pulmonary Circulation (Deoxygenated to Lungs) vs Systemic Circulation (Oxygenated to Body)', dayNumber: 34, periodNumber: 1, keyFormulaOrLaw: 'Double Circuit: Heart -> Lungs -> Heart (Pulmonary) & Heart -> Body -> Heart (Systemic)', keyPoints: ['Prevents mixing of oxygen-rich and carbon dioxide-rich blood for maximum oxygen efficiency', 'Left ventricle has the thickest muscular myocardium wall to pump blood against systemic resistance'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_b_35', topicTitle: 'Nephron: Glomerular Ultrafiltration (Day 35)', subtopic: 'Afferent vs Efferent Arteriole Hydrostatic Pressure and Bowman\'s Capsule Filtration', dayNumber: 35, periodNumber: 1, keyFormulaOrLaw: 'Glomerular Filtration Rate (GFR) â‰ˆ 125 mL/min = 180 Litres/day of Primary Filtrate', keyPoints: ['High pressure in glomerulus capillaries forces water, urea, ions, and glucose into Bowman capsule', 'Blood cells and large plasma proteins (Albumin) are retained in bloodstream'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_35', topicTitle: 'Nephron: Glomerular Ultrafiltration (Day 35)', subtopic: 'Afferent vs Efferent Arteriole Hydrostatic Pressure and Bowman\'s Capsule Filtration', dayNumber: 35, periodNumber: 1, keyFormulaOrLaw: 'Glomerular Filtration Rate (GFR) ≈ 125 mL/min = 180 Litres/day of Primary Filtrate', keyPoints: ['High pressure in glomerulus capillaries forces water, urea, ions, and glucose into Bowman capsule', 'Blood cells and large plasma proteins (Albumin) are retained in bloodstream'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_b_36', topicTitle: 'Nephron: Selective Reabsorption in Henle Loop (Day 36)', subtopic: 'Proximal Convoluted Tubule (PCT), Loop of Henle Counter-Current and Urine Concentration', dayNumber: 36, periodNumber: 1, keyFormulaOrLaw: 'Urine Output = 180 L GFR - 178.5 L Reabsorbed = 1.5 Litres/day of Concentrated Urine', keyPoints: ['100% of vital glucose and amino acids are actively reabsorbed back into peritubular capillaries', 'Antidiuretic Hormone (ADH) controls water permeability in collecting ducts'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_b_37', topicTitle: 'Human Brain: Cerebrum & Cognitive Functions (Day 37)', subtopic: 'Cerebral Cortex, 4 Lobes (Frontal, Parietal, Occipital, Temporal) & Voluntary Control', dayNumber: 37, periodNumber: 1, keyFormulaOrLaw: 'Cerebrum = Largest Part (~80% of brain) | Seat of Logic, Memory, Emotion and Sensory Processing', keyPoints: ['Left hemisphere controls right side of body and governs logic/language skills', 'Right hemisphere controls left side of body and governs spatial awareness/creativity'], type: 'concept', importance: 'High-Yield' },
             { id: 'mid_b_38', topicTitle: 'Human Brain: Cerebellum & Body Equilibrium (Day 38)', subtopic: 'Hindbrain Motor Coordination, Muscular Posture, Precision Timing and Balance', dayNumber: 38, periodNumber: 1, keyFormulaOrLaw: 'Cerebellum = "Little Brain" | Coordinates Voluntary Muscular Precision & Posture Balance', keyPoints: ['Allows smooth coordinated movements like walking a tightrope, cycling, or playing piano', 'Alcohol consumption impairs cerebellum function causing loss of muscular coordination and slurred speech'], type: 'concept', importance: 'High-Yield' },
@@ -1064,7 +1064,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
     },
     {
       subjectId: 'mid_social',
-      subjectName: isTa ? 'à®šà®®à¯‚à®• à®…à®±à®¿à®µà®¿à®¯à®²à¯ (History, Geography, Civics & Economics)' : 'Social Science (History, Geography, Civics & Economics)',
+      subjectName: isTa ? '�šம�‚�• �…றிவியல் (History, Geography, Civics & Economics)' : 'Social Science (History, Geography, Civics & Economics)',
       icon: 'ðŸ›ï¸',
       color: '#f59e0b',
       totalChapters: 3,
@@ -1072,19 +1072,19 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'à®µà®°à®²à®¾à®±à¯ (à®šà®¿à®¨à¯à®¤à¯ à®šà®®à®µà¯†à®³à®¿, à®ªà®²à¯à®²à®µà®°à¯, à®šà¯‹à®´à®°à¯ & à®®à¯à®•à®²à®¾à®¯à®°à¯)' : 'History: Indus Valley, Pallavas, Cholas & Mughals',
-          description: isTa ? 'à®¹à®°à®ªà¯à®ªà®¾ à®®à¯Šà®•à®žà¯à®šà®¤à®¾à®°à¯‹, à®®à®¾à®®à®²à¯à®²à®ªà¯à®°à®®à¯ à®ªà®²à¯à®²à®µà®°à¯, à®¤à®žà¯à®šà¯ˆ à®ªà¯†à®°à®¿à®¯ à®•à¯‹à®µà®¿à®²à¯ à®šà¯‹à®´à®°à¯, à®®à¯à®•à®²à®¾à®¯à®°à¯ à®†à®Ÿà¯à®šà®¿' : 'Harappa, Mohenjo-Daro, Pallava cave temples, Raja Raja Chola Brihadisvara, Mughals',
+          chapterTitle: isTa ? 'வரலாறு (�šிந்து �šமவ�†ளி, பல்லவர், �š�‹ழர் & மு�•லாயர்)' : 'History: Indus Valley, Pallavas, Cholas & Mughals',
+          description: isTa ? 'ஹரப்பா ம�Š�•�ž்�šதார�‹, மாமல்லபுரம் பல்லவர், த�ž்�š�ˆ ப�†ரிய �•�‹வில் �š�‹ழர், மு�•லாயர் �†�Ÿ்�šி' : 'Harappa, Mohenjo-Daro, Pallava cave temples, Raja Raja Chola Brihadisvara, Mughals',
           subtopics: [
             {
               id: 'mid_soc_sub1',
-              title: 'à®‡à®¨à¯à®¤à®¿à®¯ à®®à®±à¯à®±à¯à®®à¯ à®¤à®®à®¿à®´à¯à®¨à®¾à®Ÿà¯ à®µà®°à®²à®¾à®±à¯',
+              title: '�‡ந்திய மற்றும் தமிழ்நா�Ÿு வரலாறு',
               microTopics: [
-                { id: 'mid_soc_1', title: 'à®šà®¿à®¨à¯à®¤à¯ à®šà®®à®µà¯†à®³à®¿ à®¨à®¾à®•à®°à®¿à®•à®®à¯ & à®šà¯‹à®´à®°à¯ à®µà®°à®²à®¾à®±à¯à®±à¯à®ªà¯ à®ªà¯†à®°à¯à®®à¯ˆ', keyAxiom: 'Raja Raja Chola built Brihadisvara Temple Thanjavur (1010 AD)' }
+                { id: 'mid_soc_1', title: '�šிந்து �šமவ�†ளி நா�•ரி�•ம் & �š�‹ழர் வரலாற்றுப் ப�†ரும�ˆ', keyAxiom: 'Raja Raja Chola built Brihadisvara Temple Thanjavur (1010 AD)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_soc_1', topicTitle: isTa ? 'à®šà®¿à®¨à¯à®¤à¯ à®šà®®à®µà¯†à®³à®¿, à®šà¯‹à®´à®°à¯ & à®®à¯à®•à®²à®¾à®¯à®ªà¯ à®ªà¯‡à®°à®°à®šà¯ à®µà®°à®²à®¾à®±à¯' : 'Indus Valley, Chola Empire & Mughal Administration', subtopic: isTa ? 'à®¹à®°à®ªà¯à®ªà®¾ à®¨à®•à®°à®®à¯ˆà®ªà¯à®ªà¯ & à®¤à®žà¯à®šà¯ˆ à®ªà¯†à®°à®¿à®¯ à®•à¯‹à®µà®¿à®²à¯' : 'Grid town planning, Great Bath, Raja Raja Chola naval expeditions, Akbar administration', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Indus Valley: Discovered in 1921 | Brihadisvara Temple: 1010 AD by Raja Raja I', keyPoints: ['Bronze dancing girl and priest king found in Mohenjo-Daro', 'Uttaramerur inscription describes Chola Kudavolai election system'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_soc_1', topicTitle: isTa ? '�šிந்து �šமவ�†ளி, �š�‹ழர் & மு�•லாயப் ப�‡ரர�šு வரலாறு' : 'Indus Valley, Chola Empire & Mughal Administration', subtopic: isTa ? 'ஹரப்பா ந�•ரம�ˆப்பு & த�ž்�š�ˆ ப�†ரிய �•�‹வில்' : 'Grid town planning, Great Bath, Raja Raja Chola naval expeditions, Akbar administration', dayNumber: 15, periodNumber: 4, keyFormulaOrLaw: 'Indus Valley: Discovered in 1921 | Brihadisvara Temple: 1010 AD by Raja Raja I', keyPoints: ['Bronze dancing girl and priest king found in Mohenjo-Daro', 'Uttaramerur inscription describes Chola Kudavolai election system'], type: 'concept', importance: 'High-Yield' }
           ]
         }
       ]
@@ -1106,7 +1106,7 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 4. SECONDARY STAGE: CLASS 9 & CLASS 10 (SSLC â€” 9 IYAL TAMIL & 7 UNITS ENGLISH)
+// 4. SECONDARY STAGE: CLASS 9 & CLASS 10 (SSLC — 9 IYAL TAMIL & 7 UNITS ENGLISH)
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: string): any {
   const isTa = courseTitle.includes('தமிழ்') || courseId.includes('-ta-');
@@ -1163,7 +1163,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
             { id: 'm3_3', topicTitle: 'Rational Expressions', subtopic: 'Expressions', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'P(x)/Q(x)', keyPoints: ['Simplifying rational expressions'], type: 'concept', importance: 'Foundational' },
             { id: 'm3_4', topicTitle: 'Quadratic Equation Standard Form', subtopic: 'Quadratic', dayNumber: 7, periodNumber: 4, keyFormulaOrLaw: 'ax^2+bx+c=0', keyPoints: ['Standard representation'], type: 'formula', importance: 'Foundational' },
             { id: 'm3_5', topicTitle: 'Solving Quadratics by Factorization', subtopic: 'Quadratic', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: '(x-p)(x-q)=0', keyPoints: ['Factoring to find roots'], type: 'solved_problem', importance: 'Core Standard' },
-            { id: 'm3_6', topicTitle: 'Quadratic Formula', subtopic: 'Quadratic', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'x = (-b Â± âˆš(b^2-4ac))/2a', keyPoints: ['Formula for roots'], type: 'formula', importance: 'High-Yield' },
+            { id: 'm3_6', topicTitle: 'Quadratic Formula', subtopic: 'Quadratic', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'x = (-b ± √(b^2-4ac))/2a', keyPoints: ['Formula for roots'], type: 'formula', importance: 'High-Yield' },
             { id: 'm3_7', topicTitle: 'Nature of Roots Discriminant', subtopic: 'Quadratic', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'Î” = b^2-4ac', keyPoints: ['Determining root types'], type: 'concept', importance: 'High-Yield' }
           ]
         },
@@ -1194,9 +1194,9 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
           chapterNumber: 6,
           chapterTitle: 'Trigonometry',
           microTopics: [
-            { id: 'm6_1', topicTitle: 'Trigonometric Identities Definition', subtopic: 'Identities', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'sin^2(Î¸) + cos^2(Î¸) = 1', keyPoints: ['Basic identities'], type: 'formula', importance: 'High-Yield' },
-            { id: 'm6_2', topicTitle: 'Heights and Distances', subtopic: 'Applications', dayNumber: 13, periodNumber: 2, keyFormulaOrLaw: 'tan(Î¸) = opposite/adjacent', keyPoints: ['Angle of elevation'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'm6_3', topicTitle: 'Trigonometric Ratios of Allied Angles', subtopic: 'Ratios', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'sin(90-Î¸) = cos(Î¸)', keyPoints: ['Complementary angles'], type: 'formula', importance: 'Core Standard' }
+            { id: 'm6_1', topicTitle: 'Trigonometric Identities Definition', subtopic: 'Identities', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'sin^2(θ) + cos^2(θ) = 1', keyPoints: ['Basic identities'], type: 'formula', importance: 'High-Yield' },
+            { id: 'm6_2', topicTitle: 'Heights and Distances', subtopic: 'Applications', dayNumber: 13, periodNumber: 2, keyFormulaOrLaw: 'tan(θ) = opposite/adjacent', keyPoints: ['Angle of elevation'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'm6_3', topicTitle: 'Trigonometric Ratios of Allied Angles', subtopic: 'Ratios', dayNumber: 13, periodNumber: 3, keyFormulaOrLaw: 'sin(90-θ) = cos(θ)', keyPoints: ['Complementary angles'], type: 'formula', importance: 'Core Standard' }
           ]
         },
         {
@@ -1216,10 +1216,10 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
           chapterNumber: 8,
           chapterTitle: 'Statistics and Probability',
           microTopics: [
-            { id: 'm8_1', topicTitle: 'Mean for Grouped Data', subtopic: 'Statistics', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'Î£fx/Î£f', keyPoints: ['Average calculation'], type: 'formula', importance: 'Core Standard' },
+            { id: 'm8_1', topicTitle: 'Mean for Grouped Data', subtopic: 'Statistics', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'Σfx/Σf', keyPoints: ['Average calculation'], type: 'formula', importance: 'Core Standard' },
             { id: 'm8_2', topicTitle: 'Median for Grouped Data', subtopic: 'Statistics', dayNumber: 16, periodNumber: 2, keyFormulaOrLaw: 'l + [(n/2 - cf)/f]*h', keyPoints: ['Middle value'], type: 'formula', importance: 'High-Yield' },
             { id: 'm8_3', topicTitle: 'Mode for Grouped Data', subtopic: 'Statistics', dayNumber: 16, periodNumber: 3, keyFormulaOrLaw: 'l + [(f1-f0)/(2f1-f0-f2)]*h', keyPoints: ['Most frequent value'], type: 'formula', importance: 'Core Standard' },
-            { id: 'm8_4', topicTitle: 'Standard Deviation Definition', subtopic: 'Statistics', dayNumber: 16, periodNumber: 4, keyFormulaOrLaw: 'âˆš(Variance)', keyPoints: ['Measure of spread'], type: 'formula', importance: 'High-Yield' },
+            { id: 'm8_4', topicTitle: 'Standard Deviation Definition', subtopic: 'Statistics', dayNumber: 16, periodNumber: 4, keyFormulaOrLaw: '√(Variance)', keyPoints: ['Measure of spread'], type: 'formula', importance: 'High-Yield' },
             { id: 'm8_5', topicTitle: 'Coefficient of Variation', subtopic: 'Statistics', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: '(SD/Mean)*100', keyPoints: ['Relative variability'], type: 'formula', importance: 'Core Standard' },
             { id: 'm8_6', topicTitle: 'Probability Definition', subtopic: 'Probability', dayNumber: 17, periodNumber: 2, keyFormulaOrLaw: 'Favorable/Total', keyPoints: ['Basic chance calculation'], type: 'concept', importance: 'Foundational' }
           ]
@@ -1265,7 +1265,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
           chapterNumber: 5,
           chapterTitle: 'Acoustics',
           microTopics: [
-            { id: 's5_1', topicTitle: 'Sound Wave Properties', subtopic: 'Physics', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'v = fÎ»', keyPoints: ['Frequency and wavelength'], type: 'concept', importance: 'Core Standard' }
+            { id: 's5_1', topicTitle: 'Sound Wave Properties', subtopic: 'Physics', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'v = fλ', keyPoints: ['Frequency and wavelength'], type: 'concept', importance: 'Core Standard' }
           ]
         },
         {
@@ -1636,7 +1636,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
 }
 
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 6. UPSC CIVIL SERVICES EXAMINATION (CSE â€” IAS / IPS / IFS / IRS) MASTER SYLLABUS
+// 6. UPSC CIVIL SERVICES EXAMINATION (CSE — IAS / IPS / IFS / IRS) MASTER SYLLABUS
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTitle?: string): CourseFullSyllabus {
   // SUBJECT 1: GS PAPER I (History, Art & Culture, Geography & Indian Society)
@@ -1726,7 +1726,7 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
       chapterTitle: 'Indian Macroeconomics, Budgeting (FRBM) & Inclusive Growth',
       description: 'GDP calculation (GVA at basic prices), Fiscal Deficit, FRBM Act, Tax buoyancy, GST reforms, Monetary Policy MPC, Banking NPAs & IBC 2016',
       microTopics: [
-        { id: 'upsc_gs3_1', topicTitle: 'Macroeconomic Aggregates, Fiscal Deficit, Budgeting & FRBM Architecture', subtopic: 'Nominal vs Real GDP, GVA, Fiscal Deficit = Total Expenditure - (Revenue Receipts + Non-debt Capital Receipts), FRBM targets (3% Fiscal Deficit)', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Primary Deficit = Fiscal Deficit - Interest Payments | Monetary Policy Taylor Rule: Repo Rate adjustment for inflation targeting (4% Â± 2%)', keyPoints: ['Insolvency and Bankruptcy Code (IBC 2016) time-bound resolution of stressed corporate assets', 'Capital Expenditure (Capex) multiplier effect on infrastructure growth vs revenue expenditure'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'upsc_gs3_1', topicTitle: 'Macroeconomic Aggregates, Fiscal Deficit, Budgeting & FRBM Architecture', subtopic: 'Nominal vs Real GDP, GVA, Fiscal Deficit = Total Expenditure - (Revenue Receipts + Non-debt Capital Receipts), FRBM targets (3% Fiscal Deficit)', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Primary Deficit = Fiscal Deficit - Interest Payments | Monetary Policy Taylor Rule: Repo Rate adjustment for inflation targeting (4% ± 2%)', keyPoints: ['Insolvency and Bankruptcy Code (IBC 2016) time-bound resolution of stressed corporate assets', 'Capital Expenditure (Capex) multiplier effect on infrastructure growth vs revenue expenditure'], type: 'solved_problem', importance: 'High-Yield' },
         { id: 'upsc_gs3_2', topicTitle: 'Inclusive Growth, Financial Inclusion (JAM Trinity) & Employment Landscape', subtopic: 'Jan Dhan-Aadhaar-Mobile (JAM), Direct Benefit Transfer (DBT), Gini coefficient, Periodic Labour Force Survey (PLFS), Gig and platform economy', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Lorenz Curve & Gini Coefficient: G = A / (A + B) (0 = Perfect Equality, 1 = Perfect Inequality)', keyPoints: ['PM Jan Dhan Yojana achieved over 50 crore zero-balance bank accounts', 'Female Labour Force Participation Rate (FLFPR) constraints and care economy recognition'], type: 'concept', importance: 'High-Yield' }
       ]
     },
@@ -1744,7 +1744,7 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
       chapterTitle: 'Science & Technology: Space, AI, Biotechnology, Supercomputing & IPR',
       description: 'ISRO (Gaganyaan, Chandrayaan-3, Aditya-L1), 5G/6G, Artificial Intelligence, CRISPR-Cas9 gene editing, mRNA vaccines, Patents Act Section 3(d)',
       microTopics: [
-        { id: 'upsc_gs3_5', topicTitle: 'Space Science: ISRO Launch Vehicles (LVM3, SSLV) & Deep Space Missions', subtopic: 'Chandrayaan-3 lunar south pole landing, Aditya-L1 Lagrange Point Halo orbit, Gaganyaan human spaceflight, NavIC satellite navigation', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Orbital Mechanics: Escape Velocity v_e = âˆš(2GM/R) | Lagrange Points L1 to L5 gravitational equilibrium', keyPoints: ['Cryogenic upper stage (CE-20 engine) powers India heavy lift LVM3 rocket', 'IN-SPACe single-window agency facilitating private space tech startups in India'], type: 'concept', importance: 'High-Yield' },
+        { id: 'upsc_gs3_5', topicTitle: 'Space Science: ISRO Launch Vehicles (LVM3, SSLV) & Deep Space Missions', subtopic: 'Chandrayaan-3 lunar south pole landing, Aditya-L1 Lagrange Point Halo orbit, Gaganyaan human spaceflight, NavIC satellite navigation', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Orbital Mechanics: Escape Velocity v_e = √(2GM/R) | Lagrange Points L1 to L5 gravitational equilibrium', keyPoints: ['Cryogenic upper stage (CE-20 engine) powers India heavy lift LVM3 rocket', 'IN-SPACe single-window agency facilitating private space tech startups in India'], type: 'concept', importance: 'High-Yield' },
         { id: 'upsc_gs3_6', topicTitle: 'Frontier Tech: AI, Quantum Computing, CRISPR-Cas9 Gene Editing & IPR Section 3(d)', subtopic: 'National Quantum Mission (QKD, Superconducting qubits), Generative AI ethics, CRISPR-Cas9 molecular scissors, Section 3(d) of Patents Act against evergreening', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Section 3(d) Patents Act 1970: Mere discovery of a new form of known substance without enhanced therapeutic efficacy is not patentable', keyPoints: ['Novartis case upheld Section 3(d) to ensure affordable generic medicines for public health', 'CRISPR-Cas9 enables precise targeted genetic modification to cure sickle cell disease'], type: 'concept', importance: 'High-Yield' }
       ]
     },
@@ -1814,7 +1814,7 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
       chapterTitle: 'Logical Reasoning, Puzzles, Clocks, Calendars & Data Interpretation',
       description: 'Syllogisms (Venn method), Linear/Circular seating arrangements, Blood relations, Direction test, Clock angle & Pie/Bar charts',
       microTopics: [
-        { id: 'upsc_csat_4', topicTitle: 'Logical Deduction: Syllogisms, Seating Arrangements, Blood Relations & Dice', subtopic: 'All/Some/No statement truth values, complex multi-variable floor/seating puzzles, family tree notation, dice opposite faces', dayNumber: 4, periodNumber: 5, keyFormulaOrLaw: 'Clock Angle: Î¸ = |30H - (11/2)M| | Calendar Odd Days: Normal Year = 1 Odd Day, Leap Year = 2 Odd Days', keyPoints: ['Syllogism: If statement is "Some A are B", its converse "Some B are A" is definitively true', 'Blood relation problems solved by systematic generational family tree diagrams'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'upsc_csat_4', topicTitle: 'Logical Deduction: Syllogisms, Seating Arrangements, Blood Relations & Dice', subtopic: 'All/Some/No statement truth values, complex multi-variable floor/seating puzzles, family tree notation, dice opposite faces', dayNumber: 4, periodNumber: 5, keyFormulaOrLaw: 'Clock Angle: θ = |30H - (11/2)M| | Calendar Odd Days: Normal Year = 1 Odd Day, Leap Year = 2 Odd Days', keyPoints: ['Syllogism: If statement is "Some A are B", its converse "Some B are A" is definitively true', 'Blood relation problems solved by systematic generational family tree diagrams'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -1822,7 +1822,7 @@ export function getUpscCivilServicesCompleteSyllabus(courseId?: string, courseTi
   const subjects: SyllabusSubject[] = [
     { subjectId: 'upsc_gs1', subjectName: 'UPSC GS Paper I: Heritage, History, Geography & Society (GS-1)', icon: 'ðŸ›ï¸', color: '#10b981', totalChapters: gs1Chapters.length, totalMicroTopics: gs1Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs1Chapters },
     { subjectId: 'upsc_gs2', subjectName: 'UPSC GS Paper II: Governance, Constitution, Polity, Social Justice & IR (GS-2)', icon: 'âš–ï¸', color: '#06b6d4', totalChapters: gs2Chapters.length, totalMicroTopics: gs2Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs2Chapters },
-    { subjectId: 'upsc_gs3', subjectName: 'UPSC GS Paper III: Technology, Economy, Environment & Internal Security (GS-3)', icon: 'ðŸ“ˆ', color: '#f59e0b', totalChapters: gs3Chapters.length, totalMicroTopics: gs3Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs3Chapters },
+    { subjectId: 'upsc_gs3', subjectName: 'UPSC GS Paper III: Technology, Economy, Environment & Internal Security (GS-3)', icon: '📈', color: '#f59e0b', totalChapters: gs3Chapters.length, totalMicroTopics: gs3Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs3Chapters },
     { subjectId: 'upsc_gs4', subjectName: 'UPSC GS Paper IV: Ethics, Integrity, Aptitude & Case Studies (GS-4)', icon: '💡', color: '#8b5cf6', totalChapters: gs4Chapters.length, totalMicroTopics: gs4Chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gs4Chapters },
     { subjectId: 'upsc_csat', subjectName: 'UPSC CSAT Paper II: Reading Comprehension & Quantitative Reasoning', icon: '🎯', color: '#ec4899', totalChapters: csatChapters.length, totalMicroTopics: csatChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: csatChapters }
   ];
@@ -1853,7 +1853,7 @@ export function getUpscOptionalSubjectSyllabus(courseId: string, courseTitle?: s
   const subjects: SyllabusSubject[] = [
     {
       subjectId: `${courseId}_p1`,
-      subjectName: `${opt.shortTitle} â€” Paper I: Theory & Foundations`,
+      subjectName: `${opt.shortTitle} — Paper I: Theory & Foundations`,
       icon: 'ðŸ›ï¸',
       color: opt.badgeColor || '#06b6d4',
       totalChapters: paper1Units.length,
@@ -1865,7 +1865,7 @@ export function getUpscOptionalSubjectSyllabus(courseId: string, courseTitle?: s
         microTopics: u.keyTopics.map((kt, tIdx) => ({
           id: `${courseId}_p1_${idx + 1}_${tIdx + 1}`,
           topicTitle: kt,
-          subtopic: u.thinkersOrLaws.join(' Â· '),
+          subtopic: u.thinkersOrLaws.join(' · '),
           dayNumber: (idx * 15) + (tIdx * 3) + 1,
           periodNumber: 1,
           keyFormulaOrLaw: `Core Thinkers: ${u.thinkersOrLaws.join(', ')}`,
@@ -1877,7 +1877,7 @@ export function getUpscOptionalSubjectSyllabus(courseId: string, courseTitle?: s
     },
     {
       subjectId: `${courseId}_p2`,
-      subjectName: `${opt.shortTitle} â€” Paper II: Indian Context & Advanced Applications`,
+      subjectName: `${opt.shortTitle} — Paper II: Indian Context & Advanced Applications`,
       icon: 'âš–ï¸',
       color: '#10b981',
       totalChapters: paper2Units.length,
@@ -1889,7 +1889,7 @@ export function getUpscOptionalSubjectSyllabus(courseId: string, courseTitle?: s
         microTopics: u.keyTopics.map((kt, tIdx) => ({
           id: `${courseId}_p2_${idx + 1}_${tIdx + 1}`,
           topicTitle: kt,
-          subtopic: u.thinkersOrLaws.join(' Â· '),
+          subtopic: u.thinkersOrLaws.join(' · '),
           dayNumber: 180 + (idx * 15) + (tIdx * 3) + 1,
           periodNumber: 2,
           keyFormulaOrLaw: `Applied Principles: ${u.thinkersOrLaws.join(', ')}`,
@@ -1939,7 +1939,7 @@ export function getTnpscUnifiedCompleteSyllabus(courseId?: string, courseTitle?:
 export function getNeetUgCompleteSyllabus(): CourseFullSyllabus {
   return {
     courseId: 'exam-neet-ug',
-    courseTitle: 'NEET UG â€” National Medical Entrance Exam Preparation',
+    courseTitle: 'NEET UG — National Medical Entrance Exam Preparation',
     category: 'entrance',
     board: 'NTA / NMC',
     medium: 'English',
@@ -2001,7 +2001,7 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
       chapterTitle: 'Introductory Microeconomics & Statistics for Economics',
       description: 'Law of Demand, Elasticity, Variable Proportions, Measures of Central Tendency (Mean, Median, Mode)',
       microTopics: [
-        { id: 'com_eco_1', topicTitle: 'Consumer Equilibrium & Price Elasticity of Demand (Ed)', subtopic: 'Marginal utility, Indifference curve tangency MRS_xy = P_x / P_y, E_d formula', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Price Elasticity of Demand E_d = - (Î”Q / Î”P) Ã— (P / Q) | Empirical: Mode = 3 Median - 2 Mean', keyPoints: ['Indifference curve is convex to origin due to diminishing MRS', 'Standard Deviation Ïƒ measures absolute dispersion'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'com_eco_1', topicTitle: 'Consumer Equilibrium & Price Elasticity of Demand (Ed)', subtopic: 'Marginal utility, Indifference curve tangency MRS_xy = P_x / P_y, E_d formula', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Price Elasticity of Demand E_d = - (Î”Q / Î”P) × (P / Q) | Empirical: Mode = 3 Median - 2 Mean', keyPoints: ['Indifference curve is convex to origin due to diminishing MRS', 'Standard Deviation Ïƒ measures absolute dispersion'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2009,12 +2009,12 @@ export function getCommerceClass11Syllabus(courseId: string, courseTitle: string
   const subjects: SyllabusSubject[] = [
     { subjectId: 'cbse_acc', subjectName: 'Accountancy (Financial Accounting Part 1 & 2)', icon: '📊', color: '#10b981', totalChapters: accountancyChapters.length, totalMicroTopics: accountancyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: accountancyChapters },
     { subjectId: 'cbse_bst', subjectName: 'Business Studies (Foundations & Finance)', icon: 'ðŸ’¼', color: '#06b6d4', totalChapters: businessStudiesChapters.length, totalMicroTopics: businessStudiesChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: businessStudiesChapters },
-    { subjectId: 'cbse_eco', subjectName: 'Economics (Microeconomics & Statistics)', icon: 'ðŸ“ˆ', color: '#f59e0b', totalChapters: economicsChapters.length, totalMicroTopics: economicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: economicsChapters }
+    { subjectId: 'cbse_eco', subjectName: 'Economics (Microeconomics & Statistics)', icon: '📈', color: '#f59e0b', totalChapters: economicsChapters.length, totalMicroTopics: economicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: economicsChapters }
   ];
 
   return {
     courseId: courseId || 'cbse-11-com',
-    courseTitle: courseTitle || 'Class 11 â€” Senior Secondary Commerce (NCERT / CBSE)',
+    courseTitle: courseTitle || 'Class 11 — Senior Secondary Commerce (NCERT / CBSE)',
     category: 'school_cbse',
     board: 'CBSE / NCERT / State Board',
     medium: 'English',
@@ -2035,20 +2035,20 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   const physicsChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: isTa ? 'à®¨à®¿à®²à¯ˆ à®®à®¿à®©à¯à®©à®¿à®¯à®²à¯ & à®®à®¿à®©à¯à®©à¯‹à®Ÿà¯à®Ÿà®µà®¿à®¯à®²à¯ (Electrostatics & Current Electricity)' : 'Electrostatics, Gauss Law & Current Electricity',
-      description: isTa ? 'à®•à¯‚à®²à¯à®®à¯ à®µà®¿à®¤à®¿, à®•à®¾à®¸à¯ à®µà®¿à®¤à®¿, à®®à®¿à®©à¯à®¤à¯‡à®•à¯à®•à®¿, à®“à®®à¯ à®µà®¿à®¤à®¿, à®•à®¿à®°à¯à®•à¯à®•à®¾à®ƒà®ªà¯ à®µà®¿à®¤à®¿à®•à®³à¯ & à®µà¯€à®Ÿà¯à®¸à¯à®Ÿà¯‹à®©à¯ à®šà®®à®©à®šà¯à®šà¯à®±à¯à®±à¯' : 'Coulomb\'s Law, Gauss Law & applications, Capacitance & Dielectrics, Kirchhoff\'s Laws, Wheatstone Bridge & Potentiometer',
+      chapterTitle: isTa ? 'நில�ˆ மின்னியல் & மின்ன�‹�Ÿ்�Ÿவியல் (Electrostatics & Current Electricity)' : 'Electrostatics, Gauss Law & Current Electricity',
+      description: isTa ? '�•�‚லும் விதி, �•ாஸ் விதி, மின்த�‡�•்�•ி, �“ம் விதி, �•ிர்�•்�•ா�ƒப் விதி�•ள் & வ�€�Ÿ்ஸ்�Ÿ�‹ன் �šமன�š்�šுற்று' : 'Coulomb\'s Law, Gauss Law & applications, Capacitance & Dielectrics, Kirchhoff\'s Laws, Wheatstone Bridge & Potentiometer',
       microTopics: [
-        { id: 'hsc_phy_1', topicTitle: isTa ? 'à®•à¯‚à®²à¯à®®à¯ à®µà®¿à®¤à®¿, à®•à®¾à®¸à¯ à®µà®¿à®¤à®¿ & à®®à®¿à®©à¯à®ªà¯à®²à®®à¯' : 'Coulomb Law, Electric Field & Gauss Theorem Applications', subtopic: isTa ? 'F = (1/4Ï€Îµâ‚€)(qâ‚qâ‚‚/rÂ²) à®®à®±à¯à®±à¯à®®à¯ à®•à®¾à®¸à¯ à®šà®®à®©à¯à®ªà®¾à®Ÿà¯à®•à®³à¯' : 'Electric dipole, Torque Ï„ = p Ã— E, Flux Î¦ = âˆ® EÂ·dA = q_enc / Îµâ‚€, Infinite line charge E = Î» / (2Ï€Îµâ‚€r)', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Coulomb: F = (1/4Ï€Îµâ‚€)(qâ‚qâ‚‚/rÂ²) | Gauss: âˆ® EÂ·dA = q_in / Îµâ‚€ | Dipole Potential V = (1/4Ï€Îµâ‚€)(p cos Î¸ / rÂ²)', keyPoints: ['Electric field inside a hollow spherical conductor is zero (Electrostatic shielding)', 'Capacitance of parallel plate with dielectric: C = K Îµâ‚€ A / d'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'hsc_phy_2', topicTitle: isTa ? 'à®•à®¿à®°à¯à®•à¯à®•à®¾à®ƒà®ªà¯ à®µà®¿à®¤à®¿à®•à®³à¯, à®µà¯€à®Ÿà¯à®¸à¯à®Ÿà¯‹à®©à¯ à®ªà®¾à®²à®®à¯ & à®®à®¿à®©à¯à®©à®´à¯à®¤à¯à®¤à®®à®¾à®©à®¿' : 'Kirchhoff Laws, Wheatstone Bridge & Drift Velocity', subtopic: isTa ? 'à®®à®¿à®©à¯à®©à¯‹à®Ÿà¯à®Ÿ à®µà®¿à®¤à®¿ (KCL), à®®à®¿à®©à¯à®©à®´à¯à®¤à¯à®¤ à®µà®¿à®¤à®¿ (KVL) & P/Q = R/S' : 'Current density j = n e v_d, Kirchhoff Current & Voltage Laws, Wheatstone balanced condition P/Q = R/S, Internal resistance r = R(lâ‚/lâ‚‚ - 1)', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Kirchhoff Loop: Î£ Î”V = 0 | Wheatstone: P/Q = R/S (Null deflection) | Drift Velocity v_d = eEÏ„ / m', keyPoints: ['KCL is based on conservation of charge; KVL is based on conservation of energy', 'Potentiometer draws no current at balance point, acting as an ideal voltmeter'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_phy_1', topicTitle: isTa ? '�•�‚லும் விதி, �•ாஸ் விதி & மின்புலம்' : 'Coulomb Law, Electric Field & Gauss Theorem Applications', subtopic: isTa ? 'F = (1/4�€ε�‚€)(q�‚�q�‚‚/r�) மற்றும் �•ாஸ் �šமன்பா�Ÿு�•ள்' : 'Electric dipole, Torque �„ = p � E, Flux Φ = �ˆ� E�dA = q_enc / ε�‚€, Infinite line charge E = λ / (2�€ε�‚€r)', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Coulomb: F = (1/4�€ε�‚€)(q�‚�q�‚‚/r�) | Gauss: �ˆ� E�dA = q_in / ε�‚€ | Dipole Potential V = (1/4�€ε�‚€)(p cos θ / r�)', keyPoints: ['Electric field inside a hollow spherical conductor is zero (Electrostatic shielding)', 'Capacitance of parallel plate with dielectric: C = K ε�‚€ A / d'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'hsc_phy_2', topicTitle: isTa ? '�•ிர்�•்�•ா�ƒப் விதி�•ள், வ�€�Ÿ்ஸ்�Ÿ�‹ன் பாலம் & மின்னழுத்தமானி' : 'Kirchhoff Laws, Wheatstone Bridge & Drift Velocity', subtopic: isTa ? 'மின்ன�‹�Ÿ்�Ÿ விதி (KCL), மின்னழுத்த விதி (KVL) & P/Q = R/S' : 'Current density j = n e v_d, Kirchhoff Current & Voltage Laws, Wheatstone balanced condition P/Q = R/S, Internal resistance r = R(l�‚�/l�‚‚ - 1)', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Kirchhoff Loop: Σ �”V = 0 | Wheatstone: P/Q = R/S (Null deflection) | Drift Velocity v_d = eE�„ / m', keyPoints: ['KCL is based on conservation of charge; KVL is based on conservation of energy', 'Potentiometer draws no current at balance point, acting as an ideal voltmeter'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: isTa ? 'à®®à®¿à®©à¯à®•à®¾à®¨à¯à®¤à®µà®¿à®¯à®²à¯ & à®’à®³à®¿à®¯à®¿à®¯à®²à¯ (Magnetism, EMI, AC & Wave Optics)' : 'Magnetic Effects of Current, EMI, AC & Wave Optics',
-      description: isTa ? 'à®ªà®¯à¯‹à®Ÿà¯-à®šà®¾à®µà®¾à®°à¯à®Ÿà¯ à®µà®¿à®¤à®¿, à®ƒà®ªà®¾à®°à®Ÿà¯‡ à®µà®¿à®¤à®¿, à®®à®¾à®±à¯à®¤à®¿à®šà¯ˆ à®®à®¿à®©à¯à®©à¯‹à®Ÿà¯à®Ÿà®®à¯ LCR à®šà¯à®±à¯à®±à¯, à®¹à¯ˆà®œà¯†à®©à¯à®¸à¯ à®¤à®¤à¯à®¤à¯à®µà®®à¯' : 'Biot-Savart Law, Ampere Circuital Law, Faraday & Lenz Laws, LCR Resonance, Huygens Principle, Young Double Slit Experiment',
+      chapterTitle: isTa ? 'மின்�•ாந்தவியல் & �’ளியியல் (Magnetism, EMI, AC & Wave Optics)' : 'Magnetic Effects of Current, EMI, AC & Wave Optics',
+      description: isTa ? 'பய�‹�Ÿ்-�šாவார்�Ÿ் விதி, �ƒபார�Ÿ�‡ விதி, மாறுதி�š�ˆ மின்ன�‹�Ÿ்�Ÿம் LCR �šுற்று, ஹ�ˆ�œ�†ன்ஸ் தத்துவம்' : 'Biot-Savart Law, Ampere Circuital Law, Faraday & Lenz Laws, LCR Resonance, Huygens Principle, Young Double Slit Experiment',
       microTopics: [
-        { id: 'hsc_phy_3', topicTitle: isTa ? 'à®ªà®¯à¯‹à®Ÿà¯-à®šà®¾à®µà®¾à®°à¯à®Ÿà¯ à®µà®¿à®¤à®¿, à®†à®®à¯à®ªà®¿à®¯à®°à¯ à®µà®¿à®¤à®¿ & à®²à®¾à®°à®©à¯à®¸à¯ à®µà®¿à®šà¯ˆ' : 'Biot-Savart Law, Ampere Circuital Law & Cyclotron Resonance', subtopic: isTa ? 'à®µà®Ÿà¯à®Ÿà®šà¯à®šà¯à®°à¯à®³à®¿à®©à¯ à®•à®¾à®¨à¯à®¤à®ªà¯à®ªà¯à®²à®®à¯ B = Î¼â‚€I/(2R) & F = q(v Ã— B)' : 'Magnetic field on circular coil axis B = Î¼â‚€ I RÂ² / [2(RÂ²+xÂ²)^(3/2)], Force on wire F = I(L Ã— B), Galvanometer to Ammeter/Voltmeter conversion', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Biot-Savart: dB = (Î¼â‚€/4Ï€)(I dl sin Î¸ / rÂ²) | Lorentz Force F = q(E + v Ã— B) | Shunt Resistance S = I_g G / (I - I_g)', keyPoints: ['Parallel currents attract; antiparallel currents repel with force F/L = (Î¼â‚€ Iâ‚ Iâ‚‚) / (2Ï€d)', 'Converting Galvanometer to Ammeter requires low shunt resistance in parallel'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'hsc_phy_4', topicTitle: isTa ? 'à®®à®¿à®©à¯à®•à®¾à®¨à¯à®¤ à®¤à¯‚à®£à¯à®Ÿà®²à¯, LCR à®’à®¤à¯à®¤à®¤à®¿à®°à¯à®µà¯ & à®…à®²à¯ˆ à®’à®³à®¿à®¯à®¿à®¯à®²à¯ (YDSE)' : 'EMI (Faraday/Lenz), LCR Resonance & Young Double Slit (YDSE)', subtopic: isTa ? 'e = -dÎ¦/dt, à®’à®¤à¯à®¤à®¤à®¿à®°à¯à®µà¯ à®…à®¤à®¿à®°à¯à®µà¯†à®£à¯ f = 1/(2Ï€âˆšLC), à®ªà®Ÿà¯à®Ÿà¯ˆà®¯à®¿à®©à¯ à®…à®•à®²à®®à¯ Î² = Î»D/d' : 'Motional EMF e = Bvl, Quality factor Q = (1/R)âˆš(L/C), Wavefronts, Fringe width Î² = Î»D/d in interference, Brewster law Î¼ = tan i_p', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'Faraday Law: e = -N (dÎ¦/dt) | LCR Resonance: f_r = 1 / (2Ï€âˆšLC) | YDSE Fringe Width: Î² = Î» D / d', keyPoints: ['Lenz law is consistent with principle of conservation of energy', 'Diffraction central maximum angular width Î¸ = 2Î» / a'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_phy_3', topicTitle: isTa ? 'பய�‹�Ÿ்-�šாவார்�Ÿ் விதி, �†ம்பியர் விதி & லாரன்ஸ் வி�š�ˆ' : 'Biot-Savart Law, Ampere Circuital Law & Cyclotron Resonance', subtopic: isTa ? 'வ�Ÿ்�Ÿ�š்�šுருளின் �•ாந்தப்புலம் B = μ�‚€I/(2R) & F = q(v � B)' : 'Magnetic field on circular coil axis B = μ�‚€ I R� / [2(R�+x�)^(3/2)], Force on wire F = I(L � B), Galvanometer to Ammeter/Voltmeter conversion', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Biot-Savart: dB = (μ�‚€/4�€)(I dl sin θ / r�) | Lorentz Force F = q(E + v � B) | Shunt Resistance S = I_g G / (I - I_g)', keyPoints: ['Parallel currents attract; antiparallel currents repel with force F/L = (μ�‚€ I�‚� I�‚‚) / (2�€d)', 'Converting Galvanometer to Ammeter requires low shunt resistance in parallel'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'hsc_phy_4', topicTitle: isTa ? 'மின்�•ாந்த த�‚ண்�Ÿல், LCR �’த்ததிர்வு & �…ல�ˆ �’ளியியல் (YDSE)' : 'EMI (Faraday/Lenz), LCR Resonance & Young Double Slit (YDSE)', subtopic: isTa ? 'e = -dΦ/dt, �’த்ததிர்வு �…திர்வ�†ண் f = 1/(2�€�ˆšLC), ப�Ÿ்�Ÿ�ˆயின் �…�•லம் β = λD/d' : 'Motional EMF e = Bvl, Quality factor Q = (1/R)�ˆš(L/C), Wavefronts, Fringe width β = λD/d in interference, Brewster law μ = tan i_p', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'Faraday Law: e = -N (dΦ/dt) | LCR Resonance: f_r = 1 / (2�€�ˆšLC) | YDSE Fringe Width: β = λ D / d', keyPoints: ['Lenz law is consistent with principle of conservation of energy', 'Diffraction central maximum angular width θ = 2λ / a'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2056,20 +2056,20 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   const chemistryChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: isTa ? 'à®•à®°à¯ˆà®šà®²à¯à®•à®³à¯, à®®à®¿à®©à¯à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ & à®µà¯‡à®¤à®¿à®µà®¿à®©à¯ˆ à®µà¯‡à®•à®µà®¿à®¯à®²à¯' : 'Solutions, Electrochemistry & Chemical Kinetics',
-      description: isTa ? 'à®¹à¯†à®©à¯à®±à®¿ à®µà®¿à®¤à®¿, à®°à®µà¯à®²à¯à®Ÿà¯ à®µà®¿à®¤à®¿, à®¨à¯†à®°à¯à®©à¯à®¸à¯à®Ÿà¯ à®šà®®à®©à¯à®ªà®¾à®Ÿà¯, à®®à¯à®¤à®²à¯ à®µà®•à¯ˆ à®µà®¿à®©à¯ˆ à®šà®®à®©à¯à®ªà®¾à®Ÿà¯' : 'Raoult\'s Law, Colligative Properties (Van\'t Hoff factor), Nernst Equation, Kohlrausch Law, Integrated Rate Law for 1st Order Reactions',
+      chapterTitle: isTa ? '�•ர�ˆ�šல்�•ள், மின்வ�‡தியியல் & வ�‡திவின�ˆ வ�‡�•வியல்' : 'Solutions, Electrochemistry & Chemical Kinetics',
+      description: isTa ? 'ஹ�†ன்றி விதி, ரவுல்�Ÿ் விதி, ந�†ர்ன்ஸ்�Ÿ் �šமன்பா�Ÿு, முதல் வ�•�ˆ வின�ˆ �šமன்பா�Ÿு' : 'Raoult\'s Law, Colligative Properties (Van\'t Hoff factor), Nernst Equation, Kohlrausch Law, Integrated Rate Law for 1st Order Reactions',
       microTopics: [
-        { id: 'hsc_ch_1', topicTitle: isTa ? 'à®°à®µà¯à®²à¯à®Ÿà¯ à®µà®¿à®¤à®¿, à®šà®µà¯à®µà¯‚à®Ÿà¯à®ªà®°à®µà®²à¯ à®…à®´à¯à®¤à¯à®¤à®®à¯ & à®µà®¾à®£à¯à®Ÿà¯ à®¹à®¾à®ƒà®ªà¯ à®•à®¾à®°à®£à®¿' : 'Raoult Law, Colligative Properties & Van\'t Hoff Factor (i)', subtopic: isTa ? 'Î”T_b = K_b m, Î”T_f = K_f m, Ï€ = iCRT à®šà®®à®©à¯à®ªà®¾à®Ÿà¯à®•à®³à¯' : 'Relative lowering of vapour pressure (pÂ°-p)/pÂ° = x_B, Elevation in boiling point, Depression in freezing point, Abnormal molar mass i = 1 + (n-1)Î±', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Raoult Law: p_A = pÂ°_A x_A | Osmotic Pressure: Ï€ = i C R T | Van\'t Hoff: i = Normal Molar Mass / Abnormal Molar Mass', keyPoints: ['Colligative properties depend only on number of solute particles, not on their identity', 'For association of molecules, i < 1; for dissociation (electrolytes), i > 1'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'hsc_ch_2', topicTitle: isTa ? 'à®®à®¿à®©à¯à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯: à®¨à¯†à®°à¯à®©à¯à®¸à¯à®Ÿà¯ à®šà®®à®©à¯à®ªà®¾à®Ÿà¯ & à®®à¯à®¤à®²à¯ à®µà®•à¯ˆ à®µà®¿à®©à¯ˆ à®šà®®à®©à¯à®ªà®¾à®Ÿà¯' : 'Nernst Equation, Kohlrausch Law & Integrated Rate Equations', subtopic: isTa ? 'E_cell = EÂ° - (0.0591/n)log Q, k = (2.303/t)log([Aâ‚€]/[A])' : 'Electrochemical cell EMF, Standard Hydrogen Electrode (SHE), Kohlrausch law of independent migration of ions, Half-life t_Â½ = 0.693 / k, Arrhenius equation', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Nernst: E_cell = EÂ°_cell - (0.0591/n) log Q | First Order Rate: k = (2.303/t) log([A]â‚€/[A]) | t_Â½ = 0.693 / k', keyPoints: ['Gibbs Free Energy and EMF relation: Î”GÂ° = -n F EÂ°_cell', 'Half-life of first-order reaction is completely independent of initial reactant concentration'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_ch_1', topicTitle: isTa ? 'ரவுல்�Ÿ் விதி, �šவ்வ�‚�Ÿுபரவல் �…ழுத்தம் & வாண்�Ÿ் ஹா�ƒப் �•ாரணி' : 'Raoult Law, Colligative Properties & Van\'t Hoff Factor (i)', subtopic: isTa ? '�”T_b = K_b m, �”T_f = K_f m, �€ = iCRT �šமன்பா�Ÿு�•ள்' : 'Relative lowering of vapour pressure (p�-p)/p� = x_B, Elevation in boiling point, Depression in freezing point, Abnormal molar mass i = 1 + (n-1)α', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Raoult Law: p_A = p�_A x_A | Osmotic Pressure: �€ = i C R T | Van\'t Hoff: i = Normal Molar Mass / Abnormal Molar Mass', keyPoints: ['Colligative properties depend only on number of solute particles, not on their identity', 'For association of molecules, i < 1; for dissociation (electrolytes), i > 1'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'hsc_ch_2', topicTitle: isTa ? 'மின்வ�‡தியியல்: ந�†ர்ன்ஸ்�Ÿ் �šமன்பா�Ÿு & முதல் வ�•�ˆ வின�ˆ �šமன்பா�Ÿு' : 'Nernst Equation, Kohlrausch Law & Integrated Rate Equations', subtopic: isTa ? 'E_cell = E� - (0.0591/n)log Q, k = (2.303/t)log([A�‚€]/[A])' : 'Electrochemical cell EMF, Standard Hydrogen Electrode (SHE), Kohlrausch law of independent migration of ions, Half-life t_� = 0.693 / k, Arrhenius equation', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Nernst: E_cell = E�_cell - (0.0591/n) log Q | First Order Rate: k = (2.303/t) log([A]�‚€/[A]) | t_� = 0.693 / k', keyPoints: ['Gibbs Free Energy and EMF relation: �”G� = -n F E�_cell', 'Half-life of first-order reaction is completely independent of initial reactant concentration'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: isTa ? 'à®…à®£à¯ˆà®µà¯à®šà¯ à®šà¯‡à®°à¯à®®à®™à¯à®•à®³à¯ & à®•à®°à®¿à®® à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ (à®†à®²à¯à®•à®¹à®¾à®²à¯à®•à®³à¯, à®†à®²à¯à®Ÿà®¿à®¹à¯ˆà®Ÿà¯à®•à®³à¯)' : 'Coordination Compounds & Organic Reaction Mechanisms',
-      description: isTa ? 'à®µà¯†à®°à¯à®©à®°à¯ à®•à¯Šà®³à¯à®•à¯ˆ, à®ªà®Ÿà®¿à®•à®ªà¯à®ªà¯à®²à®•à¯ à®•à¯Šà®³à¯à®•à¯ˆ (CFT), SN1/SN2 à®µà®¿à®©à¯ˆà®•à®³à¯, à®†à®²à¯à®Ÿà®¾à®²à¯ à®•à¯à®±à¯à®•à¯à®•à®®à¯ & à®•à¯‡à®©à®¿à®šà®°à¯‹ à®µà®¿à®©à¯ˆ' : 'IUPAC naming of complexes, Crystal Field Splitting (Î”_o & Î”_t), SN1 vs SN2 kinetics, Aldol condensation, Cannizzaro reaction, Diazonium salts',
+      chapterTitle: isTa ? '�…ண�ˆவு�š் �š�‡ர்ம�™்�•ள் & �•ரிம வ�‡தியியல் (�†ல்�•ஹால்�•ள், �†ல்�Ÿிஹ�ˆ�Ÿு�•ள்)' : 'Coordination Compounds & Organic Reaction Mechanisms',
+      description: isTa ? 'வ�†ர்னர் �•�Šள்�•�ˆ, ப�Ÿி�•ப்புல�•் �•�Šள்�•�ˆ (CFT), SN1/SN2 வின�ˆ�•ள், �†ல்�Ÿால் �•ுறு�•்�•ம் & �•�‡னி�šர�‹ வின�ˆ' : 'IUPAC naming of complexes, Crystal Field Splitting (�”_o & �”_t), SN1 vs SN2 kinetics, Aldol condensation, Cannizzaro reaction, Diazonium salts',
       microTopics: [
-        { id: 'hsc_ch_3', topicTitle: isTa ? 'à®…à®£à¯ˆà®µà¯à®šà¯ à®šà¯‡à®°à¯à®®à®™à¯à®•à®³à¯: à®µà¯†à®°à¯à®©à®°à¯ à®•à¯Šà®³à¯à®•à¯ˆ & à®ªà®Ÿà®¿à®•à®ªà¯à®ªà¯à®²à®•à¯ à®•à¯Šà®³à¯à®•à¯ˆ (CFT)' : 'Coordination Chemistry: CFT Splitting & IUPAC Nomenclature', subtopic: isTa ? 'à®†à®•à¯à®Ÿà®¾à®¹à¯†à®Ÿà¯à®°à®²à¯ tâ‚‚g - e_g à®ªà®¿à®³à®ªà¯à®ªà¯, à®•à®¾à®¨à¯à®¤à®¤à¯à®¤à®©à¯à®®à¯ˆ, à®¸à¯à®ªà¯†à®•à¯à®Ÿà¯à®°à¯‹à®•à¯†à®®à®¿à®•à¯à®•à®²à¯ à®µà®°à®¿à®šà¯ˆ' : 'Primary & secondary valency, Crystal field splitting energy Î”_o, Strong vs weak field ligands, High-spin vs Low-spin configurations, Magnetic moment Î¼ = âˆš[n(n+2)] BM', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'Magnetic Moment: Î¼ = âˆš[n(n+2)] BM (Bohr Magnetons) | CFT Splitting: Octahedral Î”_o (tâ‚‚gÂ³ e_gÂ²)', keyPoints: ['Strong field ligands (CNâ», CO) cause electron pairing and large CFSE Î”_o', 'Chelate complexes are more stable than non-chelate complexes due to entropy increase'], type: 'concept', importance: 'High-Yield' },
-        { id: 'hsc_ch_4', topicTitle: isTa ? 'à®•à®°à®¿à®® à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯: SN1/SN2 à®µà®¿à®©à¯ˆà®•à®³à¯, à®†à®²à¯à®Ÿà®¾à®²à¯ à®•à¯à®±à¯à®•à¯à®•à®®à¯ & à®•à¯‡à®©à®¿à®šà®°à¯‹' : 'Organic Mechanisms: SN1/SN2, Aldol, Cannizzaro & Diazotization', subtopic: isTa ? 'à®•à®¾à®°à¯à®ªà¯‹à®•à¯‡à®·à®©à¯ à®‡à®Ÿà¯ˆà®¨à®¿à®²à¯ˆ, à®¤à®²à¯ˆà®•à¯€à®´à¯ à®…à®®à¯ˆà®ªà¯à®ªà¯, à®†à®²à¯à®ªà®¾-à®¹à¯ˆà®Ÿà¯à®°à®œà®©à¯ à®µà®¿à®©à¯ˆà®•à®³à¯' : 'Nucleophilic substitution kinetics (SN1 two-step vs SN2 concerted Walden inversion), Aldol condensation with Î±-H, Cannizzaro disproportionation without Î±-H, Sandmeyer reaction', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'SN2: Rate = k[R-X][Nuâ»] (Walden Inversion) | SN1: Rate = k[R-X] (Carbocation intermediate, Racemization)', keyPoints: ['Tertiary alkyl halides undergo SN1 due to carbocation stability (3Â° > 2Â° > 1Â°)', 'Aldehydes with no Î±-hydrogen (Formaldehyde, Benzaldehyde) undergo Cannizzaro reaction'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_ch_3', topicTitle: isTa ? '�…ண�ˆவு�š் �š�‡ர்ம�™்�•ள்: வ�†ர்னர் �•�Šள்�•�ˆ & ப�Ÿி�•ப்புல�•் �•�Šள்�•�ˆ (CFT)' : 'Coordination Chemistry: CFT Splitting & IUPAC Nomenclature', subtopic: isTa ? '�†�•்�Ÿாஹ�†�Ÿ்ரல் t�‚‚g - e_g பிளப்பு, �•ாந்தத்தன்ம�ˆ, ஸ்ப�†�•்�Ÿ்ர�‹�•�†மி�•்�•ல் வரி�š�ˆ' : 'Primary & secondary valency, Crystal field splitting energy �”_o, Strong vs weak field ligands, High-spin vs Low-spin configurations, Magnetic moment μ = �ˆš[n(n+2)] BM', dayNumber: 10, periodNumber: 2, keyFormulaOrLaw: 'Magnetic Moment: μ = �ˆš[n(n+2)] BM (Bohr Magnetons) | CFT Splitting: Octahedral �”_o (t�‚‚g� e_g�)', keyPoints: ['Strong field ligands (CN⁻, CO) cause electron pairing and large CFSE �”_o', 'Chelate complexes are more stable than non-chelate complexes due to entropy increase'], type: 'concept', importance: 'High-Yield' },
+        { id: 'hsc_ch_4', topicTitle: isTa ? '�•ரிம வ�‡தியியல்: SN1/SN2 வின�ˆ�•ள், �†ல்�Ÿால் �•ுறு�•்�•ம் & �•�‡னி�šர�‹' : 'Organic Mechanisms: SN1/SN2, Aldol, Cannizzaro & Diazotization', subtopic: isTa ? '�•ார்ப�‹�•�‡ஷன் �‡�Ÿ�ˆநில�ˆ, தல�ˆ�•�€ழ் �…ம�ˆப்பு, �†ல்பா-ஹ�ˆ�Ÿ்ர�œன் வின�ˆ�•ள்' : 'Nucleophilic substitution kinetics (SN1 two-step vs SN2 concerted Walden inversion), Aldol condensation with α-H, Cannizzaro disproportionation without α-H, Sandmeyer reaction', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'SN2: Rate = k[R-X][Nu⁻] (Walden Inversion) | SN1: Rate = k[R-X] (Carbocation intermediate, Racemization)', keyPoints: ['Tertiary alkyl halides undergo SN1 due to carbocation stability (3� > 2� > 1�)', 'Aldehydes with no α-hydrogen (Formaldehyde, Benzaldehyde) undergo Cannizzaro reaction'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2077,20 +2077,20 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   const mathematicsChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: isTa ? 'à®…à®£à®¿à®•à®³à¯, à®…à®£à®¿à®•à¯à®•à¯‹à®µà¯ˆà®•à®³à¯ & à®µà®•à¯ˆ à®¨à¯à®£à¯à®•à®£à®¿à®¤à®®à¯' : 'Matrices, Determinants & Differential Calculus',
-      description: isTa ? 'à®…à®£à®¿à®¯à®¿à®©à¯ à®¨à¯‡à®°à¯à®®à®¾à®±à¯ Aâ»Â¹ = (1/|A|)adj(A), à®¤à¯Šà®Ÿà®°à¯à®šà¯à®šà®¿ à®®à®±à¯à®±à¯à®®à¯ à®µà®•à¯ˆà®¯à®¿à®Ÿà¯à®¤à®²à¯, à®Žà®²à¯à®²à¯ˆà®•à®³à¯' : 'Matrix inversion, Cramer\'s Rule, Continuity & Differentiability, Chain rule, Maxima & Minima (Second derivative test)',
+      chapterTitle: isTa ? '�…ணி�•ள், �…ணி�•்�•�‹வ�ˆ�•ள் & வ�•�ˆ நுண்�•ணிதம்' : 'Matrices, Determinants & Differential Calculus',
+      description: isTa ? '�…ணியின் ந�‡ர்மாறு A⁻� = (1/|A|)adj(A), த�Š�Ÿர்�š்�šி மற்றும் வ�•�ˆயி�Ÿுதல், �Žல்ல�ˆ�•ள்' : 'Matrix inversion, Cramer\'s Rule, Continuity & Differentiability, Chain rule, Maxima & Minima (Second derivative test)',
       microTopics: [
-        { id: 'hsc_m_1', topicTitle: isTa ? 'à®…à®£à®¿à®•à®³à¯ & à®…à®£à®¿à®•à¯à®•à¯‹à®µà¯ˆà®•à®³à¯: à®¨à¯‡à®°à¯à®®à®¾à®±à¯ à®®à®±à¯à®±à¯à®®à¯ à®•à®¿à®°à®¾à®®à®°à®¿à®©à¯ à®µà®¿à®¤à®¿' : 'Matrices & Determinants: Inverse Aâ»Â¹ & System of Linear Equations', subtopic: isTa ? 'Aâ»Â¹ = (1/|A|) adj A à®®à®±à¯à®±à¯à®®à¯ AX = B à®¤à¯€à®°à¯à®µà¯ à®®à¯à®±à¯ˆ' : 'Properties of determinants, Adjoint of square matrix, Solution of non-homogeneous linear systems using matrix method and Cramer\'s rule', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Matrix Inverse: Aâ»Â¹ = (1 / |A|) adj(A) | Product: A Â· adj(A) = |A| I_n | System: X = Aâ»Â¹ B', keyPoints: ['A square matrix A is invertible if and only if |A| â‰  0 (Non-singular matrix)', '|adj(A)| = |A|^(n-1) for a matrix of order n'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'hsc_m_2', topicTitle: isTa ? 'à®µà®•à¯ˆ à®¨à¯à®£à¯à®•à®£à®¿à®¤à®®à¯: à®ªà¯†à®°à¯à®®à®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®šà®¿à®±à¯à®®à®®à¯ (Maxima & Minima)' : 'Calculus: Derivatives, Mean Value Theorems & Maxima/Minima', subtopic: isTa ? 'dy/dx = 0 à®ªà¯à®³à¯à®³à®¿à®•à®³à¯, dÂ²y/dxÂ² à®šà¯‹à®¤à®©à¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®¤à¯Šà®Ÿà®°à¯ à®ªà¯†à®°à¯à®•à¯à®•à®®à¯' : 'Rolle\'s & Lagrange\'s Mean Value Theorems, Tangents & Normals slope m = dy/dx, Critical points, Second derivative test for local maxima/minima', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Maxima Condition: f\'(x) = 0 and f\'\'(x) < 0 | Minima Condition: f\'(x) = 0 and f\'\'(x) > 0 | Chain Rule: d/dx[f(g(x))] = f\'(g(x)) Â· g\'(x)', keyPoints: ['If f\'\'(x) = 0 at critical point, use higher derivative test or first derivative sign test', 'Slope of normal to curve at (xâ‚, yâ‚) is -1 / (dy/dx)_(xâ‚,yâ‚)'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_m_1', topicTitle: isTa ? '�…ணி�•ள் & �…ணி�•்�•�‹வ�ˆ�•ள்: ந�‡ர்மாறு மற்றும் �•ிராமரின் விதி' : 'Matrices & Determinants: Inverse A⁻� & System of Linear Equations', subtopic: isTa ? 'A⁻� = (1/|A|) adj A மற்றும் AX = B த�€ர்வு முற�ˆ' : 'Properties of determinants, Adjoint of square matrix, Solution of non-homogeneous linear systems using matrix method and Cramer\'s rule', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Matrix Inverse: A⁻� = (1 / |A|) adj(A) | Product: A � adj(A) = |A| I_n | System: X = A⁻� B', keyPoints: ['A square matrix A is invertible if and only if |A| �‰� 0 (Non-singular matrix)', '|adj(A)| = |A|^(n-1) for a matrix of order n'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'hsc_m_2', topicTitle: isTa ? 'வ�•�ˆ நுண்�•ணிதம்: ப�†ருமம் மற்றும் �šிறுமம் (Maxima & Minima)' : 'Calculus: Derivatives, Mean Value Theorems & Maxima/Minima', subtopic: isTa ? 'dy/dx = 0 புள்ளி�•ள், d�y/dx� �š�‹தன�ˆ மற்றும் த�Š�Ÿர் ப�†ரு�•்�•ம்' : 'Rolle\'s & Lagrange\'s Mean Value Theorems, Tangents & Normals slope m = dy/dx, Critical points, Second derivative test for local maxima/minima', dayNumber: 7, periodNumber: 3, keyFormulaOrLaw: 'Maxima Condition: f\'(x) = 0 and f\'\'(x) < 0 | Minima Condition: f\'(x) = 0 and f\'\'(x) > 0 | Chain Rule: d/dx[f(g(x))] = f\'(g(x)) � g\'(x)', keyPoints: ['If f\'\'(x) = 0 at critical point, use higher derivative test or first derivative sign test', 'Slope of normal to curve at (x�‚�, y�‚�) is -1 / (dy/dx)_(x�‚�,y�‚�)'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: isTa ? 'à®¤à¯Šà®•à¯ˆ à®¨à¯à®£à¯à®•à®£à®¿à®¤à®®à¯, à®¤à®¿à®šà¯ˆà®¯à®©à¯à®•à®³à¯ & à®¨à®¿à®•à®´à¯à®¤à®•à®µà¯' : 'Integral Calculus, Vectors, 3D Geometry & Probability',
-      description: isTa ? 'à®ªà®•à¯à®¤à®¿à®ªà¯ à®ªà®¿à®©à¯à®©à®™à¯à®•à®³à¯ à®®à¯‚à®²à®®à¯ à®¤à¯Šà®•à¯ˆà®¯à®¿à®Ÿà®²à¯, à®ªà¯†à®°à¯à®©à¯‹à®²à®¿ à®šà¯‚à®¤à¯à®¤à®¿à®°à®®à¯, à®¤à®¿à®šà¯ˆà®¯à®©à¯ à®ªà¯†à®°à¯à®•à¯à®•à®²à¯, à®ªà¯‡à®¯à®¸à¯ à®¤à¯‡à®±à¯à®±à®®à¯' : 'Integration by parts âˆ«u dv = uv - âˆ«v du, Definite integral properties, Dot and Cross products, Shortest distance between skew lines, Bayes\' Theorem',
+      chapterTitle: isTa ? 'த�Š�•�ˆ நுண்�•ணிதம், தி�š�ˆயன்�•ள் & நி�•ழ்த�•வு' : 'Integral Calculus, Vectors, 3D Geometry & Probability',
+      description: isTa ? 'ப�•ுதிப் பின்ன�™்�•ள் ம�‚லம் த�Š�•�ˆயி�Ÿல், ப�†ர்ன�‹லி �š�‚த்திரம், தி�š�ˆயன் ப�†ரு�•்�•ல், ப�‡யஸ் த�‡ற்றம்' : 'Integration by parts �ˆ�u dv = uv - �ˆ�v du, Definite integral properties, Dot and Cross products, Shortest distance between skew lines, Bayes\' Theorem',
       microTopics: [
-        { id: 'hsc_m_3', topicTitle: isTa ? 'à®¤à¯Šà®•à¯ˆ à®¨à¯à®£à¯à®•à®£à®¿à®¤à®®à¯: à®ªà®•à¯à®¤à®¿ à®¤à¯Šà®•à¯ˆà®¯à®¿à®Ÿà®²à¯ & à®•à¯à®±à®¿à®ªà¯à®ªà®¿à®Ÿà¯à®Ÿ à®¤à¯Šà®•à¯ˆà®¯à¯€à®Ÿà¯à®•à®³à¯' : 'Integral Calculus: Integration by Parts & Definite Properties', subtopic: isTa ? 'âˆ« u dv = uv - âˆ« v du à®®à®±à¯à®±à¯à®®à¯ âˆ«â‚€áµƒ f(x)dx = âˆ«â‚€áµƒ f(a-x)dx' : 'Integration by substitution, partial fractions, Integration by parts ILATE rule, Definite integrals king property âˆ«â‚€áµƒ f(x)dx = âˆ«â‚€áµƒ f(a-x)dx, Area under curve', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'By Parts: âˆ« u v dx = u âˆ«v dx - âˆ«[u\' (âˆ«v dx)] dx | King Property: âˆ«â‚€áµƒ f(x) dx = âˆ«â‚€áµƒ f(a - x) dx', keyPoints: ['ILATE priority for choosing u: Inverse, Logarithmic, Algebraic, Trigonometric, Exponential', 'Area between curve y = f(x) and x-axis from a to b = âˆ«â‚áµ‡ |f(x)| dx'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'hsc_m_4', topicTitle: isTa ? 'à®¤à®¿à®šà¯ˆà®¯à®©à¯à®•à®³à¯ (Vectors), à®®à¯à®ªà¯à®ªà®°à®¿à®®à®¾à®£ à®µà®Ÿà®¿à®µà®¿à®¯à®²à¯ & à®ªà¯‡à®¯à®¸à¯ à®¤à¯‡à®±à¯à®±à®®à¯' : 'Vectors, 3D Geometry (Skew Lines) & Bayes Theorem', subtopic: isTa ? 'a Â· b = |a||b|cos Î¸, a Ã— b, à®•à¯‹à®Ÿà¯à®•à®³à¯à®•à¯à®•à¯ à®‡à®Ÿà¯ˆà®ªà¯à®ªà®Ÿà¯à®Ÿ à®®à¯€à®šà¯à®šà®¿à®±à¯ à®¤à¯Šà®²à¯ˆà®µà¯, à®¨à®¿à®ªà®¨à¯à®¤à®©à¯ˆ à®¨à®¿à®•à®´à¯à®¤à®•à®µà¯' : 'Scalar triple product [a b c], Vector cross product, Shortest distance d = |(aâ‚‚-aâ‚)Â·(bâ‚Ã—bâ‚‚)| / |bâ‚Ã—bâ‚‚|, Conditional probability P(A|B), Bayes\' Theorem calculation', dayNumber: 15, periodNumber: 3, keyFormulaOrLaw: 'Dot Product: a Â· b = aâ‚bâ‚ + aâ‚‚bâ‚‚ + aâ‚ƒbâ‚ƒ | Cross Product: |a Ã— b| = |a||b| sin Î¸ | Bayes: P(A_i|B) = [P(A_i)P(B|A_i)] / Î£[P(A_j)P(B|A_j)]', keyPoints: ['Two non-zero vectors a and b are perpendicular if and only if a Â· b = 0', 'Shortest distance between two parallel lines r = aâ‚ + Î»b and r = aâ‚‚ + Î¼b is |b Ã— (aâ‚‚ - aâ‚)| / |b|'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_m_3', topicTitle: isTa ? 'த�Š�•�ˆ நுண்�•ணிதம்: ப�•ுதி த�Š�•�ˆயி�Ÿல் & �•ுறிப்பி�Ÿ்�Ÿ த�Š�•�ˆய�€�Ÿு�•ள்' : 'Integral Calculus: Integration by Parts & Definite Properties', subtopic: isTa ? '�ˆ� u dv = uv - �ˆ� v du மற்றும் �ˆ��‚€�ƒ f(x)dx = �ˆ��‚€�ƒ f(a-x)dx' : 'Integration by substitution, partial fractions, Integration by parts ILATE rule, Definite integrals king property �ˆ��‚€�ƒ f(x)dx = �ˆ��‚€�ƒ f(a-x)dx, Area under curve', dayNumber: 11, periodNumber: 3, keyFormulaOrLaw: 'By Parts: �ˆ� u v dx = u �ˆ�v dx - �ˆ�[u\' (�ˆ�v dx)] dx | King Property: �ˆ��‚€�ƒ f(x) dx = �ˆ��‚€�ƒ f(a - x) dx', keyPoints: ['ILATE priority for choosing u: Inverse, Logarithmic, Algebraic, Trigonometric, Exponential', 'Area between curve y = f(x) and x-axis from a to b = �ˆ��‚��‡ |f(x)| dx'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'hsc_m_4', topicTitle: isTa ? 'தி�š�ˆயன்�•ள் (Vectors), முப்பரிமாண வ�Ÿிவியல் & ப�‡யஸ் த�‡ற்றம்' : 'Vectors, 3D Geometry (Skew Lines) & Bayes Theorem', subtopic: isTa ? 'a � b = |a||b|cos θ, a � b, �•�‹�Ÿு�•ளு�•்�•ு �‡�Ÿ�ˆப்ப�Ÿ்�Ÿ ம�€�š்�šிறு த�Šல�ˆவு, நிபந்தன�ˆ நி�•ழ்த�•வு' : 'Scalar triple product [a b c], Vector cross product, Shortest distance d = |(a�‚‚-a�‚�)�(b�‚��b�‚‚)| / |b�‚��b�‚‚|, Conditional probability P(A|B), Bayes\' Theorem calculation', dayNumber: 15, periodNumber: 3, keyFormulaOrLaw: 'Dot Product: a � b = a�‚�b�‚� + a�‚‚b�‚‚ + a�‚ƒb�‚ƒ | Cross Product: |a � b| = |a||b| sin θ | Bayes: P(A_i|B) = [P(A_i)P(B|A_i)] / Σ[P(A_j)P(B|A_j)]', keyPoints: ['Two non-zero vectors a and b are perpendicular if and only if a � b = 0', 'Shortest distance between two parallel lines r = a�‚� + λb and r = a�‚‚ + μb is |b � (a�‚‚ - a�‚�)| / |b|'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2098,38 +2098,38 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   const generalTamilChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'à®‡à®¯à®²à¯ 1: à®®à¯Šà®´à®¿ & à®šà¯†à®¯à¯à®¯à¯à®³à¯ (à®¤à®©à¯à®©à¯‡à®°à¯ à®‡à®²à®¾à®¤ à®¤à®®à®¿à®´à¯ & à®¤à®®à®¿à®´à®¾à®¯à¯ à®Žà®´à¯à®¤à¯à®µà¯‹à®®à¯)',
-      description: 'à®¤à®£à¯à®Ÿà®¿à®¯à®²à®™à¯à®•à®¾à®° à®‰à®°à¯ˆ à®®à¯‡à®±à¯à®•à¯‹à®³à¯ à®ªà®¾à®Ÿà®²à¯, à®ªà®¿à®´à¯ˆà®¯à®¿à®©à¯à®±à®¿à®¤à¯ à®¤à®®à®¿à®´à®¿à®²à¯ à®Žà®´à¯à®¤à¯à®®à¯ à®®à¯à®±à¯ˆà®•à®³à¯, à®Žà®´à¯à®¤à¯à®¤à¯à®šà¯ à®šà¯€à®°à¯à®¤à®¿à®°à¯à®¤à¯à®¤à®®à¯',
+      chapterTitle: '�‡யல் 1: ம�Šழி & �š�†ய்யுள் (தன்ன�‡ர் �‡லாத தமிழ் & தமிழாய் �Žழுதுவ�‹ம்)',
+      description: 'தண்�Ÿியல�™்�•ார �‰ர�ˆ ம�‡ற்�•�‹ள் பா�Ÿல், பிழ�ˆயின்றித் தமிழில் �Žழுதும் முற�ˆ�•ள், �Žழுத்து�š் �š�€ர்திருத்தம்',
       subtopics: [
         {
           id: 'hsc_t_sub1',
-          title: 'à®¤à®©à¯à®©à¯‡à®°à¯ à®‡à®²à®¾à®¤ à®¤à®®à®¿à®´à¯ & à®¤à®®à®¿à®´à¯ à®Žà®´à¯à®¤à¯à®¤à¯ à®®à¯à®±à¯ˆà®®à¯ˆ',
+          title: 'தன்ன�‡ர் �‡லாத தமிழ் & தமிழ் �Žழுத்து முற�ˆம�ˆ',
           microTopics: [
-            { id: 'hsc_t_1', title: 'à®¤à®©à¯à®©à¯‡à®°à¯ à®‡à®²à®¾à®¤ à®¤à®®à®¿à®´à¯ (à®¤à®£à¯à®Ÿà®¿à®¯à®²à®™à¯à®•à®¾à®°à®®à¯) â€” à®šà¯†à®¨à¯à®¤à®®à®¿à®´à®¿à®©à¯ à®¤à®©à®¿à®šà¯à®šà®¿à®±à®ªà¯à®ªà¯', keyAxiom: 'à®“à®™à¯à®•à®²à®¿à®Ÿà¯ˆ à®µà®¨à¯à®¤à¯ à®‰à®¯à®°à¯à®¨à¯à®¤à¯‹à®°à¯ à®¤à¯Šà®´ à®µà®¿à®³à®™à¯à®•à®¿ à®à®™à¯à®•à¯Šà®²à®¿ à®¨à¯€à®°à¯ à®žà®¾à®²à®¤à¯à®¤à¯ à®‡à®°à¯à®³à®•à®±à¯à®±à¯à®®à¯ à®šà¯†à®¨à¯à®¤à®®à®¿à®´à¯' },
-            { id: 'hsc_t_2', title: 'à®¤à®®à®¿à®´à®¾à®¯à¯ à®Žà®´à¯à®¤à¯à®µà¯‹à®®à¯ â€” à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯ à®‡à®Ÿà®™à¯à®•à®³à¯ & à®®à®¿à®•à®¾ à®‡à®Ÿà®™à¯à®•à®³à¯', keyAxiom: 'à®•à¯, à®šà¯, à®¤à¯, à®ªà¯ à®šà®¨à¯à®¤à®¿à®ªà¯à®ªà®¿à®´à¯ˆà®•à®³à¯ à®¨à¯€à®•à¯à®•à®¿ à®Žà®´à¯à®¤à¯à®¤à®²à¯' }
+            { id: 'hsc_t_1', title: 'தன்ன�‡ர் �‡லாத தமிழ் (தண்�Ÿியல�™்�•ாரம்) — �š�†ந்தமிழின் தனி�š்�šிறப்பு', keyAxiom: '�“�™்�•லி�Ÿ�ˆ வந்து �‰யர்ந்த�‹ர் த�Šழ விள�™்�•ி ஏ�™்�•�Šலி ந�€ர் �žாலத்து �‡ருள�•ற்றும் �š�†ந்தமிழ்' },
+            { id: 'hsc_t_2', title: 'தமிழாய் �Žழுதுவ�‹ம் — வல்லினம் மி�•ும் �‡�Ÿ�™்�•ள் & மி�•ா �‡�Ÿ�™்�•ள்', keyAxiom: '�•், �š், த், ப் �šந்திப்பிழ�ˆ�•ள் ந�€�•்�•ி �Žழுதுதல்' }
           ]
         }
       ],
       microTopics: [
-        { id: 'hsc_t_1', topicTitle: 'à®¤à®©à¯à®©à¯‡à®°à¯ à®‡à®²à®¾à®¤ à®¤à®®à®¿à®´à¯ & à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯ / à®®à®¿à®•à®¾ à®‡à®Ÿà®™à¯à®•à®³à¯', subtopic: 'à®¤à®£à¯à®Ÿà®¿à®¯à®²à®™à¯à®•à®¾à®° à®¨à®¯à®®à¯ & à®šà®¨à¯à®¤à®¿à®ªà¯ à®ªà®¿à®´à¯ˆà®•à®³à¯ à®¨à¯€à®•à¯à®•à¯à®¤à®²à¯', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'à®¤à®£à¯à®Ÿà®¿à®¯à®²à®™à¯à®•à®¾à®°à®®à¯: à®“à®™à¯à®•à®²à®¿à®Ÿà¯ˆ à®µà®¨à¯à®¤à¯ à®‰à®¯à®°à¯à®¨à¯à®¤à¯‹à®°à¯ à®¤à¯Šà®´ à®µà®¿à®³à®™à¯à®•à®¿ | à®µà®²à¯à®²à®¿à®©à®®à¯: à®…à®¨à¯à®¤, à®‡à®¨à¯à®¤, à®Žà®¨à¯à®¤ à®ªà®¿à®©à¯ à®®à®¿à®•à¯à®®à¯', keyPoints: ['à®…à®£à®¿ à®‡à®²à®•à¯à®•à®£à®¤à¯à®¤à¯ˆ à®®à®Ÿà¯à®Ÿà¯à®®à¯‡ à®•à¯‚à®±à¯à®®à¯ à®¨à¯‚à®²à¯ à®¤à®£à¯à®Ÿà®¿à®¯à®²à®™à¯à®•à®¾à®°à®®à¯', 'à®µà®Ÿà®®à¯Šà®´à®¿à®¯à®¿à®²à¯ à®‰à®³à¯à®³ à®•à®¾à®µà®¿à®¯ à®¤à®°à¯à®šà®®à¯ à®¨à¯‚à®²à¯ˆà®¤à¯ à®¤à®´à¯à®µà®¿ à®Žà®´à¯à®¤à®ªà¯à®ªà®Ÿà¯à®Ÿà®¤à¯'], type: 'concept', importance: 'High-Yield' }
+        { id: 'hsc_t_1', topicTitle: 'தன்ன�‡ர் �‡லாத தமிழ் & வல்லினம் மி�•ும் / மி�•ா �‡�Ÿ�™்�•ள்', subtopic: 'தண்�Ÿியல�™்�•ார நயம் & �šந்திப் பிழ�ˆ�•ள் ந�€�•்�•ுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'தண்�Ÿியல�™்�•ாரம்: �“�™்�•லி�Ÿ�ˆ வந்து �‰யர்ந்த�‹ர் த�Šழ விள�™்�•ி | வல்லினம்: �…ந்த, �‡ந்த, �Žந்த பின் மி�•ும்', keyPoints: ['�…ணி �‡ல�•்�•ணத்த�ˆ ம�Ÿ்�Ÿும�‡ �•�‚றும் ந�‚ல் தண்�Ÿியல�™்�•ாரம்', 'வ�Ÿம�Šழியில் �‰ள்ள �•ாவிய தர்�šம் ந�‚ல�ˆத் தழுவி �Žழுதப்ப�Ÿ்�Ÿது'], type: 'concept', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'à®‡à®¯à®²à¯ 2: à®‡à®¯à®±à¯à®•à¯ˆ & à®µà¯‡à®³à®¾à®£à¯à®®à¯ˆ (à®¤à®¿à®°à¯à®®à®²à¯ˆ à®®à¯à®°à¯à®•à®©à¯ à®ªà®³à¯à®³à¯ & à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯)',
-      description: 'à®ªà¯†à®°à®¿à®¯à®µà®©à¯ à®•à®µà®¿à®°à®¾à®¯à®°à¯ à®¤à®¿à®°à¯à®®à®²à¯ˆ à®®à¯à®°à¯à®•à®©à¯ à®ªà®³à¯à®³à¯, à®ªà¯‡à®¯à®©à®¾à®°à¯ à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯, à®¨à®¾à®²à¯à®µà®•à¯ˆà®ªà¯ à®ªà¯Šà®°à¯à®¤à¯à®¤à®™à¯à®•à®³à¯ (à®¤à®¿à®£à¯ˆ, à®ªà®¾à®²à¯, à®Žà®£à¯, à®‡à®Ÿà®®à¯)',
+      chapterTitle: '�‡யல் 2: �‡யற்�•�ˆ & வ�‡ளாண்ம�ˆ (திருமல�ˆ முரு�•ன் பள்ளு & ஐ�™்�•ுறுந�‚று)',
+      description: 'ப�†ரியவன் �•விராயர் திருமல�ˆ முரு�•ன் பள்ளு, ப�‡யனார் ஐ�™்�•ுறுந�‚று, நால்வ�•�ˆப் ப�Šருத்த�™்�•ள் (திண�ˆ, பால், �Žண், �‡�Ÿம்)',
       subtopics: [
         {
           id: 'hsc_t_sub2',
-          title: 'à®ªà®³à¯à®³à¯ à®‡à®²à®•à¯à®•à®¿à®¯à®®à¯ & à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯',
+          title: 'பள்ளு �‡ல�•்�•ியம் & ஐ�™்�•ுறுந�‚று',
           microTopics: [
-            { id: 'hsc_t_3', title: 'à®¤à®¿à®°à¯à®®à®²à¯ˆ à®®à¯à®°à¯à®•à®©à¯ à®ªà®³à¯à®³à¯ (à®ªà¯†à®°à®¿à®¯à®µà®©à¯ à®•à®µà®¿à®°à®¾à®¯à®°à¯) â€” à®‰à®´à®µà¯à®šà¯ à®šà®¿à®±à®ªà¯à®ªà¯', keyAxiom: 'à®ªà®³à¯à®³à¯ à®Žà®©à¯à®ªà®¤à¯ 96 à®µà®•à¯ˆ à®šà®¿à®±à¯à®±à®¿à®²à®•à¯à®•à®¿à®¯à®™à¯à®•à®³à¯à®³à¯ à®’à®©à¯à®±à¯ (à®‰à®´à®¤à¯à®¤à®¿à®ªà¯ à®ªà®¾à®Ÿà¯à®Ÿà¯)' },
-            { id: 'hsc_t_4', title: 'à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯ (à®®à¯à®²à¯à®²à¯ˆà®¤à¯à®¤à®¿à®£à¯ˆ â€” à®ªà¯‡à®¯à®©à®¾à®°à¯) & à®¨à®¾à®²à¯à®µà®•à¯ˆà®ªà¯ à®ªà¯Šà®°à¯à®¤à¯à®¤à®™à¯à®•à®³à¯', keyAxiom: 'à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯ 3 à®…à®Ÿà®¿ à®®à¯à®¤à®²à¯ 6 à®…à®Ÿà®¿ à®µà®°à¯ˆà®¯à®¿à®²à®¾à®© à®•à¯à®±à¯ˆà®¨à¯à®¤ à®…à®•à®µà®±à¯à®ªà®¾à®•à¯à®•à®³à¯ à®•à¯Šà®£à¯à®Ÿ à®¨à¯‚à®²à¯' }
+            { id: 'hsc_t_3', title: 'திருமல�ˆ முரு�•ன் பள்ளு (ப�†ரியவன் �•விராயர்) — �‰ழவு�š் �šிறப்பு', keyAxiom: 'பள்ளு �Žன்பது 96 வ�•�ˆ �šிற்றில�•்�•ிய�™்�•ளுள் �’ன்று (�‰ழத்திப் பா�Ÿ்�Ÿு)' },
+            { id: 'hsc_t_4', title: 'ஐ�™்�•ுறுந�‚று (முல்ல�ˆத்திண�ˆ — ப�‡யனார்) & நால்வ�•�ˆப் ப�Šருத்த�™்�•ள்', keyAxiom: 'ஐ�™்�•ுறுந�‚று 3 �…�Ÿி முதல் 6 �…�Ÿி வர�ˆயிலான �•ுற�ˆந்த �…�•வற்பா�•்�•ள் �•�Šண்�Ÿ ந�‚ல்' }
           ]
         }
       ],
       microTopics: [
-        { id: 'hsc_t_3', topicTitle: 'à®¤à®¿à®°à¯à®®à®²à¯ˆ à®®à¯à®°à¯à®•à®©à¯ à®ªà®³à¯à®³à¯ & à®¨à®¾à®²à¯à®µà®•à¯ˆà®ªà¯ à®ªà¯Šà®°à¯à®¤à¯à®¤à®™à¯à®•à®³à¯ à®‡à®²à®•à¯à®•à®£à®®à¯', subtopic: 'à®‰à®´à®µà¯ à®¨à®¾à®•à®°à®¿à®•à®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®¤à®¿à®£à¯ˆ, à®ªà®¾à®²à¯, à®Žà®£à¯, à®‡à®Ÿà®ªà¯ à®ªà¯Šà®°à¯à®¤à¯à®¤à®™à¯à®•à®³à¯', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'à®ªà®³à¯à®³à¯ à®‡à®²à®•à¯à®•à®¿à®¯à®®à¯: à®‰à®´à®µà®°à¯ à®µà®¾à®´à¯à®•à¯à®•à¯ˆà®¯à¯ˆà®šà¯ à®šà®¿à®¤à¯à®¤à®°à®¿à®•à¯à®•à¯à®®à¯ à®‰à®³à®¤à¯à®¤à®¿à®ªà¯ à®ªà®¾à®Ÿà¯à®Ÿà¯ | à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯: 500 à®…à®•à®µà®±à¯à®ªà®¾à®•à¯à®•à®³à¯', keyPoints: ['à®à®™à¯à®•à¯à®±à¯à®¨à¯‚à®±à¯à®±à¯ˆà®¤à¯ à®¤à¯Šà®•à¯à®¤à¯à®¤à®µà®°à¯ à®ªà¯à®²à®¤à¯à®¤à¯à®±à¯ˆ à®®à¯à®±à¯à®±à®¿à®¯ à®•à¯‚à®Ÿà®²à¯‚à®°à¯ à®•à®¿à®´à®¾à®°à¯', 'à®¤à¯Šà®•à¯à®ªà¯à®ªà®¿à®¤à¯à®¤à®µà®°à¯ à®¯à®¾à®©à¯ˆà®•à®Ÿà¯à®šà¯‡à®¯à¯ à®®à®¾à®¨à¯à®¤à®°à®žà¯à®šà¯‡à®°à®²à¯ à®‡à®°à¯à®®à¯à®ªà¯Šà®±à¯ˆ'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'hsc_t_3', topicTitle: 'திருமல�ˆ முரு�•ன் பள்ளு & நால்வ�•�ˆப் ப�Šருத்த�™்�•ள் �‡ல�•்�•ணம்', subtopic: '�‰ழவு நா�•ரி�•ம் மற்றும் திண�ˆ, பால், �Žண், �‡�Ÿப் ப�Šருத்த�™்�•ள்', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'பள்ளு �‡ல�•்�•ியம்: �‰ழவர் வாழ்�•்�•�ˆய�ˆ�š் �šித்தரி�•்�•ும் �‰ளத்திப் பா�Ÿ்�Ÿு | ஐ�™்�•ுறுந�‚று: 500 �…�•வற்பா�•்�•ள்', keyPoints: ['ஐ�™்�•ுறுந�‚ற்ற�ˆத் த�Š�•ுத்தவர் புலத்துற�ˆ முற்றிய �•�‚�Ÿல�‚ர் �•ிழார்', 'த�Š�•ுப்பித்தவர் யான�ˆ�•�Ÿ்�š�‡ய் மாந்தர�ž்�š�‡ரல் �‡ரும்ப�Šற�ˆ'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2174,16 +2174,16 @@ export function getHigherSecondaryScienceCompleteSyllabus(courseId: string, cour
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'hsc_tamil', subjectName: 'à®ªà¯Šà®¤à¯à®¤à¯ à®¤à®®à®¿à®´à¯ (General Tamil â€” HSC 8 à®‡à®¯à®²à¯à®•à®³à¯)', icon: '🔤', color: '#ec4899', totalChapters: generalTamilChapters.length, totalMicroTopics: generalTamilChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalTamilChapters },
+    { subjectId: 'hsc_tamil', subjectName: 'ப�Šதுத் தமிழ் (General Tamil — HSC 8 �‡யல்�•ள்)', icon: '��', color: '#ec4899', totalChapters: generalTamilChapters.length, totalMicroTopics: generalTamilChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalTamilChapters },
     { subjectId: 'hsc_english', subjectName: 'General English (HSC Units 1 to 6 Core)', icon: '🔤', color: '#3b82f6', totalChapters: generalEnglishChapters.length, totalMicroTopics: generalEnglishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalEnglishChapters },
-    { subjectId: 'hsc_physics', subjectName: isTa ? 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ (Physics Core â€” HSC / Board)' : 'Physics (Senior Secondary Core)', icon: '⚡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: physicsChapters },
-    { subjectId: 'hsc_chemistry', subjectName: isTa ? 'à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ (Chemistry Core â€” HSC / Board)' : 'Chemistry (Senior Secondary Core)', icon: 'ðŸ§ª', color: '#10b981', totalChapters: chemistryChapters.length, totalMicroTopics: chemistryChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: chemistryChapters },
-    { subjectId: 'hsc_mathematics', subjectName: isTa ? 'à®•à®£à®¿à®¤à®®à¯ (Mathematics Core â€” HSC / Board)' : 'Mathematics (Senior Secondary Calculus & Vectors)', icon: 'ðŸ“', color: '#f59e0b', totalChapters: mathematicsChapters.length, totalMicroTopics: mathematicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: mathematicsChapters }
+    { subjectId: 'hsc_physics', subjectName: isTa ? '�‡யற்பியல் (Physics Core — HSC / Board)' : 'Physics (Senior Secondary Core)', icon: '⚡', color: '#06b6d4', totalChapters: physicsChapters.length, totalMicroTopics: physicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: physicsChapters },
+    { subjectId: 'hsc_chemistry', subjectName: isTa ? 'வ�‡தியியல் (Chemistry Core — HSC / Board)' : 'Chemistry (Senior Secondary Core)', icon: '�Ÿ��', color: '#10b981', totalChapters: chemistryChapters.length, totalMicroTopics: chemistryChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: chemistryChapters },
+    { subjectId: 'hsc_mathematics', subjectName: isTa ? '�•ணிதம் (Mathematics Core — HSC / Board)' : 'Mathematics (Senior Secondary Calculus & Vectors)', icon: '�Ÿ“�', color: '#f59e0b', totalChapters: mathematicsChapters.length, totalMicroTopics: mathematicsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: mathematicsChapters }
   ];
 
   return {
     courseId: courseId || 'tnsb-12-sci',
-    courseTitle: courseTitle || 'Class 12 â€” Higher Secondary Science & Maths Master Program',
+    courseTitle: courseTitle || 'Class 12 — Higher Secondary Science & Maths Master Program',
     category: 'school_hsc',
     board: 'TNSB / CBSE / ISC',
     medium: isTa ? 'Tamil' : 'English',
@@ -2275,8 +2275,8 @@ export function getCollegeAndTechSkillsCompleteSyllabus(courseId: string, course
         }
       ],
       microTopics: [
-        { id: 'tech_py_3', topicTitle: 'NumPy Vectorization, Pandas Data Wrangling & Feature Engineering', subtopic: 'Broadcasting rules, GroupBy aggregations, Handling missing data, MinMax/StandardScaler, One-Hot encoding', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Z-Score Standardization: z = (x - Î¼) / Ïƒ | Broadcasting: Trailing dimensions must be equal or 1', keyPoints: ['Vectorized NumPy operations execute at C-speed without Python loop overhead', 'Pandas DataFrame merge operates similarly to SQL JOIN operations'], type: 'solved_problem', importance: 'High-Yield' },
-        { id: 'tech_py_4', topicTitle: 'Machine Learning Algorithms & Large Language Model (LLM) Integration', subtopic: 'Supervised vs Unsupervised learning, Train/Test split, Confusion matrix metrics (Precision, Recall, F1), Prompt Engineering with Gemini/GPT APIs', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'F1-Score = 2 Ã— (Precision Ã— Recall) / (Precision + Recall) | Confusion Matrix: TP, TN, FP, FN', keyPoints: ['Overfitting occurs when model memorizes training noise; mitigate with Regularization (L1/L2)', 'Few-shot prompting provides input-output examples to guide LLM reasoning reliably'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'tech_py_3', topicTitle: 'NumPy Vectorization, Pandas Data Wrangling & Feature Engineering', subtopic: 'Broadcasting rules, GroupBy aggregations, Handling missing data, MinMax/StandardScaler, One-Hot encoding', dayNumber: 8, periodNumber: 2, keyFormulaOrLaw: 'Z-Score Standardization: z = (x - μ) / Ïƒ | Broadcasting: Trailing dimensions must be equal or 1', keyPoints: ['Vectorized NumPy operations execute at C-speed without Python loop overhead', 'Pandas DataFrame merge operates similarly to SQL JOIN operations'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tech_py_4', topicTitle: 'Machine Learning Algorithms & Large Language Model (LLM) Integration', subtopic: 'Supervised vs Unsupervised learning, Train/Test split, Confusion matrix metrics (Precision, Recall, F1), Prompt Engineering with Gemini/GPT APIs', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'F1-Score = 2 × (Precision × Recall) / (Precision + Recall) | Confusion Matrix: TP, TN, FP, FN', keyPoints: ['Overfitting occurs when model memorizes training noise; mitigate with Regularization (L1/L2)', 'Few-shot prompting provides input-output examples to guide LLM reasoning reliably'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2291,13 +2291,13 @@ export function getCollegeAndTechSkillsCompleteSyllabus(courseId: string, course
           id: 'tech_dsa_sub1',
           title: 'Linear Data Structures & Two-Pointers',
           microTopics: [
-            { id: 'tech_dsa_1', title: 'Big-O Asymptotics, Two Pointers & Sliding Window Patterns', keyAxiom: 'Sliding window converts quadratic O(NÂ²) iterations into linear O(N)' },
+            { id: 'tech_dsa_1', title: 'Big-O Asymptotics, Two Pointers & Sliding Window Patterns', keyAxiom: 'Sliding window converts quadratic O(N²) iterations into linear O(N)' },
             { id: 'tech_dsa_2', title: 'Monotonic Stacks & Floyd Cycle Finding Algorithm', keyAxiom: 'Floyd Tortoise and Hare detects cycles with O(1) auxiliary space' }
           ]
         }
       ],
       microTopics: [
-        { id: 'tech_dsa_1', topicTitle: 'Asymptotic Analysis (Big-O) & Two-Pointer / Sliding Window Techniques', subtopic: 'O(1), O(log n), O(n), O(n log n), O(nÂ²) complexity, Invert array in-place, Two-Sum sorted, Maximum subarray sum (Kadane)', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Kadane Algorithm: max_so_far = max(nums[i], max_so_far + nums[i]) | Two Pointer: Left=0, Right=n-1', keyPoints: ['Sliding window optimizes nested loops from O(nÂ²) to linear O(n) time', 'Hash table lookup, insertion, and deletion operate in average O(1) time'], type: 'solved_problem', importance: 'High-Yield' },
+        { id: 'tech_dsa_1', topicTitle: 'Asymptotic Analysis (Big-O) & Two-Pointer / Sliding Window Techniques', subtopic: 'O(1), O(log n), O(n), O(n log n), O(n²) complexity, Invert array in-place, Two-Sum sorted, Maximum subarray sum (Kadane)', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Kadane Algorithm: max_so_far = max(nums[i], max_so_far + nums[i]) | Two Pointer: Left=0, Right=n-1', keyPoints: ['Sliding window optimizes nested loops from O(n²) to linear O(n) time', 'Hash table lookup, insertion, and deletion operate in average O(1) time'], type: 'solved_problem', importance: 'High-Yield' },
         { id: 'tech_dsa_2', topicTitle: 'Linked Lists, Stacks (Monotonic Stack) & Queue Implementations', subtopic: 'Reverse linked list in-place, Fast & Slow pointer cycle detection (Floyd), Monotonic stack next greater element, Queue using two stacks', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Floyd Cycle Finding: slow moves 1 step, fast moves 2 steps; cycle exists if slow == fast', keyPoints: ['Reversing linked list requires 3 pointers (prev, curr, next)', 'Monotonic stack solves range query problems in O(n) single-pass'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
@@ -2323,7 +2323,7 @@ export function getCollegeAndTechSkillsCompleteSyllabus(courseId: string, course
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'tech_fullstack', subjectName: 'Full-Stack Web & Mobile Architecture (React, Node, TypeScript)', icon: 'ðŸ’»', color: '#06b6d4', totalChapters: fullstackChapters.length, totalMicroTopics: fullstackChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: fullstackChapters },
+    { subjectId: 'tech_fullstack', subjectName: 'Full-Stack Web & Mobile Architecture (React, Node, TypeScript)', icon: '💻', color: '#06b6d4', totalChapters: fullstackChapters.length, totalMicroTopics: fullstackChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: fullstackChapters },
     { subjectId: 'tech_python_ai', subjectName: 'Python 3.12, Data Science & Generative AI Engineering', icon: 'ðŸ', color: '#10b981', totalChapters: pythonAiChapters.length, totalMicroTopics: pythonAiChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pythonAiChapters },
     { subjectId: 'tech_dsa', subjectName: 'Data Structures & Algorithms (LeetCode Master Patterns)', icon: '⚡', color: '#8b5cf6', totalChapters: dsaChapters.length, totalMicroTopics: dsaChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: dsaChapters }
   ];
@@ -2349,38 +2349,38 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
   const tamilEligibilityChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'à®ªà®•à¯à®¤à®¿ à®…: à®¤à®®à®¿à®´à¯ à®‡à®²à®•à¯à®•à®£à®®à¯ (10à®†à®®à¯ à®µà®•à¯à®ªà¯à®ªà¯ à®¤à®°à®®à¯ â€” 100 à®µà®¿à®©à®¾à®•à¯à®•à®³à¯ à®¤à®•à¯à®¤à®¿)',
-      description: 'à®ªà¯Šà®°à¯à®¤à¯à®¤à¯à®¤à®²à¯, à®ªà®¿à®°à®¿à®¤à¯à®¤à¯†à®´à¯à®¤à¯à®¤à®²à¯, à®Žà®¤à®¿à®°à¯à®šà¯à®šà¯Šà®²à¯, à®ªà®¿à®´à¯ˆ à®¤à®¿à®°à¯à®¤à¯à®¤à®®à¯ (à®šà®¨à¯à®¤à®¿à®ªà¯à®ªà®¿à®´à¯ˆ, à®’à®°à¯à®®à¯ˆ à®ªà®©à¯à®®à¯ˆ), à®µà¯‡à®°à¯à®šà¯à®šà¯Šà®²à¯, à®…à®•à®°à®µà®°à®¿à®šà¯ˆ',
+      chapterTitle: 'ப�•ுதி �…: தமிழ் �‡ல�•்�•ணம் (10�†ம் வ�•ுப்பு தரம் — 100 வினா�•்�•ள் த�•ுதி)',
+      description: 'ப�Šருத்துதல், பிரித்த�†ழுதுதல், �Žதிர்�š்�š�Šல், பிழ�ˆ திருத்தம் (�šந்திப்பிழ�ˆ, �’ரும�ˆ பன்ம�ˆ), வ�‡ர்�š்�š�Šல், �…�•ரவரி�š�ˆ',
       subtopics: [
         {
           id: 'pol_t_sub1',
-          title: 'à®‡à®²à®•à¯à®•à®£ à®µà®¿à®¤à®¿à®•à®³à¯ & à®šà¯Šà®²à¯ à®µà®•à¯ˆ',
+          title: '�‡ல�•்�•ண விதி�•ள் & �š�Šல் வ�•�ˆ',
           microTopics: [
-            { id: 'pol_t_1', title: 'à®ªà®¿à®°à®¿à®¤à¯à®¤à¯†à®´à¯à®¤à¯à®¤à®²à¯, à®šà¯‡à®°à¯à®¤à¯à®¤à¯†à®´à¯à®¤à¯à®¤à®²à¯ & à®Žà®¤à®¿à®°à¯à®šà¯à®šà¯Šà®²à¯ à®…à®±à®¿à®¤à®²à¯', keyAxiom: 'à®‰à®¯à®¿à®°à¯†à®´à¯à®¤à¯à®¤à¯ à®‰à®Ÿà®®à¯à®ªà®Ÿà¯à®®à¯†à®¯à¯ à®šà®¨à¯à®¤à®¿ à®µà®¿à®¤à®¿à®•à®³à¯' },
-            { id: 'pol_t_2', title: 'à®šà®¨à¯à®¤à®¿à®ªà¯à®ªà®¿à®´à¯ˆ à®¨à¯€à®•à¯à®•à¯à®¤à®²à¯ & à®®à®°à®ªà¯à®ªà¯ à®ªà®¿à®´à¯ˆà®•à®³à¯', keyAxiom: 'à®…à®¨à¯à®¤, à®‡à®¨à¯à®¤, à®Žà®¨à¯à®¤ à®ªà®¿à®©à¯ à®µà®²à¯à®²à®¿à®©à®®à¯ à®®à®¿à®•à¯à®®à¯' }
+            { id: 'pol_t_1', title: 'பிரித்த�†ழுதுதல், �š�‡ர்த்த�†ழுதுதல் & �Žதிர்�š்�š�Šல் �…றிதல்', keyAxiom: '�‰யிர�†ழுத்து �‰�Ÿம்ப�Ÿும�†ய் �šந்தி விதி�•ள்' },
+            { id: 'pol_t_2', title: '�šந்திப்பிழ�ˆ ந�€�•்�•ுதல் & மரபுப் பிழ�ˆ�•ள்', keyAxiom: '�…ந்த, �‡ந்த, �Žந்த பின் வல்லினம் மி�•ும்' }
           ]
         }
       ],
       microTopics: [
-        { id: 'pol_t_1', topicTitle: 'à®ªà®¿à®°à®¿à®¤à¯à®¤à¯†à®´à¯à®¤à¯à®¤à®²à¯, à®Žà®¤à®¿à®°à¯à®šà¯à®šà¯Šà®²à¯, à®ªà®¿à®´à¯ˆ à®¤à®¿à®°à¯à®¤à¯à®¤à®®à¯ & à®…à®•à®°à®µà®°à®¿à®šà¯ˆ', subtopic: 'à®šà®¨à¯à®¤à®¿à®ªà¯à®ªà®¿à®´à¯ˆ (à®•à¯, à®šà¯, à®¤à¯, à®ªà¯) à®¨à¯€à®•à¯à®•à¯à®¤à®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®µà¯‡à®°à¯à®šà¯à®šà¯Šà®²à¯à®²à®¿à®²à®¿à®°à¯à®¨à¯à®¤à¯ à®µà®¿à®©à¯ˆà®¯à¯†à®šà¯à®šà®®à¯ à®•à®¾à®£à¯à®¤à®²à¯', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'à®µà¯‡à®°à¯à®šà¯à®šà¯Šà®²à¯ -> à®¤à¯Šà®´à®¿à®±à¯à®ªà¯†à®¯à®°à¯ (à®¨à®Ÿ -> à®¨à®Ÿà®¤à¯à®¤à®²à¯) | à®ªà¯†à®¯à®°à¯†à®šà¯à®šà®®à¯ (à®¨à®Ÿà®¨à¯à®¤) | à®µà®¿à®©à¯ˆà®¯à¯†à®šà¯à®šà®®à¯ (à®¨à®Ÿà®¨à¯à®¤à¯)', keyPoints: ['à®¤à®®à®¿à®´à¯ à®¤à®•à¯à®¤à®¿à®¤à¯ à®¤à¯‡à®°à¯à®µà®¿à®²à¯ 40% à®•à¯à®±à¯ˆà®¨à¯à®¤à®ªà®Ÿà¯à®š à®®à®¤à®¿à®ªà¯à®ªà¯†à®£à¯ à®•à®Ÿà¯à®Ÿà®¾à®¯à®®à¯', 'à®…à®•à®°à®µà®°à®¿à®šà¯ˆà®ªà¯à®ªà®Ÿà¯à®¤à¯à®¤à¯à®¤à®²à¯: à®…, à®†, à®‡ à®µà®°à®¿à®šà¯ˆ à®®à®±à¯à®±à¯à®®à¯ à®•, à®•à®¾, à®•à®¿ à®µà®°à®¿à®šà¯ˆ'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'pol_t_1', topicTitle: 'பிரித்த�†ழுதுதல், �Žதிர்�š்�š�Šல், பிழ�ˆ திருத்தம் & �…�•ரவரி�š�ˆ', subtopic: '�šந்திப்பிழ�ˆ (�•், �š், த், ப்) ந�€�•்�•ுதல் மற்றும் வ�‡ர்�š்�š�Šல்லிலிருந்து வின�ˆய�†�š்�šம் �•ாணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'வ�‡ர்�š்�š�Šல் -> த�Šழிற்ப�†யர் (ந�Ÿ -> ந�Ÿத்தல்) | ப�†யர�†�š்�šம் (ந�Ÿந்த) | வின�ˆய�†�š்�šம் (ந�Ÿந்து)', keyPoints: ['தமிழ் த�•ுதித் த�‡ர்வில் 40% �•ுற�ˆந்தப�Ÿ்�š மதிப்ப�†ண் �•�Ÿ்�Ÿாயம்', '�…�•ரவரி�š�ˆப்ப�Ÿுத்துதல்: �…, �†, �‡ வரி�š�ˆ மற்றும் �•, �•ா, �•ி வரி�š�ˆ'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'à®ªà®•à¯à®¤à®¿ à®† & à®‡: à®¤à®®à®¿à®´à¯ à®‡à®²à®•à¯à®•à®¿à®¯à®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®¤à®®à®¿à®´à¯ à®…à®±à®¿à®žà®°à¯à®•à®³à¯',
-      description: 'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯, à®šà®¿à®²à®ªà¯à®ªà®¤à®¿à®•à®¾à®°à®®à¯, à®•à®®à¯à®ªà®°à®¾à®®à®¾à®¯à®£à®®à¯, à®ªà®¾à®°à®¤à®¿à®¯à®¾à®°à¯, à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯, à®¤à®¨à¯à®¤à¯ˆ à®ªà¯†à®°à®¿à®¯à®¾à®°à¯, à®ªà¯‡à®°à®±à®¿à®žà®°à¯ à®…à®£à¯à®£à®¾',
+      chapterTitle: 'ப�•ுதி �† & �‡: தமிழ் �‡ல�•்�•ியம் மற்றும் தமிழ் �…றி�žர்�•ள்',
+      description: 'திரு�•்�•ுறள், �šிலப்பதி�•ாரம், �•ம்பராமாயணம், பாரதியார், பாரதிதா�šன், தந்த�ˆ ப�†ரியார், ப�‡ரறி�žர் �…ண்ணா',
       subtopics: [
         {
           id: 'pol_t_sub2',
-          title: 'à®šà®™à¯à®• à®‡à®²à®•à¯à®•à®¿à®¯à®®à¯ & à®•à®µà®¿à®žà®°à¯à®•à®³à¯',
+          title: '�š�™்�• �‡ல�•்�•ியம் & �•வி�žர்�•ள்',
           microTopics: [
-            { id: 'pol_t_3', title: 'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯, à®Žà®Ÿà¯à®Ÿà¯à®¤à¯à®¤à¯Šà®•à¯ˆ, à®ªà®¤à¯à®¤à¯à®ªà¯à®ªà®¾à®Ÿà¯à®Ÿà¯ à®šà®¿à®±à®ªà¯à®ªà¯à®•à®³à¯', keyAxiom: 'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯ à®…à®±à®¤à¯à®¤à¯à®ªà¯à®ªà®¾à®²à¯, à®ªà¯Šà®°à¯à®Ÿà¯à®ªà®¾à®²à¯, à®•à®¾à®®à®¤à¯à®¤à¯à®ªà¯à®ªà®¾à®²à¯ 133 à®…à®¤à®¿à®•à®¾à®°à®™à¯à®•à®³à¯' },
-            { id: 'pol_t_4', title: 'à®ªà®¾à®°à®¤à®¿à®¯à®¾à®°à¯, à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯, à®ªà¯†à®°à®¿à®¯à®¾à®°à¯, à®…à®£à¯à®£à®¾ à®¤à®®à®¿à®´à¯à®¤à¯à®¤à¯Šà®£à¯à®Ÿà¯', keyAxiom: 'à®ªà®¾à®°à®¤à®¿à®¯à®¾à®°à¯ à®ªà®¾à®Ÿà¯à®Ÿà¯à®•à¯à®•à¯Šà®°à¯ à®ªà¯à®²à®µà®©à¯ | à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯ à®ªà¯à®°à®Ÿà¯à®šà®¿à®•à¯ à®•à®µà®¿à®žà®°à¯' }
+            { id: 'pol_t_3', title: 'திரு�•்�•ுறள், �Ž�Ÿ்�Ÿுத்த�Š�•�ˆ, பத்துப்பா�Ÿ்�Ÿு �šிறப்பு�•ள்', keyAxiom: 'திரு�•்�•ுறள் �…றத்துப்பால், ப�Šரு�Ÿ்பால், �•ாமத்துப்பால் 133 �…தி�•ார�™்�•ள்' },
+            { id: 'pol_t_4', title: 'பாரதியார், பாரதிதா�šன், ப�†ரியார், �…ண்ணா தமிழ்த்த�Šண்�Ÿு', keyAxiom: 'பாரதியார் பா�Ÿ்�Ÿு�•்�•�Šரு புலவன் | பாரதிதா�šன் புர�Ÿ்�šி�•் �•வி�žர்' }
           ]
         }
       ],
       microTopics: [
-        { id: 'pol_t_3', topicTitle: 'à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯, à®•à®®à¯à®ªà®°à®¾à®®à®¾à®¯à®£à®®à¯, à®ªà®¾à®°à®¤à®¿à®¯à®¾à®°à¯ & à®¤à®¨à¯à®¤à¯ˆ à®ªà¯†à®°à®¿à®¯à®¾à®°à¯ à®¤à®®à®¿à®´à¯à®¤à¯à®¤à¯Šà®£à¯à®Ÿà¯', subtopic: 'à®¨à¯‚à®²à¯ à®†à®šà®¿à®°à®¿à®¯à®°à¯à®•à®³à¯, à®…à®Ÿà¯ˆà®®à¯Šà®´à®¿à®ªà¯ à®ªà¯†à®¯à®°à¯à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®®à¯‡à®±à¯à®•à¯‹à®³à¯ à®µà®°à®¿à®•à®³à¯', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'à®ªà®¾à®°à®¤à®¿à®¯à®¾à®°à¯ à®‡à®¤à®´à¯à®•à®³à¯: à®‡à®¨à¯à®¤à®¿à®¯à®¾, à®µà®¿à®œà®¯à®¾ | à®ªà®¾à®°à®¤à®¿à®¤à®¾à®šà®©à¯: à®•à¯à®Ÿà¯à®®à¯à®ª à®µà®¿à®³à®•à¯à®•à¯, à®ªà®¾à®£à¯à®Ÿà®¿à®¯à®©à¯ à®ªà®°à®¿à®šà¯', keyPoints: ['à®¤à®¿à®°à¯à®•à¯à®•à¯à®±à®³à¯à®•à¯à®•à¯ à®‰à®°à¯ˆ à®Žà®´à¯à®¤à®¿à®¯ à®ªà®¤à®¿à®©à¯à®®à®°à®¿à®²à¯ à®šà®¿à®±à®¨à¯à®¤à®µà®°à¯ à®ªà®°à®¿à®®à¯‡à®²à®´à®•à®°à¯', 'à®¤à®¨à¯à®¤à¯ˆ à®ªà¯†à®°à®¿à®¯à®¾à®°à¯ à®¨à®Ÿà®¤à¯à®¤à®¿à®¯ à®‡à®¤à®´à¯à®•à®³à¯: à®•à¯à®Ÿà®¿à®¯à®°à®šà¯, à®µà®¿à®Ÿà¯à®¤à®²à¯ˆ'], type: 'concept', importance: 'High-Yield' }
+        { id: 'pol_t_3', topicTitle: 'திரு�•்�•ுறள், �•ம்பராமாயணம், பாரதியார் & தந்த�ˆ ப�†ரியார் தமிழ்த்த�Šண்�Ÿு', subtopic: 'ந�‚ல் �†�šிரியர்�•ள், �…�Ÿ�ˆம�Šழிப் ப�†யர்�•ள் மற்றும் ம�‡ற்�•�‹ள் வரி�•ள்', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'பாரதியார் �‡தழ்�•ள்: �‡ந்தியா, வி�œயா | பாரதிதா�šன்: �•ு�Ÿும்ப விள�•்�•ு, பாண்�Ÿியன் பரி�šு', keyPoints: ['திரு�•்�•ுறளு�•்�•ு �‰ர�ˆ �Žழுதிய பதின்மரில் �šிறந்தவர் பரிம�‡லழ�•ர்', 'தந்த�ˆ ப�†ரியார் ந�Ÿத்திய �‡தழ்�•ள்: �•ு�Ÿியர�šு, வி�Ÿுதல�ˆ'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2388,38 +2388,38 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
   const generalKnowledgeChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'à®ªà¯Šà®¤à¯ à®…à®±à®¿à®µà¯: à®µà®°à®²à®¾à®±à¯, à®ªà¯à®µà®¿à®¯à®¿à®¯à®²à¯ & à®‡à®¨à¯à®¤à®¿à®¯ à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯',
-      description: 'à®šà®¿à®¨à¯à®¤à¯ à®šà®®à®µà¯†à®³à®¿, à®®à¯Œà®°à®¿à®¯à®°à¯, à®šà¯‹à®´à®°à¯, à®‡à®¨à¯à®¤à®¿à®¯ à®µà®¿à®Ÿà¯à®¤à®²à¯ˆ à®‡à®¯à®•à¯à®•à®®à¯, à®†à®±à¯à®•à®³à¯, à®ªà®°à¯à®µà®®à®´à¯ˆ, à®‡à®¨à¯à®¤à®¿à®¯ à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ à®‰à®°à®¿à®®à¯ˆà®•à®³à¯',
+      chapterTitle: 'ப�Šது �…றிவு: வரலாறு, புவியியல் & �‡ந்திய �…ர�šியலம�ˆப்பு',
+      description: '�šிந்து �šமவ�†ளி, ம�Œரியர், �š�‹ழர், �‡ந்திய வி�Ÿுதல�ˆ �‡ய�•்�•ம், �†று�•ள், பருவமழ�ˆ, �‡ந்திய �…ர�šியலம�ˆப்பு �…�Ÿிப்ப�Ÿ�ˆ �‰ரிம�ˆ�•ள்',
       subtopics: [
         {
           id: 'pol_gk_sub1',
-          title: 'à®µà®°à®²à®¾à®±à¯ & à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯',
+          title: 'வரலாறு & �…ர�šியலம�ˆப்பு',
           microTopics: [
-            { id: 'pol_gk_1', title: 'à®šà®¿à®¨à¯à®¤à¯ à®šà®®à®µà¯†à®³à®¿, à®šà¯‹à®´à®°à¯ à®ªà¯‡à®°à®°à®šà¯ & à®µà®¿à®Ÿà¯à®¤à®²à¯ˆà®ªà¯ à®ªà¯‹à®°à®¾à®Ÿà¯à®Ÿà®®à¯', keyAxiom: '1857 à®ªà¯†à®°à¯à®®à¯ à®ªà¯à®°à®Ÿà¯à®šà®¿ & 1947 à®‡à®¨à¯à®¤à®¿à®¯ à®µà®¿à®Ÿà¯à®¤à®²à¯ˆ' },
-            { id: 'pol_gk_2', title: 'à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ à®‰à®°à®¿à®®à¯ˆà®•à®³à¯ (14â€“32), à®•à¯à®Ÿà®¿à®¯à®°à®šà¯à®¤à¯ à®¤à®²à¯ˆà®µà®°à¯, à®†à®³à¯à®¨à®°à¯', keyAxiom: 'à®šà®°à®¤à¯à®¤à¯ 32 à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà®¿à®©à¯ à®‡à®¤à®¯à®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®†à®©à¯à®®à®¾' }
+            { id: 'pol_gk_1', title: '�šிந்து �šமவ�†ளி, �š�‹ழர் ப�‡ரர�šு & வி�Ÿுதல�ˆப் ப�‹ரா�Ÿ்�Ÿம்', keyAxiom: '1857 ப�†ரும் புர�Ÿ்�šி & 1947 �‡ந்திய வி�Ÿுதல�ˆ' },
+            { id: 'pol_gk_2', title: '�…�Ÿிப்ப�Ÿ�ˆ �‰ரிம�ˆ�•ள் (14–32), �•ு�Ÿியர�šுத் தல�ˆவர், �†ளுநர்', keyAxiom: '�šரத்து 32 �…ர�šியலம�ˆப்பின் �‡தயம் மற்றும் �†ன்மா' }
           ]
         }
       ],
       microTopics: [
-        { id: 'pol_gk_1', topicTitle: 'à®‡à®¨à¯à®¤à®¿à®¯ à®µà®¿à®Ÿà¯à®¤à®²à¯ˆ à®‡à®¯à®•à¯à®•à®®à¯, à®¤à®®à®¿à®´à®• à®ªà®™à¯à®•à¯ & à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯ à®…à®Ÿà®¿à®ªà¯à®ªà®Ÿà¯ˆ à®‰à®°à®¿à®®à¯ˆà®•à®³à¯', subtopic: 'à®µà¯‡à®²à¯à®¨à®¾à®šà¯à®šà®¿à®¯à®¾à®°à¯, à®µ.à®‰.à®šà®¿, à®ªà®•à®¤à¯à®šà®¿à®™à¯, à®•à®¾à®¨à¯à®¤à®¿à®¯à®Ÿà®¿à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®šà®°à®¤à¯à®¤à¯ 14â€“32', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'à®…à®°à®šà®¿à®¯à®²à®®à¯ˆà®ªà¯à®ªà¯ à®¨à®Ÿà¯ˆà®®à¯à®±à¯ˆ: 26 à®œà®©à®µà®°à®¿ 1950 | à®šà®Ÿà¯à®Ÿà®¤à¯à®¤à®¿à®©à¯ à®®à¯à®©à¯ à®…à®©à¯ˆà®µà®°à¯à®®à¯ à®šà®®à®®à¯: à®šà®°à®¤à¯à®¤à¯ 14', keyPoints: ['à®¤à®®à®¿à®´à¯à®¨à®¾à®Ÿà¯ à®•à®¾à®µà®²à¯ à®¤à¯à®±à¯ˆ à®šà®¿à®©à¯à®©à®®à¯: à®¸à¯à®°à¯€à®µà®¿à®²à¯à®²à®¿à®ªà¯à®¤à¯à®¤à¯‚à®°à¯ à®•à¯‹à®µà®¿à®²à¯ à®•à¯‹à®ªà¯à®°à®®à¯', 'à®•à®¾à®µà®²à¯à®¤à¯à®±à¯ˆ à®…à®®à¯ˆà®ªà¯à®ªà®¿à®©à¯ à®¤à®¨à¯à®¤à¯ˆ à®Žà®© à®…à®´à¯ˆà®•à¯à®•à®ªà¯à®ªà®Ÿà¯à®ªà®µà®°à¯ à®•à®¾à®°à®©à¯à®µà®¾à®²à®¿à®¸à¯ à®ªà®¿à®°à®ªà¯'], type: 'concept', importance: 'High-Yield' }
+        { id: 'pol_gk_1', topicTitle: '�‡ந்திய வி�Ÿுதல�ˆ �‡ய�•்�•ம், தமிழ�• ப�™்�•ு & �…ர�šியலம�ˆப்பு �…�Ÿிப்ப�Ÿ�ˆ �‰ரிம�ˆ�•ள்', subtopic: 'வ�‡லுநா�š்�šியார், வ.�‰.�šி, ப�•த்�šி�™், �•ாந்திய�Ÿி�•ள் மற்றும் �šரத்து 14–32', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: '�…ர�šியலம�ˆப்பு ந�Ÿ�ˆமுற�ˆ: 26 �œனவரி 1950 | �š�Ÿ்�Ÿத்தின் முன் �…ன�ˆவரும் �šமம்: �šரத்து 14', keyPoints: ['தமிழ்நா�Ÿு �•ாவல் துற�ˆ �šின்னம்: ஸ்ர�€வில்லிபுத்த�‚ர் �•�‹வில் �•�‹புரம்', '�•ாவல்துற�ˆ �…ம�ˆப்பின் தந்த�ˆ �Žன �…ழ�ˆ�•்�•ப்ப�Ÿுபவர் �•ாரன்வாலிஸ் பிரபு'], type: 'concept', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'à®ªà¯Šà®¤à¯ à®…à®±à®¿à®µà®¿à®¯à®²à¯: à®…à®©à¯à®±à®¾à®Ÿ à®µà®¾à®´à¯à®µà®¿à®²à¯ à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯, à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ & à®‰à®¯à®¿à®°à®¿à®¯à®²à¯',
-      description: 'à®‡à®¯à®•à¯à®• à®µà®¿à®¤à®¿à®•à®³à¯, à®’à®³à®¿-à®’à®²à®¿, à®…à®®à®¿à®²à®™à¯à®•à®³à¯-à®•à®¾à®°à®™à¯à®•à®³à¯, à®¤à®©à®¿à®®à®™à¯à®•à®³à¯, à®®à®©à®¿à®¤ à®‰à®Ÿà®²à¯ à®‰à®±à¯à®ªà¯à®ªà¯ à®®à®£à¯à®Ÿà®²à®™à¯à®•à®³à¯, à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯ à®•à¯à®±à¯ˆà®ªà®¾à®Ÿà¯à®•à®³à¯',
+      chapterTitle: 'ப�Šது �…றிவியல்: �…ன்றா�Ÿ வாழ்வில் �‡யற்பியல், வ�‡தியியல் & �‰யிரியல்',
+      description: '�‡ய�•்�• விதி�•ள், �’ளி-�’லி, �…மில�™்�•ள்-�•ார�™்�•ள், தனிம�™்�•ள், மனித �‰�Ÿல் �‰றுப்பு மண்�Ÿல�™்�•ள், வ�ˆ�Ÿ்�Ÿமின் �•ுற�ˆபா�Ÿு�•ள்',
       subtopics: [
         {
           id: 'pol_gk_sub2',
-          title: 'à®ªà¯Šà®¤à¯ à®…à®±à®¿à®µà®¿à®¯à®²à¯ à®µà®¿à®¤à®¿à®•à®³à¯',
+          title: 'ப�Šது �…றிவியல் விதி�•ள்',
           microTopics: [
-            { id: 'pol_gk_3', title: 'à®¨à®¿à®¯à¯‚à®Ÿà¯à®Ÿà®©à¯ 3 à®µà®¿à®¤à®¿à®•à®³à¯, à®²à¯†à®©à¯à®¸à¯, à®®à®¿à®©à¯à®©à¯‹à®Ÿà¯à®Ÿà®®à¯ & à®µà¯‡à®¤à®¿à®¯à®¿à®¯à®²à¯ à®•à®¾à®°à®™à¯à®•à®³à¯', keyAxiom: 'à®µà®¿à®šà¯ˆ F = ma | à®…à®®à®¿à®²à®™à¯à®•à®³à¯ à®¨à¯€à®² à®²à®¿à®Ÿà¯à®®à®¸à¯ˆ à®šà®¿à®µà®ªà¯à®ªà®¾à®• à®®à®¾à®±à¯à®±à¯à®®à¯' },
-            { id: 'pol_gk_4', title: 'à®®à®©à®¿à®¤ à®šà¯†à®°à®¿à®®à®¾à®©à®®à¯, à®°à®¤à¯à®¤ à®“à®Ÿà¯à®Ÿà®®à¯ & à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯à®•à®³à¯ à®•à¯à®±à¯ˆà®ªà®¾à®Ÿà¯', keyAxiom: 'à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯ A (à®®à®¾à®²à¯ˆà®•à¯à®•à®£à¯), à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯ C (à®¸à¯à®•à®°à¯à®µà®¿)' }
+            { id: 'pol_gk_3', title: 'நிய�‚�Ÿ்�Ÿன் 3 விதி�•ள், ல�†ன்ஸ், மின்ன�‹�Ÿ்�Ÿம் & வ�‡தியியல் �•ார�™்�•ள்', keyAxiom: 'வி�š�ˆ F = ma | �…மில�™்�•ள் ந�€ல லி�Ÿ்மஸ�ˆ �šிவப்பா�• மாற்றும்' },
+            { id: 'pol_gk_4', title: 'மனித �š�†ரிமானம், ரத்த �“�Ÿ்�Ÿம் & வ�ˆ�Ÿ்�Ÿமின்�•ள் �•ுற�ˆபா�Ÿு', keyAxiom: 'வ�ˆ�Ÿ்�Ÿமின் A (மால�ˆ�•்�•ண்), வ�ˆ�Ÿ்�Ÿமின் C (ஸ்�•ர்வி)' }
           ]
         }
       ],
       microTopics: [
-        { id: 'pol_gk_3', topicTitle: 'à®¨à®¿à®¯à¯‚à®Ÿà¯à®Ÿà®©à¯ à®µà®¿à®¤à®¿à®•à®³à¯ (F=ma), à®…à®®à®¿à®²à®™à¯à®•à®³à¯ à®•à®¾à®°à®™à¯à®•à®³à¯ & à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯à®•à®³à¯', subtopic: 'à®‡à®¯à®±à¯à®ªà®¿à®¯à®²à¯ à®…à®²à®•à¯à®•à®³à¯ (SI Units), à®¤à®©à®¿à®®à®™à¯à®•à®³à®¿à®©à¯ à®•à¯à®±à®¿à®¯à¯€à®Ÿà¯à®•à®³à¯, à®°à®¤à¯à®¤ à®µà®•à¯ˆà®•à®³à¯ (ABO)', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'F = ma | à®°à®¤à¯à®¤à®¤à¯à®¤à®¿à®©à¯ pH à®®à®¤à®¿à®ªà¯à®ªà¯ = 7.4 | à®…à®©à¯ˆà®µà®°à¯à®•à¯à®•à¯à®®à¯ à®°à®¤à¯à®¤à®®à¯ à®µà®´à®™à¯à®•à¯à®®à¯ à®ªà®¿à®°à®¿à®µà¯: O à®¨à¯†à®•à®Ÿà¯à®Ÿà®¿à®µà¯', keyPoints: ['à®®à®©à®¿à®¤ à®‰à®Ÿà®²à®¿à®©à¯ à®®à®¿à®•à®ªà¯à®ªà¯†à®°à®¿à®¯ à®‰à®±à¯à®ªà¯à®ªà¯ à®¤à¯‹à®²à¯; à®®à®¿à®•à®ªà¯à®ªà¯†à®°à®¿à®¯ à®šà¯à®°à®ªà¯à®ªà®¿ à®•à®²à¯à®²à¯€à®°à®²à¯', 'à®µà¯ˆà®Ÿà¯à®Ÿà®®à®¿à®©à¯ D à®šà¯‚à®°à®¿à®¯ à®’à®³à®¿à®¯à®¿à®©à¯ à®®à¯‚à®²à®®à¯ à®‰à®Ÿà®²à®¿à®²à¯ à®¤à®¯à®¾à®°à®¾à®•à®¿à®±à®¤à¯'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'pol_gk_3', topicTitle: 'நிய�‚�Ÿ்�Ÿன் விதி�•ள் (F=ma), �…மில�™்�•ள் �•ார�™்�•ள் & வ�ˆ�Ÿ்�Ÿமின்�•ள்', subtopic: '�‡யற்பியல் �…ல�•ு�•ள் (SI Units), தனிம�™்�•ளின் �•ுறிய�€�Ÿு�•ள், ரத்த வ�•�ˆ�•ள் (ABO)', dayNumber: 5, periodNumber: 2, keyFormulaOrLaw: 'F = ma | ரத்தத்தின் pH மதிப்பு = 7.4 | �…ன�ˆவரு�•்�•ும் ரத்தம் வழ�™்�•ும் பிரிவு: O ந�†�•�Ÿ்�Ÿிவ்', keyPoints: ['மனித �‰�Ÿலின் மி�•ப்ப�†ரிய �‰றுப்பு த�‹ல்; மி�•ப்ப�†ரிய �šுரப்பி �•ல்ல�€ரல்', 'வ�ˆ�Ÿ்�Ÿமின் D �š�‚ரிய �’ளியின் ம�‚லம் �‰�Ÿலில் தயாரா�•ிறது'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2427,46 +2427,46 @@ export function getTamilNaduPoliceCompleteSyllabus(courseId?: string, courseTitl
   const psychologyChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'à®‰à®³à®µà®¿à®¯à®²à¯: à®¤à®•à®µà®²à¯ à®¤à¯Šà®Ÿà®°à¯à®ªà¯à®¤à¯ à®¤à®¿à®±à®©à¯ & à®Žà®£à¯ à®•à®£à®¿à®¤ à®¨à¯à®£à¯à®£à®±à®¿à®µà¯',
-      description: 'à®Žà®£à¯ à®¤à¯Šà®Ÿà®°à¯, à®µà®¿à®Ÿà¯à®ªà®Ÿà¯à®Ÿ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯, à®•à¯à®±à®¿à®¯à¯€à®Ÿà¯à®Ÿà¯ à®®à¯à®±à¯ˆ (Coding-Decoding), à®‡à®°à®¤à¯à®¤ à®‰à®±à®µà¯à®•à®³à¯, à®¤à®¿à®šà¯ˆ à®…à®±à®¿à®¤à®²à¯ à®šà¯‹à®¤à®©à¯ˆà®•à®³à¯',
+      chapterTitle: '�‰ளவியல்: த�•வல் த�Š�Ÿர்புத் திறன் & �Žண் �•ணித நுண்ணறிவு',
+      description: '�Žண் த�Š�Ÿர், வி�Ÿுப�Ÿ்�Ÿ �Žழுத்து�•ள், �•ுறிய�€�Ÿ்�Ÿு முற�ˆ (Coding-Decoding), �‡ரத்த �‰றவு�•ள், தி�š�ˆ �…றிதல் �š�‹தன�ˆ�•ள்',
       subtopics: [
         {
           id: 'pol_psy_sub1',
-          title: 'à®Žà®£à¯ à®•à®£à®¿à®¤à®®à¯ & à®•à¯à®±à®¿à®¯à¯€à®Ÿà¯à®Ÿà¯ à®®à¯à®±à¯ˆ',
+          title: '�Žண் �•ணிதம் & �•ுறிய�€�Ÿ்�Ÿு முற�ˆ',
           microTopics: [
-            { id: 'pol_psy_1', title: 'à®Žà®£à¯ à®¤à¯Šà®Ÿà®°à¯ & à®•à¯à®±à®¿à®¯à¯€à®Ÿà¯à®Ÿà¯ à®®à¯à®±à¯ˆ (Coding-Decoding)', keyAxiom: 'A=1 to Z=26 à®Žà®£à¯ à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯à®•à®³à¯' },
-            { id: 'pol_psy_2', title: 'à®‡à®°à®¤à¯à®¤ à®‰à®±à®µà¯à®•à®³à¯ & à®¤à®¿à®šà¯ˆ à®…à®±à®¿à®¤à®²à¯ (à®µà®Ÿà®•à¯à®•à¯, à®•à®¿à®´à®•à¯à®•à¯, à®¤à¯†à®±à¯à®•à¯, à®®à¯‡à®±à¯à®•à¯)', keyAxiom: 'à®ªà®¿à®¤à®¾à®•à®°à®¸à¯ à®¤à¯‡à®±à¯à®±à®®à¯ à®µà®´à®¿ à®¤à¯‚à®°à®®à¯ à®•à®£à®•à¯à®•à®¿à®Ÿà¯à®¤à®²à¯' }
+            { id: 'pol_psy_1', title: '�Žண் த�Š�Ÿர் & �•ுறிய�€�Ÿ்�Ÿு முற�ˆ (Coding-Decoding)', keyAxiom: 'A=1 to Z=26 �Žண் மதிப்ப�€�Ÿு�•ள்' },
+            { id: 'pol_psy_2', title: '�‡ரத்த �‰றவு�•ள் & தி�š�ˆ �…றிதல் (வ�Ÿ�•்�•ு, �•ிழ�•்�•ு, த�†ற்�•ு, ம�‡ற்�•ு)', keyAxiom: 'பிதா�•ரஸ் த�‡ற்றம் வழி த�‚ரம் �•ண�•்�•ி�Ÿுதல்' }
           ]
         }
       ],
       microTopics: [
-        { id: 'pol_psy_1', topicTitle: 'à®Žà®£à¯ à®¤à¯Šà®Ÿà®°à¯, Coding-Decoding, à®‡à®°à®¤à¯à®¤ à®‰à®±à®µà¯à®•à®³à¯ & à®¤à®¿à®šà¯ˆ à®…à®±à®¿à®¤à®²à¯', subtopic: 'à®¤à®¿à®šà¯ˆ à®•à®£à®•à¯à®•à¯€à®Ÿà¯à®•à®³à¯, à®‰à®±à®µà¯à®®à¯à®±à¯ˆ à®µà®°à¯ˆà®ªà®Ÿà®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®µà®¿à®Ÿà¯à®ªà®Ÿà¯à®Ÿ à®Žà®£à¯ à®•à®£à¯à®Ÿà®±à®¿à®¤à®²à¯', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'à®¤à®¿à®šà¯ˆ à®¤à¯‚à®°à®®à¯ = âˆš(à®µà®Ÿà®•à¯à®•à¯Â² + à®•à®¿à®´à®•à¯à®•à¯Â²) | à®•à¯à®±à®¿à®¯à¯€à®Ÿà¯à®Ÿà¯ à®®à¯à®±à¯ˆ: +1, -1, à®¤à®²à¯ˆà®•à¯€à®´à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯', keyPoints: ['à®‡à®°à®¤à¯à®¤ à®‰à®±à®µà¯à®•à®³à®¿à®²à¯ à®¤à®¨à¯à®¤à¯ˆ à®µà®´à®¿ vs à®¤à®¾à®¯à¯ à®µà®´à®¿ à®‰à®±à®µà¯à®®à¯à®±à¯ˆà®•à®³à¯ˆ à®¤à¯†à®³à®¿à®µà®¾à®• à®ªà®¿à®°à®¿à®•à¯à®•à®µà¯à®®à¯', 'à®•à®Ÿà®¿à®•à®¾à®° à®®à¯à®Ÿà¯à®•à®³à®¿à®©à¯ à®•à¯‹à®£à®®à¯: Î¸ = |30H - (11/2)M|'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'pol_psy_1', topicTitle: '�Žண் த�Š�Ÿர், Coding-Decoding, �‡ரத்த �‰றவு�•ள் & தி�š�ˆ �…றிதல்', subtopic: 'தி�š�ˆ �•ண�•்�•�€�Ÿு�•ள், �‰றவுமுற�ˆ வர�ˆப�Ÿம் மற்றும் வி�Ÿுப�Ÿ்�Ÿ �Žண் �•ண்�Ÿறிதல்', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'தி�š�ˆ த�‚ரம் = �ˆš(வ�Ÿ�•்�•ு� + �•ிழ�•்�•ு�) | �•ுறிய�€�Ÿ்�Ÿு முற�ˆ: +1, -1, தல�ˆ�•�€ழ் �Žழுத்து�•ள்', keyPoints: ['�‡ரத்த �‰றவு�•ளில் தந்த�ˆ வழி vs தாய் வழி �‰றவுமுற�ˆ�•ள�ˆ த�†ளிவா�• பிரி�•்�•வும்', '�•�Ÿி�•ார மு�Ÿ்�•ளின் �•�‹ணம்: θ = |30H - (11/2)M|'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'à®¤à®°à¯à®•à¯à®• à®ªà®•à¯à®ªà¯à®ªà®¾à®¯à¯à®µà¯ & à®µà®°à¯ˆà®ªà®Ÿà®¤à¯ à®¤à¯Šà®Ÿà®°à¯à®ªà¯ (Logical Reasoning)',
-      description: 'à®µà¯†à®©à¯ à®µà®°à¯ˆà®ªà®Ÿà®™à¯à®•à®³à¯, à®ªà®•à®Ÿà¯ˆ à®•à®£à®•à¯à®•à¯à®•à®³à¯, à®•à®£à¯à®£à®¾à®Ÿà®¿ à®ªà®¿à®®à¯à®ªà®™à¯à®•à®³à¯, à®‡à®°à¯à®•à¯à®•à¯ˆ à®…à®®à¯ˆà®ªà¯à®ªà¯ à®®à¯à®±à¯ˆ, à®¨à¯‡à®°à®®à¯à®®à¯ à®µà¯‡à®²à¯ˆà®¯à¯à®®à¯',
+      chapterTitle: 'தர்க்கப் பகுப்பாய்வு & வரைபடத் தொடர்பு (Logical Reasoning)',
+      description: 'வென் வரைபடங்கள், பகடை கணக்குகள், கண்ணாடி பிம்பங்கள், இருக்கை அமைப்பு முறை, நேரமும் வேலையும்',
       subtopics: [
         {
           id: 'pol_psy_sub2',
-          title: 'à®¤à®°à¯à®•à¯à®• à®ªà®•à¯à®ªà¯à®ªà®¾à®¯à¯à®µà¯ & à®‰à®°à¯à®µà®™à¯à®•à®³à¯',
+          title: 'தர்க்கப் பகுப்பாய்வு & உருவங்கள்',
           microTopics: [
-            { id: 'pol_psy_3', title: 'à®µà¯†à®©à¯ à®µà®°à¯ˆà®ªà®Ÿà®™à¯à®•à®³à¯ & à®ªà®•à®Ÿà¯ˆ à®Žà®¤à®¿à®°à¯à®ªà¯à®ªà®•à¯à®•à®™à¯à®•à®³à¯', keyAxiom: 'à®ªà®•à®Ÿà¯ˆà®¯à®¿à®©à¯ à®…à®Ÿà¯à®¤à¯à®¤à®Ÿà¯à®¤à¯à®¤ à®ªà®•à¯à®•à®™à¯à®•à®³à¯ à®Žà®¤à®¿à®°à¯ à®ªà®•à¯à®•à®®à®¾à®• à®…à®®à¯ˆà®¯à®¾à®¤à¯' },
-            { id: 'pol_psy_4', title: 'à®•à®¾à®²à®®à¯à®®à¯ à®µà¯‡à®²à¯ˆà®¯à¯à®®à¯ (Men Ã— Days) & à®‡à®°à¯à®•à¯à®•à¯ˆ à®…à®®à¯ˆà®ªà¯à®ªà¯', keyAxiom: 'Mâ‚ Dâ‚ = Mâ‚‚ Dâ‚‚ à®šà¯‚à®¤à¯à®¤à®¿à®°à®®à¯' }
+            { id: 'pol_psy_3', title: 'வ�†ன் வர�ˆப�Ÿ�™்�•ள் & ப�•�Ÿ�ˆ �Žதிர்ப்ப�•்�•�™்�•ள்', keyAxiom: 'ப�•�Ÿ�ˆயின் �…�Ÿுத்த�Ÿுத்த ப�•்�•�™்�•ள் �Žதிர் ப�•்�•மா�• �…ம�ˆயாது' },
+            { id: 'pol_psy_4', title: '�•ாலமும் வ�‡ல�ˆயும் (Men � Days) & �‡ரு�•்�•�ˆ �…ம�ˆப்பு', keyAxiom: 'M1 D1 = M2 D2 சூத்திரம்' }
           ]
         }
       ],
       microTopics: [
-        { id: 'pol_psy_3', topicTitle: 'à®µà¯†à®©à¯ à®µà®°à¯ˆà®ªà®Ÿà®®à¯, à®ªà®•à®Ÿà¯ˆ, à®•à®£à¯à®£à®¾à®Ÿà®¿ à®ªà®¿à®®à¯à®ªà®®à¯ & à®•à®¾à®²à®®à¯à®®à¯ à®µà¯‡à®²à¯ˆà®¯à¯à®®à¯', subtopic: 'Mâ‚Dâ‚ = Mâ‚‚Dâ‚‚ à®®à®±à¯à®±à¯à®®à¯ à®µà®Ÿà¯à®Ÿà®µà®Ÿà®¿à®µ à®‡à®°à¯à®•à¯à®•à¯ˆ à®…à®®à¯ˆà®ªà¯à®ªà¯ à®•à®£à®•à¯à®•à¯€à®Ÿà¯à®•à®³à¯', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'à®µà¯‡à®²à¯ˆ: 1 à®¨à®¾à®³à®¿à®²à¯ à®šà¯†à®¯à¯à®¤ à®µà¯‡à®²à¯ˆ = 1/N | à®ªà®•à®Ÿà¯ˆ à®µà®¿à®¤à®¿: à®ªà¯Šà®¤à¯à®µà®¾à®© à®Žà®£à¯ à®•à¯Šà®£à¯à®Ÿ à®‡à®°à¯ à®¨à®¿à®²à¯ˆà®•à®³à¯', keyPoints: ['à®µà¯†à®©à¯ à®µà®°à¯ˆà®ªà®Ÿà®¤à¯à®¤à®¿à®²à¯ à®ªà¯Šà®¤à¯à®µà®¾à®© à®ªà®•à¯à®¤à®¿ à®µà¯†à®Ÿà¯à®Ÿà¯à®ªà¯à®ªà®•à¯à®¤à®¿à®¯à¯ˆ à®•à¯à®±à®¿à®•à¯à®•à¯à®®à¯', 'à®•à®£à¯à®£à®¾à®Ÿà®¿ à®ªà®¿à®®à¯à®ªà®¤à¯à®¤à®¿à®²à¯ à®‡à®Ÿà®¤à¯-à®µà®²à®¤à¯ à®®à®Ÿà¯à®Ÿà¯à®®à¯‡ à®®à®¾à®±à¯à®®à¯; à®®à¯‡à®²à¯-à®•à¯€à®´à¯ à®®à®¾à®±à®¾à®¤à¯'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'pol_psy_3', topicTitle: 'வ�†ன் வர�ˆப�Ÿம், ப�•�Ÿ�ˆ, �•ண்ணா�Ÿி பிம்பம் & �•ாலமும் வ�‡ல�ˆயும்', subtopic: 'M�‚�D�‚� = M�‚‚D�‚‚ மற்றும் வ�Ÿ்�Ÿவ�Ÿிவ �‡ரு�•்�•�ˆ �…ம�ˆப்பு �•ண�•்�•�€�Ÿு�•ள்', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'வ�‡ல�ˆ: 1 நாளில் �š�†ய்த வ�‡ல�ˆ = 1/N | ப�•�Ÿ�ˆ விதி: ப�Šதுவான �Žண் �•�Šண்�Ÿ �‡ரு நில�ˆ�•ள்', keyPoints: ['வ�†ன் வர�ˆப�Ÿத்தில் ப�Šதுவான ப�•ுதி வ�†�Ÿ்�Ÿுப்ப�•ுதிய�ˆ �•ுறி�•்�•ும்', '�•ண்ணா�Ÿி பிம்பத்தில் �‡�Ÿது-வலது ம�Ÿ்�Ÿும�‡ மாறும்; ம�‡ல்-�•�€ழ் மாறாது'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'pol_tamil', subjectName: 'à®¤à®®à®¿à®´à¯ à®®à¯Šà®´à®¿à®¤à¯ à®¤à®•à¯à®¤à®¿à®¤à¯ à®¤à¯‡à®°à¯à®µà¯ (Tamil Eligibility â€” 100 Marks)', icon: '🔤', color: '#ec4899', totalChapters: tamilEligibilityChapters.length, totalMicroTopics: tamilEligibilityChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: tamilEligibilityChapters },
-    { subjectId: 'pol_gk', subjectName: 'à®ªà¯Šà®¤à¯ à®…à®±à®¿à®µà¯ & à®…à®±à®¿à®µà®¿à®¯à®²à¯ (General Knowledge & Science Core)', icon: 'ðŸ›ï¸', color: '#06b6d4', totalChapters: generalKnowledgeChapters.length, totalMicroTopics: generalKnowledgeChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalKnowledgeChapters },
-    { subjectId: 'pol_psy', subjectName: 'à®‰à®³à®µà®¿à®¯à®²à¯ & à®¤à®°à¯à®•à¯à®•à®•à¯ à®•à®¾à®°à®£à®µà®¿à®¯à®²à¯ (Psychology & Logical Analysis)', icon: 'ðŸ§ ', color: '#8b5cf6', totalChapters: psychologyChapters.length, totalMicroTopics: psychologyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: psychologyChapters }
+    { subjectId: 'pol_tamil', subjectName: 'தமிழ் ம�Šழித் த�•ுதித் த�‡ர்வு (Tamil Eligibility — 100 Marks)', icon: '��', color: '#ec4899', totalChapters: tamilEligibilityChapters.length, totalMicroTopics: tamilEligibilityChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: tamilEligibilityChapters },
+    { subjectId: 'pol_gk', subjectName: 'ப�Šது �…றிவு & �…றிவியல் (General Knowledge & Science Core)', icon: '�Ÿ�›️', color: '#06b6d4', totalChapters: generalKnowledgeChapters.length, totalMicroTopics: generalKnowledgeChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: generalKnowledgeChapters },
+    { subjectId: 'pol_psy', subjectName: '�‰ளவியல் & தர்�•்�•�•் �•ாரணவியல் (Psychology & Logical Analysis)', icon: '�Ÿ��', color: '#8b5cf6', totalChapters: psychologyChapters.length, totalMicroTopics: psychologyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: psychologyChapters }
   ];
 
   return {
@@ -2498,7 +2498,7 @@ export function getBankingAndInsuranceCompleteSyllabus(courseId?: string, course
           title: 'Speed Calculations & Inequalities',
           microTopics: [
             { id: 'bank_q_1', title: 'Percentage Fractions (1/2 to 1/20) & BODMAS Approximation', keyAxiom: 'Fraction equivalents: 1/8=12.5%, 1/7=14.28%, 1/6=16.66%' },
-            { id: 'bank_q_2', title: 'Quadratic Equation Sign Method (axÂ² + bx + c = 0)', keyAxiom: 'Constant negative in both equations gives No Relation (CND)' }
+            { id: 'bank_q_2', title: 'Quadratic Equation Sign Method (ax² + bx + c = 0)', keyAxiom: 'Constant negative in both equations gives No Relation (CND)' }
           ]
         }
       ],
@@ -2516,12 +2516,12 @@ export function getBankingAndInsuranceCompleteSyllabus(courseId?: string, course
           title: 'Data Interpretation & Arithmetic',
           microTopics: [
             { id: 'bank_q_3', title: 'Caselet DI & Double Pie Chart Analysis', keyAxiom: 'Venn-diagram based caselet variable isolation' },
-            { id: 'bank_q_4', title: 'CI - SI Difference & Mixture Alligation Rule', keyAxiom: '2-Year Difference = P(R/100)Â² | Alligation: (c - m)/(m - d)' }
+            { id: 'bank_q_4', title: 'CI - SI Difference & Mixture Alligation Rule', keyAxiom: '2-Year Difference = P(R/100)² | Alligation: (c - m)/(m - d)' }
           ]
         }
       ],
       microTopics: [
-        { id: 'bank_q_3', topicTitle: 'High-Level DI (Caselet, Pie, Radar) & Arithmetic Word Problems', subtopic: 'CI-SI difference formulas, Alligation rule, Relative speed (Train & Boats)', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: '2-Year CI-SI Diff: Dâ‚‚ = P(R/100)Â² | 3-Year Diff: Dâ‚ƒ = P(R/100)Â² Ã— (300+R)/100', keyPoints: ['Boat downstream = u + v; Upstream = u - v', 'Work equivalence: Total Work = LCM of individual days taken'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'bank_q_3', topicTitle: 'High-Level DI (Caselet, Pie, Radar) & Arithmetic Word Problems', subtopic: 'CI-SI difference formulas, Alligation rule, Relative speed (Train & Boats)', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: '2-Year CI-SI Diff: Dâ‚‚ = P(R/100)² | 3-Year Diff: Dâ‚ƒ = P(R/100)² × (300+R)/100', keyPoints: ['Boat downstream = u + v; Upstream = u - v', 'Work equivalence: Total Work = LCM of individual days taken'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2608,9 +2608,9 @@ export function getBankingAndInsuranceCompleteSyllabus(courseId?: string, course
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'bank_quant', subjectName: 'Quantitative Aptitude & Advanced DI (Banking)', icon: 'ðŸ”¢', color: '#06b6d4', totalChapters: quantChapters.length, totalMicroTopics: quantChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: quantChapters },
-    { subjectId: 'bank_reasoning', subjectName: 'Reasoning Ability & Complex Puzzles', icon: 'ðŸ§©', color: '#8b5cf6', totalChapters: reasoningChapters.length, totalMicroTopics: reasoningChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: reasoningChapters },
-    { subjectId: 'bank_english', subjectName: 'English Language & Verbal Ability', icon: 'ðŸ“–', color: '#3b82f6', totalChapters: englishChapters.length, totalMicroTopics: englishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: englishChapters },
+    { subjectId: 'bank_quant', subjectName: 'Quantitative Aptitude & Advanced DI (Banking)', icon: '🔢', color: '#06b6d4', totalChapters: quantChapters.length, totalMicroTopics: quantChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: quantChapters },
+    { subjectId: 'bank_reasoning', subjectName: 'Reasoning Ability & Complex Puzzles', icon: '🧩', color: '#8b5cf6', totalChapters: reasoningChapters.length, totalMicroTopics: reasoningChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: reasoningChapters },
+    { subjectId: 'bank_english', subjectName: 'English Language & Verbal Ability', icon: '📖', color: '#3b82f6', totalChapters: englishChapters.length, totalMicroTopics: englishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: englishChapters },
     { subjectId: 'bank_ga', subjectName: 'Banking Awareness, Financial Systems & Current Affairs', icon: 'ðŸ›ï¸', color: '#10b981', totalChapters: bankingAwarenessChapters.length, totalMicroTopics: bankingAwarenessChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: bankingAwarenessChapters }
   ];
 
@@ -2643,12 +2643,12 @@ export function getSscAndRailwayCompleteSyllabus(courseId?: string, courseTitle?
           title: 'Advance Geometry & Trigonometry',
           microTopics: [
             { id: 'ssc_q_1', title: 'Triangle Centers & Circle Tangent Theorems', keyAxiom: 'Inradius r = Area / Semi-perimeter | Circumradius R = abc / 4Î”' },
-            { id: 'ssc_q_2', title: 'Trigonometry Maxima/Minima & Heights/Distances', keyAxiom: 'a sin Î¸ + b cos Î¸ has max value âˆš(aÂ² + bÂ²)' }
+            { id: 'ssc_q_2', title: 'Trigonometry Maxima/Minima & Heights/Distances', keyAxiom: 'a sin θ + b cos θ has max value √(a² + b²)' }
           ]
         }
       ],
       microTopics: [
-        { id: 'ssc_q_1', topicTitle: 'Circle Theorems (Alternate Segment), Triangle Centers & Trigonometry Maxima', subtopic: 'Incenter angle = 90Â° + A/2, Circumcenter angle = 2A, Tangent PA Ã— PB = PTÂ²', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Alternate Segment Theorem | Incenter: âˆ BIC = 90Â° + âˆ A/2 | Secant: PA Â· PB = PTÂ²', keyPoints: ['Centroid divides median in 2:1 ratio', 'Sum of interior angles of n-sided polygon = (n - 2) Ã— 180Â°'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'ssc_q_1', topicTitle: 'Circle Theorems (Alternate Segment), Triangle Centers & Trigonometry Maxima', subtopic: 'Incenter angle = 90° + A/2, Circumcenter angle = 2A, Tangent PA × PB = PT²', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Alternate Segment Theorem | Incenter: âˆ BIC = 90° + âˆ A/2 | Secant: PA · PB = PT²', keyPoints: ['Centroid divides median in 2:1 ratio', 'Sum of interior angles of n-sided polygon = (n - 2) × 180°'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     },
     {
@@ -2666,7 +2666,7 @@ export function getSscAndRailwayCompleteSyllabus(courseId?: string, courseTitle?
         }
       ],
       microTopics: [
-        { id: 'ssc_q_3', topicTitle: 'Dishonest Dealer, CI Installments & Train Speed Problems', subtopic: 'Weight fraud % profit, Equal annual installment formula', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'Installment P = x/(1+r/100) + x/(1+r/100)Â² | Net % = a + b + ab/100', keyPoints: ['Speed conversion: 1 km/h = 5/18 m/s', 'Work formula: Mâ‚ Dâ‚ Hâ‚ / Wâ‚ = Mâ‚‚ Dâ‚‚ Hâ‚‚ / Wâ‚‚'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'ssc_q_3', topicTitle: 'Dishonest Dealer, CI Installments & Train Speed Problems', subtopic: 'Weight fraud % profit, Equal annual installment formula', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'Installment P = x/(1+r/100) + x/(1+r/100)² | Net % = a + b + ab/100', keyPoints: ['Speed conversion: 1 km/h = 5/18 m/s', 'Work formula: Mâ‚ Dâ‚ Hâ‚ / Wâ‚ = Mâ‚‚ Dâ‚‚ Hâ‚‚ / Wâ‚‚'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2729,15 +2729,15 @@ export function getSscAndRailwayCompleteSyllabus(courseId?: string, courseTitle?
         }
       ],
       microTopics: [
-        { id: 'ssc_ga_1', topicTitle: 'Indian Polity Articles, Geography Rivers/Passes & NCERT Science Core', subtopic: 'Article 14â€“32, Major Mountain Passes (Zoji La, Nathu La), Human hormones', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Article 51A: 11 Fundamental Duties added by 42nd Amendment 1976 (Swaran Singh Committee)', keyPoints: ['Tropic of Cancer passes through 8 Indian states (Gujarat to Mizoram)', 'Sound waves cannot travel through vacuum; light waves travel at 3 Ã— 10â¸ m/s'], type: 'concept', importance: 'High-Yield' }
+        { id: 'ssc_ga_1', topicTitle: 'Indian Polity Articles, Geography Rivers/Passes & NCERT Science Core', subtopic: 'Article 14–32, Major Mountain Passes (Zoji La, Nathu La), Human hormones', dayNumber: 5, periodNumber: 3, keyFormulaOrLaw: 'Article 51A: 11 Fundamental Duties added by 42nd Amendment 1976 (Swaran Singh Committee)', keyPoints: ['Tropic of Cancer passes through 8 Indian states (Gujarat to Mizoram)', 'Sound waves cannot travel through vacuum; light waves travel at 3 × 10â¸ m/s'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
 
   const subjects: SyllabusSubject[] = [
     { subjectId: 'ssc_quant', subjectName: 'Quantitative Aptitude & Pure Advance Maths', icon: 'ðŸ“', color: '#06b6d4', totalChapters: quantChapters.length, totalMicroTopics: quantChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: quantChapters },
-    { subjectId: 'ssc_reasoning', subjectName: 'General Intelligence & Reasoning (Verbal / Non-Verbal)', icon: 'ðŸ§©', color: '#8b5cf6', totalChapters: reasoningChapters.length, totalMicroTopics: reasoningChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: reasoningChapters },
-    { subjectId: 'ssc_english', subjectName: 'English Language & Comprehension', icon: 'ðŸ“–', color: '#3b82f6', totalChapters: englishChapters.length, totalMicroTopics: englishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: englishChapters },
+    { subjectId: 'ssc_reasoning', subjectName: 'General Intelligence & Reasoning (Verbal / Non-Verbal)', icon: '🧩', color: '#8b5cf6', totalChapters: reasoningChapters.length, totalMicroTopics: reasoningChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: reasoningChapters },
+    { subjectId: 'ssc_english', subjectName: 'English Language & Comprehension', icon: '📖', color: '#3b82f6', totalChapters: englishChapters.length, totalMicroTopics: englishChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: englishChapters },
     { subjectId: 'ssc_ga', subjectName: 'General Awareness & General Science Core', icon: 'ðŸ›ï¸', color: '#10b981', totalChapters: gsChapters.length, totalMicroTopics: gsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: gsChapters }
   ];
 
@@ -2762,38 +2762,38 @@ export function getTrbAndTeacherExamsCompleteSyllabus(courseId?: string, courseT
   const childDevChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'Child Development & Learning Theories (à®•à¯à®´à®¨à¯à®¤à¯ˆ à®µà®³à®°à¯à®šà¯à®šà®¿ à®®à®±à¯à®±à¯à®®à¯ à®•à®±à¯à®±à®²à¯ à®•à¯‹à®Ÿà¯à®ªà®¾à®Ÿà¯à®•à®³à¯)',
+      chapterTitle: 'Child Development & Learning Theories (�•ுழந்த�ˆ வளர்�š்�šி மற்றும் �•ற்றல் �•�‹�Ÿ்பா�Ÿு�•ள்)',
       description: 'Jean Piaget 4 Cognitive Stages, Lev Vygotsky ZPD & Scaffolding, Kohlberg Moral Stages, Erikson Psychosocial Stages',
       subtopics: [
         {
           id: 'trb_cd_sub1',
-          title: 'à®µà®³à®°à¯à®šà¯à®šà®¿ à®¨à®¿à®²à¯ˆà®•à®³à¯ & à®•à®±à¯à®±à®²à¯ à®•à¯‹à®Ÿà¯à®ªà®¾à®Ÿà¯à®•à®³à¯',
+          title: 'வளர்�š்�šி நில�ˆ�•ள் & �•ற்றல் �•�‹�Ÿ்பா�Ÿு�•ள்',
           microTopics: [
-            { id: 'trb_cd_1', title: 'à®ªà®¿à®¯à®¾à®œà¯‡ (Piaget) à®…à®±à®¿à®¤à®¿à®±à®©à¯ à®µà®³à®°à¯à®šà¯à®šà®¿ 4 à®¨à®¿à®²à¯ˆà®•à®³à¯', keyAxiom: 'Sensorimotor (0-2), Preoperational (2-7), Concrete (7-11), Formal (11+)' },
-            { id: 'trb_cd_2', title: 'à®µà¯ˆà®•à®¾à®Ÿà¯à®¸à¯à®•à®¿ (Vygotsky) ZPD & à®šà®¾à®°à®•à¯à®•à®Ÿà¯à®Ÿà¯ (Scaffolding)', keyAxiom: 'Zone of Proximal Development: Gap between actual and guided capability' }
+            { id: 'trb_cd_1', title: 'பியா�œ�‡ (Piaget) �…றிதிறன் வளர்�š்�šி 4 நில�ˆ�•ள்', keyAxiom: 'Sensorimotor (0-2), Preoperational (2-7), Concrete (7-11), Formal (11+)' },
+            { id: 'trb_cd_2', title: 'வ�ˆ�•ா�Ÿ்ஸ்�•ி (Vygotsky) ZPD & �šார�•்�•�Ÿ்�Ÿு (Scaffolding)', keyAxiom: 'Zone of Proximal Development: Gap between actual and guided capability' }
           ]
         }
       ],
       microTopics: [
-        { id: 'trb_cd_1', topicTitle: 'à®ªà®¿à®¯à®¾à®œà¯‡ 4 à®¨à®¿à®²à¯ˆà®•à®³à¯, à®µà¯ˆà®•à®¾à®Ÿà¯à®¸à¯à®•à®¿ ZPD & à®•à¯‹à®²à¯à®ªà®°à¯à®•à¯ à®’à®´à¯à®•à¯à®• à®µà®³à®°à¯à®šà¯à®šà®¿', subtopic: 'à®…à®±à®¿à®¤à®¿à®±à®©à¯ à®µà®³à®°à¯à®šà¯à®šà®¿ à®¨à®¿à®²à¯ˆà®•à®³à¯, à®šà®¾à®°à®•à¯à®•à®Ÿà¯à®Ÿà¯ (Scaffolding) à®®à®±à¯à®±à¯à®®à¯ à®®à®¾à®°à®²à¯ à®•à¯‹à®Ÿà¯à®ªà®¾à®Ÿà¯à®•à®³à¯', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Piaget 4 Stages: Sensorimotor -> Pre-operational -> Concrete Operational -> Formal Operational | Vygotsky: ZPD & MKO', keyPoints: ['Assimilation (à®‰à®Ÿà¯à®•à®¿à®°à®•à®¿à®¤à¯à®¤à®²à¯) vs Accommodation (à®ªà¯Šà®°à¯à®¤à¯à®¤à¯à®¤à®²à¯)', 'Scaffolding concept proposed by Jerome Bruner in Vygotskian framework'], type: 'concept', importance: 'High-Yield' }
+        { id: 'trb_cd_1', topicTitle: 'பியா�œ�‡ 4 நில�ˆ�•ள், வ�ˆ�•ா�Ÿ்ஸ்�•ி ZPD & �•�‹ல்பர்�•் �’ழு�•்�• வளர்�š்�šி', subtopic: '�…றிதிறன் வளர்�š்�šி நில�ˆ�•ள், �šார�•்�•�Ÿ்�Ÿு (Scaffolding) மற்றும் மாரல் �•�‹�Ÿ்பா�Ÿு�•ள்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Piaget 4 Stages: Sensorimotor -> Pre-operational -> Concrete Operational -> Formal Operational | Vygotsky: ZPD & MKO', keyPoints: ['Assimilation (�‰�Ÿ்�•ிர�•ித்தல்) vs Accommodation (ப�Šருத்துதல்)', 'Scaffolding concept proposed by Jerome Bruner in Vygotskian framework'], type: 'concept', importance: 'High-Yield' }
       ]
     },
     {
       chapterNumber: 2,
-      chapterTitle: 'à®¨à¯à®£à¯à®£à®±à®¿à®µà¯, à®†à®³à¯à®®à¯ˆ, à®šà®¿à®±à®ªà¯à®ªà¯ à®•à¯à®´à®¨à¯à®¤à¯ˆà®•à®³à¯à®•à¯à®•à®¾à®© à®•à®²à¯à®µà®¿ & RTE à®šà®Ÿà¯à®Ÿà®®à¯',
-      description: 'Gardner Multiple Intelligences (8 à®µà®•à¯ˆà®•à®³à¯), Maslow Hierarchy of Needs, Inclusive Education, CWSN, RTE Act 2009 & NEP 2020',
+      chapterTitle: 'நுண்ணறிவு, �†ளும�ˆ, �šிறப்பு �•ுழந்த�ˆ�•ளு�•்�•ான �•ல்வி & RTE �š�Ÿ்�Ÿம்',
+      description: 'Gardner Multiple Intelligences (8 வ�•�ˆ�•ள்), Maslow Hierarchy of Needs, Inclusive Education, CWSN, RTE Act 2009 & NEP 2020',
       subtopics: [
         {
           id: 'trb_cd_sub2',
-          title: 'à®¨à¯à®£à¯à®£à®±à®¿à®µà¯ & à®‰à®³à¯à®³à®Ÿà®•à¯à®•à®¿à®¯ à®•à®²à¯à®µà®¿',
+          title: 'நுண்ணறிவு & �‰ள்ள�Ÿ�•்�•ிய �•ல்வி',
           microTopics: [
-            { id: 'trb_cd_3', title: 'à®¹à¯‹à®µà®°à¯à®Ÿà¯ à®•à®¾à®°à¯à®Ÿà¯à®©à®°à¯ 8 à®µà®•à¯ˆ à®ªà®²à¯à®µà®•à¯ˆ à®¨à¯à®£à¯à®£à®±à®¿à®µà¯', keyAxiom: 'Linguistic, Logical-Mathematical, Spatial, Bodily, Musical, Inter/Intra-personal, Naturalist' },
-            { id: 'trb_cd_4', title: 'à®‰à®³à¯à®³à®Ÿà®•à¯à®•à®¿à®¯ à®•à®²à¯à®µà®¿ (Inclusive Education) & RTE à®šà®Ÿà¯à®Ÿà®®à¯ 2009', keyAxiom: 'Section 12(1)(c) mandates 25% admission for disadvantaged children in private schools' }
+            { id: 'trb_cd_3', title: 'ஹ�‹வர்�Ÿ் �•ார்�Ÿ்னர் 8 வ�•�ˆ பல்வ�•�ˆ நுண்ணறிவு', keyAxiom: 'Linguistic, Logical-Mathematical, Spatial, Bodily, Musical, Inter/Intra-personal, Naturalist' },
+            { id: 'trb_cd_4', title: '�‰ள்ள�Ÿ�•்�•ிய �•ல்வி (Inclusive Education) & RTE �š�Ÿ்�Ÿம் 2009', keyAxiom: 'Section 12(1)(c) mandates 25% admission for disadvantaged children in private schools' }
           ]
         }
       ],
       microTopics: [
-        { id: 'trb_cd_3', topicTitle: 'à®•à®¾à®°à¯à®Ÿà¯à®©à®°à¯ 8 à®µà®•à¯ˆ à®¨à¯à®£à¯à®£à®±à®¿à®µà¯, à®®à®¾à®¸à¯à®²à¯‹ à®¤à¯‡à®µà¯ˆà®•à®³à¯ & RTE à®šà®Ÿà¯à®Ÿà®®à¯ 2009', subtopic: 'à®¹à¯‹à®µà®°à¯à®Ÿà¯ à®•à®¾à®°à¯à®Ÿà¯à®©à®°à¯ à®¤à®¤à¯à®¤à¯à®µà®®à¯, à®®à®¸à¯à®²à¯‹ à®ªà®Ÿà®¿à®¨à®¿à®²à¯ˆ à®¤à¯‡à®µà¯ˆà®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®‡à®²à®µà®š à®•à®Ÿà¯à®Ÿà®¾à®¯à®•à¯ à®•à®²à¯à®µà®¿', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'Maslow Hierarchy: Physiological -> Safety -> Love/Belonging -> Esteem -> Self-Actualization', keyPoints: ['RTE Act came into force on 1 April 2010 (Article 21A)', 'Pupil-Teacher Ratio (PTR) in primary school: 30:1; Upper primary: 35:1'], type: 'concept', importance: 'High-Yield' }
+        { id: 'trb_cd_3', topicTitle: '�•ார்�Ÿ்னர் 8 வ�•�ˆ நுண்ணறிவு, மாஸ்ல�‹ த�‡வ�ˆ�•ள் & RTE �š�Ÿ்�Ÿம் 2009', subtopic: 'ஹ�‹வர்�Ÿ் �•ார்�Ÿ்னர் தத்துவம், மஸ்ல�‹ ப�Ÿிநில�ˆ த�‡வ�ˆ�•ள் மற்றும் �‡லவ�š �•�Ÿ்�Ÿாய�•் �•ல்வி', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'Maslow Hierarchy: Physiological -> Safety -> Love/Belonging -> Esteem -> Self-Actualization', keyPoints: ['RTE Act came into force on 1 April 2010 (Article 21A)', 'Pupil-Teacher Ratio (PTR) in primary school: 30:1; Upper primary: 35:1'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2801,27 +2801,27 @@ export function getTrbAndTeacherExamsCompleteSyllabus(courseId?: string, courseT
   const pedagogyChapters: SyllabusChapter[] = [
     {
       chapterNumber: 1,
-      chapterTitle: 'à®®à¯Šà®´à®¿ à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®®à¯à®±à¯ˆà®•à®³à¯ & à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯à®Ÿà¯ à®‰à®¤à¯à®¤à®¿à®•à®³à¯ (Pedagogy & Assessment)',
-      description: 'LSRW à®¤à®¿à®±à®©à¯à®•à®³à¯ (à®•à¯‡à®Ÿà¯à®Ÿà®²à¯, à®ªà¯‡à®šà¯à®¤à®²à¯, à®ªà®Ÿà®¿à®¤à¯à®¤à®²à¯, à®Žà®´à¯à®¤à¯à®¤à®²à¯), à®šà¯†à®¯à¯à®¯à¯à®³à¯/à®‰à®°à¯ˆà®¨à®Ÿà¯ˆ à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯, à®¨à¯à®£à¯à®£à®¿à®²à¯ˆ à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ (Micro-teaching), CCE à®¤à¯Šà®Ÿà®°à¯ à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯',
+      chapterTitle: 'ம�Šழி �•ற்பித்தல் முற�ˆ�•ள் & மதிப்ப�€�Ÿ்�Ÿு �‰த்தி�•ள் (Pedagogy & Assessment)',
+      description: 'LSRW திறன்�•ள் (�•�‡�Ÿ்�Ÿல், ப�‡�šுதல், ப�Ÿித்தல், �Žழுதுதல்), �š�†ய்யுள்/�‰ர�ˆந�Ÿ�ˆ �•ற்பித்தல், நுண்ணில�ˆ �•ற்பித்தல் (Micro-teaching), CCE த�Š�Ÿர் மதிப்ப�€�Ÿு',
       subtopics: [
         {
           id: 'trb_ped_sub1',
-          title: 'à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®®à¯à®±à¯ˆà®•à®³à¯ & à®¨à¯à®£à¯à®£à®¿à®²à¯ˆ à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯',
+          title: '�•ற்பித்தல் முற�ˆ�•ள் & நுண்ணில�ˆ �•ற்பித்தல்',
           microTopics: [
-            { id: 'trb_ped_1', title: 'LSRW à®®à¯Šà®´à®¿à®¤à¯à®¤à®¿à®±à®©à¯à®•à®³à¯ & à®®à¯Šà®´à®¿ à®•à®±à¯à®ªà®¿à®•à¯à®•à¯à®®à¯ à®®à¯à®±à¯ˆà®•à®³à¯', keyAxiom: 'à®•à¯‡à®Ÿà¯à®Ÿà®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®ªà®Ÿà®¿à®¤à¯à®¤à®²à¯ à®à®±à¯à®ªà¯à®¤à¯ à®¤à®¿à®±à®©à¯à®•à®³à¯; à®ªà¯‡à®šà¯à®¤à®²à¯ à®®à®±à¯à®±à¯à®®à¯ à®Žà®´à¯à®¤à¯à®¤à®²à¯ à®µà¯†à®³à®¿à®¯à¯€à®Ÿà¯à®Ÿà¯à®¤à¯ à®¤à®¿à®±à®©à¯à®•à®³à¯' },
-            { id: 'trb_ped_2', title: 'à®¨à¯à®£à¯à®£à®¿à®²à¯ˆ à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ 6 à®ªà®Ÿà®¿à®•à®³à¯ (Micro-Teaching Cycle)', keyAxiom: 'Teach (6m) -> Feedback (6m) -> Re-plan (12m) -> Re-teach (6m) -> Re-feedback (6m) = 36 mins' }
+            { id: 'trb_ped_1', title: 'LSRW ம�Šழித்திறன்�•ள் & ம�Šழி �•ற்பி�•்�•ும் முற�ˆ�•ள்', keyAxiom: '�•�‡�Ÿ்�Ÿல் மற்றும் ப�Ÿித்தல் ஏற்புத் திறன்�•ள்; ப�‡�šுதல் மற்றும் �Žழுதுதல் வ�†ளிய�€�Ÿ்�Ÿுத் திறன்�•ள்' },
+            { id: 'trb_ped_2', title: 'நுண்ணில�ˆ �•ற்பித்தல் 6 ப�Ÿி�•ள் (Micro-Teaching Cycle)', keyAxiom: 'Teach (6m) -> Feedback (6m) -> Re-plan (12m) -> Re-teach (6m) -> Re-feedback (6m) = 36 mins' }
           ]
         }
       ],
       microTopics: [
-        { id: 'trb_ped_1', topicTitle: 'LSRW à®®à¯Šà®´à®¿à®¤à¯à®¤à®¿à®±à®©à¯à®•à®³à¯, à®¨à¯à®£à¯à®£à®¿à®²à¯ˆ à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®šà¯à®´à®±à¯à®šà®¿ (36 à®¨à®¿à®®à®¿à®Ÿà®™à¯à®•à®³à¯) & CCE', subtopic: 'à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®ªà®Ÿà®¿à®•à®³à¯, à®ªà®¿à®©à¯à®©à¯‚à®Ÿà¯à®Ÿà®®à¯ à®®à®±à¯à®±à¯à®®à¯ à®¤à¯Šà®Ÿà®°à¯ à®®à¯à®´à¯à®®à¯ˆà®¯à®¾à®© à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯ (CCE)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Micro-teaching Cycle: 36 Minutes (Plan -> Teach 6m -> Feedback 6m -> Re-plan 12m -> Re-teach 6m -> Re-feedback 6m)', keyPoints: ['Formative Assessment (à®•à®±à¯à®±à®²à¯à®•à¯à®•à®¾à®© à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯) vs Summative Assessment (à®•à®±à¯à®±à®²à®¿à®©à¯ à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯)', 'Micro-teaching was introduced by Dwight W. Allen at Stanford University (1963)'], type: 'concept', importance: 'High-Yield' }
+        { id: 'trb_ped_1', topicTitle: 'LSRW ம�Šழித்திறன்�•ள், நுண்ணில�ˆ �•ற்பித்தல் �šுழற்�šி (36 நிமி�Ÿ�™்�•ள்) & CCE', subtopic: '�•ற்பித்தல் ப�Ÿி�•ள், பின்ன�‚�Ÿ்�Ÿம் மற்றும் த�Š�Ÿர் முழும�ˆயான மதிப்ப�€�Ÿு (CCE)', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Micro-teaching Cycle: 36 Minutes (Plan -> Teach 6m -> Feedback 6m -> Re-plan 12m -> Re-teach 6m -> Re-feedback 6m)', keyPoints: ['Formative Assessment (�•ற்றலு�•்�•ான மதிப்ப�€�Ÿு) vs Summative Assessment (�•ற்றலின் மதிப்ப�€�Ÿு)', 'Micro-teaching was introduced by Dwight W. Allen at Stanford University (1963)'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
 
   const subjects: SyllabusSubject[] = [
-    { subjectId: 'trb_child_dev', subjectName: 'à®•à¯à®´à®¨à¯à®¤à¯ˆ à®®à¯‡à®®à¯à®ªà®¾à®Ÿà¯à®®à¯ à®•à®±à¯à®±à®²à¯ à®‰à®³à®µà®¿à®¯à®²à¯à®®à¯ (Child Development & Pedagogy)', icon: 'ðŸ‘¶', color: '#ec4899', totalChapters: childDevChapters.length, totalMicroTopics: childDevChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: childDevChapters },
-    { subjectId: 'trb_pedagogy', subjectName: 'à®•à®±à¯à®ªà®¿à®¤à¯à®¤à®²à¯ à®®à¯à®±à¯ˆà®•à®³à¯à®®à¯ à®®à®¤à®¿à®ªà¯à®ªà¯€à®Ÿà¯à®®à¯ (Teaching Methodology & CCE)', icon: '📚', color: '#06b6d4', totalChapters: pedagogyChapters.length, totalMicroTopics: pedagogyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pedagogyChapters }
+    { subjectId: 'trb_child_dev', subjectName: '�•ுழந்த�ˆ ம�‡ம்பா�Ÿும் �•ற்றல் �‰ளவியலும் (Child Development & Pedagogy)', icon: '�Ÿ‘�', color: '#ec4899', totalChapters: childDevChapters.length, totalMicroTopics: childDevChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: childDevChapters },
+    { subjectId: 'trb_pedagogy', subjectName: '�•ற்பித்தல் முற�ˆ�•ளும் மதிப்ப�€�Ÿும் (Teaching Methodology & CCE)', icon: '��', color: '#06b6d4', totalChapters: pedagogyChapters.length, totalMicroTopics: pedagogyChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: pedagogyChapters }
   ];
 
   return {
@@ -2853,12 +2853,12 @@ export function getGateAndEngineeringCompleteSyllabus(courseId?: string, courseT
           title: 'Linear Algebra & Discrete Math',
           microTopics: [
             { id: 'gate_m_1', title: 'Eigenvalues, Eigenvectors & Cayley-Hamilton Theorem', keyAxiom: 'Sum of eigenvalues = Trace of matrix; Product of eigenvalues = Determinant' },
-            { id: 'gate_m_2', title: 'Graph Theory (Handshaking Lemma, Planar Graphs E â‰¤ 3V - 6)', keyAxiom: 'Sum of degrees of all vertices = 2 Ã— Number of Edges' }
+            { id: 'gate_m_2', title: 'Graph Theory (Handshaking Lemma, Planar Graphs E ≤ 3V - 6)', keyAxiom: 'Sum of degrees of all vertices = 2 × Number of Edges' }
           ]
         }
       ],
       microTopics: [
-        { id: 'gate_m_1', topicTitle: 'Eigenvalues, Cayley-Hamilton Theorem, Handshaking Lemma & Bayes Rule', subtopic: 'Matrix characteristic equation |A - Î»I| = 0, Planar graph Euler formula V - E + F = 2', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Trace(A) = Î£ Î»_i | Det(A) = Î  Î»_i | Handshaking: Î£ deg(v) = 2|E| | Euler Formula: V - E + F = 2', keyPoints: ['Every square matrix satisfies its own characteristic equation (Cayley-Hamilton)', 'In a planar connected graph with V â‰¥ 3, number of edges E â‰¤ 3V - 6'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'gate_m_1', topicTitle: 'Eigenvalues, Cayley-Hamilton Theorem, Handshaking Lemma & Bayes Rule', subtopic: 'Matrix characteristic equation |A - λI| = 0, Planar graph Euler formula V - E + F = 2', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'Trace(A) = Σ λ_i | Det(A) = Π λ_i | Handshaking: Σ deg(v) = 2|E| | Euler Formula: V - E + F = 2', keyPoints: ['Every square matrix satisfies its own characteristic equation (Cayley-Hamilton)', 'In a planar connected graph with V ≥ 3, number of edges E ≤ 3V - 6'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2891,20 +2891,20 @@ export function getGateAndEngineeringCompleteSyllabus(courseId?: string, courseT
           id: 'gate_cs_sub2',
           title: 'Networks, TOC & Compilers',
           microTopics: [
-            { id: 'gate_cs_3', title: 'Sliding Window Protocols (GBN vs SR) & Subnetting CIDR', keyAxiom: 'Efficiency Î· = N / (1 + 2a) where a = Propagation Time / Transmission Time' },
+            { id: 'gate_cs_3', title: 'Sliding Window Protocols (GBN vs SR) & Subnetting CIDR', keyAxiom: 'Efficiency η = N / (1 + 2a) where a = Propagation Time / Transmission Time' },
             { id: 'gate_cs_4', title: 'DFA Minimization (Myhill-Nerode) & LL(1) Parsing Table', keyAxiom: 'A grammar is LL(1) if FIRST and FOLLOW sets have no common intersection' }
           ]
         }
       ],
       microTopics: [
-        { id: 'gate_cs_3', topicTitle: 'Sliding Window Efficiency (GBN / SR), DFA Minimization & LL(1) Parsing', subtopic: 'Go-Back-N window size N = 1 + 2a, Selective Repeat N = 2^(k-1), Pumping Lemma for regular languages', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Sliding Window Efficiency Î· = N / (1 + 2a) | a = T_p / T_t | IPv4 Subnet Mask /26 = 255.255.255.192 (64 IPs)', keyPoints: ['Selective Repeat uses window size 2^(k-1) to avoid sequence number overlap', 'Halting problem of Turing Machine is undecidable'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'gate_cs_3', topicTitle: 'Sliding Window Efficiency (GBN / SR), DFA Minimization & LL(1) Parsing', subtopic: 'Go-Back-N window size N = 1 + 2a, Selective Repeat N = 2^(k-1), Pumping Lemma for regular languages', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Sliding Window Efficiency η = N / (1 + 2a) | a = T_p / T_t | IPv4 Subnet Mask /26 = 255.255.255.192 (64 IPs)', keyPoints: ['Selective Repeat uses window size 2^(k-1) to avoid sequence number overlap', 'Halting problem of Turing Machine is undecidable'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
 
   const subjects: SyllabusSubject[] = [
     { subjectId: 'gate_math', subjectName: 'Engineering Mathematics & Discrete Math', icon: 'ðŸ“', color: '#06b6d4', totalChapters: engMathChapters.length, totalMicroTopics: engMathChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: engMathChapters },
-    { subjectId: 'gate_cs', subjectName: 'Computer Science Core (OS, DBMS, Networks, TOC & Compilers)', icon: 'ðŸ’»', color: '#8b5cf6', totalChapters: csCoreChapters.length, totalMicroTopics: csCoreChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: csCoreChapters }
+    { subjectId: 'gate_cs', subjectName: 'Computer Science Core (OS, DBMS, Networks, TOC & Compilers)', icon: '💻', color: '#8b5cf6', totalChapters: csCoreChapters.length, totalMicroTopics: csCoreChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: csCoreChapters }
   ];
 
   return {
@@ -2957,12 +2957,12 @@ export function getKidsSkillsCompleteSyllabus(courseId: string, courseTitle: str
           id: 'kid_vm_sub1',
           title: 'Speed Maths Sutras',
           microTopics: [
-            { id: 'kid_vm_1', title: 'Squaring Numbers Ending in 5 & Fast Multiplication with 11', keyAxiom: '(n5)Â² = [n Ã— (n+1)] | 25' }
+            { id: 'kid_vm_1', title: 'Squaring Numbers Ending in 5 & Fast Multiplication with 11', keyAxiom: '(n5)² = [n × (n+1)] | 25' }
           ]
         }
       ],
       microTopics: [
-        { id: 'kid_vm_1', topicTitle: 'Squaring Numbers Ending in 5 & Fast Multiplication with 11', subtopic: '35Â² = (3Ã—4)|25 = 1225, 45Ã—11 = 4|(4+5)|5 = 495, 2-second rapid mental math calculations', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Vedic Sutra: (n5)Â² = [n Ã— (n + 1)] followed by 25 | Multiplication by 11: ab Ã— 11 = a | (a+b) | b', keyPoints: ['Ekadhikena Purvena means "By one more than the previous one"', 'Multiplication with 99, 999 using base deviation subtraction'], type: 'solved_problem', importance: 'High-Yield' }
+        { id: 'kid_vm_1', topicTitle: 'Squaring Numbers Ending in 5 & Fast Multiplication with 11', subtopic: '35² = (3×4)|25 = 1225, 45×11 = 4|(4+5)|5 = 495, 2-second rapid mental math calculations', dayNumber: 2, periodNumber: 2, keyFormulaOrLaw: 'Vedic Sutra: (n5)² = [n × (n + 1)] followed by 25 | Multiplication by 11: ab × 11 = a | (a+b) | b', keyPoints: ['Ekadhikena Purvena means "By one more than the previous one"', 'Multiplication with 99, 999 using base deviation subtraction'], type: 'solved_problem', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2977,12 +2977,12 @@ export function getKidsSkillsCompleteSyllabus(courseId: string, courseTitle: str
           id: 'kid_rob_sub1',
           title: 'Circuits & Sensors',
           microTopics: [
-            { id: 'kid_rob_1', title: 'Arduino Microcontroller & Ultrasonic Obstacle Avoidance', keyAxiom: 'Distance = (Travel Time Ã— Speed of Sound) / 2' }
+            { id: 'kid_rob_1', title: 'Arduino Microcontroller & Ultrasonic Obstacle Avoidance', keyAxiom: 'Distance = (Travel Time × Speed of Sound) / 2' }
           ]
         }
       ],
       microTopics: [
-        { id: 'kid_rob_1', topicTitle: 'Arduino Microcontroller, Breadboard Circuits & Ultrasonic Sensor', subtopic: 'Connecting LED resistors, Reading ultrasonic sensor pulse, Motor driver L298N', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Ohm Law: V = IR | Ultrasonic: Distance = (Duration Ã— 0.034) / 2 cm', keyPoints: ['Anode is longer positive leg of LED; Cathode is shorter negative leg', 'Arduino void setup() runs once; void loop() runs repeatedly'], type: 'concept', importance: 'High-Yield' }
+        { id: 'kid_rob_1', topicTitle: 'Arduino Microcontroller, Breadboard Circuits & Ultrasonic Sensor', subtopic: 'Connecting LED resistors, Reading ultrasonic sensor pulse, Motor driver L298N', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Ohm Law: V = IR | Ultrasonic: Distance = (Duration × 0.034) / 2 cm', keyPoints: ['Anode is longer positive leg of LED; Cathode is shorter negative leg', 'Arduino void setup() runs once; void loop() runs repeatedly'], type: 'concept', importance: 'High-Yield' }
       ]
     }
   ];
@@ -2990,7 +2990,7 @@ export function getKidsSkillsCompleteSyllabus(courseId: string, courseTitle: str
   const subjects: SyllabusSubject[] = [
     { subjectId: 'kid_scratch', subjectName: 'Scratch 3.0 Block Coding & Game Studio', icon: 'ðŸ±', color: '#f59e0b', totalChapters: scratchChapters.length, totalMicroTopics: scratchChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: scratchChapters },
     { subjectId: 'kid_vedic', subjectName: 'Vedic Maths & Lightning Speed Calculations', icon: '⚡', color: '#06b6d4', totalChapters: vedicMathsChapters.length, totalMicroTopics: vedicMathsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: vedicMathsChapters },
-    { subjectId: 'kid_robotics', subjectName: 'Robotics, Electronics & Smart IoT Studio', icon: 'ðŸ¤–', color: '#10b981', totalChapters: roboticsChapters.length, totalMicroTopics: roboticsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: roboticsChapters }
+    { subjectId: 'kid_robotics', subjectName: 'Robotics, Electronics & Smart IoT Studio', icon: '🤖', color: '#10b981', totalChapters: roboticsChapters.length, totalMicroTopics: roboticsChapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0), chapters: roboticsChapters }
   ];
 
   return {
@@ -3093,7 +3093,7 @@ export function resolveCompleteCourseSyllabus(
     const subjects: SyllabusSubject[] = [
       {
         subjectId: 'kg_tamil',
-        subjectName: isTa ? 'à®¤à®®à®¿à®´à¯ à®®à®´à®²à¯ˆà®¯à®°à¯ à®ªà®¾à®Ÿà®²à¯ & à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à¯à®•à®³à¯' : 'Tamil Rhymes & Vowels (Uyir Ezhuthukkal)',
+        subjectName: isTa ? 'தமிழ் மழலையர் பாடல் & உயிர் எழுத்துக்கள்' : 'Tamil Rhymes & Vowels (Uyir Ezhuthukkal)',
         icon: '🔤',
         color: '#ec4899',
         totalChapters: 2,
@@ -3101,10 +3101,10 @@ export function resolveCompleteCourseSyllabus(
         chapters: [
           {
             chapterNumber: 1,
-            chapterTitle: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ 12 & à®®à®´à®²à¯ˆà®¯à®°à¯ à®ªà®¾à®²à®°à¯ à®ªà®¾à®Ÿà®²à¯à®•à®³à¯',
-            description: 'à®… à®®à¯à®¤à®²à¯ à®” à®µà®°à¯ˆ à®‰à®³à¯à®³ 12 à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ à®®à®±à¯à®±à¯à®®à¯ à®¨à®¿à®²à®¾ à®¨à®¿à®²à®¾ à®“à®Ÿà®¿ à®µà®¾ à®ªà®¾à®Ÿà®²à¯à®•à®³à¯',
+            chapterTitle: '�‰யிர் �Žழுத்து�•ள் 12 & மழல�ˆயர் பாலர் பா�Ÿல்�•ள்',
+            description: '�… முதல் �” வர�ˆ �‰ள்ள 12 �‰யிர் �Žழுத்து�•ள் மற்றும் நிலா நிலா �“�Ÿி வா பா�Ÿல்�•ள்',
             microTopics: [
-              { id: 'kg_t_1', topicTitle: 'à®… à®®à¯à®¤à®²à¯ à®” à®µà®°à¯ˆ à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ (à®…à®®à¯à®®à®¾, à®†à®Ÿà¯, à®‡à®²à¯ˆ, à®ˆà®Ÿà¯à®Ÿà®¿)', subtopic: 'à®ªà®Ÿà®™à¯à®•à®³à¯ à®ªà®¾à®°à¯à®¤à¯à®¤à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à®³à¯ˆ à®…à®Ÿà¯ˆà®¯à®¾à®³à®®à¯ à®•à®¾à®£à¯à®¤à®²à¯', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'à®‰à®¯à®¿à®°à¯ à®Žà®´à¯à®¤à¯à®¤à¯à®•à¯à®•à®³à¯: à®…, à®†, à®‡, à®ˆ, à®‰, à®Š, à®Ž, à®, à®, à®’, à®“, à®”', keyPoints: ['à®… - à®…à®£à®¿à®²à¯, à®…à®®à¯à®®à®¾', 'à®† - à®†à®Ÿà¯, à®†à®²à®®à®°à®®à¯'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_t_1', topicTitle: '�… முதல் �” வர�ˆ �‰யிர் �Žழுத்து�•ள் (�…ம்மா, �†�Ÿு, �‡ல�ˆ, �ˆ�Ÿ்�Ÿி)', subtopic: 'ப�Ÿ�™்�•ள் பார்த்து �Žழுத்து�•ள�ˆ �…�Ÿ�ˆயாளம் �•ாணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '�‰யிர் �Žழுத்து�•்�•ள்: �…, �†, �‡, �ˆ, �‰, �Š, �Ž, ஏ, ஐ, �’, �“, �”', keyPoints: ['�… - �…ணில், �…ம்மா', '�† - �†�Ÿு, �†லமரம்'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -3130,7 +3130,7 @@ export function resolveCompleteCourseSyllabus(
       {
         subjectId: 'kg_maths',
         subjectName: 'Fun Maths & Numbers (1 to 20)',
-        icon: 'ðŸ”¢',
+        icon: '🔢',
         color: '#06b6d4',
         totalChapters: 2,
         totalMicroTopics: 6,
@@ -3148,7 +3148,7 @@ export function resolveCompleteCourseSyllabus(
       {
         subjectId: 'kg_evs',
         subjectName: 'EVS, Nature, Animals & Good Habits',
-        icon: 'ðŸŒ¿',
+        icon: '🌿',
         color: '#10b981',
         totalChapters: 2,
         totalMicroTopics: 6,
@@ -3190,7 +3190,7 @@ export function resolveCompleteCourseSyllabus(
   }
 
   // 13. TNPSC & GENERAL STUDIES SUB-TOPICS (Tamil, GK, Polity, History, Science)
-  if (c.includes('à®ªà¯Šà®°à¯à®¤à¯à®¤à¯à®¤à®²à¯') || c.includes('à®‡à®²à®•à¯à®•à®£à®®à¯') || c.includes('à®µà¯‡à®°à¯à®šà¯à®šà¯Šà®²à¯') || c.includes('à®¤à®®à®¿à®´à¯') || c.includes('tamil') || c.includes('à®µà®°à®²à®¾à®±à¯') || c.includes('à®…à®°à®šà®¿à®¯à®²à¯') || c.includes('à®ªà¯à®µà®¿à®¯à®¿à®¯à®²à¯') || c.includes('à®ªà¯Šà®°à¯à®³à®¾à®¤à®¾à®°à®®à¯') || c.includes('gk') || c.includes('rrb') || c.includes('constitution') || c.includes('à®ªà¯†à®°à®¿à®¯à®¾à®°à¯') || c.includes('à®ªà®¾à®°à®¤à®¿à®¯à®¾à®°à¯') || c.includes('à®…à®£à¯à®£à®¾') || c.includes('à®•à®¾à®®à®°à®¾à®šà®°à¯') || c.includes('à®°à®¾à®œà®¾à®œà®¿') || c.includes('à®µà®¿à®°à¯à®¤à¯à®•à®³à¯')) {
+  if (c.includes('ப�Šருத்துதல்') || c.includes('�‡ல�•்�•ணம்') || c.includes('வ�‡ர்�š்�š�Šல்') || c.includes('தமிழ்') || c.includes('tamil') || c.includes('வரலாறு') || c.includes('�…ர�šியல்') || c.includes('புவியியல்') || c.includes('ப�Šருளாதாரம்') || c.includes('gk') || c.includes('rrb') || c.includes('constitution') || c.includes('ப�†ரியார்') || c.includes('பாரதியார்') || c.includes('�…ண்ணா') || c.includes('�•ாமரா�šர்') || c.includes('ரா�œா�œி') || c.includes('விருது�•ள்')) {
     return getTnpscUnifiedCompleteSyllabus(courseId, title);
   }
 
