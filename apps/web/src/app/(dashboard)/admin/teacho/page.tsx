@@ -12,6 +12,28 @@ import { ALL_COURSES, CourseOption } from '@/data/coursesCatalog';
 import { resolveMasterSequentialSyllabus } from '@/data/curriculum/masterCurriculumRegistry';
 import { getAugmentedCourseSyllabus, SyllabusMicroTopic } from '@/data/curriculum/courseSyllabusRegistry';
 
+function cleanUnicodeString(str: any): string {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/\uFFFD/g, '')
+    .replace(/[\u0080-\u009F]/g, '')
+    .replace(/[^\x20-\x7E\u0B80-\u0BFF\u0900-\u097F\u0A80-\u0AFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\n\r\t.,!?:;'"()\[\]{}\/\\+\-*=<>%@#$&_~`^|—–•✓✗🏆🔥✨📚🎒📝💡📖]/gu, '')
+    .trim();
+}
+
+function deepSanitize(obj: any): any {
+  if (typeof obj === 'string') return cleanUnicodeString(obj);
+  if (Array.isArray(obj)) return obj.map(deepSanitize);
+  if (obj !== null && typeof obj === 'object') {
+    const res: any = {};
+    for (const [k, v] of Object.entries(obj)) {
+      res[cleanUnicodeString(k)] = deepSanitize(v);
+    }
+    return res;
+  }
+  return obj;
+}
+
 export default function TeachOAdminStudioPage() {
   const [activeTab, setActiveTab] = useState<'editor' | 'syllabus_builder' | 'bulk'>('editor');
   const [searchQuery, setSearchQuery] = useState('');
@@ -306,11 +328,11 @@ export default function TeachOAdminStudioPage() {
     const colors = ['#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
     return {
       taskNumber: tNum,
-      title: item.subject,
+      title: cleanUnicodeString(item.subject),
       icon: icons[(tNum - 1) % icons.length],
       color: colors[(tNum - 1) % colors.length],
-      currentChapter: item.chapterTitle || item.subtopic,
-      topicTitle: item.topicTitle
+      currentChapter: cleanUnicodeString(item.chapterTitle || item.subtopic),
+      topicTitle: cleanUnicodeString(item.topicTitle)
     };
   });
 
@@ -507,9 +529,9 @@ export default function TeachOAdminStudioPage() {
         });
 
         if (isDb) {
-          setStatusMessage(`✅ Loaded Day ${day} Section ${sectionNum} (${activeSub}) from Supabase LMS.`);
+          setStatusMessage(cleanUnicodeString(`✅ Loaded Day ${day} Section ${sectionNum} (${activeSub}) from Supabase LMS.`));
         } else {
-          setStatusMessage(`✨ Generated Day ${day} Section ${sectionNum} (${activeSub}) with Curriculum Engine.`);
+          setStatusMessage(cleanUnicodeString(`✨ Generated Day ${day} Section ${sectionNum} (${activeSub}) with Curriculum Engine.`));
         }
       }
     } catch (e) {
