@@ -387,9 +387,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  quizStartButtonText: {
-    color: '#0f172a',
+  quizBtnText: {
+    color: '#020617',
     fontSize: 14,
     fontWeight: '800',
   },
 });
+
+export default TeachOConceptDeck;
