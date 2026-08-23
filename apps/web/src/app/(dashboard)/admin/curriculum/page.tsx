@@ -116,7 +116,6 @@ export default function AdminCurriculumManagementPage() {
 
   const processBulkSyllabus = () => {
     if (!rawSyllabus) return;
-    // Break down syllabus by newlines, commas, or dot points
     const lines = rawSyllabus.split(/[\n,;]+/).map(s => s.trim()).filter(s => s.length > 3);
     const nodes = lines.map((line, idx) => ({
       id: `bulk_node_${Date.now()}_${idx}`,
@@ -268,12 +267,12 @@ export default function AdminCurriculumManagementPage() {
                           <div key={sIdx} className="ml-2 pl-2 border-l border-slate-800/60 my-1 space-y-1">
                             <p className="text-[10px] font-medium text-sky-400">{sub.title}</p>
                             {sub.microTopics?.map((micro, mIdx) => {
-                              const mTitle = micro.title || (micro as any).topicTitle || \`Topic \${mIdx + 1}\`;
+                              const mTitle = micro.title || (micro as any).topicTitle || `Topic ${mIdx + 1}`;
                               return (
                                 <button
                                   key={mIdx}
                                   onClick={() => handleSelectTopic(mTitle, micro.keyAxiom || (micro as any).keyFormulaOrLaw)}
-                                  className={\`w-full text-left p-2 rounded-lg text-[11px] transition flex items-center justify-between \${selectedTopic === mTitle ? 'bg-emerald-950/80 border border-emerald-500 text-emerald-200' : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300'}\`}
+                                  className={`w-full text-left p-2 rounded-lg text-[11px] transition flex items-center justify-between ${selectedTopic === mTitle ? 'bg-emerald-950/80 border border-emerald-500 text-emerald-200' : 'bg-slate-900/60 hover:bg-slate-800 text-slate-300'}`}
                                 >
                                   <span className="truncate">{mTitle}</span>
                                 </button>
@@ -387,12 +386,12 @@ export default function AdminCurriculumManagementPage() {
               
               <div className="h-[450px] overflow-y-auto pr-2 space-y-2">
                 {syllabusUnits.flatMap(u => u.chapters || []).flatMap(c => c.subtopics || []).flatMap(s => s.microTopics || []).slice(0, 50).map((micro: any, idx) => {
-                  const mTitle = micro.title || micro.topicTitle || \`Topic \${idx}\`;
+                  const mTitle = micro.title || micro.topicTitle || `Topic ${idx}`;
                   return (
                     <div key={idx} className="flex items-center justify-between bg-slate-950 p-3 rounded-lg border border-slate-800">
                       <span className="text-xs text-slate-300 font-medium truncate flex-1">{mTitle}</span>
                       <button 
-                        onClick={() => addNodeToDayPlan({ id: \`n_\${idx}\`, title: mTitle })}
+                        onClick={() => addNodeToDayPlan({ id: `n_${idx}`, title: mTitle })}
                         className="ml-3 p-1.5 rounded bg-slate-800 hover:bg-emerald-600/20 text-emerald-400 transition"
                       >
                         <Plus className="w-4 h-4" />
@@ -450,7 +449,7 @@ export default function AdminCurriculumManagementPage() {
                 disabled={isSaving || dayPlanItems.length === 0}
                 className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Save className="w-4 h-4" /> {isSaving ? 'Assigning...' : \`Assign Plan to Users for Day \${targetDay}\`}
+                <Save className="w-4 h-4" /> {isSaving ? 'Assigning...' : `Assign Plan to Users for Day ${targetDay}`}
               </button>
             </div>
           </div>
