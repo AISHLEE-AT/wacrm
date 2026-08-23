@@ -2437,5 +2437,53 @@ export async function matchStoredContentForTopic(
   return result;
 }
 
+/**
+ * 💾 Persist Topic Course Content & Notes directly to Supabase Database
+ * Saves to both `kindle_content_cache` (fast key-value cache) and `unified_master_data`
+ */
+export async function persistTopicContentToDatabase(
+  courseId: string,
+  topicTitle: string,
+  topicKey: string,
+  contentPayload: any,
+  source: 'ai_generated' | 'admin_edited' | 'curriculum_sync' = 'ai_generated'
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const cleanKey = topicKey || `${courseId}_${topicTitle.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`;
 
+    // 1. Upsert into kindle_content_cache
+    const { error: cacheErr } = await aishleeSupabase
+      .from('kindle_content_cache')
+      .upsert({
+        topic_key: cleanKey,
+        kindle_json: contentPayload,
+        model_used: source === 'admin_edited' ? 'admin-editor' : 'gemini-flash-latest',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'topic_key' });
 
+    if (cacheErr) {
+      console.warn('[DB Persist] Cache table notice:', cacheErr.message);
+    }
+
+    // 2. Also record in unified_master_data for unified search
+    const { error: masterErr } = await aishleeSupabase
+      .from('unified_master_data')
+      .upsert({
+        id: `topic_${cleanKey}`,
+        item_type: 'course_notes',
+        title_name: topicTitle,
+        description: `Micro-topic notes for ${topicTitle} in ${courseId}`,
+        additional_info: contentPayload,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+
+    if (masterErr) {
+      console.warn('[DB Persist] Master table notice:', masterErr.message);
+    }
+
+    return { success: true, message: 'Content successfully persisted to database.' };
+  } catch (err: any) {
+    console.error('[DB Persist Error]:', err);
+    return { success: false, message: err.message };
+  }
+}

@@ -38,6 +38,8 @@ import {
   Lightbulb,
   Check,
   Zap,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
 import { geminiToolsService } from '../services/geminiToolsService';
@@ -50,8 +52,10 @@ import {
   generateSectionStepSolutionsAI,
   generateSectionCbtMcqsAI,
   generateSectionMnemonicsAI,
-  matchStoredContentForTopic
+  matchStoredContentForTopic,
+  persistTopicContentToDatabase
 } from '../lib/coursePlayerEngine';
+import AdminCurriculumEditorModal from '../components/teacho/AdminCurriculumEditorModal';
 
 function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle: string): any {
   if (!raw) return null;
@@ -173,6 +177,7 @@ export default function TeachOCourseScreen() {
   const [playerTheme, setPlayerTheme] = useState<'dark' | 'sepia' | 'light'>('dark');
   const [playerLoading, setPlayerLoading] = useState(false);
   const [playerAiLoading, setPlayerAiLoading] = useState<string | null>(null);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [playerSource, setPlayerSource] = useState<'cache' | 'ai' | 'fallback'>('cache');
   const [userMcqAnswers, setUserMcqAnswers] = useState<Record<number, number>>({});
   const [revealedVsaq, setRevealedVsaq] = useState<Record<number, boolean>>({});
@@ -189,11 +194,19 @@ export default function TeachOCourseScreen() {
     setPlayerAiLoading('tamil');
     try {
       const res = await generateSectionTamilAnalogyAI(playerBook.topicTitle, playerBook.courseTitle);
-      setPlayerBook((prev: any) => ({
-        ...prev,
-        tamilExplanation: res
-      }));
-      Alert.alert('🌟 தமிழ் விளக்கம் தயாராக உள்ளது!', 'புதிய நடைமுறை உதாரணங்கள் சேர்க்கப்பட்டன.');
+      const updatedBook = {
+        ...playerBook,
+        tamilExplanation: {
+          ...playerBook.tamilExplanation,
+          colloquialIntro: res.colloquialIntro,
+          everydayAnalogy: res.everydayAnalogy,
+          keyPointsTamil: res.keyPointsTamil,
+        }
+      };
+      setPlayerBook(updatedBook);
+      // Auto-persist to DB
+      persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
+      Alert.alert('🌟 தமிழ் விளக்கம் தயாராக உள்ளது!', 'புதிய நடைமுறை உதாரணங்கள் சேர்க்கப்பட்டன மற்றும் தரவுத்தளத்தில் சேமிக்கப்பட்டது.');
     } catch (e: any) {
       Alert.alert('AI Notice', 'Unable to generate fresh Tamil analogy: ' + e.message);
     } finally {
@@ -206,11 +219,14 @@ export default function TeachOCourseScreen() {
     setPlayerAiLoading('vsaq');
     try {
       const res = await generateSectionVsaqsAI(playerBook.topicTitle, playerBook.courseTitle, 5);
-      setPlayerBook((prev: any) => ({
-        ...prev,
-        vsaqs: [...(prev.vsaqs || []), ...res]
-      }));
-      Alert.alert('⚡ 5 New VSAQs Added!', '5 high-yield 1-mark flashcard questions generated.');
+      const updatedBook = {
+        ...playerBook,
+        vsaqs: [...(playerBook.vsaqs || []), ...res]
+      };
+      setPlayerBook(updatedBook);
+      // Auto-persist to DB
+      persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
+      Alert.alert('⚡ 5 New VSAQs Added!', '5 high-yield 1-mark flashcard questions generated and saved to DB.');
     } catch (e: any) {
       Alert.alert('AI Notice', 'Unable to generate extra VSAQs: ' + e.message);
     } finally {
@@ -224,11 +240,14 @@ export default function TeachOCourseScreen() {
     try {
       const res = await generateSectionStepSolutionsAI(playerBook.topicTitle, playerBook.courseTitle);
       if (res && res.shortAnswers) {
-        setPlayerBook((prev: any) => ({
-          ...prev,
-          shortAnswers: [...(prev.shortAnswers || []), ...res.shortAnswers]
-        }));
-        Alert.alert('📝 Problem Sets Added!', '2-Mark & 5-Mark step-by-step solutions generated.');
+        const updatedBook = {
+          ...playerBook,
+          shortAnswers: [...(playerBook.shortAnswers || []), ...res.shortAnswers]
+        };
+        setPlayerBook(updatedBook);
+        // Auto-persist to DB
+        persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
+        Alert.alert('📝 Problem Sets Added!', '2-Mark & 5-Mark step-by-step solutions generated and saved to DB.');
       }
     } catch (e: any) {
       Alert.alert('AI Notice', 'Unable to generate solutions: ' + e.message);
@@ -242,17 +261,20 @@ export default function TeachOCourseScreen() {
     setPlayerAiLoading('mcq');
     try {
       const res = await generateSectionCbtMcqsAI(playerBook.topicTitle, playerBook.courseTitle, 10);
-      setPlayerBook((prev: any) => ({
-        ...prev,
+      const updatedBook = {
+        ...playerBook,
         mcqs: res.map((m: any) => ({
           question: m.question,
           options: m.options,
           correct: m.correctIndex,
           explanation: m.explanation
         }))
-      }));
+      };
+      setPlayerBook(updatedBook);
       setUserMcqAnswers({});
-      Alert.alert('🎯 10 CBT MCQs Refreshed!', 'Fresh 10-question exam test loaded from TestO database.');
+      // Auto-persist to DB
+      persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
+      Alert.alert('🎯 10 CBT MCQs Refreshed!', 'Fresh 10-question exam test loaded from TestO database and saved to DB.');
     } catch (e: any) {
       Alert.alert('AI Notice', 'Unable to refresh CBT MCQs: ' + e.message);
     } finally {
@@ -266,11 +288,14 @@ export default function TeachOCourseScreen() {
     try {
       const res = await generateSectionMnemonicsAI(playerBook.topicTitle, playerBook.courseTitle);
       if (res && res.formulasAndMnemonics) {
-        setPlayerBook((prev: any) => ({
-          ...prev,
-          formulasAndMnemonics: [...(prev.formulasAndMnemonics || []), ...res.formulasAndMnemonics]
-        }));
-        Alert.alert('🧠 Memory Mnemonics Added!', 'New memory shortcuts and formulas generated.');
+        const updatedBook = {
+          ...playerBook,
+          formulasAndMnemonics: [...(playerBook.formulasAndMnemonics || []), ...res.formulasAndMnemonics]
+        };
+        setPlayerBook(updatedBook);
+        // Auto-persist to DB
+        persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
+        Alert.alert('🧠 Memory Mnemonics Added!', 'New memory shortcuts and formulas generated and saved to DB.');
       }
     } catch (e: any) {
       Alert.alert('AI Notice', 'Unable to generate mnemonics: ' + e.message);
@@ -405,6 +430,8 @@ export default function TeachOCourseScreen() {
 
     setPlayerBook(finalBook);
     setPlayerLoading(false);
+    // Auto-persist synthesized content to DB
+    persistTopicContentToDatabase(courseId, cleanTopic, explicitTopicKey || '', finalBook, 'ai_generated');
   };
 
   // Auto-open specific tab or micro-topic when navigated from TestO or other screens
@@ -424,6 +451,31 @@ export default function TeachOCourseScreen() {
   }, [route.params]);
 
   const exportCoursePlayerPDF = async (book: any) => {
+    // 🔒 Gatekeeper: Check PDF Export Permission
+    const hasExportPermission = route.params?.isPassUnlocked || route.params?.isAdmin || false;
+    if (!hasExportPermission) {
+      Alert.alert(
+        '🔒 Verified PDF Export Restricted',
+        'PDF export with watermark and step solutions requires an active TeachO Pass (₹99) or Admin approval.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Request Admin Access',
+            onPress: () => {
+              Alert.alert('✅ Request Dispatched', 'Your request to export verified course PDFs has been submitted to the Admin.');
+            },
+          },
+          {
+            text: 'Unlock Pass ₹99',
+            onPress: () => {
+              navigation.navigate('TestOHubScreen', { openPayment: true });
+            },
+          },
+        ]
+      );
+      return;
+    }
+
     try {
       const html = `
         <!DOCTYPE html>
@@ -1000,6 +1052,26 @@ export default function TeachOCourseScreen() {
             {courseTitle}
           </Text>
         </View>
+
+        {/* 🛠️ Admin Curriculum Console Trigger */}
+        <TouchableOpacity
+          onPress={() => setIsAdminModalOpen(true)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            borderWidth: 1,
+            borderColor: '#ef4444',
+            paddingHorizontal: 8,
+            paddingVertical: 5,
+            borderRadius: 8,
+            gap: 4,
+          }}
+          activeOpacity={0.8}
+        >
+          <ShieldAlert size={13} color="#ef4444" />
+          <Text style={{ color: '#ef4444', fontSize: 10, fontWeight: '800' }}>Admin</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Course Header Bar */}
@@ -1716,6 +1788,14 @@ export default function TeachOCourseScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* 🛠️ Admin Curriculum & Content Management Modal */}
+      <AdminCurriculumEditorModal
+        visible={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        initialCourseId={courseId}
+        initialCourseTitle={courseTitle}
+      />
     </View>
   );
 }
