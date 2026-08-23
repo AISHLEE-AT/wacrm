@@ -25,6 +25,48 @@ class _TestoScreenState extends State<TestoScreen> {
 
   final List<Map<String, dynamic>> syllabusCourses = [
     {
+      'id': 'class_6_8_middle',
+      'title': 'Class 6–8 (Middle School)',
+      'sub': 'Maths (BODMAS, HCF, LCM, Mean, Median, Mode), Science, Tamil, English, Social',
+      'units': [
+        {
+          'subject': 'Mathematics (கணிதம்)',
+          'title': 'Unit 1: Arithmetic & Statistics (BODMAS, HCF, LCM, Mean, Median, Mode)',
+          'topics': [
+            {'title': 'BODMAS / PEMDAS Rule (செயல்பாடுகளின் வரிசை)', 'law': 'Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction'},
+            {'title': 'HCF & LCM (மீப்பெரு பொது வகுத்தி & மீச்சிறு மடங்கு)', 'law': 'Product of Two Numbers = HCF × LCM'},
+            {'title': 'Mean / Average (கூட்டுச் சராசரி)', 'law': 'Mean x̄ = (Σ x) / N = (x₁ + x₂ + ... + xₙ) / n'},
+            {'title': 'Median & Mode (இடைநிலை அளவு & முகடு)', 'law': 'Median = Middle value in ordered set | Mode = Most frequent value'},
+            {'title': 'Compound Interest & Profit/Loss (கூட்டுவட்டி & இலாபம்)', 'law': 'Amount A = P(1 + R/100)ⁿ | CI = A - P'},
+            {'title': 'Pythagoras Theorem (பிதாகரஸ் தேற்றம்)', 'law': 'Hypotenuse² = Base² + Altitude² (c² = a² + b²)'},
+            {'title': 'Area & Perimeter (வட்டம், முக்கோணம், செவ்வகம்)', 'law': 'Circle Area = πr² | Circumference = 2πr | Triangle = ½bh'}
+          ]
+        },
+        {
+          'subject': 'Science (அறிவியல்)',
+          'title': 'Unit 2: Physics, Chemistry & Biology Fundamentals',
+          'topics': [
+            {'title': 'Speed, Velocity & Acceleration (வேகம் & முடுக்கம்)', 'law': 'Speed = Distance / Time | a = (v - u) / t'},
+            {'title': 'Force & Fluid Pressure (விசை & அழுத்தம்: P = F/A)', 'law': 'Pressure P = Force / Area (Pascals) | Liquid Pressure = ρgh'},
+            {'title': 'Reflection & Refraction of Light (ஒளி எதிரொலிப்பு & விலகல்)', 'law': 'Angle i = Angle r | Snell\'s Law: sin i / sin r = μ'},
+            {'title': 'Acids, Bases & pH Scale (அமிலங்கள், காரங்கள் & pH)', 'law': 'Acid + Base -> Salt + Water (Neutralization)'},
+            {'title': 'Plant Cell vs Animal Cell (தாவர & விலங்கு செல்)', 'law': 'Plant Cell = Cell Wall + Chloroplast | Animal Cell = Centrioles'},
+            {'title': 'Mitochondria - Powerhouse of Cell (மைட்டோகாண்ட்ரியா)', 'law': 'Cellular Respiration: Glucose + O₂ -> 38 ATP + CO₂ + H₂O'}
+          ]
+        },
+        {
+          'subject': 'Tamil (தமிழ்)',
+          'title': 'Unit 3: எழுத்து, சொல் & நீதி இலக்கியம்',
+          'topics': [
+            {'title': 'உயிர் & மெய் எழுத்துகள் (12 & 18)', 'law': 'குறில் 5, நெடில் 7 | வல்லினம், மெல்லினம், இடையினம்'},
+            {'title': 'இன எழுத்துகள் (நட்பு எழுத்துகள்)', 'law': 'க்-ங், ச்-ஞ், ட்-ண், த்-ந், ப்-ம், ற்-ன்'},
+            {'title': 'மயங்கொலிகள் (8 எழுத்துகள்: ண-ந-ன, ல-ழ-ள, ர-ற)', 'law': 'ஒரே மாதிரி ஒலித்து பொருள் வேறுபடும் 8 மயங்கொலி எழுத்துகள்'},
+            {'title': 'ஔவையார் மூதுரை & ஆத்திசூடி', 'law': '"அறஞ்செய விரும்பு", "ஆறுவது சினம்", "ஏட்டில் படித்ததோடு இருந்துவிடாதே"'}
+          ]
+        }
+      ]
+    },
+    {
       'id': 'class_10_tn',
       'title': 'Class 10 (SSLC 10th)',
       'sub': 'Science (Bio/Phy/Chem), Maths, Tamil, English, Social',

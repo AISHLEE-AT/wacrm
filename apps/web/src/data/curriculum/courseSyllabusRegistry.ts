@@ -895,37 +895,63 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'முழுக்கள், விகிதமுறு எண்கள் & அடுக்குகள்' : 'Integers, Rational Numbers & Exponents',
-          description: isTa ? 'குறை மற்றும் மிகை எண்கள், விகிதமுறு எண்கள் கூட்டல்/பெருக்கல், அடுக்கு விதிகள்' : 'Negative & Positive integers, Rational numbers, Laws of Exponents (a^m × a^n = a^(m+n))',
+          chapterTitle: isTa ? 'எண்கணிதம்: BODMAS, HCF/LCM & விகிதமுறு எண்கள்' : 'Arithmetic: BODMAS, HCF/LCM & Rational Numbers',
+          description: isTa ? 'செயல்பாடுகளின் வரிசை BODMAS, பகா காரணிப்படுத்துதல் HCF/LCM, முழுக்கள், விகிதமுறு எண்கள் & அடுக்கு விதிகள்' : 'BODMAS / PEMDAS order of operations, HCF & LCM prime factorization, Integers, Rational numbers and Laws of Exponents',
           subtopics: [
             {
               id: 'mid_m_sub1',
-              title: 'எண்கணிதம் & அடுக்குகள்',
+              title: 'எண்கணிதம் & அடிப்படை செயல்பாடுகள்',
               microTopics: [
-                { id: 'mid_m_1', title: 'விகிதமுறு எண்கள் (Rational Numbers) & அடுக்கு விதிகள்', keyAxiom: 'a^m × a^n = a^(m+n) | a^m / a^n = a^(m-n)' },
-                { id: 'mid_m_2', title: 'ஒருபடி சமன்பாடுகள் & காரணிப்படுத்துதல்', keyAxiom: '(a+b)² = a² + 2ab + b²' }
+                { id: 'mid_m_1', title: 'BODMAS / PEMDAS Rule (செயல்பாடுகளின் வரிசை)', keyAxiom: 'Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction' },
+                { id: 'mid_m_2', title: 'HCF & LCM (மீப்பெரு பொது வகுத்தி & மீச்சிறு பொது மடங்கு)', keyAxiom: 'Product of Two Numbers = HCF × LCM' },
+                { id: 'mid_m_3', title: 'அடுக்கு விதிகள் (Laws of Exponents: a^m × a^n = a^(m+n))', keyAxiom: 'a^m / a^n = a^(m-n) | (a^m)^n = a^(mn) | a^0 = 1' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_1', topicTitle: isTa ? 'விகிதமுறு எண்கள் & அடுக்கு விதிகள்' : 'Rational Numbers & Laws of Exponents', subtopic: isTa ? 'பின்ன வடிவில் எண்கள் (p/q, q ≠ 0) & அடுக்கு சமன்பாடுகள்' : 'Properties (Closure, Commutative, Associative, Distributive), Scientific notation', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'Exponent Laws: a^m × a^n = a^(m+n) | a^m / a^n = a^(m-n) | (a^m)^n = a^(mn) | a^0 = 1', keyPoints: ['Rational numbers are dense between any two given rationals', 'Negative exponent: a^(-n) = 1 / a^n'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_1', topicTitle: 'BODMAS / PEMDAS Rule (செயல்பாடுகளின் வரிசை)', subtopic: 'Order of Operations: Brackets, Exponents, Division, Multiplication, Addition, Subtraction', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'BODMAS: () -> Orders -> ÷ -> × -> + -> -', keyPoints: ['Always simplify expressions inside innermost brackets first', 'Division and Multiplication have equal precedence; evaluate left-to-right'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_2', topicTitle: 'HCF & LCM (மீப்பெரு பொது வகுத்தி & மீச்சிறு மடங்கு)', subtopic: 'Prime Factorization Tree Method, Division Method & Relationship Formula', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'HCF × LCM = Number₁ × Number₂ | HCF(a, b) ≤ min(a, b) | LCM(a, b) ≥ max(a, b)', keyPoints: ['HCF of two prime numbers is always 1 (Co-primes)', 'LCM is the smallest number divisible by all given numbers without remainder'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_3', topicTitle: 'Laws of Exponents (அடுக்கு விதிகள்)', subtopic: 'Product, Quotient, Power of a Power and Zero Exponent Rules', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'aᵐ × aⁿ = aᵐ⁺ⁿ | aᵐ / aⁿ = aᵐ⁻ⁿ | (aᵐ)ⁿ = aᵐⁿ | a⁰ = 1 | a⁻ⁿ = 1/aⁿ', keyPoints: ['Any non-zero number raised to the power 0 equals 1', 'Used in scientific notation for very large and small numbers'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'விகிதம், கூட்டுவட்டி & 2D/3D அளவியல்' : 'Ratio, Compound Interest & Mensuration',
-          description: isTa ? 'தனிவட்டி, கூட்டுவட்டி A = P(1+R/100)^n, முக்கோணம், வட்டம், நாற்கரம் பரப்பளவு' : 'Direct/Inverse proportion, Compound Interest formula, Area of Trapezium, Surface Area/Volume of Cuboid & Cylinder',
+          chapterTitle: isTa ? 'புள்ளியியல் & வணிகக் கணிதம்: Mean, Median, Mode & கூட்டுவட்டி' : 'Statistics & Commercial Maths: Mean, Median, Mode & CI',
+          description: isTa ? 'கூட்டுச் சராசரி (Mean), இடைநிலை அளவு (Median), முகடு (Mode), தனிவட்டி, கூட்டுவட்டி A = P(1+R/100)^n' : 'Measures of Central Tendency (Mean, Median, Mode, Range), Simple & Compound Interest, Percentages',
           subtopics: [
             {
               id: 'mid_m_sub2',
-              title: 'வியாபாரக் கணிதம் & அளவியல்',
+              title: 'புள்ளியியல் & வணிகக் கணிதம்',
               microTopics: [
-                { id: 'mid_m_3', title: 'கூட்டுவட்டி & தள்ளுபடி சூத்திரங்கள்', keyAxiom: 'A = P(1 + R/100)ⁿ | CI = A - P' }
+                { id: 'mid_m_4', title: 'Mean / Average (கூட்டுச் சராசரி: x̄ = Σx / N)', keyAxiom: 'Sum of all observations divided by total number of observations' },
+                { id: 'mid_m_5', title: 'Median & Mode (இடைநிலை அளவு & முகடு)', keyAxiom: 'Median = Middle value in ordered set | Mode = Most frequent observation' },
+                { id: 'mid_m_6', title: 'Compound Interest & Profit/Loss (கூட்டுவட்டி & இலாப நட்டம்)', keyAxiom: 'A = P(1 + R/100)ⁿ | CI = A - P' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_3', topicTitle: isTa ? 'கூட்டுவட்டி (Compound Interest) & தள்ளுபடி கணக்கீடுகள்' : 'Compound Interest & Commercial Mathematics', subtopic: isTa ? 'அரையாண்டு, முழு ஆண்டு கூட்டுவட்டி சமன்பாடுகள்' : 'A = P(1 + R/100)ⁿ | CI = A - P | Profit% and Loss% formulas', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Compound Amount A = P(1 + R/100)ⁿ | CI = P[(1 + R/100)ⁿ - 1]', keyPoints: ['CI grows exponentially compared to linear growth of SI', 'Depreciation formula: V = P(1 - R/100)ⁿ'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_4', topicTitle: 'Mean / Average (கூட்டுச் சராசரி)', subtopic: 'Calculation of Arithmetic Mean for Raw and Grouped Frequency Data', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'Mean x̄ = (Σ x) / N = (x₁ + x₂ + ... + xₙ) / n', keyPoints: ['Mean is the mathematical average sensitive to extreme outlier values', 'Sum of deviations of all values from the mean is always zero: Σ(x - x̄) = 0'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_5', topicTitle: 'Median & Mode (இடைநிலை அளவு & முகடு)', subtopic: 'Finding Median for Odd/Even Data & Determining Unimodal/Bimodal Data', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Median = [(n+1)/2]ᵗʰ (Odd) | Mode = Observation with maximum frequency', keyPoints: ['Median divides an ordered dataset into two exactly equal halves (50% above, 50% below)', 'Empirical Relation: Mode ≈ 3(Median) - 2(Mean)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_6', topicTitle: 'Compound Interest (கூட்டுவட்டி)', subtopic: 'Annual and Half-Yearly Compounding Formula and Depreciation', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Amount A = P(1 + R/100)ⁿ | CI = A - P = P[(1 + R/100)ⁿ - 1]', keyPoints: ['Compound interest yields higher returns than simple interest because interest earns interest', 'Half-yearly compounding: Rate becomes R/2 and time becomes 2n'], type: 'solved_problem', importance: 'High-Yield' }
+          ]
+        },
+        {
+          chapterNumber: 3,
+          chapterTitle: isTa ? 'வடிவியல் & அளவியல்: பிதாகரஸ் தேற்றம், பரப்பளவு & சுற்றளவு' : 'Geometry & Mensuration: Pythagoras, Area & Perimeter',
+          description: isTa ? 'பிதாகரஸ் தேற்றம் a² + b² = c², முக்கோணம், செவ்வகம், வட்டம் பரப்பளவு மற்றும் கனஅளவு' : 'Pythagorean Theorem, Area and Perimeter of 2D shapes, Surface area and volume of 3D solids',
+          subtopics: [
+            {
+              id: 'mid_m_sub3',
+              title: 'வடிவியல் தேற்றங்கள் & பரப்பளவு',
+              microTopics: [
+                { id: 'mid_m_7', title: 'Pythagoras Theorem (பிதாகரஸ் தேற்றம்: a² + b² = c²)', keyAxiom: 'In a right triangle: Hypotenuse² = Base² + Height²' },
+                { id: 'mid_m_8', title: 'Area & Perimeter of 2D Shapes (முக்கோணம், வட்டம், செவ்வகம்)', keyAxiom: 'Circle: Area = πr², Perimeter = 2πr | Triangle: Area = ½bh' }
+              ]
+            }
+          ],
+          microTopics: [
+            { id: 'mid_m_7', topicTitle: 'Pythagoras Theorem (பிதாகரஸ் தேற்றம்)', subtopic: 'Right-Angled Triangle Properties & Pythagorean Triplets (3-4-5, 5-12-13, 8-15-17)', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'Hypotenuse² = Base² + Altitude² | c² = a² + b²', keyPoints: ['Applicable strictly to right-angled triangles', 'Pythagorean Triplet condition: 2m, m² - 1, m² + 1'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_8', topicTitle: 'Area & Perimeter of Circle and Triangle (பரப்பளவு & சுற்றளவு)', subtopic: 'Circle Circumference/Area, Triangle Area (½bh) and Trapezium Area', dayNumber: 8, periodNumber: 4, keyFormulaOrLaw: 'Circle Area = πr² | Circumference = 2πr | Triangle Area = ½ × b × h | Trapezium = ½h(a + b)', keyPoints: ['Perimeter is the boundary distance around a 2D shape', 'Area is the total 2D surface space enclosed within the boundary'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -940,54 +966,63 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'அளவீட்டியல், விசையும் இயக்கமும், ஒளி & ஒலி' : 'Measurement, Motion, Force, Light & Sound',
-          description: isTa ? 'SI அலகுகள், வேகம் v = d/t, பாய்ம அழுத்தம், ஒளியின் எதிரொளிப்பு, ஒலியின் சுருதி' : 'SI units, Speed & Velocity, Pressure P = F/A, Reflection laws, Acoustic frequency',
+          chapterTitle: isTa ? 'இயற்பியல்: வேகம், விசை, அழுத்தம் & ஒளி' : 'Physics: Speed, Force, Pressure & Light',
+          description: isTa ? 'வேகம் v = d/t, விசை F = ma, பாய்ம அழுத்தம் P = F/A, ஒளியின் எதிரொளிப்பு மற்றும் விலகல்' : 'Speed, Velocity, Force, Fluid Pressure P = F/A, Reflection and Refraction of Light',
           subtopics: [
             {
               id: 'mid_s_sub1',
               title: 'இயற்பியல் அடிப்படைகள்',
               microTopics: [
-                { id: 'mid_p_1', title: 'வேகம், விசை & பாய்ம அழுத்தம்', keyAxiom: 'Speed = d/t | Pressure P = F/A (Pascals)' },
-                { id: 'mid_p_2', title: 'ஒளி எதிரொளிப்பு & ஒலி அதிர்வெண் (20–20,000 Hz)', keyAxiom: 'Angle i = Angle r | Human hearing range: 20 Hz to 20,000 Hz' }
+                { id: 'mid_p_1', title: 'Speed, Velocity & Acceleration (வேகம், திசைவேகம் & முடுக்கம்)', keyAxiom: 'Speed = Distance/Time | Velocity = Displacement/Time | a = (v - u)/t' },
+                { id: 'mid_p_2', title: 'Force & Pressure (விசை & அழுத்தம்: P = F/A)', keyAxiom: 'Pressure P = Force / Area (Pascals) | Liquid Pressure = ρgh' },
+                { id: 'mid_p_3', title: 'Reflection & Refraction of Light (ஒளி எதிரொலிப்பு & ஒளி விலகல்)', keyAxiom: 'Angle i = Angle r | Snell\'s Law: sin i / sin r = μ' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_p_1', topicTitle: isTa ? 'வேகம், இயக்கம் & விசை அழுத்தம் (Force & Pressure)' : 'Speed, Velocity, Force & Pressure Mechanics', subtopic: isTa ? 'v = d/t மற்றும் P = F/A கணக்கீடுகள்' : 'Uniform vs non-uniform motion, Pressure P = F/A in Pascals, Atmospheric pressure barometer', dayNumber: 9, periodNumber: 4, keyFormulaOrLaw: 'Speed = Distance / Time | Pressure P = Force / Area (1 Pa = 1 N/m²)', keyPoints: ['Pressure increases with depth in liquids (P = ρgh)', 'Friction can be reduced using ball bearings and lubricants'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_p_1', topicTitle: 'Speed, Velocity & Acceleration (வேகம் & முடுக்கம்)', subtopic: 'Scalar vs Vector, Equations of Motion (v = u + at, s = ut + ½at²)', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Speed = Distance / Time | Acceleration a = (v - u) / t (m/s²)', keyPoints: ['Speed is scalar (magnitude only); Velocity is vector (direction included)', 'Uniform acceleration occurs when velocity changes at a constant rate'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_2', topicTitle: 'Force & Pressure (விசை & அழுத்தம்)', subtopic: 'P = F / A in Pascals (N/m²), Hydraulic Lift & Atmospheric Pressure', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: 'Pressure P = Force / Area (1 Pa = 1 N/m²) | Liquid Pressure P = hρg', keyPoints: ['Sharper knife cuts better because smaller area produces higher pressure for same force', 'Atmospheric pressure measured using Mercury Barometer (760 mm Hg)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_3', topicTitle: 'Reflection & Refraction of Light (ஒளி எதிரொலிப்பு & விலகல்)', subtopic: 'Laws of Reflection (∠i = ∠r) and Refraction through Glass Slab / Prism', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Angle of Incidence = Angle of Reflection (∠i = ∠r) | Refractive Index μ = c / v', keyPoints: ['Light bends towards normal when entering denser medium (Air to Water/Glass)', 'Rainbow is formed by dispersion and internal reflection in water droplets'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'அமிலங்கள், காரங்கள், அணு அமைப்பு & உலோகம்' : 'Acids, Bases, Atomic Structure & Metals',
-          description: isTa ? 'லிட்மஸ், pH, புரோட்டான் எலக்ட்ரான் நியூட்ரான், உலோகங்களின் வினைபடு வரிசை' : 'Neutralization (Acid + Base -> Salt + Water), Atomic model, Reactivity series of metals',
+          chapterTitle: isTa ? 'வேதியியல்: அமிலங்கள், காரங்கள், pH & அணு அமைப்பு' : 'Chemistry: Acids, Bases, pH & Atomic Structure',
+          description: isTa ? 'லிட்மஸ், pH அளவீடு, நடுநிலையாக்கல், புரோட்டான் எலக்ட்ரான் நியூட்ரான் அணு அமைப்பு' : 'Acids, Bases, Indicators, pH Scale, Atomic Structure (Protons, Neutrons, Electrons)',
           subtopics: [
             {
               id: 'mid_s_sub2',
               title: 'வேதியியல் கோட்பாடுகள்',
               microTopics: [
-                { id: 'mid_c_1', title: 'அமிலங்கள் காரங்கள் & உலோக வினைபடு வரிசை', keyAxiom: 'Zn + CuSO₄ -> ZnSO₄ + Cu (Displacement reaction)' }
+                { id: 'mid_c_1', title: 'Acids, Bases & Salts (அமிலங்கள், காரங்கள் & உப்புகள்)', keyAxiom: 'Acid + Base -> Salt + Water (Neutralization)' },
+                { id: 'mid_c_2', title: 'Atomic Structure - Protons, Neutrons, Electrons (அணு அமைப்பு)', keyAxiom: 'Atomic Number Z = Protons | Mass Number A = Protons + Neutrons' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_c_1', topicTitle: isTa ? 'அமிலங்கள், காரங்கள் & உலோகங்களின் வினைபடு வரிசை' : 'Acids, Bases, Salts & Metal Reactivity Series', subtopic: isTa ? 'இடப்பெயர்ச்சி வினைகள் மற்றும் நடுநிலையாக்கல்' : 'Litmus/Phenolphthalein indicators, Metal + Acid -> Salt + H₂ gas, Reactivity series (K > Na > Ca > Mg > Al > Zn > Fe > Cu)', dayNumber: 12, periodNumber: 4, keyFormulaOrLaw: 'Neutralization: Acid + Base -> Salt + Water | Metal Displacement: Zn + CuSO₄ -> ZnSO₄ + Cu', keyPoints: ['More reactive metal displaces less reactive metal from its salt solution', 'Bases are bitter in taste and soapy to touch; turn red litmus blue'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_c_1', topicTitle: 'Acids, Bases & pH Scale (அமிலங்கள் & காரங்கள்)', subtopic: 'Litmus Test, Neutralization Reaction and pH Scale (0 to 14)', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'Neutralization: Acid + Base -> Salt + Water (HCl + NaOH -> NaCl + H₂O)', keyPoints: ['Acids turn blue litmus red (pH < 7); Bases turn red litmus blue (pH > 7)', 'Antacids (Milk of Magnesia) neutralize excess stomach acid'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_c_2', topicTitle: 'Atomic Structure: Protons, Neutrons & Electrons (அணு அமைப்பு)', subtopic: 'Rutherford & Bohr Model, Nucleus, Atomic Number (Z) & Mass Number (A)', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Atomic Number Z = No. of Protons = No. of Electrons | Mass Number A = Z + Neutrons', keyPoints: ['Protons (+ve charge) and Neutrons (neutral) reside in dense central Nucleus', 'Electrons (-ve charge) revolve around nucleus in discrete orbits/shells (K, L, M, N)'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'செல் உயிரியல், தாவர & விலங்கு உடலியல்' : 'Cell Biology, Plant & Animal Physiology',
-          description: isTa ? 'தாவர/விலங்கு செல் நுண்ணுறுப்புகள், மைட்டோகாண்ட்ரியா, மனித செரிமானம் & சுவாசம்' : 'Plant vs Animal cell, Mitochondria (Powerhouse), Human digestion, Respiration',
+          chapterTitle: isTa ? 'உயிரியல்: செல் நுண்ணுறுப்புகள், மைட்டோகாண்ட்ரியா & ஒளிச்சேர்க்கை' : 'Biology: Cell Organelles, Mitochondria & Photosynthesis',
+          description: isTa ? 'தாவர/விலங்கு செல் நுண்ணுறுப்புகள், மைட்டோகாண்ட்ரியா ஆற்றல் மையம், ஒளிச்சேர்க்கை' : 'Plant vs Animal Cell, Mitochondria ATP production, Photosynthesis in Chloroplast',
           subtopics: [
             {
               id: 'mid_s_sub3',
               title: 'உயிரியல் அமைப்புகள்',
               microTopics: [
-                { id: 'mid_b_1', title: 'தாவர செல் vs விலங்கு செல் நுண்ணுறுப்புகள்', keyAxiom: 'Mitochondria = Powerhouse (ATP) | Chloroplast = Photosynthesis' }
+                { id: 'mid_b_1', title: 'Plant Cell vs Animal Cell (தாவர மற்றும் விலங்கு செல்)', keyAxiom: 'Plant cells possess rigid cellulose cell wall and chloroplasts' },
+                { id: 'mid_b_2', title: 'Mitochondria - Powerhouse of the Cell (மைட்டோகாண்ட்ரியா)', keyAxiom: 'Generates cellular energy currency ATP via aerobic cellular respiration' },
+                { id: 'mid_b_3', title: 'Photosynthesis Fundamentals (ஒளிச்சேர்க்கை அடிப்படை)', keyAxiom: '6CO₂ + 6H₂O + Sunlight -> C₆H₁₂O₆ + 6O₂' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_b_1', topicTitle: isTa ? 'செல் அமைப்பு: தாவர மற்றும் விலங்கு செல்' : 'Cell: Structure & Function (Plant vs Animal Cell)', subtopic: isTa ? 'மைட்டோகாண்ட்ரியா, உட்கரு, பசுங்கணிகம் வேறுபாடுகள்' : 'Cell wall (plants only), Chloroplast (photosynthesis), Nucleus (genetic material), Vacuoles', dayNumber: 14, periodNumber: 4, keyFormulaOrLaw: 'Mitochondria = Powerhouse of Cell (ATP) | Ribosomes = Protein Factories', keyPoints: ['Robert Hooke discovered cells in cork (1665)', 'Prokaryotic (no true nucleus) vs Eukaryotic cells'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_b_1', topicTitle: 'Plant Cell vs Animal Cell (தாவர & விலங்கு செல் வேறுபாடு)', subtopic: 'Cell Wall, Chloroplast, Large Central Vacuole and Centrioles', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Plant Cell = Cell Wall + Chloroplast + Large Vacuole | Animal Cell = Centrioles + Lysosomes', keyPoints: ['Plant cells have a rigid cellulose cell wall giving structural protection', 'Animal cells have flexible cell membrane and small temporary vacuoles'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_2', topicTitle: 'Mitochondria - Powerhouse of the Cell (மைட்டோகாண்ட்ரியா)', subtopic: 'Cristae, Matrix, Krebs Cycle and ATP Energy Production', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'Cellular Respiration: Glucose + O₂ -> CO₂ + H₂O + 38 ATP Energy', keyPoints: ['Mitochondria have double membranes and their own circular DNA and ribosomes', 'Produce ATP (Adenosine Triphosphate), the universal energy currency of living cells'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_3', topicTitle: 'Photosynthesis Fundamentals (ஒளிச்சேர்க்கை)', subtopic: 'Chlorophyll Pigment, Light Energy Conversion and Stomatal Gas Exchange', dayNumber: 14, periodNumber: 3, keyFormulaOrLaw: '6CO₂ + 6H₂O + Sunlight (Chlorophyll) -> C₆H₁₂O₆ (Glucose) + 6O₂ (Oxygen)', keyPoints: ['Occurs in Chloroplasts containing green chlorophyll pigment', 'Releases vital oxygen gas into the atmosphere as byproduct'], type: 'concept', importance: 'High-Yield' }
           ]
         }
       ]
@@ -1449,71 +1484,82 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'வரலாறு: உலகப்போர்கள், 19ஆம் நூற்றாண்டு சீர்திருத்தம் & தமிழ்நாடு விடுதலை இயக்கம்' : 'History: World Wars, 19th Century Reforms & TN Freedom Struggle',
-          description: isTa ? 'முதல் & இரண்டாம் உலகப்போர், பிரம்ம சமாஜம், ஆரிய சமாஜம், வைகுண்ட சுவாமிகள், வேலுநாச்சியார், பாரதியார், வ.உ.சிதம்பரனார், நீதிக்கட்சி (1916), சுயமரியாதை இயக்கம்' : 'WWI, Russian Revolution 1917, WWII, Raja Ram Mohan Roy, Velu Nachiyar, VOC, Subramania Bharati, Justice Party, Periyar E.V.R.',
+          chapterTitle: isTa ? 'வரலாறு: விடுதலைப் போராளிகள் & சமூக சீர்திருத்தம்' : 'History: Freedom Fighters & Social Reform',
+          description: isTa ? 'வேலுநாச்சியார், வ.உ.சிதம்பரனார், பாரதியார், நீதிக்கட்சி மற்றும் பெரியார் சுயமரியாதை இயக்கம்' : 'Velu Nachiyar, VOC Swadeshi Shipping, Subramania Bharati, Justice Party and Self-Respect Movement',
           subtopics: [
             {
               id: 'sec_soc_sub1',
               title: 'விடுதலைப் போராட்டம் & சமூக சீர்திருத்தம்',
               microTopics: [
-                { id: 'sec_soc_1', title: 'தமிழ்நாட்டில் விடுதலைப் போராட்டம் (வேலுநாச்சியார், பூலித்தேவன், வ.உ.சி)', keyAxiom: 'Velu Nachiyar recaptured Sivagangai (1780); VOC launched Swadeshi Steam Navigation Company' },
-                { id: 'sec_soc_2', title: 'நீதிக்கட்சி (1916), பெரியார் சுயமரியாதை இயக்கம் (1925) & சமூக நீதி', keyAxiom: '1921 Communal GO, Free Midday meals at Thousand Lights Chennai, Women voting rights' }
+                { id: 'sec_soc_1', title: 'Velu Nachiyar & Early Resistance (வேலுநாச்சியார் சிவகங்கை மீட்பு)', keyAxiom: 'Velu Nachiyar recaptured Sivagangai (1780) with Haider Ali\'s support' },
+                { id: 'sec_soc_2', title: 'V.O. Chidambaranar & Swadeshi Shipping (கப்பலோட்டிய தமிழன் வ.உ.சி)', keyAxiom: 'VOC launched Swadeshi Steam Navigation Company (1906) between Tuticorin and Colombo' },
+                { id: 'sec_soc_3', title: 'Periyar & Self-Respect Movement (பெரியார் சுயமரியாதை இயக்கம்)', keyAxiom: 'Self-Respect Movement (1925) for rationalism, gender equality and abolition of caste hierarchy' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_soc_1', topicTitle: isTa ? 'வேலுநாச்சியார், வ.உ.சி கப்பலோட்டிய தமிழன் & பெரியார் சுயமரியாதை இயக்கம்' : 'Velu Nachiyar, VOC Swadeshi Steam Navigation & Periyar Social Justice', subtopic: isTa ? '1780 சிவகங்கை மீட்பு, 1906 சுதேசி கப்பல் நிறுவனம், 1921 வகுப்புவாரி அரசாணை' : 'Early TN uprisings, Anti-Hindi agitation, Dravidian movement & Social reforms', dayNumber: 16, periodNumber: 4, keyFormulaOrLaw: '1780 Velu Nachiyar Sivagangai Victory | 1906 VOC Swadeshi Shipping | 1921 Communal GO | 1925 Self-Respect Movement', keyPoints: ['Velu Nachiyar was first Indian queen to fight and defeat British East India Company', 'VOC bought two ships: S.S. Gallia and S.S. Lawoe for Tuticorin-Colombo service'], type: 'concept', importance: 'High-Yield' }
+            { id: 'sec_soc_1', topicTitle: 'Velu Nachiyar & Early Resistance (வேலுநாச்சியார்)', subtopic: 'First Indian Queen to defeat East India Company (1780 Sivagangai Recapture)', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: '1780 Velu Nachiyar Sivagangai Victory | Kuyili (First Suicide Bombing Martyr)', keyPoints: ['Formed an alliance with Haider Ali and Gopala Nayakar of Dindigul', 'Commander Kuyili sacrificed herself by setting ammunition depot on fire'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_soc_2', topicTitle: 'V.O.C. & Swadeshi Shipping (வ.உ.சி கப்பலோட்டிய தமிழன்)', subtopic: 'Swadeshi Steam Navigation Company (1906) & Coral Mill Strike (1908)', dayNumber: 16, periodNumber: 2, keyFormulaOrLaw: '1906 VOC Swadeshi Shipping | Ships: S.S. Gallia & S.S. Lawoe', keyPoints: ['Challenged British maritime monopoly by running ships between Tuticorin and Colombo', 'Sentenced to double life imprisonment (40 years) and forced to pull oil press at Coimbatore jail'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_soc_3', topicTitle: 'Periyar & Self-Respect Movement (சுயமரியாதை இயக்கம்)', subtopic: 'Kudi Arasu Newspaper (1925), Anti-Hindi Agitation & 1921 Communal GO', dayNumber: 16, periodNumber: 3, keyFormulaOrLaw: '1925 Self-Respect Movement | 1921 Communal GO (Affirmative Action)', keyPoints: ['Advocated Self-Respect Marriages without religious rituals and priest mediation', 'Awarded "Socrates of South Asia" title by UNESCO in 1970'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'புவியியல்: இந்தியா மற்றும் தமிழ்நாடு இயற்கை அமைப்புகள், காலநிலை & வேளாண்மை' : 'Geography: India & Tamil Nadu Physiography, Climate & Agriculture',
-          description: isTa ? 'இமயமலை, தென்மேற்கு & வடகிழக்கு பருவமழை, கரிசல்/செம்மண், நெல் கரும்பு பருத்தி சாகுபடி, தமிழ்நாடு தொழிலகங்கள்' : 'Northern mountains, Southwest & Northeast monsoons, Alluvial/Black soil, Kharif/Rabi/Zaid crops, TN industrial clusters',
+          chapterTitle: isTa ? 'புவியியல்: பருவமழை, மண் வகைகள் & தமிழ்நாடு தொழிலகங்கள்' : 'Geography: Monsoons, Soils & Industrial Clusters',
+          description: isTa ? 'தென்மேற்கு & வடகிழக்கு பருவமழை, வண்டல் கரிசல் மண், தமிழ்நாடு நெசவு & காற்று ஆலைகள்' : 'Southwest & Northeast Monsoons, Soil types, TN Textile & Wind Energy Clusters',
           subtopics: [
             {
               id: 'sec_soc_sub2',
-              title: 'புவியியல் அமைப்புகள் & வேளாண்மை',
+              title: 'பருவமழை & தமிழ்நாடு புவியியல்',
               microTopics: [
-                { id: 'sec_soc_3', title: 'இந்திய காலநிலை: தென்மேற்கு பருவமழை & வடகிழக்கு பருவமழை (தமிழ்நாடு)', keyAxiom: 'Tamil Nadu receives 48% of its annual rainfall from Northeast Monsoon (Oct–Dec)' }
+                { id: 'sec_soc_4', title: 'Monsoons of India - SW & NE Monsoons (பருவமழை)', keyAxiom: 'SW Monsoon (June–Sept) | NE Monsoon (Oct–Dec gives 48% rainfall to Tamil Nadu)' },
+                { id: 'sec_soc_5', title: 'Tamil Nadu Industrial Clusters (தமிழ்நாடு தொழிலகங்கள்)', keyAxiom: 'Coimbatore (Textiles Manchester), Tiruppur (Knitwear), Sivakasi (Fireworks)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_soc_3', topicTitle: isTa ? 'தென்மேற்கு & வடகிழக்கு பருவமழை, மண் வகைகள் மற்றும் தமிழ்நாடு புவியியல்' : 'Monsoons (SW & NE), Soils of India & TN Industrial Geography', subtopic: isTa ? 'தமிழ்நாடு அதிக மழை பெறும் வடகிழக்கு பருவமழை மற்றும் கோயம்புத்தூர் மான்செஸ்டர்' : 'Rainfall mechanisms, Agricultural seasons (Kuruvai, Samba), Industrial hubs', dayNumber: 17, periodNumber: 4, keyFormulaOrLaw: 'SW Monsoon: June to September | NE Monsoon: October to December (TN Primary Rainfall Season)', keyPoints: ['Tamil Nadu is India\'s highest wind energy producing state (Muppandal wind farm)', 'Coimbatore is called Manchester of South India due to extensive cotton textile mills'], type: 'concept', importance: 'High-Yield' }
+            { id: 'sec_soc_4', topicTitle: 'Monsoons of India - SW & NE Monsoons (பருவமழை)', subtopic: 'Retreating Monsoon, Coromandel Coast Rainfall & Tropical Cyclones', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: 'SW Monsoon = June to Sept (Bulk of India) | NE Monsoon = Oct to Dec (48% TN Rainfall)', keyPoints: ['Western Ghats block SW monsoon causing rain shadow region in interior Tamil Nadu', 'Mawsynram in Meghalaya receives highest annual rainfall in the world (~1141 cm)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_soc_5', topicTitle: 'Tamil Nadu Industrial Hubs (தமிழ்நாடு தொழிற்துறை)', subtopic: 'Automobile Hub Chennai (Detroit of South Asia), Textiles & Fireworks Clusters', dayNumber: 17, periodNumber: 2, keyFormulaOrLaw: 'Chennai = Detroit of South Asia | Coimbatore = Manchester of South India', keyPoints: ['Tiruppur accounts for over 50% of India\'s total cotton knitwear exports', 'Muppandal wind farm in Kanyakumari is one of the largest onshore wind farms in the world'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'குடிமையியல்: இந்திய அரசியலமைப்பு, மத்திய அரசு & மாநில அரசு' : 'Civics: Indian Constitution, Central & State Government',
-          description: isTa ? 'அரசியலமைப்பு உருவாக்கம், முகப்புரை, அடிப்படை உரிமைகள் (சரத்து 14–32), குடியரசுத் தலைவர், பிரதமர், ஆளுநர், முதலமைச்சர் அதிகாரங்கள்' : 'Constituent Assembly, Preamble, 6 Fundamental Rights, Writs (Habeas Corpus etc.), President, Prime Minister, Governor, CM',
+          chapterTitle: isTa ? 'குடிமையியல்: அரசியலமைப்பு முகப்புரை, அடிப்படை உரிமைகள் & நீதிப்பேராணைகள்' : 'Civics: Preamble, Fundamental Rights & Writs',
+          description: isTa ? 'அரசியலமைப்பு முகப்புரை, அடிப்படை உரிமைகள் (சரத்து 12–35), 5 நீதிப்பேராணைகள் (சரத்து 32)' : 'Constituent Assembly, Preamble, 6 Fundamental Rights, 5 Constitutional Writs under Article 32',
           subtopics: [
             {
               id: 'sec_soc_sub3',
-              title: 'இந்திய அரசியலமைப்பு சட்டம்',
+              title: 'அரசியலமைப்பு உரிமைகள் & பேராணைகள்',
               microTopics: [
-                { id: 'sec_soc_4', title: 'அடிப்படை உரிமைகள் (சரத்து 14–32) & 5 நீதிப்பேராணைகள் (Writs)', keyAxiom: 'Article 32 is Heart and Soul of Constitution (Dr. Ambedkar) — Habeas Corpus, Mandamus, Prohibition, Quo-Warranto, Certiorari' }
+                { id: 'sec_soc_6', title: 'Preamble of Indian Constitution (அரசியலமைப்பு முகப்புரை)', keyAxiom: 'Sovereign, Socialist, Secular, Democratic, Republic & Justice, Liberty, Equality, Fraternity' },
+                { id: 'sec_soc_7', title: 'Fundamental Rights - Articles 12 to 35 (அடிப்படை உரிமைகள்)', keyAxiom: 'Right to Equality (14-18), Freedom (19-22), Exploitation (23-24), Religion (25-28), Remedies (32)' },
+                { id: 'sec_soc_8', title: '5 Constitutional Writs - Article 32 (நீதிப்பேராணைகள்)', keyAxiom: 'Habeas Corpus, Mandamus, Prohibition, Quo-Warranto, Certiorari' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_soc_4', topicTitle: isTa ? 'அடிப்படை உரிமைகள் 6 (சரத்து 14–32) & 5 நீதிப்பேராணைகள் (Writs)' : 'Fundamental Rights (Articles 14–32) & 5 Constitutional Writs', subtopic: isTa ? 'ஆட்கொணர்வு, கட்டளையுறுத்தும், தடையுறுத்தும், ஆவணக்கேட்பு, தகுதிமுறை வினவும் பேராணைகள்' : 'Constitutional remedies under Article 32 (Supreme Court) and Article 226 (High Court)', dayNumber: 18, periodNumber: 4, keyFormulaOrLaw: 'Article 14: Equality | Article 19: 6 Freedoms | Article 21: Life & Liberty | Article 32: Constitutional Writs', keyPoints: ['Indian Constitution is the lengthiest written constitution in the world', 'Governor appoints Chief Minister and Advocate General of State'], type: 'concept', importance: 'High-Yield' }
+            { id: 'sec_soc_6', topicTitle: 'Preamble of Indian Constitution (அரசியலமைப்பு முகப்புரை)', subtopic: 'Identity Card of Constitution, 42nd Amendment (1976) & Kesavananda Bharati Case', dayNumber: 18, periodNumber: 1, keyFormulaOrLaw: 'Keywords: Sovereign, Socialist, Secular, Democratic, Republic', keyPoints: ['Drafted based on Objective Resolution introduced by Jawaharlal Nehru in 1946', 'Amended only once by 42nd Constitutional Amendment Act 1976 adding "Socialist, Secular, Integrity"'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_soc_7', topicTitle: 'Fundamental Rights - Articles 12 to 35 (அடிப்படை உரிமைகள்)', subtopic: '6 Fundamental Rights, Enforceability & Right to Life and Personal Liberty (Art 21)', dayNumber: 18, periodNumber: 2, keyFormulaOrLaw: 'Art 14 (Equality) | Art 19 (6 Freedoms) | Art 21 (Life & Liberty) | Art 32 (Remedies)', keyPoints: ['Borrowed from the Bill of Rights of the United States Constitution (Part III)', 'Right to Property was deleted from Fundamental Rights by 44th Amendment 1978 and made legal right (Art 300A)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'sec_soc_8', topicTitle: '5 Constitutional Writs - Article 32 (நீதிப்பேராணைகள்)', subtopic: 'Habeas Corpus, Mandamus, Prohibition, Certiorari & Quo-Warranto', dayNumber: 18, periodNumber: 3, keyFormulaOrLaw: 'Article 32 = Supreme Court Writs | Article 226 = High Court Writs', keyPoints: ['Dr. B.R. Ambedkar termed Article 32 as the "Heart and Soul of the Constitution"', 'Habeas Corpus literally means "to have the body of" protecting against illegal detention'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 4,
-          chapterTitle: isTa ? 'பொருளியல்: மொத்த உள்நாட்டு உற்பத்தி (GDP), உலகமயமாதல் & வரிகள்' : 'Economics: GDP Growth, Globalisation, Food Security & Taxes',
-          description: isTa ? 'GDP கணக்கீடு = C + I + G + (X - M), முதன்மை இரண்டாம் மூன்றாம் துறைகள், WTO, GST சரக்கு மற்றும் சேவை வரி' : 'GDP formula, Primary/Secondary/Tertiary sectors, Multi-National Companies (MNCs), PDS rationing, Direct vs Indirect Taxes, GST',
+          chapterTitle: isTa ? 'பொருளியல்: GDP கணக்கீடு, 3 துறைகள் & GST வரி அமைப்பு' : 'Economics: GDP Formula, 3 Sectors & GST',
+          description: isTa ? 'மொத்த உள்நாட்டு உற்பத்தி GDP = C + I + G + (X - M), முதன்மை இரண்டாம் மூன்றாம் துறைகள், GST சரக்கு சேவை வரி' : 'Gross Domestic Product formula, Primary/Secondary/Tertiary sectors and Goods & Services Tax (GST)',
           subtopics: [
             {
               id: 'sec_soc_sub4',
-              title: 'பொருளாதார வளர்ச்சி & வரிகள்',
+              title: 'பொருளாதார கோட்பாடுகள் & வரிகள்',
               microTopics: [
-                { id: 'sec_soc_5', title: 'மொத்த உள்நாட்டு உற்பத்தி: GDP = C + I + G + (X - M) & GST வரி அமைப்பு', keyAxiom: 'GDP measures total monetary value of finished goods and services produced within a country in a year' }
+                { id: 'sec_soc_9', title: 'GDP Calculation - C + I + G + (X - M) (மொத்த உள்நாட்டு உற்பத்தி)', keyAxiom: 'GDP = Consumption + Investment + Government Spending + (Exports - Imports)' },
+                { id: 'sec_soc_10', title: 'GST Taxation Structure (சரக்கு மற்றும் சேவை வரி)', keyAxiom: 'Dual GST (CGST + SGST / IGST) with slabs: 0%, 5%, 12%, 18%, 28%' }
               ]
             }
           ],
           microTopics: [
-            { id: 'sec_soc_5', topicTitle: isTa ? 'GDP கணக்கீடு = C + I + G + (X - M), 3 துறைகள் & GST சரக்கு சேவை வரி' : 'GDP Calculation, Primary/Secondary/Tertiary Sectors & GST Taxation', subtopic: isTa ? 'விவசாயம், தொழில், சேவைத் துறைகள் மற்றும் நேரடி/மறைமுக வரிகள்' : 'Gross Domestic Product formula, Public Distribution System (PDS), GST slabs (0%, 5%, 12%, 18%, 28%)', dayNumber: 19, periodNumber: 4, keyFormulaOrLaw: 'GDP = Consumption (C) + Investment (I) + Govt Spending (G) + Net Exports (X - M) | GST implemented 1 July 2017', keyPoints: ['Service sector (Tertiary sector) is the largest contributor to Indian and Tamil Nadu GDP', 'GST replaced multiple indirect cascading taxes into a unified single national tax'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'sec_soc_9', topicTitle: 'GDP Calculation Formula (மொத்த உள்நாட்டு உற்பத்தி - GDP)', subtopic: 'GDP = C + I + G + (X - M), Real vs Nominal GDP & Per Capita Income', dayNumber: 19, periodNumber: 1, keyFormulaOrLaw: 'GDP = C + I + G + (X - M) | Per Capita Income = Total National Income / Population', keyPoints: ['Measures the total monetary value of all finished goods and services produced in a country in a financial year', 'Tertiary sector (Services) is the largest contributor to Indian and Tamil Nadu GDP (~54%)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'sec_soc_10', topicTitle: 'GST Taxation Structure (சரக்கு மற்றும் சேவை வரி)', subtopic: 'One Nation One Tax, CGST, SGST, IGST and GST Council Constitutional Body', dayNumber: 19, periodNumber: 2, keyFormulaOrLaw: '101st Amendment Act 2016 (Implemented 1 July 2017) | GST Slabs: 0%, 5%, 12%, 18%, 28%', keyPoints: ['Subsumed multiple central and state indirect taxes like Excise Duty, VAT, Service Tax into a single tax', 'GST Council is chaired by the Union Finance Minister under Article 279A of the Constitution'], type: 'concept', importance: 'High-Yield' }
           ]
         }
       ]
