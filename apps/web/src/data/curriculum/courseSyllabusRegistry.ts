@@ -3088,7 +3088,7 @@ export function resolveCompleteCourseSyllabus(
     return getHigherSecondaryScienceCompleteSyllabus(courseId, title);
   }
 
-  // 10. KINDERGARTEN (LKG & UKG)
+    // 10. KINDERGARTEN (LKG & UKG)
   if (c.includes('lkg') || c.includes('ukg') || c.includes('kindergarten')) {
     const subjects: SyllabusSubject[] = [
       {
@@ -3101,10 +3101,21 @@ export function resolveCompleteCourseSyllabus(
         chapters: [
           {
             chapterNumber: 1,
-            chapterTitle: '�‰யிர் �Žழுத்து�•ள் 12 & மழல�ˆயர் பாலர் பா�Ÿல்�•ள்',
-            description: '�… முதல் �” வர�ˆ �‰ள்ள 12 �‰யிர் �Žழுத்து�•ள் மற்றும் நிலா நிலா �“�Ÿி வா பா�Ÿல்�•ள்',
+            chapterTitle: 'உயிர் எழுத்துக்கள் 12 & மழலையர் பாலர் பாடல்கள்',
+            description: 'அ முதல் ஔ வரை உள்ள 12 உயிர் எழுத்துக்கள் மற்றும் நிலா நிலா ஓடி வா பாடல்கள்',
+            subtopics: [
+              {
+                id: 'kg_t_sub1',
+                title: 'உயிர் எழுத்துகள் & படங்கள்',
+                microTopics: [
+                  { id: 'kg_t_1', title: 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள் (அம்மா, ஆடு, இலை, ஈட்டி)', keyAxiom: 'உயிர் எழுத்துக்கள் மொத்தம் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ' },
+                  { id: 'kg_t_2', title: 'நிலா நிலா ஓடி வா & கைவீசம்மா கைவீசு மழலையர் பாடல்கள்', keyAxiom: 'மழலையர் பாலர் பாடல்கள் மற்றும் எளிய உச்சரிப்புப் பயிற்சி' }
+                ]
+              }
+            ],
             microTopics: [
-              { id: 'kg_t_1', topicTitle: '�… முதல் �” வர�ˆ �‰யிர் �Žழுத்து�•ள் (�…ம்மா, �†�Ÿு, �‡ல�ˆ, �ˆ�Ÿ்�Ÿி)', subtopic: 'ப�Ÿ�™்�•ள் பார்த்து �Žழுத்து�•ள�ˆ �…�Ÿ�ˆயாளம் �•ாணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: '�‰யிர் �Žழுத்து�•்�•ள்: �…, �†, �‡, �ˆ, �‰, �Š, �Ž, ஏ, ஐ, �’, �“, �”', keyPoints: ['�… - �…ணில், �…ம்மா', '�† - �†�Ÿு, �†லமரம்'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_t_1', topicTitle: 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள் (அம்மா, ஆடு, இலை, ஈட்டி)', subtopic: 'படங்கள் பார்த்து எழுத்துக்களை அடையாளம் காணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'உயிர் எழுத்துக்கள் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ | ஆய்த எழுத்து: ஃ', keyPoints: ['அ - அணில், அம்மா', 'ஆ - ஆடு, ஆலமரம்', 'இ - இலை, இட்லி', 'ஈ - ஈட்டி, ஈ'], type: 'concept', importance: 'Foundational' },
+              { id: 'kg_t_2', topicTitle: 'நிலா நிலா ஓடி வா மழலையர் பாடல்', subtopic: 'ராகத்தோடு பாடி அபிநயம் செய்தல்', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'பாடல்: நிலா நிலா ஓடி வா, நில்லாமல் ஓடி வா', keyPoints: ['ஒலி நயத்தோடு பாடுதல்', 'எளிய உடல் அசைவுகள்'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -3121,6 +3132,15 @@ export function resolveCompleteCourseSyllabus(
             chapterNumber: 1,
             chapterTitle: 'Phonics Sounds: Letters A to Z & Classic Nursery Rhymes',
             description: 'Letter sounds, picture matching, and CVC 3-letter word blending',
+            subtopics: [
+              {
+                id: 'kg_e_sub1',
+                title: 'Phonics A to Z',
+                microTopics: [
+                  { id: 'kg_e_1', title: 'Letters A to Z Phonics & Nursery Rhymes', keyAxiom: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z' }
+                ]
+              }
+            ],
             microTopics: [
               { id: 'kg_e_1', topicTitle: 'Letters A to Z Phonics & Nursery Rhymes', subtopic: 'Apple, Ball, Cat, Dog, Elephant phonics sounds and Twinkle Twinkle rhyme', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z', keyPoints: ['Letter tracing inside lines', 'Object recognition'], type: 'concept', importance: 'Foundational' }
             ]
@@ -3139,6 +3159,15 @@ export function resolveCompleteCourseSyllabus(
             chapterNumber: 1,
             chapterTitle: 'Counting Numbers 1 to 20 & 2D Shapes',
             description: 'Count with fun objects, Circle, Square, Triangle, Big vs Small',
+            subtopics: [
+              {
+                id: 'kg_m_sub1',
+                title: 'Numbers 1 to 20',
+                microTopics: [
+                  { id: 'kg_m_1', title: 'Numbers 1 to 20: Counting, Shapes & Comparison', keyAxiom: 'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)' }
+                ]
+              }
+            ],
             microTopics: [
               { id: 'kg_m_1', topicTitle: 'Numbers 1 to 20: Counting, Shapes & Comparison', subtopic: '1 Sun, 2 Shoes, 3 Stars, Circle, Square, Big elephant vs small mouse', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)', keyPoints: ['Finger counting and pattern recognition', 'Big vs Small visual comparison'], type: 'concept', importance: 'Foundational' }
             ]
@@ -3157,8 +3186,17 @@ export function resolveCompleteCourseSyllabus(
             chapterNumber: 1,
             chapterTitle: 'My 5 Senses, Friendly Animals & Magic Manners',
             description: '5 senses (Eyes, Ears, Nose, Tongue, Skin), Domestic animals, Please/Thank You',
+            subtopics: [
+              {
+                id: 'kg_evs_sub1',
+                title: '5 Senses & Animals',
+                microTopics: [
+                  { id: 'kg_evs_1', title: '5 Senses, Healthy Habits & Gentle Animal Friends', keyAxiom: '5 Senses: Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin)' }
+                ]
+              }
+            ],
             microTopics: [
-              { id: 'kg_ev_1', topicTitle: 'My 5 Senses, Animals & Magic Words ("Thank You", "Please")', subtopic: 'Eyes to see, Ears to hear, Nose to smell, Tongue to taste, Skin to touch', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: '5 Sense Organs | Magic Words: "Please" and "Thank You"', keyPoints: ['Domestic animals (Dog, Cat, Cow)', 'Daily hygiene and handwashing'], type: 'concept', importance: 'Foundational' }
+              { id: 'kg_evs_1', topicTitle: '5 Senses, Healthy Habits & Gentle Animal Friends', subtopic: 'Eyes to see, Ears to hear, Nose to smell, Tongue to taste, Skin to touch', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: '5 Senses: Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin)', keyPoints: ['Brush teeth twice a day', 'Wash hands before eating meals'], type: 'concept', importance: 'Foundational' }
             ]
           }
         ]
@@ -3166,8 +3204,8 @@ export function resolveCompleteCourseSyllabus(
     ];
 
     return {
-      courseId,
-      courseTitle: title,
+      courseId: courseId || 'kindergarten-master',
+      courseTitle: title || 'Kindergarten (LKG & UKG) Foundation',
       category: 'kindergarten',
       board: 'TNSB / CBSE / Matric',
       medium: isTa ? 'Tamil' : 'English',
@@ -3190,7 +3228,7 @@ export function resolveCompleteCourseSyllabus(
   }
 
   // 13. TNPSC & GENERAL STUDIES SUB-TOPICS (Tamil, GK, Polity, History, Science)
-  if (c.includes('ப�Šருத்துதல்') || c.includes('�‡ல�•்�•ணம்') || c.includes('வ�‡ர்�š்�š�Šல்') || c.includes('தமிழ்') || c.includes('tamil') || c.includes('வரலாறு') || c.includes('�…ர�šியல்') || c.includes('புவியியல்') || c.includes('ப�Šருளாதாரம்') || c.includes('gk') || c.includes('rrb') || c.includes('constitution') || c.includes('ப�†ரியார்') || c.includes('பாரதியார்') || c.includes('�…ண்ணா') || c.includes('�•ாமரா�šர்') || c.includes('ரா�œா�œி') || c.includes('விருது�•ள்')) {
+  if (c.includes('பொருத்துதல்') || c.includes('இலக்கணம்') || c.includes('வேர்ச்சொல்') || c.includes('தமிழ்') || c.includes('tamil') || c.includes('வரலாறு') || c.includes('அரசியல்') || c.includes('புவியியல்') || c.includes('பொருளாதாரம்') || c.includes('gk') || c.includes('rrb') || c.includes('constitution') || c.includes('பெரியார்') || c.includes('பாரதியார்') || c.includes('அண்ணா') || c.includes('காமராசர்') || c.includes('ராஜாஜி') || c.includes('விருதுகள்')) {
     return getTnpscUnifiedCompleteSyllabus(courseId, title);
   }
 
@@ -3208,9 +3246,6 @@ export function resolveCompleteCourseSyllabus(
   return getTnpscUnifiedCompleteSyllabus(courseId, title);
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 11. AUGMENTED SYLLABUS RESOLVER (BUILT-IN + DYNAMIC ADMIN ADDITIONS)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function getAugmentedCourseSyllabus(
   courseId: string,
   courseTitle?: string

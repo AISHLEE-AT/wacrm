@@ -217,7 +217,7 @@ Return ONLY a JSON object with this EXACT structure:
   "videoMeta": {
     "channel": "@aishleetechnology",
     "channelUrl": "https://www.youtube.com/@aishleetechnology",
-    "youtubeVideoId": "q1xNuU7gaAQ",
+    "youtubeVideoId": "_sF-D_oN-2Y",
     "videoTitle": "${subject}: ${topicTitle} Complete Masterclass",
     "durationMinutes": 25,
     "isOfficialAishlee": true
@@ -360,7 +360,7 @@ export function synthesizePrimaryEvsContent(topicTitle: string, subject: string,
     videoMeta: {
       channel: '@aishleetechnology',
       channelUrl: 'https://www.youtube.com/@aishleetechnology',
-      youtubeVideoId: 'q1xNuU7gaAQ',
+      youtubeVideoId: '_sF-D_oN-2Y',
       videoTitle: 'My Amazing Body & Five Senses for Kids | Class 1 EVS',
       durationMinutes: 20,
       isOfficialAishlee: true
@@ -475,7 +475,7 @@ export function synthesizePrimaryMathsContent(topicTitle: string, subject: strin
     videoMeta: {
       channel: '@aishleetechnology',
       channelUrl: 'https://www.youtube.com/@aishleetechnology',
-      youtubeVideoId: '0TgLtF3PMOc',
+      youtubeVideoId: 'EpdTHQ0s6oM',
       videoTitle: 'Counting 1 to 20 with Objects & Number Magic | Class 1 Maths',
       durationMinutes: 20,
       isOfficialAishlee: true
@@ -699,7 +699,7 @@ export function synthesizePlantKingdomContent(topicTitle: string, subject: strin
     videoMeta: {
       channel: '@aishleetechnology',
       channelUrl: 'https://www.youtube.com/@aishleetechnology',
-      youtubeVideoId: 'X6TLFZUC9gI',
+      youtubeVideoId: 'LwCRRUa8yTU',
       videoTitle: 'Parts of a Plant & How Plants Grow | Class 1 EVS',
       durationMinutes: 20,
       isOfficialAishlee: true
@@ -1583,7 +1583,7 @@ export function normalizeCoursePlayerPayload(
 
   // Extract videoMeta
   const rawVideoId = raw?.videoMeta?.youtubeVideoId || raw?.videoId || raw?.youtubeVideoId;
-  const blacklistedIds = ['0TgLtF3PMOc', 'xqgCwgvInDU', '2p8x9K4jW7Q', 'LgCg_1yP6_M'];
+  const blacklistedIds = ['EpdTHQ0s6oM', 'xqgCwgvInDU', '2p8x9K4jW7Q', 'LgCg_1yP6_M'];
   const isVideoValid = rawVideoId && typeof rawVideoId === 'string' && rawVideoId.length >= 8 && !blacklistedIds.includes(rawVideoId);
   const youtubeVideoId = isVideoValid ? rawVideoId : (fallbackVideo.youtubeVideoId || 'EpdTHQ0s6oM');
 
