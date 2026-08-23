@@ -710,94 +710,81 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: 'இயல் 1: மொழி (இன்பத்தமிழ், தமிழ்க்கும்மி & தமிழ் எழுத்துகளின் வகை தொகை)',
-          description: 'பாரதிதாசன் இன்பத்தமிழ், பெருஞ்சித்திரனார் தமிழ்க்கும்மி, வளர்தமிழ், கனவு பலித்தது, எழுத்து இலக்கணம்',
+          chapterTitle: 'தமிழ் நானோ அலகுகள்: உயிர், மெய், மாத்திரை & ஆய்தம் (Days 41–46)',
+          description: '5 குறில் எழுத்துகள், 7 நெடில் எழுத்துகள், வல்லினம் மெல்லினம் இடையினம், ஆய்த எழுத்து ஃ மற்றும் மாத்திரை கால அளவுகள்',
           subtopics: [
             {
               id: 'mid_t_sub1',
-              title: 'கவிதைப்பேழை & உரைநடை',
+              title: 'எழுத்து இலக்கண நானோ அலகுகள்',
               microTopics: [
-                { id: 'mid_t_1', title: 'செய்யுள்: இன்பத்தமிழ் (பாரதிதாசன்) & தமிழ்க்கும்மி (பெருஞ்சித்திரனார்)', keyAxiom: 'தமிழுக்கும் அமுதென்று பேர் — பாரதிதாசன் | எட்டுத் திசையிலும் செந்தமிழின் புகழ் — பெருஞ்சித்திரனார்' },
-                { id: 'mid_t_2', title: 'உரைநடை: வளர்தமிழ் & விரிவானம்: கனவு பலித்தது (கடிதம்)', keyAxiom: 'தமிழ் மூத்த மொழி, எளிய மொழி, சீர்மை மொழி மற்றும் அறிவியல் தொழில்நுட்ப மொழி' },
-                { id: 'mid_t_3', title: 'கற்கண்டு: தமிழ் எழுத்துகளின் வகை தொகையீடு (மாத்திரை அளவுகள்)', keyAxiom: 'குறில் 1 மாத்திரை, நெடில் 2 மாத்திரை, மெய் மற்றும் ஆய்தம் ½ மாத்திரை' }
+                { id: 'mid_t_41', title: 'உயிர் எழுத்துகள்: 5 குறில் எழுத்துகள் (1 மாத்திரை) (Day 41)', keyAxiom: 'அ, இ, உ, எ, ஒ — குறுகிய ஓசையுடைய 5 உயிர் எழுத்துகள்' },
+                { id: 'mid_t_42', title: 'உயிர் எழுத்துகள்: 7 நெடில் எழுத்துகள் (2 மாத்திரை) (Day 42)', keyAxiom: 'ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ — நீண்ட ஓசையுடைய 7 உயிர் எழுத்துகள்' },
+                { id: 'mid_t_43', title: 'வல்லின மெய் எழுத்துகள்: கசடதபற (Day 43)', keyAxiom: 'க், ச், ட், த், ப், ற் — வன்மையான ஓசையுடைய 6 மெய் எழுத்துகள்' },
+                { id: 'mid_t_44', title: 'மெல்லின மெய் எழுத்துகள்: ஙஞணநமன (Day 44)', keyAxiom: 'ங், ஞ், ண், ந், ம், ன் — மென்மையான மூக்கொலியுடைய 6 மெய் எழுத்துகள்' },
+                { id: 'mid_t_45', title: 'இடையின மெய் எழுத்துகள்: யரலவழள (Day 45)', keyAxiom: 'ய், ர், ல், வ், ழ், ள் — இடைப்பட்ட ஓசையுடைய 6 மெய் எழுத்துகள்' },
+                { id: 'mid_t_46', title: 'ஆய்த எழுத்து (ஃ) பயன்பாட்டு விதிகள் (Day 46)', keyAxiom: 'சொல்லின் இடையில் மட்டுமே வரும்; எஃகு, அஃது, இஃது' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_t_1', topicTitle: 'இயல் 1: இன்பத்தமிழ், தமிழ்க்கும்மி & மாத்திரை அளவுகள்', subtopic: 'குறில் 1, நெடில் 2, மெய் ½ மாத்திரை மற்றும் சொல்லின் வகைகள்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'மாத்திரை: குறில் = 1 மாத்திரை | நெடில் = 2 மாத்திரை | மெய் & ஆய்தம் = ½ மாத்திரை', keyPoints: ['பெருஞ்சித்திரனாரின் இயற்பெயர் மாணிக்கம்', 'கனிச்சாறு, கொய்யாக்கனி, பாவியக்கொத்து நூலாசிரியர் பெருஞ்சித்திரனார்'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_t_41', topicTitle: 'உயிர் எழுத்துகள்: 5 குறில் எழுத்துகள் (Day 41)', subtopic: 'குறுகிய ஓசையுடைய எழுத்துகள்: அ, இ, உ, எ, ஒ (1 மாத்திரை கால அளவு)', dayNumber: 41, periodNumber: 1, keyFormulaOrLaw: 'குறில் எழுத்து மாத்திரை = 1 மாத்திரை (ஒரு முறை கண் இமைக்கும் அல்லது கை நொடிக்கும் நேரம்)', keyPoints: ['உயிர் எழுத்துகளில் குறில் எழுத்துகள் மொத்தம் 5', 'குறில் எழுத்துகள் சொல்லின் முதலில் உயிராகவும், மெய்யுடன் இணைந்து உயிர்மெய்க் குறிலாகவும் வரும்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_42', topicTitle: 'உயிர் எழுத்துகள்: 7 நெடில் எழுத்துகள் (Day 42)', subtopic: 'நீண்ட ஓசையுடைய எழுத்துகள்: ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ (2 மாத்திரை கால அளவு)', dayNumber: 42, periodNumber: 1, keyFormulaOrLaw: 'நெடில் எழுத்து மாத்திரை = 2 மாத்திரை (இரண்டு முறை கண் இமைக்கும் கால அளவு)', keyPoints: ['ஐ மற்றும் ஔ ஆகிய இரண்டும் நெடில் எழுத்துகளாகும்', 'நெடில் எழுத்துகள் தனித்தும் மெய்யோடு இணைந்தும் 2 மாத்திரை ஒலிக்கும்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_43', topicTitle: 'வல்லின மெய் எழுத்துகள்: கசடதபற (Day 43)', subtopic: 'வன்மையான ஓசையுடைய எழுத்துகள்: க், ச், ட், த், ப், ற் (அரை மாத்திரை)', dayNumber: 43, periodNumber: 1, keyFormulaOrLaw: 'வல்லினம் = க், ச், ட், த், ப், ற் | மாத்திரை அளவு = ½ மாத்திரை', keyPoints: ['மார்பைத் தலைமையாகக் கொண்டு பிறக்கும் வன்மையான எழுத்துகள்', 'சொல்லின் இறுதியில் ட், த், ப் போன்ற சில வல்லின மெய்கள் வாரா'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_44', topicTitle: 'மெல்லின மெய் எழுத்துகள்: ஙஞணநமன (Day 44)', subtopic: 'மென்மையான ஓசையுடைய எழுத்துகள்: ங், ஞ், ண், ந், ம், ன் (அரை மாத்திரை)', dayNumber: 44, periodNumber: 1, keyFormulaOrLaw: 'மெல்லினம் = ங், ஞ், ண், ந், ம், ன் | மாத்திரை அளவு = ½ மாத்திரை', keyPoints: ['மூக்கைத் தலைமையாகக் கொண்டு பிறக்கும் மெல்லிய எழுத்துகள்', 'வல்லின எழுத்துகளுக்கு இன எழுத்துகளாக நட்பு எழுத்துகளாக அமைகின்றன (ங்-க், ஞ்-ச், ண்-ட், ந்-த், ம்-ப், ன்-ற்)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_45', topicTitle: 'இடையின மெய் எழுத்துகள்: யரலவழள (Day 45)', subtopic: 'இடைப்பட்ட ஓசையுடைய எழுத்துகள்: ய், ர், ல், வ், ழ், ள் (அரை மாத்திரை)', dayNumber: 45, periodNumber: 1, keyFormulaOrLaw: 'இடையினம் = ய், ர், ல், வ், ழ், ள் | மாத்திரை அளவு = ½ மாத்திரை', keyPoints: ['கழுத்தைத் தலைமையாகக் கொண்டு வன்மைக்கும் மென்மைக்கும் இடைப்பட்டு பிறக்கின்றன', 'தமிழ் மொழிக்கே சிறப்பான "ழ்" (சிறப்பு ழகரம்) இடையின எழுத்துகளில் ஒன்றாகும்'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_46', topicTitle: 'ஆய்த எழுத்து (ஃ) பயன்பாட்டு விதிகள் (Day 46)', subtopic: 'முப்புள்ளி, முப்பாற்புள்ளி, தனிநிலை (அரை மாத்திரை)', dayNumber: 46, periodNumber: 1, keyFormulaOrLaw: 'ஆய்தம் = ஃ | மாத்திரை = ½ | விதி: தனக்கு முன் ஒரு குறிலையும் பின் ஒரு வல்லின உயிர்மெய்யையும் பெறும்', keyPoints: ['சொல்லின் முதலிலோ இறுதியிலோ வராது; சொல்லின் இடையில் மட்டுமே வரும் (எ.கா: எஃகு, அஃது, இஃது)', 'ஆய்த எழுத்தை முதன்மையாகக் கொண்ட சொல் தனிநிலைச் சொல் எனப்படும்'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: 'இயல் 2: இயற்கை (காணி நிலம், சிறகின் ஓசை, கிழவனும் கடலும் & திருக்குறள்)',
-          description: 'பாரதியார் காணி நிலம் வேண்டும், பறவைகள் வலசை போதல், எர்னஸ்ட் ஹெமிங்வே கிழவனும் கடலும், முதலெழுத்தும் சார்பெழுத்தும்',
+          chapterTitle: 'தமிழ் நானோ அலகுகள்: திணை, பால் & முக்காலம் (Days 47–51)',
+          description: 'உயர்திணை அஃறிணை, ஆண்பால் பெண்பால் பலர்பால் ஒன்றன்பால் பலவின்பால் மற்றும் இறந்த, நிகழ்கால, எதிர்கால இடைநிலைகள்',
           subtopics: [
             {
               id: 'mid_t_sub2',
-              title: 'இயற்கை நயம் & இலக்கணம்',
+              title: 'திணை, பால், கால நானோ அலகுகள்',
               microTopics: [
-                { id: 'mid_t_4', title: 'செய்யுள்: காணி நிலம் வேண்டும் (பாரதியார்) & சிலப்பதிகாரம் வாழ்த்து', keyAxiom: 'திங்களைப் போற்றுதும் ஞாயிறு போற்றுதும் — இளங்கோவடிகள்' },
-                { id: 'mid_t_5', title: 'உரைநடை: சிறகின் ஓசை (பறவைகள் வலசை போதல்) & விரிவானம்: கிழவனும் கடலும்', keyAxiom: 'நாராய் நாராய் செங்கால் நாராய் — சத்திமுத்தப் புலவர் | சாண்டியாகோ மீன்பிடிப் போராட்டம்' },
-                { id: 'mid_t_6', title: 'கற்கண்டு: முதலெழுத்தும் சார்பெழுத்தும் (10 வகைகள்) & திருக்குறள்', keyAxiom: 'முதலெழுத்து 30 (உயிர் 12 + மெய் 18); சார்பெழுத்து 10 (உயிரளபெடை முதல் ஆய்தக்குறுக்கம் வரை)' }
+                { id: 'mid_t_47', title: 'திணை பாகுபாடு: உயர்திணை vs அஃறிணை (Day 47)', keyAxiom: 'பகுத்தறிவுள்ள மக்கள் உயர்திணை; பறவை, விலங்கு, தாவரங்கள் அஃறிணை' },
+                { id: 'mid_t_48', title: 'ஐம்பால் பாகுபாடு (ஆண், பெண், பலர், ஒன்று, பல) (Day 48)', keyAxiom: 'உயர்திணை 3 பால் (ஆண், பெண், பலர்); அஃறிணை 2 பால் (ஒன்று, பல)' },
+                { id: 'mid_t_49', title: 'முக்காலம்: இறந்த கால இடைநிலைகள் (த், ட், ற், இன்) (Day 49)', keyAxiom: 'செய்தான் (த்), உண்டான் (ட்), கற்றான் (ற்), பாடினான் (இன்)' },
+                { id: 'mid_t_50', title: 'முக்காலம்: நிகழ்கால இடைநிலைகள் (கிறு, கின்று, ஆநின்று) (Day 50)', keyAxiom: 'செய்கிறான் (கிறு), உண்கின்றான் (கின்று), வாராநின்றான் (ஆநின்று)' },
+                { id: 'mid_t_51', title: 'முக்காலம்: எதிர்கால இடைநிலைகள் (ப், வ்) (Day 51)', keyAxiom: 'படிப்பான் (ப்), வருவான் (வ்)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_t_4', topicTitle: 'இயல் 2: பாரதியார் காணி நிலம் & முதலெழுத்து/சார்பெழுத்து (10 வகை)', subtopic: 'முதலெழுத்துகள் 30 மற்றும் சார்பெழுத்துகள் 10 வகைகள்', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'முதலெழுத்துகள் = 30 | சார்பெழுத்து 10: உயிரளபெடை, ஒற்றளபெடை, குற்றியலுகரம், குற்றியலிகரம், ஐகாரக்குறுக்கம், ஔகாரக்குறுக்கம், மகரக்குறுக்கம், ஆய்தக்குறுக்கம், முற்றியலுகரம், ஆய்த எழுத்து', keyPoints: ['பாரதியாரின் இயற்பெயர் சுப்பிரமணியன்', 'எர்னஸ்ட் ஹெமிங்வே நோபல் பரிசு பெற்ற புதினம்: கிழவனும் கடலும் (The Old Man and the Sea)'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_t_47', topicTitle: 'திணை பாகுபாடு: உயர்திணை vs அஃறிணை (Day 47)', subtopic: 'ஒழுக்கம் மற்றும் பகுத்தறிவு அடிப்படையில் இருதிணை வகைப்பாடு', dayNumber: 47, periodNumber: 1, keyFormulaOrLaw: 'திணை 2: உயர்திணை (மனிதர்கள், தேவர்கள், நரகர்) | அஃறிணை (அல் + திணை = உயிரற்றவை, விலங்குகள், தாவரங்கள்)', keyPoints: ['கண்ணன், ஆசிரியர், மருத்துவர் - உயர்திணை', 'மரம், நாய், கடல், மேகம், நிலா - அஃறிணை'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_48', topicTitle: 'ஐம்பால் பாகுபாடு (Day 48)', subtopic: 'பால் என்பது திணையின் உட்பிரிவு (5 வகைகள்)', dayNumber: 48, periodNumber: 1, keyFormulaOrLaw: 'உயர்திணை: ஆண்பால் (அன்), பெண்பால் (அள்), பலர்பால் (அர்) | அஃறிணை: ஒன்றன்பால் (து), பலவின்பால் (அ)', keyPoints: ['மாணவன் (ஆண்பால்), மாணவி (பெண்பால்), மாணவர்கள் (பலர்பால்)', 'குதிரை வந்தது (ஒன்றன்பால்), குதிரைகள் வந்தன (பலவின்பால்)'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_t_49', topicTitle: 'முக்காலம்: இறந்த கால இடைநிலைகள் (Day 49)', subtopic: 'நடந்து முடிந்த செயலைக் குறிக்கும் இடைநிலைகள்: த், ட், ற், இன்', dayNumber: 49, periodNumber: 1, keyFormulaOrLaw: 'இறந்த கால இடைநிலைகள்: த், ட், ற், இன் (பகுதி + இடைநிலை + விகுதி)', keyPoints: ['செய்தான் = செய் + த் + ஆன் (த் = இறந்த கால இடைநிலை)', 'ஓடினான் = ஓடு + இன் + ஆன் (இன் = இறந்த கால இடைநிலை)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_50', topicTitle: 'முக்காலம்: நிகழ்கால இடைநிலைகள் (Day 50)', subtopic: 'இப்போது நிகழும் செயலைக் குறிக்கும் இடைநிலைகள்: கிறு, கின்று, ஆநின்று', dayNumber: 50, periodNumber: 1, keyFormulaOrLaw: 'நிகழ்கால இடைநிலைகள்: கிறு, கின்று, ஆநின்று', keyPoints: ['படிக்கிறான் = படி + க் + கிறு + ஆன் (கிறு = நிகழ்கால இடைநிலை)', 'உண்கின்றான் = உண் + கின்று + ஆன் (கின்று = நிகழ்கால இடைநிலை)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_51', topicTitle: 'முக்காலம்: எதிர்கால இடைநிலைகள் (Day 51)', subtopic: 'இனிமேல் நடக்கவிருக்கும் செயலைக் குறிக்கும் இடைநிலைகள்: ப், வ்', dayNumber: 51, periodNumber: 1, keyFormulaOrLaw: 'எதிர்கால இடைநிலைகள்: ப், வ்', keyPoints: ['காண்பான் = காண் + ப் + ஆன் (ப் = எதிர்கால இடைநிலை)', 'வருவான் = வா(வரு) + வ் + ஆன் (வ் = எதிர்கால இடைநிலை)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: 'இயல் 3: அறிவியல் தொழில்நுட்பம் (அறிவியல் ஆத்திசூடி & மொழி முதல்/இறுதி எழுத்துகள்)',
-          description: 'நெல்லை சு. முத்து அறிவியல் ஆத்திசூடி, அறிவியலால் ஆள்வோம், கனியனின் நண்பன் (ரோபோ), மொழி முதல் இறுதி எழுத்துகள்',
+          chapterTitle: 'தமிழ் நானோ அலகுகள்: தொகைநிலைத் தொடர்கள் & புணர்ச்சி (Days 52–57)',
+          description: 'வேற்றுமைத்தொகை, வினைத்தொகை, பண்புத்தொகை, உவமைத்தொகை, உம்மைத்தொகை மற்றும் வல்லினம் மிகும்/மிகா இடங்கள்',
           subtopics: [
             {
               id: 'mid_t_sub3',
-              title: 'அறிவியல் சிந்தனை & மொழி அமைப்பு',
+              title: 'தொகைநிலை & புணர்ச்சி நானோ அலகுகள்',
               microTopics: [
-                { id: 'mid_t_7', title: 'அறிவியல் ஆத்திசூடி (நெல்லை சு. முத்து) & ரோபோ தொழில்நுட்பம்', keyAxiom: 'உடற்பயிற்சி அறிவியல் சிந்தனை கொள் — அப்துல் கலாம் பாராட்டிய நெல்லை முத்து' },
-                { id: 'mid_t_8', title: 'கற்கண்டு: மொழி முதல் மற்றும் மொழி இறுதி எழுத்துகள்', keyAxiom: 'மொழி முதல் வரும் எழுத்துகள் 22; மொழி இறுதி வரும் எழுத்துகள் 24' }
+                { id: 'mid_t_52', title: 'வேற்றுமைத் தொகை: ஐ, ஆல், கு, இன், அது, கண் மறைதல் (Day 52)', keyAxiom: 'பால் குடித்தான் = பாலைக் குடித்தான் (2-ஆம் வேற்றுமை உருபு ஐ மறைந்தது)' },
+                { id: 'mid_t_53', title: 'வினைத்தொகை: முக்காலமும் மறைந்து வருதல் (Day 53)', keyAxiom: 'ஊறுகாய் = ஊறிய காய், ஊறுகின்ற காய், ஊறும் காய் (காலம் காட்டும் இடைநிலை மறைந்தது)' },
+                { id: 'mid_t_54', title: 'பண்புத்தொகை: மை விகுதியும் ஆகிய, ஆன உருபுகளும் மறைதல் (Day 54)', keyAxiom: 'செந்தாமரை = செம்மையாகிய தாமரை | வட்டத்தொட்டி = வட்டமாகிய தொட்டி' },
+                { id: 'mid_t_55', title: 'உவமைத்தொகை & உம்மைத்தொகை (Day 55)', keyAxiom: 'மலர்விழி (போல மறைந்தது) | தாய் தந்தை (தாயும் தந்தையும் - உம் மறைந்தது)' },
+                { id: 'mid_t_56', title: 'வல்லினம் மிகும் இடங்கள்: அந்த, இந்த சுட்டுப்பெயர்கள் பின் (Day 56)', keyAxiom: 'அந்த + காடு = அந்தக்காடு | இந்த + பையன் = இந்தப்பையன்' },
+                { id: 'mid_t_57', title: 'வல்லினம் மிகா இடங்கள்: வினைத்தொகை & அது, இது பின் (Day 57)', keyAxiom: 'குடி தண்ணீர் (வினைத்தொகை மிகாது) | அது சென்றது (மிகாது)' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_t_7', topicTitle: 'இயல் 3: அறிவியல் ஆத்திசூடி & மொழி முதல்/இறுதி எழுத்துகள் (22 & 24)', subtopic: 'சொல்லின் முதலில் வரும் எழுத்துகள் மற்றும் இறுதியில் வரும் எழுத்துகள்', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'மொழி முதல் எழுத்துகள்: 22 (உயிர் 12 + மெய் உயிர்மெய் 10) | மொழி இறுதி எழுத்துகள்: 24', keyPoints: ['ரோபோ (Robot) என்ற சொல்லை முதன்முதலில் பயன்படுத்தியவர் காரல் கபெக் (1920)'], type: 'concept', importance: 'High-Yield' }
-          ]
-        },
-        {
-          chapterNumber: 4,
-          chapterTitle: 'இயல் 4: கல்வி (மூதுரை, துன்பம் வெல்லும் கல்வி, காமராசர் & இன எழுத்துகள்)',
-          description: 'ஔவையார் மூதுரை, பட்டுக்கோட்டை கல்யாணசுந்தரம் பாடல், கல்விக்கண் திறந்தவர் காமராசர், அண்ணா நூற்றாண்டு நூலகம், இன எழுத்துகள்',
-          subtopics: [
-            {
-              id: 'mid_t_sub4',
-              title: 'கல்வி மேன்மை & இன எழுத்துகள்',
-              microTopics: [
-                { id: 'mid_t_9', title: 'துன்பம் வெல்லும் கல்வி — பட்டுக்கோட்டை கல்யாணசுந்தரம்', keyAxiom: 'ஏட்டில் படித்ததோடு இருந்துவிடாதே — மக்கள் கவிஞர் பட்டுக்கோட்டை' },
-                { id: 'mid_t_10', title: 'கற்கண்டு: இன எழுத்துகள் (இணை எழுத்துகள்)', keyAxiom: 'வல்லினத்திற்கு மெல்லினம் இன எழுத்து (ங்-க், ஞ்-ச், ண்-ட், ந்-த், ம்-ப், ன்-ற்)' }
-              ]
-            }
-          ],
-          microTopics: [
-            { id: 'mid_t_9', topicTitle: 'இயல் 4: துன்பம் வெல்லும் கல்வி & இன எழுத்துகள் (இணை எழுத்துகள்)', subtopic: 'வல்லின-மெல்லின நட்பு எழுத்துகள் (ங்-க், ஞ்-ச், ண்-ட், ந்-த், ம்-ப், ன்-ற்)', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'இன எழுத்துகள்: க்-ங் | ச்-ஞ் | ட்-ண் | த்-ந்த் | ப்-ம் | ற்-ன் | ஐ-இ | ஔ-உ', keyPoints: ['ஆசியாவிலேயே இரண்டாவது மிகப்பெரிய நூலகம் அண்ணா நூற்றாண்டு நூலகம் சென்னை', 'மக்கள் கவிஞர் என்று அழைக்கப்படுபவர் பட்டுக்கோட்டை கல்யாணசுந்தரம்'], type: 'solved_problem', importance: 'High-Yield' }
-          ]
-        },
-        {
-          chapterNumber: 5,
-          chapterTitle: 'இயல் 5: நாகரிகம் பண்பாடு (ஆசாரக்கோவை, பொங்கல் திருநாள் & மயங்கொலிகள்)',
-          description: 'பெருவாயின் முள்ளியார் ஆசாரக்கோவை, கண்மணியே கண்ணுறங்கு, தமிழர் பெருவிழா, மாமல்லபுரம் சிற்பங்கள், மயங்கொலிப் பிழைகள்',
-          subtopics: [
-            {
-              id: 'mid_t_sub5',
-              title: 'தமிழர் பண்பாடு & மயங்கொலி இலக்கணம்',
-              microTopics: [
-                { id: 'mid_t_11', title: 'ஆசாரக்கோவை & தமிழர் திருநாள் பொங்கல் சிறப்பு', keyAxiom: 'நன்றி அறிதல் பொறை உடைமை — ஆசாரக்கோவை நல்லொழுக்கங்களின் தொகுப்பு' },
-                { id: 'mid_t_12', title: 'கற்கண்டு: மயங்கொலிகள் (8 எழுத்துகள்: ண-ந-ன, ல-ழ-ள, ர-ற)', keyAxiom: 'ஒரே மாதிரி ஒலித்து பொருள் வேறுபடும் 8 மயங்கொலி எழுத்துகள்' }
-              ]
-            }
-          ],
-          microTopics: [
-            { id: 'mid_t_11', topicTitle: 'இயல் 5: ஆசாரக்கோவை, மாமல்லபுரம் & மயங்கொலி 8 எழுத்துகள்', subtopic: 'பொருள் வேறுபாடு: களம் (இடம்) vs கலம் (பாத்திரம்/கப்பல்), வளை vs வாழை', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'மயங்கொலிகள்: ண, ந, ன (3) | ல, ழ, ள (3) | ர, ற (2) = மொத்தம் 8 எழுத்துகள்', keyPoints: ['மாமல்லபுரம் பல்லவர் கால கடற்கரை கோவில் மற்றும் ஒற்றைக்கல் ரதங்கள்', 'ஆசாரக்கோவை ஆசிரியர் பெருவாயின் முள்ளியார்'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_t_52', topicTitle: 'வேற்றுமைத் தொகை (Day 52)', subtopic: 'வேற்றுமை உருபுகள் (ஐ, ஆல், கு, இன், அது, கண்) சொல்லின் நடுவில் மறைந்து வருதல்', dayNumber: 52, periodNumber: 1, keyFormulaOrLaw: 'வேற்றுமைத் தொகை: பெயர்ச்சொல் + பெயர்ச்சொல் (வேற்றுமை உருபு மறைவு)', keyPoints: ['கரும்பு தின்றான் = கரும்பைத் தின்றான் (2-ஆம் வேற்றுமைத் தொகை)', 'தலை வணங்கினான் = தலையால் வணங்கினான் (3-ஆம் வேற்றுமைத் தொகை)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_53', topicTitle: 'வினைத்தொகை: ஊறுகாய் (Day 53)', subtopic: 'வினைப்பகுதியும் பெயர்ச்சொல்லும் இணைந்து முக்காலமும் மறைந்து நின்று பொருள் தருதல்', dayNumber: 53, periodNumber: 1, keyFormulaOrLaw: 'வினைத்தொகை = வினைப்பகுதி (ஏவல்) + பெயர்ச்சொல் (காலம் கரந்த பெயரெச்சம்)', keyPoints: ['ஊறுகாய் = ஊறிய காய், ஊறுகின்ற காய், ஊறும் காய்', 'சுடுசோறு, அலைகடல், பாய்புலி, வளர்பிறை ஆகியவை வினைத்தொகைகள்'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_54', topicTitle: 'பண்புத்தொகை: செந்தாமரை (Day 54)', subtopic: 'நிறம், வடிவம், சுவை, அளவு ஆகிய பண்புகளை உணர்த்தி "மை" விகுதி மறைந்து வருதல்', dayNumber: 54, periodNumber: 1, keyFormulaOrLaw: 'பண்புத்தொகை = பண்புப்பெயர் + ஆகிய/ஆன உருபு மறைவு', keyPoints: ['செந்தாமரை = செம்மை + தாமரை (செம்மையாகிய தாமரை)', 'வெண்ணிலவு = வெண்மை + நிலவு | கருங்குவளை = கருமை + குவளை'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_55', topicTitle: 'உவமைத்தொகை & உம்மைத்தொகை (Day 55)', subtopic: 'உவம உருபு (போல, போன்ற) மற்றும் எண்ணும்மை (உம்) மறைந்து வருதல்', dayNumber: 55, periodNumber: 1, keyFormulaOrLaw: 'உவமைத்தொகை: உவமானம் + உவமேயம் | உம்மைத்தொகை: எண்ணல்/அளவைச் சொற்களில் "உம்" மறைவு', keyPoints: ['மலர்விழி = மலர் போன்ற விழி (உவமைத்தொகை)', 'இரவுபகல் = இரவும் பகலும் | அண்ணன் தம்பி = அண்ணனும் தம்பியும் (உம்மைத்தொகை)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_56', topicTitle: 'வல்லினம் மிகும் இடங்கள் (Day 56)', subtopic: 'அ, இ சுட்டெழுத்துகளின் பின்னும், எ வினாவெழுத்தின் பின்னும் வல்லினம் மிகும்', dayNumber: 56, periodNumber: 1, keyFormulaOrLaw: 'விதி: அந்த, இந்த, எந்த + வல்லின மெய் (க், ச், த், ப்) மிகும்', keyPoints: ['அந்த + காடு = அந்தக்காடு | இந்த + சட்டை = இந்தச்சட்டை', 'எந்த + புத்தகம் = எந்தப்புத்தகம்'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_t_57', topicTitle: 'வல்லினம் மிகா இடங்கள் (Day 57)', subtopic: 'வினைத்தொகையிலும், அது, இது, எது சுட்டுப் பெயர்களின் பின்னும் வல்லினம் மிகாது', dayNumber: 57, periodNumber: 1, keyFormulaOrLaw: 'விதி: வினைத்தொகையில் வல்லினம் மிகாது | அது, இது, எது பின் மிகாது', keyPoints: ['குடி தண்ணீர் (குடித்தண்ணீர் தவறு)', 'அது பறந்தது (அதுப்பறந்தது தவறு) | எது கண்டாய் (எதுக்கண்டாய் தவறு)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -895,63 +882,83 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'எண்கணிதம்: BODMAS, HCF/LCM & விகிதமுறு எண்கள்' : 'Arithmetic: BODMAS, HCF/LCM & Rational Numbers',
-          description: isTa ? 'செயல்பாடுகளின் வரிசை BODMAS, பகா காரணிப்படுத்துதல் HCF/LCM, முழுக்கள், விகிதமுறு எண்கள் & அடுக்கு விதிகள்' : 'BODMAS / PEMDAS order of operations, HCF & LCM prime factorization, Integers, Rational numbers and Laws of Exponents',
+          chapterTitle: isTa ? 'எண்கணிதம் & வரிசை: BODMAS, HCF & LCM நானோ தலைப்புகள்' : 'Arithmetic & Operations: BODMAS, HCF & LCM Nano-Topics',
+          description: isTa ? 'செயல்பாடுகளின் வரிசை BODMAS பிராக்கெட்டுகள், வகுத்தல் பெருக்கல் முன்னுரிமை, பகா காரணி மரம், யூக்ளிட் வழிமுறை, மீ.பொ.வ மற்றும் மீ.சி.ம பயன்பாட்டுக் கணக்குகள்' : 'BODMAS bracket hierarchy, Division/Multiplication precedence, Prime factorization tree, Euclid long division, and Real-world HCF/LCM word problems',
           subtopics: [
             {
               id: 'mid_m_sub1',
-              title: 'எண்கணிதம் & அடிப்படை செயல்பாடுகள்',
+              title: 'BODMAS & HCF/LCM Nano-Units',
               microTopics: [
-                { id: 'mid_m_1', title: 'BODMAS / PEMDAS Rule (செயல்பாடுகளின் வரிசை)', keyAxiom: 'Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction' },
-                { id: 'mid_m_2', title: 'HCF & LCM (மீப்பெரு பொது வகுத்தி & மீச்சிறு பொது மடங்கு)', keyAxiom: 'Product of Two Numbers = HCF × LCM' },
-                { id: 'mid_m_3', title: 'அடுக்கு விதிகள் (Laws of Exponents: a^m × a^n = a^(m+n))', keyAxiom: 'a^m / a^n = a^(m-n) | (a^m)^n = a^(mn) | a^0 = 1' }
+                { id: 'mid_m_1', title: 'BODMAS: Brackets Hierarchy (), {}, [] (Day 1)', keyAxiom: 'Innermost () first, then {}, finally outer []' },
+                { id: 'mid_m_2', title: 'BODMAS: Division & Multiplication Priority (Day 2)', keyAxiom: '÷ and × have equal precedence; evaluate Left-to-Right' },
+                { id: 'mid_m_3', title: 'BODMAS: Addition & Subtraction Priority (Day 3)', keyAxiom: '+ and - have equal precedence; evaluate Left-to-Right' },
+                { id: 'mid_m_4', title: 'HCF: Prime Factorization Tree Method (Day 4)', keyAxiom: 'Product of lowest powers of common prime factors' },
+                { id: 'mid_m_5', title: 'HCF: Euclid Division / Long Division Method (Day 5)', keyAxiom: 'a = bq + r until remainder r = 0' },
+                { id: 'mid_m_6', title: 'LCM: Common Division Method (Day 6)', keyAxiom: 'Product of all prime divisors including remaining factors' },
+                { id: 'mid_m_7', title: 'HCF × LCM = Product of Two Numbers Identity (Day 7)', keyAxiom: 'Number₁ × Number₂ = HCF(a,b) × LCM(a,b)' },
+                { id: 'mid_m_8', title: 'HCF & LCM Word Problems: Bells & Tiles (Day 8)', keyAxiom: 'HCF for largest tile size; LCM for simultaneous bell intervals' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_1', topicTitle: 'BODMAS / PEMDAS Rule (செயல்பாடுகளின் வரிசை)', subtopic: 'Order of Operations: Brackets, Exponents, Division, Multiplication, Addition, Subtraction', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'BODMAS: () -> Orders -> ÷ -> × -> + -> -', keyPoints: ['Always simplify expressions inside innermost brackets first', 'Division and Multiplication have equal precedence; evaluate left-to-right'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_2', topicTitle: 'HCF & LCM (மீப்பெரு பொது வகுத்தி & மீச்சிறு மடங்கு)', subtopic: 'Prime Factorization Tree Method, Division Method & Relationship Formula', dayNumber: 3, periodNumber: 2, keyFormulaOrLaw: 'HCF × LCM = Number₁ × Number₂ | HCF(a, b) ≤ min(a, b) | LCM(a, b) ≥ max(a, b)', keyPoints: ['HCF of two prime numbers is always 1 (Co-primes)', 'LCM is the smallest number divisible by all given numbers without remainder'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_3', topicTitle: 'Laws of Exponents (அடுக்கு விதிகள்)', subtopic: 'Product, Quotient, Power of a Power and Zero Exponent Rules', dayNumber: 3, periodNumber: 3, keyFormulaOrLaw: 'aᵐ × aⁿ = aᵐ⁺ⁿ | aᵐ / aⁿ = aᵐ⁻ⁿ | (aᵐ)ⁿ = aᵐⁿ | a⁰ = 1 | a⁻ⁿ = 1/aⁿ', keyPoints: ['Any non-zero number raised to the power 0 equals 1', 'Used in scientific notation for very large and small numbers'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_1', topicTitle: 'BODMAS: Brackets Hierarchy (), {}, [] (Day 1)', subtopic: 'Solving Innermost Round Brackets (), Curly Brackets {}, and Square Brackets []', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'BODMAS Order: () -> {} -> [] -> Orders -> ÷ -> × -> + -> -', keyPoints: ['Always simplify expressions inside the innermost parentheses first', 'Nested brackets evaluate from inside out like peeling an onion'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_2', topicTitle: 'BODMAS: Division & Multiplication Precedence (Day 2)', subtopic: 'Left-to-Right Rule for Equal Precedence Operations in 24 ÷ 4 × 2 vs 24 × 4 ÷ 2', dayNumber: 2, periodNumber: 1, keyFormulaOrLaw: 'Rule: Division and Multiplication have EQUAL priority; Evaluate Left-to-Right', keyPoints: ['In 24 ÷ 4 × 2, do 24 ÷ 4 = 6 first, then 6 × 2 = 12 (not 24 ÷ 8)', 'Never prioritize multiplication over division unless indicated by brackets'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_3', topicTitle: 'BODMAS: Addition & Subtraction Precedence (Day 3)', subtopic: 'Left-to-Right Evaluation and Grouping Positive and Negative Terms', dayNumber: 3, periodNumber: 1, keyFormulaOrLaw: 'Rule: Addition and Subtraction have EQUAL priority; Evaluate Left-to-Right', keyPoints: ['Group all positive numbers together and all negative numbers together', 'Subtract the sum of negative terms from the sum of positive terms'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_4', topicTitle: 'HCF: Prime Factorization Tree Method (Day 4)', subtopic: 'Breaking Numbers into Prime Factors and Taking Smallest Powers of Common Factors', dayNumber: 4, periodNumber: 1, keyFormulaOrLaw: 'HCF(a, b) = Product of smallest power of each common prime factor', keyPoints: ['For 24 (2³ × 3) and 36 (2² × 3²), HCF = 2² × 3 = 12', 'HCF is always less than or equal to the smallest number'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_5', topicTitle: 'HCF: Euclid Division / Long Division Method (Day 5)', subtopic: 'Successive Division Algorithm: Dividend = Divisor × Quotient + Remainder', dayNumber: 5, periodNumber: 1, keyFormulaOrLaw: 'Euclid Algorithm: a = bq + r (0 ≤ r < b) | Last non-zero divisor is HCF', keyPoints: ['Efficient method for finding HCF of very large 3-digit and 4-digit numbers', 'When remainder becomes 0, the divisor at that stage is the exact HCF'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_6', topicTitle: 'LCM: Common Division Method (Day 6)', subtopic: 'Simultaneous Division of Multiple Numbers by Common Prime Divisors', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'LCM(a, b) = Product of all prime divisors and undivided remainder quotients', keyPoints: ['LCM is the smallest positive number that is a multiple of all given numbers', 'LCM is always greater than or equal to the largest number'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_7', topicTitle: 'HCF × LCM = a × b Core Identity (Day 7)', subtopic: 'Finding One Unknown Number or HCF/LCM Using the Product Relationship Formula', dayNumber: 7, periodNumber: 1, keyFormulaOrLaw: 'Number₁ × Number₂ = HCF(a, b) × LCM(a, b) | Number₂ = (HCF × LCM) / Number₁', keyPoints: ['Applicable strictly to any two positive integers', 'Given HCF = 6, LCM = 36, Number₁ = 12 -> Number₂ = (6 × 36)/12 = 18'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_8', topicTitle: 'HCF & LCM Word Problems: Bells & Tiles (Day 8)', subtopic: 'Real-World Applications: Paving Floors with Minimum Square Tiles & Bell Intervals', dayNumber: 8, periodNumber: 1, keyFormulaOrLaw: 'Max Tile Side = HCF(Length, Breadth) | Next Toll Time = LCM(Interval₁, Interval₂)', keyPoints: ['Use HCF when dividing or partitioning into maximum equal sizes', 'Use LCM when synchronizing repeating cycles or periodic events'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'புள்ளியியல் & வணிகக் கணிதம்: Mean, Median, Mode & கூட்டுவட்டி' : 'Statistics & Commercial Maths: Mean, Median, Mode & CI',
-          description: isTa ? 'கூட்டுச் சராசரி (Mean), இடைநிலை அளவு (Median), முகடு (Mode), தனிவட்டி, கூட்டுவட்டி A = P(1+R/100)^n' : 'Measures of Central Tendency (Mean, Median, Mode, Range), Simple & Compound Interest, Percentages',
+          chapterTitle: isTa ? 'புள்ளியியல் நானோ தலைப்புகள்: Mean, Median, Mode, Range & CI' : 'Statistics & Commercial Nano-Topics: Mean, Median, Mode & CI',
+          description: isTa ? 'கூட்டுச் சராசரி (Mean), ஒற்றைப்படை/இரட்டைப்படை இடைநிலை (Median), முகடு (Mode), வீச்சு (Range), கூட்டுவட்டி' : 'Arithmetic Mean calculation, ODD/EVEN Median rules, Mode peak detection, Range spread, and Compound Interest',
           subtopics: [
             {
               id: 'mid_m_sub2',
               title: 'புள்ளியியல் & வணிகக் கணிதம்',
               microTopics: [
-                { id: 'mid_m_4', title: 'Mean / Average (கூட்டுச் சராசரி: x̄ = Σx / N)', keyAxiom: 'Sum of all observations divided by total number of observations' },
-                { id: 'mid_m_5', title: 'Median & Mode (இடைநிலை அளவு & முகடு)', keyAxiom: 'Median = Middle value in ordered set | Mode = Most frequent observation' },
-                { id: 'mid_m_6', title: 'Compound Interest & Profit/Loss (கூட்டுவட்டி & இலாப நட்டம்)', keyAxiom: 'A = P(1 + R/100)ⁿ | CI = A - P' }
+                { id: 'mid_m_9', title: 'Arithmetic Mean: Ungrouped Raw Data Average (Day 9)', keyAxiom: 'Mean x̄ = (Σx) / N' },
+                { id: 'mid_m_10', title: 'Median: Finding Middle Term for ODD Dataset (Day 10)', keyAxiom: 'Median = [(n + 1)/2]ᵗʰ term after sorting' },
+                { id: 'mid_m_11', title: 'Median: Finding Middle Average for EVEN Dataset (Day 11)', keyAxiom: 'Median = Average of (n/2)ᵗʰ and (n/2 + 1)ᵗʰ terms' },
+                { id: 'mid_m_12', title: 'Mode: Identifying Peak Frequency Values (Day 12)', keyAxiom: 'Mode = Most frequently occurring observation' },
+                { id: 'mid_m_13', title: 'Range & Coefficient of Range (Day 13)', keyAxiom: 'Range = Largest - Smallest | Coefficient = (L-S)/(L+S)' },
+                { id: 'mid_m_14', title: 'Empirical Formula: Mode ≈ 3(Median) - 2(Mean) (Day 14)', keyAxiom: 'Mode = 3 Median - 2 Mean for moderately skewed distribution' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_4', topicTitle: 'Mean / Average (கூட்டுச் சராசரி)', subtopic: 'Calculation of Arithmetic Mean for Raw and Grouped Frequency Data', dayNumber: 6, periodNumber: 1, keyFormulaOrLaw: 'Mean x̄ = (Σ x) / N = (x₁ + x₂ + ... + xₙ) / n', keyPoints: ['Mean is the mathematical average sensitive to extreme outlier values', 'Sum of deviations of all values from the mean is always zero: Σ(x - x̄) = 0'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_5', topicTitle: 'Median & Mode (இடைநிலை அளவு & முகடு)', subtopic: 'Finding Median for Odd/Even Data & Determining Unimodal/Bimodal Data', dayNumber: 6, periodNumber: 2, keyFormulaOrLaw: 'Median = [(n+1)/2]ᵗʰ (Odd) | Mode = Observation with maximum frequency', keyPoints: ['Median divides an ordered dataset into two exactly equal halves (50% above, 50% below)', 'Empirical Relation: Mode ≈ 3(Median) - 2(Mean)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_6', topicTitle: 'Compound Interest (கூட்டுவட்டி)', subtopic: 'Annual and Half-Yearly Compounding Formula and Depreciation', dayNumber: 6, periodNumber: 3, keyFormulaOrLaw: 'Amount A = P(1 + R/100)ⁿ | CI = A - P = P[(1 + R/100)ⁿ - 1]', keyPoints: ['Compound interest yields higher returns than simple interest because interest earns interest', 'Half-yearly compounding: Rate becomes R/2 and time becomes 2n'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_9', topicTitle: 'Arithmetic Mean: Raw Data Average (Day 9)', subtopic: 'Calculation of Arithmetic Mean: Sum of Observations Divided by Total Count', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Mean x̄ = (Σ x) / N = (x₁ + x₂ + ... + xₙ) / n', keyPoints: ['Mean is the mathematical center balance of numerical data', 'If each observation is increased by k, the new mean increases by k'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_10', topicTitle: 'Median: Middle Term for ODD Dataset (Day 10)', subtopic: 'Sorting in Ascending Order and Selecting Exact Center Position [(n+1)/2]ᵗʰ', dayNumber: 10, periodNumber: 1, keyFormulaOrLaw: 'For Odd n: Median = Value of [(n + 1) / 2]ᵗʰ term', keyPoints: ['Always arrange data in ascending or descending order first', 'For 7 items, Median is the 4th item; 50% values lie below and 50% above'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_11', topicTitle: 'Median: Middle Average for EVEN Dataset (Day 11)', subtopic: 'Finding the Arithmetic Average of the Two Central Values for Even Count', dayNumber: 11, periodNumber: 1, keyFormulaOrLaw: 'For Even n: Median = ½ [ (n/2)ᵗʰ term + (n/2 + 1)ᵗʰ term ]', keyPoints: ['For 8 items, Median is average of 4th and 5th items', 'Median is not affected by extreme outlier values unlike Mean'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_12', topicTitle: 'Mode: Identifying Peak Frequency Values (Day 12)', subtopic: 'Finding the Most Frequently Occurring Observation; Unimodal and Bimodal Data', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'Mode = Observation with the highest frequency in the dataset', keyPoints: ['A dataset can have one mode (unimodal), two modes (bimodal), or no mode at all', 'Useful in manufacturing and business for identifying most popular shoe size or clothing item'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_13', topicTitle: 'Range & Coefficient of Range (Day 13)', subtopic: 'Measuring Data Dispersion: Difference Between Maximum and Minimum Values', dayNumber: 13, periodNumber: 1, keyFormulaOrLaw: 'Range R = Largest (L) - Smallest (S) | Coefficient of Range = (L - S) / (L + S)', keyPoints: ['Simplest measure of data dispersion and variability', 'Range depends only on extreme values and ignores all intermediate numbers'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_14', topicTitle: 'Empirical Relation: Mode, Median & Mean (Day 14)', subtopic: 'Karl Pearson Empirical Relationship Formula for Moderately Skewed Distributions', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Mode ≈ 3(Median) - 2(Mean) | Mean - Mode = 3(Mean - Median)', keyPoints: ['Allows calculating any one statistic if the other two are known', 'In a perfectly symmetrical normal distribution: Mean = Median = Mode'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'வடிவியல் & அளவியல்: பிதாகரஸ் தேற்றம், பரப்பளவு & சுற்றளவு' : 'Geometry & Mensuration: Pythagoras, Area & Perimeter',
-          description: isTa ? 'பிதாகரஸ் தேற்றம் a² + b² = c², முக்கோணம், செவ்வகம், வட்டம் பரப்பளவு மற்றும் கனஅளவு' : 'Pythagorean Theorem, Area and Perimeter of 2D shapes, Surface area and volume of 3D solids',
+          chapterTitle: isTa ? 'வடிவியல் & அளவியல் நானோ தலைப்புகள்: பிதாகரஸ் & வட்டம்' : 'Geometry & Mensuration Nano-Topics: Pythagoras & Circle',
+          description: isTa ? 'பிதாகரஸ் தேற்றம், முக்கோண விகிதங்கள், வட்டத்தின் சுற்றளவு 2πr மற்றும் பரப்பளவு πr²' : 'Pythagorean theorem, Pythagorean triplets, Circle circumference (2πr) and Circle area (πr²)',
           subtopics: [
             {
               id: 'mid_m_sub3',
-              title: 'வடிவியல் தேற்றங்கள் & பரப்பளவு',
+              title: 'வடிவியல் & அளவியல்',
               microTopics: [
-                { id: 'mid_m_7', title: 'Pythagoras Theorem (பிதாகரஸ் தேற்றம்: a² + b² = c²)', keyAxiom: 'In a right triangle: Hypotenuse² = Base² + Height²' },
-                { id: 'mid_m_8', title: 'Area & Perimeter of 2D Shapes (முக்கோணம், வட்டம், செவ்வகம்)', keyAxiom: 'Circle: Area = πr², Perimeter = 2πr | Triangle: Area = ½bh' }
+                { id: 'mid_m_15', title: 'Pythagoras Theorem: Finding Hypotenuse (Day 15)', keyAxiom: 'c² = a² + b² (Hypotenuse = √(Base² + Height²))' },
+                { id: 'mid_m_16', title: 'Pythagoras Triplets: 3-4-5, 5-12-13, 8-15-17 (Day 16)', keyAxiom: '(2m, m² - 1, m² + 1) generates right triangle integer sides' },
+                { id: 'mid_m_17', title: 'Circle: Circumference Formula 2πr (Day 17)', keyAxiom: 'Circumference = 2 × (22/7) × radius' },
+                { id: 'mid_m_18', title: 'Circle: Area Formula πr² (Day 18)', keyAxiom: 'Area = (22/7) × radius²' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_m_7', topicTitle: 'Pythagoras Theorem (பிதாகரஸ் தேற்றம்)', subtopic: 'Right-Angled Triangle Properties & Pythagorean Triplets (3-4-5, 5-12-13, 8-15-17)', dayNumber: 8, periodNumber: 3, keyFormulaOrLaw: 'Hypotenuse² = Base² + Altitude² | c² = a² + b²', keyPoints: ['Applicable strictly to right-angled triangles', 'Pythagorean Triplet condition: 2m, m² - 1, m² + 1'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_m_8', topicTitle: 'Area & Perimeter of Circle and Triangle (பரப்பளவு & சுற்றளவு)', subtopic: 'Circle Circumference/Area, Triangle Area (½bh) and Trapezium Area', dayNumber: 8, periodNumber: 4, keyFormulaOrLaw: 'Circle Area = πr² | Circumference = 2πr | Triangle Area = ½ × b × h | Trapezium = ½h(a + b)', keyPoints: ['Perimeter is the boundary distance around a 2D shape', 'Area is the total 2D surface space enclosed within the boundary'], type: 'solved_problem', importance: 'High-Yield' }
+            { id: 'mid_m_15', topicTitle: 'Pythagoras Theorem: Finding Hypotenuse (Day 15)', subtopic: 'Right-Angled Triangle Side Calculation: Hypotenuse² = Base² + Altitude²', dayNumber: 15, periodNumber: 1, keyFormulaOrLaw: 'Hypotenuse c = √(a² + b²) | a² + b² = c²', keyPoints: ['Strictly applies only to 90-degree right-angled triangles', 'The hypotenuse is always the longest side opposite the 90° right angle'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_16', topicTitle: 'Pythagorean Triplets (3-4-5, 5-12-13, 8-15-17) (Day 16)', subtopic: 'Integer Side Combinations and Formula (2m, m² - 1, m² + 1)', dayNumber: 16, periodNumber: 1, keyFormulaOrLaw: 'Pythagorean Triplet: 2m, m² - 1, m² + 1 for any integer m > 1', keyPoints: ['Multiples of triplets also form right triangles (e.g. 6-8-10 is 2× of 3-4-5)', 'Used in construction for verifying perfect 90-degree right-angle corners'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_17', topicTitle: 'Circle: Circumference Formula 2πr (Day 17)', subtopic: 'Boundary Distance of Circle, Diameter Relation (C = πd) & Wheel Rotations', dayNumber: 17, periodNumber: 1, keyFormulaOrLaw: 'Circumference C = 2πr = πd (where π ≈ 22/7 or 3.14159)', keyPoints: ['Circumference is the distance traveled by a wheel in one complete revolution', 'Ratio of Circumference to Diameter is constant π for all circles'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_m_18', topicTitle: 'Circle: Area Formula πr² (Day 18)', subtopic: 'Calculating 2D Enclosed Surface Area of Circle and Semicircle (½πr²)', dayNumber: 18, periodNumber: 1, keyFormulaOrLaw: 'Circle Area A = πr² | Semicircle Area = ½πr² | Quadrant Area = ¼πr²', keyPoints: ['Area units are always square units (cm², m²)', 'Doubling the radius increases the circle area by 4 times (2² = 4)'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         }
       ]
@@ -966,63 +973,91 @@ export function getMiddleClass6to8Syllabus(courseId: string, courseTitle: string
       chapters: [
         {
           chapterNumber: 1,
-          chapterTitle: isTa ? 'இயற்பியல்: வேகம், விசை, அழுத்தம் & ஒளி' : 'Physics: Speed, Force, Pressure & Light',
-          description: isTa ? 'வேகம் v = d/t, விசை F = ma, பாய்ம அழுத்தம் P = F/A, ஒளியின் எதிரொளிப்பு மற்றும் விலகல்' : 'Speed, Velocity, Force, Fluid Pressure P = F/A, Reflection and Refraction of Light',
+          chapterTitle: isTa ? 'இயற்பியல் நானோ அலகுகள்: இயக்கம், விசை, அழுத்தம் & ஒளி' : 'Physics Nano-Units: Motion, Force, Pressure & Light',
+          description: isTa ? 'வேகம், முடுக்கம், விசை F=ma, நியூட்டன் விதிகள் 1/2/3, ஓம் விதி, மின்தடை தொடர்/பக்க இணைப்பு, ஒளி எதிரொலிப்பு மற்றும் விலகல்' : 'Speed, Acceleration, Force F=ma, Newton 1st/2nd/3rd Laws, Ohm\'s Law, Series/Parallel Resistors, Reflection and Refraction',
           subtopics: [
             {
               id: 'mid_s_sub1',
-              title: 'இயற்பியல் அடிப்படைகள்',
+              title: 'இயற்பியல் நானோ அலகுகள்',
               microTopics: [
-                { id: 'mid_p_1', title: 'Speed, Velocity & Acceleration (வேகம், திசைவேகம் & முடுக்கம்)', keyAxiom: 'Speed = Distance/Time | Velocity = Displacement/Time | a = (v - u)/t' },
-                { id: 'mid_p_2', title: 'Force & Pressure (விசை & அழுத்தம்: P = F/A)', keyAxiom: 'Pressure P = Force / Area (Pascals) | Liquid Pressure = ρgh' },
-                { id: 'mid_p_3', title: 'Reflection & Refraction of Light (ஒளி எதிரொலிப்பு & ஒளி விலகல்)', keyAxiom: 'Angle i = Angle r | Snell\'s Law: sin i / sin r = μ' }
+                { id: 'mid_p_19', title: 'Speed vs Velocity vs Acceleration (Day 19)', keyAxiom: 'Speed = Distance/Time | a = (v - u)/t (m/s²)' },
+                { id: 'mid_p_20', title: 'Fluid Pressure: P = F/A & Liquid Depth P = ρgh (Day 20)', keyAxiom: 'Pressure in liquid increases linearly with depth' },
+                { id: 'mid_p_21', title: 'Newton 1st Law: Inertia of Rest and Motion (Day 21)', keyAxiom: 'Objects resist change in velocity unless acted by net force' },
+                { id: 'mid_p_22', title: 'Newton 2nd Law: F = ma & Momentum Impulse (Day 22)', keyAxiom: 'Force equals mass times acceleration (F = dp/dt)' },
+                { id: 'mid_p_23', title: 'Newton 3rd Law: Action & Reaction Pairs (Day 23)', keyAxiom: 'For every action, equal and opposite reaction (F₁₂ = -F₂₁)' },
+                { id: 'mid_p_24', title: 'Ohm\'s Law: Voltage, Current & Resistance V = IR (Day 24)', keyAxiom: 'Current is directly proportional to potential difference' },
+                { id: 'mid_p_25', title: 'Resistors in Series: R_s = R₁ + R₂ + R₃ (Day 25)', keyAxiom: 'Same current; Total resistance is sum of individual resistances' },
+                { id: 'mid_p_26', title: 'Resistors in Parallel: 1/R_p = 1/R₁ + 1/R₂ (Day 26)', keyAxiom: 'Same voltage; Reciprocal sum gives inverse equivalent resistance' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_p_1', topicTitle: 'Speed, Velocity & Acceleration (வேகம் & முடுக்கம்)', subtopic: 'Scalar vs Vector, Equations of Motion (v = u + at, s = ut + ½at²)', dayNumber: 9, periodNumber: 1, keyFormulaOrLaw: 'Speed = Distance / Time | Acceleration a = (v - u) / t (m/s²)', keyPoints: ['Speed is scalar (magnitude only); Velocity is vector (direction included)', 'Uniform acceleration occurs when velocity changes at a constant rate'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_p_2', topicTitle: 'Force & Pressure (விசை & அழுத்தம்)', subtopic: 'P = F / A in Pascals (N/m²), Hydraulic Lift & Atmospheric Pressure', dayNumber: 9, periodNumber: 2, keyFormulaOrLaw: 'Pressure P = Force / Area (1 Pa = 1 N/m²) | Liquid Pressure P = hρg', keyPoints: ['Sharper knife cuts better because smaller area produces higher pressure for same force', 'Atmospheric pressure measured using Mercury Barometer (760 mm Hg)'], type: 'solved_problem', importance: 'High-Yield' },
-            { id: 'mid_p_3', topicTitle: 'Reflection & Refraction of Light (ஒளி எதிரொலிப்பு & விலகல்)', subtopic: 'Laws of Reflection (∠i = ∠r) and Refraction through Glass Slab / Prism', dayNumber: 9, periodNumber: 3, keyFormulaOrLaw: 'Angle of Incidence = Angle of Reflection (∠i = ∠r) | Refractive Index μ = c / v', keyPoints: ['Light bends towards normal when entering denser medium (Air to Water/Glass)', 'Rainbow is formed by dispersion and internal reflection in water droplets'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_p_19', topicTitle: 'Speed, Velocity & Acceleration (Day 19)', subtopic: 'Scalar Speed, Vector Velocity and Rate of Change of Velocity Acceleration (a = Δv/Δt)', dayNumber: 19, periodNumber: 1, keyFormulaOrLaw: 'Speed = Distance / Time | Velocity = Displacement / Time | Acceleration a = (v - u) / t', keyPoints: ['Speed is scalar (no direction); Velocity is vector (magnitude and direction)', 'Deceleration / Retardation is negative acceleration when brakes are applied'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_20', topicTitle: 'Fluid Pressure & Atmospheric Barometer (Day 20)', subtopic: 'Pressure P = F/A (1 Pa = 1 N/m²), Hydrostatic Pressure (P = hρg) & Mercury Column', dayNumber: 20, periodNumber: 1, keyFormulaOrLaw: 'Pressure P = Force / Area (Pa) | Liquid Hydrostatic Pressure P = h × ρ × g', keyPoints: ['Dams are built wider at the bottom because liquid pressure increases with depth', 'Standard atmospheric pressure at sea level is 760 mm Hg (1.013 × 10⁵ Pa)'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_21', topicTitle: 'Newton\'s 1st Law: Inertia of Rest & Motion (Day 21)', subtopic: 'Galileo Concept of Inertia, Inertia of Rest, Motion, Direction and Mass as Measure of Inertia', dayNumber: 21, periodNumber: 1, keyFormulaOrLaw: 'Newton\'s First Law: Σ F = 0 -> Velocity is Constant (Inertia)', keyPoints: ['Passengers lean backwards when bus starts suddenly due to inertia of rest', 'Heavier objects have greater inertia because inertia is directly proportional to mass'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_p_22', topicTitle: 'Newton\'s 2nd Law: Force Formula F = ma (Day 22)', subtopic: 'Momentum (p = mv), Rate of Change of Momentum and Impulse (J = F × Δt)', dayNumber: 22, periodNumber: 1, keyFormulaOrLaw: 'Force F = m × a = (mv - mu) / t | Impulse J = Force × Time = Δp', keyPoints: ['Fielder pulls hands backward while catching ball to increase time, reducing impact force', '1 Newton is the force that produces an acceleration of 1 m/s² on a 1 kg mass'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_23', topicTitle: 'Newton\'s 3rd Law: Action & Reaction Pairs (Day 23)', subtopic: 'Simultaneous Force Pairs Acting on Different Bodies, Recoil of Gun and Rocket Propulsion', dayNumber: 23, periodNumber: 1, keyFormulaOrLaw: 'Force on A by B = - Force on B by A | F₁₂ = -F₂₁', keyPoints: ['Action and reaction never cancel each other because they act on two different bodies', 'Rocket moves upward as high-speed combustion exhaust gases push downward'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_p_24', topicTitle: 'Ohm\'s Law: Voltage, Current & Resistance V = IR (Day 24)', subtopic: 'Ohmic Conductors, V-I Linear Characteristic Graph and Resistance Concept', dayNumber: 24, periodNumber: 1, keyFormulaOrLaw: 'Potential Difference V = Current (I) × Resistance (R) | R = V / I (Ohms Ω)', keyPoints: ['At constant temperature, current through metallic conductor is proportional to voltage', 'Slope of V-I graph represents electrical resistance of the conductor'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_25', topicTitle: 'Resistors in Series: R_s = R₁ + R₂ + R₃ (Day 25)', subtopic: 'Single Pathway Circuit, Same Current Through All Resistors & Voltage Division', dayNumber: 25, periodNumber: 1, keyFormulaOrLaw: 'Series Equivalent: R_s = R₁ + R₂ + R₃ | Total Voltage V = V₁ + V₂ + V₃', keyPoints: ['Equivalent series resistance is always greater than the largest individual resistor', 'If any one component in series breaks, the entire circuit stops working'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_p_26', topicTitle: 'Resistors in Parallel: 1/R_p = 1/R₁ + 1/R₂ (Day 26)', subtopic: 'Multiple Current Branches, Same Voltage Across Resistors & Domestic Wiring', dayNumber: 26, periodNumber: 1, keyFormulaOrLaw: 'Parallel Equivalent: 1/R_p = 1/R₁ + 1/R₂ | Total Current I = I₁ + I₂', keyPoints: ['Equivalent parallel resistance is always smaller than the smallest individual resistor', 'Home appliances are connected in parallel so each operates independently at 220V'], type: 'solved_problem', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 2,
-          chapterTitle: isTa ? 'வேதியியல்: அமிலங்கள், காரங்கள், pH & அணு அமைப்பு' : 'Chemistry: Acids, Bases, pH & Atomic Structure',
-          description: isTa ? 'லிட்மஸ், pH அளவீடு, நடுநிலையாக்கல், புரோட்டான் எலக்ட்ரான் நியூட்ரான் அணு அமைப்பு' : 'Acids, Bases, Indicators, pH Scale, Atomic Structure (Protons, Neutrons, Electrons)',
+          chapterTitle: isTa ? 'வேதியியல் நானோ அலகுகள்: அமிலங்கள், காரங்கள், pH & அணு அமைப்பு' : 'Chemistry Nano-Units: Acids, Bases, pH & Atomic Structure',
+          description: isTa ? 'லிட்மஸ், நடுநிலையாக்கல், pH அளவீடு (0–14), புரோட்டான், எலக்ட்ரான், நியூட்ரான், அணு எண் Z மற்றும் நிறை எண் A' : 'Litmus indicators, Neutralization, pH scale (0 to 14), Subatomic particles, Atomic number Z and Mass number A',
           subtopics: [
             {
               id: 'mid_s_sub2',
-              title: 'வேதியியல் கோட்பாடுகள்',
+              title: 'வேதியியல் நானோ அலகுகள்',
               microTopics: [
-                { id: 'mid_c_1', title: 'Acids, Bases & Salts (அமிலங்கள், காரங்கள் & உப்புகள்)', keyAxiom: 'Acid + Base -> Salt + Water (Neutralization)' },
-                { id: 'mid_c_2', title: 'Atomic Structure - Protons, Neutrons, Electrons (அணு அமைப்பு)', keyAxiom: 'Atomic Number Z = Protons | Mass Number A = Protons + Neutrons' }
+                { id: 'mid_c_27', title: 'Acids & Bases: Litmus Indicators (Day 27)', keyAxiom: 'Acids turn blue litmus red; Bases turn red litmus blue' },
+                { id: 'mid_c_28', title: 'Neutralization: Acid + Base -> Salt + Water (Day 28)', keyAxiom: 'HCl + NaOH -> NaCl + H₂O + Heat energy' },
+                { id: 'mid_c_29', title: 'pH Scale: 0 to 14 Acidity & Basicity Measure (Day 29)', keyAxiom: 'pH = -log₁₀[H⁺] | pH < 7 Acidic | pH = 7 Neutral | pH > 7 Basic' },
+                { id: 'mid_c_30', title: 'Atomic Structure: Protons, Neutrons & Electrons (Day 30)', keyAxiom: 'Protons (+), Neutrons (0) in Nucleus; Electrons (-) in Shells' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_c_1', topicTitle: 'Acids, Bases & pH Scale (அமிலங்கள் & காரங்கள்)', subtopic: 'Litmus Test, Neutralization Reaction and pH Scale (0 to 14)', dayNumber: 12, periodNumber: 1, keyFormulaOrLaw: 'Neutralization: Acid + Base -> Salt + Water (HCl + NaOH -> NaCl + H₂O)', keyPoints: ['Acids turn blue litmus red (pH < 7); Bases turn red litmus blue (pH > 7)', 'Antacids (Milk of Magnesia) neutralize excess stomach acid'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_c_2', topicTitle: 'Atomic Structure: Protons, Neutrons & Electrons (அணு அமைப்பு)', subtopic: 'Rutherford & Bohr Model, Nucleus, Atomic Number (Z) & Mass Number (A)', dayNumber: 12, periodNumber: 2, keyFormulaOrLaw: 'Atomic Number Z = No. of Protons = No. of Electrons | Mass Number A = Z + Neutrons', keyPoints: ['Protons (+ve charge) and Neutrons (neutral) reside in dense central Nucleus', 'Electrons (-ve charge) revolve around nucleus in discrete orbits/shells (K, L, M, N)'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_c_27', topicTitle: 'Acids & Bases: Litmus & Indicators (Day 27)', subtopic: 'Natural Indicators (Turmeric, China Rose, Red Cabbage) and Synthetic Indicators (Phenolphthalein)', dayNumber: 27, periodNumber: 1, keyFormulaOrLaw: 'Acids: Sour Taste, pH < 7, Blue Litmus -> Red | Bases: Bitter, Soapy, Red Litmus -> Blue', keyPoints: ['Phenolphthalein turns bright pink in basic solutions and remains colorless in acids', 'Methyl orange turns red in acidic solutions and yellow in basic solutions'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_c_28', topicTitle: 'Neutralization: Acid + Base -> Salt + Water (Day 28)', subtopic: 'Exothermic Neutralization Reaction, Salt Formation & Antacid Treatment', dayNumber: 28, periodNumber: 1, keyFormulaOrLaw: 'Neutralization: Acid + Base -> Salt + Water (e.g. HCl + NaOH -> NaCl + H₂O)', keyPoints: ['Antacid tablets containing Magnesium Hydroxide Mg(OH)₂ neutralize excess stomach acid', 'Bee sting is acidic (formic acid), treated by applying mild base like baking soda'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_c_29', topicTitle: 'pH Scale: 0 to 14 Acidity & Alkalinity (Day 29)', subtopic: 'Sorenson pH Scale, Hydrogen Ion Concentration & Universal Indicator Color Chart', dayNumber: 29, periodNumber: 1, keyFormulaOrLaw: 'pH = -log₁₀[H⁺] | Acidic: 0 to 6.9 | Neutral: 7.0 | Basic / Alkaline: 7.1 to 14', keyPoints: ['Human blood maintains strict homeostasis around pH 7.35 to 7.45', 'Acid rain occurs when atmospheric sulfur/nitrogen oxides drop rain pH below 5.6'], type: 'solved_problem', importance: 'High-Yield' },
+            { id: 'mid_c_30', topicTitle: 'Atomic Structure: Protons, Neutrons & Electrons (Day 30)', subtopic: 'Bohr-Rutherford Planetary Model, Atomic Number Z, Mass Number A & Shell Filling', dayNumber: 30, periodNumber: 1, keyFormulaOrLaw: 'Atomic Number Z = Protons = Electrons | Mass Number A = Protons + Neutrons', keyPoints: ['Protons (+1 charge) and Neutrons (0 charge) form the heavy central Nucleus', 'Electrons (-1 charge) revolve in discrete energy shells following the 2n² rule (K=2, L=8, M=18)'], type: 'concept', importance: 'High-Yield' }
           ]
         },
         {
           chapterNumber: 3,
-          chapterTitle: isTa ? 'உயிரியல்: செல் நுண்ணுறுப்புகள், மைட்டோகாண்ட்ரியா & ஒளிச்சேர்க்கை' : 'Biology: Cell Organelles, Mitochondria & Photosynthesis',
-          description: isTa ? 'தாவர/விலங்கு செல் நுண்ணுறுப்புகள், மைட்டோகாண்ட்ரியா ஆற்றல் மையம், ஒளிச்சேர்க்கை' : 'Plant vs Animal Cell, Mitochondria ATP production, Photosynthesis in Chloroplast',
+          chapterTitle: isTa ? 'உயிரியல் நானோ அலகுகள்: ஒளிச்சேர்க்கை, இதயம், நெஃப்ரான் & மூளை' : 'Biology Nano-Units: Photosynthesis, Heart, Nephron & Brain',
+          description: isTa ? 'ஒளிச்சேர்க்கை ஒளி/இருள் வினைகள், இதயத்தின் 4 அறைகள் & பேஸ்மேக்கர், நெஃப்ரான் வடிகட்டுதல், மூளையின் பகுதிகள் மற்றும் தாவர ஹார்மோன்கள்' : 'Light & Dark photosynthesis, Heart 4 chambers & SA node, Nephron ultrafiltration, Brain regions and Plant hormones',
           subtopics: [
             {
               id: 'mid_s_sub3',
-              title: 'உயிரியல் அமைப்புகள்',
+              title: 'உயிரியல் நானோ அலகுகள்',
               microTopics: [
-                { id: 'mid_b_1', title: 'Plant Cell vs Animal Cell (தாவர மற்றும் விலங்கு செல்)', keyAxiom: 'Plant cells possess rigid cellulose cell wall and chloroplasts' },
-                { id: 'mid_b_2', title: 'Mitochondria - Powerhouse of the Cell (மைட்டோகாண்ட்ரியா)', keyAxiom: 'Generates cellular energy currency ATP via aerobic cellular respiration' },
-                { id: 'mid_b_3', title: 'Photosynthesis Fundamentals (ஒளிச்சேர்க்கை அடிப்படை)', keyAxiom: '6CO₂ + 6H₂O + Sunlight -> C₆H₁₂O₆ + 6O₂' }
+                { id: 'mid_b_31', title: 'Photosynthesis: Light Reaction in Thylakoids (Day 31)', keyAxiom: 'Photolysis: 2H₂O + Light -> 4H⁺ + 4e⁻ + O₂ + ATP + NADPH' },
+                { id: 'mid_b_32', title: 'Photosynthesis: Dark Reaction Calvin Cycle (Day 32)', keyAxiom: 'RuBisCO fixes CO₂ + ATP + NADPH into Glucose in Stroma' },
+                { id: 'mid_b_33', title: 'Human Heart: SA Node Natural Pacemaker (Day 33)', keyAxiom: 'Sinoatrial node generates rhythmic 72 electrical impulses/min' },
+                { id: 'mid_b_34', title: 'Human Heart: Double Circulation Flow (Day 34)', keyAxiom: 'Pulmonary circuit (Lungs) + Systemic circuit (Body organs)' },
+                { id: 'mid_b_35', title: 'Nephron: Glomerular Ultrafiltration (Day 35)', keyAxiom: 'Bowman\'s capsule filters waste under high glomerular pressure' },
+                { id: 'mid_b_36', title: 'Nephron: Selective Reabsorption in Henle Loop (Day 36)', keyAxiom: 'Reabsorbs 99% water, glucose and amino acids into capillaries' },
+                { id: 'mid_b_37', title: 'Human Brain: Cerebrum & Cognitive Functions (Day 37)', keyAxiom: 'Cerebrum governs conscious thought, speech, sensory perception and memory' },
+                { id: 'mid_b_38', title: 'Human Brain: Cerebellum & Body Equilibrium (Day 38)', keyAxiom: 'Cerebellum coordinates voluntary muscle movements and motor balance' },
+                { id: 'mid_b_39', title: 'Plant Hormones: Auxin & Phototropism (Day 39)', keyAxiom: 'Auxin elongates cells on shaded side causing stem to bend towards sunlight' },
+                { id: 'mid_b_40', title: 'Plant Hormones: Ethylene & Fruit Ripening (Day 40)', keyAxiom: 'Gaseous hormone converting complex fruit starches to simple sweet sugars' }
               ]
             }
           ],
           microTopics: [
-            { id: 'mid_b_1', topicTitle: 'Plant Cell vs Animal Cell (தாவர & விலங்கு செல் வேறுபாடு)', subtopic: 'Cell Wall, Chloroplast, Large Central Vacuole and Centrioles', dayNumber: 14, periodNumber: 1, keyFormulaOrLaw: 'Plant Cell = Cell Wall + Chloroplast + Large Vacuole | Animal Cell = Centrioles + Lysosomes', keyPoints: ['Plant cells have a rigid cellulose cell wall giving structural protection', 'Animal cells have flexible cell membrane and small temporary vacuoles'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_b_2', topicTitle: 'Mitochondria - Powerhouse of the Cell (மைட்டோகாண்ட்ரியா)', subtopic: 'Cristae, Matrix, Krebs Cycle and ATP Energy Production', dayNumber: 14, periodNumber: 2, keyFormulaOrLaw: 'Cellular Respiration: Glucose + O₂ -> CO₂ + H₂O + 38 ATP Energy', keyPoints: ['Mitochondria have double membranes and their own circular DNA and ribosomes', 'Produce ATP (Adenosine Triphosphate), the universal energy currency of living cells'], type: 'concept', importance: 'High-Yield' },
-            { id: 'mid_b_3', topicTitle: 'Photosynthesis Fundamentals (ஒளிச்சேர்க்கை)', subtopic: 'Chlorophyll Pigment, Light Energy Conversion and Stomatal Gas Exchange', dayNumber: 14, periodNumber: 3, keyFormulaOrLaw: '6CO₂ + 6H₂O + Sunlight (Chlorophyll) -> C₆H₁₂O₆ (Glucose) + 6O₂ (Oxygen)', keyPoints: ['Occurs in Chloroplasts containing green chlorophyll pigment', 'Releases vital oxygen gas into the atmosphere as byproduct'], type: 'concept', importance: 'High-Yield' }
+            { id: 'mid_b_31', topicTitle: 'Photosynthesis: Light Reaction in Thylakoids (Day 31)', subtopic: 'Photolysis of Water, Chlorophyll Light Absorption, ATP and NADPH Energy Synthesis', dayNumber: 31, periodNumber: 1, keyFormulaOrLaw: 'Photolysis: 2H₂O + Sunlight -> 4H⁺ + 4e⁻ + O₂ (Oxygen Released) + ATP + NADPH', keyPoints: ['Occurs in the Thylakoid Grana membranes of Chloroplasts containing green chlorophyll', 'Solar energy is converted into chemical energy currencies ATP and NADPH'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_32', topicTitle: 'Photosynthesis: Dark Reaction Calvin Cycle (Day 32)', subtopic: 'Stroma Carbon Fixation, RuBisCO Enzyme and Glucose C₆H₁₂O₆ Synthesis', dayNumber: 32, periodNumber: 1, keyFormulaOrLaw: 'Calvin Cycle: 6CO₂ + 18 ATP + 12 NADPH -> C₆H₁₂O₆ (Glucose) + 18 ADP + 12 NADP⁺', keyPoints: ['Takes place in the fluid Stroma of Chloroplasts independent of direct light', 'RuBisCO is the most abundant enzyme on Earth responsible for fixing atmospheric CO₂'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_33', topicTitle: 'Human Heart: SA Node Natural Pacemaker (Day 33)', subtopic: 'Sinoatrial Node Electrical Conduction, Atrial Depolarization & Cardiac Pulse', dayNumber: 33, periodNumber: 1, keyFormulaOrLaw: 'Cardiac Output = Stroke Volume (70 mL) × Heart Rate (72 bpm) ≈ 5.0 Litres/min', keyPoints: ['SA node located in the right atrium generates rhythmic electrical impulses spontaneously', 'Artificial electronic pacemakers are implanted when the natural SA node malfunctions'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_34', topicTitle: 'Human Heart: Double Circulation Flow (Day 34)', subtopic: 'Pulmonary Circulation (Deoxygenated to Lungs) vs Systemic Circulation (Oxygenated to Body)', dayNumber: 34, periodNumber: 1, keyFormulaOrLaw: 'Double Circuit: Heart -> Lungs -> Heart (Pulmonary) & Heart -> Body -> Heart (Systemic)', keyPoints: ['Prevents mixing of oxygen-rich and carbon dioxide-rich blood for maximum oxygen efficiency', 'Left ventricle has the thickest muscular myocardium wall to pump blood against systemic resistance'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_35', topicTitle: 'Nephron: Glomerular Ultrafiltration (Day 35)', subtopic: 'Afferent vs Efferent Arteriole Hydrostatic Pressure and Bowman\'s Capsule Filtration', dayNumber: 35, periodNumber: 1, keyFormulaOrLaw: 'Glomerular Filtration Rate (GFR) ≈ 125 mL/min = 180 Litres/day of Primary Filtrate', keyPoints: ['High pressure in glomerulus capillaries forces water, urea, ions, and glucose into Bowman capsule', 'Blood cells and large plasma proteins (Albumin) are retained in bloodstream'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_36', topicTitle: 'Nephron: Selective Reabsorption in Henle Loop (Day 36)', subtopic: 'Proximal Convoluted Tubule (PCT), Loop of Henle Counter-Current and Urine Concentration', dayNumber: 36, periodNumber: 1, keyFormulaOrLaw: 'Urine Output = 180 L GFR - 178.5 L Reabsorbed = 1.5 Litres/day of Concentrated Urine', keyPoints: ['100% of vital glucose and amino acids are actively reabsorbed back into peritubular capillaries', 'Antidiuretic Hormone (ADH) controls water permeability in collecting ducts'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_37', topicTitle: 'Human Brain: Cerebrum & Cognitive Functions (Day 37)', subtopic: 'Cerebral Cortex, 4 Lobes (Frontal, Parietal, Occipital, Temporal) & Voluntary Control', dayNumber: 37, periodNumber: 1, keyFormulaOrLaw: 'Cerebrum = Largest Part (~80% of brain) | Seat of Logic, Memory, Emotion and Sensory Processing', keyPoints: ['Left hemisphere controls right side of body and governs logic/language skills', 'Right hemisphere controls left side of body and governs spatial awareness/creativity'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_38', topicTitle: 'Human Brain: Cerebellum & Body Equilibrium (Day 38)', subtopic: 'Hindbrain Motor Coordination, Muscular Posture, Precision Timing and Balance', dayNumber: 38, periodNumber: 1, keyFormulaOrLaw: 'Cerebellum = "Little Brain" | Coordinates Voluntary Muscular Precision & Posture Balance', keyPoints: ['Allows smooth coordinated movements like walking a tightrope, cycling, or playing piano', 'Alcohol consumption impairs cerebellum function causing loss of muscular coordination and slurred speech'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_39', topicTitle: 'Plant Hormones: Auxin & Phototropism (Day 39)', subtopic: 'Indole-3-Acetic Acid (IAA), Apical Dominance and Stem Bending Towards Light', dayNumber: 39, periodNumber: 1, keyFormulaOrLaw: 'Phototropism: Auxin migrates to shaded side -> Stimulates cell elongation -> Stem bends to light', keyPoints: ['Auxin is produced in the growing shoot tips (apical meristems)', 'Synthetic auxins (2,4-D) are used as selective weed killers in cereal farming'], type: 'concept', importance: 'High-Yield' },
+            { id: 'mid_b_40', topicTitle: 'Plant Hormones: Ethylene & Fruit Ripening (Day 40)', subtopic: 'Gaseous Phytohormone (C₂H₄), Starch Breakdown, Aroma Development and Abscission', dayNumber: 40, periodNumber: 1, keyFormulaOrLaw: 'Ethylene: Converts starch to sugars | Breaks down chlorophyll | Softens fruit cell walls', keyPoints: ['Only known gaseous plant hormone in nature', 'Placing a ripe banana with raw fruits accelerates ripening of the other fruits'], type: 'concept', importance: 'High-Yield' }
           ]
         }
       ]

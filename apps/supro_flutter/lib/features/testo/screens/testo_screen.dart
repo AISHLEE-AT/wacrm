@@ -26,42 +26,82 @@ class _TestoScreenState extends State<TestoScreen> {
   final List<Map<String, dynamic>> syllabusCourses = [
     {
       'id': 'class_6_8_middle',
-      'title': 'Class 6–8 (Middle School)',
-      'sub': 'Maths (BODMAS, HCF, LCM, Mean, Median, Mode), Science, Tamil, English, Social',
+      'title': 'Class 6–8 (Middle School Nano-Curriculum)',
+      'sub': 'Days 1–57: Maths, Science & Tamil Nano-Units with 1-Tap CBT',
       'units': [
         {
-          'subject': 'Mathematics (கணிதம்)',
-          'title': 'Unit 1: Arithmetic & Statistics (BODMAS, HCF, LCM, Mean, Median, Mode)',
+          'subject': 'Mathematics (கணிதம் — Days 1–18)',
+          'title': 'Unit 1: BODMAS, HCF/LCM, Statistics & Geometry Nano-Topics',
           'topics': [
-            {'title': 'BODMAS / PEMDAS Rule (செயல்பாடுகளின் வரிசை)', 'law': 'Brackets -> Orders -> Division -> Multiplication -> Addition -> Subtraction'},
-            {'title': 'HCF & LCM (மீப்பெரு பொது வகுத்தி & மீச்சிறு மடங்கு)', 'law': 'Product of Two Numbers = HCF × LCM'},
-            {'title': 'Mean / Average (கூட்டுச் சராசரி)', 'law': 'Mean x̄ = (Σ x) / N = (x₁ + x₂ + ... + xₙ) / n'},
-            {'title': 'Median & Mode (இடைநிலை அளவு & முகடு)', 'law': 'Median = Middle value in ordered set | Mode = Most frequent value'},
-            {'title': 'Compound Interest & Profit/Loss (கூட்டுவட்டி & இலாபம்)', 'law': 'Amount A = P(1 + R/100)ⁿ | CI = A - P'},
-            {'title': 'Pythagoras Theorem (பிதாகரஸ் தேற்றம்)', 'law': 'Hypotenuse² = Base² + Altitude² (c² = a² + b²)'},
-            {'title': 'Area & Perimeter (வட்டம், முக்கோணம், செவ்வகம்)', 'law': 'Circle Area = πr² | Circumference = 2πr | Triangle = ½bh'}
+            {'title': 'Day 1: BODMAS Brackets Hierarchy (), {}, []', 'law': 'Innermost () -> {} -> Outer []'},
+            {'title': 'Day 2: BODMAS Division & Multiplication Precedence', 'law': 'Equal Priority: Evaluate Left-to-Right'},
+            {'title': 'Day 3: BODMAS Addition & Subtraction Precedence', 'law': 'Equal Priority: Evaluate Left-to-Right'},
+            {'title': 'Day 4: HCF Prime Factorization Tree Method', 'law': 'Product of lowest powers of common prime factors'},
+            {'title': 'Day 5: HCF Euclid Division / Long Division', 'law': 'a = bq + r until remainder r = 0'},
+            {'title': 'Day 6: LCM Common Division Method', 'law': 'Product of all divisors & undivided remainders'},
+            {'title': 'Day 7: HCF × LCM = a × b Core Identity', 'law': 'Number₁ × Number₂ = HCF(a,b) × LCM(a,b)'},
+            {'title': 'Day 8: HCF & LCM Word Problems (Bells & Tiles)', 'law': 'HCF for tile size; LCM for bell intervals'},
+            {'title': 'Day 9: Arithmetic Mean: Raw Data Average', 'law': 'Mean x̄ = (Σ x) / N'},
+            {'title': 'Day 10: Median: Middle Term for ODD Dataset', 'law': 'Median = [(n + 1)/2]ᵗʰ sorted term'},
+            {'title': 'Day 11: Median: Middle Average for EVEN Dataset', 'law': 'Median = Average of (n/2)ᵗʰ & (n/2+1)ᵗʰ'},
+            {'title': 'Day 12: Mode: Peak Frequency Detection', 'law': 'Mode = Most frequent observation'},
+            {'title': 'Day 13: Range & Coefficient of Range', 'law': 'Range = Largest - Smallest | Coeff = (L-S)/(L+S)'},
+            {'title': 'Day 14: Empirical Relation: Mode, Median & Mean', 'law': 'Mode ≈ 3(Median) - 2(Mean)'},
+            {'title': 'Day 15: Pythagoras Theorem: Hypotenuse Formula', 'law': 'c² = a² + b² (c = √(a² + b²))'},
+            {'title': 'Day 16: Pythagorean Triplets (3-4-5, 5-12-13)', 'law': '(2m, m² - 1, m² + 1)'},
+            {'title': 'Day 17: Circle Circumference Formula (2πr)', 'law': 'Circumference = 2 × (22/7) × r'},
+            {'title': 'Day 18: Circle Area Formula (πr²)', 'law': 'Area = (22/7) × r²'}
           ]
         },
         {
-          'subject': 'Science (அறிவியல்)',
-          'title': 'Unit 2: Physics, Chemistry & Biology Fundamentals',
+          'subject': 'Science (அறிவியல் — Days 19–40)',
+          'title': 'Unit 2: Physics, Chemistry & Biology Nano-Units',
           'topics': [
-            {'title': 'Speed, Velocity & Acceleration (வேகம் & முடுக்கம்)', 'law': 'Speed = Distance / Time | a = (v - u) / t'},
-            {'title': 'Force & Fluid Pressure (விசை & அழுத்தம்: P = F/A)', 'law': 'Pressure P = Force / Area (Pascals) | Liquid Pressure = ρgh'},
-            {'title': 'Reflection & Refraction of Light (ஒளி எதிரொலிப்பு & விலகல்)', 'law': 'Angle i = Angle r | Snell\'s Law: sin i / sin r = μ'},
-            {'title': 'Acids, Bases & pH Scale (அமிலங்கள், காரங்கள் & pH)', 'law': 'Acid + Base -> Salt + Water (Neutralization)'},
-            {'title': 'Plant Cell vs Animal Cell (தாவர & விலங்கு செல்)', 'law': 'Plant Cell = Cell Wall + Chloroplast | Animal Cell = Centrioles'},
-            {'title': 'Mitochondria - Powerhouse of Cell (மைட்டோகாண்ட்ரியா)', 'law': 'Cellular Respiration: Glucose + O₂ -> 38 ATP + CO₂ + H₂O'}
+            {'title': 'Day 19: Speed, Velocity & Acceleration', 'law': 'Speed = Distance/Time | a = (v - u)/t'},
+            {'title': 'Day 20: Fluid Pressure P = F/A & Liquid Depth P = ρgh', 'law': 'Pressure = Force/Area (Pa) | Liquid P = hρg'},
+            {'title': 'Day 21: Newton 1st Law: Inertia of Rest & Motion', 'law': 'Objects resist change in motion (Inertia)'},
+            {'title': 'Day 22: Newton 2nd Law: Force Formula F = ma', 'law': 'F = ma = (mv - mu)/t | Impulse J = F × Δt'},
+            {'title': 'Day 23: Newton 3rd Law: Action & Reaction Pairs', 'law': 'F₁₂ = -F₂₁ (Equal & Opposite Action-Reaction)'},
+            {'title': 'Day 24: Ohm\'s Law: V = IR & Resistance', 'law': 'V = IR | Current is proportional to Voltage'},
+            {'title': 'Day 25: Resistors in Series: R_s = R₁ + R₂ + R₃', 'law': 'Same Current; Resistances add up directly'},
+            {'title': 'Day 26: Resistors in Parallel: 1/R_p = 1/R₁ + 1/R₂', 'law': 'Same Voltage; Reciprocals add up'},
+            {'title': 'Day 27: Acids, Bases & Litmus Indicators', 'law': 'Acids: Blue -> Red | Bases: Red -> Blue'},
+            {'title': 'Day 28: Neutralization: Acid + Base -> Salt + Water', 'law': 'HCl + NaOH -> NaCl + H₂O + Heat'},
+            {'title': 'Day 29: pH Scale: 0 to 14 Acidity & Basicity', 'law': 'pH = -log₁₀[H⁺] | <7 Acid | 7 Neutral | >7 Base'},
+            {'title': 'Day 30: Atomic Structure: Protons, Neutrons, Electrons', 'law': 'Atomic No Z = Protons | Mass No A = Z + Neutrons'},
+            {'title': 'Day 31: Photosynthesis: Light Reaction in Thylakoids', 'law': 'Photolysis: 2H₂O + Light -> O₂ + ATP + NADPH'},
+            {'title': 'Day 32: Photosynthesis: Dark Reaction Calvin Cycle', 'law': 'RuBisCO fixes CO₂ + ATP + NADPH -> Glucose'},
+            {'title': 'Day 33: Human Heart: SA Node Natural Pacemaker', 'law': 'Sinoatrial node generates 72 electrical pulses/min'},
+            {'title': 'Day 34: Human Heart: Double Circulation Flow', 'law': 'Pulmonary (Lungs) + Systemic (Body)'},
+            {'title': 'Day 35: Nephron: Glomerular Ultrafiltration', 'law': 'Bowman\'s capsule filters 180 L/day at high pressure'},
+            {'title': 'Day 36: Nephron: Selective Reabsorption in Henle Loop', 'law': 'Reabsorbs 99% water, glucose and amino acids'},
+            {'title': 'Day 37: Human Brain: Cerebrum Cognitive Functions', 'law': 'Cerebrum governs logic, thought and memory'},
+            {'title': 'Day 38: Human Brain: Cerebellum Body Equilibrium', 'law': 'Cerebellum coordinates posture and balance'},
+            {'title': 'Day 39: Plant Hormones: Auxin & Phototropism', 'law': 'Auxin elongates shaded cells -> Bends to light'},
+            {'title': 'Day 40: Plant Hormones: Ethylene & Fruit Ripening', 'law': 'Gaseous hormone converts starch to fruit sugar'}
           ]
         },
         {
-          'subject': 'Tamil (தமிழ்)',
-          'title': 'Unit 3: எழுத்து, சொல் & நீதி இலக்கியம்',
+          'subject': 'Tamil (தமிழ் — Days 41–57)',
+          'title': 'Unit 3: தமிழ் எழுத்து, காலம் & தொகைநிலைத் தொடர்கள்',
           'topics': [
-            {'title': 'உயிர் & மெய் எழுத்துகள் (12 & 18)', 'law': 'குறில் 5, நெடில் 7 | வல்லினம், மெல்லினம், இடையினம்'},
-            {'title': 'இன எழுத்துகள் (நட்பு எழுத்துகள்)', 'law': 'க்-ங், ச்-ஞ், ட்-ண், த்-ந், ப்-ம், ற்-ன்'},
-            {'title': 'மயங்கொலிகள் (8 எழுத்துகள்: ண-ந-ன, ல-ழ-ள, ர-ற)', 'law': 'ஒரே மாதிரி ஒலித்து பொருள் வேறுபடும் 8 மயங்கொலி எழுத்துகள்'},
-            {'title': 'ஔவையார் மூதுரை & ஆத்திசூடி', 'law': '"அறஞ்செய விரும்பு", "ஆறுவது சினம்", "ஏட்டில் படித்ததோடு இருந்துவிடாதே"'}
+            {'title': 'Day 41: உயிர் எழுத்துகள் 5 குறில் எழுத்துகள்', 'law': 'அ, இ, உ, எ, ஒ — 1 மாத்திரை கால அளவு'},
+            {'title': 'Day 42: உயிர் எழுத்துகள் 7 நெடில் எழுத்துகள்', 'law': 'ஆ, ஈ, ஊ, ஏ, ஐ, ஓ, ஔ — 2 மாத்திரை கால அளவு'},
+            {'title': 'Day 43: வல்லின மெய் எழுத்துகள் (க், ச், ட், த், ப், ற்)', 'law': 'கசடதபற — வன்மையான ஓசை (½ மாத்திரை)'},
+            {'title': 'Day 44: மெல்லின மெய் எழுத்துகள் (ங், ஞ், ண், ந், ம், ன்)', 'law': 'ஙஞணநமன — மெல்லிய மூக்கொலி (½ மாத்திரை)'},
+            {'title': 'Day 45: இடையின மெய் எழுத்துகள் (ய், ர், ல், வ், ழ், ள்)', 'law': 'யரலவழள — இடைப்பட்ட ஓசை (½ மாத்திரை)'},
+            {'title': 'Day 46: ஆய்த எழுத்து (ஃ) நடுநிலை பயன்பாட்டு விதிகள்', 'law': 'எஃகு, அஃது — சொல்லின் இடையில் மட்டுமே வரும்'},
+            {'title': 'Day 47: திணை பாகுபாடு: உயர்திணை vs அஃறிணை', 'law': 'மனிதர் உயர்திணை; பறவை, விலங்கு, பொருட்கள் அஃறிணை'},
+            {'title': 'Day 48: ஐம்பால் பாகுபாடு (ஆண், பெண், பலர், ஒன்று, பல)', 'law': 'உயர்திணை 3 பால்; அஃறிணை 2 பால்'},
+            {'title': 'Day 49: முக்காலம்: இறந்த கால இடைநிலைகள் (த், ட், ற், இன்)', 'law': 'செய்தான் (த்), உண்டான் (ட்), பாடினான் (இன்)'},
+            {'title': 'Day 50: முக்காலம்: நிகழ்கால இடைநிலைகள் (கிறு, கின்று, ஆநின்று)', 'law': 'செய்கிறான் (கிறு), உண்கின்றான் (கின்று)'},
+            {'title': 'Day 51: முக்காலம்: எதிர்கால இடைநிலைகள் (ப், வ்)', 'law': 'படிப்பான் (ப்), வருவான் (வ்)'},
+            {'title': 'Day 52: வேற்றுமைத் தொகை: ஐ, ஆல், கு, இன், அது, கண்', 'law': 'பால் குடித்தான் = பாலைக் குடித்தான் (ஐ மறைந்தது)'},
+            {'title': 'Day 53: வினைத்தொகை: ஊறுகாய் முக்காலம் மறைதல்', 'law': 'ஊறிய, ஊறுகின்ற, ஊறும் காய் (காலம் கரந்தது)'},
+            {'title': 'Day 54: பண்புத்தொகை: செந்தாமரை மை விகுதி மறைதல்', 'law': 'செம்மையாகிய தாமரை | வெண்ணிலவு'},
+            {'title': 'Day 55: உவமைத்தொகை & உம்மைத்தொகை', 'law': 'மலர்விழி (போல) | தாய் தந்தை (உம் மறைந்தது)'},
+            {'title': 'Day 56: வல்லினம் மிகும் இடங்கள்: அந்த, இந்த சுட்டு', 'law': 'அந்த + காடு = அந்தக்காடு | இந்த + பையன் = இந்தப்பையன்'},
+            {'title': 'Day 57: வல்லினம் மிகா இடங்கள்: வினைத்தொகை & அது, இது', 'law': 'குடி தண்ணீர் (மிகாது) | அது சென்றது (மிகாது)'}
           ]
         }
       ]
