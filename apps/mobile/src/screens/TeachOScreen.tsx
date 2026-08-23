@@ -192,11 +192,6 @@ export default function TeachOScreen() {
     setIsCoursePickerOpen(false);
     try {
       await AsyncStorage.setItem('teacho_active_enrolled_course_id', course.id);
-      
-      // WhatsApp CRM Student Registration Alert
-      const studentPhone = user?.phone || profile?.phone || '9486335870';
-      const studentName = user?.name || profile?.full_name || 'Learner';
-      TeachOWhatsAppService.sendCourseRegistrationWelcome(studentPhone, studentName, course);
     } catch (e) {}
   };
 
