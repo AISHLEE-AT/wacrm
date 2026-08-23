@@ -205,32 +205,81 @@ class _TestoScreenState extends State<TestoScreen> {
     },
     {
       'id': 'neet_ug_2026',
-      'title': 'NEET UG 2026',
-      'sub': 'Physics, Chemistry, Botany, Zoology (720 Marks)',
+      'title': 'NEET UG 2026 (NMC 50 Units Official)',
+      'sub': 'Physics (20 Units), Chemistry (20 Units), Biology (10 Units)',
       'units': [
         {
-          'subject': 'Botany & Zoology',
-          'title': 'Genetics & Molecular Basis of Inheritance',
+          'subject': 'Physics (இயற்பியல் — NMC Official)',
+          'title': 'Unit 1–4: Mechanics, Electrodynamics & Optics',
           'topics': [
-            {'title': 'Mendelian Dihybrid Cross & Law of Segregation', 'law': 'Phenotypic Ratio 9:3:3:1'},
-            {'title': 'DNA Replication Semi-Conservative Model', 'law': 'Meselson-Stahl Proof & DNA Polymerase III'},
-            {'title': 'Lac Operon & Gene Regulation', 'law': 'Repressor binds operator in absence of allolactose'}
+            {'title': 'Newton Laws of Motion & Friction', 'law': 'F = ma | Limiting Friction f_s ≤ μ_s N'},
+            {'title': 'Work-Energy Theorem & Power', 'law': 'W_net = ΔK = 1/2 m(v² - u²) | Power P = F · v'},
+            {'title': 'Electrostatics & Coulomb Law', 'law': 'F = (1/4πε₀)(q₁q₂/r²) | Flux Φ = Q_enc / ε₀'},
+            {'title': 'Optics: Lens Maker Formula', 'law': '1/f = (μ - 1)(1/R₁ - 1/R₂) | Power P = 1/f(m)'},
+            {'title': 'Photoelectric Effect & Photons', 'law': 'K_max = hν - Φ = eV₀ | Einstein Equation'}
+          ]
+        },
+        {
+          'subject': 'Chemistry (வேதியியல் — NMC Official)',
+          'title': 'Unit 5–8: Physical, Inorganic & Organic Chemistry',
+          'topics': [
+            {'title': 'Thermodynamics & Gibbs Free Energy', 'law': 'ΔG° = ΔH° - TΔS° | Spontaneous when ΔG < 0'},
+            {'title': 'Chemical Kinetics: Rate Law & Arrhenius', 'law': 'k = A exp(-E_a / RT) | First Order t₁/₂ = 0.693/k'},
+            {'title': 'Coordination Compounds: CFT Splitting', 'law': 'Octahedral Δ_o splitting | μ = √[n(n+2)] BM'},
+            {'title': 'Organic Mechanisms: SN1 vs SN2 Walden Inversion', 'law': 'SN2 concerted 1-step | SN1 carbocation 2-step'}
+          ]
+        },
+        {
+          'subject': 'Botany & Zoology (உயிரியல் — NMC Official)',
+          'title': 'Unit 9–10: Genetics, Molecular Biology & Human Physiology',
+          'topics': [
+            {'title': 'Mendelian Dihybrid Cross & Law of Segregation', 'law': 'Phenotypic Ratio 9:3:3:1 | Independent Assortment'},
+            {'title': 'DNA Replication Semi-Conservative Model', 'law': 'Meselson-Stahl Proof & DNA Polymerase III 5\'->3\''},
+            {'title': 'Lac Operon & Gene Regulation', 'law': 'Repressor binds operator in absence of allolactose inducer'},
+            {'title': 'Human Heart & Double Circulation', 'law': 'SA Node pacemaker -> AV Node -> Bundle of His -> Purkinje'},
+            {'title': 'Nephron Ultrafiltration & Henle Loop Countercurrent', 'law': 'GFR = 125 mL/min (180 L/day) | 99% Reabsorption'}
           ]
         }
       ]
     },
     {
       'id': 'tnpsc_group_1_2_4',
-      'title': 'TNPSC Gr 1, 2, 4 & VAO',
-      'sub': 'General Tamil 100M, General Studies 75M, Aptitude 25M',
+      'title': 'TNPSC Group 1, 2, 4 & VAO (Govt 2026 Scheme)',
+      'sub': 'Mandatory Tamil (100 Qs) + General Studies Units 1–10 (100 Qs)',
       'units': [
         {
-          'subject': 'General Tamil (பொதுத்தமிழ்)',
-          'title': 'பகுதி-அ: இலக்கணம் & இலக்கியம்',
+          'subject': 'Mandatory Tamil (பொதுத்தமிழ் — 100 வினாக்கள்)',
+          'title': 'பகுதி அ, ஆ & இ: இலக்கணம், இலக்கியம் & தமிழறிஞர்கள்',
           'topics': [
-            {'title': 'எட்டுத்தொகை & பத்துப்பாட்டு நூல்கள்', 'law': 'சங்க இலக்கிய திணை & ஆசிரியர்கள் பகுப்பாய்வு'},
-            {'title': 'திருக்குறள் அறுபத்துநான்கு அதிகாரங்கள்', 'law': 'பொருட்பால் & அறத்துப்பால் முக்கிய வினாக்கள்'},
-            {'title': 'சொல் வகை & புணர்ச்சி விதிகள்', 'law': 'உயிரீறு, மெய்யீறு, உடம்படுமெய் இலக்கணம்'}
+            {'title': 'பகுதி அ: தமிழ் இலக்கணம் — வேற்றுமை & தொகைநிலைத் தொடர்கள்', 'law': 'வேற்றுமை, வினை, பண்பு, உவமை, உம்மைத்தொகை'},
+            {'title': 'பகுதி அ: வல்லினம் மிகும் & மிகா இடங்கள்', 'law': 'அந்த, இந்த, எந்த சுட்டுப் பின் மிகும்; வினைத்தொகை மிகாது'},
+            {'title': 'பகுதி ஆ: திருக்குறள் — அறத்துப்பால் & பொருட்பால்', 'law': '133 அதிகாரங்கள், 1330 குறள்கள், பரிமேலழகர் உரை'},
+            {'title': 'பகுதி ஆ: சங்க இலக்கியம் — எட்டுத்தொகை & பத்துப்பாட்டு', 'law': 'நற்றிணை, குறுந்தொகை, ஐங்குறுநூறு, பதிற்றுப்பத்து'},
+            {'title': 'பகுதி இ: பாரதியார், பாரதிதாசன் & நாமக்கல் கவிஞர்', 'law': 'பாட்டுக்கொரு புலவன் பாரதி | புரட்சிக்கவிஞர் பாரதிதாசன்'},
+            {'title': 'பகுதி இ: தந்தை பெரியார் & பேரறிஞர் அண்ணா தமிழ்த்தொண்டு', 'law': 'சுயமரியாதை இயக்கம் 1925 | குடியரசு, விடுதலை இதழ்கள்'}
+          ]
+        },
+        {
+          'subject': 'General Studies Units 1–7 (பொது அறிவு அலகுகள் 1–7)',
+          'title': 'அலகு 1 முதல் 7: அறிவியல், புவியியல், வரலாறு, இந்திய அரசியல் & பொருளாதாரம்',
+          'topics': [
+            {'title': 'அலகு 1: பொது அறிவியல் — இயக்க விதிகள், தனிமங்கள் & ஊட்டச்சத்து', 'law': 'விசை F = ma | ரத்த pH = 7.4 | விட்டமின் குறைபாடுகள்'},
+            {'title': 'அலகு 3: இந்தியப் புவியியல் — பருவமழை, ஆறுகள் & காடுகள்', 'law': 'தென்மேற்கு & வடகிழக்கு பருவக்காற்று | தீபகற்ப ஆறுகள்'},
+            {'title': 'அலகு 4: இந்திய வரலாறு — சிந்து சமவெளி, குப்தர், முகலாயர் & மராத்தியர்', 'law': 'ஹரப்பா 1921 | மகதப் பேரரசு | விஜயநகரப் பேரரசு'},
+            {'title': 'அலகு 5: இந்திய அரசியலமைப்பு — முகப்புரை, அடிப்படை உரிமைகள் (14–32)', 'law': 'சரத்து 32 அரசியலமைப்பு பரிகார உரிமை | 42வது திருத்தம் 1976'},
+            {'title': 'அலகு 6: இந்தியப் பொருளாதாரம் — ஐந்தாண்டுத் திட்டங்கள், நிதி ஆயோக் & GST', 'law': 'NITI Aayog 2015 | GST ஜூலை 1, 2017 (சரத்து 279A)'},
+            {'title': 'அலகு 7: இந்திய தேசிய இயக்கம் — 1857 புரட்சி, காந்திய சகாப்தம் & தமிழக தலைவர்கள்', 'law': 'வேலூர் புரட்சி 1806 | வ.உ.சி சுதேசிக் கப்பல் | பாரதியார்'}
+          ]
+        },
+        {
+          'subject': 'Units 8, 9 & 10 (அலகுகள் 8, 9 & 10)',
+          'title': 'அலகு 8: தமிழ் மரபு, அலகு 9: வளர்ச்சி நிர்வாகம், அலகு 10: திறனறிவும் மனக்கணக்கும்',
+          'topics': [
+            {'title': 'அலகு 8: தொல்லியல் கண்டுபிடிப்புகள் (கீழடி, சிவகளை, ஆதிச்சநல்லூர்)', 'law': 'வைகை நதிக்கரை கீழடி நகர நாகரிகம் (கி.மு. 6ஆம் நூற்றாண்டு)'},
+            {'title': 'அலகு 8: திருக்குறள் மதச்சார்பற்ற இலக்கியம் & சமூக நீதி இயக்கம்', 'law': 'நீதிக்கட்சி 1916 | வைக்கம் போராட்டம் 1924 | சுயமரியாதை'},
+            {'title': 'அலகு 9: தமிழகத்தில் வளர்ச்சி நிர்வாகம் & e-Governance', 'law': 'மனித வள மேம்பாட்டுக் குறியீடு (HDI) | தமிழ்நாடு மின்னாளுகை'},
+            {'title': 'அலகு 10: திறனறிவும் மனக்கணக்கும் (Aptitude — 25 Qs): HCF, LCM & சதவீதம்', 'law': 'HCF × LCM = x × y | லாபம் % = (லாபம்/அடக்க விலை) × 100'},
+            {'title': 'அலகு 10: காலமும் வேலையும் (M₁D₁ = M₂D₂) & தனிவட்டி (SI = PNR/100)', 'law': 'SI = PNR/100 | CI = P(1 + R/100)ᴺ - P'}
           ]
         }
       ]

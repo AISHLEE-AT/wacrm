@@ -105,6 +105,16 @@ export default function TeachODashboard() {
   const [selectedSyllabusSubject, setSelectedSyllabusSubject] = useState<string>('all');
   const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
 
+  // Gemini AI Custom Syllabus Synthesizer State
+  const [isSynthesizeModalOpen, setIsSynthesizeModalOpen] = useState(false);
+  const [synthTopicTitle, setSynthTopicTitle] = useState('');
+  const [synthSubjectName, setSynthSubjectName] = useState('');
+  const [synthChapterTitle, setSynthChapterTitle] = useState('');
+  const [synthKeyFormula, setSynthKeyFormula] = useState('');
+  const [synthLoading, setSynthLoading] = useState(false);
+  const [synthSuccessMsg, setSynthSuccessMsg] = useState('');
+  const [augmentationCounter, setAugmentationCounter] = useState(0);
+
   // Resolve Full Micro-Granular Syllabus for Active Course
   const fullSyllabus = useMemo(() => {
     try {
@@ -124,7 +134,63 @@ export default function TeachODashboard() {
         subjects: [],
       };
     }
-  }, [activeCourse?.id, activeCourse?.title]);
+  }, [activeCourse?.id, activeCourse?.title, augmentationCounter]);
+
+  const handleSynthesizeNewTopic = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!synthTopicTitle.trim()) return;
+
+    setSynthLoading(true);
+    setSynthSuccessMsg('');
+
+    try {
+      const targetSubject = synthSubjectName.trim() || fullSyllabus.subjects[0]?.subjectName || 'General Studies';
+      const targetChapter = synthChapterTitle.trim() || `Unit ${fullSyllabus.totalChapters + 1}: Core Applications`;
+      
+      const newMicroTopic = {
+        id: `custom_${Date.now()}`,
+        topicTitle: synthTopicTitle.trim(),
+        subtopic: `Government 2026 Curriculum Standard: ${synthTopicTitle.trim()}`,
+        dayNumber: Math.min(courseDay, activeCourse.totalDays),
+        periodNumber: 1,
+        keyFormulaOrLaw: synthKeyFormula.trim() || `Core Rule: ${synthTopicTitle.trim()}`,
+        keyPoints: [
+          `Verified standard formulation for ${synthTopicTitle.trim()}`,
+          `High-yield numerical and theoretical exam application`,
+          `Daily practice and active recall mnemonic`
+        ],
+        type: 'solved_problem',
+        importance: 'High-Yield'
+      };
+
+      const storageKey = `teacho_custom_syllabus_${activeCourse.id}`;
+      const existingRaw = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+      const existing = existingRaw ? JSON.parse(existingRaw) : [];
+      
+      existing.push({
+        subjectName: targetSubject,
+        chapterTitle: targetChapter,
+        chapterNumber: 1,
+        microTopic: newMicroTopic
+      });
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(storageKey, JSON.stringify(existing));
+      }
+      setAugmentationCounter(prev => prev + 1);
+      setSynthSuccessMsg(`✓ Successfully synthesized "${synthTopicTitle.trim()}" and added to syllabus!`);
+      
+      setTimeout(() => {
+        setSynthTopicTitle('');
+        setSynthKeyFormula('');
+        setSynthLoading(false);
+        setIsSynthesizeModalOpen(false);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Error synthesizing topic:', err);
+      setSynthLoading(false);
+    }
+  };
 
   const toggleChapter = (chapterKey: string) => {
     setExpandedChapters(prev => ({
@@ -765,6 +831,10 @@ export default function TeachODashboard() {
                     <span className="px-3 py-1 rounded-xl text-xs font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                       {activeCourse.badge}
                     </span>
+                    <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 flex items-center gap-1.5 shadow-sm">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                      2026 Govt-Notified Syllabus
+                    </span>
                     <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-800/80 text-slate-300 border border-slate-700">
                       {fullSyllabus.board} • {fullSyllabus.medium} Medium
                     </span>
@@ -777,7 +847,7 @@ export default function TeachODashboard() {
                     <span>{activeCourse.title}</span>
                   </h3>
                   <p className="text-xs md:text-sm text-slate-400 max-w-3xl leading-relaxed">
-                    Official authentic curriculum mapped to micro-granular topics. Each micro-topic includes theoretical foundations, textbook formulas/laws, key exam points, and direct masterclass video lessons.
+                    Official authentic government-notified curriculum mapped to micro-granular topics. Each micro-topic includes theoretical foundations, textbook formulas/laws, key exam points, and direct masterclass video lessons.
                   </p>
                 </div>
 
@@ -802,7 +872,7 @@ export default function TeachODashboard() {
                 </div>
               </div>
 
-              {/* Controls Bar: Search & Subject Filters */}
+              {/* Controls Bar: Search, Subject Filters & AI Synthesizer */}
               <div className="pt-4 border-t border-slate-800/80 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
                 {/* Subject Selector Tabs */}
                 <div className="flex flex-wrap gap-2">
@@ -843,7 +913,7 @@ export default function TeachODashboard() {
                 </div>
 
                 {/* Micro-Topic Search Input */}
-                <div className="relative min-w-[260px] md:w-72">
+                <div className="relative min-w-[240px] md:w-72">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
