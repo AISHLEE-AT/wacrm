@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   SectionList,
+  FlatList,
+  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
@@ -24,6 +26,8 @@ import VoiceSpeechBridge, { VoiceSpeechBridgeRef } from '../components/VoiceSpee
 import PaymentQRModal from '../components/PaymentQRModal';
 import {
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Search,
   Award,
   FileCheck2,
@@ -44,7 +48,12 @@ import {
   Layers,
   FileText,
   BookOpen,
+  PlayCircle,
+  Target,
+  Compass,
 } from 'lucide-react-native';
+import { getCourseSyllabus, SyllabusUnit } from '../lib/courseCatalogMaster';
+import { fetchTestOMcqsForTopic } from '../lib/coursePlayerEngine';
 
 const EXAM_CATEGORIES = [
   { id: 'all', label: 'All Exams', icon: Layers },
@@ -54,6 +63,23 @@ const EXAM_CATEGORIES = [
   { id: 'school', label: 'School 8–12', icon: GraduationCap },
   { id: 'tech', label: 'Tech & Coding', icon: Sparkles },
   { id: 'pyq', label: 'PYQ Papers', icon: BookOpen },
+];
+
+export const SYLLABUS_TEST_COURSES = [
+  { id: 'class_12_tamil_nadu', label: 'Class 12 Board', subtitle: 'Maths, Physics, Chem, Bio, Commerce, Accounts, CS, Tamil, English', icon: GraduationCap, category: 'school' },
+  { id: 'class_11_tamil_nadu', label: 'Class 11 Board', subtitle: 'State Board & CBSE Full Syllabus', icon: GraduationCap, category: 'school' },
+  { id: 'class_10_tamil_nadu', label: 'Class 10 SSLC', subtitle: 'Tamil, English, Maths, Science, Social', icon: GraduationCap, category: 'school' },
+  { id: 'class_9_tamil_nadu', label: 'Class 9th Standard', subtitle: 'All 5 Subjects Complete Samacheer', icon: GraduationCap, category: 'school' },
+  { id: 'class_8_tamil_nadu', label: 'Class 8th Standard', subtitle: 'Middle School Samacheer Kalvi', icon: GraduationCap, category: 'school' },
+  { id: 'neet_ug_2026', label: 'NEET UG 2026', subtitle: 'Physics, Chemistry, Botany, Zoology (720 Marks)', icon: Zap, category: 'neet_jee' },
+  { id: 'jee_main_advanced_2026', label: 'JEE Main & Adv', subtitle: 'Physics, Chemistry, Mathematics (300 Marks)', icon: Zap, category: 'neet_jee' },
+  { id: 'tnpsc_group_1_2_4', label: 'TNPSC Gr 1, 2, 4 & VAO', subtitle: 'General Tamil 100M, GK 75M, Aptitude 25M', icon: Award, category: 'tnpsc_govt' },
+  { id: 'tn_police_si_constable', label: 'Police SI & Constable', subtitle: 'Tamil Eligibility, GK & Psychology 140M', icon: Award, category: 'tnpsc_govt' },
+  { id: 'banking_ibps_sbi_po_clerk', label: 'Banking & Insurance', subtitle: 'IBPS/SBI PO & Clerk: Quant, Reasoning, English, GA', icon: FileCheck2, category: 'ssc_bank' },
+  { id: 'ssc_cgl_chsl_rrb_railway', label: 'SSC & RRB Railway', subtitle: 'SSC CGL/CHSL & RRB NTPC: Advance Maths & GA', icon: FileCheck2, category: 'ssc_bank' },
+  { id: 'trb_tntet_teachers_exam', label: 'TRB & TNTET Exams', subtitle: 'Pedagogy, Child Development & School Subjects', icon: BookOpen, category: 'tnpsc_govt' },
+  { id: 'gate_engineering', label: 'GATE 2026 & B.Tech', subtitle: 'CS/IT: Linear Algebra, OS, DBMS, Networks, TOC', icon: Sparkles, category: 'tech' },
+  { id: 'college_tech_skills', label: 'Degree Tech & AI', subtitle: 'React 19, TypeScript, Python 3.12 AI/ML, LeetCode DSA', icon: Sparkles, category: 'tech' },
 ];
 
 export default function TestOHubScreen({ route }: any) {
@@ -73,6 +99,66 @@ export default function TestOHubScreen({ route }: any) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
+  // ─── DUAL VIEW MODE: MOCK EXAMS vs SYLLABUS-WISE MICRO-TOPIC CBT ───
+  const [testoViewMode, setTestoViewMode] = useState<'mock_tests' | 'syllabus_cbt'>(
+    route?.params?.mode === 'syllabus' ? 'syllabus_cbt' : 'mock_tests'
+  );
+  const [selectedSyllabusCourseId, setSelectedSyllabusCourseId] = useState<string>(
+    route?.params?.courseId || 'class_12_tamil_nadu'
+  );
+  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+  const [cbtLaunchingTopic, setCbtLaunchingTopic] = useState<string | null>(null);
+
+  const activeSyllabusCourse = useMemo(() => {
+    return SYLLABUS_TEST_COURSES.find(c => c.id === selectedSyllabusCourseId) || SYLLABUS_TEST_COURSES[0];
+  }, [selectedSyllabusCourseId]);
+
+  const activeSyllabusUnits: SyllabusUnit[] = useMemo(() => {
+    return getCourseSyllabus(activeSyllabusCourse.id, activeSyllabusCourse.category);
+  }, [activeSyllabusCourse]);
+
+  const toggleChapter = (chapKey: string) => {
+    setExpandedChapters(prev => ({
+      ...prev,
+      [chapKey]: prev[chapKey] === undefined ? false : !prev[chapKey]
+    }));
+  };
+
+  const launchMicroTopicCbt = async (microTopicTitle: string, courseTitle: string) => {
+    try {
+      setCbtLaunchingTopic(microTopicTitle);
+      const qs = await fetchTestOMcqsForTopic(microTopicTitle, courseTitle, 10);
+      setCbtLaunchingTopic(null);
+      navigation.navigate('TestOExamScreen', {
+        testId: `micro_${microTopicTitle.toLowerCase().replace(/[^a-z0-9_]/g, '_')}`,
+        title: `${microTopicTitle} • 10-Q CBT Test`,
+        questionCount: qs.length || 10,
+        markingScheme: '+4 / -1',
+        localQuestions: qs
+      });
+    } catch (err: any) {
+      setCbtLaunchingTopic(null);
+      Alert.alert('CBT Launch', 'Unable to start CBT test: ' + err.message);
+    }
+  };
+
+  const openCoursePlayerForMicroTopic = (
+    microTopicTitle: string,
+    courseTitle: string,
+    courseId: string,
+    category?: string
+  ) => {
+    navigation.navigate('TeachOCourseScreen', {
+      course: {
+        id: courseId,
+        title_name: courseTitle,
+        category: category || 'general'
+      },
+      activeTab: 'curriculum',
+      initialMicroTopic: microTopicTitle
+    });
+  };
+
   // Handle incoming route params when navigated
   useEffect(() => {
     if (route?.params?.searchQuery) {
@@ -81,6 +167,12 @@ export default function TestOHubScreen({ route }: any) {
       setSearchQuery(route.params.topic);
     } else if (route?.params?.courseTitle) {
       setSearchQuery(route.params.courseTitle);
+    }
+    if (route?.params?.mode) {
+      setTestoViewMode(route.params.mode === 'syllabus' ? 'syllabus_cbt' : 'mock_tests');
+    }
+    if (route?.params?.courseId) {
+      setSelectedSyllabusCourseId(route.params.courseId);
     }
   }, [route?.params]);
 
@@ -326,6 +418,19 @@ export default function TestOHubScreen({ route }: any) {
     return result;
   }, [sections, selectedCategory, searchQuery]);
 
+  const openCourseSyllabus = (courseName: string, category?: string) => {
+    const cleanTitle = courseName || 'Academic Course Syllabus';
+    const cleanId = cleanTitle.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    navigation.navigate('TeachOCourseScreen', {
+      course: {
+        id: cleanId,
+        title_name: cleanTitle,
+        category: category || selectedCategory || 'general'
+      },
+      activeTab: 'curriculum'
+    });
+  };
+
   const renderTestCard = ({ item }: { item: any }) => {
     const qCount = item.questionCount || 25;
     const maxMarks = qCount * 4;
@@ -385,10 +490,18 @@ export default function TestOHubScreen({ route }: any) {
         </View>
 
         <View style={styles.cardFooter}>
-          <View style={styles.freeBadge}>
-            <CheckCircle2 size={11} color="#10b981" style={{ marginRight: 3 }} />
-            <Text style={styles.freeBadgeText}>Free Solution & Certificate</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.syllabusBtn}
+            onPress={() => {
+              const secCourseName = item.title_name?.includes(':')
+                ? item.title_name.split(':')[0].trim()
+                : (item.displayTitle || item.title_name || 'Course');
+              openCourseSyllabus(secCourseName, item.category);
+            }}
+          >
+            <BookOpen size={12} color="#10b981" style={{ marginRight: 4 }} />
+            <Text style={styles.syllabusBtnText}>Syllabus ➔</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.startBtn}
@@ -411,8 +524,17 @@ export default function TestOHubScreen({ route }: any) {
 
   const renderSectionHeader = ({ section: { title, data } }: any) => (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionCount}>{data.length} Tests</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionCount}>{data.length} Tests Available</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.sectionSyllabusBadge}
+        onPress={() => openCourseSyllabus(title)}
+      >
+        <BookOpen size={11} color="#38bdf8" style={{ marginRight: 4 }} />
+        <Text style={styles.sectionSyllabusText}>View Syllabus ➔</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -497,113 +619,361 @@ export default function TestOHubScreen({ route }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* 🏷️ Horizontal Exam Category Filter Pills */}
-      <View style={{ marginBottom: 12 }}>
-        <SectionList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          sections={[{ title: '', data: EXAM_CATEGORIES }]}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-          renderItem={({ item }) => {
-            const isSelected = selectedCategory === item.id;
-            const IconComp = item.icon;
-            return (
-              <TouchableOpacity
-                style={[
-                  styles.categoryPill,
-                  isSelected && styles.categoryPillActive,
-                ]}
-                onPress={() => setSelectedCategory(item.id)}
-                activeOpacity={0.7}
-              >
-                <IconComp size={12} color={isSelected ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
-                <Text style={[styles.categoryPillText, isSelected && styles.categoryPillTextActive]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+      {/* 🎯 TestO Dual Mode Switcher: Full Mock Exams vs Syllabus & Micro-Topic CBT */}
+      <View style={styles.modeSwitcherContainer}>
+        <TouchableOpacity
+          style={[styles.modeBtn, testoViewMode === 'mock_tests' && styles.modeBtnActive]}
+          onPress={() => setTestoViewMode('mock_tests')}
+          activeOpacity={0.8}
+        >
+          <Layers size={13} color={testoViewMode === 'mock_tests' ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 6 }} />
+          <Text style={[styles.modeBtnText, testoViewMode === 'mock_tests' && styles.modeBtnTextActive]}>
+            Full Mock Exams & Tests
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.modeBtn, testoViewMode === 'syllabus_cbt' && styles.modeBtnActive]}
+          onPress={() => setTestoViewMode('syllabus_cbt')}
+          activeOpacity={0.8}
+        >
+          <Target size={13} color={testoViewMode === 'syllabus_cbt' ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 6 }} />
+          <Text style={[styles.modeBtnText, testoViewMode === 'syllabus_cbt' && styles.modeBtnTextActive]}>
+            Syllabus & Micro-Topic CBT
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 🔥 All-India Free Daily Live Mock Test Banner */}
-      <View style={styles.liveMockCard}>
-        <View style={styles.liveMockHeader}>
-          <View style={styles.liveTag}>
-            <Flame size={12} color="#ef4444" />
-            <Text style={styles.liveTagText}>TODAY'S ALL-INDIA LIVE MOCK</Text>
+      {/* ─── VIEW 1: SYLLABUS & MICRO-TOPIC CBT EXPLORER ─── */}
+      {testoViewMode === 'syllabus_cbt' ? (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 120 }}
+          showsVerticalScrollIndicator={true}
+        >
+          {/* Course Selector Horizontal Carousel */}
+          <View style={{ marginBottom: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+              {SYLLABUS_TEST_COURSES.map(courseItem => {
+                const isSelected = selectedSyllabusCourseId === courseItem.id;
+                const IconComp = courseItem.icon;
+                return (
+                  <TouchableOpacity
+                    key={courseItem.id}
+                    style={[styles.syllabusCourseCard, isSelected && styles.syllabusCourseCardActive]}
+                    onPress={() => setSelectedSyllabusCourseId(courseItem.id)}
+                    activeOpacity={0.8}
+                  >
+                    <IconComp size={14} color={isSelected ? '#0a0f1e' : '#10b981'} style={{ marginRight: 6 }} />
+                    <Text style={[styles.syllabusCourseText, isSelected && styles.syllabusCourseTextActive]}>
+                      {courseItem.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
-          <Text style={styles.liveTimerText}>⏳ Ends in 04h 30m</Text>
-        </View>
-        <Text style={styles.liveMockTitle}>National Standard General Aptitude & Core Concepts (CBT)</Text>
-        <View style={styles.liveMockDetails}>
-          <Text style={styles.liveMockDetailText}>📝 30 Questions • ⏰ 30 Mins • 🏆 All India Live Ranking</Text>
-        </View>
-        <View style={styles.liveMockFooter}>
-          <View style={styles.liveUsersRow}>
-            <Users size={12} color="#10b981" />
-            <Text style={styles.liveUsersText}>14,890 Students Registered</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.liveAttemptBtn}
-            onPress={() => {
-              if (sections.length > 0 && sections[0].data.length > 0) {
-                const firstTest = sections[0].data[0];
-                navigation.navigate('TestOExamScreen', {
-                  testId: firstTest.id,
-                  title: 'All-India Live Free Mock Test 2026',
-                  questionCount: 30,
-                  markingScheme: '+4 / -1',
-                });
-              } else {
-                Alert.alert('Live Test', 'Loading live test server. Please tap on any test below.');
-              }
-            }}
-          >
-            <Text style={styles.liveAttemptBtnText}>Take Free Test ⚡</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* 💳 Test Series Pass Unlock Banner */}
-      <TouchableOpacity
-        style={styles.testoUnlockBanner}
-        onPress={() => setIsPaymentModalOpen(true)}
-        activeOpacity={0.85}
-      >
-        <View style={styles.testoUnlockIconBox}>
-          <ShoppingCart size={16} color="#fbbf24" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={styles.testoUnlockTitle}>Unlock All Test Series (₹99)</Text>
-            <View style={styles.testoUnlockPriceBadge}>
-              <Text style={styles.testoUnlockPriceText}>Instant Pass</Text>
+          {/* Course Header Banner */}
+          <View style={styles.courseHeaderBanner}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.courseHeaderTitle}>{activeSyllabusCourse.label}</Text>
+              <Text style={styles.courseHeaderSubtitle}>{activeSyllabusCourse.subtitle}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                <View style={styles.metaBadge}>
+                  <Text style={styles.metaBadgeText}>{activeSyllabusUnits.length} Subject Units</Text>
+                </View>
+                <View style={[styles.metaBadge, { backgroundColor: '#38bdf820', borderColor: '#38bdf8' }]}>
+                  <Text style={[styles.metaBadgeText, { color: '#38bdf8' }]}>10-Q CBT & Player Ready</Text>
+                </View>
+              </View>
             </View>
           </View>
-          <Text style={styles.testoUnlockDesc}>
-            1-Tap UPI / GPay unlock for all standard & chapter exams with certificate.
-          </Text>
-        </View>
-      </TouchableOpacity>
 
-      <SectionList
-        sections={filteredSections}
-        keyExtractor={item => item.id}
-        renderItem={renderTestCard}
-        renderSectionHeader={renderSectionHeader}
-        contentContainerStyle={[
-          styles.listContainer,
-          { paddingBottom: Math.max(insets.bottom, 16) + 120 },
-        ]}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <FileCheck2 size={44} color="#334155" style={{ marginBottom: 10 }} />
-            <Text style={styles.emptyText}>No mock tests match your search.</Text>
+          {/* Units & Chapters & Micro-Topics List */}
+          <View style={{ paddingHorizontal: 16 }}>
+            {activeSyllabusUnits.map((unit, uIdx) => {
+              const hasChapters = unit.chapters && unit.chapters.length > 0;
+              return (
+                <View key={unit.id || uIdx} style={{ marginBottom: 16 }}>
+                  {/* Subject / Unit Header */}
+                  <View style={styles.syllabusUnitHeader}>
+                    <View style={{ flex: 1 }}>
+                      {unit.subjectName ? (
+                        <Text style={styles.subjectPill}>{unit.subjectName}</Text>
+                      ) : null}
+                      <Text style={styles.unitTitleText}>
+                        {unit.unitNumber ? `UNIT ${unit.unitNumber}: ` : ''}{unit.title}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Chapters */}
+                  {hasChapters && unit.chapters?.map((chap, cIdx) => {
+                    const chapKey = `${selectedSyllabusCourseId}-${uIdx}-${cIdx}`;
+                    const isExpanded = expandedChapters[chapKey] !== false; // open by default
+                    const chapTitle = chap.chapterTitle || chap.title || `Chapter ${cIdx + 1}`;
+                    const hasSubtopics = chap.subtopics && chap.subtopics.length > 0;
+                    const hasDirectMicro = chap.microTopics && chap.microTopics.length > 0;
+
+                    return (
+                      <View key={chapKey} style={styles.syllabusChapCard}>
+                        <TouchableOpacity
+                          style={styles.chapHeaderRow}
+                          onPress={() => toggleChapter(chapKey)}
+                          activeOpacity={0.8}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.chapNumText}>CHAPTER {chap.chapterNumber || cIdx + 1}</Text>
+                            <Text style={styles.chapTitleText}>{chapTitle}</Text>
+                            {chap.tamilTitle || chap.chapterTamilTitle ? (
+                              <Text style={styles.chapTamilText}>{chap.tamilTitle || chap.chapterTamilTitle}</Text>
+                            ) : null}
+                          </View>
+                          {isExpanded ? <ChevronUp size={18} color="#10b981" /> : <ChevronDown size={18} color="#94a3b8" />}
+                        </TouchableOpacity>
+
+                        {isExpanded && (
+                          <View style={styles.chapBody}>
+                            {hasSubtopics ? (
+                              chap.subtopics?.map((sub, sIdx) => (
+                                <View key={sub.id || sIdx} style={styles.subtopicSection}>
+                                  <Text style={styles.subtopicTitleText}>{sub.title}</Text>
+                                  {sub.microTopics?.map((micro, mIdx) => {
+                                    const mTitle = micro.title || micro.topicTitle || `Topic ${mIdx + 1}`;
+                                    const isLaunchingThis = cbtLaunchingTopic === mTitle;
+                                    return (
+                                      <View key={micro.id || mIdx} style={styles.microTopicCard}>
+                                        <View style={{ flex: 1, marginRight: 8 }}>
+                                          <Text style={styles.microTitleText}>{mTitle}</Text>
+                                          {micro.keyAxiom || micro.keyFormulaOrLaw ? (
+                                            <Text style={styles.microAxiomText}>
+                                              {micro.keyAxiom || micro.keyFormulaOrLaw}
+                                            </Text>
+                                          ) : null}
+                                        </View>
+                                        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                          <TouchableOpacity
+                                            style={styles.microCbtBtn}
+                                            onPress={() => launchMicroTopicCbt(mTitle, activeSyllabusCourse.label)}
+                                            disabled={isLaunchingThis}
+                                          >
+                                            {isLaunchingThis ? (
+                                              <ActivityIndicator size="small" color="#0a0f1e" />
+                                            ) : (
+                                              <>
+                                                <FileCheck2 size={11} color="#0a0f1e" style={{ marginRight: 3 }} />
+                                                <Text style={styles.microCbtBtnText}>10-Q CBT</Text>
+                                              </>
+                                            )}
+                                          </TouchableOpacity>
+                                          <TouchableOpacity
+                                            style={styles.microPlayerBtn}
+                                            onPress={() => openCoursePlayerForMicroTopic(mTitle, activeSyllabusCourse.label, activeSyllabusCourse.id, activeSyllabusCourse.category)}
+                                          >
+                                            <Text style={styles.microPlayerBtnText}>Player ➔</Text>
+                                          </TouchableOpacity>
+                                        </View>
+                                      </View>
+                                    );
+                                  })}
+                                </View>
+                              ))
+                            ) : hasDirectMicro ? (
+                              chap.microTopics?.map((micro, mIdx) => {
+                                const mTitle = micro.topicTitle || micro.title || `Topic ${mIdx + 1}`;
+                                const isLaunchingThis = cbtLaunchingTopic === mTitle;
+                                return (
+                                  <View key={micro.id || mIdx} style={styles.microTopicCard}>
+                                    <View style={{ flex: 1, marginRight: 8 }}>
+                                      <Text style={styles.microTitleText}>{mTitle}</Text>
+                                      {micro.keyFormulaOrLaw || micro.keyAxiom ? (
+                                        <Text style={styles.microAxiomText}>
+                                          {micro.keyFormulaOrLaw || micro.keyAxiom}
+                                        </Text>
+                                      ) : null}
+                                    </View>
+                                    <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                                      <TouchableOpacity
+                                        style={styles.microCbtBtn}
+                                        onPress={() => launchMicroTopicCbt(mTitle, activeSyllabusCourse.label)}
+                                        disabled={isLaunchingThis}
+                                      >
+                                        {isLaunchingThis ? (
+                                          <ActivityIndicator size="small" color="#0a0f1e" />
+                                        ) : (
+                                          <>
+                                            <FileCheck2 size={11} color="#0a0f1e" style={{ marginRight: 3 }} />
+                                            <Text style={styles.microCbtBtnText}>10-Q CBT</Text>
+                                          </>
+                                        )}
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        style={styles.microPlayerBtn}
+                                        onPress={() => openCoursePlayerForMicroTopic(mTitle, activeSyllabusCourse.label, activeSyllabusCourse.id, activeSyllabusCourse.category)}
+                                      >
+                                        <Text style={styles.microPlayerBtnText}>Player ➔</Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  </View>
+                                );
+                              })
+                            ) : null}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
           </View>
-        }
-      />
+        </ScrollView>
+      ) : (
+        /* ─── VIEW 2: FULL MOCK EXAMS & PYQ TESTS ─── */
+        <>
+          {/* 🏷️ Horizontal Exam Category Filter Pills */}
+          <View style={{ marginBottom: 12 }}>
+            <SectionList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              sections={[{ title: '', data: EXAM_CATEGORIES }]}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+              renderItem={({ item }) => {
+                const isSelected = selectedCategory === item.id;
+                const IconComp = item.icon;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.categoryPill,
+                      isSelected && styles.categoryPillActive,
+                    ]}
+                    onPress={() => setSelectedCategory(item.id)}
+                    activeOpacity={0.7}
+                  >
+                    <IconComp size={12} color={isSelected ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
+                    <Text style={[styles.categoryPillText, isSelected && styles.categoryPillTextActive]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+
+          {/* 🎓 Master Syllabus & Micro-Topic Player Navigation Hub */}
+          <TouchableOpacity
+            style={styles.topSyllabusBanner}
+            onPress={() => {
+              const catCourseMap: Record<string, string> = {
+                neet_jee: 'NEET & JEE Complete Foundation',
+                tnpsc_govt: 'TNPSC Group 1, 2 & 4 Master Syllabus',
+                ssc_bank: 'Banking, SSC & Railway Master Course',
+                school: 'Tamil Nadu Class 10 & 12 Complete Syllabus',
+                tech: 'Full-Stack Web & AI Engineering',
+                pyq: 'Previous Year Question Analysis Hub',
+                all: 'Tamil Nadu School & Competitive Exams Master Hub'
+              };
+              openCourseSyllabus(catCourseMap[selectedCategory] || 'Academic Syllabus Master');
+            }}
+            activeOpacity={0.85}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <View style={styles.syllabusBannerIconWrap}>
+                <GraduationCap size={20} color="#10b981" />
+              </View>
+              <View style={{ marginLeft: 10, flex: 1 }}>
+                <Text style={styles.syllabusBannerTitle}>
+                  2026 Micro-Topic Syllabus & Course Player
+                </Text>
+                <Text style={styles.syllabusBannerSub}>
+                  Subject ➔ Chapter ➔ Subtopic ➔ Micro-topic Player
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={18} color="#10b981" />
+          </TouchableOpacity>
+
+          {/* 🔥 All-India Free Daily Live Mock Test Banner */}
+          <View style={styles.liveMockCard}>
+            <View style={styles.liveMockHeader}>
+              <View style={styles.liveTag}>
+                <Flame size={12} color="#ef4444" />
+                <Text style={styles.liveTagText}>TODAY'S ALL-INDIA LIVE MOCK</Text>
+              </View>
+              <Text style={styles.liveTimerText}>⏳ Ends in 04h 30m</Text>
+            </View>
+            <Text style={styles.liveMockTitle}>National Standard General Aptitude & Core Concepts (CBT)</Text>
+            <View style={styles.liveMockDetails}>
+              <Text style={styles.liveMockDetailText}>📝 30 Questions • ⏰ 30 Mins • 🏆 All India Live Ranking</Text>
+            </View>
+            <View style={styles.liveMockFooter}>
+              <View style={styles.liveUsersRow}>
+                <Users size={12} color="#10b981" />
+                <Text style={styles.liveUsersText}>14,890 Students Registered</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.liveAttemptBtn}
+                onPress={() => {
+                  if (sections.length > 0 && sections[0].data.length > 0) {
+                    const firstTest = sections[0].data[0];
+                    navigation.navigate('TestOExamScreen', {
+                      testId: firstTest.id,
+                      title: 'All-India Live Free Mock Test 2026',
+                      questionCount: 30,
+                      markingScheme: '+4 / -1',
+                    });
+                  } else {
+                    Alert.alert('Live Test', 'Loading live test server. Please tap on any test below.');
+                  }
+                }}
+              >
+                <Text style={styles.liveAttemptBtnText}>Take Free Test ⚡</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 💳 Test Series Pass Unlock Banner */}
+          <TouchableOpacity
+            style={styles.testoUnlockBanner}
+            onPress={() => setIsPaymentModalOpen(true)}
+            activeOpacity={0.85}
+          >
+            <View style={styles.testoUnlockIconBox}>
+              <ShoppingCart size={16} color="#fbbf24" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={styles.testoUnlockTitle}>Unlock All Test Series (₹99)</Text>
+                <View style={styles.testoUnlockPriceBadge}>
+                  <Text style={styles.testoUnlockPriceText}>Instant Pass</Text>
+                </View>
+              </View>
+              <Text style={styles.testoUnlockDesc}>
+                1-Tap UPI / GPay unlock for all standard & chapter exams with certificate.
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <SectionList
+            sections={filteredSections}
+            keyExtractor={item => item.id}
+            renderItem={renderTestCard}
+            renderSectionHeader={renderSectionHeader}
+            contentContainerStyle={[
+              styles.listContainer,
+              { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+            ]}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <FileCheck2 size={44} color="#334155" style={{ marginBottom: 10 }} />
+                <Text style={styles.emptyText}>No mock tests match your search.</Text>
+              </View>
+            }
+          />
+        </>
+      )}
 
       {/* Voice Search Modal */}
       <Modal
@@ -1212,14 +1582,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   liveMockCard: {
-    backgroundColor: '#111827',
+    backgroundColor: '#181216',
     marginHorizontal: 16,
     marginBottom: 14,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.4)',
-    backgroundColor: '#181216',
   },
   liveMockHeader: {
     flexDirection: 'row',
@@ -1289,6 +1658,266 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 11,
     fontWeight: '900',
+  },
+  syllabusBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderWidth: 1,
+    borderColor: '#10b981',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  syllabusBtnText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  sectionSyllabusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  sectionSyllabusText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  topSyllabusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0f241d',
+    borderWidth: 1,
+    borderColor: '#10b98150',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 14,
+  },
+  syllabusBannerIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  syllabusBannerTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  syllabusBannerSub: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  modeSwitcherContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#111827',
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 12,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  modeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 9,
+  },
+  modeBtnActive: {
+    backgroundColor: '#10b981',
+  },
+  modeBtnText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  modeBtnTextActive: {
+    color: '#0a0f1e',
+    fontWeight: '900',
+  },
+  syllabusCourseCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  syllabusCourseCardActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  syllabusCourseText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  syllabusCourseTextActive: {
+    color: '#0a0f1e',
+    fontWeight: '900',
+  },
+  courseHeaderBanner: {
+    backgroundColor: '#111827',
+    marginHorizontal: 16,
+    marginBottom: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  courseHeaderTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  courseHeaderSubtitle: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginTop: 3,
+  },
+  metaBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: '#10b981',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  metaBadgeText: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  syllabusUnitHeader: {
+    backgroundColor: '#0f172a',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  subjectPill: {
+    color: '#10b981',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  unitTitleText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  syllabusChapCard: {
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    overflow: 'hidden',
+  },
+  chapHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  chapNumText: {
+    color: '#10b981',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  chapTitleText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  chapTamilText: {
+    color: '#fbbf24',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  chapBody: {
+    padding: 10,
+    backgroundColor: '#0b1120',
+    borderTopWidth: 1,
+    borderTopColor: '#1e293b',
+  },
+  subtopicSection: {
+    marginBottom: 10,
+    paddingLeft: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: '#334155',
+  },
+  subtopicTitleText: {
+    color: '#38bdf8',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  microTopicCard: {
+    backgroundColor: '#111827',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  microTitleText: {
+    color: '#f1f5f9',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  microAxiomText: {
+    color: '#94a3b8',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  microCbtBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10b981',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  microCbtBtnText: {
+    color: '#0a0f1e',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  microPlayerBtn: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  microPlayerBtnText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });
 

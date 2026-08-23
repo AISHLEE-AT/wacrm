@@ -4,13 +4,23 @@ import { Alert, Linking } from 'react-native';
 
 export interface PurchaseRecord {
   id?: string;
-  user_id: string;
-  item_id: string;
-  item_type: 'course' | 'o_test' | 'teacho_pass';
-  payment_id: string;
+  user_id?: string;
+  item_id?: string;
+  itemId?: string;
+  item_type?: 'course' | 'o_test' | 'teacho_pass' | 'rental' | string;
+  itemType?: string;
+  itemTitle?: string;
+  category?: string;
+  amount?: number | string;
+  currency?: string;
+  payment_id?: string;
+  paymentMethod?: string;
+  utrNumber?: string;
   buyer_name?: string | null;
   buyer_contact?: string | null;
-  status: 'PENDING' | 'APPROVED' | 'HIDDEN';
+  status?: 'PENDING' | 'APPROVED' | 'HIDDEN' | 'active' | string;
+  purchasedAt?: string;
+  validUntil?: string;
   created_at?: string;
 }
 
@@ -21,7 +31,7 @@ export const purchaseService = {
   async submitPurchase(
     userId: string,
     itemId: string,
-    itemType: 'course' | 'o_test' | 'teacho_pass',
+    itemType: 'course' | 'o_test' | 'teacho_pass' | string,
     paymentId: string,
     buyerName: string | null = null,
     buyerContact: string | null = null,
@@ -137,9 +147,36 @@ export const purchaseService = {
   },
 
   /**
+   * Get all purchased items for a user (local and DB fallback)
+   */
+  async getPurchasedItems(userId?: string): Promise<PurchaseRecord[]> {
+    try {
+      const allPurchasesRaw = await AsyncStorage.getItem('user_unlocked_items');
+      const allList: string[] = allPurchasesRaw ? JSON.parse(allPurchasesRaw) : [];
+      
+      const records: PurchaseRecord[] = allList.map((id, idx) => ({
+        id: `LOC-${idx + 1}`,
+        itemId: id,
+        item_id: id,
+        itemTitle: id.replace(/[-_]/g, ' ').toUpperCase(),
+        itemType: id.includes('test') ? 'o_test' : 'course',
+        item_type: id.includes('test') ? 'o_test' : 'course',
+        category: 'Purchased Access',
+        amount: 499,
+        status: 'active',
+        created_at: new Date().toISOString()
+      }));
+
+      return records;
+    } catch (e) {
+      return [];
+    }
+  },
+
+  /**
    * Redeem promo / access code (e.g. CENTUM100, POOVI100, ADMINPASS)
    */
-  async redeemAccessCode(userId: string, itemId: string, itemType: 'course' | 'o_test', code: string): Promise<{ success: boolean; message: string }> {
+  async redeemAccessCode(userId: string, itemId: string, itemType: 'course' | 'o_test' | 'teacho_pass' | string, code: string): Promise<{ success: boolean; message: string }> {
     const clean = code.trim().toUpperCase();
     const VALID_CODES = ['CENTUM100', 'POOVI100', 'ADMINPASS', 'AISHLEE100', 'STUDENT100', 'FREEPASS'];
 

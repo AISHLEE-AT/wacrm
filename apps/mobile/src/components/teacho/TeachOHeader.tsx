@@ -17,6 +17,7 @@ interface TeachOHeaderProps {
   originalPrice?: number;
   onOpenCoursePicker: () => void;
   onOpenPurchase?: () => void;
+  onOpenSyllabus?: () => void;
 }
 
 export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
@@ -33,6 +34,7 @@ export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
   originalPrice = 2999,
   onOpenCoursePicker,
   onOpenPurchase,
+  onOpenSyllabus,
 }) => {
   const insets = useSafeAreaInsets();
   const topPadding = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 28) : 0) + 8;
@@ -51,8 +53,19 @@ export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
           </View>
         </View>
 
-        {/* Gamified Streak & XP Pills */}
+        {/* Gamified Streak & XP Pills + Syllabus Quick Link */}
         <View style={styles.statsRow}>
+          {onOpenSyllabus && (
+            <TouchableOpacity
+              style={styles.syllabusQuickBtn}
+              onPress={onOpenSyllabus}
+              activeOpacity={0.8}
+            >
+              <BookOpen size={12} color="#06b6d4" />
+              <Text style={styles.syllabusQuickText}>Syllabus</Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.streakPill}>
             <Flame size={14} color="#f59e0b" fill="#f59e0b" />
             <Text style={styles.streakText}>{streak}d</Text>
@@ -119,15 +132,28 @@ export const TeachOHeader: React.FC<TeachOHeaderProps> = ({
           </View>
         </View>
 
-        {!isPurchased && onOpenPurchase && (
-          <TouchableOpacity
-            style={styles.buyNowBtn}
-            onPress={onOpenPurchase}
-            activeOpacity={0.85}
-          >
-            <ShoppingCart size={13} color="#0B1120" />
-            <Text style={styles.buyNowText}>Unlock (₹{price})</Text>
-          </TouchableOpacity>
+        {isPurchased ? (
+          onOpenSyllabus && (
+            <TouchableOpacity
+              style={styles.syllabusBtn}
+              onPress={onOpenSyllabus}
+              activeOpacity={0.85}
+            >
+              <BookOpen size={13} color="#06b6d4" />
+              <Text style={styles.syllabusBtnText}>View Syllabus</Text>
+            </TouchableOpacity>
+          )
+        ) : (
+          onOpenPurchase && (
+            <TouchableOpacity
+              style={styles.buyNowBtn}
+              onPress={onOpenPurchase}
+              activeOpacity={0.85}
+            >
+              <ShoppingCart size={13} color="#0B1120" />
+              <Text style={styles.buyNowText}>Unlock (₹{price})</Text>
+            </TouchableOpacity>
+          )
         )}
       </View>
     </View>
@@ -355,5 +381,37 @@ const styles = StyleSheet.create({
     color: '#0B1120',
     fontSize: 11,
     fontWeight: '900',
+  },
+  syllabusQuickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+  },
+  syllabusQuickText: {
+    color: '#06b6d4',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  syllabusBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(6, 182, 212, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.35)',
+  },
+  syllabusBtnText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '800',
   },
 });

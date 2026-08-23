@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -43,6 +43,15 @@ import { aishleeSupabase } from '../services/aishleeSupabase';
 import { geminiToolsService } from '../services/geminiToolsService';
 import { getCourseSyllabus, SyllabusUnit } from '../lib/courseCatalogMaster';
 import { generateKindleBook } from '../lib/kindleContentEngine';
+import {
+  fetchTestOMcqsForTopic,
+  generateSectionTamilAnalogyAI,
+  generateSectionVsaqsAI,
+  generateSectionStepSolutionsAI,
+  generateSectionCbtMcqsAI,
+  generateSectionMnemonicsAI,
+  matchStoredContentForTopic
+} from '../lib/coursePlayerEngine';
 
 function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle: string): any {
   if (!raw) return null;
@@ -119,14 +128,16 @@ export default function TeachOCourseScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { course } = route.params;
+  const course = route.params?.course || {};
+  const courseTitle = course.title_name || course.title || 'Master Course';
+  const courseId = course.id || courseTitle.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
   // Dedicated Course Syllabus with Master Resolver Fallback
   const courseUnits: SyllabusUnit[] = (course.metadata?.syllabus && Array.isArray(course.metadata.syllabus) && course.metadata.syllabus.length > 0)
     ? course.metadata.syllabus
-    : getCourseSyllabus(course.id || course.title_name, course.category);
+    : getCourseSyllabus(courseId, course.category);
 
-  const [activeCourseTab, setActiveCourseTab] = useState<'curriculum' | 'notes' | 'mindmap' | 'forum'>('curriculum');
+  const [activeCourseTab, setActiveCourseTab] = useState<'curriculum' | 'notes' | 'mindmap' | 'forum'>(route.params?.activeTab || 'curriculum');
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
   const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({});
 
@@ -161,14 +172,111 @@ export default function TeachOCourseScreen() {
   const [playerTab, setPlayerTab] = useState<'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas'>('theory');
   const [playerTheme, setPlayerTheme] = useState<'dark' | 'sepia' | 'light'>('dark');
   const [playerLoading, setPlayerLoading] = useState(false);
+  const [playerAiLoading, setPlayerAiLoading] = useState<string | null>(null);
   const [playerSource, setPlayerSource] = useState<'cache' | 'ai' | 'fallback'>('cache');
   const [userMcqAnswers, setUserMcqAnswers] = useState<Record<number, number>>({});
   const [revealedVsaq, setRevealedVsaq] = useState<Record<number, boolean>>({});
 
-  const generateCoursePlayerFallback = (topic: string, courseTitle: string) => {
+  const generateCoursePlayerFallback = (topic: string, courseTitleParam: string) => {
     const cleanTopic = topic || 'Core Fundamentals';
-    const cleanCourse = courseTitle || 'Masterclass Course';
+    const cleanCourse = courseTitleParam || courseTitle;
     return generateKindleBook(cleanTopic, cleanCourse, course?.category || '');
+  };
+
+  // ─── DYNAMIC AI GENERATOR HELPERS FOR USER / ADMIN ───
+  const handleGenerateMoreTamil = async () => {
+    if (!playerBook) return;
+    setPlayerAiLoading('tamil');
+    try {
+      const res = await generateSectionTamilAnalogyAI(playerBook.topicTitle, playerBook.courseTitle);
+      setPlayerBook((prev: any) => ({
+        ...prev,
+        tamilExplanation: res
+      }));
+      Alert.alert('🌟 தமிழ் விளக்கம் தயாராக உள்ளது!', 'புதிய நடைமுறை உதாரணங்கள் சேர்க்கப்பட்டன.');
+    } catch (e: any) {
+      Alert.alert('AI Notice', 'Unable to generate fresh Tamil analogy: ' + e.message);
+    } finally {
+      setPlayerAiLoading(null);
+    }
+  };
+
+  const handleGenerateMoreVsaqs = async () => {
+    if (!playerBook) return;
+    setPlayerAiLoading('vsaq');
+    try {
+      const res = await generateSectionVsaqsAI(playerBook.topicTitle, playerBook.courseTitle, 5);
+      setPlayerBook((prev: any) => ({
+        ...prev,
+        vsaqs: [...(prev.vsaqs || []), ...res]
+      }));
+      Alert.alert('⚡ 5 New VSAQs Added!', '5 high-yield 1-mark flashcard questions generated.');
+    } catch (e: any) {
+      Alert.alert('AI Notice', 'Unable to generate extra VSAQs: ' + e.message);
+    } finally {
+      setPlayerAiLoading(null);
+    }
+  };
+
+  const handleGenerateMoreSolutions = async () => {
+    if (!playerBook) return;
+    setPlayerAiLoading('solutions');
+    try {
+      const res = await generateSectionStepSolutionsAI(playerBook.topicTitle, playerBook.courseTitle);
+      if (res && res.shortAnswers) {
+        setPlayerBook((prev: any) => ({
+          ...prev,
+          shortAnswers: [...(prev.shortAnswers || []), ...res.shortAnswers]
+        }));
+        Alert.alert('📝 Problem Sets Added!', '2-Mark & 5-Mark step-by-step solutions generated.');
+      }
+    } catch (e: any) {
+      Alert.alert('AI Notice', 'Unable to generate solutions: ' + e.message);
+    } finally {
+      setPlayerAiLoading(null);
+    }
+  };
+
+  const handleRefreshCbtMcqs = async () => {
+    if (!playerBook) return;
+    setPlayerAiLoading('mcq');
+    try {
+      const res = await generateSectionCbtMcqsAI(playerBook.topicTitle, playerBook.courseTitle, 10);
+      setPlayerBook((prev: any) => ({
+        ...prev,
+        mcqs: res.map((m: any) => ({
+          question: m.question,
+          options: m.options,
+          correct: m.correctIndex,
+          explanation: m.explanation
+        }))
+      }));
+      setUserMcqAnswers({});
+      Alert.alert('🎯 10 CBT MCQs Refreshed!', 'Fresh 10-question exam test loaded from TestO database.');
+    } catch (e: any) {
+      Alert.alert('AI Notice', 'Unable to refresh CBT MCQs: ' + e.message);
+    } finally {
+      setPlayerAiLoading(null);
+    }
+  };
+
+  const handleGenerateMoreMnemonics = async () => {
+    if (!playerBook) return;
+    setPlayerAiLoading('formulas');
+    try {
+      const res = await generateSectionMnemonicsAI(playerBook.topicTitle, playerBook.courseTitle);
+      if (res && res.formulasAndMnemonics) {
+        setPlayerBook((prev: any) => ({
+          ...prev,
+          formulasAndMnemonics: [...(prev.formulasAndMnemonics || []), ...res.formulasAndMnemonics]
+        }));
+        Alert.alert('🧠 Memory Mnemonics Added!', 'New memory shortcuts and formulas generated.');
+      }
+    } catch (e: any) {
+      Alert.alert('AI Notice', 'Unable to generate mnemonics: ' + e.message);
+    } finally {
+      setPlayerAiLoading(null);
+    }
   };
 
   const openCoursePlayer = async (
@@ -183,12 +291,11 @@ export default function TeachOCourseScreen() {
     setRevealedVsaq({});
     setPlayerLoading(true);
 
-    const courseId = course.id || course.title_name.toLowerCase().replace(/[^a-z0-9_]/g, '_');
     const candidateKeys = [
       explicitTopicKey,
       `${courseId}_day_${dayNumber}_task_1`,
       `${courseId}_day_${dayNumber}`,
-      `${course.title_name}_day_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+      `${courseTitle}_day_${dayNumber}`.toLowerCase().replace(/[^a-z0-9_]/g, '_')
     ].filter(Boolean) as string[];
 
     let loadedPayload: any = null;
@@ -236,16 +343,85 @@ export default function TeachOCourseScreen() {
       }
     }
 
+    let finalBook: any = null;
     if (loadedPayload) {
-      const normalized = normalizeMobileCoursePayload(loadedPayload, cleanTopic, course.title_name);
-      setPlayerBook(normalized);
+      finalBook = normalizeMobileCoursePayload(loadedPayload, cleanTopic, courseTitle);
     } else {
-      const fallbackBook = generateCoursePlayerFallback(cleanTopic, course.title_name);
-      setPlayerBook(fallbackBook);
+      finalBook = generateCoursePlayerFallback(cleanTopic, courseTitle);
       setPlayerSource('fallback');
     }
+
+    // 3. 🧠 AI Smart Brain Database Matcher (Pre-generated PDFs, CBT Questions, Notes, Solutions)
+    try {
+      const dbMatch = await matchStoredContentForTopic(cleanTopic, courseTitle, category);
+      if (dbMatch.hasStoredMcqs && dbMatch.mcqs && dbMatch.mcqs.length > 0) {
+        finalBook.mcqs = dbMatch.mcqs.map((m: any) => ({
+          question: m.question,
+          options: m.options,
+          correct: m.correctIndex !== undefined ? m.correctIndex : m.correct,
+          explanation: m.explanation
+        }));
+      }
+      if (dbMatch.hasStoredNotes && dbMatch.theoryNotes) {
+        finalBook.notes = {
+          ...finalBook.notes,
+          overview: dbMatch.theoryNotes
+        };
+      }
+      if (dbMatch.tamilAnalogy) {
+        finalBook.tamilExplanation = {
+          ...finalBook.tamilExplanation,
+          colloquialIntro: dbMatch.tamilAnalogy
+        };
+      }
+      if (dbMatch.hasStoredSolutions && dbMatch.stepSolutions && dbMatch.stepSolutions.length > 0) {
+        finalBook.shortAnswers = dbMatch.stepSolutions.map((s: any) => ({
+          question: s.question,
+          marks: `${s.marks || 5} Marks`,
+          solutionSteps: s.solutionSteps || [s.modelAnswer || ''],
+          keyTips: 'Ensure rigorous derivation and clear formula declaration.'
+        }));
+      }
+    } catch (dbErr) {
+      // Non-blocking fallback
+    }
+
+    // 4. Guarantee 10 MCQs from TestO Database Bridge
+    if (!finalBook.mcqs || finalBook.mcqs.length < 10) {
+      try {
+        const testOMcqs = await fetchTestOMcqsForTopic(cleanTopic, courseTitle, 10);
+        if (testOMcqs && testOMcqs.length > 0) {
+          finalBook.mcqs = testOMcqs.map((m: any) => ({
+            question: m.question,
+            options: m.options,
+            correct: m.correctIndex !== undefined ? m.correctIndex : m.correct,
+            explanation: m.explanation
+          }));
+        }
+      } catch (testoErr) {
+        // Non-blocking fallback
+      }
+    }
+
+    setPlayerBook(finalBook);
     setPlayerLoading(false);
   };
+
+  // Auto-open specific tab or micro-topic when navigated from TestO or other screens
+  useEffect(() => {
+    if (route.params?.activeTab) {
+      setActiveCourseTab(route.params.activeTab);
+    }
+    if (route.params?.initialMicroTopic || route.params?.topic) {
+      const topicToOpen = route.params.initialMicroTopic || route.params.topic;
+      openCoursePlayer(
+        topicToOpen,
+        route.params.initialTab || 'theory',
+        route.params.dayNumber || 1,
+        route.params.topicKey
+      );
+    }
+  }, [route.params]);
 
   const exportCoursePlayerPDF = async (book: any) => {
     try {
@@ -381,16 +557,16 @@ export default function TeachOCourseScreen() {
 
     if (promptType === 'explain_tamil') {
       title = 'தமிழில் எளிய விளக்கம் (Tamil AI Tutor)';
-      prompt = `Explain the foundational core concepts of the academic syllabus course "${course.title_name}" in clear, engaging, conversational Tamil. Use bullet points and simple real-world analogies.`;
+      prompt = `Explain the foundational core concepts of the academic syllabus course "${courseTitle}" in clear, engaging, conversational Tamil. Use bullet points and simple real-world analogies.`;
     } else if (promptType === 'practice_mcqs') {
       title = '5 High-Yield Examination MCQs';
-      prompt = `Generate 5 high-yield multiple-choice questions with 4 options (A, B, C, D) and detailed explanations for "${course.title_name}". Include correct answer keys.`;
+      prompt = `Generate 5 high-yield multiple-choice questions with 4 options (A, B, C, D) and detailed explanations for "${courseTitle}". Include correct answer keys.`;
     } else if (promptType === 'summary_notes') {
       title = 'Complete Chapter Summary & Formula Sheet';
-      prompt = `Provide a comprehensive revision summary with all key formulas, governing equations, and shortcuts for "${course.title_name}".`;
+      prompt = `Provide a comprehensive revision summary with all key formulas, governing equations, and shortcuts for "${courseTitle}".`;
     } else {
       title = 'AI Tutor Explanation';
-      prompt = customText || `Explain the core principles of "${course.title_name}".`;
+      prompt = customText || `Explain the core principles of "${courseTitle}".`;
     }
 
     setAiPromptTitle(title);
@@ -428,7 +604,7 @@ export default function TeachOCourseScreen() {
 
     try {
       const res = await geminiToolsService.executePrompt(
-        `Answer this student question about "${course.title_name}": "${userQ}". Provide a concise, clear academic explanation in 2-3 sentences.`
+        `Answer this student question about "${courseTitle}": "${userQ}". Provide a concise, clear academic explanation in 2-3 sentences.`
       );
 
       setForumPosts((prev) =>
@@ -460,15 +636,19 @@ export default function TeachOCourseScreen() {
       keyExtractor={(item, index) => item.id || index.toString()}
       contentContainerStyle={[styles.listContainer, { paddingBottom: Math.max(insets.bottom, 24) + 60 }]}
       renderItem={({ item: unit, index: uIdx }) => {
+        const hasChapters = unit.chapters && unit.chapters.length > 0;
+
         return (
           <View key={unit.id || uIdx} style={{ marginBottom: 16 }}>
             <View style={{ backgroundColor: '#111827', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#1e293b', marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                  <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#10b981', backgroundColor: '#10b98120', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 6 }}>
-                    {unit.subjectName}
-                  </Text>
-                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#94a3b8' }}>{unit.unitNumber}</Text>
+                  {unit.subjectName ? (
+                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#10b981', backgroundColor: '#10b98120', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 6 }}>
+                      {unit.subjectName}
+                    </Text>
+                  ) : null}
+                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#94a3b8' }}>{unit.unitNumber ? `UNIT ${unit.unitNumber}` : `UNIT ${uIdx + 1}`}</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>{unit.title}</Text>
               </View>
@@ -480,98 +660,204 @@ export default function TeachOCourseScreen() {
               </TouchableOpacity>
             </View>
 
-            {(unit.chapters || []).map((chap: any, cIdx: number) => {
-              const chapKey = `${uIdx}-${cIdx}`;
-              const isExpanded = expandedModules[chapKey] !== false;
+            {hasChapters ? (
+              (unit.chapters || []).map((chap: any, cIdx: number) => {
+                const chapKey = `${uIdx}-${cIdx}`;
+                const isExpanded = expandedModules[chapKey] !== false;
+                const chapTitle = chap.chapterTitle || chap.title || `Chapter ${cIdx + 1}`;
+                const hasSubtopics = chap.subtopics && chap.subtopics.length > 0;
+                const hasDirectMicro = chap.microTopics && chap.microTopics.length > 0;
 
-              return (
-                <View key={chap.id || cIdx} style={[styles.moduleCard, { marginBottom: 10 }]}>
-                  <TouchableOpacity
-                    style={styles.moduleHeader}
-                    onPress={() => toggleModule(chapKey)}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.moduleIndex}>CHAPTER {cIdx + 1}</Text>
-                      <Text style={styles.moduleTitle}>{chap.title}</Text>
-                      {chap.tamilTitle ? (
-                        <Text style={{ fontSize: 11, color: '#f59e0b', marginTop: 2 }}>{chap.tamilTitle}</Text>
-                      ) : null}
-                    </View>
-                    {isExpanded ? <ChevronUp color="#10b981" size={20} /> : <ChevronDown color="#94a3b8" size={20} />}
-                  </TouchableOpacity>
-
-                  {isExpanded && (
-                    <View style={styles.videosContainer}>
-                      {/* Video Lecture Link */}
-                      <View style={styles.lessonRow}>
-                        <TouchableOpacity style={styles.lessonContent} onPress={() => openVideo(chap.videoUrl || chap.url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')}>
-                          <PlayCircle size={20} color="#10b981" style={{ marginRight: 10 }} />
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.videoTitle}>Watch Full HD Lecture</Text>
-                            <Text style={styles.lessonMeta}>Official Video Stream • YouTube</Text>
-                          </View>
-                        </TouchableOpacity>
-
-                        <View style={{ flexDirection: 'row', gap: 6 }}>
-                          <TouchableOpacity
-                            style={[styles.aiHelpPill, { backgroundColor: '#10b98120' }]}
-                            onPress={() => openCoursePlayer(chap.title, 'theory')}
-                          >
-                            <Text style={[styles.aiHelpText, { color: '#10b981' }]}>Player</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            style={[styles.aiHelpPill, { backgroundColor: '#38bdf820' }]}
-                            onPress={() => openCoursePlayer(chap.title, 'mcq')}
-                          >
-                            <Text style={[styles.aiHelpText, { color: '#38bdf8' }]}>5 MCQs</Text>
-                          </TouchableOpacity>
-                        </View>
+                return (
+                  <View key={chap.id || cIdx} style={[styles.moduleCard, { marginBottom: 10 }]}>
+                    <TouchableOpacity
+                      style={styles.moduleHeader}
+                      onPress={() => toggleModule(chapKey)}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.moduleIndex}>CHAPTER {chap.chapterNumber || cIdx + 1}</Text>
+                        <Text style={styles.moduleTitle}>{chapTitle}</Text>
+                        {chap.tamilTitle || chap.chapterTamilTitle ? (
+                          <Text style={{ fontSize: 11, color: '#f59e0b', marginTop: 2 }}>{chap.tamilTitle || chap.chapterTamilTitle}</Text>
+                        ) : null}
                       </View>
+                      {isExpanded ? <ChevronUp color="#10b981" size={20} /> : <ChevronDown color="#94a3b8" size={20} />}
+                    </TouchableOpacity>
 
-                      {/* Subtopics & Micro-Topics Tree */}
-                      {chap.subtopics?.map((sub: any, sIdx: number) => (
-                        <View key={sub.id || sIdx} style={{ marginTop: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#334155' }}>
-                          <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#93c5fd', marginBottom: 4 }}>
-                            {sub.title}
-                          </Text>
+                    {isExpanded && (
+                      <View style={styles.videosContainer}>
+                        {/* Video Lecture & Quick Action Bar */}
+                        <View style={styles.lessonRow}>
+                          <TouchableOpacity style={styles.lessonContent} onPress={() => openVideo(chap.videoUrl || chap.url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')}>
+                            <PlayCircle size={20} color="#10b981" style={{ marginRight: 10 }} />
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.videoTitle}>Watch Full HD Lecture</Text>
+                              <Text style={styles.lessonMeta}>Official Video Stream • YouTube</Text>
+                            </View>
+                          </TouchableOpacity>
 
-                          {sub.microTopics?.map((micro: any, mIdx: number) => {
-                            const lessonKey = `${chapKey}-${sIdx}-${mIdx}`;
+                          <View style={{ flexDirection: 'row', gap: 6 }}>
+                            <TouchableOpacity
+                              style={[styles.aiHelpPill, { backgroundColor: '#10b98120' }]}
+                              onPress={() => openCoursePlayer(chapTitle, 'theory')}
+                            >
+                              <Text style={[styles.aiHelpText, { color: '#10b981' }]}>Player</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.aiHelpPill, { backgroundColor: '#38bdf820' }]}
+                              onPress={() => openCoursePlayer(chapTitle, 'mcq')}
+                            >
+                              <Text style={[styles.aiHelpText, { color: '#38bdf8' }]}>5 MCQs</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+
+                        {/* Subtopics & Micro-Topics Tree */}
+                        {hasSubtopics ? (
+                          chap.subtopics.map((sub: any, sIdx: number) => (
+                            <View key={sub.id || sIdx} style={{ marginTop: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#334155' }}>
+                              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#93c5fd', marginBottom: 4 }}>
+                                {sub.title}
+                              </Text>
+
+                              {(sub.microTopics || []).map((micro: any, mIdx: number) => {
+                                const lessonKey = `${chapKey}-${sIdx}-${mIdx}`;
+                                const isDone = !!completedLessons[lessonKey];
+                                const mTitle = micro.title || micro.topicTitle || `Topic ${mIdx + 1}`;
+
+                                return (
+                                  <View key={micro.id || mIdx} style={{ backgroundColor: '#0f172a', padding: 8, borderRadius: 8, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <TouchableOpacity
+                                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                                      onPress={() => toggleLessonComplete(lessonKey)}
+                                    >
+                                      <CheckCircle2 size={16} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 8 }} />
+                                      <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 12, color: isDone ? '#64748b' : '#e2e8f0', textDecorationLine: isDone ? 'line-through' : 'none' }}>
+                                          {mTitle}
+                                        </Text>
+                                        {micro.keyAxiom || micro.keyFormulaOrLaw ? (
+                                          <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{micro.keyAxiom || micro.keyFormulaOrLaw}</Text>
+                                        ) : null}
+                                      </View>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                      style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 6 }}
+                                      onPress={() => openCoursePlayer(mTitle, 'theory')}
+                                    >
+                                      <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          ))
+                        ) : hasDirectMicro ? (
+                          <View style={{ marginTop: 8 }}>
+                            {chap.microTopics.map((micro: any, mIdx: number) => {
+                              const lessonKey = `${chapKey}-m-${mIdx}`;
+                              const isDone = !!completedLessons[lessonKey];
+                              const mTitle = micro.topicTitle || micro.title || `Topic ${mIdx + 1}`;
+
+                              return (
+                                <View key={micro.id || mIdx} style={{ backgroundColor: '#0f172a', padding: 8, borderRadius: 8, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <TouchableOpacity
+                                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                                    onPress={() => toggleLessonComplete(lessonKey)}
+                                  >
+                                    <CheckCircle2 size={16} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 8 }} />
+                                    <View style={{ flex: 1 }}>
+                                      <Text style={{ fontSize: 12, color: isDone ? '#64748b' : '#e2e8f0', textDecorationLine: isDone ? 'line-through' : 'none' }}>
+                                        {mTitle}
+                                      </Text>
+                                      {micro.keyFormulaOrLaw || micro.keyAxiom ? (
+                                        <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{micro.keyFormulaOrLaw || micro.keyAxiom}</Text>
+                                      ) : null}
+                                    </View>
+                                  </TouchableOpacity>
+
+                                  <TouchableOpacity
+                                    style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 6 }}
+                                    onPress={() => openCoursePlayer(mTitle, 'theory')}
+                                  >
+                                    <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              );
+                            })}
+                          </View>
+                        ) : (
+                          (unit.lessons || []).map((les: any, lIdx: number) => {
+                            const lessonKey = `${chapKey}-l-${lIdx}`;
                             const isDone = !!completedLessons[lessonKey];
 
                             return (
-                              <View key={micro.id || mIdx} style={{ backgroundColor: '#0f172a', padding: 8, borderRadius: 8, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <View key={les.id || lIdx} style={styles.lessonRow}>
                                 <TouchableOpacity
-                                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                                  style={styles.lessonContent}
                                   onPress={() => toggleLessonComplete(lessonKey)}
                                 >
-                                  <CheckCircle2 size={16} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 8 }} />
+                                  <CheckCircle2 size={18} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 10 }} />
                                   <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 12, color: isDone ? '#64748b' : '#e2e8f0', textDecorationLine: isDone ? 'line-through' : 'none' }}>
-                                      {micro.title}
+                                    <Text style={[styles.lessonTitle, isDone && styles.lessonTitleDone]}>
+                                      {les.title}
                                     </Text>
-                                    {micro.keyAxiom ? (
-                                      <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{micro.keyAxiom}</Text>
-                                    ) : null}
+                                    <Text style={styles.lessonMeta}>
+                                      {les.duration} • {les.type?.toUpperCase()}
+                                    </Text>
                                   </View>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                  style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 6 }}
-                                  onPress={() => openCoursePlayer(micro.title, 'theory')}
+                                  style={styles.aiHelpPill}
+                                  onPress={() => openCoursePlayer(les.title, les.type === 'quiz' ? 'mcq' : 'theory')}
                                 >
-                                  <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
+                                  <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
+                                  <Text style={styles.aiHelpText}>AI Study</Text>
                                 </TouchableOpacity>
                               </View>
                             );
-                          })}
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
+                          })
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              })
+            ) : (
+              (unit.lessons || []).map((les: any, lIdx: number) => {
+                const lessonKey = `${uIdx}-l-${lIdx}`;
+                const isDone = !!completedLessons[lessonKey];
+
+                return (
+                  <View key={les.id || lIdx} style={styles.lessonRow}>
+                    <TouchableOpacity
+                      style={styles.lessonContent}
+                      onPress={() => toggleLessonComplete(lessonKey)}
+                    >
+                      <CheckCircle2 size={18} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 10 }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.lessonTitle, isDone && styles.lessonTitleDone]}>
+                          {les.title}
+                        </Text>
+                        <Text style={styles.lessonMeta}>
+                          {les.duration} • {les.type?.toUpperCase()}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.aiHelpPill}
+                      onPress={() => openCoursePlayer(les.title, les.type === 'quiz' ? 'mcq' : 'theory')}
+                    >
+                      <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
+                      <Text style={styles.aiHelpText}>AI Study</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            )}
           </View>
         );
       }}
@@ -591,7 +877,7 @@ export default function TeachOCourseScreen() {
           <Text style={styles.notesCardTitle}>Verified Syllabus Summary Notes</Text>
         </View>
         <Text style={styles.notesCardDesc}>
-          Download high-yield summary notes, derivations, and formulas for {course.title_name}.
+          Download high-yield summary notes, derivations, and formulas for {courseTitle}.
         </Text>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <TouchableOpacity
@@ -603,7 +889,7 @@ export default function TeachOCourseScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.notesDownloadBtn, { backgroundColor: '#38bdf8' }]}
-            onPress={() => openCoursePlayer(course.title_name, 'theory')}
+            onPress={() => openCoursePlayer(courseTitle, 'theory')}
           >
             <BookOpen size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
             <Text style={styles.notesDownloadText}>Open Course Player</Text>
@@ -627,16 +913,19 @@ export default function TeachOCourseScreen() {
         <View style={{ marginTop: 12 }}>
           {courseUnits.map((unit, uIdx) => (
             <View key={uIdx} style={{ marginBottom: 12, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#38bdf8' }}>
-              <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#38bdf8' }}>{unit.unitNumber}: {unit.title}</Text>
-              {(unit.chapters || []).map((ch, cIdx) => (
-                <TouchableOpacity
-                  key={cIdx}
-                  style={{ marginTop: 4, padding: 8, backgroundColor: '#1e293b', borderRadius: 6 }}
-                  onPress={() => openCoursePlayer(ch.title, 'theory')}
-                >
-                  <Text style={{ fontSize: 12, color: '#e2e8f0' }}>➔ Chapter {cIdx+1}: {ch.title}</Text>
-                </TouchableOpacity>
-              ))}
+              <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#38bdf8' }}>{unit.unitNumber ? `Unit ${unit.unitNumber}` : `Unit ${uIdx+1}`}: {unit.title}</Text>
+              {(unit.chapters || []).map((ch: any, cIdx: number) => {
+                const chTitle = ch.chapterTitle || ch.title || `Chapter ${cIdx + 1}`;
+                return (
+                  <TouchableOpacity
+                    key={cIdx}
+                    style={{ marginTop: 4, padding: 8, backgroundColor: '#1e293b', borderRadius: 6 }}
+                    onPress={() => openCoursePlayer(chTitle, 'theory')}
+                  >
+                    <Text style={{ fontSize: 12, color: '#e2e8f0' }}>➔ Chapter {cIdx+1}: {chTitle}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           ))}
         </View>
@@ -708,14 +997,14 @@ export default function TeachOCourseScreen() {
         <View style={styles.navTextContainer}>
           <Text style={styles.navCategory}>{course.category || 'Masterclass Course'}</Text>
           <Text style={styles.navTitle} numberOfLines={1}>
-            {course.title_name}
+            {courseTitle}
           </Text>
         </View>
       </View>
 
       {/* Course Header Bar */}
       <View style={styles.courseHeader}>
-        <Text style={styles.courseTitle}>{course.title_name}</Text>
+        <Text style={styles.courseTitle}>{courseTitle}</Text>
         <Text style={styles.courseSubtitle}>
           {courseUnits.reduce((acc, u) => acc + (u.chapters?.length || 0), 0)} Chapters • {courseUnits.length} Units • Verified Syllabus
         </Text>
@@ -724,7 +1013,7 @@ export default function TeachOCourseScreen() {
         <View style={styles.aiActionBar}>
           <TouchableOpacity
             style={styles.aiActionPill}
-            onPress={() => handleAskAi('explain_tamil', course.title_name)}
+            onPress={() => handleAskAi('explain_tamil', courseTitle)}
           >
             <Sparkles size={13} color="#10b981" style={{ marginRight: 5 }} />
             <Text style={styles.aiActionText}>தமிழில் விளக்கம்</Text>
@@ -732,7 +1021,7 @@ export default function TeachOCourseScreen() {
 
           <TouchableOpacity
             style={styles.aiActionPill}
-            onPress={() => handleAskAi('practice_mcqs', course.title_name)}
+            onPress={() => handleAskAi('practice_mcqs', courseTitle)}
           >
             <FileCheck2 size={13} color="#38bdf8" style={{ marginRight: 5 }} />
             <Text style={styles.aiActionText}>5 Practice MCQs</Text>
@@ -740,7 +1029,7 @@ export default function TeachOCourseScreen() {
 
           <TouchableOpacity
             style={styles.aiActionPill}
-            onPress={() => handleAskAi('summary_notes', course.title_name)}
+            onPress={() => handleAskAi('summary_notes', courseTitle)}
           >
             <BookOpen size={13} color="#f59e0b" style={{ marginRight: 5 }} />
             <Text style={styles.aiActionText}>Summary Notes</Text>
@@ -944,6 +1233,26 @@ export default function TeachOCourseScreen() {
                     ) : null}
                   </View>
                 ))}
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#064e3b',
+                    padding: 12,
+                    borderRadius: 10,
+                    marginTop: 8,
+                    borderWidth: 1,
+                    borderColor: '#10b981'
+                  }}
+                  onPress={() => handleAskAi('explain_tamil', playerBook.topicTitle)}
+                >
+                  <Sparkles size={16} color="#34d399" style={{ marginRight: 8 }} />
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
+                    ⚡ AI Tutor: Deepen Conceptual Explanation
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -993,6 +1302,31 @@ export default function TeachOCourseScreen() {
                     </Text>
                   ))}
                 </View>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: playerAiLoading === 'tamil' ? '#475569' : '#854d0e',
+                    padding: 12,
+                    borderRadius: 10,
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: '#f59e0b'
+                  }}
+                  onPress={handleGenerateMoreTamil}
+                  disabled={playerAiLoading === 'tamil'}
+                >
+                  {playerAiLoading === 'tamil' ? (
+                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                  ) : (
+                    <Sparkles size={16} color="#fde68a" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
+                    {playerAiLoading === 'tamil' ? 'Generating Tamil Analogies...' : '⚡ AI Helper: Generate Relatable Everyday Tamil Analogies'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -1039,6 +1373,31 @@ export default function TeachOCourseScreen() {
                     </TouchableOpacity>
                   );
                 })}
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: playerAiLoading === 'vsaq' ? '#475569' : '#0369a1',
+                    padding: 12,
+                    borderRadius: 10,
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: '#38bdf8'
+                  }}
+                  onPress={handleGenerateMoreVsaqs}
+                  disabled={playerAiLoading === 'vsaq'}
+                >
+                  {playerAiLoading === 'vsaq' ? (
+                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                  ) : (
+                    <Zap size={16} color="#7dd3fc" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
+                    {playerAiLoading === 'vsaq' ? 'Generating VSAQs...' : '⚡ AI Helper: Generate 5 More 1-Mark Flashcards'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -1085,15 +1444,71 @@ export default function TeachOCourseScreen() {
                     ) : null}
                   </View>
                 ))}
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: playerAiLoading === 'solutions' ? '#475569' : '#047857',
+                    padding: 12,
+                    borderRadius: 10,
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: '#10b981'
+                  }}
+                  onPress={handleGenerateMoreSolutions}
+                  disabled={playerAiLoading === 'solutions'}
+                >
+                  {playerAiLoading === 'solutions' ? (
+                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                  ) : (
+                    <FileText size={16} color="#6ee7b7" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
+                    {playerAiLoading === 'solutions' ? 'Generating Worked Solutions...' : '⚡ AI Helper: Generate 2-Mark & 5-Mark Problem Sets'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
-            {/* 5. Interactive Quiz MCQs */}
+            {/* 5. Interactive TestO CBT MCQs */}
             {playerTab === 'mcq' && playerBook && (
               <View>
-                <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>
-                  🎯 Test your knowledge with these exam questions.
-                </Text>
+                {/* Score & Progress Tracker */}
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#f1f5f9' : '#0f172a',
+                  padding: 12,
+                  borderRadius: 10,
+                  marginBottom: 14,
+                  borderWidth: 1,
+                  borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b'
+                }}>
+                  <View>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#10b981' }}>
+                      TestO CBT Practice Engine
+                    </Text>
+                    <Text style={{ fontSize: 11, color: '#94a3b8' }}>
+                      Answered: {Object.keys(userMcqAnswers).length} / {playerBook.mcqs?.length || 10}
+                    </Text>
+                  </View>
+                  <View style={{
+                    backgroundColor: '#10b98120',
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                    borderRadius: 6,
+                    borderWidth: 1,
+                    borderColor: '#10b981'
+                  }}>
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#10b981' }}>
+                      Score: {playerBook.mcqs?.reduce((acc: number, m: any, idx: number) => userMcqAnswers[idx] === m.correct ? acc + 1 : acc, 0) || 0} / {playerBook.mcqs?.length || 10}
+                    </Text>
+                  </View>
+                </View>
+
                 {playerBook.mcqs?.map((mcq: any, qIdx: number) => {
                   const selected = userMcqAnswers[qIdx];
                   const isAnswered = selected !== undefined;
@@ -1170,6 +1585,31 @@ export default function TeachOCourseScreen() {
                     </View>
                   );
                 })}
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: playerAiLoading === 'mcq' ? '#475569' : '#6d28d9',
+                    padding: 12,
+                    borderRadius: 10,
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: '#a855f7'
+                  }}
+                  onPress={handleRefreshCbtMcqs}
+                  disabled={playerAiLoading === 'mcq'}
+                >
+                  {playerAiLoading === 'mcq' ? (
+                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                  ) : (
+                    <FileCheck2 size={16} color="#c084fc" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
+                    {playerAiLoading === 'mcq' ? 'Refreshing TestO CBT MCQs...' : '⚡ AI Helper: Refresh 10 TestO CBT Practice Questions'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
 
@@ -1204,6 +1644,31 @@ export default function TeachOCourseScreen() {
                     ) : null}
                   </View>
                 ))}
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: playerAiLoading === 'formulas' ? '#475569' : '#b45309',
+                    padding: 12,
+                    borderRadius: 10,
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: '#f59e0b'
+                  }}
+                  onPress={handleGenerateMoreMnemonics}
+                  disabled={playerAiLoading === 'formulas'}
+                >
+                  {playerAiLoading === 'formulas' ? (
+                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
+                  ) : (
+                    <Lightbulb size={16} color="#fde68a" style={{ marginRight: 8 }} />
+                  )}
+                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
+                    {playerAiLoading === 'formulas' ? 'Generating Mnemonics...' : '⚡ AI Helper: Generate Advanced Mnemonics & Memory Tricks'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             )}
           </ScrollView>
@@ -1398,6 +1863,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  lessonTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  lessonTitleDone: {
+    color: '#94a3b8',
+    textDecorationLine: 'line-through',
   },
   lessonMeta: {
     fontSize: 11,

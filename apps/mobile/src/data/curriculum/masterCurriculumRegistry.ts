@@ -4,8 +4,8 @@
  * Covers all 96 courses across all academic days (Day 1 to 200/360) and subject periods (P1 to P6).
  */
 
-import { resolveAuthenticEducationalVideo } from './educationalVideoRegistry.ts';
-import { getUpscDailyTopic, UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData.ts';
+import { resolveAuthenticEducationalVideo } from './educationalVideoRegistry';
+import { getUpscDailyTopic, UPSC_OPTIONALS_REGISTRY } from './upscCurriculumData';
 
 export interface PeriodSyllabusItem {
   taskNumber: number;
@@ -13,6 +13,8 @@ export interface PeriodSyllabusItem {
   topicTitle: string;
   subtopic: string;
   chapterTitle: string;
+  aiPrompt?: string;
+  formula?: string;
   overview: string;
   formulaOrLaw: string;
   tamilTitle: string;

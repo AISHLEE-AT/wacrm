@@ -64,7 +64,7 @@ export const EDUCATIONAL_VIDEO_DATABASE: Record<string, VideoReference> = {
 
   // ── 2. TAMIL NADU STATE BOARD SAMACHEER KALVI (CLASS 6-12) ──
   'tnsb_tamil': {
-    youtubeVideoId: 'LgCg_1yP6_M',
+    youtubeVideoId: 'EpdTHQ0s6oM',
     videoTitle: 'தமிழ் செய்யுள், உரைநடை & இலக்கணப் பாடங்கள்',
     channelName: 'Kalvi TV Official',
     durationMinutes: 20,

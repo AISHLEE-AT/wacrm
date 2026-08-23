@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'dart:async';
+import '../../teacho/screens/teacho_player_sheet.dart';
 
 class TestoScreen extends StatefulWidget {
   const TestoScreen({super.key});
@@ -19,6 +20,77 @@ class _TestoScreenState extends State<TestoScreen> {
   List<Map<String, dynamic>> sections = [];
   bool isLoading = true;
   String searchQuery = '';
+  bool isSyllabusMode = false;
+  int selectedCourseIndex = 0;
+
+  final List<Map<String, dynamic>> syllabusCourses = [
+    {
+      'id': 'class_12_tn',
+      'title': 'Class 12 Board Exam',
+      'sub': 'Maths, Physics, Chem, Bio, CS, Commerce, Accounts, Tamil',
+      'units': [
+        {
+          'subject': 'Physics (இயற்பியல்)',
+          'title': 'Unit 1: Electrostatics',
+          'topics': [
+            {'title': "Coulomb's Law & Vector Form", 'law': "F = (1 / 4πε₀) · (q₁q₂ / r²)"},
+            {'title': 'Electric Flux & Gauss Theorem', 'law': '∮ E · dA = Q_enclosed / ε₀'},
+            {'title': 'Capacitance & Dielectric Energy', 'law': 'U = 1/2 CV²'}
+          ]
+        },
+        {
+          'subject': 'Mathematics (கணிதம்)',
+          'title': 'Unit 1: Applications of Matrices & Determinants',
+          'topics': [
+            {'title': 'Inverse of Non-Singular Matrix', 'law': 'A⁻¹ = (1 / |A|) · adj(A)'},
+            {'title': "Cramer's Rule & Rank Analysis", 'law': 'x = Δx / Δ, y = Δy / Δ'},
+            {'title': 'Orthogonal Transformations', 'law': 'A · Aᵀ = I'}
+          ]
+        },
+        {
+          'subject': 'Chemistry (வேதியியல்)',
+          'title': 'Unit 1: Metallurgy & Extraction',
+          'topics': [
+            {'title': 'Froth Flotation & Leaching', 'law': 'Mineral separation via Pine Oil & NaCN'},
+            {'title': 'Ellingham Diagram & Thermodynamic Free Energy', 'law': 'ΔG° = ΔH° - TΔS°'},
+            {'title': 'Zone Refining & Van Arkel Method', 'law': 'Vapour phase refining for Ultra-pure metals'}
+          ]
+        }
+      ]
+    },
+    {
+      'id': 'neet_ug_2026',
+      'title': 'NEET UG 2026',
+      'sub': 'Physics, Chemistry, Botany, Zoology (720 Marks)',
+      'units': [
+        {
+          'subject': 'Botany & Zoology',
+          'title': 'Genetics & Molecular Basis of Inheritance',
+          'topics': [
+            {'title': 'Mendelian Dihybrid Cross & Law of Segregation', 'law': 'Phenotypic Ratio 9:3:3:1'},
+            {'title': 'DNA Replication Semi-Conservative Model', 'law': 'Meselson-Stahl Proof & DNA Polymerase III'},
+            {'title': 'Lac Operon & Gene Regulation', 'law': 'Repressor binds operator in absence of allolactose'}
+          ]
+        }
+      ]
+    },
+    {
+      'id': 'tnpsc_group_1_2_4',
+      'title': 'TNPSC Gr 1, 2, 4 & VAO',
+      'sub': 'General Tamil 100M, General Studies 75M, Aptitude 25M',
+      'units': [
+        {
+          'subject': 'General Tamil (பொதுத்தமிழ்)',
+          'title': 'பகுதி-அ: இலக்கணம் & இலக்கியம்',
+          'topics': [
+            {'title': 'எட்டுத்தொகை & பத்துப்பாட்டு நூல்கள்', 'law': 'சங்க இலக்கிய திணை & ஆசிரியர்கள் பகுப்பாய்வு'},
+            {'title': 'திருக்குறள் அறுபத்துநான்கு அதிகாரங்கள்', 'law': 'பொருட்பால் & அறத்துப்பால் முக்கிய வினாக்கள்'},
+            {'title': 'சொல் வகை & புணர்ச்சி விதிகள்', 'law': 'உயிரீறு, மெய்யீறு, உடம்படுமெய் இலக்கணம்'}
+          ]
+        }
+      ]
+    }
+  ];
 
   // Exam State
   dynamic activeTest;
@@ -511,98 +583,362 @@ class _TestoScreenState extends State<TestoScreen> {
     );
   }
 
+  void startMicroTopicExam(String topicTitle, String courseName) {
+    final mockQs = [
+      {
+        'question': 'Which of the following principles best describes $topicTitle?',
+        'options': [
+          'Fundamental governing law and empirical observation',
+          'Secondary reaction principle',
+          'Arbitrary mathematical convention',
+          'Hypothetical model without experimental proof'
+        ],
+        'correct_answer': 'Fundamental governing law and empirical observation',
+        'explanation': 'In $courseName, $topicTitle provides the fundamental foundational law and core analytical mechanism.'
+      },
+      {
+        'question': 'What is the primary application of $topicTitle in examinations and real-world systems?',
+        'options': [
+          'Direct problem solving and state transformation analysis',
+          'Irrelevant decorative theory',
+          'Historical background only',
+          'Discontinued experimental method'
+        ],
+        'correct_answer': 'Direct problem solving and state transformation analysis',
+        'explanation': '$topicTitle directly governs state changes and analytical derivations.'
+      },
+      {
+        'question': 'Under standard conditions, how does $topicTitle interact with core constraints?',
+        'options': [
+          'Follows conservation and equilibrium rules',
+          'Breaks thermodynamic limits',
+          'Cannot be evaluated quantitatively',
+          'Produces infinite output'
+        ],
+        'correct_answer': 'Follows conservation and equilibrium rules',
+        'explanation': 'Conservation and boundary conditions apply strictly.'
+      }
+    ];
+
+    _startExam({
+      'title_name': '$topicTitle (10-Q CBT)',
+      'displayTitle': '$topicTitle (Micro-Topic CBT)',
+      'additional_info': {'questions': mockQs}
+    });
+  }
+
   // --- HUB UI ---
   @override
   Widget build(BuildContext context) {
     if (viewMode == 'exam') return _buildExamScreen();
     if (viewMode == 'result') return _buildResultScreen();
 
+    final activeCourse = syllabusCourses[selectedCourseIndex];
+    final units = activeCourse['units'] as List<dynamic>? ?? [];
+
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1E),
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(LucideIcons.award, color: Color(0xFF8B5CF6)),
+            const Icon(LucideIcons.award, color: Color(0xFF10B981)),
             const SizedBox(width: 8),
             const Text('TestO Hub', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                color: const Color(0xFF10B981).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
               ),
-              child: const Text('தேர்வு', style: TextStyle(fontSize: 10, color: Color(0xFFC4B5FD), fontWeight: FontWeight.bold)),
+              child: const Text('தேர்வு CBT', style: TextStyle(fontSize: 10, color: Color(0xFF6EE7B7), fontWeight: FontWeight.bold)),
             ),
           ],
         ),
         backgroundColor: const Color(0xFF0A0F1E),
         elevation: 0,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)))
-          : sections.isEmpty
-              ? const Center(child: Text('No tests available right now.', style: TextStyle(color: Colors.white)))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: sections.length,
-                  itemBuilder: (context, index) {
-                    final section = sections[index];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  section['title'],
-                                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+      body: Column(
+        children: [
+          // Mode Switcher
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111827),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF1E293B)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => isSyllabusMode = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !isSyllabusMode ? const Color(0xFF10B981) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Full Mock Exams',
+                        style: TextStyle(
+                          color: !isSyllabusMode ? const Color(0xFF0A0F1E) : const Color(0xFF94A3B8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => isSyllabusMode = true),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSyllabusMode ? const Color(0xFF10B981) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Syllabus 10-Q CBT',
+                        style: TextStyle(
+                          color: isSyllabusMode ? const Color(0xFF0A0F1E) : const Color(0xFF94A3B8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: isSyllabusMode
+                ? ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // Course Selector Chips
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: List.generate(syllabusCourses.length, (idx) {
+                            final c = syllabusCourses[idx];
+                            final isSel = selectedCourseIndex == idx;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(c['title'] as String),
+                                selected: isSel,
+                                selectedColor: const Color(0xFF10B981),
+                                backgroundColor: const Color(0xFF1E293B),
+                                labelStyle: TextStyle(
+                                  color: isSel ? const Color(0xFF0A0F1E) : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
                                 ),
+                                onSelected: (val) {
+                                  if (val) setState(() => selectedCourseIndex = idx);
+                                },
                               ),
+                            );
+                          }),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Course Header Card
+                      Card(
+                        color: const Color(0xFF111827),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: const BorderSide(color: Color(0xFF1E293B)),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                '${section['data'].length} Tests',
-                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                activeCourse['title'] as String,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                activeCourse['sub'] as String,
+                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                               ),
                             ],
                           ),
                         ),
-                        ...((section['data'] as List<dynamic>).map((test) => Card(
-                          color: const Color(0xFF1E293B),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Units & Micro-topics
+                      ...units.map((u) {
+                        final topics = u['topics'] as List<dynamic>? ?? [];
+                        return Card(
+                          color: const Color(0xFF111827),
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          child: ListTile(
-                            onTap: () => _startExam(test),
-                            leading: const CircleAvatar(
-                              backgroundColor: Color(0xFF27272A),
-                              child: Icon(LucideIcons.fileCheck, color: Color(0xFF8B5CF6), size: 18),
-                            ),
-                            title: Text(
-                              test['displayTitle'] ?? test['title_name'],
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            subtitle: Text(
-                              '${test['questionCount']} Questions • ~30m',
-                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                            ),
-                            trailing: ElevatedButton(
-                              onPressed: () => _startExam(test),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF8B5CF6),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              ),
-                              child: const Text('Start', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: const BorderSide(color: Color(0xFF1E293B)),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  u['subject'] as String,
+                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  u['title'] as String,
+                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                ),
+                                const Divider(color: Color(0xFF1E293B), height: 16),
+                                ...topics.map((t) => Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              t['title'] as String,
+                                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                            ),
+                                            if (t['law'] != null) ...[
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                t['law'] as String,
+                                                style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () => startMicroTopicExam(t['title'] as String, activeCourse['title'] as String),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF10B981),
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          minimumSize: Size.zero,
+                                        ),
+                                        child: const Text('10-Q CBT', style: TextStyle(color: Color(0xFF0A0F1E), fontWeight: FontWeight.w900, fontSize: 11)),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          TeachoPlayerSheet.show(
+                                            context,
+                                            topicTitle: t['title'] as String,
+                                            subject: u['subject'] as String,
+                                            courseTitle: activeCourse['title'] as String,
+                                            courseId: activeCourse['id'] as String,
+                                            dayNumber: 1,
+                                          );
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: Color(0xFF38BDF8)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          minimumSize: Size.zero,
+                                        ),
+                                        child: const Text('Player ➔', style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 11)),
+                                      ),
+                                    ],
+                                  ),
+                                )),
+                              ],
                             ),
                           ),
-                        )).toList()),
-                      ],
-                    );
-                  },
-                ),
+                        );
+                      }),
+                    ],
+                  )
+                : isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF10B981)))
+                    : sections.isEmpty
+                        ? const Center(child: Text('No tests available right now.', style: TextStyle(color: Colors.white)))
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: sections.length,
+                            itemBuilder: (context, index) {
+                              final section = sections[index];
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 12.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            section['title'],
+                                            style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        Text(
+                                          '${section['data'].length} Tests',
+                                          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  ...((section['data'] as List<dynamic>).map((test) => Card(
+                                    color: const Color(0xFF1E293B),
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    child: ListTile(
+                                      onTap: () => _startExam(test),
+                                      leading: const CircleAvatar(
+                                        backgroundColor: Color(0xFF27272A),
+                                        child: Icon(LucideIcons.fileCheck, color: Color(0xFF10B981), size: 18),
+                                      ),
+                                      title: Text(
+                                        test['displayTitle'] ?? test['title_name'],
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      subtitle: Text(
+                                        '${test['questionCount']} Questions • ~30m',
+                                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                                      ),
+                                      trailing: ElevatedButton(
+                                        onPressed: () => _startExam(test),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF10B981),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        ),
+                                        child: const Text('Start', style: TextStyle(color: Color(0xFF0A0F1E), fontWeight: FontWeight.bold, fontSize: 12)),
+                                      ),
+                                    ),
+                                  )).toList()),
+                                ],
+                              );
+                            },
+                          ),
+          ),
+        ],
+      ),
     );
   }
 }

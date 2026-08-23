@@ -158,7 +158,7 @@ function getEducationalFallbackVideoId(topic: string, subject: string): { videoI
     t.includes('உரிமைகள்')
   ) {
     return {
-      videoId: 'LgCg_1yP6_M',
+      videoId: 's8PzU3n6lZg',
       title: `${topic} - Indian Polity & Constitution Masterclass`
     };
   }

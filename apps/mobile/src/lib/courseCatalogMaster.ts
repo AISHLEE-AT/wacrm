@@ -4,15 +4,47 @@
  * Total Courses: 165
  */
 
+export interface SyllabusMicroTopicItem {
+  id: string;
+  title?: string;
+  topicTitle?: string;
+  subtopic?: string;
+  keyAxiom?: string;
+  keyFormulaOrLaw?: string;
+  keyPoints?: string[];
+  type?: string;
+  importance?: string;
+}
+
+export interface SyllabusSubtopicItem {
+  id?: string;
+  title: string;
+  microTopics?: SyllabusMicroTopicItem[];
+}
+
+export interface SyllabusChapterItem {
+  chapterNumber?: number;
+  chapterTitle?: string;
+  title?: string;
+  tamilTitle?: string;
+  chapterTamilTitle?: string;
+  description?: string;
+  subtopics?: SyllabusSubtopicItem[];
+  microTopics?: SyllabusMicroTopicItem[];
+}
+
 export interface SyllabusUnit {
   id: string;
   title: string;
+  subjectName?: string;
+  unitNumber?: number;
   description: string;
   dayNumber: number;
   topicKey: string;
   fallbackKey: string;
   isUnlocked: boolean;
   isCompleted: boolean;
+  chapters?: SyllabusChapterItem[];
   lessons: {
     id: string;
     title: string;
@@ -23502,8 +23534,10 @@ export const TEACHO_MASTER_CATALOG: MobileTeachOCourse[] = [
   }
 ];
 
+import { resolveCompleteCourseSyllabus } from '../data/curriculum/courseSyllabusRegistry';
+
 export function getCourseSyllabus(courseTitleOrId: string, category?: string): SyllabusUnit[] {
-  if (!courseTitleOrId) return TEACHO_MASTER_CATALOG[0].metadata.syllabus;
+  if (!courseTitleOrId) return TEACHO_MASTER_CATALOG[0]?.metadata?.syllabus || [];
   const clean = courseTitleOrId.toLowerCase().trim();
   const found = TEACHO_MASTER_CATALOG.find(c => 
     c.id.toLowerCase() === clean || 
@@ -23513,5 +23547,70 @@ export function getCourseSyllabus(courseTitleOrId: string, category?: string): S
   if (found && found.metadata?.syllabus?.length > 0) {
     return found.metadata.syllabus;
   }
-  return TEACHO_MASTER_CATALOG[0].metadata.syllabus;
+
+  // Dynamic Resolution from Master 2026 Micro-Topic Syllabus Registry
+  try {
+    const full = resolveCompleteCourseSyllabus(courseTitleOrId, courseTitleOrId);
+    if (full && full.subjects && full.subjects.length > 0) {
+      const units: SyllabusUnit[] = [];
+      full.subjects.forEach((subj, sIdx) => {
+        const firstChap = subj.chapters?.[0];
+        const firstMicro = firstChap?.microTopics?.[0];
+        const dayNum = firstMicro?.dayNumber || (sIdx + 1);
+
+        units.push({
+          id: `${subj.subjectId || 'subj_' + (sIdx + 1)}`,
+          title: subj.subjectName,
+          subjectName: subj.subjectName,
+          unitNumber: sIdx + 1,
+          description: `${subj.subjectName} — ${subj.chapters?.length || 0} Comprehensive Chapters with Subtopics & Micro-Topics.`,
+          dayNumber: dayNum,
+          topicKey: `${courseTitleOrId}_subj_${sIdx + 1}`.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+          fallbackKey: `${courseTitleOrId}_day_${dayNum}`.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+          isUnlocked: true,
+          isCompleted: false,
+          chapters: (subj.chapters || []).map((chap, cIdx) => ({
+            chapterNumber: chap.chapterNumber || (cIdx + 1),
+            chapterTitle: chap.chapterTitle,
+            title: chap.chapterTitle,
+            tamilTitle: chap.chapterTamilTitle || chap.tamilTitle,
+            description: chap.description,
+            subtopics: chap.subtopics?.map((sub) => ({
+              id: sub.id,
+              title: sub.title,
+              microTopics: sub.microTopics?.map((m: any) => ({
+                id: m.id,
+                title: m.title || m.topicTitle,
+                topicTitle: m.topicTitle || m.title,
+                keyAxiom: m.keyAxiom || m.keyFormulaOrLaw,
+                keyFormulaOrLaw: m.keyFormulaOrLaw || m.keyAxiom,
+              }))
+            })),
+            microTopics: chap.microTopics?.map((m) => ({
+              id: m.id,
+              title: m.topicTitle || m.title,
+              topicTitle: m.topicTitle || m.title,
+              subtopic: m.subtopic,
+              keyAxiom: m.keyAxiom || m.keyFormulaOrLaw,
+              keyFormulaOrLaw: m.keyFormulaOrLaw || m.keyAxiom,
+              keyPoints: m.keyPoints,
+              type: m.type,
+              importance: m.importance,
+            }))
+          })),
+          lessons: [
+            { id: `l_${subj.subjectId}_1`, title: 'Comprehensive Theory Notes & Formulas', duration: '15 mins', type: 'notes' },
+            { id: `l_${subj.subjectId}_2`, title: 'Colloquial Explanation & Real-World Analogies', duration: '10 mins', type: 'video' },
+            { id: `l_${subj.subjectId}_3`, title: 'Interactive Flashcards & 1-Line Q&A', duration: '10 mins', type: 'mindmap' },
+            { id: `l_${subj.subjectId}_4`, title: '30-MCQ CBT Mock Test Engine', duration: '30 mins', type: 'quiz' }
+          ]
+        });
+      });
+      if (units.length > 0) return units;
+    }
+  } catch (e) {
+    console.warn('Could not generate dynamic syllabus units:', e);
+  }
+
+  return TEACHO_MASTER_CATALOG[0]?.metadata?.syllabus || [];
 }

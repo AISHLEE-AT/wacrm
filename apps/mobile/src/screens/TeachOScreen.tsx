@@ -365,6 +365,7 @@ export default function TeachOScreen() {
         originalPrice={2999}
         onOpenCoursePicker={() => setIsCoursePickerOpen(true)}
         onOpenPurchase={() => setIsPaymentModalOpen(true)}
+        onOpenSyllabus={() => navigation.navigate('TeachOCourseScreen', { course: selectedCourse })}
       />
 
       {/* 2. SCROLLABLE CLEAN MAIN FEED */}
@@ -385,14 +386,18 @@ export default function TeachOScreen() {
                   {isAdmin ? 'ADMIN MASTER ACCESS' : 'PREMIUM FULL ACCESS UNLOCKED'}
                 </Text>
               </View>
-              <View style={styles.adminTag}>
+              <TouchableOpacity
+                style={styles.adminSyllabusTag}
+                onPress={() => navigation.navigate('TeachOCourseScreen', { course: selectedCourse })}
+                activeOpacity={0.8}
+              >
                 <Unlock size={12} color="#10b981" />
-                <Text style={styles.adminTagText}>All {totalDays} Days Unlocked</Text>
-              </View>
+                <Text style={styles.adminTagText}>📖 Full Course Syllabus</Text>
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.adminBannerDesc}>
-              Full learning access enabled. Jump to any day from Day 1 to Day {totalDays} without restrictions.
+              Full learning access enabled. Jump to any day from Day 1 to Day {totalDays} or explore complete chapter-wise syllabus.
             </Text>
 
             {/* Quick Day Navigator Pills */}
@@ -463,7 +468,7 @@ export default function TeachOScreen() {
         <TeachOQuickHub
           onOpenAiTutor={handleOpenAiTutor}
           onOpenTestO={handleOpenTestO}
-          onOpenNotes={() => Alert.alert('Study Notes 📚', 'Chapter summary notes and formula sheets are available inside each lesson!')}
+          onOpenNotes={() => navigation.navigate('TeachOCourseScreen', { course: selectedCourse })}
           onSendWhatsAppAlert={handleSendWhatsAppAlert}
           isWhatsAppAlertEnabled={true}
         />
@@ -568,6 +573,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  adminSyllabusTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(6, 182, 212, 0.18)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.4)',
   },
   adminTagText: {
     color: '#10b981',

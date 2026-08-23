@@ -13,10 +13,10 @@
  */
 
 
-import { lmsSupabase as aishleeSupabase } from './lms-supabase.ts';
-import { resolveCanonicalTopic } from './canonicalTopicResolver.ts';
-import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry.ts';
-import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry.ts';
+import { lmsSupabase as aishleeSupabase } from './lms-supabase';
+import { resolveCanonicalTopic } from './canonicalTopicResolver';
+import { resolveAuthenticEducationalVideo } from '../data/curriculum/educationalVideoRegistry';
+import { resolveMasterSequentialSyllabus } from '../data/curriculum/masterCurriculumRegistry';
 
 export interface VideoMeta {
   channel: string;
@@ -66,6 +66,7 @@ export interface CoursePlayerMCQ {
   options: string[];
   correctIndex: number;
   explanation: string;
+  optionExplanations?: Record<string, string>;
 }
 
 export interface TwoMarkQuestion {
@@ -115,7 +116,7 @@ function getCandidatePool(): string[] {
     const userKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gemini_api_key');
     if (userKey) return [userKey];
   }
-  const envKeys = (process.env.GEMINI_API_KEYS || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
+  const envKeys = (process.env.GEMINI_API_KEYS || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').split(',').map((k: string) => k.trim()).filter(Boolean);
   if (envKeys.length > 0) return envKeys;
   return [(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '').trim()].filter(Boolean);
 }
@@ -1472,28 +1473,75 @@ export function normalizeCoursePlayerPayload(
 ): CoursePlayerContent {
   const fallbackVideo = resolveAuthenticEducationalVideo(courseId || courseTitle, subject, topicTitle);
   
+  // Boilerplate detection — these patterns indicate template/placeholder text, not real content
+  const isBoilerplate = (text: string | undefined): boolean => {
+    if (!text || text.length < 10) return true;
+    const patterns = [
+      /Comprehensive syllabus lesson on/i,
+      /Detailed conceptual breakdown of/i,
+      /Designed with 100% adherence to standard textbook/i,
+      /Master fundamental definitions, underlying principles/i,
+      /Systematic algorithm and step-by-step presentation/i,
+      /Crucial memory aids, formula derivations, unit conversions/i,
+      /Core Concept & Exam Mastery/i,
+      /Core concepts, interactive video explanation/i,
+    ];
+    return patterns.some(p => p.test(text));
+  };
+
+  // Get rich syllabus data as alternative source
+  let syllabusItem: any = null;
+  try {
+    syllabusItem = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, taskNumber || 1);
+  } catch (e) {}
+
   // Extract overview
-  const overview = 
-    raw?.overview || 
-    raw?.notes?.overview || 
+  let rawOverview = raw?.overview || raw?.notes?.overview || 
     (Array.isArray(raw?.notes?.keyPoints) ? raw.notes.keyPoints.join(' ') : '') || 
-    (Array.isArray(raw?.keyPoints) ? raw.keyPoints.join(' ') : '') || 
-    `Day ${dayNumber}: Comprehensive syllabus lesson on ${topicTitle}. Designed with 100% adherence to standard textbook curriculum, official exam blueprints, and structured learning objectives.`;
+    (Array.isArray(raw?.keyPoints) ? raw.keyPoints.join(' ') : '');
+
+  const overview = (!rawOverview || isBoilerplate(rawOverview))
+    ? (syllabusItem?.overview || `${topicTitle} — ${subject || courseTitle}. Day ${dayNumber} study material.`)
+    : rawOverview;
 
   // Extract core concepts
   let rawConcepts = raw?.coreConcepts || raw?.notes?.coreConcepts || raw?.studyNotes || raw?.notes?.studyNotes || [];
-  if (!Array.isArray(rawConcepts) || rawConcepts.length === 0) {
-    const seq = resolveMasterSequentialSyllabus(courseId || 'general', courseTitle, dayNumber, taskNumber || 1);
-    rawConcepts = seq.keyConcepts || [
-      { heading: `1. Core Theoretical Foundations: ${topicTitle}`, content: overview, body: overview, example: 'Standard textbook principle.' },
-      { heading: `2. Problem Solving & Analytical Methodologies`, content: `Systematic algorithm and step-by-step presentation to solve exam questions on ${topicTitle}.`, body: `Systematic algorithm and step-by-step presentation to solve exam questions on ${topicTitle}.`, example: 'Worked model question highlighting scoring points.' },
-      { heading: `3. High-Yield Formulas, Mnemonics & Exam Shortcuts`, content: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules for ${topicTitle}.`, body: `Crucial memory aids, formula derivations, unit conversions, and rapid elimination rules for ${topicTitle}.`, example: 'Active Recall Examination Tip' }
-    ];
+  
+  const conceptsAreBoilerplate = !Array.isArray(rawConcepts) || rawConcepts.length === 0 ||
+    rawConcepts.every((c: any) => isBoilerplate(c?.body || c?.content || ''));
+
+  if (conceptsAreBoilerplate) {
+    if (syllabusItem?.keyConcepts && syllabusItem.keyConcepts.length > 0) {
+      rawConcepts = syllabusItem.keyConcepts;
+    } else {
+      rawConcepts = [
+        { heading: `1. ${topicTitle}`, content: overview, body: overview, formulaOrExample: syllabusItem?.formulaOrLaw || '' },
+      ];
+      if (syllabusItem?.keyPoints && Array.isArray(syllabusItem.keyPoints) && syllabusItem.keyPoints.length > 0) {
+        rawConcepts.push({
+          heading: '2. Important Points & Exam Tips',
+          content: syllabusItem.keyPoints.join('\n• '),
+          body: syllabusItem.keyPoints.join('\n• '),
+          formulaOrExample: ''
+        });
+      }
+      if (syllabusItem?.formulaOrLaw) {
+        rawConcepts.push({
+          heading: `${rawConcepts.length + 1}. Key Formulas & Shortcuts`,
+          content: syllabusItem.formulaOrLaw,
+          body: syllabusItem.formulaOrLaw,
+          formulaOrExample: syllabusItem.formulaOrLaw
+        });
+      }
+    }
   }
 
   const coreConcepts = rawConcepts.map((c: any, i: number) => {
     const heading = c.heading || c.sectionTitle || `Concept ${i + 1}`;
-    const textContent = c.body || c.content || c.explanation || overview;
+    let textContent = c.body || c.content || c.explanation || '';
+    if (isBoilerplate(textContent)) {
+      textContent = overview;
+    }
     const formulaOrExample = c.formulaOrExample || c.example || '';
     return {
       heading,
@@ -1521,8 +1569,9 @@ export function normalizeCoursePlayerPayload(
   // Extract formulas & shortcuts
   let rawFormulas = raw?.formulasAndMnemonics || raw?.formulasAndShortcuts || raw?.notes?.formulasAndShortcuts || raw?.notes?.formulasAndMnemonics || [];
   if (!Array.isArray(rawFormulas) || rawFormulas.length === 0) {
+    const formulaVal = syllabusItem?.formulaOrLaw || 'Standard Method / Equation';
     rawFormulas = [
-      { name: `${topicTitle} Master Rule`, formula: 'Standard Method / Equation', mnemonic: 'Active Recall Examination Tip', tip: 'Active Recall Examination Tip' }
+      { name: `${topicTitle} Master Rule`, formula: formulaVal, mnemonic: 'Active Recall Examination Tip', tip: 'Active Recall Examination Tip' }
     ];
   }
   const formulasAndShortcuts = rawFormulas.map((f: any) => ({
@@ -1534,9 +1583,9 @@ export function normalizeCoursePlayerPayload(
 
   // Extract videoMeta
   const rawVideoId = raw?.videoMeta?.youtubeVideoId || raw?.videoId || raw?.youtubeVideoId;
-  const blacklistedIds = ['0TgLtF3PMOc', 'xqgCwgvInDU', '2p8x9K4jW7Q'];
+  const blacklistedIds = ['0TgLtF3PMOc', 'xqgCwgvInDU', '2p8x9K4jW7Q', 'LgCg_1yP6_M'];
   const isVideoValid = rawVideoId && typeof rawVideoId === 'string' && rawVideoId.length >= 8 && !blacklistedIds.includes(rawVideoId);
-  const youtubeVideoId = isVideoValid ? rawVideoId : (fallbackVideo.youtubeVideoId || 'LgCg_1yP6_M');
+  const youtubeVideoId = isVideoValid ? rawVideoId : (fallbackVideo.youtubeVideoId || 'EpdTHQ0s6oM');
 
   const videoMeta: VideoMeta = {
     channel: raw?.videoMeta?.channelName || raw?.videoMeta?.channel || fallbackVideo.channelName || 'TeachO Masterclass',
@@ -1911,5 +1960,481 @@ export async function getCoursePlayerContent(
 }
 
 export const loadCoursePlayerContent = getCoursePlayerContent;
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * TESTO DATABASE MCQ BRIDGE & DYNAMIC 10-MCQ CBT GENERATOR
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+export async function fetchTestOMcqsForTopic(
+  topicTitle: string,
+  courseTitle: string,
+  targetCount: number = 10
+): Promise<CoursePlayerMCQ[]> {
+  const cleanTopic = (topicTitle || '').toLowerCase();
+  const cleanCourse = (courseTitle || '').toLowerCase();
+  const mcqs: CoursePlayerMCQ[] = [];
+
+  // 1. Try querying unified_master_data (TestO tests)
+  try {
+    const { data, error } = await aishleeSupabase
+      .from('unified_master_data')
+      .select('title_name, additional_info, metadata')
+      .eq('item_type', 'o_test')
+      .limit(50);
+
+    if (!error && data && data.length > 0) {
+      for (const item of data) {
+        let ai = item.additional_info;
+        if (typeof ai === 'string') {
+          try { ai = JSON.parse(ai); } catch (e) {}
+        }
+        if (ai && Array.isArray(ai.questions)) {
+          for (const q of ai.questions) {
+            const qText = (q.question || q.question_ta || '').toLowerCase();
+            const titleMatch = (item.title_name || '').toLowerCase();
+            if (
+              qText.includes(cleanTopic) ||
+              titleMatch.includes(cleanTopic) ||
+              cleanTopic.split(' ').some(word => word.length > 3 && (qText.includes(word) || titleMatch.includes(word)))
+            ) {
+              const opts = q.options || [];
+              let cIdx = 0;
+              if (typeof q.answer === 'string') {
+                const optIndex = opts.findIndex((o: string) => o.trim().startsWith(q.answer.charAt(0)) || o.trim() === q.answer.trim());
+                if (optIndex >= 0) cIdx = optIndex;
+              } else if (typeof q.correct === 'number') {
+                cIdx = q.correct;
+              }
+              mcqs.push({
+                question: q.question || q.question_ta || `Question on ${topicTitle}`,
+                options: opts.length === 4 ? opts : ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'],
+                correctIndex: cIdx,
+                explanation: q.explanation || 'Verified correct answer per official syllabus.'
+              });
+              if (mcqs.length >= targetCount) break;
+            }
+          }
+        }
+        if (mcqs.length >= targetCount) break;
+      }
+    }
+  } catch (e) {
+    // Non-blocking fallback
+  }
+
+  // 2. If fewer than targetCount, generate fresh targeted MCQs via Gemini AI
+  if (mcqs.length < targetCount) {
+    const needed = targetCount - mcqs.length;
+    const aiGenerated = await generateSectionCbtMcqsAI(topicTitle, courseTitle, needed);
+    mcqs.push(...aiGenerated);
+  }
+
+  return mcqs.slice(0, targetCount);
+}
+
+/**
+ * AI Helper: Generate Relatable Everyday Tamil Analogies
+ */
+export async function generateSectionTamilAnalogyAI(
+  topicTitle: string,
+  courseTitle: string
+): Promise<{ simpleTitle: string; colloquialIntro: string; everydayAnalogy: string; keyPointsTamil: string[] }> {
+  const prompt = `You are an expert Tamil Nadu teacher explaining "${topicTitle}" from "${courseTitle}" to a student.
+Provide an engaging, everyday colloquial Tamil explanation (தங்கத்தமிழ் / Tanglish / Tamil) with a relatable daily life analogy.
+
+Return ONLY a JSON object with this EXACT structure:
+{
+  "simpleTitle": "${topicTitle} - எளிய நேரடி விளக்கம்",
+  "colloquialIntro": "<2-3 sentence friendly introduction in conversational Tamil>",
+  "everydayAnalogy": "<Engaging real-world daily life analogy e.g. cooking, bus travel, cricket, mobile phone, farm life>",
+  "keyPointsTamil": [
+    "<முக்கிய தேர்வு குறிப்பு 1>",
+    "<முக்கிய தேர்வு குறிப்பு 2>",
+    "<முக்கிய தேர்வு குறிப்பு 3>"
+  ]
+}`;
+
+  try {
+    const apiKey = getNextGeminiKey();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, responseMimeType: 'application/json' }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return JSON.parse(text);
+    }
+  } catch (e) {}
+
+  return {
+    simpleTitle: `${topicTitle} - முழுமையான விளக்கம்`,
+    colloquialIntro: `${topicTitle} என்பது பாடத்திட்டத்தின் மிக முக்கியமான அடிப்படையாகும். இதனை எளிதாக புரிந்துகொண்டால் தேர்வில் முழு மதிப்பெண் பெறலாம்.`,
+    everydayAnalogy: `நமது அன்றாட வாழ்வில் நாம் பயன்படுத்தும் எளிமையான செயல்முறைகளை இதனுடன் ஒப்பிட்டு நினைவில் கொள்ளலாம்.`,
+    keyPointsTamil: [
+      `அடிப்படை விதிகள் மற்றும் வரையறைகளை நினைவில் கொள்க.`,
+      `மாதிரி வினாக்களை மீண்டும் பயிற்சி செய்க.`,
+      `சூத்திரங்கள் மற்றும் கோட்பாடுகளை குறிப்பெடுத்துக் கொள்க.`
+    ]
+  };
+}
+
+/**
+ * AI Helper: Generate 5 More 1-Mark VSAQ Flashcards
+ */
+export async function generateSectionVsaqsAI(
+  topicTitle: string,
+  courseTitle: string,
+  count: number = 5
+): Promise<OneLineQnA[]> {
+  const prompt = `Generate exactly ${count} high-yield 1-mark Very Short Answer Questions (VSAQs) with concise, accurate 1-line answers for:
+- Topic: "${topicTitle}"
+- Course: "${courseTitle}"
+
+Return ONLY a JSON object:
+{
+  "vsaqs": [
+    { "question": "<Rapid recall Q1>", "answer": "<1-line direct answer>" },
+    { "question": "<Rapid recall Q2>", "answer": "<1-line direct answer>" },
+    { "question": "<Rapid recall Q3>", "answer": "<1-line direct answer>" },
+    { "question": "<Rapid recall Q4>", "answer": "<1-line direct answer>" },
+    { "question": "<Rapid recall Q5>", "answer": "<1-line direct answer>" }
+  ]
+}`;
+
+  try {
+    const apiKey = getNextGeminiKey();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.vsaqs)) return parsed.vsaqs;
+      }
+    }
+  } catch (e) {}
+
+  return [
+    { question: `Define the primary governing principle of ${topicTitle}.`, answer: `It states the fundamental relationship and operational boundary for this concept.` },
+    { question: `What is the SI unit or standard representation for ${topicTitle}?`, answer: `Standard scientific unit per international system.` },
+    { question: `State one key condition required for ${topicTitle}.`, answer: `The system must maintain steady state or equilibrium parameters.` }
+  ];
+}
+
+/**
+ * AI Helper: Generate 2-Mark & 5-Mark Step-by-Step Worked Solutions
+ */
+export async function generateSectionStepSolutionsAI(
+  topicTitle: string,
+  courseTitle: string
+): Promise<{ shortAnswers: any[] }> {
+  const prompt = `Generate 2-Mark and 5-Mark step-by-step examination model questions and complete structured solutions for:
+- Topic: "${topicTitle}"
+- Course: "${courseTitle}"
+
+Return ONLY a JSON object:
+{
+  "shortAnswers": [
+    {
+      "question": "<2-Mark Question on ${topicTitle}>",
+      "marks": "2 Marks",
+      "solutionSteps": [
+        "<Step 1: Formula / Definition>",
+        "<Step 2: Substitution & Final Answer>"
+      ],
+      "keyTips": "<Examiner scoring tip for full marks>"
+    },
+    {
+      "question": "<5-Mark Derivation or Problem on ${topicTitle}>",
+      "marks": "5 Marks",
+      "solutionSteps": [
+        "<Step 1: Statement of Law / Given Data>",
+        "<Step 2: Mathematical setup / Free Body Diagram / Step 1>",
+        "<Step 3: Intermediate algebraic derivation / Step 2>",
+        "<Step 4: Boundary conditions / Step 3>",
+        "<Step 5: Final Equation with units and significance>"
+      ],
+      "keyTips": "<Highlight crucial intermediate steps examiners look for>"
+    }
+  ]
+}`;
+
+  try {
+    const apiKey = getNextGeminiKey();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.shortAnswers)) return parsed;
+      }
+    }
+  } catch (e) {}
+
+  return {
+    shortAnswers: [
+      {
+        question: `Explain the fundamental mechanism of ${topicTitle}.`,
+        marks: '2 Marks',
+        solutionSteps: [
+          'State the formal governing law and relevant physical parameters.',
+          'State the mathematical relation with proper SI units.'
+        ],
+        keyTips: 'Ensure both definition and unit are clearly boxed.'
+      }
+    ]
+  };
+}
+
+/**
+ * AI Helper: Generate 10 CBT Practice MCQs with Explanations
+ */
+export async function generateSectionCbtMcqsAI(
+  topicTitle: string,
+  courseTitle: string,
+  count: number = 10
+): Promise<CoursePlayerMCQ[]> {
+  const prompt = `Generate exactly ${count} examination-standard multiple-choice questions (MCQs) for:
+- Topic: "${topicTitle}"
+- Course: "${courseTitle}"
+
+Every question must have 4 distinct options (A, B, C, D), a correct index (0 for A, 1 for B, 2 for C, 3 for D), and a clear pedagogical explanation.
+
+Return ONLY a JSON object:
+{
+  "mcqs": [
+    {
+      "question": "<Precise Question 1>",
+      "options": ["A) ...", "B) ...", "C) ...", "D) ..."],
+      "correctIndex": 0,
+      "explanation": "<Step-by-step reason why this is correct>"
+    }
+  ]
+}`;
+
+  try {
+    const apiKey = getNextGeminiKey();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.mcqs)) {
+          return parsed.mcqs.map((m: any) => ({
+            question: m.question,
+            options: Array.isArray(m.options) ? m.options : ['A) Opt 1', 'B) Opt 2', 'C) Opt 3', 'D) Opt 4'],
+            correctIndex: typeof m.correctIndex === 'number' ? m.correctIndex : 0,
+            explanation: m.explanation || 'Correct per syllabus standard.'
+          }));
+        }
+      }
+    }
+  } catch (e) {}
+
+  return [
+    {
+      question: `Which of the following is most representative of ${topicTitle}?`,
+      options: ['A) Direct proportional relationship', 'B) Inverse square relation', 'C) Constant value', 'D) Undefined parameter'],
+      correctIndex: 0,
+      explanation: `By fundamental definition of ${topicTitle}, direct linear proportionality governs the initial state.`
+    }
+  ];
+}
+
+/**
+ * AI Helper: Generate Formulas & Memory Mnemonics
+ */
+export async function generateSectionMnemonicsAI(
+  topicTitle: string,
+  courseTitle: string
+): Promise<{ formulasAndMnemonics: Array<{ formula: string; meaning: string; mnemonic?: string }> }> {
+  const prompt = `Generate essential formulas, equations, axioms, and memory mnemonics for:
+- Topic: "${topicTitle}"
+- Course: "${courseTitle}"
+
+Return ONLY a JSON object:
+{
+  "formulasAndMnemonics": [
+    {
+      "formula": "<Equation or Law>",
+      "meaning": "<Clear explanation of each variable>",
+      "mnemonic": "<Catchy acronym or memory phrase to never forget this>"
+    }
+  ]
+}`;
+
+  try {
+    const apiKey = getNextGeminiKey();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.formulasAndMnemonics)) return parsed;
+      }
+    }
+  } catch (e) {}
+
+  return {
+    formulasAndMnemonics: [
+      {
+        formula: `${topicTitle}: Governing Axiom Formula`,
+        meaning: `Governs the physical and mathematical transition between initial and final states.`,
+        mnemonic: `Remember by the order of primary variables in the numerator.`
+      }
+    ]
+  };
+}
+
+export interface MatchedDatabaseTopicContent {
+  source: 'database' | 'ai_synthesized';
+  matchedId?: string;
+  pdfUrl?: string;
+  hasStoredMcqs: boolean;
+  hasStoredNotes: boolean;
+  hasStoredSolutions: boolean;
+  mcqs: CoursePlayerMCQ[];
+  theoryNotes?: string;
+  tamilAnalogy?: string;
+  stepSolutions?: Array<{ marks: 2 | 5; question: string; solutionSteps: string[] }>;
+  formulasAndMnemonics?: Array<{ formula: string; meaning: string; mnemonic?: string }>;
+}
+
+/**
+ * 🧠 AI Smart Brain Database Content & Test Matcher Engine
+ * Scans unified_master_data to link pre-generated PDFs, CBT questions, notes, and tests
+ * to any course micro-topic across all standards and competitive exams.
+ */
+export async function matchStoredContentForTopic(
+  topicTitle: string,
+  courseTitle: string,
+  category?: string
+): Promise<MatchedDatabaseTopicContent> {
+  const result: MatchedDatabaseTopicContent = {
+    source: 'ai_synthesized',
+    hasStoredMcqs: false,
+    hasStoredNotes: false,
+    hasStoredSolutions: false,
+    mcqs: []
+  };
+
+  try {
+    const cleanTokens = topicTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2);
+
+    const primarySearchTerm = cleanTokens.slice(0, 3).join(' ');
+
+    if (primarySearchTerm) {
+      const { data: dbItems, error } = await aishleeSupabase
+        .from('unified_master_data')
+        .select('*')
+        .or(`title_name.ilike.%${primarySearchTerm}%,description.ilike.%${primarySearchTerm}%`)
+        .limit(10);
+
+      if (!error && dbItems && dbItems.length > 0) {
+        for (const item of dbItems) {
+          const info = item.additional_info || item.metadata || {};
+          let parsedInfo = info;
+          if (typeof info === 'string') {
+            try { parsedInfo = JSON.parse(info); } catch (e) {}
+          }
+
+          if (!result.pdfUrl && (parsedInfo.pdf_url || parsedInfo.pdfUrl || item.file_url)) {
+            result.pdfUrl = parsedInfo.pdf_url || parsedInfo.pdfUrl || item.file_url;
+          }
+
+          const rawQuestions = parsedInfo.questions || parsedInfo.data || (Array.isArray(parsedInfo) ? parsedInfo : null);
+          if (Array.isArray(rawQuestions) && rawQuestions.length > 0 && result.mcqs.length < 10) {
+            result.hasStoredMcqs = true;
+            result.source = 'database';
+            result.matchedId = item.id;
+
+            for (const q of rawQuestions) {
+              if (q.question && Array.isArray(q.options) && result.mcqs.length < 10) {
+                let correctIdx = 0;
+                if (typeof q.answer === 'number') correctIdx = q.answer;
+                else if (typeof q.correctIndex === 'number') correctIdx = q.correctIndex;
+                else if (typeof q.answer === 'string') {
+                  const found = q.options.findIndex((opt: string) => opt.trim() === q.answer.trim());
+                  if (found !== -1) correctIdx = found;
+                }
+                result.mcqs.push({
+                  question: q.question,
+                  options: q.options,
+                  correctIndex: correctIdx,
+                  explanation: q.explanation || `Core concept explanation for ${topicTitle}.`
+                });
+              }
+            }
+          }
+
+          if (!result.theoryNotes && (parsedInfo.theory || parsedInfo.content || parsedInfo.notes)) {
+            result.hasStoredNotes = true;
+            result.theoryNotes = parsedInfo.theory || parsedInfo.content || parsedInfo.notes;
+          }
+
+          if (!result.tamilAnalogy && (parsedInfo.tamil_explanation || parsedInfo.tanglish || parsedInfo.colloquial_tamil)) {
+            result.tamilAnalogy = parsedInfo.tamil_explanation || parsedInfo.tanglish || parsedInfo.colloquial_tamil;
+          }
+
+          if (!result.stepSolutions && parsedInfo.step_solutions && Array.isArray(parsedInfo.step_solutions)) {
+            result.hasStoredSolutions = true;
+            result.stepSolutions = parsedInfo.step_solutions;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[AI Matcher Engine] Topic scan fallback:', err);
+  }
+
+  return result;
+}
+
 
 
