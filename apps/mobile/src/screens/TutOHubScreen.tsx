@@ -32,6 +32,7 @@ import {
   ArrowRight,
   Flame,
   Award,
+  Lock,
 } from 'lucide-react-native';
 
 import { AppContext } from '../context/AppContext';
@@ -39,7 +40,7 @@ import { TeachOCoursePickerSheet } from '../components/teacho/TeachOCoursePicker
 import { TutOQBankModal } from '../components/teacho/TutOQBankModal';
 import { TutODayCoursePlayerModal } from '../components/teacho/TutODayCoursePlayerModal';
 import {
-  getAllDaySummariesForCourse,
+  getReleasedDaySummariesForCourse,
   getCompletedDaysForCourse,
   toggleDayCompletion,
   DayPlanSummaryItem,
@@ -70,31 +71,52 @@ export default function TutOHubScreen({ navigation }: any) {
   // ─── 4. Completed Days Set State ──────────────────────────────────────────
   const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
 
-  // ─── 5. Day Filter & Navigation State ────────────────────────────────────
+  // ─── 5. Admin-Released Days Pool ─────────────────────────────────────────
+  const [adminReleasedDays, setAdminReleasedDays] = useState<DayPlanSummaryItem[]>([]);
+  const [isLoadingDays, setIsLoadingDays] = useState<boolean>(true);
+
+  // ─── 6. Day Filter & Navigation State ────────────────────────────────────
   const [selectedWeek, setSelectedWeek] = useState<number | 'ALL' | 'HOLIDAYS'>('ALL');
   const [daySearchQuery, setDaySearchQuery] = useState<string>('');
+
+  // Load released day plans from admin store
+  const refreshReleasedDays = useCallback(async (courseId: string, courseTitle: string, board: SchoolBoard, doneSet: Set<number>) => {
+    setIsLoadingDays(true);
+    try {
+      const list = await getReleasedDaySummariesForCourse(courseId, courseTitle, board, doneSet);
+      setAdminReleasedDays(list);
+    } catch (e) {
+      console.warn('Failed to load released days:', e);
+    } finally {
+      setIsLoadingDays(false);
+    }
+  }, []);
 
   // Load saved course, board, and completion status on mount
   useEffect(() => {
     async function loadSavedState() {
       try {
         const savedCourseId = await AsyncStorage.getItem('tuto_active_course_id');
+        let course = DEFAULT_COURSE;
+        let board: SchoolBoard = 'TNSB';
         if (savedCourseId) {
           const savedBoard = await AsyncStorage.getItem(`tuto_selected_board_${savedCourseId}`);
-          if (savedBoard) setSelectedBoard(savedBoard as SchoolBoard);
+          if (savedBoard) board = savedBoard as SchoolBoard;
           const matched = ALL_COURSES.find((c) => c.id === savedCourseId);
-          if (matched) {
-            setSelectedCourse(matched);
-          }
+          if (matched) course = matched;
         }
-        const doneSet = await getCompletedDaysForCourse(savedCourseId || DEFAULT_COURSE.id);
+        setSelectedCourse(course);
+        setSelectedBoard(board);
+
+        const doneSet = await getCompletedDaysForCourse(course.id);
         setCompletedDays(doneSet);
+        await refreshReleasedDays(course.id, course.title, board, doneSet);
       } catch (e) {
         console.warn('Failed to load saved course state:', e);
       }
     }
     loadSavedState();
-  }, []);
+  }, [refreshReleasedDays]);
 
   // Course selector handler
   const handleSelectCourse = useCallback(async (course: CourseOption) => {
@@ -109,22 +131,22 @@ export default function TutOHubScreen({ navigation }: any) {
       AsyncStorage.setItem('tuto_active_course_id', course.id).catch(() => {});
       const doneSet = await getCompletedDaysForCourse(course.id);
       setCompletedDays(doneSet);
+      await refreshReleasedDays(course.id, course.title, courseBoard, doneSet);
     } catch (err) {
       console.warn('Error applying selected course:', err);
       setSelectedCourse(course);
       setIsCoursePickerOpen(false);
     }
-  }, []);
+  }, [refreshReleasedDays]);
 
   // Toggle completion for a day
   const handleToggleDone = async (dayNum: number) => {
     const isDone = await toggleDayCompletion(selectedCourse.id, dayNum);
-    setCompletedDays((prev) => {
-      const next = new Set(prev);
-      if (isDone) next.add(dayNum);
-      else next.delete(dayNum);
-      return next;
-    });
+    const next = new Set(completedDays);
+    if (isDone) next.add(dayNum);
+    else next.delete(dayNum);
+    setCompletedDays(next);
+    await refreshReleasedDays(selectedCourse.id, selectedCourse.title, selectedBoard, next);
   };
 
   // Launch course player for a specific day
@@ -140,24 +162,13 @@ export default function TutOHubScreen({ navigation }: any) {
     setIsQBankModalOpen(true);
   };
 
-  // Generate light 300-day summaries for the active course
-  const allDaysList: DayPlanSummaryItem[] = useMemo(() => {
-    return getAllDaySummariesForCourse(
-      selectedCourse.id,
-      selectedCourse.title,
-      300,
-      selectedBoard,
-      completedDays
-    );
-  }, [selectedCourse.id, selectedCourse.title, selectedBoard, completedDays]);
-
-  // Filter days based on week selection and search query
+  // Filter ONLY the Admin-Released days based on week selection and search query
   const filteredDays = useMemo(() => {
     const q = daySearchQuery.trim().toLowerCase();
     const isSingleNum = /^\d+$/.test(q);
     const searchNum = isSingleNum ? parseInt(q, 10) : null;
 
-    return allDaysList.filter((d) => {
+    return adminReleasedDays.filter((d) => {
       // Week filter
       if (selectedWeek === 'HOLIDAYS') {
         if (!d.isMondayHoliday) return false;
@@ -176,11 +187,19 @@ export default function TutOHubScreen({ navigation }: any) {
 
       return true;
     });
-  }, [allDaysList, selectedWeek, daySearchQuery]);
+  }, [adminReleasedDays, selectedWeek, daySearchQuery]);
 
-  // Total completion statistics
-  const completedCount = completedDays.size;
-  const progressPercent = Math.min(100, Math.round((completedCount / 300) * 100));
+  // Total completion statistics for released days
+  const releasedTotal = adminReleasedDays.length;
+  const completedCount = adminReleasedDays.filter(d => completedDays.has(d.dayNumber)).length;
+  const progressPercent = releasedTotal > 0 ? Math.min(100, Math.round((completedCount / releasedTotal) * 100)) : 0;
+
+  // Extract available weeks among released days
+  const availableWeeks = useMemo(() => {
+    const wSet = new Set<number>();
+    adminReleasedDays.forEach(d => wSet.add(d.weekNumber));
+    return Array.from(wSet).sort((a, b) => a - b);
+  }, [adminReleasedDays]);
 
   return (
     <View style={styles.container}>
@@ -197,10 +216,10 @@ export default function TutOHubScreen({ navigation }: any) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Text style={styles.brandTitle}>TutO</Text>
                 <View style={styles.enrolledBadge}>
-                  <Text style={styles.enrolledBadgeText}>ACTIVE COURSE</Text>
+                  <Text style={styles.enrolledBadgeText}>ADMIN RELEASED</Text>
                 </View>
               </View>
-              <Text style={styles.brandSubtitle}>300-Day Whole Year Learning Deck</Text>
+              <Text style={styles.brandSubtitle}>Curated Day Plans Deck</Text>
             </View>
           </View>
 
@@ -233,7 +252,7 @@ export default function TutOHubScreen({ navigation }: any) {
               <Layers size={16} color="#00D084" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.activeCourseLabel}>ENROLLED COURSE BLUEPRINT</Text>
+              <Text style={styles.activeCourseLabel}>ENROLLED COURSE</Text>
               <Text style={styles.activeCourseTitle} numberOfLines={1}>
                 {selectedCourse.title}
               </Text>
@@ -254,9 +273,9 @@ export default function TutOHubScreen({ navigation }: any) {
           <View style={styles.progressSection}>
             <View style={styles.progressInfoRow}>
               <Text style={styles.progressInfoText}>
-                Day <Text style={{ color: '#00D084', fontWeight: '900' }}>{completedCount}</Text> of 300 Completed
+                <Text style={{ color: '#00D084', fontWeight: '900' }}>{completedCount}</Text> of {releasedTotal} Released Days Completed
               </Text>
-              <Text style={styles.progressPercentText}>{progressPercent}% Progress</Text>
+              <Text style={styles.progressPercentText}>{progressPercent}% Done</Text>
             </View>
             <View style={styles.progressBarTrack}>
               <View style={[styles.progressBarFill, { width: `${Math.max(2, progressPercent)}%` }]} />
@@ -265,7 +284,7 @@ export default function TutOHubScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* ─── 3. VIRTUALIZED ADMIN-RELEASED DAY PLANS FEED ─── */}
+      {/* ─── 3. VIRTUALIZED ADMIN-RELEASED DAY PLANS ONLY ─── */}
       <FlatList
         data={filteredDays}
         keyExtractor={(item) => `day_${item.dayNumber}`}
@@ -282,7 +301,7 @@ export default function TutOHubScreen({ navigation }: any) {
               <Search size={16} color="#00D084" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Jump to Day # (e.g. 100) or topic name..."
+                placeholder="Search released days (e.g. 1, 5, topic name)..."
                 placeholderTextColor="#64748B"
                 value={daySearchQuery}
                 onChangeText={setDaySearchQuery}
@@ -295,48 +314,49 @@ export default function TutOHubScreen({ navigation }: any) {
               )}
             </View>
 
-            {/* Week Filter Stepper Bar */}
-            <View style={styles.weekSelectorSection}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.weekBar}>
-                <TouchableOpacity
-                  style={[styles.weekPill, selectedWeek === 'ALL' && styles.weekPillActive]}
-                  onPress={() => setSelectedWeek('ALL')}
-                >
-                  <Text style={[styles.weekPillText, selectedWeek === 'ALL' && styles.weekPillTextActive]}>
-                    All 300 Days
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.weekPill, selectedWeek === 'HOLIDAYS' && styles.weekPillHolidayActive]}
-                  onPress={() => setSelectedWeek('HOLIDAYS')}
-                >
-                  <Text style={[styles.weekPillText, selectedWeek === 'HOLIDAYS' && { color: '#00D084', fontWeight: '900' }]}>
-                    🌿 43 Monday Holidays
-                  </Text>
-                </TouchableOpacity>
-
-                {Array.from({ length: 43 }, (_, i) => i + 1).map((wk) => (
+            {/* Week Filter Stepper Bar (Only for Released Weeks) */}
+            {availableWeeks.length > 1 && (
+              <View style={styles.weekSelectorSection}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.weekBar}>
                   <TouchableOpacity
-                    key={wk}
-                    style={[styles.weekPill, selectedWeek === wk && styles.weekPillActive]}
-                    onPress={() => setSelectedWeek(wk)}
+                    style={[styles.weekPill, selectedWeek === 'ALL' && styles.weekPillActive]}
+                    onPress={() => setSelectedWeek('ALL')}
                   >
-                    <Text style={[styles.weekPillText, selectedWeek === wk && styles.weekPillTextActive]}>
-                      Week {wk}
+                    <Text style={[styles.weekPillText, selectedWeek === 'ALL' && styles.weekPillTextActive]}>
+                      All Released ({releasedTotal})
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+
+                  {availableWeeks.map((wk) => (
+                    <TouchableOpacity
+                      key={wk}
+                      style={[styles.weekPill, selectedWeek === wk && styles.weekPillActive]}
+                      onPress={() => setSelectedWeek(wk)}
+                    >
+                      <Text style={[styles.weekPillText, selectedWeek === wk && styles.weekPillTextActive]}>
+                        Week {wk}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Results Count Bar */}
             <View style={styles.resultsCountBar}>
               <Text style={styles.resultsCountText}>
                 Showing <Text style={{ color: '#00D084', fontWeight: '900' }}>{filteredDays.length}</Text> Admin-Released Day Plans
-                {selectedWeek === 'HOLIDAYS' ? ' (Monday Mindful Holidays)' : typeof selectedWeek === 'number' ? ` (Week ${selectedWeek})` : ''}
               </Text>
             </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Lock size={32} color="#64748B" />
+            <Text style={styles.emptyTitle}>Admin Content In Preparation</Text>
+            <Text style={styles.emptySubtitle}>
+              The course instructor is currently finalizing lessons for this curriculum. Released day plans will appear here automatically.
+            </Text>
           </View>
         }
         renderItem={({ item: dayItem }) => {
@@ -480,7 +500,7 @@ export default function TutOHubScreen({ navigation }: any) {
       {/* ─── 6. 300-DAY INTERACTIVE COURSE PLAYER MODAL ─── */}
       <TutODayCoursePlayerModal
         visible={isCoursePlayerOpen}
-        dayPlan={allDaysList.find((d) => d.dayNumber === playerDayNumber) ? undefined : undefined}
+        dayPlan={undefined}
         dayNumber={playerDayNumber}
         courseId={selectedCourse.id}
         courseTitle={selectedCourse.title}
@@ -696,10 +716,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 208, 132, 0.15)',
     borderColor: '#00D084',
   },
-  weekPillHolidayActive: {
-    backgroundColor: 'rgba(0, 208, 132, 0.25)',
-    borderColor: '#00D084',
-  },
   weekPillText: {
     fontSize: 11,
     fontWeight: '700',
@@ -717,6 +733,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     fontWeight: '600',
+  },
+  emptyCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    marginTop: 20,
+    gap: 10,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  emptySubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   dayCard: {
     backgroundColor: '#0E172A',

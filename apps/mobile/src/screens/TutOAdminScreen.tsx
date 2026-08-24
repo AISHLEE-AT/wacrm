@@ -52,6 +52,9 @@ import {
   resolveWholeYearDayPlan,
   saveAdminCustomDayPlan,
   getAdminCustomDayPlan,
+  getAdminReleasedDayNumbers,
+  toggleAdminDayRelease,
+  releaseBatchDays,
 } from '../data/curriculum/wholeYearDayPlanEngine';
 import { geminiToolsService } from '../services/geminiToolsService';
 import {
@@ -94,6 +97,38 @@ export default function TutOAdminScreen({ navigation }: any) {
 
   // Editable Day Plan State
   const [editablePlan, setEditablePlan] = useState<WholeYearDayPlan | null>(null);
+  const [releasedDaySet, setReleasedDaySet] = useState<Set<number>>(new Set());
+
+  const refreshAdminReleasedDays = useCallback(async (courseId: string) => {
+    const set = await getAdminReleasedDayNumbers(courseId);
+    setReleasedDaySet(set);
+  }, []);
+
+  useEffect(() => {
+    refreshAdminReleasedDays(selectedCourse.id);
+  }, [selectedCourse.id, refreshAdminReleasedDays]);
+
+  const isCurrentDayReleased = releasedDaySet.has(dayNumber);
+
+  const handleToggleRelease = async () => {
+    const isNow = await toggleAdminDayRelease(selectedCourse.id, dayNumber);
+    const next = new Set(releasedDaySet);
+    if (isNow) next.add(dayNumber);
+    else next.delete(dayNumber);
+    setReleasedDaySet(next);
+    Alert.alert(
+      isNow ? 'Day Plan Released! 🚀' : 'Day Plan Unpublished 🔒',
+      isNow
+        ? `Day ${dayNumber} is now live and visible to students on TutO UI.`
+        : `Day ${dayNumber} is now hidden from student view.`
+    );
+  };
+
+  const handleBatchRelease = async (from: number, to: number) => {
+    const arr = await releaseBatchDays(selectedCourse.id, from, to);
+    setReleasedDaySet(new Set(arr));
+    Alert.alert('Batch Released! ✨', `Days ${from} to ${to} are now officially released and visible to students!`);
+  };
 
   // Load active day plan
   useEffect(() => {
@@ -237,6 +272,54 @@ export default function TutOAdminScreen({ navigation }: any) {
           <View style={styles.sectionContainer}>
             {/* Day Header & Navigator */}
             <View style={styles.dayControlHeader}>
+              {/* Batch Release Bar */}
+              <View style={styles.batchReleaseBar}>
+                <Text style={styles.batchReleaseLabel}>⚡ BATCH RELEASE TO STUDENTS:</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                  <TouchableOpacity
+                    style={styles.batchReleaseBtn}
+                    onPress={() => handleBatchRelease(1, 7)}
+                  >
+                    <Text style={styles.batchReleaseBtnText}>Release Week 1 (Days 1-7)</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.batchReleaseBtn}
+                    onPress={() => handleBatchRelease(1, 30)}
+                  >
+                    <Text style={styles.batchReleaseBtnText}>Release Month 1 (Days 1-30)</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.batchReleaseBtn}
+                    onPress={() => handleBatchRelease(1, 100)}
+                  >
+                    <Text style={styles.batchReleaseBtnText}>Release Days 1-100</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.batchReleaseBtn}
+                    onPress={() => handleBatchRelease(1, 300)}
+                  >
+                    <Text style={styles.batchReleaseBtnText}>Release All 300 Days</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+
+              <View style={styles.releaseStatusRow}>
+                <View style={[styles.releaseStatusPill, isCurrentDayReleased && styles.releaseStatusPillActive]}>
+                  <Text style={[styles.releaseStatusPillText, isCurrentDayReleased && styles.releaseStatusPillTextActive]}>
+                    {isCurrentDayReleased ? '✅ RELEASED TO STUDENTS' : '🔒 DRAFT (HIDDEN FROM STUDENTS)'}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.toggleReleaseBtn, isCurrentDayReleased ? styles.toggleReleaseBtnRevoke : styles.toggleReleaseBtnPublish]}
+                  onPress={handleToggleRelease}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.toggleReleaseBtnText}>
+                    {isCurrentDayReleased ? 'Unpublish Day' : `🚀 Release Day ${dayNumber} to Students`}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={styles.dayControlTitle}>
@@ -523,6 +606,75 @@ export default function TutOAdminScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+
+  batchReleaseBar: {
+    backgroundColor: '#070C18',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    marginBottom: 10,
+    gap: 6,
+  },
+  batchReleaseLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#38BDF8',
+    letterSpacing: 0.5,
+  },
+  batchReleaseBtn: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#38BDF840',
+  },
+  batchReleaseBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  releaseStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  releaseStatusPill: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  releaseStatusPillActive: {
+    backgroundColor: 'rgba(0, 208, 132, 0.2)',
+  },
+  releaseStatusPillText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#94A3B8',
+  },
+  releaseStatusPillTextActive: {
+    color: '#00D084',
+  },
+  toggleReleaseBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  toggleReleaseBtnPublish: {
+    backgroundColor: '#00D084',
+  },
+  toggleReleaseBtnRevoke: {
+    backgroundColor: '#F43F5E',
+  },
+  toggleReleaseBtnText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#070C18',
+  },
+
 
   jumpDayBox: {
     flexDirection: 'row',

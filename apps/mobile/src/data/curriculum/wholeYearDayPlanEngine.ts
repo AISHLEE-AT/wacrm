@@ -671,3 +671,103 @@ export async function toggleDayCompletion(courseId: string, dayNumber: number): 
     return false;
   }
 }
+
+
+/**
+ * ─── ADMIN RELEASED DAY PLANS MANAGEMENT ──────────────────────────────────────
+ * Ensures students ONLY see day plans that have been explicitly released / published by the Admin.
+ */
+const TUTO_ADMIN_RELEASED_DAYS_PREFIX = 'tuto_admin_released_days_v1_';
+
+/**
+ * Returns the Set of Day Numbers that the Admin has released for this course.
+ * Default starter: Days 1 to 7 (Week 1 starter) if no custom release state exists.
+ */
+export async function getAdminReleasedDayNumbers(courseId: string): Promise<Set<number>> {
+  try {
+    const raw = await AsyncStorage.getItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`);
+    if (raw) {
+      const arr: number[] = JSON.parse(raw);
+      return new Set(arr.sort((a, b) => a - b));
+    }
+    // Also check if admin has saved any custom day plans for this course
+    const customRaw = await AsyncStorage.getItem(ADMIN_CUSTOM_PLANS_KEY);
+    if (customRaw) {
+      const customMap = JSON.parse(customRaw);
+      const customDays: number[] = [];
+      Object.keys(customMap).forEach((key) => {
+        if (key.startsWith(`${courseId}_day_`)) {
+          const num = parseInt(key.replace(`${courseId}_day_`, ''), 10);
+          if (!isNaN(num)) customDays.push(num);
+        }
+      });
+      if (customDays.length > 0) {
+        // Save and return
+        const set = new Set([1, 2, 3, 4, 5, 6, 7, ...customDays]);
+        await AsyncStorage.setItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`, JSON.stringify(Array.from(set)));
+        return set;
+      }
+    }
+
+    // Default starter: Days 1 to 7 (Week 1)
+    const starterSet = new Set([1, 2, 3, 4, 5, 6, 7]);
+    await AsyncStorage.setItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`, JSON.stringify(Array.from(starterSet)));
+    return starterSet;
+  } catch (e) {
+    return new Set([1, 2, 3, 4, 5, 6, 7]);
+  }
+}
+
+/**
+ * Toggle the released/published status of a single day plan.
+ */
+export async function toggleAdminDayRelease(courseId: string, dayNumber: number): Promise<boolean> {
+  try {
+    const set = await getAdminReleasedDayNumbers(courseId);
+    const isNowReleased = !set.has(dayNumber);
+    if (isNowReleased) {
+      set.add(dayNumber);
+    } else {
+      set.delete(dayNumber);
+    }
+    await AsyncStorage.setItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`, JSON.stringify(Array.from(set)));
+    return isNowReleased;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Batch release multiple days at once (e.g. Days 1 to 30).
+ */
+export async function releaseBatchDays(
+  courseId: string,
+  fromDay: number,
+  toDay: number
+): Promise<number[]> {
+  try {
+    const set = await getAdminReleasedDayNumbers(courseId);
+    for (let d = fromDay; d <= toDay; d++) {
+      set.add(d);
+    }
+    const arr = Array.from(set).sort((a, b) => a - b);
+    await AsyncStorage.setItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`, JSON.stringify(arr));
+    return arr;
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Fetch ONLY the day summaries that the Admin has released.
+ */
+export async function getReleasedDaySummariesForCourse(
+  courseId: string,
+  courseTitle: string,
+  schoolBoard: string = 'TNSB',
+  completedDaySet: Set<number> = new Set()
+): Promise<DayPlanSummaryItem[]> {
+  const releasedSet = await getAdminReleasedDayNumbers(courseId);
+  const allDays = getAllDaySummariesForCourse(courseId, courseTitle, 300, schoolBoard, completedDaySet);
+  return allDays.filter((d) => releasedSet.has(d.dayNumber));
+}
