@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  Hash,
+  Sliders,
+  Globe,
+  PenTool,
   ShieldCheck,
   BookOpen,
   Layers,
@@ -30,6 +34,12 @@ import {
   CreditCard,
   ChevronDown,
   ChevronUp,
+  Video,
+  FileText,
+  Heart,
+  Smile,
+  Calendar,
+  Send,
 } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { ALL_COURSES, CourseOption, SCHOOL_BOARDS, SchoolBoard } from '../data/coursesCatalog';
@@ -37,33 +47,95 @@ import {
   getOfficialGovernmentSyllabus,
   OfficialCourseSyllabus,
 } from '../data/curriculum/officialGovernmentSyllabusRegistry';
-import { resolveNanoDayPlan, NanoDayPlan } from '../data/curriculum/dayPlanNanoEngine';
+import {
+  WholeYearDayPlan,
+  resolveWholeYearDayPlan,
+  saveAdminCustomDayPlan,
+  getAdminCustomDayPlan,
+} from '../data/curriculum/wholeYearDayPlanEngine';
 import { geminiToolsService } from '../services/geminiToolsService';
+import {
+  StructuredMCQ,
+  MASTER_QBANK_STORE,
+  searchQuestions,
+  querySupabaseQuestionBank,
+  QUESTION_FORMATS,
+  EXAM_CATEGORIES,
+} from '../lib/qbankTaxonomyEngine';
 
 export default function TutOAdminScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { geminiApiKey } = useContext(AppContext);
 
-  const [activeTab, setActiveTab] = useState<'syllabus' | 'day_plan' | 'purchases'>('syllabus');
+  const [activeTab, setActiveTab] = useState<'syllabus' | 'day_plan' | 'qbank_mapper' | 'purchases'>('day_plan');
+
+  // Fast QBank Studio States
+  const [adminQBankQuery, setAdminQBankQuery] = useState('');
+  const [adminQBankDebounced, setAdminQBankDebounced] = useState('');
+  const [adminQBankFormat, setAdminQBankFormat] = useState('ALL');
+  const [adminQBankCategory, setAdminQBankCategory] = useState('ALL');
+
+  useEffect(() => {
+    const t = setTimeout(() => setAdminQBankDebounced(adminQBankQuery), 80);
+    return () => clearTimeout(t);
+  }, [adminQBankQuery]);
+
+  const adminQBankResults = useMemo(() => {
+    return searchQuestions(adminQBankDebounced, 'ALL', 'ALL', MASTER_QBANK_STORE, {
+      format: adminQBankFormat !== 'ALL' ? (adminQBankFormat as any) : undefined,
+      examCategory: adminQBankCategory !== 'ALL' ? (adminQBankCategory as any) : undefined,
+    });
+  }, [adminQBankDebounced, adminQBankFormat, adminQBankCategory]);
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(ALL_COURSES[0]);
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [dayNumber, setDayNumber] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Editable Day Plan State
+  const [editablePlan, setEditablePlan] = useState<WholeYearDayPlan | null>(null);
+
+  // Load active day plan
+  useEffect(() => {
+    async function loadPlan() {
+      const custom = await getAdminCustomDayPlan(selectedCourse.id, dayNumber);
+      if (custom) {
+        setEditablePlan(custom);
+      } else {
+        const resolved = resolveWholeYearDayPlan(selectedCourse.id, selectedCourse.title, dayNumber, selectedBoard);
+        setEditablePlan(resolved);
+      }
+    }
+    loadPlan();
+  }, [selectedCourse.id, selectedCourse.title, dayNumber, selectedBoard]);
 
   const activeSyllabus: OfficialCourseSyllabus = useMemo(() => {
     return getOfficialGovernmentSyllabus(selectedCourse.id, selectedBoard);
   }, [selectedCourse.id, selectedBoard]);
 
-  const activeDayPlan: NanoDayPlan = useMemo(() => {
-    return resolveNanoDayPlan(selectedCourse.id, selectedCourse.title, dayNumber, selectedBoard);
-  }, [selectedCourse.id, selectedCourse.title, dayNumber, selectedBoard]);
+  // Save changes handler
+  const handleSaveDayPlan = async () => {
+    if (!editablePlan) return;
+    setIsSaving(true);
+    try {
+      const success = await saveAdminCustomDayPlan(editablePlan);
+      if (success) {
+        Alert.alert('Content Delivered! 🚀', `Day ${dayNumber} content for "${selectedCourse.title}" is now updated and delivered to all student apps!`);
+      } else {
+        Alert.alert('Save Failed', 'Could not save day plan to storage.');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message || 'Failed to save');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleAiGenerate = async () => {
     setIsAiGenerating(true);
     try {
       const prompt = `Generate an exhaustive, authentic government-notified curriculum breakdown for ${selectedCourse.title} per official norms.`;
-      const res = await geminiToolsService.executePrompt(prompt, geminiApiKey, 'Tamil');
+      await geminiToolsService.executePrompt(prompt, geminiApiKey, 'Tamil');
       Alert.alert('AI Generation Complete ✨', `Gemini AI has analyzed and verified the syllabus for ${selectedCourse.title}!`);
     } catch (e: any) {
       Alert.alert('AI Notice', 'AI generation finished with default blueprint fallback.');
@@ -80,13 +152,13 @@ export default function TutOAdminScreen({ navigation }: any) {
           <View style={styles.adminBadgeRow}>
             <View style={styles.adminBadge}>
               <ShieldCheck size={12} color="#00D084" />
-              <Text style={styles.adminBadgeText}>TUTO ADMIN STUDIO</Text>
+              <Text style={styles.adminBadgeText}>TUTO ADMIN MANAGEMENT STUDIO</Text>
             </View>
             <View style={styles.keyBadge}>
-              <Text style={styles.keyBadgeText}>{geminiApiKey ? 'Gemini AI Active' : 'Fallback Engine'}</Text>
+              <Text style={styles.keyBadgeText}>{geminiApiKey ? 'Gemini AI Active' : 'Live Sync Engine'}</Text>
             </View>
           </View>
-          <Text style={styles.headerTitle}>Curriculum & Course Control</Text>
+          <Text style={styles.headerTitle}>Course Day Plan & Content Delivery</Text>
         </View>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation?.goBack?.()}>
           <ArrowLeft size={18} color="#94A3B8" />
@@ -95,6 +167,16 @@ export default function TutOAdminScreen({ navigation }: any) {
 
       {/* Mode Tabs */}
       <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'day_plan' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('day_plan')}
+        >
+          <Clock size={13} color={activeTab === 'day_plan' ? '#00D084' : '#94A3B8'} />
+          <Text style={[styles.tabBtnText, activeTab === 'day_plan' && styles.tabBtnTextActive]}>
+            Whole Year Day Plans
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === 'syllabus' && styles.tabBtnActive]}
           onPress={() => setActiveTab('syllabus')}
@@ -105,13 +187,13 @@ export default function TutOAdminScreen({ navigation }: any) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'day_plan' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('day_plan')}
+                <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'qbank_mapper' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('qbank_mapper')}
         >
-          <Clock size={13} color={activeTab === 'day_plan' ? '#00D084' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'day_plan' && styles.tabBtnTextActive]}>
-            200-Day Plan
+          <Hash size={13} color={activeTab === 'qbank_mapper' ? '#00D084' : '#94A3B8'} />
+          <Text style={[styles.tabBtnText, activeTab === 'qbank_mapper' && styles.tabBtnTextActive]}>
+            ⚡ QBank Mapper
           </Text>
         </TouchableOpacity>
 
@@ -121,7 +203,7 @@ export default function TutOAdminScreen({ navigation }: any) {
         >
           <CreditCard size={13} color={activeTab === 'purchases' ? '#00D084' : '#94A3B8'} />
           <Text style={[styles.tabBtnText, activeTab === 'purchases' && styles.tabBtnTextActive]}>
-            Purchases
+            Purchases & Access
           </Text>
         </TouchableOpacity>
       </View>
@@ -150,10 +232,207 @@ export default function TutOAdminScreen({ navigation }: any) {
 
       {/* Main Content Body */}
       <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-        {/* TAB 1: SYLLABUS MATRIX */}
+        {/* TAB 1: WHOLE YEAR DAY PLAN (3 VIDEOS, 3 NOTES, 1 TEST, 1 YOGA) */}
+        {activeTab === 'day_plan' && editablePlan && (
+          <View style={styles.sectionContainer}>
+            {/* Day Header & Navigator */}
+            <View style={styles.dayControlHeader}>
+              <View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.dayControlTitle}>
+                    Day {editablePlan.dayNumber} · Week {editablePlan.weekNumber}
+                  </Text>
+                  {editablePlan.isMondayHoliday ? (
+                    <View style={styles.holidayBadge}>
+                      <Smile size={10} color="#F59E0B" />
+                      <Text style={styles.holidayBadgeText}>MONDAY HOLIDAY</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.activeDayBadge}>
+                      <Text style={styles.activeDayBadgeText}>{editablePlan.dayOfWeekName}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.dayControlSubtitle}>{editablePlan.topicTitle}</Text>
+              </View>
+
+              <View style={styles.dayNavButtons}>
+                <TouchableOpacity
+                  style={[styles.stepBtn, dayNumber <= 1 && styles.stepBtnDisabled]}
+                  disabled={dayNumber <= 1}
+                  onPress={() => setDayNumber(Math.max(1, dayNumber - 1))}
+                >
+                  <Text style={styles.stepBtnText}>Prev Day</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.stepBtn}
+                  onPress={() => setDayNumber(Math.min(300, dayNumber + 1))}
+                >
+                  <Text style={styles.stepBtnText}>Next Day</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* 1. EDITABLE 3 VIDEOS */}
+            <View style={styles.editSectionCard}>
+              <View style={styles.editSectionHeader}>
+                <Video size={14} color="#38BDF8" />
+                <Text style={styles.editSectionTitle}>📹 3 IN-APP PLAYABLE VIDEOS (ADMIN CURATED):</Text>
+              </View>
+
+              {editablePlan.videos.map((vid, vIdx) => (
+                <View key={vid.id || vIdx} style={styles.editItemBox}>
+                  <Text style={styles.editItemLabel}>Video {vIdx + 1}: {vid.type.toUpperCase()}</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="Video Title"
+                    placeholderTextColor="#64748B"
+                    value={vid.title}
+                    onChangeText={(text) => {
+                      const copy = [...editablePlan.videos] as [any, any, any];
+                      copy[vIdx] = { ...copy[vIdx], title: text };
+                      setEditablePlan({ ...editablePlan, videos: copy });
+                    }}
+                  />
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                    <TextInput
+                      style={[styles.inputField, { flex: 1 }]}
+                      placeholder="YouTube Video ID (e.g. kKKM8Y-u7ds)"
+                      placeholderTextColor="#64748B"
+                      value={vid.youtubeVideoId}
+                      onChangeText={(text) => {
+                        const copy = [...editablePlan.videos] as [any, any, any];
+                        copy[vIdx] = { ...copy[vIdx], youtubeVideoId: text };
+                        setEditablePlan({ ...editablePlan, videos: copy });
+                      }}
+                    />
+                    <TextInput
+                      style={[styles.inputField, { width: 90 }]}
+                      placeholder="Mins"
+                      placeholderTextColor="#64748B"
+                      keyboardType="numeric"
+                      value={String(vid.durationMinutes)}
+                      onChangeText={(text) => {
+                        const copy = [...editablePlan.videos] as [any, any, any];
+                        copy[vIdx] = { ...copy[vIdx], durationMinutes: parseInt(text, 10) || 10 };
+                        setEditablePlan({ ...editablePlan, videos: copy });
+                      }}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* 2. EDITABLE 3 NOTES */}
+            <View style={styles.editSectionCard}>
+              <View style={styles.editSectionHeader}>
+                <FileText size={14} color="#00D084" />
+                <Text style={styles.editSectionTitle}>📝 3 NOTES (ADMIN AI + TOPIC AI):</Text>
+              </View>
+
+              {editablePlan.notes.map((note, nIdx) => (
+                <View key={note.id || nIdx} style={styles.editItemBox}>
+                  <Text style={styles.editItemLabel}>Note {nIdx + 1}: {note.title}</Text>
+                  <TextInput
+                    style={[styles.inputField, { minHeight: 60 }]}
+                    multiline
+                    placeholder="Note Content"
+                    placeholderTextColor="#64748B"
+                    value={note.content}
+                    onChangeText={(text) => {
+                      const copy = [...editablePlan.notes] as [any, any, any];
+                      copy[nIdx] = { ...copy[nIdx], content: text };
+                      setEditablePlan({ ...editablePlan, notes: copy });
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
+
+            {/* 3. EDITABLE 1 DAILY MCQ TEST */}
+            <View style={styles.editSectionCard}>
+              <View style={styles.editSectionHeader}>
+                <Award size={14} color="#F59E0B" />
+                <Text style={styles.editSectionTitle}>🎯 DAILY ASSESSMENT TEST (5 MCQS):</Text>
+              </View>
+              <Text style={styles.subHintText}>{editablePlan.mcqTest.questions.length} Questions configured for Day {dayNumber}.</Text>
+
+              {editablePlan.mcqTest.questions.map((q, qIdx) => (
+                <View key={q.id || qIdx} style={styles.editItemBox}>
+                  <Text style={styles.editItemLabel}>Q{qIdx + 1}: Question Statement</Text>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="Question Text"
+                    placeholderTextColor="#64748B"
+                    value={q.question}
+                    onChangeText={(text) => {
+                      const qList = [...editablePlan.mcqTest.questions];
+                      qList[qIdx] = { ...qList[qIdx], question: text };
+                      setEditablePlan({ ...editablePlan, mcqTest: { ...editablePlan.mcqTest, questions: qList } });
+                    }}
+                  />
+                  <Text style={styles.editItemLabel}>Correct Option: [ {q.correctOption} ]</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* 4. EDITABLE 1 YOGA & EXTRA-CURRICULAR TASK */}
+            <View style={styles.editSectionCard}>
+              <View style={styles.editSectionHeader}>
+                <Heart size={14} color="#EC4899" />
+                <Text style={styles.editSectionTitle}>🧘 YOGA & EXTRA-CURRICULAR ACTIVITY:</Text>
+              </View>
+
+              <TextInput
+                style={styles.inputField}
+                placeholder="Asana Name"
+                placeholderTextColor="#64748B"
+                value={editablePlan.yogaAndActivity.asanaName}
+                onChangeText={(text) => {
+                  setEditablePlan({
+                    ...editablePlan,
+                    yogaAndActivity: { ...editablePlan.yogaAndActivity, asanaName: text },
+                  });
+                }}
+              />
+              <TextInput
+                style={[styles.inputField, { marginTop: 4 }]}
+                placeholder="Extra-Curricular Challenge Title"
+                placeholderTextColor="#64748B"
+                value={editablePlan.yogaAndActivity.extraCurricularTask.title}
+                onChangeText={(text) => {
+                  setEditablePlan({
+                    ...editablePlan,
+                    yogaAndActivity: {
+                      ...editablePlan.yogaAndActivity,
+                      extraCurricularTask: { ...editablePlan.yogaAndActivity.extraCurricularTask, title: text },
+                    },
+                  });
+                }}
+              />
+            </View>
+
+            {/* Save & Broadcast Action Button */}
+            <TouchableOpacity
+              style={styles.saveBroadcastBtn}
+              disabled={isSaving}
+              onPress={handleSaveDayPlan}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#070C18" />
+              ) : (
+                <>
+                  <Save size={16} color="#070C18" />
+                  <Text style={styles.saveBroadcastBtnText}>Save & Deliver Day {dayNumber} Plan to Students 🚀</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* TAB 2: SYLLABUS MATRIX */}
         {activeTab === 'syllabus' && (
           <View style={styles.sectionContainer}>
-            {/* AI Generate Action Banner */}
             <View style={styles.aiActionCard}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.aiCardTitle}>Gemini AI Syllabus Verifier</Text>
@@ -211,76 +490,152 @@ export default function TutOAdminScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* TAB 2: 200-DAY PLAN */}
-        {activeTab === 'day_plan' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.infoCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={styles.infoTitle}>Day {dayNumber} / 200 Plan</Text>
-                <View style={styles.dayStepperRow}>
-                  <TouchableOpacity
-                    style={styles.stepBtn}
-                    onPress={() => setDayNumber(Math.max(1, dayNumber - 1))}
-                  >
-                    <Text style={styles.stepBtnText}>-1 Day</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.stepBtn}
-                    onPress={() => setDayNumber(Math.min(200, dayNumber + 1))}
-                  >
-                    <Text style={styles.stepBtnText}>+1 Day</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <Text style={styles.infoRef}>Subject: {activeDayPlan.targetSubject}</Text>
-              <Text style={styles.infoBlueprint}>Target Concept: {activeDayPlan.targetTopicTitle}</Text>
-            </View>
-
-            {activeDayPlan.tasks.map((task) => (
-              <View key={task.id} style={styles.taskCard}>
-                <View style={styles.taskStepBadge}>
-                  <Text style={styles.taskStepText}>{task.stepNumber}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.taskName}>{task.taskName}</Text>
-                  <Text style={styles.taskMeta}>
-                    {task.durationMinutes} Mins • +{task.xp} XP • {task.type}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* TAB 3: PURCHASES & APPROVALS */}
+        {/* TAB 3: PURCHASES */}
         {activeTab === 'purchases' && (
           <View style={styles.sectionContainer}>
             <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Pending UPI / QR Purchases</Text>
-              <Text style={styles.infoRef}>Review student transaction receipts and approve access</Text>
-            </View>
-
-            <View style={styles.purchaseCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.studentName}>Student User (+91 98765 43210)</Text>
-                <Text style={styles.purchasePlan}>TutO Pass Pro (1-Year All Courses) • ₹199</Text>
-                <Text style={styles.purchaseStatus}>Status: APPROVED</Text>
-              </View>
-              <View style={styles.approvedPill}>
-                <CheckCircle2 size={14} color="#00D084" />
-                <Text style={styles.approvedPillText}>Verified</Text>
-              </View>
+              <Text style={styles.infoTitle}>Subscription & Course Unlocks</Text>
+              <Text style={styles.infoRef}>Manage active learner subscriptions and day access limits.</Text>
             </View>
           </View>
         )}
-
-        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+
+  adminPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#131F37',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  adminPillActive: {
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+    borderColor: '#00D084',
+  },
+  adminPillText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  adminPillTextActive: {
+    color: '#00D084',
+  },
+  resultsCountBar: {
+    paddingVertical: 4,
+  },
+  resultsCountText: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  adminQCard: {
+    backgroundColor: '#131F37',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    gap: 6,
+    marginBottom: 8,
+  },
+  adminQHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  uidBadgePill: {
+    backgroundColor: '#070C18',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  uidBadgePillText: {
+    fontSize: 9,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  formatTagSmall: {
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  formatTagSmallText: {
+    fontSize: 8,
+    color: '#38BDF8',
+    fontWeight: '800',
+  },
+  diffPillSmall: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  diffPillSmallText: {
+    fontSize: 8,
+    color: '#F59E0B',
+    fontWeight: '800',
+  },
+  adminQText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    lineHeight: 16,
+  },
+  adminQTextTamil: {
+    fontSize: 10,
+    color: '#94A3B8',
+    lineHeight: 14,
+  },
+  optionPreviewGrid: {
+    backgroundColor: '#070C18',
+    padding: 6,
+    borderRadius: 6,
+    gap: 2,
+  },
+  optionPreviewText: {
+    fontSize: 10,
+    color: '#CBD5E1',
+  },
+  mappingActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  correctOptionTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  correctOptionTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#00D084',
+  },
+  mapToDayBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#00D084',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  mapToDayBtnText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#070C18',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#070C18',
@@ -291,21 +646,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#0E172A',
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
+    backgroundColor: '#0E172A',
   },
   adminBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   adminBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#00D08420',
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -316,15 +671,15 @@ const styles = StyleSheet.create({
     color: '#00D084',
   },
   keyBadge: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#131F37',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   keyBadgeText: {
     fontSize: 9,
-    color: '#94A3B8',
-    fontWeight: '600',
+    color: '#38BDF8',
+    fontWeight: '700',
   },
   headerTitle: {
     fontSize: 15,
@@ -332,16 +687,19 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
   },
   backBtn: {
-    padding: 8,
-    backgroundColor: '#131F37',
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#0E172A',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
   },
@@ -350,13 +708,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
     paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: '#131F37',
   },
   tabBtnActive: {
-    backgroundColor: '#00D08420',
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
     borderWidth: 1,
     borderColor: '#00D084',
   },
@@ -367,19 +725,20 @@ const styles = StyleSheet.create({
   },
   tabBtnTextActive: {
     color: '#00D084',
+    fontWeight: '900',
   },
   courseSelectBar: {
-    backgroundColor: '#0E172A',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    backgroundColor: '#070C18',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
   },
   coursePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#131F37',
+    backgroundColor: '#0E172A',
     borderWidth: 1,
     borderColor: '#1E293B',
   },
@@ -401,7 +760,133 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   sectionContainer: {
-    gap: 12,
+    gap: 14,
+    paddingBottom: 40,
+  },
+  dayControlHeader: {
+    backgroundColor: '#0E172A',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dayControlTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#F8FAFC',
+  },
+  dayControlSubtitle: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  holidayBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  holidayBadgeText: {
+    fontSize: 8,
+    fontWeight: '900',
+    color: '#F59E0B',
+  },
+  activeDayBadge: {
+    backgroundColor: '#131F37',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  activeDayBadgeText: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#00D084',
+  },
+  dayNavButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepBtn: {
+    backgroundColor: '#131F37',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  stepBtnDisabled: {
+    opacity: 0.4,
+  },
+  stepBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#00D084',
+  },
+  editSectionCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    gap: 10,
+  },
+  editSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  editSectionTitle: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#F8FAFC',
+    letterSpacing: 0.5,
+  },
+  subHintText: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  editItemBox: {
+    backgroundColor: '#131F37',
+    borderRadius: 8,
+    padding: 10,
+    gap: 6,
+  },
+  editItemLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  inputField: {
+    backgroundColor: '#0E172A',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 11,
+    color: '#F8FAFC',
+  },
+  saveBroadcastBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#00D084',
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 6,
+  },
+  saveBroadcastBtnText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#070C18',
   },
   aiActionCard: {
     flexDirection: 'row',
@@ -409,17 +894,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: '#0E172A',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
-    borderColor: '#00D08440',
+    borderColor: 'rgba(0, 208, 132, 0.3)',
   },
   aiCardTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '800',
-    color: '#00D084',
+    color: '#F8FAFC',
   },
   aiCardSub: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#94A3B8',
   },
   aiActionBtn: {
@@ -429,42 +914,41 @@ const styles = StyleSheet.create({
     backgroundColor: '#00D084',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 6,
   },
   aiActionBtnText: {
-    fontSize: 10,
-    fontWeight: '900',
+    fontSize: 11,
+    fontWeight: '800',
     color: '#070C18',
   },
   infoCard: {
     backgroundColor: '#0E172A',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#1E293B',
     gap: 4,
   },
   infoTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
     color: '#F8FAFC',
   },
   infoRef: {
     fontSize: 11,
-    color: '#00D084',
-    fontWeight: '700',
+    color: '#94A3B8',
   },
   infoBlueprint: {
-    fontSize: 10,
-    color: '#94A3B8',
+    fontSize: 11,
+    color: '#CBD5E1',
   },
   subjectCard: {
     backgroundColor: '#0E172A',
     borderRadius: 12,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#1E293B',
-    gap: 8,
+    gap: 10,
   },
   subjectHeader: {
     flexDirection: 'row',
@@ -477,118 +961,33 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
   },
   subjectTamil: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#94A3B8',
   },
   badgeBox: {
     backgroundColor: '#131F37',
     paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   badgeBoxText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: '#00D084',
   },
   chapterBox: {
     backgroundColor: '#131F37',
-    padding: 8,
     borderRadius: 8,
+    padding: 10,
     gap: 2,
   },
   chapterTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#E2E8F0',
+    color: '#F8FAFC',
   },
   chapterMeta: {
-    fontSize: 9,
-    color: '#64748B',
-  },
-  dayStepperRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  stepBtn: {
-    backgroundColor: '#131F37',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  stepBtnText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#00D084',
-  },
-  taskCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#0E172A',
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  taskStepBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#00D08420',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  taskStepText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#00D084',
-  },
-  taskName: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#F8FAFC',
-  },
-  taskMeta: {
-    fontSize: 9,
-    color: '#94A3B8',
-  },
-  purchaseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  studentName: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  purchasePlan: {
     fontSize: 10,
     color: '#94A3B8',
-  },
-  purchaseStatus: {
-    fontSize: 10,
-    color: '#00D084',
-    fontWeight: '700',
-  },
-  approvedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#00D08420',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  approvedPillText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#00D084',
   },
 });
