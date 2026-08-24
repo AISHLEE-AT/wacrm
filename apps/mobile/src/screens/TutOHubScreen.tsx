@@ -59,6 +59,7 @@ import PaymentQRModal from '../components/PaymentQRModal';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, SCHOOL_BOARDS } from '../data/coursesCatalog';
 import { resolveNanoDayPlan, NanoDayPlan } from '../data/curriculum/dayPlanNanoEngine';
+import { getOfficialGovernmentSyllabus, OfficialCourseSyllabus } from '../data/curriculum/officialGovernmentSyllabusRegistry';
 import { getCoursePlayerContent } from '../lib/coursePlayerEngine';
 import purchaseService from '../services/purchaseService';
 import NotificationService from '../services/NotificationService';
@@ -66,7 +67,7 @@ import { generateBilingualQuestionsForTopic, calculateTestODiagnosticReport } fr
 
 const { width } = Dimensions.get('window');
 
-type TutOMode = 'STUDY' | 'TESTS' | 'AI_TUTOR';
+type TutOMode = 'STUDY' | 'SYLLABUS' | 'TESTS' | 'AI_TUTOR';
 type TestCategoryTab = 'ALL' | 'FULL_MOCKS' | 'CHAPTER_TESTS' | 'PYQ' | 'CURRENT_AFFAIRS' | 'DAY_PLAN';
 
 export default function TutOHubScreen() {
@@ -90,6 +91,8 @@ export default function TutOHubScreen() {
   const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSyllabusModalOpen, setIsSyllabusModalOpen] = useState(false);
+  const [syllabusActiveSubjectId, setSyllabusActiveSubjectId] = useState<string>('ALL');
+  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({ '0_0': true });
 
   // ─── Purchase & Pass Pro State ───────────────────────────────────────────
   const [isCoursePurchased, setIsCoursePurchased] = useState(false);
@@ -176,25 +179,26 @@ export default function TutOHubScreen() {
     await AsyncStorage.setItem(`tuto_selected_board_${selectedCourse.id}`, board);
   }, [selectedCourse.id]);
 
-  const handleSelectCourse = useCallback((course: CourseOption) => {
+  const handleSelectCourse = useCallback(async (course: CourseOption) => {
     if (!course) return;
     try {
       setSelectedCourse(course);
-        const courseBoard = (await AsyncStorage.getItem(`tuto_selected_board_${course.id}`)) as SchoolBoard || 'TNSB';
-        setSelectedBoard(courseBoard);
+      const courseBoard = ((await AsyncStorage.getItem(`tuto_selected_board_${course.id}`)) as SchoolBoard) || 'TNSB';
+      setSelectedBoard(courseBoard);
       setIsCoursePickerOpen(false);
       const dayToUse = course.currentDayDefault || 1;
       setCurrentDay(dayToUse);
       setTotalDays(course.totalDays || 200);
       const plan = resolveNanoDayPlan(course.id, course.title, dayToUse, selectedBoard);
-    if (plan) setActiveDayPlan(plan);
+      if (plan) setActiveDayPlan(plan);
       AsyncStorage.setItem('tuto_active_course_id', course.id).catch(() => {});
+      setIsSyllabusModalOpen(true);
     } catch (err) {
       console.warn('Error applying selected course:', err);
       setSelectedCourse(course);
       setIsCoursePickerOpen(false);
     }
-  }, []);
+  }, [selectedBoard]);
 
   const handleDaySelect = useCallback((day: number) => {
     setCurrentDay(day);
@@ -458,15 +462,25 @@ export default function TutOHubScreen() {
           </View>
         )}
 
-        {/* ─── 2. PRIMARY MODE SWITCHER TABS ─── */}
+                {/* ─── 2. PRIMARY MODE SWITCHER TABS ─── */}
         <View style={styles.modeSwitcherBar}>
           <TouchableOpacity
             style={[styles.modeTab, activeMode === 'STUDY' && styles.modeTabActive]}
             onPress={() => setActiveMode('STUDY')}
           >
-            <BookOpen size={14} color={activeMode === 'STUDY' ? '#00D084' : '#94A3B8'} />
+            <BookOpen size={13} color={activeMode === 'STUDY' ? '#00D084' : '#94A3B8'} />
             <Text style={[styles.modeTabText, activeMode === 'STUDY' && styles.modeTabTextActive]}>
-              🎓 Study & Day Plan
+              Day Plan
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modeTab, activeMode === 'SYLLABUS' && styles.modeTabActive]}
+            onPress={() => setIsSyllabusModalOpen(true)}
+          >
+            <Layers size={13} color={activeMode === 'SYLLABUS' ? '#00D084' : '#94A3B8'} />
+            <Text style={[styles.modeTabText, activeMode === 'SYLLABUS' && styles.modeTabTextActive]}>
+              Syllabus
             </Text>
           </TouchableOpacity>
 
@@ -474,9 +488,9 @@ export default function TutOHubScreen() {
             style={[styles.modeTab, activeMode === 'TESTS' && styles.modeTabActive]}
             onPress={() => setActiveMode('TESTS')}
           >
-            <Award size={14} color={activeMode === 'TESTS' ? '#00D084' : '#94A3B8'} />
+            <Award size={13} color={activeMode === 'TESTS' ? '#00D084' : '#94A3B8'} />
             <Text style={[styles.modeTabText, activeMode === 'TESTS' && styles.modeTabTextActive]}>
-              📝 Mock Tests & PYQ
+              Mock Tests
             </Text>
           </TouchableOpacity>
 
@@ -484,9 +498,9 @@ export default function TutOHubScreen() {
             style={[styles.modeTab, activeMode === 'AI_TUTOR' && styles.modeTabActive]}
             onPress={() => handleLaunchAiTutor()}
           >
-            <Bot size={14} color={activeMode === 'AI_TUTOR' ? '#00D084' : '#94A3B8'} />
+            <Bot size={13} color={activeMode === 'AI_TUTOR' ? '#00D084' : '#94A3B8'} />
             <Text style={[styles.modeTabText, activeMode === 'AI_TUTOR' && styles.modeTabTextActive]}>
-              🤖 AI Tutor
+              AI Tutor
             </Text>
           </TouchableOpacity>
         </View>
@@ -498,7 +512,196 @@ export default function TutOHubScreen() {
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 60 }}
         showsVerticalScrollIndicator={false}
       >
-        {activeMode === 'STUDY' ? (
+        {activeMode === 'SYLLABUS' ? (
+          /* ═══════════════════════════════════════════════════════════════════
+             📋 MODE 4: FULL OFFICIAL GOVERNMENT SYLLABUS EXPLORER
+             ═══════════════════════════════════════════════════════════════════ */
+          <View style={styles.inlineSyllabusContainer}>
+            {(() => {
+              const syl = getOfficialGovernmentSyllabus(selectedCourse.id, selectedBoard);
+              const filteredSubjects = syllabusActiveSubjectId === 'ALL'
+                ? syl.subjects
+                : syl.subjects.filter(s => s.subjectId === syllabusActiveSubjectId);
+
+              return (
+                <>
+                  <View style={styles.syllabusHeroCard}>
+                    <View style={styles.syllabusHeroHeader}>
+                      <View style={styles.govVerifiedBadge}>
+                        <ShieldCheck size={12} color="#00D084" />
+                        <Text style={styles.govVerifiedBadgeText}>100% GOVT NOTIFIED SYLLABUS</Text>
+                      </View>
+                      <Text style={styles.syllabusMediumText}>{syl.medium}</Text>
+                    </View>
+                    <Text style={styles.syllabusHeroTitle}>{syl.courseTitle}</Text>
+                    <Text style={styles.syllabusAuthorityText}>🏛️ {syl.boardOrAuthority}</Text>
+                    <Text style={styles.syllabusNotificationRef}>📋 {syl.notificationRef}</Text>
+                    <Text style={styles.syllabusBlueprint}>⚖️ {syl.examPatternSummary}</Text>
+
+                    <View style={styles.syllabusStatsRow}>
+                      <View style={styles.statPill}>
+                        <Text style={styles.statVal}>{syl.totalSubjects}</Text>
+                        <Text style={styles.statLbl}>Subjects</Text>
+                      </View>
+                      <View style={styles.statPill}>
+                        <Text style={styles.statVal}>{syl.totalChapters}</Text>
+                        <Text style={styles.statLbl}>Chapters</Text>
+                      </View>
+                      <View style={styles.statPill}>
+                        <Text style={styles.statVal}>{syl.totalTopics}</Text>
+                        <Text style={styles.statLbl}>Topics</Text>
+                      </View>
+                      <View style={styles.statPill}>
+                        <Text style={styles.statVal}>{syl.totalNanoConcepts || (syl.totalTopics * 2)}</Text>
+                        <Text style={styles.statLbl}>Nano Nodes</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subjectFilterBar}>
+                    <TouchableOpacity
+                      style={[styles.subjPill, syllabusActiveSubjectId === 'ALL' && styles.subjPillActive]}
+                      onPress={() => setSyllabusActiveSubjectId('ALL')}
+                    >
+                      <Text style={[styles.subjPillText, syllabusActiveSubjectId === 'ALL' && styles.subjPillTextActive]}>
+                        All Subjects ({syl.subjects.length})
+                      </Text>
+                    </TouchableOpacity>
+                    {syl.subjects.map(s => (
+                      <TouchableOpacity
+                        key={s.subjectId}
+                        style={[styles.subjPill, syllabusActiveSubjectId === s.subjectId && styles.subjPillActive]}
+                        onPress={() => setSyllabusActiveSubjectId(s.subjectId)}
+                      >
+                        <Text style={{ fontSize: 12 }}>{s.icon}</Text>
+                        <Text style={[styles.subjPillText, syllabusActiveSubjectId === s.subjectId && styles.subjPillTextActive]}>
+                          {s.subjectName}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  {filteredSubjects.map((subj, sIdx) => (
+                    <View key={subj.subjectId || sIdx} style={styles.subjectTreeCard}>
+                      <View style={styles.subjectTreeHeader}>
+                        <Text style={{ fontSize: 18 }}>{subj.icon}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.subjectTreeTitle}>{subj.subjectName}</Text>
+                          {subj.tamilName && <Text style={styles.subjectTreeTamil}>{subj.tamilName}</Text>}
+                        </View>
+                        <View style={styles.subjectCountBadge}>
+                          <Text style={styles.subjectCountBadgeText}>
+                            {subj.chapters.length} Chapters
+                          </Text>
+                        </View>
+                      </View>
+
+                      {subj.chapters.map((ch, cIdx) => {
+                        const chapterKey = sIdx + '_' + cIdx;
+                        const isExpanded = expandedChapters[chapterKey] !== false;
+
+                        return (
+                          <View key={cIdx} style={styles.chapterTreeBox}>
+                            <TouchableOpacity
+                              style={styles.chapterTreeHeader}
+                              onPress={() => {
+                                setExpandedChapters(prev => ({
+                                  ...prev,
+                                  [chapterKey]: !isExpanded
+                                }));
+                              }}
+                              activeOpacity={0.7}
+                            >
+                              <View style={{ flex: 1 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                  <View style={styles.unitTag}>
+                                    <Text style={styles.unitTagText}>{ch.unitNumber || ('Unit ' + (cIdx + 1))}</Text>
+                                  </View>
+                                  <Text style={styles.chapterNumberText}>Chapter {ch.chapterNumber}</Text>
+                                </View>
+                                <Text style={styles.chapterTreeTitle}>{ch.chapterTitle}</Text>
+                                {ch.tamilTitle && <Text style={styles.chapterTreeTamil}>{ch.tamilTitle}</Text>}
+                              </View>
+                              {isExpanded ? <ChevronUp size={16} color="#94A3B8" /> : <ChevronDown size={16} color="#94A3B8" />}
+                            </TouchableOpacity>
+
+                            {isExpanded && (
+                              <View style={styles.topicsTreeList}>
+                                {ch.topics.map((top, tIdx) => (
+                                  <View key={top.id || tIdx} style={styles.topicTreeCard}>
+                                    <View style={styles.topicTreeHeader}>
+                                      {top.topicCode && (
+                                        <View style={styles.topicCodeBadge}>
+                                          <Text style={styles.topicCodeText}>{top.topicCode}</Text>
+                                        </View>
+                                      )}
+                                      <Text style={styles.topicTreeTitle}>{top.title}</Text>
+                                    </View>
+                                    {top.tamilTitle && <Text style={styles.topicTreeTamil}>{top.tamilTitle}</Text>}
+
+                                    {(top.nanoConcepts || []).map((nano, nIdx) => (
+                                      <View key={nano.id || nIdx} style={styles.nanoTreeCard}>
+                                        <View style={styles.nanoTreeHeader}>
+                                          <View style={{ flex: 1 }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                              <Text style={styles.nanoCodeText}>{nano.conceptCode}</Text>
+                                              <View style={styles.qTypePill}>
+                                                <Text style={styles.qTypePillText}>{nano.questionType || '2-Mark'}</Text>
+                                              </View>
+                                            </View>
+                                            <Text style={styles.nanoNameText}>{nano.name}</Text>
+                                            {nano.tamilName && <Text style={styles.nanoTamilText}>{nano.tamilName}</Text>}
+                                          </View>
+                                        </View>
+
+                                        {nano.description ? (
+                                          <Text style={styles.nanoDescText}>{nano.description}</Text>
+                                        ) : null}
+
+                                        {nano.keyRuleOrFormula && (
+                                          <View style={styles.nanoFormulaBox}>
+                                            <Text style={styles.nanoFormulaLabel}>KEY RULE / FORMULA:</Text>
+                                            <Text style={styles.nanoFormulaText}>{nano.keyRuleOrFormula}</Text>
+                                          </View>
+                                        )}
+
+                                        <TouchableOpacity
+                                          style={styles.launchAiPlayerBtn}
+                                          onPress={() => {
+                                            setActiveNanoTask({
+                                              topicTitle: nano.name || top.title,
+                                              tamilTopicTitle: nano.tamilName || top.tamilTitle,
+                                              subject: subj.subjectName,
+                                              conceptCode: nano.conceptCode || top.topicCode,
+                                              keyFormulaOrRule: nano.keyRuleOrFormula || top.keyFormula,
+                                              taskNumber: 1,
+                                              initialTab: 'lecture',
+                                            });
+                                            setIsNanoPlayerOpen(true);
+                                          }}
+                                          activeOpacity={0.8}
+                                        >
+                                          <Sparkles size={12} color="#070C18" />
+                                          <Text style={styles.launchAiPlayerBtnText}>
+                                            Launch AI Nano Lesson ({nano.conceptCode})
+                                          </Text>
+                                        </TouchableOpacity>
+                                      </View>
+                                    ))}
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </>
+              );
+            })()}
+          </View>
+        ) : activeMode === 'STUDY' ? (
           /* ═══════════════════════════════════════════════════════════════════
              🎓 MODE 1: STUDY & DAY PLAN (TeachO Power Engine)
              ═══════════════════════════════════════════════════════════════════ */
@@ -858,6 +1061,308 @@ export default function TutOHubScreen() {
 }
 
 const styles = StyleSheet.create({
+  viewSyllabusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#00D08420',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#00D084',
+  },
+  viewSyllabusPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#00D084',
+  },
+  inlineSyllabusContainer: {
+    gap: 12,
+  },
+  syllabusHeroCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    gap: 6,
+  },
+  syllabusHeroHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  govVerifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#00D08420',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  govVerifiedBadgeText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#00D084',
+  },
+  syllabusMediumText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  syllabusHeroTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  syllabusAuthorityText: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  syllabusNotificationRef: {
+    fontSize: 11,
+    color: '#00D084',
+    fontWeight: '700',
+  },
+  syllabusBlueprint: {
+    fontSize: 10,
+    color: '#CBD5E1',
+    lineHeight: 14,
+  },
+  syllabusStatsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 6,
+  },
+  statPill: {
+    flex: 1,
+    backgroundColor: '#131F37',
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  statVal: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#00D084',
+  },
+  statLbl: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  subjectFilterBar: {
+    gap: 6,
+    paddingVertical: 4,
+  },
+  subjPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#0E172A',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  subjPillActive: {
+    backgroundColor: '#00D084',
+    borderColor: '#00D084',
+  },
+  subjPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  subjPillTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
+  },
+  subjectTreeCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    gap: 10,
+  },
+  subjectTreeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  subjectTreeTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  subjectTreeTamil: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  subjectCountBadge: {
+    backgroundColor: '#131F37',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  subjectCountBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  chapterTreeBox: {
+    backgroundColor: '#131F37',
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
+  chapterTreeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  unitTag: {
+    backgroundColor: '#00D08420',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  unitTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#00D084',
+  },
+  chapterNumberText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  chapterTreeTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginTop: 2,
+  },
+  chapterTreeTamil: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  topicsTreeList: {
+    gap: 8,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+  },
+  topicTreeCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 10,
+    padding: 10,
+    gap: 6,
+  },
+  topicCodeBadge: {
+    backgroundColor: '#38BDF820',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  topicCodeText: {
+    fontSize: 9,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: '#38BDF8',
+    fontWeight: '800',
+  },
+  topicTreeTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    flex: 1,
+  },
+  topicTreeTamil: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  nanoTreeCard: {
+    backgroundColor: '#131F37',
+    borderRadius: 8,
+    padding: 8,
+    gap: 4,
+    borderLeftWidth: 2,
+    borderLeftColor: '#00D084',
+  },
+  nanoTreeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  nanoCodeText: {
+    fontSize: 9,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    color: '#38BDF8',
+    fontWeight: '800',
+  },
+  qTypePill: {
+    backgroundColor: '#0E172A',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  qTypePillText: {
+    fontSize: 8,
+    color: '#F59E0B',
+    fontWeight: '700',
+  },
+  nanoNameText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#E2E8F0',
+    marginTop: 2,
+  },
+  nanoTamilText: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
+  nanoDescText: {
+    fontSize: 10,
+    color: '#CBD5E1',
+    lineHeight: 14,
+  },
+  nanoFormulaBox: {
+    backgroundColor: '#0E172A',
+    borderRadius: 6,
+    padding: 6,
+    gap: 2,
+    marginTop: 2,
+  },
+  nanoFormulaLabel: {
+    fontSize: 8,
+    fontWeight: '900',
+    color: '#38BDF8',
+  },
+  nanoFormulaText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  launchAiPlayerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: '#00D084',
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  launchAiPlayerBtnText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#070C18',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#070C18',
