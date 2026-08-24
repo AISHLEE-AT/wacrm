@@ -380,18 +380,18 @@ export default function AishleeToolsScreen({ navigation, route }: any) {
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState<any[]>([]);
 
-  // ─── Handle incoming TeachO Day Plan & contextual prompts ───
+  // ─── Handle incoming TutO Day Plan & contextual prompts ───
   useEffect(() => {
-    if (route?.params?.initialPrompt) {
-      const incomingPrompt = route.params.initialPrompt;
-      const targetTool = route.params.tool || 'Notes Maker';
+    const incomingPrompt = route?.params?.initialPrompt || route?.params?.aiPrompt;
+    if (incomingPrompt) {
+      const targetTool = route?.params?.tool || 'Notes Maker';
       const targetCat = CATEGORIES.find((c) => c.id === 'education') || CATEGORIES[3];
 
       setActiveCategory(targetCat);
       setActiveTool(targetTool);
       setInput(incomingPrompt);
 
-      if (route.params.autoRun) {
+      if (route?.params?.autoRun) {
         setTimeout(() => {
           handleGenerate(incomingPrompt, targetTool);
         }, 350);

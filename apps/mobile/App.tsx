@@ -20,11 +20,11 @@ import EcosystemWebView from './src/screens/EcosystemWebView';
 import DriveOScreen     from './src/screens/DriveOScreen';
 import RideOScreen      from './src/screens/RideOScreen';
 import AishleeToolsScreen from './src/screens/AishleeToolsScreen';
-import TeachOScreen     from './src/screens/TeachOScreen';
 import TeachOCourseScreen from './src/screens/TeachOCourseScreen';
-import TestOHubScreen   from './src/screens/TestOHubScreen';
 import TestOExamScreen  from './src/screens/TestOExamScreen';
 import TestOResultScreen from './src/screens/TestOResultScreen';
+import TutOHubScreen    from './src/screens/TutOHubScreen';
+import TutOAdminScreen  from './src/screens/TutOAdminScreen';
 import CareerHubScreen  from './src/screens/CareerHubScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
@@ -113,22 +113,23 @@ function UserTabs() {
 
   const getModuleConfig = (id: string) => {
     switch (id) {
+      case 'tuto': return { name: 'TutOTab', path: '/tuto', label: 'TutO', icon: GraduationCap, nativeComponent: TutOHubScreen };
       case 'driveo': return { name: 'DriveOTab', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
       case 'rideo': return { name: 'RideOTab', path: '/rideo', label: 'RideO', icon: Car, nativeComponent: RideOScreen };
-      case 'teacho': return { name: 'TeachOTab', path: '/teacho', label: 'TeachO', icon: GraduationCap, nativeComponent: TeachOScreen };
+      case 'teacho': return { name: 'TutOTab', path: '/tuto', label: 'TutO', icon: GraduationCap, nativeComponent: TutOHubScreen };
       case 'agro': return { name: 'AgrOTab', path: '/agro', label: 'AgrO', icon: Wrench, nativeComponent: AgrOScreen };
       case 'dealo': return { name: 'DealOTab', path: '/dealo', label: 'DealO', icon: ShoppingBag, nativeComponent: DealOScreen };
       case 'touro': return { name: 'TourOTab', path: '/touro', label: 'TourO', icon: Compass };
       case 'moneyo': return { name: 'MoneyOTab', path: '/moneyo', label: 'MoneyO', icon: Wallet };
       case 'rento': return { name: 'RentOTab', path: '/rento', label: 'RentO', icon: Wrench, nativeComponent: RentOScreen };
-      case 'testo': return { name: 'TestOTab', path: '/testo', label: 'TestO', icon: Award, nativeComponent: TestOHubScreen };
+      case 'testo': return { name: 'TutOTab2', path: '/tuto', label: 'TutO', icon: Award, nativeComponent: TutOHubScreen };
       default: return null;
     }
   };
 
   const renderModScreen = (mod: any) => {
     if (!mod) return null;
-    const isAishleeModule = ['/teacho', '/testo', '/tvo', '/moneyo'].includes(mod.path);
+    const isAishleeModule = ['/tuto', '/tvo', '/moneyo'].includes(mod.path);
     const aishleeUrl = isAishleeModule ? `https://thamizhan.vercel.app${mod.path}` : undefined;
 
     if (mod.nativeComponent) {
@@ -170,11 +171,11 @@ function UserTabs() {
     primaryModId = 'agro';
     relatedModId = 'rento';
   } else if (category.includes('student') || category.includes('learner') || category.includes('candidate')) {
-    primaryModId = 'teacho';
-    relatedModId = 'testo';
+    primaryModId = 'tuto';
+    relatedModId = 'dealo';
   } else if (category.includes('teacher') || category.includes('tutor')) {
-    primaryModId = 'teacho';
-    relatedModId = 'testo';
+    primaryModId = 'tuto';
+    relatedModId = 'dealo';
   } else if (category.includes('shopper') || category.includes('merchant')) {
     primaryModId = 'dealo';
     relatedModId = 'moneyo';
@@ -276,11 +277,12 @@ function RootNavigator() {
       <Stack.Screen name="DriveOScreen" component={DriveOScreen} />
       <Stack.Screen name="RideOScreen" component={RideOScreen} />
       <Stack.Screen name="AishleeToolsScreen" component={AishleeToolsScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="TeachOScreen" component={TeachOScreen} />
       <Stack.Screen name="TeachOCourseScreen" component={TeachOCourseScreen} />
-      <Stack.Screen name="TestOHubScreen" component={TestOHubScreen} />
       <Stack.Screen name="TestOExamScreen" component={TestOExamScreen} options={{ headerShown: false }} />
       <Stack.Screen name="TestOResultScreen" component={TestOResultScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TutOHubScreen" component={TutOHubScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="TutOAdminScreen" component={TutOAdminScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="TutO" component={TutOHubScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CareerHubScreen" component={CareerHubScreen} options={{ headerShown: false }} />
       <Stack.Screen name="AgrOScreen" component={AgrOScreen} />
       <Stack.Screen name="RentOScreen" component={RentOScreen} options={{ headerShown: false }} />
@@ -319,14 +321,14 @@ function NavigationWrapper() {
              let modulePath = null;
              if (currentRouteName === 'ModuleView' && currentRoute.params?.path) {
                 modulePath = currentRoute.params.path;
-             } else if (currentRouteName === 'DriveO' || currentRouteName === 'TeachO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO') {
+             } else if (currentRouteName === 'DriveO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO') {
                 // If they navigated via Bottom Tabs directly
                 const routeParams = currentRoute.params as any;
                 if (routeParams?.path) modulePath = routeParams.path;
              } else if (currentRouteName === 'AgrOScreen') {
                 modulePath = '/agro';
-             } else if (currentRouteName === 'TeachOScreen') {
-                modulePath = '/teacho';
+             } else if (currentRouteName === 'TutOHubScreen' || currentRouteName === 'TutO') {
+                modulePath = '/tuto';
              } else if (currentRouteName === 'DealOScreen' || currentRouteName === 'DealO') {
                 modulePath = '/dealo';
              }

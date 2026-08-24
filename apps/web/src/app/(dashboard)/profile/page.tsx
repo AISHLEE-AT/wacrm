@@ -134,8 +134,8 @@ const USER_CATEGORIES = [
   { key: 'Driver', label: 'Driver Partner', badge: '🚖 DriveO', desc: 'Accept rides & auto fleet management', path: '/drivo', color: 'border-blue-500/30 bg-blue-500/10 text-blue-400' },
   { key: 'Partner', label: 'Delivery / Partner', badge: '🤝 DealO', desc: 'Local business, logistics & products', path: '/dealo', color: 'border-orange-500/30 bg-orange-500/10 text-orange-400' },
   { key: 'Farmer', label: 'Farmer / Agri Expert', badge: '🌾 AgrO', desc: 'Tamil Nadu Agri TV, daily tasks & AI crop doctor', path: '/agro', color: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' },
-  { key: 'Student', label: 'Student / Candidate', badge: '🎓 TeachO & TestO', desc: 'Mock exams, courses & study material', path: '/teacho', color: 'border-purple-500/30 bg-purple-500/10 text-purple-400' },
-  { key: 'Teacher', label: 'Teacher / Tutor', badge: '👨‍🏫 TeachO', desc: 'Publish masterclasses & tests', path: '/teacho', color: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' },
+  { key: 'Student', label: 'Student / Candidate', badge: '🎓 TutO Super LMS', desc: 'Mock exams, courses & study material', path: '/tuto', color: 'border-purple-500/30 bg-purple-500/10 text-purple-400' },
+  { key: 'Teacher', label: 'Teacher / Tutor', badge: '🎓 TutO', desc: 'Publish masterclasses & tests', path: '/tuto', color: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400' },
   { key: 'Traveller', label: 'Traveller / Passenger', badge: '🧳 RideO & TourO', desc: 'Book taxis & pilgrimage trips', path: '/rideo', color: 'border-teal-500/30 bg-teal-500/10 text-teal-400' },
   { key: 'Shopper', label: 'Merchant / Shopper', badge: '🛍️ DealO', desc: 'Hyperlocal marketplace deals', path: '/dealo', color: 'border-amber-500/30 bg-amber-500/10 text-amber-400' },
   { key: 'Financier', label: 'Financier / Lender', badge: '💰 MoneyO', desc: 'Micro loans & finance manager', path: '/moneyo', color: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400' },
@@ -842,14 +842,14 @@ function ProfilePageInner() {
             </div>
           </div>
 
-          {/* Order 2: TestO All-Access Exam Pass */}
+          {/* Order 2: TutO All-Access Exam Pass */}
           <div className="p-4 bg-muted/40 border border-border/70 rounded-xl space-y-2 hover:border-purple-500/30 transition">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-md bg-purple-500/15 text-purple-400 text-[10px] font-bold border border-purple-500/30">
-                  TestO Exam Passes
+                  TutO Exam Passes
                 </span>
-                <span className="text-xs font-bold text-foreground">TestO All-Access Exam Pass (All 500+ Tests)</span>
+                <span className="text-xs font-bold text-foreground">TutO All-Access Exam Pass (All 500+ Tests)</span>
               </div>
               <span className="text-xs font-black text-amber-400">₹99 (Paid via UPI)</span>
             </div>

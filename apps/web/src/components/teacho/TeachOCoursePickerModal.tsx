@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { X, Search, Check, Layers, ChevronRight } from 'lucide-react';
-import { ALL_COURSES, CourseOption, CourseCategory } from '@/data/coursesCatalog';
+import { X, Search, Check, Layers, ChevronRight, School, GraduationCap, Award, BookOpen, Sparkles, Building2, ShieldCheck } from 'lucide-react';
+import { ALL_COURSES, CourseOption, CourseCategory, SCHOOL_BOARDS } from '@/data/coursesCatalog';
 
 interface TeachOCoursePickerModalProps {
   isOpen: boolean;
@@ -11,17 +11,22 @@ interface TeachOCoursePickerModalProps {
   onSelectCourse: (course: CourseOption) => void;
 }
 
-const CATEGORY_TABS: { id: CourseCategory; label: string; icon: string }[] = [
-  { id: 'school_tnsb_en', label: 'TNSB English', icon: '🎒' },
-  { id: 'school_tnsb_ta', label: 'TNSB தமிழ் வழி', icon: '🎒' },
-  { id: 'school_cbse', label: 'CBSE NCERT', icon: '🎒' },
-  { id: 'school_matric', label: 'Matriculation', icon: '🎒' },
-  { id: 'tnpsc', label: 'TNPSC Exams', icon: '🏛️' },
-  { id: 'upsc_central', label: 'UPSC / Central', icon: '🇮🇳' },
-  { id: 'entrance', label: 'Entrance Exams', icon: '🩺' },
-  { id: 'college_degree', label: 'College Degrees', icon: '🎓' },
-  { id: 'skills', label: 'Tech & AI Skills', icon: '💻' },
-  { id: 'kids_skills', label: 'Kids Skills', icon: '⭐' },
+interface CategoryTabConfig {
+  id: string;
+  label: string;
+  icon: string;
+  matcher: (c: CourseOption) => boolean;
+}
+
+const CATEGORY_TABS: CategoryTabConfig[] = [
+  { id: 'all', label: 'All Programs', icon: '🌐', matcher: () => true },
+  { id: 'school', label: 'School LKG-12th', icon: '🏫', matcher: (c) => c.category === 'school_k12' || c.category.startsWith('school_') },
+  { id: 'degree', label: 'Top Degrees', icon: '🎓', matcher: (c) => c.category === 'college_degree' || c.gradeLevel === 'college' },
+  { id: 'entrance', label: 'NEET / JEE / CUET', icon: '🎯', matcher: (c) => c.category === 'entrance' },
+  { id: 'tn_govt', label: 'TNPSC & Police', icon: '🏛️', matcher: (c) => c.category === 'tnpsc' },
+  { id: 'banking_ssc', label: 'Bank & SSC & RRB', icon: '🏦', matcher: (c) => c.category === 'banking_finance' || c.category === 'ssc_railway' },
+  { id: 'upsc_defense', label: 'UPSC & Defense', icon: '🇮🇳', matcher: (c) => c.category === 'upsc_central' },
+  { id: 'skills', label: 'Career Skills', icon: '💡', matcher: (c) => c.category === 'skills' || c.gradeLevel === 'skill' || c.category === 'kids_skills' },
 ];
 
 export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = ({
@@ -30,14 +35,14 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
   selectedCourseId,
   onSelectCourse,
 }) => {
-  const [activeTab, setActiveTab] = useState<CourseCategory>('school_tnsb_en');
+  const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Tab counts
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     CATEGORY_TABS.forEach(t => {
-      counts[t.id] = ALL_COURSES.filter(c => c.category === t.id).length;
+      counts[t.id] = ALL_COURSES.filter(t.matcher).length;
     });
     return counts;
   }, []);
@@ -45,12 +50,16 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
   // Filtered courses
   const filteredCourses = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) {
-      return ALL_COURSES.filter(c => c.category === activeTab);
-    }
+    const currentTabObj = CATEGORY_TABS.find(t => t.id === activeTab) || CATEGORY_TABS[0];
+
     return ALL_COURSES.filter(c => {
-      const matchText = `${c.title} ${c.short} ${c.subtitle} ${c.board} ${c.gradeLevel} ${c.medium}`.toLowerCase();
-      return matchText.includes(q);
+      // 1. Search filter
+      if (q) {
+        const matchText = `${c.title} ${c.short} ${c.subtitle} ${c.board} ${c.gradeLevel} ${c.medium} ${c.badge}`.toLowerCase();
+        return matchText.includes(q);
+      }
+      // 2. Tab filter
+      return currentTabObj.matcher(c);
     });
   }, [activeTab, searchQuery]);
 
@@ -73,7 +82,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
                   {ALL_COURSES.length} Master Programs
                 </span>
               </div>
-              <p className="text-xs text-slate-400">LKG to 12th Boards, Govt Exams, Degrees & Career Skills</p>
+              <p className="text-xs text-slate-400">LKG to 12th Boards, Govt Exams, Degrees & Career Skills • Bilingual</p>
             </div>
           </div>
 
@@ -93,7 +102,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search by Class (e.g. 10th, 12th), Board, TNPSC, B.Tech, or Skill..."
+              placeholder="Search by Class (e.g. 10th, 12th), TN Samacheer, CBSE, TNPSC, B.Tech, or Skill..."
               className="w-full pl-10 pr-4 py-2.5 bg-[#111827] border border-slate-800 rounded-2xl text-xs md:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
             />
             {searchQuery && (
@@ -107,7 +116,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
           </div>
         </div>
 
-        {/* 10 Category Tabs Bar */}
+        {/* Category Tabs Bar */}
         <div className="flex border-b border-slate-800 bg-[#0c1322] overflow-x-auto scrollbar-none px-4 py-2 gap-2">
           {CATEGORY_TABS.map(tab => {
             const isActive = activeTab === tab.id && !searchQuery;
@@ -155,6 +164,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredCourses.map(course => {
                 const isSelected = course.id === selectedCourseId;
+                const isSchool = course.category === 'school_k12' || course.category.startsWith('school_');
 
                 return (
                   <div
@@ -174,23 +184,35 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
                         <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-[10px] uppercase">
                           {course.badge}
                         </span>
-                        <span className="text-[11px] text-slate-500 font-mono">
+                        <span className="text-[11px] text-slate-400 font-mono">
                           {course.totalDays} Days • {course.medium}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <span className="text-2xl">{course.icon}</span>
-                        <div>
-                          <h4 className="text-sm font-bold text-white line-clamp-1">{course.title}</h4>
-                          <p className="text-[11px] text-slate-400 line-clamp-1">{course.subtitle}</p>
-                        </div>
+                      <div className="mb-2">
+                        <h4 className="text-sm font-bold text-white line-clamp-1">{course.title}</h4>
+                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{course.subtitle}</p>
                       </div>
+
+                      {/* Multi-Board Indicators for School Standards */}
+                      {isSchool && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">
+                            🏛️ TN Samacheer
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">
+                            📘 CBSE NCERT
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 border border-slate-700">
+                            🌐 ICSE/Intl
+                          </span>
+                        </div>
+                      )}
 
                       {/* Subjects List Preview */}
                       {course.subjects && course.subjects.length > 0 && (
                         <div className="mt-3 space-y-1">
-                          {course.subjects.slice(0, 2).map((s, sIdx) => (
+                          {course.subjects.slice(0, 3).map((s, sIdx) => (
                             <div key={sIdx} className="text-[11px] text-slate-300 flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                               <span className="line-clamp-1">{typeof s === 'string' ? s : s.name}</span>
@@ -201,7 +223,7 @@ export const TeachOCoursePickerModal: React.FC<TeachOCoursePickerModalProps> = (
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-500 font-mono">ID: {course.id}</span>
+                      <span className="text-[10px] text-slate-500 font-mono">{course.id}</span>
                       {isSelected ? (
                         <span className="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1">
                           <Check className="w-3.5 h-3.5" /> Selected

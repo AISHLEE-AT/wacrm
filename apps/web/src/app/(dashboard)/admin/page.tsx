@@ -181,7 +181,7 @@ export default function AdminOverviewPage() {
           </Card>
         </Link>
 
-        <Link href={getHref('/admin/teacho')} className="group">
+        <Link href={getHref('/admin/tuto')} className="group">
           <Card className="h-full border-emerald-500/30 hover:border-emerald-400/60 bg-emerald-500/5 transition-all duration-300 shadow-sm hover:shadow-md">
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
@@ -190,7 +190,7 @@ export default function AdminOverviewPage() {
                 </div>
                 <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
               </div>
-              <CardTitle className="text-xl">TeachO Teacher Studio &amp; CMS</CardTitle>
+              <CardTitle className="text-xl">TutO Content Studio &amp; CMS</CardTitle>
               <CardDescription>
                 Curate, AI-draft, edit, and publish day-wise lessons across all 96+ master courses directly to Supabase LMS with bulk CSV/JSON import.
               </CardDescription>

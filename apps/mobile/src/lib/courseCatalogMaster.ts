@@ -23536,8 +23536,8 @@ export const TEACHO_MASTER_CATALOG: MobileTeachOCourse[] = [
 
 import { resolveCompleteCourseSyllabus } from '../data/curriculum/courseSyllabusRegistry';
 
-export function getCourseSyllabus(courseTitleOrId: string, category?: string): SyllabusUnit[] {
-  if (!courseTitleOrId) return TEACHO_MASTER_CATALOG[0]?.metadata?.syllabus || [];
+export function getCourseSyllabus(courseTitleOrId: string, category?: string, courseTitleParam?: string): SyllabusUnit[] {
+  if (!courseTitleOrId) return [];
   const clean = courseTitleOrId.toLowerCase().trim();
   const found = TEACHO_MASTER_CATALOG.find(c => 
     c.id.toLowerCase() === clean || 
@@ -23545,9 +23545,11 @@ export function getCourseSyllabus(courseTitleOrId: string, category?: string): S
     clean.includes(c.id.toLowerCase())
   );
 
+  const titleToUse = courseTitleParam || found?.title_name || courseTitleOrId;
+
   // Dynamic Resolution from Master 2026 Micro-Topic Syllabus Registry First
   try {
-    const full = resolveCompleteCourseSyllabus(courseTitleOrId, found?.title_name || courseTitleOrId);
+    const full = resolveCompleteCourseSyllabus(courseTitleOrId, titleToUse, category || found?.category);
     if (full && full.subjects && full.subjects.length > 0) {
       const units: SyllabusUnit[] = [];
       full.subjects.forEach((subj, sIdx) => {
@@ -23595,12 +23597,17 @@ export function getCourseSyllabus(courseTitleOrId: string, category?: string): S
               importance: m.importance,
             }))
           })),
-          lessons: [
-            { id: `l_${subj.subjectId}_1`, title: 'Comprehensive Theory Notes & Formulas', duration: '15 mins', type: 'notes' },
-            { id: `l_${subj.subjectId}_2`, title: 'Colloquial Explanation & Real-World Analogies', duration: '10 mins', type: 'video' },
-            { id: `l_${subj.subjectId}_3`, title: 'Interactive Flashcards & 1-Line Q&A', duration: '10 mins', type: 'mindmap' },
-            { id: `l_${subj.subjectId}_4`, title: '30-MCQ CBT Mock Test Engine', duration: '30 mins', type: 'quiz' }
-          ]
+          lessons: (subj.chapters || []).flatMap((chap, cIdx) =>
+            (chap.microTopics || []).map((m, mIdx) => ({
+              id: m.id || `l_${subj.subjectId}_${cIdx}_${mIdx}`,
+              title: m.topicTitle || m.title || `Nano Topic ${mIdx + 1}`,
+              duration: '15 mins',
+              type: 'notes',
+              keyAxiom: m.keyAxiom || m.keyFormulaOrLaw,
+              keyPoints: m.keyPoints,
+              importance: m.importance
+            }))
+          )
         });
       });
       if (units.length > 0) return units;
@@ -23609,5 +23616,5 @@ export function getCourseSyllabus(courseTitleOrId: string, category?: string): S
     console.warn('Could not generate dynamic syllabus units:', e);
   }
 
-  return TEACHO_MASTER_CATALOG[0]?.metadata?.syllabus || [];
+  return [];
 }

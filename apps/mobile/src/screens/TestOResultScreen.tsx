@@ -98,8 +98,8 @@ export default function TestOResultScreen() {
   const handleAskAIDoubt = (q: any, idx: number) => {
     const qText = q.question || q.q || '';
     const explanation = q.explanation || q.solution || '';
-    navigation.navigate('TeachOScreen', {
-      aiPrompt: `Please explain this question from my TestO Exam in simple Tamil and English step-by-step:\n\nQuestion: "${qText}"\nExplanation: "${explanation}"`,
+    navigation.navigate('AishleeToolsScreen', {
+      aiPrompt: `Please explain this question from my TutO Exam in simple Tamil and English step-by-step:\n\nQuestion: "${qText}"\nExplanation: "${explanation}"`,
     });
   };
 
@@ -185,7 +185,7 @@ export default function TestOResultScreen() {
           },
         ]}
       >
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('TestOHubScreen')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('TutOHubScreen')}>
           <ChevronLeft color="#fff" size={24} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
@@ -268,26 +268,26 @@ export default function TestOResultScreen() {
               </View>
             </View>
 
-            {/* AI Diagnostics & TeachO Topic Revision Card */}
+            {/* AI Diagnostics & TutO Topic Revision Card */}
             <View style={styles.analysisCard}>
-              <View style={styles.analysisHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                 <Sparkles size={16} color="#10b981" style={{ marginRight: 8 }} />
-                <Text style={styles.analysisTitle}>AI Topic Diagnostics & TeachO Study Plan</Text>
+                <Text style={styles.analysisTitle}>AI Topic Diagnostics & TutO Study Plan</Text>
               </View>
               <Text style={styles.analysisBody}>
                 {percentage >= 80
-                  ? 'Excellent accuracy! You have strong mastery over core theoretical concepts. Focus on speed drills in TeachO to improve your percentile rank.'
+                  ? 'Excellent accuracy! You have strong mastery over core theoretical concepts. Focus on speed drills in TutO to improve your percentile rank.'
                   : percentage >= 50
-                  ? 'Good performance! We detected 2 weak problem areas in applied questions. Tap below to revise the exact micro-lessons in TeachO.'
-                  : 'Conceptual gaps identified in fundamentals. We recommend completing the full 4-step Daily Plan in TeachO before re-attempting.'}
+                  ? 'Good performance! We detected 2 weak problem areas in applied questions. Tap below to revise the exact micro-lessons in TutO.'
+                  : 'Conceptual gaps identified in fundamentals. We recommend completing the full 4-step Daily Plan in TutO before re-attempting.'}
               </Text>
 
               <TouchableOpacity
                 style={styles.teachoReviseBtn}
-                onPress={() => navigation.navigate('TeachOScreen')}
+                onPress={() => navigation.navigate('TutOHubScreen')}
               >
                 <BookOpen size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
-                <Text style={styles.teachoReviseBtnText}>Revise Weak Topics in TeachO 📚</Text>
+                <Text style={styles.teachoReviseBtnText}>Revise Weak Topics in TutO 📚</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -305,26 +305,67 @@ export default function TestOResultScreen() {
         {activeTab === 'pacing' && (
           <View>
             <View style={styles.pacingHero}>
-              <Text style={styles.pacingTitle}>Time & Speed Management</Text>
-              <Text style={styles.pacingSub}>Average Time per Question: <Text style={{ color: '#10b981', fontWeight: '800' }}>{avgTimePerQ}s</Text> (Target: 60s)</Text>
+              <Text style={styles.pacingTitle}>Speed vs. Accuracy Diagnostic Matrix</Text>
+              <Text style={styles.pacingSub}>Average Time per Question: <Text style={{ color: '#10b981', fontWeight: '800' }}>{avgTimePerQ}s</Text> (Target: 45-60s)</Text>
 
-              <View style={styles.pacingGrid}>
-                <View style={styles.pacingCard}>
-                  <Zap size={18} color="#10b981" />
-                  <Text style={styles.pacingVal}>{correctCount}</Text>
-                  <Text style={styles.pacingLbl}>Paced & Correct</Text>
+              {/* 4-Quadrant Matrix */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 14 }}>
+                <View style={[styles.pacingCard, { width: '48%', marginBottom: 10, borderColor: '#10b981', borderWidth: 1, backgroundColor: 'rgba(16, 185, 129, 0.1)' }]}>
+                  <Text style={{ fontSize: 20 }}>🎯</Text>
+                  <Text style={[styles.pacingVal, { color: '#10b981' }]}>{route.params?.diagnosticReport?.speedAccuracyMatrix?.perfectAttempts || correctCount}</Text>
+                  <Text style={[styles.pacingLbl, { color: '#10b981', fontWeight: '700' }]}>Perfect Attempts</Text>
+                  <Text style={{ color: '#94a3b8', fontSize: 10, marginTop: 2 }}>Fast (&lt;45s) &amp; Correct</Text>
                 </View>
-                <View style={styles.pacingCard}>
-                  <Clock size={18} color="#fbbf24" />
-                  <Text style={styles.pacingVal}>{timeTaken > 0 ? Math.round(timeTaken / 60) : 0}m</Text>
-                  <Text style={styles.pacingLbl}>Total Time</Text>
+
+                <View style={[styles.pacingCard, { width: '48%', marginBottom: 10, borderColor: '#f59e0b', borderWidth: 1, backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
+                  <Text style={{ fontSize: 20 }}>⚡</Text>
+                  <Text style={[styles.pacingVal, { color: '#f59e0b' }]}>{route.params?.diagnosticReport?.speedAccuracyMatrix?.carelessErrors || incorrectCount}</Text>
+                  <Text style={[styles.pacingLbl, { color: '#f59e0b', fontWeight: '700' }]}>Careless Errors</Text>
+                  <Text style={{ color: '#94a3b8', fontSize: 10, marginTop: 2 }}>Fast (&lt;45s) &amp; Incorrect</Text>
                 </View>
-                <View style={styles.pacingCard}>
-                  <AlertCircle size={18} color="#ef4444" />
-                  <Text style={styles.pacingVal}>{skippedCount}</Text>
-                  <Text style={styles.pacingLbl}>Skipped</Text>
+
+                <View style={[styles.pacingCard, { width: '48%', borderColor: '#38bdf8', borderWidth: 1, backgroundColor: 'rgba(56, 189, 248, 0.1)' }]}>
+                  <Text style={{ fontSize: 20 }}>⏳</Text>
+                  <Text style={[styles.pacingVal, { color: '#38bdf8' }]}>{route.params?.diagnosticReport?.speedAccuracyMatrix?.overtimeCorrect || 0}</Text>
+                  <Text style={[styles.pacingLbl, { color: '#38bdf8', fontWeight: '700' }]}>Overtime Correct</Text>
+                  <Text style={{ color: '#94a3b8', fontSize: 10, marginTop: 2 }}>Slow (&gt;90s) &amp; Correct</Text>
+                </View>
+
+                <View style={[styles.pacingCard, { width: '48%', borderColor: '#ef4444', borderWidth: 1, backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
+                  <Text style={{ fontSize: 20 }}>⚠️</Text>
+                  <Text style={[styles.pacingVal, { color: '#ef4444' }]}>{route.params?.diagnosticReport?.speedAccuracyMatrix?.wastedAttempts || 0}</Text>
+                  <Text style={[styles.pacingLbl, { color: '#ef4444', fontWeight: '700' }]}>Wasted Attempts</Text>
+                  <Text style={{ color: '#94a3b8', fontSize: 10, marginTop: 2 }}>Slow (&gt;90s) &amp; Incorrect</Text>
                 </View>
               </View>
+            </View>
+
+            {/* Topic Strength Heatmap */}
+            <View style={[styles.analysisCard, { marginTop: 16 }]}>
+              <View style={styles.analysisHeader}>
+                <Target size={16} color="#38bdf8" style={{ marginRight: 8 }} />
+                <Text style={styles.analysisTitle}>Topic-Level Strength &amp; Weakness Heatmap</Text>
+              </View>
+
+              {route.params?.diagnosticReport?.topicHeatmap && route.params.diagnosticReport.topicHeatmap.length > 0 ? (
+                route.params.diagnosticReport.topicHeatmap.map((item: any, idx: number) => (
+                  <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
+                    <View style={{ flex: 1, marginRight: 10 }}>
+                      <Text style={{ color: '#f8fafc', fontSize: 13, fontWeight: '700' }}>{item.topicName}</Text>
+                      <Text style={{ color: '#94a3b8', fontSize: 11 }}>{item.correct} / {item.total} Questions Correct ({item.accuracy}%)</Text>
+                    </View>
+                    <View style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: item.status === 'Strong' ? 'rgba(16,185,129,0.2)' : item.status === 'Moderate' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)' }}>
+                      <Text style={{ color: item.status === 'Strong' ? '#10b981' : item.status === 'Moderate' ? '#f59e0b' : '#ef4444', fontSize: 11, fontWeight: '800' }}>
+                        {item.status}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={{ paddingVertical: 8 }}>
+                  <Text style={{ color: '#94a3b8', fontSize: 13 }}>Standard syllabus distribution analyzed across core subjects.</Text>
+                </View>
+              )}
             </View>
           </View>
         )}

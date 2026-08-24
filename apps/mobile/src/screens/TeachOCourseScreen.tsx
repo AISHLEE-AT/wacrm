@@ -1,59 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Linking,
   StatusBar,
   Modal,
   ScrollView,
-  ActivityIndicator,
   TextInput,
-  Share,
   Alert,
   Platform,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import {
-  PlayCircle,
   ChevronDown,
   ChevronUp,
   ChevronLeft,
   Sparkles,
-  FileText,
-  FileCheck2,
-  CheckCircle2,
-  X,
   BookOpen,
-  Network,
-  MessageSquare,
   Download,
-  Share2,
-  Send,
-  Lightbulb,
-  Check,
-  Zap,
+  CheckCircle2,
+  Circle,
+  X,
+  Search,
   ShieldAlert,
-  ShieldCheck,
 } from 'lucide-react-native';
 import { aishleeSupabase } from '../services/aishleeSupabase';
-import { geminiToolsService } from '../services/geminiToolsService';
-import { getCourseSyllabus, SyllabusUnit } from '../lib/courseCatalogMaster';
+import {
+  resolveCompleteCourseSyllabus,
+  CourseFullSyllabus,
+  SyllabusChapter,
+  SyllabusMicroTopic
+} from '../data/curriculum/courseSyllabusRegistry';
 import { generateKindleBook } from '../lib/kindleContentEngine';
 import {
-  fetchTestOMcqsForTopic,
-  generateSectionTamilAnalogyAI,
-  generateSectionVsaqsAI,
-  generateSectionStepSolutionsAI,
-  generateSectionCbtMcqsAI,
-  generateSectionMnemonicsAI,
   matchStoredContentForTopic,
-  persistTopicContentToDatabase
 } from '../lib/coursePlayerEngine';
 import AdminCurriculumEditorModal from '../components/teacho/AdminCurriculumEditorModal';
 
@@ -67,7 +53,6 @@ function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle:
     ? raw.notes.keyPoints
     : (raw.keyPoints || []);
 
-  // Tamil Explanation & Analogies
   const tamilExplanation = raw.tamilExplanation || (raw.notes?.bilingualExplanation?.tamil ? {
     colloquialIntro: raw.notes.bilingualExplanation.tamil,
     everydayAnalogy: raw.notes.bilingualExplanation.tamil
@@ -76,7 +61,6 @@ function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle:
     everydayAnalogy: 'நடைமுறை வாழ்க்கையோடு ஒப்பிட்டுப் படிக்கும் போது நினைவில் எளிதாக நிற்கும்!'
   });
 
-  // VSAQs (1-mark Q&A / Flashcards)
   const vsaqs = (raw.oneLineQnA && Array.isArray(raw.oneLineQnA) && raw.oneLineQnA.length > 0)
     ? raw.oneLineQnA
     : (raw.vsaqs || [
@@ -84,7 +68,6 @@ function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle:
         { question: `What is the primary exam takeaway?`, answer: 'Focus on root concepts, formulas, and verified steps.' }
       ]);
 
-  // Short Answers (2 & 5 marks)
   const shortAnswers = (raw.twoMarkQuestions && Array.isArray(raw.twoMarkQuestions) && raw.twoMarkQuestions.length > 0)
     ? raw.twoMarkQuestions.map((q: any) => ({
         question: q.question,
@@ -94,7 +77,6 @@ function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle:
       }))
     : (raw.shortAnswers || []);
 
-  // 30 MCQs / CBT Questions
   const mcqs = (raw.mcqs && Array.isArray(raw.mcqs) && raw.mcqs.length > 0)
     ? raw.mcqs.map((m: any) => ({
         question: m.question,
@@ -104,7 +86,6 @@ function normalizeMobileCoursePayload(raw: any, topicTitle: string, courseTitle:
       }))
     : (raw.practiceMCQs || []);
 
-  // Formulas & Shortcuts
   const formulasAndMnemonics = (raw.notes?.formulasAndShortcuts && Array.isArray(raw.notes.formulasAndShortcuts) && raw.notes.formulasAndShortcuts.length > 0)
     ? raw.notes.formulasAndShortcuts.map((f: any) => ({
         formula: f.formula || f.name,
@@ -135,175 +116,133 @@ export default function TeachOCourseScreen() {
   const course = route.params?.course || {};
   const courseTitle = course.title_name || course.title || 'Master Course';
   const courseId = course.id || courseTitle.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  const courseCategory = course.category || '';
 
-  // Dedicated Course Syllabus with Master Resolver Fallback
-  const courseUnits: SyllabusUnit[] = (course.metadata?.syllabus && Array.isArray(course.metadata.syllabus) && course.metadata.syllabus.length > 0)
-    ? course.metadata.syllabus
-    : getCourseSyllabus(courseId, course.category);
+  // Dedicated Complete Syllabus for this course
+  const fullSyllabus: CourseFullSyllabus = useMemo(() => {
+    return resolveCompleteCourseSyllabus(courseId, courseTitle, courseCategory);
+  }, [courseId, courseTitle, courseCategory]);
 
-  const [activeCourseTab, setActiveCourseTab] = useState<'curriculum' | 'notes' | 'mindmap' | 'forum'>(route.params?.activeTab || 'curriculum');
-  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
-  const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({});
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+  const [completedTopics, setCompletedTopics] = useState<Record<string, boolean>>({});
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
-  // AI Tutor Modal
-  const [aiModalVisible, setAiModalVisible] = useState(false);
-  const [aiPromptTitle, setAiPromptTitle] = useState('');
-  const [aiResponse, setAiResponse] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-
-  // Q&A Forum State
-  const [forumQuestion, setForumQuestion] = useState('');
-  const [forumPosts, setForumPosts] = useState<any[]>([
-    {
-      id: '1',
-      author: 'Karthik R.',
-      question: 'How do we solve chapter problems in under 60 seconds for competitive exams?',
-      answer: '🤖 AI Tutor: Focus on identifying the given values first, eliminate options using unit consistency, and memorize the 10 core shortcut formulas.',
-      time: '2 hours ago',
-    },
-    {
-      id: '2',
-      author: 'Priya S.',
-      question: 'Where can I find the official Tamil Nadu State Board solution notes for Unit 2?',
-      answer: '🤖 AI Tutor: You can open the "Notes & PDF" tab right here to download the verified PDF summary and formula sheets.',
-      time: 'Yesterday',
-    },
-  ]);
-  const [isAskingForum, setIsAskingForum] = useState(false);
-
-  // Course Player Reader State (Formerly Kindle)
+  // Course Player Reader State
   const [playerBook, setPlayerBook] = useState<any | null>(null);
   const [playerTab, setPlayerTab] = useState<'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas'>('theory');
   const [playerTheme, setPlayerTheme] = useState<'dark' | 'sepia' | 'light'>('dark');
-  const [playerLoading, setPlayerLoading] = useState(false);
-  const [playerAiLoading, setPlayerAiLoading] = useState<string | null>(null);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [, setPlayerLoading] = useState(false);
   const [playerSource, setPlayerSource] = useState<'cache' | 'ai' | 'fallback'>('cache');
   const [userMcqAnswers, setUserMcqAnswers] = useState<Record<number, number>>({});
-  const [revealedVsaq, setRevealedVsaq] = useState<Record<number, boolean>>({});
 
-  const generateCoursePlayerFallback = (topic: string, courseTitleParam: string) => {
-    const cleanTopic = topic || 'Core Fundamentals';
-    const cleanCourse = courseTitleParam || courseTitle;
-    return generateKindleBook(cleanTopic, cleanCourse, course?.category || '');
-  };
-
-  // ─── DYNAMIC AI GENERATOR HELPERS FOR USER / ADMIN ───
-  const handleGenerateMoreTamil = async () => {
-    if (!playerBook) return;
-    setPlayerAiLoading('tamil');
-    try {
-      const res = await generateSectionTamilAnalogyAI(playerBook.topicTitle, playerBook.courseTitle);
-      const updatedBook = {
-        ...playerBook,
-        tamilExplanation: {
-          ...playerBook.tamilExplanation,
-          colloquialIntro: res.colloquialIntro,
-          everydayAnalogy: res.everydayAnalogy,
-          keyPointsTamil: res.keyPointsTamil,
+  // Load completion states from AsyncStorage
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(`teacho_progress_${courseId}`);
+        if (stored) {
+          setCompletedTopics(JSON.parse(stored));
         }
-      };
-      setPlayerBook(updatedBook);
-      // Auto-persist to DB
-      persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
-      Alert.alert('🌟 தமிழ் விளக்கம் தயாராக உள்ளது!', 'புதிய நடைமுறை உதாரணங்கள் சேர்க்கப்பட்டன மற்றும் தரவுத்தளத்தில் சேமிக்கப்பட்டது.');
-    } catch (e: any) {
-      Alert.alert('AI Notice', 'Unable to generate fresh Tamil analogy: ' + e.message);
-    } finally {
-      setPlayerAiLoading(null);
-    }
-  };
-
-  const handleGenerateMoreVsaqs = async () => {
-    if (!playerBook) return;
-    setPlayerAiLoading('vsaq');
-    try {
-      const res = await generateSectionVsaqsAI(playerBook.topicTitle, playerBook.courseTitle, 5);
-      const updatedBook = {
-        ...playerBook,
-        vsaqs: [...(playerBook.vsaqs || []), ...res]
-      };
-      setPlayerBook(updatedBook);
-      // Auto-persist to DB
-      persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
-      Alert.alert('⚡ 5 New VSAQs Added!', '5 high-yield 1-mark flashcard questions generated and saved to DB.');
-    } catch (e: any) {
-      Alert.alert('AI Notice', 'Unable to generate extra VSAQs: ' + e.message);
-    } finally {
-      setPlayerAiLoading(null);
-    }
-  };
-
-  const handleGenerateMoreSolutions = async () => {
-    if (!playerBook) return;
-    setPlayerAiLoading('solutions');
-    try {
-      const res = await generateSectionStepSolutionsAI(playerBook.topicTitle, playerBook.courseTitle);
-      if (res && res.shortAnswers) {
-        const updatedBook = {
-          ...playerBook,
-          shortAnswers: [...(playerBook.shortAnswers || []), ...res.shortAnswers]
-        };
-        setPlayerBook(updatedBook);
-        // Auto-persist to DB
-        persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
-        Alert.alert('📝 Problem Sets Added!', '2-Mark & 5-Mark step-by-step solutions generated and saved to DB.');
+      } catch (e) {
+        console.warn('Failed to load course progress:', e);
       }
-    } catch (e: any) {
-      Alert.alert('AI Notice', 'Unable to generate solutions: ' + e.message);
-    } finally {
-      setPlayerAiLoading(null);
-    }
+    };
+    loadProgress();
+  }, [courseId]);
+
+  // Expand all chapters initially
+  useEffect(() => {
+    const initialExpanded: Record<string, boolean> = {};
+    (fullSyllabus.subjects || []).forEach((subj, sIdx) => {
+      (subj.chapters || []).forEach((_, cIdx) => {
+        initialExpanded[`${sIdx}-${cIdx}`] = true;
+      });
+    });
+    setExpandedChapters(initialExpanded);
+  }, [fullSyllabus]);
+
+  const toggleTopicCompleted = async (topicId: string) => {
+    setCompletedTopics(prev => {
+      const next = { ...prev, [topicId]: !prev[topicId] };
+      AsyncStorage.setItem(`teacho_progress_${courseId}`, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
   };
 
-  const handleRefreshCbtMcqs = async () => {
-    if (!playerBook) return;
-    setPlayerAiLoading('mcq');
-    try {
-      const res = await generateSectionCbtMcqsAI(playerBook.topicTitle, playerBook.courseTitle, 10);
-      const updatedBook = {
-        ...playerBook,
-        mcqs: res.map((m: any) => ({
-          question: m.question,
-          options: m.options,
-          correct: m.correctIndex,
-          explanation: m.explanation
-        }))
+  const toggleChapterExpanded = (chapKey: string) => {
+    setExpandedChapters(prev => ({
+      ...prev,
+      [chapKey]: !prev[chapKey]
+    }));
+  };
+
+  const toggleExpandAll = () => {
+    const areAllExpanded = Object.values(expandedChapters).every(Boolean);
+    const newExpanded: Record<string, boolean> = {};
+    (fullSyllabus.subjects || []).forEach((subj, sIdx) => {
+      (subj.chapters || []).forEach((_, cIdx) => {
+        newExpanded[`${sIdx}-${cIdx}`] = !areAllExpanded;
+      });
+    });
+    setExpandedChapters(newExpanded);
+  };
+
+  // Filter subjects and topics based on selected subject and search query
+  const filteredSubjects = useMemo(() => {
+    let list = fullSyllabus.subjects || [];
+    if (selectedSubjectId !== 'all') {
+      list = list.filter(s => s.subjectId === selectedSubjectId);
+    }
+    if (!searchQuery.trim()) return list;
+
+    const q = searchQuery.toLowerCase().trim();
+    return list.map(subj => {
+      const matchingChapters = (subj.chapters || []).map(chap => {
+        const matchingMicro = (chap.microTopics || []).filter(m => {
+          const titleMatch = (m.topicTitle || m.title || '').toLowerCase().includes(q);
+          const subMatch = (m.subtopic || '').toLowerCase().includes(q);
+          const axiomMatch = (m.keyFormulaOrLaw || m.keyAxiom || '').toLowerCase().includes(q);
+          const pointsMatch = (m.keyPoints || []).some(pt => pt.toLowerCase().includes(q));
+          return titleMatch || subMatch || axiomMatch || pointsMatch;
+        });
+
+        const chapTitleMatch = (chap.chapterTitle || '').toLowerCase().includes(q);
+        const chapDescMatch = (chap.description || '').toLowerCase().includes(q);
+
+        if (chapTitleMatch || chapDescMatch) {
+          return chap;
+        }
+
+        if (matchingMicro.length > 0) {
+          return {
+            ...chap,
+            microTopics: matchingMicro
+          };
+        }
+        return null;
+      }).filter(Boolean) as SyllabusChapter[];
+
+      return {
+        ...subj,
+        chapters: matchingChapters
       };
-      setPlayerBook(updatedBook);
-      setUserMcqAnswers({});
-      // Auto-persist to DB
-      persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
-      Alert.alert('🎯 10 CBT MCQs Refreshed!', 'Fresh 10-question exam test loaded from TestO database and saved to DB.');
-    } catch (e: any) {
-      Alert.alert('AI Notice', 'Unable to refresh CBT MCQs: ' + e.message);
-    } finally {
-      setPlayerAiLoading(null);
-    }
-  };
+    }).filter(subj => subj.chapters.length > 0);
+  }, [fullSyllabus, selectedSubjectId, searchQuery]);
 
-  const handleGenerateMoreMnemonics = async () => {
-    if (!playerBook) return;
-    setPlayerAiLoading('formulas');
-    try {
-      const res = await generateSectionMnemonicsAI(playerBook.topicTitle, playerBook.courseTitle);
-      if (res && res.formulasAndMnemonics) {
-        const updatedBook = {
-          ...playerBook,
-          formulasAndMnemonics: [...(playerBook.formulasAndMnemonics || []), ...res.formulasAndMnemonics]
-        };
-        setPlayerBook(updatedBook);
-        // Auto-persist to DB
-        persistTopicContentToDatabase(courseId, playerBook.topicTitle, '', updatedBook, 'ai_generated');
-        Alert.alert('🧠 Memory Mnemonics Added!', 'New memory shortcuts and formulas generated and saved to DB.');
-      }
-    } catch (e: any) {
-      Alert.alert('AI Notice', 'Unable to generate mnemonics: ' + e.message);
-    } finally {
-      setPlayerAiLoading(null);
-    }
-  };
+  // Overall stats
+  const totalMicroCount = useMemo(() => {
+    return (fullSyllabus.subjects || []).reduce((acc, s) => {
+      return acc + (s.chapters || []).reduce((cAcc, c) => cAcc + (c.microTopics?.length || 0), 0);
+    }, 0);
+  }, [fullSyllabus]);
 
+  const completedCount = useMemo(() => {
+    return Object.values(completedTopics).filter(Boolean).length;
+  }, [completedTopics]);
+
+  // Course Player Opener
   const openCoursePlayer = async (
     topic: string,
     initialTab: 'theory' | 'tamil' | 'vsaq' | 'solutions' | 'mcq' | 'formulas' = 'theory',
@@ -313,7 +252,6 @@ export default function TeachOCourseScreen() {
     const cleanTopic = topic || 'Core Fundamentals';
     setPlayerTab(initialTab);
     setUserMcqAnswers({});
-    setRevealedVsaq({});
     setPlayerLoading(true);
 
     const candidateKeys = [
@@ -325,7 +263,6 @@ export default function TeachOCourseScreen() {
 
     let loadedPayload: any = null;
 
-    // 1. Check Supabase LMS DB (kindle_content_cache)
     try {
       for (const key of candidateKeys) {
         const { data, error } = await aishleeSupabase
@@ -341,10 +278,9 @@ export default function TeachOCourseScreen() {
         }
       }
     } catch (e) {
-      // Non-blocking fallback
+      // fallback
     }
 
-    // 2. Check Cloudflare R2 Primary DB (CDN Edge Direct)
     if (!loadedPayload && courseId) {
       const r2Urls = [
         `https://pub-672098863d97ed3208c7c47a8091e5dd.r2.dev/course_json/batch_curriculum/${courseId}/${courseId}_day_${dayNumber}_task_1.json`,
@@ -363,7 +299,7 @@ export default function TeachOCourseScreen() {
             }
           }
         } catch (r2Err) {
-          // Non-blocking fallback
+          // fallback
         }
       }
     }
@@ -372,13 +308,12 @@ export default function TeachOCourseScreen() {
     if (loadedPayload) {
       finalBook = normalizeMobileCoursePayload(loadedPayload, cleanTopic, courseTitle);
     } else {
-      finalBook = generateCoursePlayerFallback(cleanTopic, courseTitle);
+      finalBook = generateKindleBook(cleanTopic, courseTitle, courseCategory);
       setPlayerSource('fallback');
     }
 
-    // 3. 🧠 AI Smart Brain Database Matcher (Structured DB Content Ingested via PDF & Curriculum Pipelines)
     try {
-      const dbMatch = await matchStoredContentForTopic(cleanTopic, courseTitle, category);
+      const dbMatch = await matchStoredContentForTopic(cleanTopic, courseTitle, courseCategory);
       if (dbMatch.hasStoredMcqs && dbMatch.mcqs && dbMatch.mcqs.length > 0) {
         finalBook.mcqs = dbMatch.mcqs.map((m: any) => ({
           question: m.question,
@@ -399,661 +334,60 @@ export default function TeachOCourseScreen() {
           colloquialIntro: dbMatch.tamilAnalogy
         };
       }
-      if (dbMatch.hasStoredSolutions && dbMatch.stepSolutions && dbMatch.stepSolutions.length > 0) {
-        finalBook.shortAnswers = dbMatch.stepSolutions.map((s: any) => ({
-          question: s.question,
-          marks: `${s.marks || 5} Marks`,
-          solutionSteps: s.solutionSteps || [s.modelAnswer || ''],
-          keyTips: 'Ensure rigorous derivation and clear formula declaration.'
-        }));
-      }
-    } catch (dbErr) {
-      // Non-blocking fallback
-    }
-
-    // 4. Guarantee 10 MCQs from TestO Database Bridge
-    if (!finalBook.mcqs || finalBook.mcqs.length < 10) {
-      try {
-        const testOMcqs = await fetchTestOMcqsForTopic(cleanTopic, courseTitle, 10);
-        if (testOMcqs && testOMcqs.length > 0) {
-          finalBook.mcqs = testOMcqs.map((m: any) => ({
-            question: m.question,
-            options: m.options,
-            correct: m.correctIndex !== undefined ? m.correctIndex : m.correct,
-            explanation: m.explanation
-          }));
-        }
-      } catch (testoErr) {
-        // Non-blocking fallback
-      }
+    } catch (e) {
+      // fallback
     }
 
     setPlayerBook(finalBook);
     setPlayerLoading(false);
-    // Auto-persist synthesized content to DB
-    persistTopicContentToDatabase(courseId, cleanTopic, explicitTopicKey || '', finalBook, 'ai_generated');
   };
 
-  // Auto-open specific tab or micro-topic when navigated from TestO or other screens
-  useEffect(() => {
-    if (route.params?.activeTab) {
-      setActiveCourseTab(route.params.activeTab);
-    }
-    if (route.params?.initialMicroTopic || route.params?.topic) {
-      const topicToOpen = route.params.initialMicroTopic || route.params.topic;
-      openCoursePlayer(
-        topicToOpen,
-        route.params.initialTab || 'theory',
-        route.params.dayNumber || 1,
-        route.params.topicKey
-      );
-    }
-  }, [route.params]);
-
   const exportCoursePlayerPDF = async (book: any) => {
-    // 🔒 Gatekeeper: Check PDF Export Permission
-    const hasExportPermission = route.params?.isPassUnlocked || route.params?.isAdmin || false;
-    if (!hasExportPermission) {
-      Alert.alert(
-        '🔒 Verified PDF Export Restricted',
-        'PDF export with watermark and step solutions requires an active TeachO Pass (₹99) or Admin approval.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Request Admin Access',
-            onPress: () => {
-              Alert.alert('✅ Request Dispatched', 'Your request to export verified course PDFs has been submitted to the Admin.');
-            },
-          },
-          {
-            text: 'Unlock Pass ₹99',
-            onPress: () => {
-              navigation.navigate('TestOHubScreen', { openPayment: true });
-            },
-          },
-        ]
-      );
-      return;
-    }
-
+    if (!book) return;
     try {
-      const html = `
+      const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+          <meta charset="utf-8">
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 24px; color: #0f172a; line-height: 1.6; }
-            .header { border-bottom: 3px solid #10b981; padding-bottom: 12px; margin-bottom: 20px; }
-            .badge { display: inline-block; background: #ecfdf5; color: #059669; font-weight: bold; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #10b981; text-transform: uppercase; margin-bottom: 6px; }
-            h1 { font-size: 24px; margin: 0 0 6px 0; color: #047857; }
-            h2 { font-size: 16px; margin: 0 0 4px 0; color: #64748b; font-weight: normal; }
-            .section-title { font-size: 16px; font-weight: bold; color: #0f172a; border-left: 4px solid #10b981; padding-left: 10px; margin: 24px 0 12px 0; text-transform: uppercase; }
-            .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-            .tamil-card { background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-            .card-title { font-weight: bold; color: #0f172a; margin-bottom: 6px; font-size: 13px; }
-            .tamil-text { font-size: 13px; color: #713f12; line-height: 1.6; }
-            .vsaq-q { font-weight: bold; color: #1e293b; font-size: 13px; }
-            .vsaq-a { color: #059669; font-size: 12px; margin-top: 4px; }
-            .mcq-opt { margin-left: 16px; color: #475569; font-size: 12px; margin-top: 3px; }
-            .mcq-correct { font-weight: bold; color: #059669; }
-            .footer { text-align: center; margin-top: 40px; border-top: 1px solid #cbd5e1; padding-top: 16px; font-size: 11px; color: #94a3b8; }
+            body { font-family: 'Helvetica', sans-serif; padding: 24px; color: #1e293b; line-height: 1.6; }
+            h1 { color: #0f766e; border-bottom: 2px solid #0f766e; padding-bottom: 8px; font-size: 22px; }
+            h2 { color: #0284c7; font-size: 16px; margin-top: 20px; }
+            .badge { background-color: #f0fdf4; color: #166534; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 12px; }
+            .box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div class="badge">Interactive Course Player • SuprO TeachO</div>
-            <h1>${book.topicTitle}</h1>
-            <h2>${book.courseTitle} • ${book.readingTime || '6 min read'}</h2>
+          <span class="badge">TeachO Verified Nano Syllabus</span>
+          <h1>${book.topicTitle}</h1>
+          <p><strong>Course:</strong> ${courseTitle} (${fullSyllabus.board || 'State Board'})</p>
+          
+          <div class="box">
+            <h2>📖 Theory & Conceptual Overview</h2>
+            <p>${book.overview || 'Comprehensive syllabus breakdown.'}</p>
           </div>
 
-          <div class="section-title">1. Theoretical Overview & Foundations</div>
-          <div class="card">
-            <p style="font-size: 13px; color: #334155; margin: 0;">${book.overview}</p>
-          </div>
-
-          ${book.coreConcepts?.map((c: any) => `
-            <div class="card">
-              <div class="card-title">${c.heading}</div>
-              <p style="font-size: 12px; color: #475569; margin: 0 0 6px 0;">${c.content}</p>
-              ${c.example ? `<p style="font-size: 11px; color: #059669; margin: 0; font-style: italic;"><strong>Example:</strong> ${c.example}</p>` : ''}
-            </div>
-          `).join('')}
-
-          <div class="section-title">2. தமிழில் எளிய விளக்கம் (Tamil Explanation)</div>
-          <div class="tamil-card">
-            <div class="card-title" style="color: #854d0e;">${book.tamilExplanation?.simpleTitle || 'முழு விளக்கம்'}</div>
-            <p class="tamil-text">${book.tamilExplanation?.colloquialIntro || ''}</p>
-            ${book.tamilExplanation?.everydayAnalogy ? `<p class="tamil-text" style="font-style: italic;"><strong>நடைமுறை உதாரணம்:</strong> ${book.tamilExplanation?.everydayAnalogy}</p>` : ''}
-            ${book.tamilExplanation?.keyPointsTamil?.map((pt: string) => `<p class="tamil-text" style="margin: 3px 0;">• ${pt}</p>`).join('')}
-          </div>
-
-          <div class="section-title">3. Flashcard VSAQs (1-Mark Questions)</div>
-          ${book.vsaqs?.map((v: any, i: number) => `
-            <div class="card">
-              <div class="vsaq-q">Q${i+1}: ${v.question}</div>
-              <div class="vsaq-a">Ans: ${v.answer}</div>
-            </div>
-          `).join('')}
-
-          <div class="section-title">4. Step-by-Step Solutions (2 & 5 Marks)</div>
-          ${book.shortAnswers?.map((sa: any, i: number) => `
-            <div class="card">
-              <div class="card-title">${sa.question} <span style="color: #059669;">(${sa.marks})</span></div>
-              ${sa.solutionSteps?.map((step: string, sIdx: number) => `<p style="font-size: 12px; color: #334155; margin: 3px 0;"><strong>Step ${sIdx+1}:</strong> ${step}</p>`).join('')}
-              ${sa.keyTips ? `<p style="font-size: 11px; color: #d97706; margin-top: 6px;"><strong>💡 Examiner Tip:</strong> ${sa.keyTips}</p>` : ''}
-            </div>
-          `).join('')}
-
-          <div class="section-title">5. High-Yield Practice MCQs</div>
-          ${book.mcqs?.map((m: any, i: number) => `
-            <div class="card">
-              <div class="vsaq-q">Q${i+1}: ${m.question}</div>
-              ${m.options?.map((opt: string, optIdx: number) => `
-                <div class="mcq-opt ${optIdx === m.correct ? 'mcq-correct' : ''}">
-                  ${opt} ${optIdx === m.correct ? '✓ (Correct)' : ''}
-                </div>
-              `).join('')}
-              <p style="font-size: 11px; color: #64748b; margin-top: 6px; font-style: italic;"><strong>Explanation:</strong> ${m.explanation}</p>
-            </div>
-          `).join('')}
-
-          <div class="section-title">6. Formula Cheat Sheet & Mnemonics</div>
-          ${book.formulasAndMnemonics?.map((f: any) => `
-            <div class="card">
-              <div class="card-title" style="font-family: monospace; color: #0284c7;">${f.formula}</div>
-              <p style="font-size: 12px; color: #475569; margin: 2px 0;">${f.meaning}</p>
-              ${f.mnemonic ? `<p style="font-size: 11px; color: #d97706; margin: 2px 0;"><strong>🧠 Mnemonic:</strong> ${f.mnemonic}</p>` : ''}
-            </div>
-          `).join('')}
-
-          <div class="footer">
-            Generated via SuprO TeachO Course Player • High-Yield Interactive Study Series
+          <div class="box">
+            <h2>🗣️ தமிழ் விளக்கம் & நடைமுறை உதாரணம்</h2>
+            <p><strong>விளக்கம்:</strong> ${book.tamilExplanation?.colloquialIntro || 'பாடத்தின் அடிப்படைக் கருத்துக்கள்.'}</p>
+            <p><strong>நடைமுறை உதாரணம்:</strong> ${book.tamilExplanation?.everydayAnalogy || 'நடைமுறை வாழ்க்கையோடு தொடர்பு.'}</p>
           </div>
         </body>
         </html>
       `;
-
-      const { uri } = await Print.printToFileAsync({ html });
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
       await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
     } catch (e: any) {
-      Alert.alert('PDF Export', 'Unable to export PDF: ' + e.message);
+      Alert.alert('PDF Export Error', e.message);
     }
   };
-
-  const toggleModule = (moduleKey: string) => {
-    setExpandedModules((prev) => ({
-      ...prev,
-      [moduleKey]: prev[moduleKey] === undefined ? false : !prev[moduleKey],
-    }));
-  };
-
-  const toggleLessonComplete = (lessonId: string) => {
-    setCompletedLessons((prev) => ({
-      ...prev,
-      [lessonId]: !prev[lessonId],
-    }));
-  };
-
-  const openVideo = (url: string) => {
-    if (url) {
-      Linking.openURL(url).catch(() => {
-        Alert.alert('Error', 'Unable to open lesson stream.');
-      });
-    }
-  };
-
-  const handleAskAi = async (promptType: string, customText?: string) => {
-    let title = '';
-    let prompt = '';
-
-    if (promptType === 'explain_tamil') {
-      title = 'தமிழில் எளிய விளக்கம் (Tamil AI Tutor)';
-      prompt = `Explain the foundational core concepts of the academic syllabus course "${courseTitle}" in clear, engaging, conversational Tamil. Use bullet points and simple real-world analogies.`;
-    } else if (promptType === 'practice_mcqs') {
-      title = '5 High-Yield Examination MCQs';
-      prompt = `Generate 5 high-yield multiple-choice questions with 4 options (A, B, C, D) and detailed explanations for "${courseTitle}". Include correct answer keys.`;
-    } else if (promptType === 'summary_notes') {
-      title = 'Complete Chapter Summary & Formula Sheet';
-      prompt = `Provide a comprehensive revision summary with all key formulas, governing equations, and shortcuts for "${courseTitle}".`;
-    } else {
-      title = 'AI Tutor Explanation';
-      prompt = customText || `Explain the core principles of "${courseTitle}".`;
-    }
-
-    setAiPromptTitle(title);
-    setAiResponse('');
-    setAiLoading(true);
-    setAiModalVisible(true);
-
-    try {
-      const res = await geminiToolsService.executePrompt(prompt);
-      setAiResponse(res?.text || 'No response received. Please try again.');
-    } catch (err: any) {
-      setAiResponse(`Unable to fetch response: ${err.message || 'Network error'}`);
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handlePostForumQuestion = async () => {
-    if (!forumQuestion.trim()) return;
-
-    const userQ = forumQuestion;
-    setForumQuestion('');
-    setIsAskingForum(true);
-
-    const newPostId = Date.now().toString();
-    const newPost = {
-      id: newPostId,
-      author: 'You',
-      question: userQ,
-      answer: '🤖 AI Tutor is typing response...',
-      time: 'Just now',
-    };
-
-    setForumPosts((prev) => [newPost, ...prev]);
-
-    try {
-      const res = await geminiToolsService.executePrompt(
-        `Answer this student question about "${courseTitle}": "${userQ}". Provide a concise, clear academic explanation in 2-3 sentences.`
-      );
-
-      setForumPosts((prev) =>
-        prev.map((p) =>
-          p.id === newPostId
-            ? { ...p, answer: `🤖 AI Tutor: ${res?.text || 'Focus on understanding core definitions and formulas.'}` }
-            : p
-        )
-      );
-    } catch (err) {
-      setForumPosts((prev) => [
-        {
-          id: Date.now().toString(),
-          author: 'You',
-          question: userQ,
-          answer: '🤖 AI Tutor: Identify key formula components, check unit consistency, and eliminate invalid options.',
-          time: 'Just now',
-        },
-        ...prev,
-      ]);
-    } finally {
-      setIsAskingForum(false);
-    }
-  };
-
-  const renderCurriculum = () => (
-    <FlatList
-      data={courseUnits}
-      keyExtractor={(item, index) => item.id || index.toString()}
-      contentContainerStyle={[styles.listContainer, { paddingBottom: Math.max(insets.bottom, 24) + 60 }]}
-      renderItem={({ item: unit, index: uIdx }) => {
-        const hasChapters = unit.chapters && unit.chapters.length > 0;
-
-        return (
-          <View key={unit.id || uIdx} style={{ marginBottom: 16 }}>
-            <View style={{ backgroundColor: '#111827', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#1e293b', marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                  {unit.subjectName ? (
-                    <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#10b981', backgroundColor: '#10b98120', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginRight: 6 }}>
-                      {unit.subjectName}
-                    </Text>
-                  ) : null}
-                  <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#94a3b8' }}>{unit.unitNumber ? `UNIT ${unit.unitNumber}` : `UNIT ${uIdx + 1}`}</Text>
-                </View>
-                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>{unit.title}</Text>
-              </View>
-              <TouchableOpacity
-                style={{ backgroundColor: '#10b981', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 }}
-                onPress={() => openCoursePlayer(unit.title, 'theory', (unit as any).dayNumber || uIdx + 1, (unit as any).topicKey)}
-              >
-                <Text style={{ color: '#022c22', fontSize: 10, fontWeight: 'bold' }}>📱 Course Player</Text>
-              </TouchableOpacity>
-            </View>
-
-            {hasChapters ? (
-              (unit.chapters || []).map((chap: any, cIdx: number) => {
-                const chapKey = `${uIdx}-${cIdx}`;
-                const isExpanded = expandedModules[chapKey] !== false;
-                const chapTitle = chap.chapterTitle || chap.title || `Chapter ${cIdx + 1}`;
-                const hasSubtopics = chap.subtopics && chap.subtopics.length > 0;
-                const hasDirectMicro = chap.microTopics && chap.microTopics.length > 0;
-
-                return (
-                  <View key={chap.id || cIdx} style={[styles.moduleCard, { marginBottom: 10 }]}>
-                    <TouchableOpacity
-                      style={styles.moduleHeader}
-                      onPress={() => toggleModule(chapKey)}
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.moduleIndex}>CHAPTER {chap.chapterNumber || cIdx + 1}</Text>
-                        <Text style={styles.moduleTitle}>{chapTitle}</Text>
-                        {chap.tamilTitle || chap.chapterTamilTitle ? (
-                          <Text style={{ fontSize: 11, color: '#f59e0b', marginTop: 2 }}>{chap.tamilTitle || chap.chapterTamilTitle}</Text>
-                        ) : null}
-                      </View>
-                      {isExpanded ? <ChevronUp color="#10b981" size={20} /> : <ChevronDown color="#94a3b8" size={20} />}
-                    </TouchableOpacity>
-
-                    {isExpanded && (
-                      <View style={styles.videosContainer}>
-                        {/* Video Lecture & Quick Action Bar */}
-                        <View style={styles.lessonRow}>
-                          <TouchableOpacity style={styles.lessonContent} onPress={() => openVideo(chap.videoUrl || chap.url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')}>
-                            <PlayCircle size={20} color="#10b981" style={{ marginRight: 10 }} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.videoTitle}>Watch Full HD Lecture</Text>
-                              <Text style={styles.lessonMeta}>Official Video Stream • YouTube</Text>
-                            </View>
-                          </TouchableOpacity>
-
-                          <View style={{ flexDirection: 'row', gap: 6 }}>
-                            <TouchableOpacity
-                              style={[styles.aiHelpPill, { backgroundColor: '#10b98120' }]}
-                              onPress={() => openCoursePlayer(chapTitle, 'theory')}
-                            >
-                              <Text style={[styles.aiHelpText, { color: '#10b981' }]}>Player</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={[styles.aiHelpPill, { backgroundColor: '#38bdf820' }]}
-                              onPress={() => openCoursePlayer(chapTitle, 'mcq')}
-                            >
-                              <Text style={[styles.aiHelpText, { color: '#38bdf8' }]}>5 MCQs</Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-
-                        {/* Subtopics & Micro-Topics Tree */}
-                        {hasSubtopics ? (
-                          chap.subtopics.map((sub: any, sIdx: number) => (
-                            <View key={sub.id || sIdx} style={{ marginTop: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#334155' }}>
-                              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#93c5fd', marginBottom: 4 }}>
-                                {sub.title}
-                              </Text>
-
-                              {(sub.microTopics || []).map((micro: any, mIdx: number) => {
-                                const lessonKey = `${chapKey}-${sIdx}-${mIdx}`;
-                                const isDone = !!completedLessons[lessonKey];
-                                const mTitle = micro.title || micro.topicTitle || `Topic ${mIdx + 1}`;
-
-                                return (
-                                  <View key={micro.id || mIdx} style={{ backgroundColor: '#0f172a', padding: 8, borderRadius: 8, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <TouchableOpacity
-                                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                                      onPress={() => toggleLessonComplete(lessonKey)}
-                                    >
-                                      <CheckCircle2 size={16} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 8 }} />
-                                      <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 12, color: isDone ? '#64748b' : '#e2e8f0', textDecorationLine: isDone ? 'line-through' : 'none' }}>
-                                          {mTitle}
-                                        </Text>
-                                        {micro.keyAxiom || micro.keyFormulaOrLaw ? (
-                                          <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{micro.keyAxiom || micro.keyFormulaOrLaw}</Text>
-                                        ) : null}
-                                      </View>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                      style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginLeft: 6 }}
-                                      onPress={() => openCoursePlayer(mTitle, 'theory')}
-                                    >
-                                      <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
-                                    </TouchableOpacity>
-                                  </View>
-                                );
-                              })}
-                            </View>
-                          ))
-                        ) : hasDirectMicro ? (
-                          <View style={{ marginTop: 8 }}>
-                            {chap.microTopics.map((micro: any, mIdx: number) => {
-                              const lessonKey = `${chapKey}-m-${mIdx}`;
-                              const isDone = !!completedLessons[lessonKey];
-                              const mTitle = micro.topicTitle || micro.title || `Topic ${mIdx + 1}`;
-
-                              return (
-                                <View key={micro.id || mIdx} style={{ backgroundColor: '#0f172a', padding: 8, borderRadius: 8, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                  <TouchableOpacity
-                                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
-                                    onPress={() => toggleLessonComplete(lessonKey)}
-                                  >
-                                    <CheckCircle2 size={16} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 8 }} />
-                                    <View style={{ flex: 1 }}>
-                                      <Text style={{ fontSize: 12, color: isDone ? '#64748b' : '#e2e8f0', textDecorationLine: isDone ? 'line-through' : 'none' }}>
-                                        {mTitle}
-                                      </Text>
-                                      {micro.keyFormulaOrLaw || micro.keyAxiom ? (
-                                        <Text style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{micro.keyFormulaOrLaw || micro.keyAxiom}</Text>
-                                      ) : null}
-                                    </View>
-                                  </TouchableOpacity>
-
-                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 6 }}>
-                                    <TouchableOpacity
-                                      style={{ backgroundColor: '#f59e0b15', borderColor: '#f59e0b', borderWidth: 1, paddingHorizontal: 7, paddingVertical: 4, borderRadius: 6 }}
-                                      onPress={() => {
-                                        navigation.navigate('TestOExamScreen', {
-                                          examConfig: {
-                                            id: `cbt_${micro.id || mIdx}`,
-                                            title: `${mTitle} (10-Q CBT)`,
-                                            subject: courseTitle,
-                                            totalQuestions: 10,
-                                            durationMinutes: 15,
-                                            totalMarks: 40,
-                                            passPercentage: 40,
-                                            topicFilter: mTitle,
-                                            isOfficialMock: false
-                                          }
-                                        });
-                                      }}
-                                    >
-                                      <Text style={{ fontSize: 10, color: '#f59e0b', fontWeight: 'bold' }}>10-Q CBT</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                      style={{ backgroundColor: '#10b98115', borderColor: '#10b981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}
-                                      onPress={() => openCoursePlayer(mTitle, 'theory')}
-                                    >
-                                      <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold' }}>Player ➔</Text>
-                                    </TouchableOpacity>
-                                  </View>
-                                </View>
-                              );
-                            })}
-                          </View>
-                        ) : (
-                          (unit.lessons || []).map((les: any, lIdx: number) => {
-                            const lessonKey = `${chapKey}-l-${lIdx}`;
-                            const isDone = !!completedLessons[lessonKey];
-
-                            return (
-                              <View key={les.id || lIdx} style={styles.lessonRow}>
-                                <TouchableOpacity
-                                  style={styles.lessonContent}
-                                  onPress={() => toggleLessonComplete(lessonKey)}
-                                >
-                                  <CheckCircle2 size={18} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 10 }} />
-                                  <View style={{ flex: 1 }}>
-                                    <Text style={[styles.lessonTitle, isDone && styles.lessonTitleDone]}>
-                                      {les.title}
-                                    </Text>
-                                    <Text style={styles.lessonMeta}>
-                                      {les.duration} • {les.type?.toUpperCase()}
-                                    </Text>
-                                  </View>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                  style={styles.aiHelpPill}
-                                  onPress={() => openCoursePlayer(les.title, les.type === 'quiz' ? 'mcq' : 'theory')}
-                                >
-                                  <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
-                                  <Text style={styles.aiHelpText}>AI Study</Text>
-                                </TouchableOpacity>
-                              </View>
-                            );
-                          })
-                        )}
-                      </View>
-                    )}
-                  </View>
-                );
-              })
-            ) : (
-              (unit.lessons || []).map((les: any, lIdx: number) => {
-                const lessonKey = `${uIdx}-l-${lIdx}`;
-                const isDone = !!completedLessons[lessonKey];
-
-                return (
-                  <View key={les.id || lIdx} style={styles.lessonRow}>
-                    <TouchableOpacity
-                      style={styles.lessonContent}
-                      onPress={() => toggleLessonComplete(lessonKey)}
-                    >
-                      <CheckCircle2 size={18} color={isDone ? '#10b981' : '#475569'} style={{ marginRight: 10 }} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.lessonTitle, isDone && styles.lessonTitleDone]}>
-                          {les.title}
-                        </Text>
-                        <Text style={styles.lessonMeta}>
-                          {les.duration} • {les.type?.toUpperCase()}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.aiHelpPill}
-                      onPress={() => openCoursePlayer(les.title, les.type === 'quiz' ? 'mcq' : 'theory')}
-                    >
-                      <Sparkles size={12} color="#10b981" style={{ marginRight: 4 }} />
-                      <Text style={styles.aiHelpText}>AI Study</Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })
-            )}
-          </View>
-        );
-      }}
-      ListEmptyComponent={
-        <View style={{ padding: 40, alignItems: 'center' }}>
-          <Text style={{ color: '#94a3b8', fontSize: 14 }}>No curriculum modules uploaded for this course yet.</Text>
-        </View>
-      }
-    />
-  );
-
-  const renderNotesAndPDFs = () => (
-    <ScrollView style={styles.tabContentContainer} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 60 }}>
-      <View style={styles.notesCard}>
-        <View style={styles.notesCardHeader}>
-          <FileText size={20} color="#10b981" />
-          <Text style={styles.notesCardTitle}>Verified Syllabus Summary Notes</Text>
-        </View>
-        <Text style={styles.notesCardDesc}>
-          Download high-yield summary notes, derivations, and formulas for {courseTitle}.
-        </Text>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <TouchableOpacity
-            style={styles.notesDownloadBtn}
-            onPress={() => handleAskAi('summary_notes')}
-          >
-            <Sparkles size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
-            <Text style={styles.notesDownloadText}>Generate AI Notes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.notesDownloadBtn, { backgroundColor: '#38bdf8' }]}
-            onPress={() => openCoursePlayer(courseTitle, 'theory')}
-          >
-            <BookOpen size={14} color="#0a0f1e" style={{ marginRight: 6 }} />
-            <Text style={styles.notesDownloadText}>Open Course Player</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
-  );
-
-  const renderMindMaps = () => (
-    <ScrollView style={styles.tabContentContainer} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 60 }}>
-      <View style={styles.notesCard}>
-        <View style={styles.notesCardHeader}>
-          <Network size={20} color="#38bdf8" />
-          <Text style={styles.notesCardTitle}>Visual Mind Map & Concept Hierarchy</Text>
-        </View>
-        <Text style={styles.notesCardDesc}>
-          Interactive hierarchical concept tree connecting all units and micro-topics.
-        </Text>
-
-        <View style={{ marginTop: 12 }}>
-          {courseUnits.map((unit, uIdx) => (
-            <View key={uIdx} style={{ marginBottom: 12, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#38bdf8' }}>
-              <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#38bdf8' }}>{unit.unitNumber ? `Unit ${unit.unitNumber}` : `Unit ${uIdx+1}`}: {unit.title}</Text>
-              {(unit.chapters || []).map((ch: any, cIdx: number) => {
-                const chTitle = ch.chapterTitle || ch.title || `Chapter ${cIdx + 1}`;
-                return (
-                  <TouchableOpacity
-                    key={cIdx}
-                    style={{ marginTop: 4, padding: 8, backgroundColor: '#1e293b', borderRadius: 6 }}
-                    onPress={() => openCoursePlayer(chTitle, 'theory')}
-                  >
-                    <Text style={{ fontSize: 12, color: '#e2e8f0' }}>➔ Chapter {cIdx+1}: {chTitle}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </View>
-    </ScrollView>
-  );
-
-  const renderForum = () => (
-    <View style={{ flex: 1, padding: 16 }}>
-      {/* Ask Question Bar */}
-      <View style={styles.forumInputContainer}>
-        <TextInput
-          style={styles.forumInput}
-          placeholder="Ask a question about this course..."
-          placeholderTextColor="#64748b"
-          value={forumQuestion}
-          onChangeText={setForumQuestion}
-        />
-        <TouchableOpacity
-          style={[styles.forumSendBtn, !forumQuestion.trim() && { opacity: 0.5 }]}
-          onPress={handlePostForumQuestion}
-          disabled={!forumQuestion.trim() || isAskingForum}
-        >
-          {isAskingForum ? <ActivityIndicator size="small" color="#0a0f1e" /> : <Send size={16} color="#0a0f1e" />}
-        </TouchableOpacity>
-      </View>
-
-      {/* Forum Posts List */}
-      <FlatList
-        data={forumPosts}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 60 }}
-        renderItem={({ item }) => (
-          <View style={styles.forumCard}>
-            <View style={styles.forumHeader}>
-              <Text style={styles.forumAuthor}>{item.author}</Text>
-              <Text style={styles.forumTime}>{item.time}</Text>
-            </View>
-            <Text style={styles.forumQuestion}>{item.question}</Text>
-            <View style={styles.forumAnswerBox}>
-              <Text style={styles.forumAnswerText}>{item.answer}</Text>
-            </View>
-          </View>
-        )}
-      />
-    </View>
-  );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a0f1e" />
+      <StatusBar barStyle="light-content" backgroundColor="#070d18" />
 
-      {/* Top Navbar (Safe below punch hole / status bar) */}
+      {/* Top Navbar */}
       <View
         style={[
           styles.navbar,
@@ -1062,7 +396,7 @@ export default function TeachOCourseScreen() {
               Math.max(
                 insets.top,
                 Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
-              ) + 8,
+              ) + 6,
           },
         ]}
       >
@@ -1070,108 +404,347 @@ export default function TeachOCourseScreen() {
           <ChevronLeft color="#ffffff" size={24} />
         </TouchableOpacity>
         <View style={styles.navTextContainer}>
-          <Text style={styles.navCategory}>{course.category || 'Masterclass Course'}</Text>
+          <View style={styles.boardBadgeRow}>
+            <Text style={styles.boardBadgeText}>
+              {fullSyllabus.board || 'TNSB / CBSE'} • {fullSyllabus.medium || 'Tamil'}
+            </Text>
+          </View>
           <Text style={styles.navTitle} numberOfLines={1}>
             {courseTitle}
           </Text>
         </View>
 
-        {/* 🛠️ Admin Curriculum Console Trigger */}
+        {/* Admin Console Trigger */}
         <TouchableOpacity
           onPress={() => setIsAdminModalOpen(true)}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-            borderWidth: 1,
-            borderColor: '#ef4444',
-            paddingHorizontal: 8,
-            paddingVertical: 5,
-            borderRadius: 8,
-            gap: 4,
-          }}
+          style={styles.adminBtn}
           activeOpacity={0.8}
         >
-          <ShieldAlert size={13} color="#ef4444" />
-          <Text style={{ color: '#ef4444', fontSize: 10, fontWeight: '800' }}>Admin</Text>
+          <ShieldAlert size={12} color="#ef4444" />
+          <Text style={styles.adminBtnText}>Admin</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Course Header Bar */}
-      <View style={styles.courseHeader}>
-        <Text style={styles.courseTitle}>{courseTitle}</Text>
-        <Text style={styles.courseSubtitle}>
-          {courseUnits.reduce((acc, u) => acc + (u.chapters?.length || 0), 0)} Chapters • {courseUnits.length} Units • Verified Syllabus
-        </Text>
+      {/* Course Hero & Nano Metrics Ribbon */}
+      <View style={styles.heroSection}>
+        <Text style={styles.heroCourseTitle}>{courseTitle}</Text>
+        
+        {/* Nano Mode Metrics Bar */}
+        <View style={styles.metricsRibbon}>
+          <View style={styles.metricItem}>
+            <Text style={styles.metricNumber}>{fullSyllabus.totalSubjects || fullSyllabus.subjects.length}</Text>
+            <Text style={styles.metricLabel}>Subjects</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
+            <Text style={styles.metricNumber}>{fullSyllabus.totalChapters || 12}</Text>
+            <Text style={styles.metricLabel}>Chapters</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
+            <Text style={[styles.metricNumber, { color: '#10b981' }]}>{totalMicroCount}</Text>
+            <Text style={styles.metricLabel}>Nano Topics</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
+            <Text style={[styles.metricNumber, { color: '#38bdf8' }]}>{fullSyllabus.totalDays || 200}</Text>
+            <Text style={styles.metricLabel}>Days Plan</Text>
+          </View>
+        </View>
 
-        {/* Quick AI Action Pills */}
-        <View style={styles.aiActionBar}>
-          <TouchableOpacity
-            style={styles.aiActionPill}
-            onPress={() => handleAskAi('explain_tamil', courseTitle)}
-          >
-            <Sparkles size={13} color="#10b981" style={{ marginRight: 5 }} />
-            <Text style={styles.aiActionText}>தமிழில் விளக்கம்</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.aiActionPill}
-            onPress={() => handleAskAi('practice_mcqs', courseTitle)}
-          >
-            <FileCheck2 size={13} color="#38bdf8" style={{ marginRight: 5 }} />
-            <Text style={styles.aiActionText}>5 Practice MCQs</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.aiActionPill}
-            onPress={() => handleAskAi('summary_notes', courseTitle)}
-          >
-            <BookOpen size={13} color="#f59e0b" style={{ marginRight: 5 }} />
-            <Text style={styles.aiActionText}>Summary Notes</Text>
-          </TouchableOpacity>
+        {/* Progress Tracker Bar */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressTextRow}>
+            <Text style={styles.progressStatusText}>
+              Syllabus Completion: {completedCount} / {totalMicroCount} Nano Topics
+            </Text>
+            <Text style={styles.progressPercentText}>
+              {totalMicroCount > 0 ? Math.round((completedCount / totalMicroCount) * 100) : 0}%
+            </Text>
+          </View>
+          <View style={styles.progressBarTrack}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${totalMicroCount > 0 ? (completedCount / totalMicroCount) * 100 : 0}%` },
+              ]}
+            />
+          </View>
         </View>
       </View>
 
-      {/* Sub Tabs Navigation */}
-      <View style={styles.subTabBar}>
-        <TouchableOpacity
-          style={[styles.subTabBtn, activeCourseTab === 'curriculum' && styles.subTabBtnActive]}
-          onPress={() => setActiveCourseTab('curriculum')}
-        >
-          <BookOpen size={13} color={activeCourseTab === 'curriculum' ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
-          <Text style={[styles.subTabText, activeCourseTab === 'curriculum' && styles.subTabTextActive]}>Curriculum</Text>
-        </TouchableOpacity>
+      {/* Subject Filter Pills Bar */}
+      <View style={styles.subjectFilterBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+          <TouchableOpacity
+            style={[styles.subjectPill, selectedSubjectId === 'all' && styles.subjectPillActive]}
+            onPress={() => setSelectedSubjectId('all')}
+          >
+            <Text style={[styles.subjectPillText, selectedSubjectId === 'all' && styles.subjectPillTextActive]}>
+              All Subjects ({totalMicroCount})
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.subTabBtn, activeCourseTab === 'notes' && styles.subTabBtnActive]}
-          onPress={() => setActiveCourseTab('notes')}
-        >
-          <FileText size={13} color={activeCourseTab === 'notes' ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
-          <Text style={[styles.subTabText, activeCourseTab === 'notes' && styles.subTabTextActive]}>Notes & PDF</Text>
-        </TouchableOpacity>
+          {(fullSyllabus.subjects || []).map(subj => {
+            const isActive = selectedSubjectId === subj.subjectId;
+            const microCount = (subj.chapters || []).reduce((acc, c) => acc + (c.microTopics?.length || 0), 0);
+            return (
+              <TouchableOpacity
+                key={subj.subjectId}
+                style={[styles.subjectPill, isActive && styles.subjectPillActive]}
+                onPress={() => setSelectedSubjectId(subj.subjectId)}
+              >
+                <Text style={styles.subjectPillIcon}>{subj.icon || '📚'}</Text>
+                <Text style={[styles.subjectPillText, isActive && styles.subjectPillTextActive]}>
+                  {subj.subjectName.split('(')[0].trim()} ({microCount})
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-        <TouchableOpacity
-          style={[styles.subTabBtn, activeCourseTab === 'mindmap' && styles.subTabBtnActive]}
-          onPress={() => setActiveCourseTab('mindmap')}
-        >
-          <Network size={13} color={activeCourseTab === 'mindmap' ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
-          <Text style={[styles.subTabText, activeCourseTab === 'mindmap' && styles.subTabTextActive]}>Mind Map</Text>
-        </TouchableOpacity>
+      {/* Search & Collapse Control Row */}
+      <View style={styles.searchAndActionRow}>
+        <View style={styles.searchBox}>
+          <Search size={15} color="#64748b" style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search topics, axioms, formulas..."
+            placeholderTextColor="#64748b"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={15} color="#94a3b8" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
-        <TouchableOpacity
-          style={[styles.subTabBtn, activeCourseTab === 'forum' && styles.subTabBtnActive]}
-          onPress={() => setActiveCourseTab('forum')}
-        >
-          <MessageSquare size={13} color={activeCourseTab === 'forum' ? '#0a0f1e' : '#94a3b8'} style={{ marginRight: 4 }} />
-          <Text style={[styles.subTabText, activeCourseTab === 'forum' && styles.subTabTextActive]}>Q&A Forum</Text>
+        <TouchableOpacity style={styles.expandAllBtn} onPress={toggleExpandAll}>
+          <Text style={styles.expandAllBtnText}>
+            {Object.values(expandedChapters).every(Boolean) ? 'Collapse' : 'Expand All'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Active Tab Body */}
-      {activeCourseTab === 'curriculum' && renderCurriculum()}
-      {activeCourseTab === 'notes' && renderNotesAndPDFs()}
-      {activeCourseTab === 'mindmap' && renderMindMaps()}
-      {activeCourseTab === 'forum' && renderForum()}
+      {/* Dedicated Pure Nano-Mode Syllabus List */}
+      <FlatList
+        data={filteredSubjects}
+        keyExtractor={(item) => item.subjectId}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: Math.max(insets.bottom, 24) + 60 }}
+        renderItem={({ item: subj, index: sIdx }) => {
+          return (
+            <View style={styles.subjectCard}>
+              {/* Subject Title Banner */}
+              <View style={styles.subjectHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <Text style={styles.subjectMainIcon}>{subj.icon || '📚'}</Text>
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.subjectTitleText}>{subj.subjectName}</Text>
+                    <Text style={styles.subjectSubText}>
+                      {subj.chapters.length} Chapters • {subj.chapters.reduce((a, c) => a + (c.microTopics?.length || 0), 0)} Nano Topics
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Chapters & Nano-Topics Feed */}
+              {subj.chapters.map((chap, cIdx) => {
+                const chapKey = `${sIdx}-${cIdx}`;
+                const isExpanded = expandedChapters[chapKey] !== false;
+                const completedInChap = (chap.microTopics || []).filter(m => completedTopics[m.id]).length;
+                const totalInChap = chap.microTopics?.length || 0;
+
+                return (
+                  <View key={chap.id || cIdx} style={styles.chapterCard}>
+                    {/* Chapter Accordion Header */}
+                    <TouchableOpacity
+                      style={styles.chapterHeader}
+                      onPress={() => toggleChapterExpanded(chapKey)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1, marginRight: 8 }}>
+                        <View style={styles.chapterNumberRow}>
+                          <View style={styles.chapterNumberBadge}>
+                            <Text style={styles.chapterNumberText}>
+                              CHAPTER {chap.chapterNumber || cIdx + 1}
+                            </Text>
+                          </View>
+                          <Text style={styles.chapterProgressPill}>
+                            {completedInChap}/{totalInChap} Done
+                          </Text>
+                        </View>
+                        <Text style={styles.chapterTitle}>{chap.chapterTitle}</Text>
+                        {chap.description ? (
+                          <Text style={styles.chapterDesc} numberOfLines={2}>
+                            {chap.description}
+                          </Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.chevronBox}>
+                        {isExpanded ? (
+                          <ChevronUp color="#10b981" size={20} />
+                        ) : (
+                          <ChevronDown color="#94a3b8" size={20} />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+
+                    {/* Nano Topics List */}
+                    {isExpanded && (
+                      <View style={styles.nanoTopicsContainer}>
+                        {(chap.microTopics || []).map((micro: SyllabusMicroTopic, mIdx: number) => {
+                          const isDone = !!completedTopics[micro.id];
+                          const mTitle = micro.topicTitle || micro.title || `Nano Topic ${mIdx + 1}`;
+                          const axiom = micro.keyFormulaOrLaw || micro.keyAxiom;
+                          const points = micro.keyPoints || [];
+                          const importance = micro.importance || 'High-Yield';
+
+                          return (
+                            <View
+                              key={micro.id || mIdx}
+                              style={[
+                                styles.nanoTopicCard,
+                                isDone && styles.nanoTopicCardDone
+                              ]}
+                            >
+                              {/* Nano Topic Header Badge */}
+                              <View style={styles.nanoTopicHeaderRow}>
+                                <View style={styles.nanoDayBadge}>
+                                  <Text style={styles.nanoDayText}>
+                                    NANO TOPIC {mIdx + 1} • DAY {micro.dayNumber || cIdx + 1} • PERIOD {micro.periodNumber || 1}
+                                  </Text>
+                                </View>
+                                <View
+                                  style={[
+                                    styles.importancePill,
+                                    importance === 'High-Yield'
+                                      ? styles.importanceHighYield
+                                      : importance === 'Core Standard'
+                                      ? styles.importanceCore
+                                      : styles.importanceFoundational
+                                  ]}
+                                >
+                                  <Text
+                                    style={[
+                                      styles.importanceText,
+                                      importance === 'High-Yield'
+                                        ? styles.importanceTextHighYield
+                                        : importance === 'Core Standard'
+                                        ? styles.importanceTextCore
+                                        : styles.importanceTextFoundational
+                                    ]}
+                                  >
+                                    {importance === 'High-Yield' ? '⚡ High-Yield' : importance}
+                                  </Text>
+                                </View>
+                              </View>
+
+                              {/* Topic Title */}
+                              <Text style={[styles.nanoTitle, isDone && styles.nanoTitleDone]}>
+                                {mTitle}
+                              </Text>
+
+                              {micro.subtopic ? (
+                                <Text style={styles.nanoSubtopic}>
+                                  📌 {micro.subtopic}
+                                </Text>
+                              ) : null}
+
+                              {/* 💡 Governing Axiom / Formula / Law Box */}
+                              {axiom ? (
+                                <View style={styles.axiomContainer}>
+                                  <View style={styles.axiomHeaderRow}>
+                                    <Sparkles size={12} color="#06b6d4" />
+                                    <Text style={styles.axiomHeaderText}>CORE AXIOM / FORMULA</Text>
+                                  </View>
+                                  <Text style={styles.axiomFormulaText}>{axiom}</Text>
+                                </View>
+                              ) : null}
+
+                              {/* 📌 Key Micro-Concepts List */}
+                              {points.length > 0 && (
+                                <View style={styles.keyPointsContainer}>
+                                  {points.map((pt, pIdx) => (
+                                    <View key={pIdx} style={styles.pointRow}>
+                                      <Text style={styles.pointBullet}>•</Text>
+                                      <Text style={styles.pointText}>{pt}</Text>
+                                    </View>
+                                  ))}
+                                </View>
+                              )}
+
+                              {/* Interactive Actions Row */}
+                              <View style={styles.nanoActionsRow}>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.markDoneBtn,
+                                    isDone && styles.markDoneBtnActive
+                                  ]}
+                                  onPress={() => toggleTopicCompleted(micro.id)}
+                                >
+                                  {isDone ? (
+                                    <CheckCircle2 size={16} color="#10b981" />
+                                  ) : (
+                                    <Circle size={16} color="#64748b" />
+                                  )}
+                                  <Text style={[styles.markDoneText, isDone && styles.markDoneTextActive]}>
+                                    {isDone ? 'Completed' : 'Mark Done'}
+                                  </Text>
+                                </TouchableOpacity>
+
+                                <View style={styles.actionButtonsRight}>
+                                  {/* 10-Q CBT Quiz Trigger */}
+                                  <TouchableOpacity
+                                    style={styles.cbtQuizBtn}
+                                    onPress={() => {
+                                      navigation.navigate('TestOExamScreen', {
+                                        examConfig: {
+                                          id: `cbt_${micro.id || mIdx}`,
+                                          title: `${mTitle} (10-Q CBT)`,
+                                          subject: subj.subjectName,
+                                          totalQuestions: 10,
+                                          durationMinutes: 15,
+                                          totalMarks: 40,
+                                          passPercentage: 40,
+                                          topicFilter: mTitle,
+                                          isOfficialMock: false
+                                        }
+                                      });
+                                    }}
+                                  >
+                                    <Text style={styles.cbtQuizBtnText}>📝 10-Q CBT</Text>
+                                  </TouchableOpacity>
+
+                                  {/* Course Player Trigger */}
+                                  <TouchableOpacity
+                                    style={styles.studyPlayerBtn}
+                                    onPress={() => openCoursePlayer(mTitle, 'theory', micro.dayNumber || cIdx + 1)}
+                                  >
+                                    <BookOpen size={13} color="#022c22" style={{ marginRight: 4 }} />
+                                    <Text style={styles.studyPlayerBtnText}>Study Player</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No matching syllabus topics found.</Text>
+          </View>
+        }
+      />
 
       {/* 📱 Interactive Course Player Modal */}
       <Modal
@@ -1207,9 +780,6 @@ export default function TeachOCourseScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                 <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#10b981', textTransform: 'uppercase' }}>📱 COURSE PLAYER</Text>
                 <Text style={{ fontSize: 10, color: '#94a3b8' }}>• {playerBook?.readingTime || '6 min read'}</Text>
-                <Text style={{ fontSize: 10, color: playerSource === 'cache' ? '#38bdf8' : '#a855f7', fontWeight: 'bold' }}>
-                  • {playerSource === 'cache' ? '⚡ Cached' : '🤖 AI Generated'}
-                </Text>
               </View>
               <Text style={{ fontSize: 15, fontWeight: 'bold', color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#0f172a' : '#ffffff' }} numberOfLines={1}>
                 {playerBook?.topicTitle}
@@ -1217,7 +787,6 @@ export default function TeachOCourseScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {/* Theme Toggle */}
               <TouchableOpacity
                 onPress={() => setPlayerTheme(prev => prev === 'dark' ? 'sepia' : prev === 'sepia' ? 'light' : 'dark')}
                 style={{ padding: 6, borderRadius: 6, backgroundColor: playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b' }}
@@ -1227,7 +796,6 @@ export default function TeachOCourseScreen() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Export PDF */}
               <TouchableOpacity
                 onPress={() => exportCoursePlayerPDF(playerBook)}
                 style={{ padding: 6, borderRadius: 6, backgroundColor: '#10b981' }}
@@ -1235,7 +803,6 @@ export default function TeachOCourseScreen() {
                 <Download size={15} color="#022c22" />
               </TouchableOpacity>
 
-              {/* Close */}
               <TouchableOpacity onPress={() => setPlayerBook(null)} style={{ padding: 6 }}>
                 <X size={22} color={playerTheme === 'light' || playerTheme === 'sepia' ? '#475569' : '#ffffff'} />
               </TouchableOpacity>
@@ -1289,7 +856,6 @@ export default function TeachOCourseScreen() {
             contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 80 }}
             showsVerticalScrollIndicator={true}
           >
-            {/* 1. Theory & Core Concepts */}
             {playerTab === 'theory' && playerBook && (
               <View>
                 <View style={{ backgroundColor: playerTheme === 'sepia' ? '#f4eedb' : playerTheme === 'light' ? '#f8fafc' : '#111827', padding: 14, borderRadius: 10, marginBottom: 14, borderWidth: 1, borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b' }}>
@@ -1316,47 +882,16 @@ export default function TeachOCourseScreen() {
                     <Text style={{ fontSize: 13, color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1', lineHeight: 20, marginBottom: 8 }}>
                       {concept.content}
                     </Text>
-                    {concept.example ? (
-                      <View style={{ backgroundColor: playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#ecfdf5' : '#064e3b30', padding: 10, borderRadius: 8 }}>
-                        <Text style={{ fontSize: 11, color: playerTheme === 'sepia' ? '#92400e' : playerTheme === 'light' ? '#065f46' : '#34d399', fontWeight: 'bold' }}>
-                          💡 Real-World Example:
-                        </Text>
-                        <Text style={{ fontSize: 12, color: playerTheme === 'sepia' ? '#78350f' : playerTheme === 'light' ? '#047857' : '#a7f3d0', marginTop: 2 }}>
-                          {concept.example}
-                        </Text>
-                      </View>
-                    ) : null}
                   </View>
                 ))}
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: '#064e3b',
-                    padding: 12,
-                    borderRadius: 10,
-                    marginTop: 8,
-                    borderWidth: 1,
-                    borderColor: '#10b981'
-                  }}
-                  onPress={() => handleAskAi('explain_tamil', playerBook.topicTitle)}
-                >
-                  <Sparkles size={16} color="#34d399" style={{ marginRight: 8 }} />
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
-                    ⚡ AI Tutor: Deepen Conceptual Explanation
-                  </Text>
-                </TouchableOpacity>
               </View>
             )}
 
-            {/* 2. Tamil Explanation */}
             {playerTab === 'tamil' && playerBook && (
               <View>
                 <View style={{ backgroundColor: playerTheme === 'sepia' ? '#fef9c3' : playerTheme === 'light' ? '#fefce8' : '#42200630', padding: 14, borderRadius: 10, marginBottom: 14, borderWidth: 1, borderColor: '#facc15' }}>
                   <Text style={{ fontSize: 15, fontWeight: 'bold', color: playerTheme === 'sepia' ? '#854d0e' : playerTheme === 'light' ? '#a16207' : '#fbbf24', marginBottom: 6 }}>
-                    {playerBook.tamilExplanation?.simpleTitle}
+                    {playerBook.tamilExplanation?.simpleTitle || 'பாடத்தின் அடிப்படைக் கருத்து'}
                   </Text>
                   <Text style={{ fontSize: 13, color: playerTheme === 'sepia' ? '#713f12' : playerTheme === 'light' ? '#854d0e' : '#fde68a', lineHeight: 21 }}>
                     {playerBook.tamilExplanation?.colloquialIntro}
@@ -1380,439 +915,48 @@ export default function TeachOCourseScreen() {
                     </Text>
                   </View>
                 ) : null}
-
-                <View style={{
-                  padding: 14,
-                  borderRadius: 10,
-                  borderWidth: 1,
-                  borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b',
-                  backgroundColor: playerTheme === 'sepia' ? '#f4eedb' : playerTheme === 'light' ? '#f8fafc' : '#0f172a'
-                }}>
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#38bdf8', marginBottom: 8 }}>
-                    📌 தேர்வுக்கான முக்கிய குறிப்புகள் (Exam Points)
-                  </Text>
-                  {playerBook.tamilExplanation?.keyPointsTamil?.map((pt: string, i: number) => (
-                    <Text key={i} style={{ fontSize: 12, color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1', lineHeight: 19, marginBottom: 4 }}>
-                      • {pt}
-                    </Text>
-                  ))}
-                </View>
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: playerAiLoading === 'tamil' ? '#475569' : '#854d0e',
-                    padding: 12,
-                    borderRadius: 10,
-                    marginTop: 12,
-                    borderWidth: 1,
-                    borderColor: '#f59e0b'
-                  }}
-                  onPress={handleGenerateMoreTamil}
-                  disabled={playerAiLoading === 'tamil'}
-                >
-                  {playerAiLoading === 'tamil' ? (
-                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
-                  ) : (
-                    <Sparkles size={16} color="#fde68a" style={{ marginRight: 8 }} />
-                  )}
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
-                    {playerAiLoading === 'tamil' ? 'Generating Tamil Analogies...' : '⚡ AI Helper: Generate Relatable Everyday Tamil Analogies'}
-                  </Text>
-                </TouchableOpacity>
               </View>
             )}
 
-            {/* 3. VSAQ Flashcards */}
-            {playerTab === 'vsaq' && playerBook && (
-              <View>
-                <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>
-                  💡 Tap any card to reveal the exact 1-mark exam answer.
-                </Text>
-                {playerBook.vsaqs?.map((v: any, i: number) => {
-                  const isRevealed = !!revealedVsaq[i];
-                  return (
-                    <TouchableOpacity
-                      key={i}
-                      style={{
-                        marginBottom: 10,
-                        padding: 14,
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b',
-                        backgroundColor: playerTheme === 'sepia' ? '#f4eedb' : playerTheme === 'light' ? '#f8fafc' : '#0f172a'
-                      }}
-                      onPress={() => setRevealedVsaq(prev => ({ ...prev, [i]: !prev[i] }))}
-                    >
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <Text style={{ fontSize: 13, fontWeight: 'bold', color: playerTheme === 'sepia' ? '#78350f' : playerTheme === 'light' ? '#0f172a' : '#ffffff', flex: 1 }}>
-                          Q{i+1}: {v.question}
-                        </Text>
-                        <Text style={{ fontSize: 10, color: '#10b981', fontWeight: 'bold', marginLeft: 8 }}>1 Mark</Text>
-                      </View>
-
-                      {isRevealed ? (
-                        <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b' }}>
-                          <Text style={{ fontSize: 12, color: '#10b981', fontWeight: 'bold', marginBottom: 2 }}>Answer:</Text>
-                          <Text style={{ fontSize: 12, color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1', lineHeight: 18 }}>
-                            {v.answer}
-                          </Text>
-                        </View>
-                      ) : (
-                        <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>
-                          👉 Tap to reveal answer
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: playerAiLoading === 'vsaq' ? '#475569' : '#0369a1',
-                    padding: 12,
-                    borderRadius: 10,
-                    marginTop: 12,
-                    borderWidth: 1,
-                    borderColor: '#38bdf8'
-                  }}
-                  onPress={handleGenerateMoreVsaqs}
-                  disabled={playerAiLoading === 'vsaq'}
-                >
-                  {playerAiLoading === 'vsaq' ? (
-                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
-                  ) : (
-                    <Zap size={16} color="#7dd3fc" style={{ marginRight: 8 }} />
-                  )}
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
-                    {playerAiLoading === 'vsaq' ? 'Generating VSAQs...' : '⚡ AI Helper: Generate 5 More 1-Mark Flashcards'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* 4. Step-by-Step Solutions */}
-            {playerTab === 'solutions' && playerBook && (
-              <View>
-                {playerBook.shortAnswers?.map((sa: any, i: number) => (
-                  <View
-                    key={i}
-                    style={{
-                      marginBottom: 14,
-                      padding: 14,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b',
-                      backgroundColor: playerTheme === 'sepia' ? '#f4eedb' : playerTheme === 'light' ? '#f8fafc' : '#0f172a'
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <Text style={{ fontSize: 13, fontWeight: 'bold', color: playerTheme === 'sepia' ? '#78350f' : playerTheme === 'light' ? '#0f172a' : '#38bdf8', flex: 1 }}>
-                        {sa.question}
-                      </Text>
-                      <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#10b981', backgroundColor: '#10b98120', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, height: 20 }}>
-                        {sa.marks}
-                      </Text>
-                    </View>
-
-                    {sa.solutionSteps?.map((step: string, sIdx: number) => (
-                      <View key={sIdx} style={{ flexDirection: 'row', marginBottom: 4 }}>
-                        <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#10b981', marginRight: 6 }}>Step {sIdx+1}:</Text>
-                        <Text style={{ fontSize: 12, color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1', flex: 1, lineHeight: 18 }}>
-                          {step}
-                        </Text>
-                      </View>
-                    ))}
-
-                    {sa.keyTips ? (
-                      <View style={{ marginTop: 8, backgroundColor: playerTheme === 'sepia' ? '#fef3c7' : playerTheme === 'light' ? '#fffbeb' : '#78350f20', padding: 8, borderRadius: 6 }}>
-                        <Text style={{ fontSize: 11, color: '#f59e0b', fontWeight: 'bold' }}>💡 Examiner Scoring Tip:</Text>
-                        <Text style={{ fontSize: 11, color: playerTheme === 'sepia' ? '#92400e' : playerTheme === 'light' ? '#b45309' : '#fde68a', marginTop: 2 }}>
-                          {sa.keyTips}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ))}
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: playerAiLoading === 'solutions' ? '#475569' : '#047857',
-                    padding: 12,
-                    borderRadius: 10,
-                    marginTop: 12,
-                    borderWidth: 1,
-                    borderColor: '#10b981'
-                  }}
-                  onPress={handleGenerateMoreSolutions}
-                  disabled={playerAiLoading === 'solutions'}
-                >
-                  {playerAiLoading === 'solutions' ? (
-                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
-                  ) : (
-                    <FileText size={16} color="#6ee7b7" style={{ marginRight: 8 }} />
-                  )}
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
-                    {playerAiLoading === 'solutions' ? 'Generating Worked Solutions...' : '⚡ AI Helper: Generate 2-Mark & 5-Mark Problem Sets'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* 5. Interactive TestO CBT MCQs */}
             {playerTab === 'mcq' && playerBook && (
               <View>
-                {/* Score & Progress Tracker */}
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  backgroundColor: playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#f1f5f9' : '#0f172a',
-                  padding: 12,
-                  borderRadius: 10,
-                  marginBottom: 14,
-                  borderWidth: 1,
-                  borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b'
-                }}>
-                  <View>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#10b981' }}>
-                      TestO CBT Practice Engine
+                {(playerBook.mcqs || []).map((m: any, idx: number) => (
+                  <View key={idx} style={{ marginBottom: 16, backgroundColor: '#0f172a', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#1e293b' }}>
+                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff', marginBottom: 10 }}>
+                      Q{idx + 1}. {m.question}
                     </Text>
-                    <Text style={{ fontSize: 11, color: '#94a3b8' }}>
-                      Answered: {Object.keys(userMcqAnswers).length} / {playerBook.mcqs?.length || 10}
-                    </Text>
-                  </View>
-                  <View style={{
-                    backgroundColor: '#10b98120',
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 6,
-                    borderWidth: 1,
-                    borderColor: '#10b981'
-                  }}>
-                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#10b981' }}>
-                      Score: {playerBook.mcqs?.reduce((acc: number, m: any, idx: number) => userMcqAnswers[idx] === m.correct ? acc + 1 : acc, 0) || 0} / {playerBook.mcqs?.length || 10}
-                    </Text>
-                  </View>
-                </View>
-
-                {playerBook.mcqs?.map((mcq: any, qIdx: number) => {
-                  const selected = userMcqAnswers[qIdx];
-                  const isAnswered = selected !== undefined;
-                  const isCorrect = selected === mcq.correct;
-
-                  return (
-                    <View
-                      key={qIdx}
-                      style={{
-                        marginBottom: 16,
-                        padding: 14,
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b',
-                        backgroundColor: playerTheme === 'sepia' ? '#f4eedb' : playerTheme === 'light' ? '#f8fafc' : '#0f172a'
-                      }}
-                    >
-                      <Text style={{ fontSize: 13, fontWeight: 'bold', color: playerTheme === 'sepia' ? '#78350f' : playerTheme === 'light' ? '#0f172a' : '#ffffff', marginBottom: 10 }}>
-                        Q{qIdx+1}: {mcq.question}
-                      </Text>
-
-                      {mcq.options?.map((opt: string, optIdx: number) => {
-                        let bg = playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#f1f5f9' : '#1e293b';
-                        let textCol = playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1';
-                        let borderCol = 'transparent';
-
-                        if (isAnswered) {
-                          if (optIdx === mcq.correct) {
-                            bg = '#065f46';
-                            textCol = '#ffffff';
-                            borderCol = '#10b981';
-                          } else if (selected === optIdx) {
-                            bg = '#991b1b';
-                            textCol = '#ffffff';
-                            borderCol = '#ef4444';
-                          }
-                        }
-
-                        return (
-                          <TouchableOpacity
-                            key={optIdx}
-                            style={{
-                              backgroundColor: bg,
-                              borderColor: borderCol,
-                              borderWidth: 1,
-                              padding: 10,
-                              borderRadius: 8,
-                              marginBottom: 6,
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              justifyContent: 'space-between'
-                            }}
-                            onPress={() => setUserMcqAnswers(prev => ({ ...prev, [qIdx]: optIdx }))}
-                            disabled={isAnswered}
-                          >
-                            <Text style={{ fontSize: 12, color: textCol, flex: 1 }}>{opt}</Text>
-                            {isAnswered && optIdx === mcq.correct ? (
-                              <Check size={14} color="#10b981" />
-                            ) : null}
-                          </TouchableOpacity>
-                        );
-                      })}
-
-                      {isAnswered ? (
-                        <View style={{ marginTop: 8, padding: 8, borderRadius: 6, backgroundColor: isCorrect ? '#064e3b20' : '#7f1d1d20' }}>
-                          <Text style={{ fontSize: 11, fontWeight: 'bold', color: isCorrect ? '#10b981' : '#ef4444' }}>
-                            {isCorrect ? '✅ Correct Answer!' : '❌ Incorrect'}
-                          </Text>
-                          <Text style={{ fontSize: 11, color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1', marginTop: 2 }}>
-                            {mcq.explanation}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  );
-                })}
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: playerAiLoading === 'mcq' ? '#475569' : '#6d28d9',
-                    padding: 12,
-                    borderRadius: 10,
-                    marginTop: 12,
-                    borderWidth: 1,
-                    borderColor: '#a855f7'
-                  }}
-                  onPress={handleRefreshCbtMcqs}
-                  disabled={playerAiLoading === 'mcq'}
-                >
-                  {playerAiLoading === 'mcq' ? (
-                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
-                  ) : (
-                    <FileCheck2 size={16} color="#c084fc" style={{ marginRight: 8 }} />
-                  )}
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
-                    {playerAiLoading === 'mcq' ? 'Refreshing TestO CBT MCQs...' : '⚡ AI Helper: Refresh 10 TestO CBT Practice Questions'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* 6. Formulas & Mnemonics */}
-            {playerTab === 'formulas' && playerBook && (
-              <View>
-                {playerBook.formulasAndMnemonics?.map((f: any, i: number) => (
-                  <View
-                    key={i}
-                    style={{
-                      marginBottom: 10,
-                      padding: 14,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: playerTheme === 'sepia' ? '#e7dfc6' : playerTheme === 'light' ? '#e2e8f0' : '#1e293b',
-                      backgroundColor: playerTheme === 'sepia' ? '#f4eedb' : playerTheme === 'light' ? '#f8fafc' : '#0f172a'
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#10b981', fontFamily: 'monospace', marginBottom: 4 }}>
-                      {f.formula}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: playerTheme === 'sepia' ? '#451a03' : playerTheme === 'light' ? '#334155' : '#cbd5e1', marginBottom: 6 }}>
-                      {f.meaning}
-                    </Text>
-                    {f.mnemonic ? (
-                      <View style={{ backgroundColor: playerTheme === 'sepia' ? '#ede5cf' : playerTheme === 'light' ? '#fef3c7' : '#78350f20', padding: 8, borderRadius: 6 }}>
-                        <Text style={{ fontSize: 11, color: '#f59e0b', fontWeight: 'bold' }}>🧠 Memory Trick (Mnemonic):</Text>
-                        <Text style={{ fontSize: 11, color: playerTheme === 'sepia' ? '#92400e' : playerTheme === 'light' ? '#b45309' : '#fde68a', marginTop: 2 }}>
-                          {f.mnemonic}
+                    {(m.options || []).map((opt: string, optIdx: number) => (
+                      <TouchableOpacity
+                        key={optIdx}
+                        style={{
+                          backgroundColor: userMcqAnswers[idx] === optIdx
+                            ? (optIdx === m.correct ? '#065f46' : '#991b1b')
+                            : '#1e293b',
+                          padding: 10,
+                          borderRadius: 8,
+                          marginBottom: 6
+                        }}
+                        onPress={() => setUserMcqAnswers(prev => ({ ...prev, [idx]: optIdx }))}
+                      >
+                        <Text style={{ color: '#ffffff', fontSize: 12 }}>
+                          {String.fromCharCode(65 + optIdx)}. {opt}
                         </Text>
-                      </View>
+                      </TouchableOpacity>
+                    ))}
+                    {userMcqAnswers[idx] !== undefined && m.explanation ? (
+                      <Text style={{ color: '#94a3b8', fontSize: 11, marginTop: 6, fontStyle: 'italic' }}>
+                        💡 Explanation: {m.explanation}
+                      </Text>
                     ) : null}
                   </View>
                 ))}
-
-                <TouchableOpacity
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: playerAiLoading === 'formulas' ? '#475569' : '#b45309',
-                    padding: 12,
-                    borderRadius: 10,
-                    marginTop: 12,
-                    borderWidth: 1,
-                    borderColor: '#f59e0b'
-                  }}
-                  onPress={handleGenerateMoreMnemonics}
-                  disabled={playerAiLoading === 'formulas'}
-                >
-                  {playerAiLoading === 'formulas' ? (
-                    <ActivityIndicator size="small" color="#ffffff" style={{ marginRight: 8 }} />
-                  ) : (
-                    <Lightbulb size={16} color="#fde68a" style={{ marginRight: 8 }} />
-                  )}
-                  <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff' }}>
-                    {playerAiLoading === 'formulas' ? 'Generating Mnemonics...' : '⚡ AI Helper: Generate Advanced Mnemonics & Memory Tricks'}
-                  </Text>
-                </TouchableOpacity>
               </View>
             )}
           </ScrollView>
         </View>
       </Modal>
 
-      {/* AI Tutor Chat Modal */}
-      <Modal
-        visible={aiModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setAiModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 20) + 16 }]}>
-            <View style={styles.modalHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Sparkles color="#10b981" size={18} style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle} numberOfLines={1}>{aiPromptTitle}</Text>
-              </View>
-              <TouchableOpacity onPress={() => setAiModalVisible(false)}>
-                <X color="#94a3b8" size={20} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              {aiLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#10b981" />
-                  <Text style={styles.loadingText}>Generating academic explanation with Gemini AI...</Text>
-                </View>
-              ) : (
-                <Text style={styles.responseText}>{aiResponse}</Text>
-              )}
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setAiModalVisible(false)}
-              >
-                <Text style={styles.closeBtnText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 🛠️ Admin Curriculum & Content Management Modal */}
+      {/* Admin Curriculum Management Modal */}
       <AdminCurriculumEditorModal
         visible={isAdminModalOpen}
         onClose={() => setIsAdminModalOpen(false)}
@@ -1826,334 +970,469 @@ export default function TeachOCourseScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0f1e',
+    backgroundColor: '#070d18',
   },
   navbar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 10,
+    backgroundColor: '#070d18',
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
   },
   backBtn: {
-    marginRight: 12,
-    padding: 4,
+    padding: 6,
+    marginRight: 8,
   },
   navTextContainer: {
     flex: 1,
   },
-  navCategory: {
+  boardBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  boardBadgeText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#10b981',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   navTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#ffffff',
   },
-  courseHeader: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
-    backgroundColor: '#0f172a',
-  },
-  courseTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 4,
-  },
-  courseSubtitle: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginBottom: 12,
-  },
-  aiActionBar: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  aiActionPill: {
+  adminBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  adminBtnText: {
+    color: '#ef4444',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  heroSection: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 10,
+    backgroundColor: '#0b1324',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+  },
+  heroCourseTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  metricsRibbon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0f172a',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+  },
+  metricItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  metricNumber: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#ffffff',
+  },
+  metricLabel: {
+    fontSize: 10,
+    color: '#94a3b8',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  metricDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#334155',
+  },
+  progressContainer: {
+    marginTop: 10,
+  },
+  progressTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  progressStatusText: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  progressPercentText: {
+    fontSize: 11,
+    color: '#10b981',
+    fontWeight: '800',
+  },
+  progressBarTrack: {
+    height: 5,
     backgroundColor: '#1e293b',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#10b981',
+    borderRadius: 4,
+  },
+  subjectFilterBar: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e293b',
+    backgroundColor: '#070d18',
+  },
+  subjectPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#334155',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    gap: 6,
+  },
+  subjectPillActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  subjectPillIcon: {
+    fontSize: 13,
+  },
+  subjectPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#cbd5e1',
+  },
+  subjectPillTextActive: {
+    color: '#022c22',
+  },
+  searchAndActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    height: 38,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 12,
+    paddingVertical: 0,
+  },
+  expandAllBtn: {
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#334155',
   },
-  aiActionText: {
+  expandAllBtnText: {
+    color: '#38bdf8',
     fontSize: 11,
-    fontWeight: 'bold',
-    color: '#e2e8f0',
+    fontWeight: '700',
   },
-  subTabBar: {
-    flexDirection: 'row',
+  subjectCard: {
+    marginBottom: 20,
+  },
+  subjectHeader: {
     backgroundColor: '#0f172a',
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#1e293b',
   },
-  subTabBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+  subjectMainIcon: {
+    fontSize: 22,
   },
-  subTabBtnActive: {
-    borderBottomColor: '#10b981',
+  subjectTitleText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#ffffff',
   },
-  subTabText: {
-    fontSize: 12,
+  subjectSubText: {
+    fontSize: 11,
     color: '#94a3b8',
-    fontWeight: 'bold',
+    marginTop: 2,
   },
-  subTabTextActive: {
-    color: '#10b981',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  moduleCard: {
-    backgroundColor: '#0f172a',
+  chapterCard: {
+    backgroundColor: '#0b1324',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#1e293b',
+    marginBottom: 12,
     overflow: 'hidden',
   },
-  moduleHeader: {
+  chapterHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 14,
-    backgroundColor: '#131d31',
-  },
-  moduleIndex: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#10b981',
-    marginBottom: 2,
-  },
-  moduleTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  videosContainer: {
-    padding: 12,
-    backgroundColor: '#0a0f1e',
-  },
-  lessonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
-  },
-  lessonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  videoTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  lessonTitle: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  lessonTitleDone: {
-    color: '#94a3b8',
-    textDecorationLine: 'line-through',
-  },
-  lessonMeta: {
-    fontSize: 11,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  aiHelpPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  aiHelpText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  tabContentContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  notesCard: {
     backgroundColor: '#0f172a',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    marginBottom: 16,
   },
-  notesCardHeader: {
+  chapterNumberRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
     gap: 8,
+    marginBottom: 4,
   },
-  notesCardTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  notesCardDesc: {
-    fontSize: 12,
-    color: '#94a3b8',
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  notesDownloadBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#10b981',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-  },
-  notesDownloadText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#0a0f1e',
-  },
-  forumInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111827',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginBottom: 16,
+  chapterNumberBadge: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: '#38bdf8',
   },
-  forumInput: {
-    flex: 1,
-    color: '#ffffff',
+  chapterNumberText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#38bdf8',
+    letterSpacing: 0.5,
+  },
+  chapterProgressPill: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  chapterTitle: {
     fontSize: 13,
-    paddingVertical: 8,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
-  forumSendBtn: {
-    backgroundColor: '#10b981',
-    padding: 8,
-    borderRadius: 8,
-    marginLeft: 8,
+  chapterDesc: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 3,
+    lineHeight: 16,
   },
-  forumCard: {
-    backgroundColor: '#0f172a',
+  chevronBox: {
+    padding: 4,
+  },
+  nanoTopicsContainer: {
+    padding: 10,
+    backgroundColor: '#070d18',
+  },
+  nanoTopicCard: {
+    backgroundColor: '#0b1324',
     borderRadius: 10,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#1e293b',
   },
-  forumHeader: {
+  nanoTopicCardDone: {
+    borderColor: '#064e3b',
+    backgroundColor: '#041d1830',
+  },
+  nanoTopicHeaderRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  forumAuthor: {
-    fontSize: 12,
-    fontWeight: 'bold',
+  nanoDayBadge: {
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  nanoDayText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94a3b8',
+  },
+  importancePill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  importanceHighYield: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+  },
+  importanceCore: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+  },
+  importanceFoundational: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: '#10b981',
+  },
+  importanceText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  importanceTextHighYield: {
+    color: '#f59e0b',
+  },
+  importanceTextCore: {
     color: '#38bdf8',
   },
-  forumTime: {
-    fontSize: 10,
-    color: '#64748b',
+  importanceTextFoundational: {
+    color: '#10b981',
   },
-  forumQuestion: {
+  nanoTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  forumAnswerBox: {
-    backgroundColor: '#1e293b',
-    padding: 10,
-    borderRadius: 8,
-  },
-  forumAnswerText: {
-    fontSize: 12,
-    color: '#cbd5e1',
+    color: '#f8fafc',
+    marginBottom: 4,
     lineHeight: 18,
   },
-  modalOverlay: {
+  nanoTitleDone: {
+    color: '#94a3b8',
+    textDecorationLine: 'line-through',
+  },
+  nanoSubtopic: {
+    fontSize: 11,
+    color: '#38bdf8',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  axiomContainer: {
+    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#06b6d4',
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 8,
+  },
+  axiomHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  axiomHeaderText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#06b6d4',
+    letterSpacing: 0.5,
+  },
+  axiomFormulaText: {
+    fontSize: 11,
+    color: '#e0f2fe',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 16,
+  },
+  keyPointsContainer: {
+    marginBottom: 10,
+    paddingLeft: 4,
+  },
+  pointRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 3,
+  },
+  pointBullet: {
+    fontSize: 12,
+    color: '#10b981',
+    marginRight: 6,
+    lineHeight: 16,
+  },
+  pointText: {
+    fontSize: 11,
+    color: '#cbd5e1',
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    justifyContent: 'flex-end',
+    lineHeight: 16,
   },
-  modalContent: {
-    backgroundColor: '#0f172a',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '85%',
-    paddingBottom: 24,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-  },
-  modalHeader: {
+  nanoActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e293b',
+    borderTopWidth: 1,
+    borderTopColor: '#1e293b',
+    paddingTop: 8,
+    marginTop: 4,
   },
-  modalTitle: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    maxWidth: '85%',
-  },
-  modalBody: {
-    padding: 16,
-  },
-  loadingContainer: {
-    padding: 30,
+  markDoneBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 4,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 12,
+  markDoneBtnActive: {},
+  markDoneText: {
+    fontSize: 11,
+    color: '#64748b',
+    fontWeight: '600',
+  },
+  markDoneTextActive: {
+    color: '#10b981',
+  },
+  actionButtonsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cbtQuizBtn: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: '#f59e0b',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  cbtQuizBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#f59e0b',
+  },
+  studyPlayerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10b981',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  studyPlayerBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#022c22',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyText: {
     color: '#94a3b8',
-    textAlign: 'center',
-  },
-  responseText: {
     fontSize: 13,
-    color: '#cbd5e1',
-    lineHeight: 22,
-  },
-  modalFooter: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  closeBtn: {
-    backgroundColor: '#1e293b',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  closeBtnText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#ffffff',
   },
 });

@@ -1975,42 +1975,43 @@ export async function fetchTestOMcqsForTopic(
   const cleanCourse = (courseTitle || '').toLowerCase();
   const mcqs: CoursePlayerMCQ[] = [];
 
-  // 1. Try querying unified_master_data (TestO tests)
+  // 1. First priority: Query kindle_content_cache for pre-generated 50,000+ MCQs
   try {
-    const { data, error } = await aishleeSupabase
-      .from('unified_master_data')
-      .select('title_name, additional_info, metadata')
-      .eq('item_type', 'o_test')
-      .limit(50);
+    const searchToken = cleanTopic
+      .replace(/[^a-zA-Z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 3)[0] || cleanTopic;
 
-    if (!error && data && data.length > 0) {
-      for (const item of data) {
-        let ai = item.additional_info;
-        if (typeof ai === 'string') {
-          try { ai = JSON.parse(ai); } catch (e) {}
+    const { data: cacheData } = await aishleeSupabase
+      .from('kindle_content_cache')
+      .select('topic_title, course_title, kindle_json')
+      .or(`topic_title.ilike.%${searchToken}%,course_title.ilike.%${cleanCourse.substring(0, 15)}%`)
+      .limit(5);
+
+    if (cacheData && cacheData.length > 0) {
+      for (const row of cacheData) {
+        let kj = row.kindle_json;
+        if (typeof kj === 'string') {
+          try { kj = JSON.parse(kj); } catch (e) {}
         }
-        if (ai && Array.isArray(ai.questions)) {
-          for (const q of ai.questions) {
-            const qText = (q.question || q.question_ta || '').toLowerCase();
-            const titleMatch = (item.title_name || '').toLowerCase();
-            if (
-              qText.includes(cleanTopic) ||
-              titleMatch.includes(cleanTopic) ||
-              cleanTopic.split(' ').some(word => word.length > 3 && (qText.includes(word) || titleMatch.includes(word)))
-            ) {
-              const opts = q.options || [];
+        const rawList = kj?.mcqs || kj?.cbt_mcqs || [];
+        if (Array.isArray(rawList)) {
+          for (const q of rawList) {
+            if (q.question && Array.isArray(q.options)) {
               let cIdx = 0;
-              if (typeof q.answer === 'string') {
-                const optIndex = opts.findIndex((o: string) => o.trim().startsWith(q.answer.charAt(0)) || o.trim() === q.answer.trim());
+              if (typeof q.correct === 'number') cIdx = q.correct;
+              else if (typeof q.correctIndex === 'number') cIdx = q.correctIndex;
+              else if (typeof q.answer === 'number') cIdx = q.answer;
+              else if (typeof q.answer === 'string') {
+                const optIndex = q.options.findIndex((o: string) => o.trim().startsWith(q.answer.charAt(0)) || o.trim() === q.answer.trim());
                 if (optIndex >= 0) cIdx = optIndex;
-              } else if (typeof q.correct === 'number') {
-                cIdx = q.correct;
               }
+
               mcqs.push({
-                question: q.question || q.question_ta || `Question on ${topicTitle}`,
-                options: opts.length === 4 ? opts : ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'],
+                question: q.question,
+                options: q.options.length === 4 ? q.options : ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'],
                 correctIndex: cIdx,
-                explanation: q.explanation || 'Verified correct answer per official syllabus.'
+                explanation: q.explanation || `Concept explanation for ${topicTitle}.`
               });
               if (mcqs.length >= targetCount) break;
             }
@@ -2023,7 +2024,57 @@ export async function fetchTestOMcqsForTopic(
     // Non-blocking fallback
   }
 
-  // 2. If fewer than targetCount, generate fresh targeted MCQs via Gemini AI
+  // 2. Second priority: Try querying unified_master_data (TestO tests)
+  if (mcqs.length < targetCount) {
+    try {
+      const { data, error } = await aishleeSupabase
+        .from('unified_master_data')
+        .select('title_name, additional_info, metadata')
+        .eq('item_type', 'o_test')
+        .limit(30);
+
+      if (!error && data && data.length > 0) {
+        for (const item of data) {
+          let ai = item.additional_info;
+          if (typeof ai === 'string') {
+            try { ai = JSON.parse(ai); } catch (e) {}
+          }
+          if (ai && Array.isArray(ai.questions)) {
+            for (const q of ai.questions) {
+              const qText = (q.question || q.question_ta || '').toLowerCase();
+              const titleMatch = (item.title_name || '').toLowerCase();
+              if (
+                qText.includes(cleanTopic) ||
+                titleMatch.includes(cleanTopic) ||
+                cleanTopic.split(' ').some(word => word.length > 3 && (qText.includes(word) || titleMatch.includes(word)))
+              ) {
+                const opts = q.options || [];
+                let cIdx = 0;
+                if (typeof q.answer === 'string') {
+                  const optIndex = opts.findIndex((o: string) => o.trim().startsWith(q.answer.charAt(0)) || o.trim() === q.answer.trim());
+                  if (optIndex >= 0) cIdx = optIndex;
+                } else if (typeof q.correct === 'number') {
+                  cIdx = q.correct;
+                }
+                mcqs.push({
+                  question: q.question || q.question_ta || `Question on ${topicTitle}`,
+                  options: opts.length === 4 ? opts : ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'],
+                  correctIndex: cIdx,
+                  explanation: q.explanation || 'Verified correct answer per official syllabus.'
+                });
+                if (mcqs.length >= targetCount) break;
+              }
+            }
+          }
+          if (mcqs.length >= targetCount) break;
+        }
+      }
+    } catch (e) {
+      // Non-blocking fallback
+    }
+  }
+
+  // 3. If fewer than targetCount, generate fresh targeted MCQs via Gemini AI
   if (mcqs.length < targetCount) {
     const needed = targetCount - mcqs.length;
     const aiGenerated = await generateSectionCbtMcqsAI(topicTitle, courseTitle, needed);
@@ -2370,12 +2421,94 @@ export async function matchStoredContentForTopic(
 
     const primarySearchTerm = cleanTokens.slice(0, 3).join(' ');
 
+    // 1. Primary: Search kindle_content_cache (47,000+ pre-generated topics)
     if (primarySearchTerm) {
+      const { data: cacheData } = await aishleeSupabase
+        .from('kindle_content_cache')
+        .select('*')
+        .or(`topic_title.ilike.%${primarySearchTerm}%,topic_key.ilike.%${cleanTokens[0]}%`)
+        .limit(3);
+
+      if (cacheData && cacheData.length > 0) {
+        for (const item of cacheData) {
+          let kj = item.kindle_json;
+          if (typeof kj === 'string') {
+            try { kj = JSON.parse(kj); } catch (e) {}
+          }
+          if (kj) {
+            result.source = 'database';
+            result.matchedId = item.id;
+
+            // Extract notes
+            if (!result.theoryNotes && (kj.overview || kj.coreConcepts)) {
+              result.hasStoredNotes = true;
+              if (typeof kj.overview === 'string') {
+                result.theoryNotes = kj.overview;
+              } else if (Array.isArray(kj.coreConcepts)) {
+                result.theoryNotes = kj.coreConcepts.map((c: any) => typeof c === 'string' ? c : `${c.heading || ''}: ${c.body || ''}`).join('\n\n');
+              }
+            }
+
+            // Extract Tamil analogy
+            if (!result.tamilAnalogy && kj.tamilExplanation) {
+              result.tamilAnalogy = kj.tamilExplanation;
+            }
+
+            // Extract formulas & mnemonics
+            if (!result.formulasAndMnemonics && Array.isArray(kj.formulasAndMnemonics)) {
+              result.formulasAndMnemonics = kj.formulasAndMnemonics.map((f: any) => ({
+                formula: typeof f === 'string' ? f : (f.formula || f.rule || ''),
+                meaning: typeof f === 'string' ? '' : (f.meaning || f.title || ''),
+                mnemonic: typeof f === 'string' ? undefined : (f.mnemonic || f.tip || undefined)
+              }));
+            }
+
+            // Extract MCQs
+            const rawMcqs = kj.mcqs || kj.cbt_mcqs || [];
+            if (Array.isArray(rawMcqs) && rawMcqs.length > 0 && result.mcqs.length < 10) {
+              result.hasStoredMcqs = true;
+              for (const q of rawMcqs) {
+                if (q.question && Array.isArray(q.options) && result.mcqs.length < 10) {
+                  let cIdx = 0;
+                  if (typeof q.correct === 'number') cIdx = q.correct;
+                  else if (typeof q.correctIndex === 'number') cIdx = q.correctIndex;
+                  else if (typeof q.answer === 'number') cIdx = q.answer;
+                  else if (typeof q.answer === 'string') {
+                    const found = q.options.findIndex((opt: string) => opt.trim().startsWith(q.answer.charAt(0)) || opt.trim() === q.answer.trim());
+                    if (found !== -1) cIdx = found;
+                  }
+                  result.mcqs.push({
+                    question: q.question,
+                    options: q.options.length === 4 ? q.options : ['A) Option 1', 'B) Option 2', 'C) Option 3', 'D) Option 4'],
+                    correctIndex: cIdx,
+                    explanation: q.explanation || `Concept explanation for ${topicTitle}.`
+                  });
+                }
+              }
+            }
+
+            // Extract step solutions
+            if (!result.stepSolutions && (Array.isArray(kj.vsaqs) || Array.isArray(kj.shortAnswers))) {
+              result.hasStoredSolutions = true;
+              const combined = [...(kj.vsaqs || []), ...(kj.shortAnswers || [])];
+              result.stepSolutions = combined.map((s: any) => ({
+                marks: s.marks || 2,
+                question: s.question || s.q || 'Question',
+                solutionSteps: [s.answer || s.a || s.modelAnswer || 'Step-by-step solution.']
+              }));
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Secondary: Search unified_master_data
+    if (!result.hasStoredNotes || !result.hasStoredMcqs) {
       const { data: dbItems, error } = await aishleeSupabase
         .from('unified_master_data')
         .select('*')
         .or(`title_name.ilike.%${primarySearchTerm}%,description.ilike.%${primarySearchTerm}%`)
-        .limit(10);
+        .limit(5);
 
       if (!error && dbItems && dbItems.length > 0) {
         for (const item of dbItems) {

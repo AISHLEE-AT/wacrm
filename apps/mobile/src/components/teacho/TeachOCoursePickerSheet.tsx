@@ -10,61 +10,60 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { X, Search, Check, GraduationCap, School, Award, Sparkles, Target, Briefcase, BookOpen, Layers } from 'lucide-react-native';
-import { CourseOption } from '../../data/coursesCatalog';
+import { X, Search, Check, GraduationCap, School, Award, Sparkles, Target, Briefcase, BookOpen, Layers, ShieldCheck, Building2 } from 'lucide-react-native';
+import { ALL_COURSES, CourseOption, SCHOOL_BOARDS } from '../../data/coursesCatalog';
 
 interface TeachOCoursePickerSheetProps {
   visible: boolean;
-  courses: CourseOption[];
-  selectedCourseId: string;
+  courses?: CourseOption[];
+  selectedCourseId?: string;
+  selectedCourse?: CourseOption;
   onClose: () => void;
-  onSelectCourse: (course: CourseOption) => void;
+  onSelectCourse?: (course: CourseOption) => void;
+  onSelect?: (course: CourseOption) => void;
 }
 
 export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = ({
   visible,
-  courses,
+  courses = ALL_COURSES,
   selectedCourseId,
+  selectedCourse,
   onClose,
   onSelectCourse,
+  onSelect,
 }) => {
+  const safeCourses = courses || ALL_COURSES;
+  const activeCourseId = selectedCourseId || selectedCourse?.id;
   const [search, setSearch] = useState('');
   const [selectedTab, setSelectedTab] = useState<
     | 'all'
-    | 'tnsb_en'
-    | 'tnsb_ta'
-    | 'cbse'
-    | 'matric'
-    | 'tnpsc'
-    | 'upsc'
+    | 'school'
+    | 'degree'
     | 'entrance'
-    | 'college'
+    | 'tn_govt'
+    | 'banking_ssc'
+    | 'upsc_defense'
     | 'skills'
-    | 'kids'
   >('all');
 
   const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: courses.length };
-    courses.forEach((c) => {
-      if (c.category === 'school_tnsb_en') counts['tnsb_en'] = (counts['tnsb_en'] || 0) + 1;
-      if (c.category === 'school_tnsb_ta') counts['tnsb_ta'] = (counts['tnsb_ta'] || 0) + 1;
-      if (c.category === 'school_cbse') counts['cbse'] = (counts['cbse'] || 0) + 1;
-      if (c.category === 'school_matric') counts['matric'] = (counts['matric'] || 0) + 1;
-      if (c.category === 'tnpsc') counts['tnpsc'] = (counts['tnpsc'] || 0) + 1;
-      if (c.category === 'upsc_central') counts['upsc'] = (counts['upsc'] || 0) + 1;
+    const counts: Record<string, number> = { all: safeCourses.length };
+    safeCourses.forEach((c) => {
+      if (c.category === 'school_k12' || c.category.startsWith('school_')) counts['school'] = (counts['school'] || 0) + 1;
+      if (c.category === 'college_degree' || c.gradeLevel === 'college') counts['degree'] = (counts['degree'] || 0) + 1;
       if (c.category === 'entrance') counts['entrance'] = (counts['entrance'] || 0) + 1;
-      if (c.category === 'college_degree' || c.gradeLevel === 'college') counts['college'] = (counts['college'] || 0) + 1;
-      if (c.category === 'skills' || c.gradeLevel === 'skill') counts['skills'] = (counts['skills'] || 0) + 1;
-      if (c.category === 'kids_skills') counts['kids'] = (counts['kids'] || 0) + 1;
+      if (c.category === 'tnpsc') counts['tn_govt'] = (counts['tn_govt'] || 0) + 1;
+      if (c.category === 'banking_finance' || c.category === 'ssc_railway') counts['banking_ssc'] = (counts['banking_ssc'] || 0) + 1;
+      if (c.category === 'upsc_central') counts['upsc_defense'] = (counts['upsc_defense'] || 0) + 1;
+      if (c.category === 'skills' || c.gradeLevel === 'skill' || c.category === 'kids_skills') counts['skills'] = (counts['skills'] || 0) + 1;
     });
     return counts;
-  }, [courses]);
+  }, [safeCourses]);
 
   const filteredCourses = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return courses.filter((c) => {
-      // 1. Search Query Filter (deep multi-field search across all courses)
-      let matchSearch = true;
+    return safeCourses.filter((c) => {
+      // 1. Search Query Filter
       if (q) {
         const titleMatch = c.title.toLowerCase().includes(q);
         const shortMatch = c.short.toLowerCase().includes(q);
@@ -73,47 +72,37 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
         const boardMatch = (c.board || '').toLowerCase().includes(q);
         const medMatch = (c.medium || '').toLowerCase().includes(q);
         const subjMatch = (c.subjects || []).some((s) => s.name.toLowerCase().includes(q));
-        const idMatch = c.id.toLowerCase().includes(q.replace(/\s+/g, '-'));
+        const idMatch = c.id.toLowerCase().includes(q.replace(/\\s+/g, '-'));
 
-        matchSearch = titleMatch || shortMatch || subMatch || badgeMatch || boardMatch || medMatch || subjMatch || idMatch;
-        return matchSearch;
+        return titleMatch || shortMatch || subMatch || badgeMatch || boardMatch || medMatch || subjMatch || idMatch;
       }
 
-      // 2. Category Tab Filter (applied when no global search is active)
-      if (selectedTab === 'tnsb_en') {
-        return c.category === 'school_tnsb_en';
+      // 2. Category Tab Filter
+      if (selectedTab === 'school') {
+        return c.category === 'school_k12' || c.category.startsWith('school_');
       }
-      if (selectedTab === 'tnsb_ta') {
-        return c.category === 'school_tnsb_ta';
-      }
-      if (selectedTab === 'cbse') {
-        return c.category === 'school_cbse';
-      }
-      if (selectedTab === 'matric') {
-        return c.category === 'school_matric';
-      }
-      if (selectedTab === 'tnpsc') {
-        return c.category === 'tnpsc';
-      }
-      if (selectedTab === 'upsc') {
-        return c.category === 'upsc_central';
+      if (selectedTab === 'degree') {
+        return c.category === 'college_degree' || c.gradeLevel === 'college';
       }
       if (selectedTab === 'entrance') {
         return c.category === 'entrance';
       }
-      if (selectedTab === 'college') {
-        return c.category === 'college_degree' || c.gradeLevel === 'college';
+      if (selectedTab === 'tn_govt') {
+        return c.category === 'tnpsc';
+      }
+      if (selectedTab === 'banking_ssc') {
+        return c.category === 'banking_finance' || c.category === 'ssc_railway';
+      }
+      if (selectedTab === 'upsc_defense') {
+        return c.category === 'upsc_central';
       }
       if (selectedTab === 'skills') {
-        return c.category === 'skills' || c.gradeLevel === 'skill';
-      }
-      if (selectedTab === 'kids') {
-        return c.category === 'kids_skills';
+        return c.category === 'skills' || c.gradeLevel === 'skill' || c.category === 'kids_skills';
       }
 
       return true;
     });
-  }, [courses, search, selectedTab]);
+  }, [safeCourses, search, selectedTab]);
 
   if (!visible) return null;
 
@@ -129,9 +118,9 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
           {/* Header */}
           <View style={styles.sheetHeader}>
             <View style={styles.headerLeft}>
-              <Text style={styles.sheetTitle}>Select Tuition Program</Text>
+              <Text style={styles.sheetTitle}>Select Curriculum Program</Text>
               <Text style={styles.sheetSubtitle}>
-                {courses.length} Master Programs (LKG to 12th, Boards, Exams & Degrees)
+                {safeCourses.length} Master Programs (LKG to 12th, Boards, Exams, Degrees & Skills)
               </Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -144,7 +133,7 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
             <Search size={18} color="#64748b" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search 7th, CBSE, Matric, TNPSC, Python..."
+              placeholder="Search 10th, TN Samacheer, NEET, TNPSC, Python..."
               placeholderTextColor="#64748b"
               value={search}
               onChangeText={setSearch}
@@ -162,17 +151,14 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
           <View style={styles.tabsWrapper}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
               {[
-                { key: 'all', label: `All (${tabCounts.all || courses.length})` },
-                { key: 'tnsb_en', label: `🎒 TNSB English (${tabCounts.tnsb_en || 0})` },
-                { key: 'tnsb_ta', label: `🎒 TNSB தமிழ் வழி (${tabCounts.tnsb_ta || 0})` },
-                { key: 'cbse', label: `🎒 CBSE NCERT (${tabCounts.cbse || 0})` },
-                { key: 'matric', label: `🎒 Matriculation (${tabCounts.matric || 0})` },
-                { key: 'tnpsc', label: `🏛️ TNPSC (${tabCounts.tnpsc || 0})` },
-                { key: 'upsc', label: `🏛️ UPSC & Bank (${tabCounts.upsc || 0})` },
-                { key: 'entrance', label: `🩺 NEET & JEE (${tabCounts.entrance || 0})` },
-                { key: 'college', label: `🎓 Degrees (${tabCounts.college || 0})` },
-                { key: 'skills', label: `🚀 Skills & AI (${tabCounts.skills || 0})` },
-                { key: 'kids', label: `🎨 Kids Skills (${tabCounts.kids || 0})` },
+                { key: 'all', label: `All Programs (${tabCounts.all || safeCourses.length})` },
+                { key: 'school', label: `🏫 School LKG-12th (${tabCounts.school || 0})` },
+                { key: 'degree', label: `🎓 Top Degrees (${tabCounts.degree || 0})` },
+                { key: 'entrance', label: `🎯 NEET / JEE (${tabCounts.entrance || 0})` },
+                { key: 'tn_govt', label: `🏛️ TNPSC & Police (${tabCounts.tn_govt || 0})` },
+                { key: 'banking_ssc', label: `🏦 Bank & SSC (${tabCounts.banking_ssc || 0})` },
+                { key: 'upsc_defense', label: `🇮🇳 UPSC & Defense (${tabCounts.upsc_defense || 0})` },
+                { key: 'skills', label: `💡 Career Skills (${tabCounts.skills || 0})` },
               ].map((tab) => (
                 <TouchableOpacity
                   key={tab.key}
@@ -197,6 +183,7 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
             <Text style={styles.resultsCountText}>
               Showing {filteredCourses.length} programs
             </Text>
+            <Text style={styles.bilingualHint}>Bilingual (தமிழ் & English)</Text>
           </View>
 
           {/* Courses List */}
@@ -205,13 +192,27 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
             renderItem={({ item }) => {
-              const isSelected = item.id === selectedCourseId;
+              const isSelected = item.id === activeCourseId;
+              const isSchool = item.category === 'school_k12' || item.category.startsWith('school_');
+
               return (
                 <TouchableOpacity
                   style={[styles.courseCard, isSelected && styles.courseCardSelected]}
                   onPress={() => {
-                    onSelectCourse(item);
-                    onClose();
+                    try {
+                      if (typeof onSelectCourse === 'function') {
+                        onSelectCourse(item);
+                      }
+                      if (typeof onSelect === 'function') {
+                        onSelect(item);
+                      }
+                    } catch (err) {
+                      console.warn('Error selecting course:', err);
+                    } finally {
+                      if (typeof onClose === 'function') {
+                        onClose();
+                      }
+                    }
                   }}
                   activeOpacity={0.7}
                 >
@@ -222,15 +223,33 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
                           {item.badge || item.short}
                         </Text>
                       </View>
-                      <Text style={styles.mediumPill}>{item.medium}</Text>
+                      <View style={styles.mediumBadge}>
+                        <Text style={styles.mediumPill}>{item.medium}</Text>
+                      </View>
                       <Text style={styles.daysText}>{item.totalDays || 200} Days</Text>
                     </View>
+
                     <Text style={styles.courseTitle} numberOfLines={1}>
                       {item.title}
                     </Text>
                     <Text style={styles.courseSubtitle} numberOfLines={1}>
                       {item.subtitle}
                     </Text>
+
+                    {/* Multi-Board Indicators for School Standards */}
+                    {isSchool && (
+                      <View style={styles.boardsRow}>
+                        <View style={styles.boardChip}>
+                          <Text style={styles.boardChipText}>🏛️ TN Samacheer</Text>
+                        </View>
+                        <View style={styles.boardChip}>
+                          <Text style={styles.boardChipText}>📘 CBSE NCERT</Text>
+                        </View>
+                        <View style={styles.boardChip}>
+                          <Text style={styles.boardChipText}>🌐 ICSE/Intl</Text>
+                        </View>
+                      </View>
+                    )}
                   </View>
 
                   {isSelected ? (
@@ -246,7 +265,7 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyTitle}>No matching programs found</Text>
-                <Text style={styles.emptySub}>Try searching "7th std", "CBSE", "TNPSC", or "Python"</Text>
+                <Text style={styles.emptySub}>Try searching "10th", "TNPSC", "NEET", or "Python"</Text>
               </View>
             }
           />
@@ -283,7 +302,6 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
-    paddingRight: 10,
   },
   sheetTitle: {
     fontSize: 18,
@@ -295,79 +313,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#94a3b8',
     marginTop: 2,
-    fontWeight: '500',
-  },
-  sheetSub: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 2,
-    fontWeight: '500',
   },
   closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    padding: 6,
+    borderRadius: 12,
     backgroundColor: '#1e293b',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
+    backgroundColor: '#131d31',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
     borderRadius: 14,
-    marginHorizontal: 20,
-    marginTop: 14,
-    marginBottom: 10,
-    paddingHorizontal: 14,
-    height: 46,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#1e293b',
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 42,
+    color: '#ffffff',
+    fontSize: 14,
   },
   clearSearchBtn: {
     padding: 4,
   },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
-    marginHorizontal: 20,
-    marginTop: 14,
-    marginBottom: 10,
-    paddingHorizontal: 14,
-    height: 46,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#f8fafc',
-    paddingVertical: 0,
-  },
   tabsWrapper: {
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   tabsRow: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     gap: 8,
   },
   tabPill: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#0F172A',
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#131d31',
     borderWidth: 1,
     borderColor: '#1e293b',
   },
   tabPillActive: {
-    backgroundColor: '#06b6d4',
-    borderColor: '#06b6d4',
+    backgroundColor: '#00D08420',
+    borderColor: '#00D084',
   },
   tabPillText: {
     fontSize: 12,
@@ -375,39 +368,44 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
   },
   tabPillTextActive: {
-    color: '#0B1120',
+    color: '#00D084',
     fontWeight: '700',
   },
   resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingVertical: 6,
   },
   resultsCountText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
     color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontWeight: '600',
+  },
+  bilingualHint: {
+    fontSize: 11,
+    color: '#00D084',
+    fontWeight: '600',
   },
   listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
     gap: 10,
   },
   courseCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
+    justifyContent: 'space-between',
+    backgroundColor: '#0f172a',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: '#1e293b',
   },
   courseCardSelected: {
-    borderColor: '#06b6d4',
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
+    borderColor: '#00D084',
+    backgroundColor: '#00D0840c',
   },
   courseInfo: {
     flex: 1,
@@ -425,63 +423,82 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeTagText: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '700',
   },
-  mediumPill: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#94a3b8',
+  mediumBadge: {
     backgroundColor: '#1e293b',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
+  },
+  mediumPill: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '600',
   },
   daysText: {
     fontSize: 11,
-    fontWeight: '600',
     color: '#64748b',
+    fontWeight: '600',
   },
   courseTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   courseSubtitle: {
     fontSize: 12,
     color: '#94a3b8',
   },
-  selectedCheck: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#06b6d4',
-    alignItems: 'center',
-    justifyContent: 'center',
+  boardsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  boardChip: {
+    backgroundColor: '#1e293b80',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: '#334155',
+  },
+  boardChipText: {
+    fontSize: 10,
+    color: '#94a3b8',
+    fontWeight: '500',
   },
   selectRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#334155',
+  },
+  selectedCheck: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: '#334155',
-  },
-  emptyContainer: {
-    paddingVertical: 40,
+    backgroundColor: '#00D084',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
   },
   emptyTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#f8fafc',
-    marginBottom: 6,
+    color: '#ffffff',
   },
   emptySub: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#64748b',
+    marginTop: 4,
     textAlign: 'center',
   },
 });

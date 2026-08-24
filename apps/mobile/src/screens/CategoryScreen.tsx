@@ -122,30 +122,18 @@ const CATEGORIES: CategoryItem[] = [
     path: '/dealo',
   },
   {
-    id: 'teacho',
-    title: 'TeachO',
-    desc: 'Live Courses & Skill Coaching',
+    id: 'tuto',
+    title: 'TutO',
+    desc: 'Unified LMS: TeachO + TestO All-in-One',
     categoryGroup: 'education',
-    tag: '🎓 Courses',
-    tagColor: '#f59e0b',
+    tag: '🎓 Super LMS',
+    tagColor: '#00D084',
     icon: GraduationCap,
     iconName: 'GraduationCap',
-    color: '#f59e0b',
-    bg: 'rgba(245, 158, 11, 0.15)',
-    path: '/teacho',
-  },
-  {
-    id: 'testo',
-    title: 'TestO',
-    desc: 'TNPSC, Bank & Mock Exams',
-    categoryGroup: 'education',
-    tag: '📝 Prep',
-    tagColor: '#8b5cf6',
-    icon: Award,
-    iconName: 'Award',
-    color: '#8b5cf6',
-    bg: 'rgba(139, 92, 246, 0.15)',
-    path: '/testo',
+    color: '#00D084',
+    bg: 'rgba(0, 208, 132, 0.15)',
+    path: '/tuto',
+    featured: true,
   },
   {
     id: 'touro',
@@ -219,14 +207,12 @@ export default function CategoryScreen() {
       iconName: cat.iconName || 'Map',
     });
 
-    if (cat.path === '/drivo') {
+    if (cat.path === '/tuto') {
+      navigation.navigate('TutOHubScreen');
+    } else if (cat.path === '/drivo') {
       navigation.navigate('DriveOScreen');
     } else if (cat.path === '/rideo') {
       navigation.navigate('RideOScreen');
-    } else if (cat.path === '/teacho') {
-      navigation.navigate('TeachOScreen');
-    } else if (cat.path === '/testo') {
-      navigation.navigate('TestOHubScreen');
     } else if (cat.path === '/agro' || cat.path === '/tvo') {
       navigation.navigate('AgrOScreen');
     } else if (cat.path === '/rento') {

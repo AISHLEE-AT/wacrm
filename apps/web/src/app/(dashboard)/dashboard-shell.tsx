@@ -53,7 +53,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user || !profile || !pathname) return;
 
-    const topLevelModules = ['/crm', '/rideo', '/rento', '/drivo', '/gameo', '/teacho', '/agro', '/dealo', '/touro', '/moneyo', '/toolso', '/testo', '/tvo', '/tasko', '/tradeo'];
+    const topLevelModules = ['/crm', '/rideo', '/rento', '/drivo', '/gameo', '/tuto', '/agro', '/dealo', '/touro', '/moneyo', '/toolso', '/tvo', '/tasko', '/tradeo'];
     
     // Check if the current route belongs to a top-level module
     const currentModule = topLevelModules.find(m => pathname === m || pathname.startsWith(`${m}/`));

@@ -4,6 +4,17 @@
  */
 
 import { resolveMasterSequentialSyllabus } from './masterCurriculumRegistry';
+import { getKindergartenDayPlan, getAllKindergartenDayPlans } from './kindergarten200DaysCurriculum';
+import { getPrimaryDayPlan } from './primary200DaysCurriculum';
+import { getMiddleDayPlan } from './middle200DaysCurriculum';
+import { getSecondaryDayPlan } from './secondary200DaysCurriculum';
+import { getExamDayPlan } from './entranceAndCompetitive200DaysCurriculum';
+
+export { getKindergartenDayPlan, getAllKindergartenDayPlans } from './kindergarten200DaysCurriculum';
+export { getPrimaryDayPlan } from './primary200DaysCurriculum';
+export { getMiddleDayPlan } from './middle200DaysCurriculum';
+export { getSecondaryDayPlan } from './secondary200DaysCurriculum';
+export { getExamDayPlan } from './entranceAndCompetitive200DaysCurriculum';
 
 export function cleanUnicodeString(val: any): string {
   if (typeof val !== 'string') return '';
@@ -84,6 +95,280 @@ export function resolveMasterCurriculumPlan(
 
   const safeDay = Math.max(1, Math.min(day, totalDays));
   const blockNum = Math.ceil(safeDay / 10);
+
+  // 0. KINDERGARTEN (LKG & UKG) 200-DAY 6-TASK MULTI-ACTIVITY ROUTE
+  const lowerTitle = courseTitle.toLowerCase();
+  const lowerId = courseId.toLowerCase();
+
+  // 0. KINDERGARTEN (LKG & UKG) 200-DAY 6-TASK MULTI-ACTIVITY ROUTE
+  if (
+    lowerId.includes('lkg') ||
+    lowerId.includes('ukg') ||
+    lowerTitle.includes('kindergarten') ||
+    lowerTitle.includes('lkg') ||
+    lowerTitle.includes('ukg') ||
+    lowerTitle.includes('மழலையர்') ||
+    category === 'kids_skills' ||
+    category === 'kindergarten'
+  ) {
+    const kgPlan = getKindergartenDayPlan(safeDay);
+    const kgTasks: DailySubjectTask[] = kgPlan.tasks.map((t, idx) => ({
+      id: t.taskId,
+      title: t.title,
+      subtitle: t.description.substring(0, 80),
+      subject: t.category,
+      topic: t.title,
+      subtopic: t.descriptionTa || t.description,
+      rawSubject: t.category,
+      rawTopic: t.title,
+      aiPrompt: `Kindergarten Day ${safeDay} Task #${idx + 1}: ${t.title}. Guidance for parent/teacher: ${t.guidanceForParents}`,
+      keyFormula: t.contentData.strokeOrLetter || t.contentData.yogaPoseName || t.contentData.sightWord || '',
+      learningObjective: t.description,
+      durationMinutes: t.durationMinutes,
+      duration: t.durationLabel,
+      taskType: t.type === 'video_core' || t.type === 'video_evs' ? 'video' : t.type === 'aerobic_dance' ? 'activity' : t.type === 'yoga' ? 'activity' : t.type === 'writing' ? 'practice' : 'reading',
+      type: t.type,
+      icon: t.type === 'video_core' ? '🎥' : t.type === 'video_evs' ? '🌿' : t.type === 'aerobic_dance' ? '💃' : t.type === 'yoga' ? '🧘' : t.type === 'writing' ? '✍️' : '📖',
+      activityPrompt: t.guidanceForParents
+    }));
+
+    return {
+      dayNumber: safeDay,
+      day: safeDay,
+      blockNumber: blockNum,
+      phaseTitle: kgPlan.quarterLabel,
+      themeTitle: kgPlan.theme,
+      totalDurationMins: kgPlan.totalMinutes,
+      totalMinutes: kgPlan.totalMinutes,
+      tasks: kgTasks,
+      dailyRevision: `Recap Day ${safeDay}: ${kgPlan.theme}`,
+      dailyTestSummary: { questionCount: 5, testType: 'hands-on', focusArea: kgPlan.theme }
+    };
+  }
+
+  // 1. HIGHER SECONDARY STAGE (Classes 11 & 12 HSC) 200-DAY BOARD & ENTRANCE MASTERY ROUTE
+  const is12thOr11th = (
+    lowerId.includes('12') ||
+    lowerId.includes('11') ||
+    lowerId.includes('hsc') ||
+    lowerTitle.includes('12th') ||
+    lowerTitle.includes('11th') ||
+    lowerTitle.includes('class 12') ||
+    lowerTitle.includes('class 11') ||
+    lowerTitle.includes('12-ஆம்') ||
+    lowerTitle.includes('11-ஆம்') ||
+    lowerTitle.includes('வகுப்பு 12') ||
+    lowerTitle.includes('வகுப்பு 11')
+  );
+
+  // 2. SECONDARY STAGE (Classes 9 & 10 SSLC) 200-DAY BOARD MASTERY ROUTE
+  const isSecondary = !is12thOr11th && (
+    lowerId.includes('sslc') ||
+    lowerId.includes('10th') ||
+    lowerId.includes('-10') ||
+    lowerId.includes('std-10') ||
+    lowerId.includes('class-10') ||
+    lowerId.includes('-9') ||
+    lowerId.includes('std-9') ||
+    lowerId.includes('class-9') ||
+    lowerTitle.includes('10th') ||
+    lowerTitle.includes('9th') ||
+    lowerTitle.includes('10-ஆம்') ||
+    lowerTitle.includes('9-ஆம்') ||
+    lowerTitle.includes('வகுப்பு 10') ||
+    lowerTitle.includes('வகுப்பு 9')
+  );
+
+  if (isSecondary) {
+    const secPlan = getSecondaryDayPlan(safeDay);
+    const secTasks: DailySubjectTask[] = secPlan.tasks.map((t, idx) => ({
+      id: t.taskId,
+      title: t.title,
+      subtitle: t.titleTa,
+      subject: t.subject,
+      topic: t.title,
+      subtopic: t.keyFormulaOrLaw,
+      rawSubject: t.subject,
+      rawTopic: t.title,
+      aiPrompt: `10th SSLC Day ${safeDay} Task #${idx + 1}: ${t.title}. Core formula: ${t.keyFormulaOrLaw}. Board takeaway: ${t.boardExamTakeaway}`,
+      keyFormula: t.keyFormulaOrLaw,
+      learningObjective: t.keyPoints.join(' • '),
+      durationMinutes: t.durationMinutes,
+      duration: t.durationLabel,
+      taskType: idx === 2 ? 'practice' : idx === 3 ? 'video' : idx === 4 ? 'test' : 'reading',
+      type: idx === 2 ? 'practice' : idx === 3 ? 'video' : idx === 4 ? 'test' : 'reading',
+      icon: idx === 0 ? '📜' : idx === 1 ? '📚' : idx === 2 ? '📐' : idx === 3 ? '🔬' : '🏛️',
+      activityPrompt: t.boardExamTakeaway
+    }));
+
+    return {
+      dayNumber: safeDay,
+      day: safeDay,
+      blockNumber: blockNum,
+      phaseTitle: secPlan.quarterLabel,
+      themeTitle: secPlan.theme,
+      totalDurationMins: secPlan.totalMinutes,
+      totalMinutes: secPlan.totalMinutes,
+      tasks: secTasks,
+      dailyRevision: `Recap Day ${safeDay}: 10th SSLC Board Exam High-Yield Summary`,
+      dailyTestSummary: { questionCount: 10, testType: 'mcq', focusArea: secPlan.theme }
+    };
+  }
+
+  // 3. MIDDLE STAGE (Classes 6 to 8) 200-DAY 5-TASK ROUTE
+  const isMiddle = !is12thOr11th && !isSecondary && (
+    lowerId.includes('class-6') || lowerId.includes('class-7') || lowerId.includes('class-8') ||
+    lowerId.includes('std-6') || lowerId.includes('std-7') || lowerId.includes('std-8') ||
+    lowerId.includes('-6-') || lowerId.includes('-7-') || lowerId.includes('-8-') ||
+    lowerId.endsWith('-6') || lowerId.endsWith('-7') || lowerId.endsWith('-8') ||
+    lowerTitle.includes('6th') || lowerTitle.includes('7th') || lowerTitle.includes('8th') ||
+    lowerTitle.includes('6-ஆம்') || lowerTitle.includes('7-ஆம்') || lowerTitle.includes('8-ஆம்') ||
+    lowerTitle.includes('வகுப்பு 6') || lowerTitle.includes('வகுப்பு 7') || lowerTitle.includes('வகுப்பு 8') ||
+    lowerTitle.includes('middle')
+  );
+
+  if (isMiddle) {
+    const midPlan = getMiddleDayPlan(safeDay);
+    const midTasks: DailySubjectTask[] = midPlan.tasks.map((t, idx) => ({
+      id: t.taskId,
+      title: t.title,
+      subtitle: t.titleTa,
+      subject: t.subject,
+      topic: t.title,
+      subtopic: t.keyAxiomOrLaw,
+      rawSubject: t.subject,
+      rawTopic: t.title,
+      aiPrompt: `Middle School Day ${safeDay} Task #${idx + 1}: ${t.title}. Axiom/Law: ${t.keyAxiomOrLaw}`,
+      keyFormula: t.keyAxiomOrLaw,
+      learningObjective: t.keyPoints.join(' • '),
+      durationMinutes: t.durationMinutes,
+      duration: t.durationLabel,
+      taskType: idx === 2 ? 'practice' : idx === 3 ? 'video' : idx === 4 ? 'test' : 'reading',
+      type: idx === 2 ? 'practice' : idx === 3 ? 'video' : idx === 4 ? 'test' : 'reading',
+      icon: idx === 0 ? '📜' : idx === 1 ? '📚' : idx === 2 ? '📐' : idx === 3 ? '🔬' : '🏛️',
+      activityPrompt: `Solve textbook exercises for ${t.title}`
+    }));
+
+    return {
+      dayNumber: safeDay,
+      day: safeDay,
+      blockNumber: blockNum,
+      phaseTitle: midPlan.quarterLabel,
+      themeTitle: midPlan.theme,
+      totalDurationMins: midPlan.totalMinutes,
+      totalMinutes: midPlan.totalMinutes,
+      tasks: midTasks,
+      dailyRevision: `Recap Day ${safeDay}: Complete Middle School 5-Subject Summary`,
+      dailyTestSummary: { questionCount: 5, testType: 'mcq', focusArea: midPlan.theme }
+    };
+  }
+
+  // 4. PRIMARY STAGE (Classes 1 to 5) 200-DAY 5-TASK ROUTE
+  const isPrimary = !is12thOr11th && !isSecondary && !isMiddle && (
+    lowerId.includes('primary') ||
+    lowerId.includes('class-1') || lowerId.includes('class-2') || lowerId.includes('class-3') || lowerId.includes('class-4') || lowerId.includes('class-5') ||
+    lowerId.includes('std-1') || lowerId.includes('std-2') || lowerId.includes('std-3') || lowerId.includes('std-4') || lowerId.includes('std-5') ||
+    lowerId.includes('grade-1') || lowerId.includes('grade-2') || lowerId.includes('grade-3') || lowerId.includes('grade-4') || lowerId.includes('grade-5') ||
+    lowerId.endsWith('-1') || lowerId.endsWith('-2') || lowerId.endsWith('-3') || lowerId.endsWith('-4') || lowerId.endsWith('-5') ||
+    lowerTitle.includes('1st') || lowerTitle.includes('2nd') || lowerTitle.includes('3rd') || lowerTitle.includes('4th') || lowerTitle.includes('5th') ||
+    lowerTitle.includes('1-ஆம்') || lowerTitle.includes('2-ஆம்') || lowerTitle.includes('3-ஆம்') || lowerTitle.includes('4-ஆம்') || lowerTitle.includes('5-ஆம்') ||
+    lowerTitle.includes('வகுப்பு 1') || lowerTitle.includes('வகுப்பு 2') || lowerTitle.includes('வகுப்பு 3') || lowerTitle.includes('வகுப்பு 4') || lowerTitle.includes('வகுப்பு 5')
+  );
+
+  if (isPrimary) {
+    const priPlan = getPrimaryDayPlan(safeDay);
+    const priTasks: DailySubjectTask[] = priPlan.tasks.map((t, idx) => ({
+      id: t.taskId,
+      title: t.title,
+      subtitle: t.titleTa,
+      subject: t.subject,
+      topic: t.title,
+      subtopic: t.keyAxiomOrRule,
+      rawSubject: t.subject,
+      rawTopic: t.title,
+      aiPrompt: `Primary Day ${safeDay} Subject: ${t.subject} - Topic: ${t.title}. Rule: ${t.keyAxiomOrRule}`,
+      keyFormula: t.keyAxiomOrRule,
+      learningObjective: t.keyPoints.join(' • '),
+      durationMinutes: t.durationMinutes,
+      duration: t.durationLabel,
+      taskType: idx === 2 ? 'practice' : idx === 3 ? 'video' : 'reading',
+      type: idx === 2 ? 'practice' : idx === 3 ? 'video' : 'reading',
+      icon: idx === 0 ? '📖' : idx === 1 ? '🔤' : idx === 2 ? '🔢' : idx === 3 ? '🌿' : '🌍',
+      activityPrompt: t.homeworkExercise
+    }));
+
+    return {
+      dayNumber: safeDay,
+      day: safeDay,
+      blockNumber: blockNum,
+      phaseTitle: priPlan.quarterLabel,
+      themeTitle: priPlan.theme,
+      totalDurationMins: priPlan.totalMinutes,
+      totalMinutes: priPlan.totalMinutes,
+      tasks: priTasks,
+      dailyRevision: `Recap Day ${safeDay}: Review all 5 primary subject exercises.`,
+      dailyTestSummary: { questionCount: 5, testType: 'mcq', focusArea: priPlan.theme }
+    };
+  }
+
+  // 5. ENTRANCE & COMPETITIVE EXAMS (TNPSC / NEET / JEE / UPSC / Police) 200-DAY ROUTE
+  if (
+    lowerId.includes('tnpsc') ||
+    lowerId.includes('neet') ||
+    lowerId.includes('jee') ||
+    lowerId.includes('upsc') ||
+    lowerId.includes('police') ||
+    lowerId.includes('bank') ||
+    lowerId.includes('ssc') ||
+    lowerTitle.includes('tnpsc') ||
+    lowerTitle.includes('neet') ||
+    lowerTitle.includes('jee') ||
+    lowerTitle.includes('upsc') ||
+    lowerTitle.includes('police')
+  ) {
+    const examCat = (lowerId.includes('neet') || lowerTitle.includes('neet'))
+      ? 'NEET'
+      : (lowerId.includes('jee') || lowerTitle.includes('jee'))
+      ? 'JEE'
+      : (lowerId.includes('upsc') || lowerTitle.includes('upsc'))
+      ? 'UPSC'
+      : 'TNPSC';
+
+    const examPlan = getExamDayPlan(examCat, safeDay);
+    const examTasks: DailySubjectTask[] = examPlan.tasks.map((t, idx) => ({
+      id: t.taskId,
+      title: t.title,
+      subtitle: t.subject,
+      subject: t.subject,
+      topic: t.title,
+      subtopic: t.keyAxiomOrFormula,
+      rawSubject: t.subject,
+      rawTopic: t.title,
+      aiPrompt: `${examCat} Day ${safeDay} Task #${idx + 1}: ${t.title}. Formula: ${t.keyAxiomOrFormula}. Shortcut: ${t.shortcutEliminationTrick}`,
+      keyFormula: t.keyAxiomOrFormula,
+      learningObjective: `${t.pyqAnalysis} • ${t.shortcutEliminationTrick}`,
+      durationMinutes: t.durationMinutes,
+      duration: t.durationLabel,
+      taskType: idx === 3 ? 'practice' : idx === 4 ? 'test' : 'reading',
+      type: idx === 3 ? 'practice' : idx === 4 ? 'test' : 'reading',
+      icon: idx === 0 ? '🧬' : idx === 1 ? '⚡' : idx === 2 ? '🧪' : idx === 3 ? '📐' : '⏱️',
+      activityPrompt: t.shortcutEliminationTrick
+    }));
+
+    return {
+      dayNumber: safeDay,
+      day: safeDay,
+      blockNumber: blockNum,
+      phaseTitle: examPlan.quarterLabel,
+      themeTitle: examPlan.theme,
+      totalDurationMins: examPlan.totalMinutes,
+      totalMinutes: examPlan.totalMinutes,
+      tasks: examTasks,
+      dailyRevision: `Recap Day ${safeDay}: ${examCat} 45-Second Shortcut & PYQ Drill`,
+      dailyTestSummary: { questionCount: 10, testType: 'mcq', focusArea: examPlan.theme }
+    };
+  }
+
   const isTamilMedium = (courseTitle || '').includes('தமிழ்') || (courseId || '').includes('-ta-') || (courseId || '').includes('10-ta');
 
   // Build 4 to 5 authentic subject period tasks from master sequential curriculum

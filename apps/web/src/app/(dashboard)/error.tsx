@@ -20,9 +20,9 @@ export default function DashboardError({
   const handleClearCacheAndReset = () => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('teacho_active_course_id');
-        localStorage.removeItem('teacho_course_day');
-        localStorage.removeItem('teacho_course_xp');
+        localStorage.removeItem('tuto_active_course_id');
+        localStorage.removeItem('tuto_course_day');
+        localStorage.removeItem('tuto_course_xp');
         sessionStorage.clear();
       }
     } catch (e) {}

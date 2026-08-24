@@ -1,5 +1,5 @@
 /**
- * TeachO Master Course Syllabus Registry
+ * TutO Master Course Syllabus Registry
  * Complete Authentic Real-World Micro-Granular Curricula for all 86 Courses:
  * - Foundational Stage: LKG, UKG, Class 1, Class 2 (Ages 3–8)
  * - Preparatory Stage: Class 3, Class 4, Class 5 (Ages 8–11)
@@ -2937,9 +2937,9 @@ export function getMiddleClass6to8Syllabus(
     {
       subjectId: 'mid_social',
       subjectName: isTa
-        ? 'சமூ க அறிவியல் (History, Geography, Civics & Economics)'
+        ? 'சமூக அறிவியல் (History, Geography, Civics & Economics)'
         : 'Social Science (History, Geography, Civics & Economics)',
-      icon: 'ðடஏ›ï¸ஏ',
+      icon: '🌍',
       color: '#f59e0b',
       totalChapters: 3,
       totalMicroTopics: 14,
@@ -2947,19 +2947,19 @@ export function getMiddleClass6to8Syllabus(
         {
           chapterNumber: 1,
           chapterTitle: isTa
-            ? 'வரலாறு ( சிந்து சமவ ஆளி, பல்லவர், சோழர் & மு கலாயர்)'
+            ? 'வரலாறு: சிந்துவெளி நாகரிகம், சோழர் & முகலாயர் வரலாறு'
             : 'History: Indus Valley, Pallavas, Cholas & Mughals',
           description: isTa
-            ? 'ஹரப்பா மொ க ஞ் சதாரோ, மாமல்லபுரம் பல்லவர், த ஞ் ச ஈ பெரிய கோவில் சோழர், மு கலாயர் ஆ ட் சி'
+            ? 'ஹரப்பா மொகஞ்சதாரோ, மாமல்லபுரம் பல்லவர், தஞ்சைப் பெரிய கோவில் சோழர் மற்றும் முகலாயர் ஆட்சி'
             : 'Harappa, Mohenjo-Daro, Pallava cave temples, Raja Raja Chola Brihadisvara, Mughals',
           subtopics: [
             {
               id: 'mid_soc_sub1',
-              title: 'இந்திய மற்றும் தமிழ்நா டு வரலாறு',
+              title: 'இந்திய மற்றும் தமிழ்நாடு வரலாறு',
               microTopics: [
                 {
                   id: 'mid_soc_1',
-                  title: 'சிந்து சமவ ஆளி நா கரி கம் & சோழர் வரலாற்றுப் ப ஆரும ஈ',
+                  title: 'சிந்துவெளி நாகரிகம் & சோழர் வரலாற்றுப் பெருமை',
                   keyAxiom: 'Raja Raja Chola built Brihadisvara Temple Thanjavur (1010 AD)'
                 }
               ]
@@ -2969,10 +2969,10 @@ export function getMiddleClass6to8Syllabus(
             {
               id: 'mid_soc_1',
               topicTitle: isTa
-                ? 'சிந்து சமவ ஆளி, சோழர் & மு கலாயப் ப இரர சு வரலாறு'
+                ? 'சிந்துவெளி நாகரிகம், சோழர் & முகலாயப் பேரரசு வரலாறு'
                 : 'Indus Valley, Chola Empire & Mughal Administration',
               subtopic: isTa
-                ? 'ஹரப்பா ந கரம ஈப்பு & த ஞ் ச ஈ பெரிய கோவில்'
+                ? 'ஹரப்பா நகரமைப்பு & தஞ்சைப் பெரிய கோவில்'
                 : 'Grid town planning, Great Bath, Raja Raja Chola naval expeditions, Akbar administration',
               dayNumber: 15,
               periodNumber: 4,
@@ -8075,25 +8075,28 @@ export function getKidsSkillsCompleteSyllabus(
 
 export function resolveCompleteCourseSyllabus(
   courseId: string,
-  courseTitle: string
+  courseTitle: string,
+  category?: string
 ): CourseFullSyllabus {
-  const c = (courseId || '').toLowerCase();
-  const title = courseTitle || 'Standard Curriculum';
-  const isTa = title.includes('தமிழ்') || c.includes('-ta-');
+  const c = (courseId || '').toLowerCase().trim();
+  const title = (courseTitle || '').toLowerCase().trim();
+  const cat = (category || '').toLowerCase().trim();
+  const isTa = title.includes('தமிழ்') || c.includes('-ta-') || c.includes('_ta_') || cat.includes('_ta');
+
   // 1. UPSC Mains Optionals Track (Top 10 Subjects)
-  if (c.includes('exam-upsc-opt-') || c.includes('-opt-')) {
-    return getUpscOptionalSubjectSyllabus(courseId, title);
+  if (c.includes('exam-upsc-opt-') || c.includes('-opt-') || cat.includes('upsc_opt')) {
+    return getUpscOptionalSubjectSyllabus(courseId, courseTitle);
   }
   // 2. JEE Main & JEE Advanced Entrance Track
-  if (c.includes('jee')) {
-    return getJeeMainAdvancedCompleteSyllabus(courseId, title);
+  if (c.includes('jee') || title.includes('jee') || cat.includes('jee')) {
+    return getJeeMainAdvancedCompleteSyllabus(courseId, courseTitle);
   }
   // 3. UPSC Civil Services (IAS / IPS / IFS / IRS) Central Track
-  if (c.includes('upsc') || c.includes('ias') || c.includes('central-services')) {
-    return getUpscCivilServicesCompleteSyllabus(courseId, title);
+  if (c.includes('upsc') || c.includes('ias') || c.includes('central-services') || title.includes('upsc') || cat.includes('upsc')) {
+    return getUpscCivilServicesCompleteSyllabus(courseId, courseTitle);
   }
   // 4. NEET UG Entrance
-  if (c.includes('neet')) {
+  if (c.includes('neet') || title.includes('neet') || cat.includes('neet')) {
     return getNeetUgCompleteSyllabus();
   }
   // 5. TNUSRB Tamil Nadu Police (SI & Constable) Track
@@ -8102,11 +8105,255 @@ export function resolveCompleteCourseSyllabus(
     c.includes('tnusrb') ||
     c.includes('si-') ||
     c.includes('constable') ||
-    c.includes('sub-inspector')
+    c.includes('sub-inspector') ||
+    title.includes('police') ||
+    title.includes('tnusrb') ||
+    cat.includes('police')
   ) {
-    return getTamilNaduPoliceCompleteSyllabus(courseId, title);
+    return getTamilNaduPoliceCompleteSyllabus(courseId, courseTitle);
   }
-  // 6. TNPSC Exams Track (All Groups 1, 2, 4, VAO, DEO)
+
+  // 6. SCHOOL K-12 STAGES (PRIORITIZED FOR 100% ACCURACY)
+  // 6a. Kindergarten (LKG & UKG)
+  if (c.includes('lkg') || c.includes('ukg') || c.includes('kindergarten') || title.includes('lkg') || title.includes('ukg') || title.includes('kindergarten') || cat.includes('kindergarten')) {
+    return {
+      courseId: courseId || 'kindergarten-master',
+      courseTitle: courseTitle || 'Kindergarten (LKG & UKG) Foundation',
+      category: 'kindergarten',
+      board: 'TNSB / CBSE / Matric',
+      medium: isTa ? 'Tamil' : 'English',
+      totalDays: 200,
+      totalSubjects: 4,
+      totalChapters: 8,
+      totalMicroTopics: 24,
+      subjects: [
+        {
+          subjectId: 'kg_tamil',
+          subjectName: isTa ? 'தமிழ் மழலையர் பாடல் & உயிர் எழுத்துக்கள்' : 'Tamil Rhymes & Vowels (Uyir Ezhuthukkal)',
+          icon: '🔤',
+          color: '#ec4899',
+          totalChapters: 2,
+          totalMicroTopics: 6,
+          chapters: [
+            {
+              chapterNumber: 1,
+              chapterTitle: 'உயிர் எழுத்துக்கள் 12 & மழலையர் பாலர் பாடல்கள்',
+              description: 'அ முதல் ஔ வரை உள்ள 12 உயிர் எழுத்துக்கள் மற்றும் நிலா நிலா ஓடி வா பாடல்கள்',
+              subtopics: [
+                {
+                  id: 'kg_t_sub1',
+                  title: 'உயிர் எழுத்துகள் & படங்கள்',
+                  microTopics: [
+                    { id: 'kg_t_1', title: 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள் (அம்மா, ஆடு, இலை, ஈட்டி)', keyAxiom: 'உயிர் எழுத்துக்கள் மொத்தம் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ' },
+                    { id: 'kg_t_2', title: 'நிலா நிலா ஓடி வா & கைவீசம்மா கைவீசு மழலையர் பாடல்கள்', keyAxiom: 'மழலையர் பாலர் பாடல்கள் மற்றும் எளிய உச்சரிப்புப் பயிற்சி' }
+                  ]
+                }
+              ],
+              microTopics: [
+                { id: 'kg_t_1', topicTitle: 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள் (அம்மா, ஆடு, இலை, ஈட்டி)', subtopic: 'படங்கள் பார்த்து எழுத்துக்களை அடையாளம் காணுதல்', dayNumber: 1, periodNumber: 1, keyFormulaOrLaw: 'உயிர் எழுத்துக்கள் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ | ஆய்த எழுத்து: ஃ', keyPoints: ['அ - அணில், அம்மா', 'ஆ - ஆடு, ஆலமரம்', 'இ - இலை, இட்லி', 'ஈ - ஈட்டி, ஈ'], type: 'concept', importance: 'Foundational' },
+                { id: 'kg_t_2', topicTitle: 'நிலா நிலா ஓடி வா மழலையர் பாடல்', subtopic: 'ராகத்தோடு பாடி அபிநயம் செய்தல்', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'பாடல்: நிலா நிலா ஓடி வா, நில்லாமல் ஓடி வா', keyPoints: ['ஒலி நயத்தோடு பாடுதல்', 'எளிய உடல் அசைவுகள்'], type: 'concept', importance: 'Foundational' }
+              ]
+            }
+          ]
+        },
+        {
+          subjectId: 'kg_english',
+          subjectName: 'English Phonics & Alphabets (A to Z)',
+          icon: '🔤',
+          color: '#3b82f6',
+          totalChapters: 2,
+          totalMicroTopics: 6,
+          chapters: [
+            {
+              chapterNumber: 1,
+              chapterTitle: 'Phonics Sounds: Letters A to Z & Classic Nursery Rhymes',
+              description: 'Letter sounds, picture matching, and CVC 3-letter word blending',
+              subtopics: [
+                { id: 'kg_e_sub1', title: 'Phonics A to Z', microTopics: [{ id: 'kg_e_1', title: 'Letters A to Z Phonics & Nursery Rhymes', keyAxiom: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z' }] }
+              ],
+              microTopics: [
+                { id: 'kg_e_1', topicTitle: 'Letters A to Z Phonics & Nursery Rhymes', subtopic: 'Apple, Ball, Cat, Dog, Elephant phonics sounds and Twinkle Twinkle rhyme', dayNumber: 1, periodNumber: 2, keyFormulaOrLaw: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z', keyPoints: ['Letter tracing inside lines', 'Object recognition'], type: 'concept', importance: 'Foundational' }
+              ]
+            }
+          ]
+        },
+        {
+          subjectId: 'kg_maths',
+          subjectName: 'Fun Maths & Numbers (1 to 20)',
+          icon: '🔢',
+          color: '#06b6d4',
+          totalChapters: 2,
+          totalMicroTopics: 6,
+          chapters: [
+            {
+              chapterNumber: 1,
+              chapterTitle: 'Counting Numbers 1 to 20 & 2D Shapes',
+              description: 'Count with fun objects, Circle, Square, Triangle, Big vs Small',
+              subtopics: [
+                { id: 'kg_m_sub1', title: 'Numbers 1 to 20', microTopics: [{ id: 'kg_m_1', title: 'Numbers 1 to 20: Counting, Shapes & Comparison', keyAxiom: 'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)' }] }
+              ],
+              microTopics: [
+                { id: 'kg_m_1', topicTitle: 'Numbers 1 to 20: Counting, Shapes & Comparison', subtopic: '1 Sun, 2 Shoes, 3 Stars, Circle, Square, Big elephant vs small mouse', dayNumber: 1, periodNumber: 3, keyFormulaOrLaw: 'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)', keyPoints: ['Finger counting and pattern recognition', 'Big vs Small visual comparison'], type: 'concept', importance: 'Foundational' }
+              ]
+            }
+          ]
+        },
+        {
+          subjectId: 'kg_evs',
+          subjectName: 'EVS, Nature, Animals & Good Habits',
+          icon: '🌿',
+          color: '#10b981',
+          totalChapters: 2,
+          totalMicroTopics: 6,
+          chapters: [
+            {
+              chapterNumber: 1,
+              chapterTitle: 'My 5 Senses, Friendly Animals & Magic Manners',
+              description: '5 senses (Eyes, Ears, Nose, Tongue, Skin), Domestic animals, Please/Thank You',
+              subtopics: [
+                { id: 'kg_evs_sub1', title: '5 Senses & Animals', microTopics: [{ id: 'kg_evs_1', title: '5 Senses, Healthy Habits & Gentle Animal Friends', keyAxiom: '5 Senses: Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin)' }] }
+              ],
+              microTopics: [
+                { id: 'kg_evs_1', topicTitle: '5 Senses, Healthy Habits & Gentle Animal Friends', subtopic: 'Eyes to see, Ears to hear, Nose to smell, Tongue to taste, Skin to touch', dayNumber: 1, periodNumber: 4, keyFormulaOrLaw: '5 Senses: Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin)', keyPoints: ['Brush teeth twice a day', 'Wash hands before eating meals'], type: 'concept', importance: 'Foundational' }
+              ]
+            }
+          ]
+        },
+        {
+          subjectId: 'kg_dance',
+          subjectName: 'Kids Aerobic Dance & Rhythm Movement',
+          icon: '💃',
+          color: '#f59e0b',
+          totalChapters: 2,
+          totalMicroTopics: 6,
+          chapters: [
+            {
+              chapterNumber: 1,
+              chapterTitle: 'Action Rhyme Aerobics & Gross Motor Rhythm',
+              description: 'Baby Shark, Freeze Dance, Head Shoulders Knees & Toes, Jump & Clap',
+              subtopics: [
+                { id: 'kg_d_sub1', title: 'Rhythm Aerobics', microTopics: [{ id: 'kg_d_1', title: 'Freeze Dance & Step-Jump Gross Motor Warm-Up', keyAxiom: 'Rhythmic coordination improves balance, spatial awareness, and active joy.' }] }
+              ],
+              microTopics: [
+                { id: 'kg_d_1', topicTitle: 'Freeze Dance & Step-Jump Gross Motor Warm-Up', subtopic: 'Listen to the beat, dance freely, freeze when music stops', dayNumber: 1, periodNumber: 5, keyFormulaOrLaw: 'Movement: 1-2-3-4 rhythm step • Jump high • Balance on one foot', keyPoints: ['Develops motor coordination and listening skills', 'Promotes active daily physical fitness'], type: 'activity', importance: 'Core Standard' }
+              ]
+            }
+          ]
+        },
+        {
+          subjectId: 'kg_yoga_writing',
+          subjectName: 'Mindful Kids Yoga, Breathing & Pencil Tracing',
+          icon: '🧘',
+          color: '#8b5cf6',
+          totalChapters: 2,
+          totalMicroTopics: 6,
+          chapters: [
+            {
+              chapterNumber: 1,
+              chapterTitle: 'Animal Yoga Poses & 3-Finger Pencil Grip Tracing',
+              description: 'Butterfly pose, Tree pose, Cat-Cow, Standing/Sleeping lines, Dotted curve tracing',
+              subtopics: [
+                { id: 'kg_y_sub1', title: 'Yoga & Tracing', microTopics: [{ id: 'kg_y_1', title: 'Butterfly Pose, Lion Roar & Pre-Writing Lines Tracing', keyAxiom: 'Gentle yoga builds emotional calmness; tripod grip builds neat handwriting.' }] }
+              ],
+              microTopics: [
+                { id: 'kg_y_1', topicTitle: 'Butterfly Pose, Lion Roar & Pre-Writing Lines Tracing', subtopic: 'Flap knees like butterfly wings, trace straight standing lines from top to bottom', dayNumber: 1, periodNumber: 6, keyFormulaOrLaw: 'Yoga: Butterfly (Bhadrasana) • Tracing: Top-to-Bottom Standing Line |', keyPoints: ['Hold pencil with thumb and index finger (tripod grip)', 'Take 5 slow breaths smiling peacefully'], type: 'activity', importance: 'Foundational' }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+  }
+
+  // 6b. Foundational Stage (Class 1 & Class 2)
+  if (
+    c.includes('tnsb-ta-1') || c.includes('tnsb-ta-2') || c.includes('tnsb-en-1') || c.includes('tnsb-en-2') ||
+    c.includes('cbse-1') || c.includes('cbse-2') || c.includes('matric-1') || c.includes('matric-2') ||
+    c.includes('std-1') || c.includes('std-2') || c.includes('grade-1') || c.includes('grade-2') ||
+    c.includes('class-1') || c.includes('class-2') || c.includes('class_1') || c.includes('class_2') ||
+    c === 'tnsb-1' || c === 'tnsb-2' ||
+    title.includes('1-ஆம் வகுப்பு') || title.includes('2-ஆம் வகுப்பு') || title.includes('1 ஆம் வகுப்பு') || title.includes('2 ஆம் வகுப்பு') ||
+    title.includes('1st standard') || title.includes('2nd standard') || title.includes('class 1') || title.includes('class 2')
+  ) {
+    return getFoundationalClass1to2Syllabus(courseId, courseTitle);
+  }
+
+  // 6c. Preparatory Stage (Class 3, Class 4, Class 5)
+  if (
+    c.includes('tnsb-ta-3') || c.includes('tnsb-ta-4') || c.includes('tnsb-ta-5') ||
+    c.includes('tnsb-en-3') || c.includes('tnsb-en-4') || c.includes('tnsb-en-5') ||
+    c.includes('cbse-3') || c.includes('cbse-4') || c.includes('cbse-5') ||
+    c.includes('matric-3') || c.includes('matric-4') || c.includes('matric-5') ||
+    c.includes('std-3') || c.includes('std-4') || c.includes('std-5') ||
+    c.includes('grade-3') || c.includes('grade-4') || c.includes('grade-5') ||
+    c.includes('class-3') || c.includes('class-4') || c.includes('class-5') ||
+    c.includes('class_3') || c.includes('class_4') || c.includes('class_5') ||
+    c === 'tnsb-3' || c === 'tnsb-4' || c === 'tnsb-5' ||
+    title.includes('3-ஆம் வகுப்பு') || title.includes('4-ஆம் வகுப்பு') || title.includes('5-ஆம் வகுப்பு') ||
+    title.includes('3 ஆம் வகுப்பு') || title.includes('4 ஆம் வகுப்பு') || title.includes('5 ஆம் வகுப்பு') ||
+    title.includes('3rd standard') || title.includes('4th standard') || title.includes('5th standard') ||
+    title.includes('class 3') || title.includes('class 4') || title.includes('class 5')
+  ) {
+    return getPreparatoryClass3to5Syllabus(courseId, courseTitle);
+  }
+
+  // 6d. Middle Stage (Class 6, Class 7, Class 8)
+  if (
+    c.includes('tnsb-ta-6') || c.includes('tnsb-ta-7') || c.includes('tnsb-ta-8') ||
+    c.includes('tnsb-en-6') || c.includes('tnsb-en-7') || c.includes('tnsb-en-8') ||
+    c.includes('cbse-6') || c.includes('cbse-7') || c.includes('cbse-8') ||
+    c.includes('matric-6') || c.includes('matric-7') || c.includes('matric-8') ||
+    c.includes('std-6') || c.includes('std-7') || c.includes('std-8') ||
+    c.includes('grade-6') || c.includes('grade-7') || c.includes('grade-8') ||
+    c.includes('class-6') || c.includes('class-7') || c.includes('class-8') ||
+    c.includes('class_6') || c.includes('class_7') || c.includes('class_8') ||
+    c === 'tnsb-6' || c === 'tnsb-7' || c === 'tnsb-8' ||
+    c.includes('-6') || c.includes('-7') || c.includes('-8') ||
+    title.includes('6-ஆம் வகுப்பு') || title.includes('7-ஆம் வகுப்பு') || title.includes('8-ஆம் வகுப்பு') ||
+    title.includes('6 ஆம் வகுப்பு') || title.includes('7 ஆம் வகுப்பு') || title.includes('8 ஆம் வகுப்பு') ||
+    title.includes('6th standard') || title.includes('7th standard') || title.includes('8th standard') ||
+    title.includes('class 6') || title.includes('class 7') || title.includes('class 8') ||
+    cat.includes('school_middle')
+  ) {
+    return getMiddleClass6to8Syllabus(courseId, courseTitle);
+  }
+
+  // 6e. Secondary Stage (Class 9 & Class 10 SSLC)
+  if (
+    c.includes('tnsb-ta-9') || c.includes('tnsb-ta-10') || c.includes('tnsb-en-9') || c.includes('tnsb-en-10') ||
+    c.includes('cbse-9') || c.includes('cbse-10') || c.includes('matric-9') || c.includes('matric-10') ||
+    c.includes('std-9') || c.includes('std-10') || c.includes('grade-9') || c.includes('grade-10') ||
+    c.includes('class-9') || c.includes('class-10') || c.includes('class_9') || c.includes('class_10') ||
+    c === 'tnsb-9' || c === 'tnsb-10' ||
+    c.includes('-9') || c.includes('-10') || c.includes('9th') || c.includes('10th') || c.includes('sslc') ||
+    title.includes('9-ஆம் வகுப்பு') || title.includes('10-ஆம் வகுப்பு') || title.includes('9 ஆம் வகுப்பு') || title.includes('10 ஆம் வகுப்பு') ||
+    title.includes('9th standard') || title.includes('10th standard') || title.includes('class 9') || title.includes('class 10') ||
+    title.includes('sslc') || cat.includes('school_high')
+  ) {
+    return getSecondaryClass9to10Syllabus(courseId, courseTitle);
+  }
+
+  // 6f. Higher Secondary Commerce (Class 11 & Class 12 Commerce)
+  if (
+    (c.includes('11') || c.includes('12') || title.includes('11') || title.includes('12')) &&
+    (c.includes('com') || title.includes('வணிகவியல்') || title.includes('commerce') || title.includes('accountancy'))
+  ) {
+    return getCommerceClass11Syllabus(courseId, courseTitle);
+  }
+
+  // 6g. Higher Secondary Science (Class 11 & Class 12 Science)
+  if (
+    c.includes('11-sci') || c.includes('12-sci') || c.includes('std-11') || c.includes('std-12') ||
+    c.includes('grade-11') || c.includes('grade-12') || c.includes('-11') || c.includes('-12') ||
+    c.includes('hsc') || c.includes('plus-one') || c.includes('plus-two') ||
+    title.includes('11-ஆம் வகுப்பு') || title.includes('12-ஆம் வகுப்பு') || title.includes('11 ஆம் வகுப்பு') || title.includes('12 ஆம் வகுப்பு') ||
+    title.includes('+1') || title.includes('+2') || title.includes('11th') || title.includes('12th') ||
+    cat.includes('school_hsc')
+  ) {
+    return getHigherSecondaryScienceCompleteSyllabus(courseId, courseTitle);
+  }
+
+  // 7. TNPSC Exams Track (All Groups 1, 2, 4, VAO, DEO)
   if (
     c.includes('tnpsc') ||
     c.includes('vao') ||
@@ -8115,22 +8362,29 @@ export function resolveCompleteCourseSyllabus(
     c.includes('group-4') ||
     c.includes('grp1') ||
     c.includes('grp2') ||
-    c.includes('grp4')
+    c.includes('grp4') ||
+    title.includes('tnpsc') ||
+    cat.includes('tnpsc')
   ) {
-    return getTnpscUnifiedCompleteSyllabus(courseId, title);
+    return getTnpscUnifiedCompleteSyllabus(courseId, courseTitle);
   }
-  // 7. Banking & Insurance Track (IBPS PO/Clerk, SBI PO/Clerk, RBI Assistant)
+
+  // 8. Banking & Insurance Track (IBPS PO/Clerk, SBI PO/Clerk, RBI Assistant)
   if (
     c.includes('bank') ||
     c.includes('ibps') ||
     c.includes('sbi') ||
     c.includes('rbi') ||
     c.includes('po-') ||
-    c.includes('clerk')
+    c.includes('clerk') ||
+    title.includes('bank') ||
+    title.includes('ibps') ||
+    title.includes('sbi')
   ) {
-    return getBankingAndInsuranceCompleteSyllabus(courseId, title);
+    return getBankingAndInsuranceCompleteSyllabus(courseId, courseTitle);
   }
-  // 8. SSC & Railway Exams Track (SSC CGL / CHSL / MTS & RRB NTPC / Group D)
+
+  // 9. SSC & Railway Exams Track (SSC CGL / CHSL / MTS & RRB NTPC / Group D)
   if (
     c.includes('ssc') ||
     c.includes('cgl') ||
@@ -8138,35 +8392,48 @@ export function resolveCompleteCourseSyllabus(
     c.includes('mts') ||
     c.includes('rrb') ||
     c.includes('railway') ||
-    c.includes('ntpc')
+    c.includes('ntpc') ||
+    title.includes('ssc') ||
+    title.includes('rrb') ||
+    title.includes('railway')
   ) {
-    return getSscAndRailwayCompleteSyllabus(courseId, title);
+    return getSscAndRailwayCompleteSyllabus(courseId, courseTitle);
   }
-  // 9. TRB & Teaching Exams Track (TRB PG/BT, TNTET Paper 1 & 2)
+
+  // 10. TRB & Teaching Exams Track (TRB PG/BT, TNTET Paper 1 & 2)
   if (
     c.includes('trb') ||
     c.includes('tet') ||
     c.includes('tntet') ||
     c.includes('teacher') ||
     c.includes('bed') ||
-    c.includes('ugc-net')
+    c.includes('ugc-net') ||
+    title.includes('trb') ||
+    title.includes('tntet') ||
+    title.includes('tet')
   ) {
-    return getTrbAndTeacherExamsCompleteSyllabus(courseId, title);
+    return getTrbAndTeacherExamsCompleteSyllabus(courseId, courseTitle);
   }
-  // 10. GATE & Engineering Core Track
-  if (c.includes('gate') || c.includes('engineering') || c.includes('btech')) {
-    return getGateAndEngineeringCompleteSyllabus(courseId, title);
+
+  // 11. GATE & Engineering Core Track
+  if (c.includes('gate') || c.includes('engineering') || c.includes('btech') || title.includes('gate') || title.includes('engineering')) {
+    return getGateAndEngineeringCompleteSyllabus(courseId, courseTitle);
   }
-  // 11. Kids Skills (Scratch, Vedic Maths, Robotics)
+
+  // 12. Kids Skills (Scratch, Vedic Maths, Robotics)
   if (
     c.includes('kids') ||
     c.includes('scratch') ||
     c.includes('vedic') ||
-    c.includes('robotics')
+    c.includes('robotics') ||
+    title.includes('scratch') ||
+    title.includes('vedic') ||
+    title.includes('robotics')
   ) {
-    return getKidsSkillsCompleteSyllabus(courseId, title);
+    return getKidsSkillsCompleteSyllabus(courseId, courseTitle);
   }
-  // 12. Tech & College Degrees Track (Python, Full-Stack, Web, Mobile, DSA, AI/ML, BCA, B.Sc)
+
+  // 13. Tech & College Degrees Track (Python, Full-Stack, Web, Mobile, DSA, AI/ML, BCA, B.Sc)
   if (
     c.includes('skill') ||
     c.includes('python') ||
@@ -8177,307 +8444,26 @@ export function resolveCompleteCourseSyllabus(
     c.includes('code') ||
     c.includes('degree') ||
     c.includes('college') ||
-    c.includes('bca')
+    c.includes('bca') ||
+    title.includes('python') ||
+    title.includes('react') ||
+    title.includes('dsa') ||
+    title.includes('full stack') ||
+    title.includes('machine learning')
   ) {
-    return getCollegeAndTechSkillsCompleteSyllabus(courseId, title);
+    return getCollegeAndTechSkillsCompleteSyllabus(courseId, courseTitle);
   }
-  // 13. Class 11 & 12 Commerce Track (CBSE, State Board, Matric)
-  if (
-    c.includes('11-com') ||
-    c.includes('12-com') ||
-    c.includes('commerce') ||
-    c.includes('accountancy')
-  ) {
-    return getCommerceClass11Syllabus(courseId, title);
-  }
-  // 9. Class 11 & 12 Science Track (Higher Secondary Bio-Maths / Computer Science)
-  if (
-    c.includes('-11') ||
-    c.includes('-12') ||
-    c.includes('std-11') ||
-    c.includes('std-12') ||
-    c.includes('grade-11') ||
-    c.includes('grade-12') ||
-    c.includes('hsc') ||
-    c.includes('plus-one') ||
-    c.includes('plus-two')
-  ) {
-    return getHigherSecondaryScienceCompleteSyllabus(courseId, title);
-  }
-  // 10. KINDERGARTEN (LKG & UKG)
-  if (c.includes('lkg') || c.includes('ukg') || c.includes('kindergarten')) {
-    const subjects: SyllabusSubject[] = [
-      {
-        subjectId: 'kg_tamil',
-        subjectName: isTa
-          ? 'தமிழ் மழலையர் பாடல் & உயிர் எழுத்துக்கள்'
-          : 'Tamil Rhymes & Vowels (Uyir Ezhuthukkal)',
-        icon: '🔤',
-        color: '#ec4899',
-        totalChapters: 2,
-        totalMicroTopics: 6,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'உயிர் எழுத்துக்கள் 12 & மழலையர் பாலர் பாடல்கள்',
-            description:
-              'அ முதல் ஔ வரை உள்ள 12 உயிர் எழுத்துக்கள் மற்றும் நிலா நிலா ஓடி வா பாடல்கள்',
-            subtopics: [
-              {
-                id: 'kg_t_sub1',
-                title: 'உயிர் எழுத்துகள் & படங்கள்',
-                microTopics: [
-                  {
-                    id: 'kg_t_1',
-                    title: 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள் (அம்மா, ஆடு, இலை, ஈட்டி)',
-                    keyAxiom: 'உயிர் எழுத்துக்கள் மொத்தம் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ'
-                  },
-                  {
-                    id: 'kg_t_2',
-                    title: 'நிலா நிலா ஓடி வா & கைவீசம்மா கைவீசு மழலையர் பாடல்கள்',
-                    keyAxiom: 'மழலையர் பாலர் பாடல்கள் மற்றும் எளிய உச்சரிப்புப் பயிற்சி'
-                  }
-                ]
-              }
-            ],
-            microTopics: [
-              {
-                id: 'kg_t_1',
-                topicTitle: 'அ முதல் ஔ வரை உயிர் எழுத்துக்கள் (அம்மா, ஆடு, இலை, ஈட்டி)',
-                subtopic: 'படங்கள் பார்த்து எழுத்துக்களை அடையாளம் காணுதல்',
-                dayNumber: 1,
-                periodNumber: 1,
-                keyFormulaOrLaw:
-                  'உயிர் எழுத்துக்கள் 12: அ, ஆ, இ, ஈ, உ, ஊ, எ, ஏ, ஐ, ஒ, ஓ, ஔ | ஆய்த எழுத்து: ஃ',
-                keyPoints: [
-                  'அ - அணில், அம்மா',
-                  'ஆ - ஆடு, ஆலமரம்',
-                  'இ - இலை, இட்லி',
-                  'ஈ - ஈட்டி, ஈ'
-                ],
-                type: 'concept',
-                importance: 'Foundational'
-              },
-              {
-                id: 'kg_t_2',
-                topicTitle: 'நிலா நிலா ஓடி வா மழலையர் பாடல்',
-                subtopic: 'ராகத்தோடு பாடி அபிநயம் செய்தல்',
-                dayNumber: 1,
-                periodNumber: 2,
-                keyFormulaOrLaw: 'பாடல்: நிலா நிலா ஓடி வா, நில்லாமல் ஓடி வா',
-                keyPoints: ['ஒலி நயத்தோடு பாடுதல்', 'எளிய உடல் அசைவுகள்'],
-                type: 'concept',
-                importance: 'Foundational'
-              }
-            ]
-          }
-        ]
-      },
-      {
-        subjectId: 'kg_english',
-        subjectName: 'English Phonics & Alphabets (A to Z)',
-        icon: '🔤',
-        color: '#3b82f6',
-        totalChapters: 2,
-        totalMicroTopics: 6,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'Phonics Sounds: Letters A to Z & Classic Nursery Rhymes',
-            description: 'Letter sounds, picture matching, and CVC 3-letter word blending',
-            subtopics: [
-              {
-                id: 'kg_e_sub1',
-                title: 'Phonics A to Z',
-                microTopics: [
-                  {
-                    id: 'kg_e_1',
-                    title: 'Letters A to Z Phonics & Nursery Rhymes',
-                    keyAxiom: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z'
-                  }
-                ]
-              }
-            ],
-            microTopics: [
-              {
-                id: 'kg_e_1',
-                topicTitle: 'Letters A to Z Phonics & Nursery Rhymes',
-                subtopic:
-                  'Apple, Ball, Cat, Dog, Elephant phonics sounds and Twinkle Twinkle rhyme',
-                dayNumber: 1,
-                periodNumber: 2,
-                keyFormulaOrLaw: 'Phonics: /æ/ /b/ /k/ /d/ | 26 English Alphabets A to Z',
-                keyPoints: ['Letter tracing inside lines', 'Object recognition'],
-                type: 'concept',
-                importance: 'Foundational'
-              }
-            ]
-          }
-        ]
-      },
-      {
-        subjectId: 'kg_maths',
-        subjectName: 'Fun Maths & Numbers (1 to 20)',
-        icon: '🔢',
-        color: '#06b6d4',
-        totalChapters: 2,
-        totalMicroTopics: 6,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'Counting Numbers 1 to 20 & 2D Shapes',
-            description: 'Count with fun objects, Circle, Square, Triangle, Big vs Small',
-            subtopics: [
-              {
-                id: 'kg_m_sub1',
-                title: 'Numbers 1 to 20',
-                microTopics: [
-                  {
-                    id: 'kg_m_1',
-                    title: 'Numbers 1 to 20: Counting, Shapes & Comparison',
-                    keyAxiom:
-                      'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)'
-                  }
-                ]
-              }
-            ],
-            microTopics: [
-              {
-                id: 'kg_m_1',
-                topicTitle: 'Numbers 1 to 20: Counting, Shapes & Comparison',
-                subtopic: '1 Sun, 2 Shoes, 3 Stars, Circle, Square, Big elephant vs small mouse',
-                dayNumber: 1,
-                periodNumber: 3,
-                keyFormulaOrLaw:
-                  'Counting 1 to 20 | Circle (Round) | Triangle (3 sides) | Square (4 sides)',
-                keyPoints: [
-                  'Finger counting and pattern recognition',
-                  'Big vs Small visual comparison'
-                ],
-                type: 'concept',
-                importance: 'Foundational'
-              }
-            ]
-          }
-        ]
-      },
-      {
-        subjectId: 'kg_evs',
-        subjectName: 'EVS, Nature, Animals & Good Habits',
-        icon: '🌿',
-        color: '#10b981',
-        totalChapters: 2,
-        totalMicroTopics: 6,
-        chapters: [
-          {
-            chapterNumber: 1,
-            chapterTitle: 'My 5 Senses, Friendly Animals & Magic Manners',
-            description:
-              '5 senses (Eyes, Ears, Nose, Tongue, Skin), Domestic animals, Please/Thank You',
-            subtopics: [
-              {
-                id: 'kg_evs_sub1',
-                title: '5 Senses & Animals',
-                microTopics: [
-                  {
-                    id: 'kg_evs_1',
-                    title: '5 Senses, Healthy Habits & Gentle Animal Friends',
-                    keyAxiom:
-                      '5 Senses: Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin)'
-                  }
-                ]
-              }
-            ],
-            microTopics: [
-              {
-                id: 'kg_evs_1',
-                topicTitle: '5 Senses, Healthy Habits & Gentle Animal Friends',
-                subtopic:
-                  'Eyes to see, Ears to hear, Nose to smell, Tongue to taste, Skin to touch',
-                dayNumber: 1,
-                periodNumber: 4,
-                keyFormulaOrLaw:
-                  '5 Senses: Sight (Eyes), Hearing (Ears), Smell (Nose), Taste (Tongue), Touch (Skin)',
-                keyPoints: ['Brush teeth twice a day', 'Wash hands before eating meals'],
-                type: 'concept',
-                importance: 'Foundational'
-              }
-            ]
-          }
-        ]
-      }
-    ];
-    return {
-      courseId: courseId || 'kindergarten-master',
-      courseTitle: title || 'Kindergarten (LKG & UKG) Foundation',
-      category: 'kindergarten',
-      board: 'TNSB / CBSE / Matric',
-      medium: isTa ? 'Tamil' : 'English',
-      totalDays: 200,
-      totalSubjects: subjects.length,
-      totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
-      totalMicroTopics: subjects.reduce(
-        (a, s) =>
-          a +
-          (s.totalMicroTopics ||
-            s.chapters.reduce((acc, c) => acc + (c.microTopics?.length || 0), 0)),
-        0
-      ),
-      subjects
-    };
-  }
-  // 11. SECONDARY STAGE (Class 9 & Class 10 SSLC)
-  if (
-    c.includes('-10') ||
-    c.includes('-9') ||
-    c.includes('10th') ||
-    c.includes('9th') ||
-    c.includes('10_') ||
-    c.includes('9_') ||
-    c.includes('std-10') ||
-    c.includes('std-9') ||
-    c.includes('grade-10') ||
-    c.includes('grade-9') ||
-    c.includes('sslc')
-  ) {
-    return getSecondaryClass9to10Syllabus(courseId, title);
-  }
-  // 12. MIDDLE STAGE (Class 6, 7, 8)
-  if (
-    c.includes('-6') ||
-    c.includes('-7') ||
-    c.includes('-8') ||
-    c.includes('6th') ||
-    c.includes('7th') ||
-    c.includes('8th') ||
-    c.includes('6_') ||
-    c.includes('7_') ||
-    c.includes('8_') ||
-    c.includes('std-6') ||
-    c.includes('std-7') ||
-    c.includes('std-8') ||
-    c.includes('grade-6') ||
-    c.includes('grade-7') ||
-    c.includes('grade-8') ||
-    c.includes('middle') ||
-    c.includes('class-6') ||
-    c.includes('class_6')
-  ) {
-    return getMiddleClass6to8Syllabus(courseId, title);
-  }
-  // 13. TNPSC & GENERAL STUDIES SUB-TOPICS (Tamil, GK, Polity, History, Science)
+
+  // 14. TNPSC & GENERAL STUDIES TOPICS
   if (
     c.includes('பொருத்துதல்') ||
     c.includes('இலக்கணம்') ||
     c.includes('வேர்ச்சொல்') ||
-    c.includes('தமிழ்') ||
-    c.includes('tamil') ||
     c.includes('வரலாறு') ||
     c.includes('அரசியல்') ||
     c.includes('புவியியல்') ||
     c.includes('பொருளாதாரம்') ||
     c.includes('gk') ||
-    c.includes('rrb') ||
     c.includes('constitution') ||
     c.includes('பெரியார்') ||
     c.includes('பாரதியார்') ||
@@ -8486,40 +8472,11 @@ export function resolveCompleteCourseSyllabus(
     c.includes('ராஜாஜி') ||
     c.includes('விருதுகள்')
   ) {
-    return getTnpscUnifiedCompleteSyllabus(courseId, title);
+    return getTnpscUnifiedCompleteSyllabus(courseId, courseTitle);
   }
-  // 14. PREPARATORY STAGE (Class 3, 4, 5)
-  if (
-    c.includes('-3') ||
-    c.includes('-4') ||
-    c.includes('-5') ||
-    c.includes('3rd') ||
-    c.includes('4th') ||
-    c.includes('5th') ||
-    c.includes('std-3') ||
-    c.includes('std-4') ||
-    c.includes('std-5') ||
-    c.includes('grade-3') ||
-    c.includes('grade-4') ||
-    c.includes('grade-5')
-  ) {
-    return getPreparatoryClass3to5Syllabus(courseId, title);
-  }
-  // 15. FOUNDATIONAL STAGE (Class 1 & Class 2)
-  if (
-    c.includes('-1') ||
-    c.includes('-2') ||
-    c.includes('1st') ||
-    c.includes('2nd') ||
-    c.includes('std-1') ||
-    c.includes('std-2') ||
-    c.includes('grade-1') ||
-    c.includes('grade-2')
-  ) {
-    return getFoundationalClass1to2Syllabus(courseId, title);
-  }
-  // 16. DEFAULT FALLBACK
-  return getTnpscUnifiedCompleteSyllabus(courseId, title);
+
+  // 15. DEFAULT FALLBACK
+  return getMiddleClass6to8Syllabus(courseId, courseTitle);
 }
 
 export function getAugmentedCourseSyllabus(
@@ -8529,7 +8486,9 @@ export function getAugmentedCourseSyllabus(
   const base = resolveCompleteCourseSyllabus(courseId, courseTitle || '');
   if (typeof window === 'undefined') return base;
   try {
-    const raw = localStorage.getItem(`teacho_custom_syllabus_${courseId}`);
+    const raw =
+      localStorage.getItem(`tuto_custom_syllabus_${courseId}`) ||
+      localStorage.getItem(`teacho_custom_syllabus_${courseId}`);
     if (!raw) return base;
     const customItems: Array<{
       subjectName: string;

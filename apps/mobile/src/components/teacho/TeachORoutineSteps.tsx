@@ -181,8 +181,8 @@ export const TeachORoutineSteps: React.FC<TeachORoutineStepsProps> = ({
                   onPress={() => onTakeTest && onTakeTest(task)}
                   activeOpacity={0.75}
                 >
-                  <Award size={13} color="#fbbf24" />
-                  <Text style={[styles.stepToolBtnText, styles.stepToolTestBtnText]}>Take Test in TestO</Text>
+                  <Award size={13} color="#00D084" />
+                  <Text style={[styles.stepToolBtnText, styles.stepToolTestBtnText]}>Take CBT Test</Text>
                 </TouchableOpacity>
               </View>
             </View>
