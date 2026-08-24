@@ -256,19 +256,37 @@ export default function TutOAdminScreen({ navigation }: any) {
                 <Text style={styles.dayControlSubtitle}>{editablePlan.topicTitle}</Text>
               </View>
 
-              <View style={styles.dayNavButtons}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <TouchableOpacity
                   style={[styles.stepBtn, dayNumber <= 1 && styles.stepBtnDisabled]}
                   disabled={dayNumber <= 1}
                   onPress={() => setDayNumber(Math.max(1, dayNumber - 1))}
                 >
-                  <Text style={styles.stepBtnText}>Prev Day</Text>
+                  <Text style={styles.stepBtnText}>Prev</Text>
                 </TouchableOpacity>
+
+                <View style={styles.jumpDayBox}>
+                  <Text style={styles.jumpDayPrefix}>Day #</Text>
+                  <TextInput
+                    style={styles.jumpDayInput}
+                    placeholder="1"
+                    placeholderTextColor="#64748B"
+                    keyboardType="numeric"
+                    value={String(dayNumber)}
+                    onChangeText={(val) => {
+                      const num = parseInt(val, 10);
+                      if (num >= 1 && num <= 300) {
+                        setDayNumber(num);
+                      }
+                    }}
+                  />
+                </View>
+
                 <TouchableOpacity
                   style={styles.stepBtn}
                   onPress={() => setDayNumber(Math.min(300, dayNumber + 1))}
                 >
-                  <Text style={styles.stepBtnText}>Next Day</Text>
+                  <Text style={styles.stepBtnText}>Next</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -505,6 +523,32 @@ export default function TutOAdminScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+
+  jumpDayBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#070C18',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    width: 80,
+  },
+  jumpDayPrefix: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#00D084',
+    marginRight: 4,
+  },
+  jumpDayInput: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#F8FAFC',
+    padding: 0,
+  },
+
 
   adminPill: {
     flexDirection: 'row',

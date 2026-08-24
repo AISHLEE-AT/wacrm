@@ -545,3 +545,129 @@ export async function getAdminCustomDayPlan(
     return null;
   }
 }
+
+
+export interface DayPlanSummaryItem {
+  dayNumber: number;
+  weekNumber: number;
+  dayOfWeekName: string;
+  isMondayHoliday: boolean;
+  subject: string;
+  subjectCode: string;
+  chapterTitle: string;
+  topicTitle: string;
+  topicTamilTitle?: string;
+  conceptCode: string;
+  estimatedTotalMinutes: number;
+  totalXpReward: number;
+  isCompleted?: boolean;
+}
+
+/**
+ * Returns light-weight summary items for all 300 days of a course for fast 60 FPS list rendering.
+ */
+export function getAllDaySummariesForCourse(
+  courseId: string,
+  courseTitle: string,
+  totalDays: number = 300,
+  schoolBoard: string = 'TNSB',
+  completedDaySet: Set<number> = new Set()
+): DayPlanSummaryItem[] {
+  const syllabus = getOfficialGovernmentSyllabus(courseId, schoolBoard as any);
+  const topicsList: {
+    subjectName: string;
+    subjectCode: string;
+    chapterTitle: string;
+    topicTitle: string;
+    tamilTitle?: string;
+    conceptCode: string;
+  }[] = [];
+
+  syllabus.subjects.forEach((subj) => {
+    subj.chapters.forEach((ch) => {
+      ch.topics.forEach((top) => {
+        const firstNano = (top.nanoConcepts && top.nanoConcepts[0]) || undefined;
+        topicsList.push({
+          subjectName: subj.subjectName,
+          subjectCode: subj.subjectCode || 'GEN',
+          chapterTitle: ch.chapterTitle,
+          topicTitle: top.title,
+          tamilTitle: top.tamilTitle,
+          conceptCode: firstNano?.conceptCode || top.topicCode || 'T-01',
+        });
+      });
+    });
+  });
+
+  const totalTopics = topicsList.length > 0 ? topicsList.length : 1;
+  const days: DayPlanSummaryItem[] = [];
+
+  for (let day = 1; day <= totalDays; day++) {
+    const isMonday = day % 7 === 1;
+    const weekNumber = Math.ceil(day / 7);
+    const dayOfWeekIdx = ((day - 1) % 7);
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayOfWeekName = dayNames[dayOfWeekIdx];
+
+    const topicIndex = (day - 1) % totalTopics;
+    const currentTopic = topicsList[topicIndex] || {
+      subjectName: 'Core Foundations',
+      subjectCode: 'COR',
+      chapterTitle: 'Fundamental Principles',
+      topicTitle: 'Core Axioms & Applications',
+      tamilTitle: 'அடிப்படை விதிகள் மற்றும் பயன்பாடுகள்',
+      conceptCode: `C-${String(day).padStart(3, '0')}`,
+    };
+
+    days.push({
+      dayNumber: day,
+      weekNumber,
+      dayOfWeekName,
+      isMondayHoliday: isMonday,
+      subject: isMonday ? 'Mindful Rest & Weekly Review' : currentTopic.subjectName,
+      subjectCode: isMonday ? 'REV' : currentTopic.subjectCode,
+      chapterTitle: isMonday ? `Week ${weekNumber} Comprehensive Review` : currentTopic.chapterTitle,
+      topicTitle: isMonday ? `🌿 Week ${weekNumber} Review & Mindful Rest Day` : currentTopic.topicTitle,
+      topicTamilTitle: isMonday ? `வாரம் ${weekNumber} மீள்பார்வை மற்றும் ஓய்வு நாள்` : currentTopic.tamilTitle,
+      conceptCode: currentTopic.conceptCode,
+      estimatedTotalMinutes: isMonday ? 20 : 65,
+      totalXpReward: isMonday ? 50 : 150,
+      isCompleted: completedDaySet.has(day),
+    });
+  }
+
+  return days;
+}
+
+/**
+ * Storage helpers for day completion status
+ */
+const TUTO_COMPLETED_DAYS_KEY_PREFIX = 'tuto_completed_days_';
+
+export async function getCompletedDaysForCourse(courseId: string): Promise<Set<number>> {
+  try {
+    const raw = await AsyncStorage.getItem(`${TUTO_COMPLETED_DAYS_KEY_PREFIX}${courseId}`);
+    if (!raw) return new Set();
+    const arr: number[] = JSON.parse(raw);
+    return new Set(arr);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+export async function toggleDayCompletion(courseId: string, dayNumber: number): Promise<boolean> {
+  try {
+    const key = `${TUTO_COMPLETED_DAYS_KEY_PREFIX}${courseId}`;
+    const set = await getCompletedDaysForCourse(courseId);
+    const isNowCompleted = !set.has(dayNumber);
+    if (isNowCompleted) {
+      set.add(dayNumber);
+    } else {
+      set.delete(dayNumber);
+    }
+    await AsyncStorage.setItem(key, JSON.stringify(Array.from(set)));
+    return isNowCompleted;
+  } catch (e) {
+    return false;
+  }
+}
