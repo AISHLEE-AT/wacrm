@@ -3,7 +3,7 @@ import {
   fetchDaily10Questions,
   sendQuizPoll,
   sendTextMessage,
-} from '../../../../../../scripts/telegram_daily_quiz_bot';
+} from '@/lib/telegramQuizBot';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,6 @@ async function handleTelegramQuizTrigger(req: NextRequest) {
   const secret = searchParams.get('secret') || req.headers.get('x-cron-secret');
   const expectedSecret = process.env.CRON_SECRET || process.env.TELEGRAM_CRON_SECRET;
 
-  // If CRON_SECRET is configured, check authentication
   if (expectedSecret && secret !== expectedSecret) {
     return NextResponse.json({ error: 'Unauthorized: Invalid cron secret' }, { status: 401 });
   }
@@ -29,18 +28,8 @@ async function handleTelegramQuizTrigger(req: NextRequest) {
   const limitStr = searchParams.get('count') || '10';
   const count = Math.min(Math.max(parseInt(limitStr, 10) || 10, 1), 20);
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-
-  if (!botToken || !chatId) {
-    return NextResponse.json(
-      {
-        error: 'Missing Telegram environment configuration',
-        hint: 'Please set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in environment variables.',
-      },
-      { status: 500 }
-    );
-  }
+  const botToken = process.env.TELEGRAM_BOT_TOKEN || '7653223353:AAGeFlegMrxK0fN_O1vDiI_XI-4BW5mXJFc';
+  const chatId = process.env.TELEGRAM_CHAT_ID || '-1002413529391';
 
   try {
     const questions = await fetchDaily10Questions(category);
@@ -56,7 +45,7 @@ async function handleTelegramQuizTrigger(req: NextRequest) {
       `👇 *Tap your answer below to test your accuracy!* 👇`;
 
     try {
-      await sendTextMessage(chatId, introMsg);
+      await sendTextMessage(chatId, introMsg, 'Markdown', botToken);
     } catch (e: any) {
       console.warn('Could not send intro message:', e?.message);
     }
@@ -66,9 +55,8 @@ async function handleTelegramQuizTrigger(req: NextRequest) {
     for (let i = 0; i < questionsToPost.length; i++) {
       const q = questionsToPost[i];
       try {
-        await sendQuizPoll(chatId, q, i, questionsToPost.length);
+        await sendQuizPoll(chatId, q, i, questionsToPost.length, botToken);
         successCount++;
-        // Short pause between questions
         await new Promise((res) => setTimeout(res, 1800));
       } catch (err: any) {
         console.error(`Error sending poll ${i + 1}:`, err?.message);
@@ -84,7 +72,7 @@ async function handleTelegramQuizTrigger(req: NextRequest) {
         `👉 Great work everyone! See you tomorrow at 08:00 AM. 🚀`;
 
       try {
-        await sendTextMessage(chatId, outroMsg);
+        await sendTextMessage(chatId, outroMsg, 'Markdown', botToken);
       } catch (e: any) {
         console.warn('Could not send outro message:', e?.message);
       }

@@ -1,0 +1,472 @@
+{
+  "topicKey": "tnpsc_economy_poverty_schemes_1980_2000",
+  "topicTitle": "Major Poverty Alleviation Schemes (1980–2000) | முக்கிய வறுமை ஒழிப்புத் திட்டங்கள்",
+  "courseTitle": "TNPSC Group 1, 2, 4 & VAO General Studies",
+  "subject": "Indian Economy (இந்தியப் பொருளாதாரம்)",
+  "standardOrExam": "TNPSC Group 1, 2, 4 & State Exams",
+  "dayNumber": 42,
+  "videoMeta": {
+    "channel": "@aishleetechnology",
+    "channelUrl": "https://www.youtube.com/@aishleetechnology",
+    "youtubeVideoId": "tnpsc_eco_poverty_schemes_aishlee",
+    "videoTitle": "முக்கிய வறுமை ஒழிப்புத் திட்டங்கள் (1980-2000) Masterclass | TNPSC Economy",
+    "durationMinutes": 30,
+    "isOfficialAishlee": true
+  },
+  "notes": {
+    "overview": "1970கள் முதல் 2000 வரையிலான காலகட்டத்தில் இந்தியாவில் வறுமை ஒழிப்பு மற்றும் கிராமப்புற வேலைவாய்ப்பை அதிகரிக்க மத்திய அரசால் பல்வேறு வரலாற்றுச் சிறப்புமிக்க திட்டங்கள் செயல்படுத்தப்பட்டன. IRDP, RLEGP, JRY, IAY, SGSY, NSAP, அன்னபூர்ணா மற்றும் அந்தியோதயா அன்ன யோஜனா ஆகியவை இதில் தலையாய திட்டங்களாகும். இவை பின்னர் பல நவீன திட்டங்களுக்கு (NRLM, PMAY-G) முன்னோடியாக அமைந்தன.",
+    "keyPoints": [
+      "IRDP (1978-79): வறுமை ஒழிப்புத் திட்டங்களின் முன்னோடி (மானியங்கள் & வங்கிக் கடன்கள்).",
+      "Food for Work (1977-78): உள்கட்டமைப்பு பணிகளுக்கு ஊதியமாக உணவு தானியங்கள்.",
+      "RLEGP (1983): கிராமப்புற நிலமற்ற தொழிலாளர்களுக்கு 100 நாட்கள் வேலை உறுதி.",
+      "JRY (1989): NREP (1980) + RLEGP (1983) இணைத்து உருவாக்கப்பட்டது.",
+      "IAY (1985): கிராமப்புற BPL / SC / ST குடும்பங்களுக்கு இலவச வீடுகள் ➔ 2016 இல் PMAY-G என பெயர் மாற்றம்.",
+      "DWCRA (1982): கிராமப்புற பெண்கள் மற்றும் குழந்தைகளுக்கான மேம்பாடு.",
+      "SGSY (1999): சுய உதவிக் குழுக்கள் (SHG) அணுகுமுறை ➔ 2011 இல் NRLM என பெயர் மாற்றம்.",
+      "NSAP (1995): அரசியலமைப்பு சட்டப்பிரிவு 41 இன் கீழ் முதியோர் & விதவைகளுக்கான சமூக பாதுகாப்பு ஓய்வூதியம்.",
+      "அன்னபூர்ணா (2000): ஓய்வூதியம் பெறாத முதியோருக்கு 10 கிலோ இலவச உணவு தானியங்கள்.",
+      "அந்தியோதயா அன்ன யோஜனா (AAY - 2000): மிக ஏழ்மையான குடும்பங்களுக்கு மிகக் குறைந்த விலையில் 35 கிலோ உணவு தானியங்கள்."
+    ],
+    "schemesCatalog": [
+      {
+        "id": 1,
+        "name_en": "Integrated Rural Development Programme (IRDP)",
+        "name_ta": "ஒருங்கிணைந்த கிராமப்புற மேம்பாட்டுத் திட்டம் (IRDP)",
+        "year": "1978-79",
+        "objective_ta": "கிராமப்புற ஏழைக் குடும்பங்களை வறுமைக் கோட்டிற்கு மேலே கொண்டு வர, மானியங்கள் & வங்கிக் கடன்கள் மூலம் சுய வேலைவாய்ப்பு வாய்ப்புகளை உருவாக்க இத்திட்டம் முயன்றது. இது வறுமை ஒழிப்புத் திட்டங்களின் முக்கிய முன்னோடியாகக் கருதப்படுகிறது.",
+        "objective_en": "Aimed to raise rural poor families above poverty line through subsidies and bank credit for self-employment opportunities. Regarded as the pioneer of poverty alleviation schemes in India.",
+        "key_features": "Subsidies + Bank Credits for asset generation; Beneficiary oriented."
+      },
+      {
+        "id": 2,
+        "name_en": "Food for Work Programme (FWP)",
+        "name_ta": "வேலைக்கு உணவு திட்டம்",
+        "year": "1977-78",
+        "objective_ta": "கிராமப்புறங்களில் உள்கட்டமைப்பு பணிகளை மேற்கொள்வதன் மூலம் வேலைவாய்ப்புகளை உருவாக்கி, ஊதியமாக உணவு தானியங்களை வழங்கியது.",
+        "objective_en": "Created rural employment opportunities by undertaking infrastructure works and provided food grains as wages.",
+        "key_features": "Wage paid in food grains; Rural infrastructure creation."
+      },
+      {
+        "id": 3,
+        "name_en": "Rural Landless Employment Guarantee Programme (RLEGP)",
+        "name_ta": "கிராமப்புற நிலமற்ற தொழிலாளர் வேலைவாய்ப்பு உறுதி திட்டம் (RLEGP)",
+        "year": "1983",
+        "objective_ta": "நிலமற்ற கிராமப்புற குடும்பங்களுக்கு 100 நாட்கள் வேலைவாய்ப்பை உறுதி செய்வதை நோக்கமாகக் கொண்டது.",
+        "objective_en": "Aimed to guarantee 100 days of employment per year to landless rural households.",
+        "key_features": "100 days guaranteed wage employment for landless rural labor."
+      },
+      {
+        "id": 4,
+        "name_en": "Jawahar Rozgar Yojana (JRY)",
+        "name_ta": "ஜவஹர் ரோஜ்கர் யோஜனா (JRY)",
+        "year": "1989",
+        "objective_ta": "தேசிய கிராமப்புற வேலைவாய்ப்புத் திட்டம் (NREP) மற்றும் கிராமப்புற நிலமற்ற தொழிலாளர் வேலைவாய்ப்பு உறுதித் திட்டம் (RLEGP) ஆகியவற்றை இணைத்து தொடங்கப்பட்டது. கிராமப்புற ஏழைகளுக்கு ஊதிய வேலைவாய்ப்புகளை வழங்குவதையும், கிராமப்புற உள்கட்டமைப்பை உருவாக்குவதையும் நோக்கமாகக் கொண்டது.",
+        "objective_en": "Launched by merging NREP (1980) and RLEGP (1983). Aimed to provide wage employment to rural poor and create durable community assets/infrastructure.",
+        "key_features": "Merged NREP + RLEGP; Village panchayat level implementation."
+      },
+      {
+        "id": 5,
+        "name_en": "Indira Awaas Yojana (IAY)",
+        "name_ta": "இந்திரா ஆவாஸ் யோஜனா (IAY)",
+        "year": "1985",
+        "objective_ta": "கிராமப்புறங்களில் வறுமைக் கோட்டிற்கு கீழ் உள்ள (BPL) குடும்பங்களுக்கு, குறிப்பாக பட்டியல் சாதியினர்/பழங்குடியினர் மற்றும் விடுவிக்கப்பட்ட கொத்தடிமைகளுக்கு இலவச வீடுகளை வழங்குவதை நோக்கமாகக் கொண்டது. இது பின்னர் பிரதான் மந்திரி ஆவாஸ் யோஜனா - கிராமீண் (PMAY-G) என மறுபெயரிடப்பட்டது.",
+        "objective_en": "Provided free housing units to rural BPL families, specifically SC/STs and freed bonded laborers. Later restructured into Pradhan Mantri Awaas Yojana - Gramin (PMAY-G) in 2016.",
+        "key_features": "Free rural housing for SC/ST/BPL; Restructured to PMAY-G in 2016."
+      },
+      {
+        "id": 6,
+        "name_en": "Development of Women and Children in Rural Areas (DWCRA)",
+        "name_ta": "ஊரகப் பெண்கள் மற்றும் குழந்தைகளுக்கான மேம்பாட்டுத் திட்டம் (DWCRA)",
+        "year": "1982",
+        "objective_ta": "கிராமப்புறப் பெண்களுக்கு சுயதொழில் வாய்ப்புகளை உருவாக்குதல் மற்றும் சமூகப் பொருளாதார மேம்பாட்டை அடைதல்.",
+        "objective_en": "Aimed to generate self-employment opportunities for rural women and improve their socio-economic status.",
+        "key_features": "Focused exclusively on rural women & children self-employment groups."
+      },
+      {
+        "id": 7,
+        "name_en": "Swarnajayanti Gram Swarozgar Yojana (SGSY)",
+        "name_ta": "சுவர்ண ஜெயந்தி கிராம் ஸ்வரோஸ்கர் யோஜனா (SGSY)",
+        "year": "1999",
+        "objective_ta": "IRDP மற்றும் அதன் துணைத் திட்டங்களை ஒருங்கிணைத்து உருவாக்கப்பட்ட இது, சுய உதவிக் குழுக்கள் மூலம் கிராமப்புற சுயதொழிலை மேம்படுத்துவதில் கவனம் செலுத்தியது. இது பின்னர் தேசிய கிராமப்புற வாழ்வாதார இயக்கம் (National Rural Livelihoods Mission - NRLM) என மறுபெயரிடப்பட்டது.",
+        "objective_en": "Holistic self-employment scheme formed by merging IRDP and allied sub-programmes (TRYSEM, DWCRA, SITRA, GKY, MWS). Promoted Self Help Groups (SHGs). Restructured into NRLM (National Rural Livelihoods Mission / Aajeevika) in 2011.",
+        "key_features": "SHG Cluster approach; Merged 6 schemes; Evolved into NRLM."
+      },
+      {
+        "id": 8,
+        "name_en": "National Social Assistance Programme (NSAP)",
+        "name_ta": "தேசிய சமூக உதவித் திட்டம் (NSAP)",
+        "year": "1995",
+        "objective_ta": "வறுமைக் கோட்டிற்கு கீழ் உள்ள முதியோர், விதவைகள் மற்றும் ஊனமுற்றவர்களுக்கு சமூக பாதுகாப்பு அளிக்கும் நோக்கத்துடன், தேசிய முதியோர் ஓய்வூதியத் திட்டம் (NOAPS), தேசிய குடும்ப நலத் திட்டம் (NFBS) போன்ற துணைத் திட்டங்களைக் கொண்டிருந்தது.",
+        "objective_en": "Fulfills Directive Principles (Article 41) by providing social security pensions to elderly, widows, and disabled BPL persons through NOAPS, NFBS, and NMBS.",
+        "key_features": "Social security pensions for elderly, widows & disabled (Article 41)."
+      },
+      {
+        "id": 9,
+        "name_en": "Annapurna Scheme",
+        "name_ta": "அன்னபூர்ணா திட்டம்",
+        "year": "April 2000",
+        "objective_ta": "தேசிய முதியோர் ஓய்வூதியத் திட்டத்தின் (NOAPS) கீழ் வராத தகுதியுடைய மூத்த குடிமக்களுக்கு 10 கிலோ இலவச உணவு தானியங்களை வழங்கியது.",
+        "objective_en": "Provided 10 kg of free food grains monthly to destitute senior citizens who were eligible but not covered under NOAPS pension.",
+        "key_features": "10 kg free food grains per month for uncovered senior citizens."
+      },
+      {
+        "id": 10,
+        "name_en": "Antyodaya Anna Yojana (AAY)",
+        "name_ta": "அந்தியோதயா அன்ன யோஜனா (AAY)",
+        "year": "December 2000",
+        "objective_ta": "வறுமைக் கோட்டிற்கு கீழ் உள்ள மிக ஏழ்மையான குடும்பங்களுக்கு (Poorest of the Poor) மிகக் குறைந்த விலையில் உணவு தானியங்களை வழங்கியது.",
+        "objective_en": "Targeted the poorest of the poor (Poorest among BPL) providing 35 kg food grains per family per month at heavily subsidized rates (Rice Rs.3/kg, Wheat Rs.2/kg).",
+        "key_features": "Targeted \"Poorest of the Poor\"; Highly subsidized food grains (35 kg/family)."
+      }
+    ],
+    "mnemonics": "Trick to remember chronology: FWP (77) ➔ IRDP (78) ➔ DWCRA (82) ➔ RLEGP (83) ➔ IAY (85) ➔ JRY (89) ➔ NSAP (95) ➔ SGSY (99) ➔ Annapurna (Apr 2000) ➔ AAY (Dec 2000)",
+    "mainsDescriptive": [
+      {
+        "question": "இந்தியாவில் 1980 முதல் 2000 வரையிலான வறுமை ஒழிப்புத் திட்டங்களின் பரிணாம வளர்ச்சியை விவரிக்கவும்.",
+        "answer_hints": "IRDP சுய வேலைவாய்ப்பு ➔ JRY ஊதிய வேலைவாய்ப்பு ➔ SGSY மகளிர் சுய உதவிக்குழுக்கள் ➔ AAY உணவுப் பாதுகாப்பு என வறுமை ஒழிப்பின் பல்முனை பரிமாணங்களை விளக்குக."
+      }
+    ],
+    "mcqs": [
+      {
+        "question_uid": "TNPSC-ECO-POV-001",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Integrated Rural Development Programme",
+        "subtopic_code": "IRDP",
+        "microtopic": "IRDP Pioneer Scheme",
+        "microtopic_code": "M1",
+        "difficulty": "Medium",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "In which year was the Integrated Rural Development Programme (IRDP) launched as a major pioneer scheme for poverty alleviation in India?",
+        "question_text_ta": "இந்தியாவில் வறுமை ஒழிப்புத் திட்டங்களின் முக்கிய முன்னோடியாகக் கருதப்படும் ஒருங்கிணைந்த கிராமப்புற மேம்பாட்டுத் திட்டம் (IRDP) எந்த ஆண்டு தொடங்கப்பட்டது?",
+        "options": {
+          "A": "1974-75",
+          "B": "1978-79",
+          "C": "1985-86",
+          "D": "1991-92"
+        },
+        "options_ta": {
+          "A": "1974-75",
+          "B": "1978-79",
+          "C": "1985-86",
+          "D": "1991-92"
+        },
+        "correct_option": "B",
+        "explanation": "IRDP was launched in 1978-79 across select blocks and expanded nationwide on 2nd October 1980 to provide bank credits and subsidies to rural BPL families.",
+        "explanation_ta": "IRDP திட்டம் 1978-79 ஆம் ஆண்டு தொடங்கப்பட்டு, பின்னர் 2 அக்டோபர் 1980 இல் நாடு முழுவதும் விரிவுபடுத்தப்பட்டது.",
+        "formula_or_law": "IRDP = Subsidies + Bank Credits for Self-Employment (1978-79)"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-002",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Food for Work Programme",
+        "subtopic_code": "FWP",
+        "microtopic": "Food for Work Scheme",
+        "microtopic_code": "M2",
+        "difficulty": "Easy",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "What was the primary mode of wage payment provided under the historic \"Food for Work Programme\" (1977-78)?",
+        "question_text_ta": "1977-78 இல் தொடங்கப்பட்ட \"வேலைக்கு உணவு திட்டம்\" (Food for Work) மூலம் தொழிலாளர்களுக்கு ஊதியமாக என்ன வழங்கப்பட்டது?",
+        "options": {
+          "A": "Cash subsidy via Post Office",
+          "B": "Food grains (உணவு தானியங்கள்)",
+          "C": "Agricultural Land deeds",
+          "D": "Gold bonds"
+        },
+        "options_ta": {
+          "A": "அஞ்சலகம் வழியே ரொக்க மானியம்",
+          "B": "உணவு தானியங்கள் (Food Grains)",
+          "C": "விவசாய நிலப் பத்திரங்கள்",
+          "D": "தங்கப் பத்திரங்கள்"
+        },
+        "correct_option": "B",
+        "explanation": "Food for Work Programme (1977-78) utilized surplus food grain stocks to pay wages while constructing durable community infrastructure.",
+        "explanation_ta": "வேலைக்கு உணவு திட்டம் கிராமப்புற உள்கட்டமைப்பு பணிகளை மேற்கொண்டு, ஊதியமாக உணவு தானியங்களை வழங்கியது.",
+        "formula_or_law": "FWP (1977-78) = Wages in Food Grains + Rural Infrastructure"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-003",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Rural Landless Employment Guarantee",
+        "subtopic_code": "RLEGP",
+        "microtopic": "RLEGP 100 Days Guarantee",
+        "microtopic_code": "M3",
+        "difficulty": "Medium",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "How many days of guaranteed employment was targeted per household under the Rural Landless Employment Guarantee Programme (RLEGP - 1983)?",
+        "question_text_ta": "1983 இல் தொடங்கப்பட்ட கிராமப்புற நிலமற்ற தொழிலாளர் வேலைவாய்ப்பு உறுதி திட்டம் (RLEGP) ஒரு குடும்பத்திற்கு எத்தனை நாட்கள் வேலைவாய்ப்பை உறுதி செய்தது?",
+        "options": {
+          "A": "50 Days",
+          "B": "100 Days (100 நாட்கள்)",
+          "C": "150 Days",
+          "D": "200 Days"
+        },
+        "options_ta": {
+          "A": "50 நாட்கள்",
+          "B": "100 நாட்கள்",
+          "C": "150 நாட்கள்",
+          "D": "200 நாட்கள்"
+        },
+        "correct_option": "B",
+        "explanation": "RLEGP was started in 1983 with the specific objective of guaranteeing 100 days of wage employment to at least one member of every landless rural household.",
+        "explanation_ta": "RLEGP திட்டம் நிலமற்ற கிராமப்புற குடும்பங்களுக்கு ஆண்டுக்கு 100 நாட்கள் வேலைவாய்ப்பை உறுதி செய்தது.",
+        "formula_or_law": "RLEGP (1983) = 100 Days Guaranteed Wage Employment for Landless Rural Labor"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-004",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Jawahar Rozgar Yojana",
+        "subtopic_code": "JRY",
+        "microtopic": "JRY Merger Evolution",
+        "microtopic_code": "M4",
+        "difficulty": "Hard",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "Jawahar Rozgar Yojana (JRY - 1989) was formed by merging which of the following two major employment schemes?",
+        "question_text_ta": "1989 இல் தொடங்கப்பட்ட ஜவஹர் ரோஜ்கர் யோஜனா (JRY) எந்த இரு முக்கிய வேலைவாய்ப்புத் திட்டங்களை இணைத்து உருவாக்கப்பட்டது?",
+        "options": {
+          "A": "IRDP and DWCRA",
+          "B": "NREP and RLEGP",
+          "C": "IAY and NSAP",
+          "D": "SGSY and AAY"
+        },
+        "options_ta": {
+          "A": "IRDP மற்றும் DWCRA",
+          "B": "NREP மற்றும் RLEGP",
+          "C": "IAY மற்றும் NSAP",
+          "D": "SGSY மற்றும் AAY"
+        },
+        "correct_option": "B",
+        "explanation": "JRY was launched in April 1989 by merging National Rural Employment Programme (NREP - 1980) and Rural Landless Employment Guarantee Programme (RLEGP - 1983).",
+        "explanation_ta": "ஜவஹர் ரோஜ்கர் யோஜனா (JRY) 1989 இல் NREP (1980) மற்றும் RLEGP (1983) ஆகியவற்றை இணைத்து தொடங்கப்பட்டது.",
+        "formula_or_law": "JRY (1989) = NREP (1980) + RLEGP (1983)"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-005",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Indira Awaas Yojana",
+        "subtopic_code": "IAY",
+        "microtopic": "IAY to PMAY Transformation",
+        "microtopic_code": "M5",
+        "difficulty": "Medium",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "Indira Awaas Yojana (IAY - 1985), providing free housing to BPL families, was later restructured and renamed as _______ in 2016.",
+        "question_text_ta": "1985 இல் தொடங்கப்பட்ட இந்திரா ஆவாஸ் யோஜனா (IAY) இலவச வீட்டுத் திட்டம் பின்னர் 2016 இல் என்ன பெயரில் மறுசீரமைக்கப்பட்டது?",
+        "options": {
+          "A": "Pradhan Mantri Gram Sadak Yojana (PMGSY)",
+          "B": "Pradhan Mantri Awaas Yojana - Gramin (PMAY-G)",
+          "C": "Deen Dayal Upadhyaya Grameen Kaushalya Yojana",
+          "D": "Valmiki Ambedkar Awas Yojana (VAMBAY)"
+        },
+        "options_ta": {
+          "A": "பிரதான் மந்திரி கிராம சடக் யோஜனா (PMGSY)",
+          "B": "பிரதான் மந்திரி ஆவாஸ் யோஜனா - கிராமீண் (PMAY-G)",
+          "C": "தீன்தயாள் உபாத்யாயா கிராமப்புற திறன் திட்டம்",
+          "D": "வால்மீகி அம்பேத்கர் ஆவாஸ் யோஜனா"
+        },
+        "correct_option": "B",
+        "explanation": "Indira Awaas Yojana (IAY), originally launched as a sub-scheme of RLEGP in 1985, became independent in 1996 and was revamped as PMAY-Gramin in 2016.",
+        "explanation_ta": "இந்திரா ஆவாஸ் யோஜனா (IAY - 1985) பின்னர் 2016 இல் பிரதான் மந்திரி ஆவாஸ் யோஜனா - கிராமீண் (PMAY-G) என மறுபெயரிடப்பட்டது.",
+        "formula_or_law": "IAY (1985) ➔ PMAY-G (2016) [Target: Housing for All]"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-006",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Development of Women & Children",
+        "subtopic_code": "DWCRA",
+        "microtopic": "DWCRA Focus Group",
+        "microtopic_code": "M6",
+        "difficulty": "Easy",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "What was the primary objective of DWCRA (Development of Women and Children in Rural Areas - 1982)?",
+        "question_text_ta": "1982 இல் தொடங்கப்பட்ட DWCRA திட்டத்தின் முக்கிய நோக்கம் என்ன?",
+        "options": {
+          "A": "Providing computer education in schools",
+          "B": "Self-employment & socio-economic upliftment of rural women",
+          "C": "Distributing tractors to large farmers",
+          "D": "Construction of rural expressways"
+        },
+        "options_ta": {
+          "A": "பள்ளிகளில் கணினி கல்வி வழங்குதல்",
+          "B": "கிராமப்புறப் பெண்களுக்கு சுயதொழில் & சமூகப் பொருளாதார மேம்பாடு",
+          "C": "விவசாயிகளுக்கு டிராக்டர்கள் வழங்குதல்",
+          "D": "கிராமப்புற விரைவுச்சாலைகள் அமைத்தல்"
+        },
+        "correct_option": "B",
+        "explanation": "DWCRA was launched as a sub-scheme of IRDP in 1982 to organize rural women into groups of 10-15 for collective socio-economic empowerment and income-generating self-employment.",
+        "explanation_ta": "DWCRA திட்டம் கிராமப்புறப் பெண்களுக்கு சுயதொழில் வாய்ப்புகளை உருவாக்கி, சமூகப் பொருளாதார மேம்பாட்டை அடைவதை நோக்கமாகக் கொண்டது.",
+        "formula_or_law": "DWCRA (1982) = Rural Women Groups + Income Generating Self-Employment"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-007",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Swarnajayanti Gram Swarozgar Yojana",
+        "subtopic_code": "SGSY",
+        "microtopic": "SGSY to NRLM Transformation",
+        "microtopic_code": "M7",
+        "difficulty": "Hard",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "Swarnajayanti Gram Swarozgar Yojana (SGSY - 1999) emphasized the Self Help Group (SHG) model and was later restructured into which major mission in 2011?",
+        "question_text_ta": "சுய உதவிக் குழுக்கள் (SHG) மூலம் சுயதொழிலை ஊக்குவித்த சுவர்ண ஜெயந்தி கிராம் ஸ்வரோஸ்கர் யோஜனா (SGSY - 1999) பின்னர் 2011 இல் எந்த இயக்கமாக மாற்றப்பட்டது?",
+        "options": {
+          "A": "National Rural Health Mission (NRHM)",
+          "B": "National Rural Livelihoods Mission (NRLM / Aajeevika)",
+          "C": "Pradhan Mantri Krishi Sinchayee Yojana",
+          "D": "Skill India Mission"
+        },
+        "options_ta": {
+          "A": "தேசிய கிராமப்புற சுகாதார இயக்கம் (NRHM)",
+          "B": "தேசிய கிராமப்புற வாழ்வாதார இயக்கம் (NRLM / ஆஜீவிகா)",
+          "C": "பிரதான் மந்திரி கிருஷி சிஞ்சாயி யோஜனா",
+          "D": "ஸ்கில் இந்தியா மிஷன்"
+        },
+        "correct_option": "B",
+        "explanation": "SGSY (1999) was restructured into National Rural Livelihoods Mission (NRLM - Aajeevika) in June 2011 to provide universal SHG coverage.",
+        "explanation_ta": "SGSY (1999) திட்டம் 2011 இல் தேசிய கிராமப்புற வாழ்வாதார இயக்கம் (NRLM - National Rural Livelihoods Mission) என மறுபெயரிடப்பட்டது.",
+        "formula_or_law": "SGSY (1999) [SHG Cluster] ➔ NRLM / DAY-NRLM (2011)"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-008",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "National Social Assistance Programme",
+        "subtopic_code": "NSAP",
+        "microtopic": "NSAP Constitutional Article",
+        "microtopic_code": "M8",
+        "difficulty": "Medium",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "The National Social Assistance Programme (NSAP - 1995), which provides pensions to elderly, widows, and persons with disabilities, fulfills which Directive Principle of State Policy?",
+        "question_text_ta": "1995 இல் தொடங்கப்பட்ட தேசிய சமூக உதவித் திட்டம் (NSAP) இந்திய அரசியலமைப்பின் எந்த அரசு வழிகாட்டு நெறிமுறைப் பிரிவை (DPSP) நிறைவேற்றுகிறது?",
+        "options": {
+          "A": "Article 39A (Free Legal Aid)",
+          "B": "Article 40 (Village Panchayats)",
+          "C": "Article 41 (Right to Work, Education & Public Assistance)",
+          "D": "Article 45 (Early Childhood Care)"
+        },
+        "options_ta": {
+          "A": "சட்டப்பிரிவு 39A (இலவச சட்ட உதவி)",
+          "B": "சட்டப்பிரிவு 40 (கிராம பஞ்சாயத்துகள்)",
+          "C": "சட்டப்பிரிவு 41 (வேலை, கல்வி & பொது உதவி பெறும் உரிமை)",
+          "D": "சட்டப்பிரிவு 45 (குழந்தை பருவ பராமரிப்பு)"
+        },
+        "correct_option": "C",
+        "explanation": "NSAP (1995) fulfills Article 41 of the Indian Constitution, directing the State to provide public assistance to elderly, sick, and disabled persons.",
+        "explanation_ta": "NSAP (1995) சட்டப்பிரிவு 41 இன் கீழ் முதியோர், விதவைகள் மற்றும் மாற்றுத்திறனாளிகளுக்கு சமூக பாதுகாப்பு உதவித்தொகைகளை வழங்குகிறது.",
+        "formula_or_law": "NSAP (1995) ➔ Fulfills Article 41 of Indian Constitution (Social Security & Pensions)"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-009",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Annapurna Scheme",
+        "subtopic_code": "ANNAPURNA",
+        "microtopic": "Annapurna Free Food Grains",
+        "microtopic_code": "M9",
+        "difficulty": "Medium",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "Under the Annapurna Scheme launched in April 2000, how many kilograms of free food grains per month were provided to eligible senior citizens?",
+        "question_text_ta": "ஏப்ரல் 2000 இல் தொடங்கப்பட்ட அன்னபூர்ணா திட்டத்தின் கீழ் தகுதியுடைய மூத்த குடிமக்களுக்கு மாதம் எத்தனை கிலோ இலவச உணவு தானியங்கள் வழங்கப்பட்டன?",
+        "options": {
+          "A": "5 kg",
+          "B": "10 kg (10 கிலோ)",
+          "C": "15 kg",
+          "D": "25 kg"
+        },
+        "options_ta": {
+          "A": "5 கிலோ",
+          "B": "10 கிலோ",
+          "C": "15 கிலோ",
+          "D": "25 கிலோ"
+        },
+        "correct_option": "B",
+        "explanation": "Annapurna Scheme was launched in April 2000 to provide 10 kg of free food grains monthly to senior citizens not receiving pensions under NOAPS.",
+        "explanation_ta": "அன்னபூர்ணா திட்டம் தேசிய முதியோர் ஓய்வூதியத் திட்டத்தின் கீழ் வராத மூத்த குடிமக்களுக்கு 10 கிலோ இலவச உணவு தானியங்களை வழங்கியது.",
+        "formula_or_law": "Annapurna Scheme (April 2000) = 10 kg Free Food Grains / Month / Senior Citizen"
+      },
+      {
+        "question_uid": "TNPSC-ECO-POV-010",
+        "subject": "Indian Economy",
+        "subject_code": "ECO",
+        "domain": "Poverty & Social Welfare",
+        "domain_code": "POV",
+        "topic": "Poverty Alleviation Schemes (1980-2000)",
+        "topic_code": "SCH-01",
+        "subtopic": "Antyodaya Anna Yojana",
+        "subtopic_code": "AAY",
+        "microtopic": "AAY Poorest of Poor Scheme",
+        "microtopic_code": "M10",
+        "difficulty": "Medium",
+        "exam_category": "TNPSC",
+        "question_format": "single_choice",
+        "question_text": "Which landmark food security scheme was launched in December 2000 to provide heavily subsidized food grains to the \"Poorest of the Poor\" families?",
+        "question_text_ta": "டிசம்பர் 2000 இல் வறுமைக் கோட்டிற்கு கீழ் உள்ள மிக ஏழ்மையான (Poorest of the Poor) குடும்பங்களுக்கு மிகக் குறைந்த விலையில் உணவு தானியங்களை வழங்க தொடங்கப்பட்ட திட்டம் எது?",
+        "options": {
+          "A": "Pradhan Mantri Garib Kalyan Anna Yojana",
+          "B": "Antyodaya Anna Yojana (AAY - அந்தியோதயா அன்ன யோஜனா)",
+          "C": "Targeted Public Distribution System (TPDS)",
+          "D": "Mid-Day Meal Scheme"
+        },
+        "options_ta": {
+          "A": "பிரதான் மந்திரி கரீப் கல்யாண் அன்ன யோஜனா",
+          "B": "அந்தியோதயா அன்ன யோஜனா (AAY)",
+          "C": "இலக்கு நிர்ணயிக்கப்பட்ட பொது விநியோகத் திட்டம்",
+          "D": "மதிய உணவுத் திட்டம்"
+        },
+        "correct_option": "B",
+        "explanation": "Antyodaya Anna Yojana (AAY) was launched in December 2000 by Prime Minister Atal Bihari Vajpayee, targeting 1 crore poorest families with subsidized food grains (35 kg/month at Rs.2/kg wheat, Rs.3/kg rice).",
+        "explanation_ta": "அந்தியோதயா அன்ன யோஜனா (AAY) டிசம்பர் 2000 இல் மிக ஏழ்மையான குடும்பங்களுக்கு குறைந்த விலையில் உணவு தானியங்களை வழங்க தொடங்கப்பட்டது.",
+        "formula_or_law": "AAY (Dec 2000) = Target \"Poorest of Poor\" (35 kg Grain at Rs.2 Wheat / Rs.3 Rice)"
+      }
+    ]
+  }
+}

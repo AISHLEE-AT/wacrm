@@ -89,6 +89,8 @@ scratch/
 scripts/
 !scripts/telegram_daily_quiz_bot.js
 !scripts/get_telegram_chat_id.js
+!scripts/ingest_poverty_alleviation_schemes.js
+!scripts/migrate_to_cloudflare_r2.js
 *.apk
 *.json.gz
 apps/mobile/src/lib/coursePlayerPrecompiledCache.json
