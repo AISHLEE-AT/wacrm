@@ -28,8 +28,8 @@ import TutOAdminScreen  from './src/screens/TutOAdminScreen';
 import CareerHubScreen  from './src/screens/CareerHubScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
-import DealOScreen      from './src/screens/DealOScreen';
 import FlowQuestionScreen from './src/screens/FlowQuestionScreen';
+import QuizScreen from './src/screens/QuizScreen';
 
 import OnboardingPermissionsScreen from './src/screens/OnboardingPermissionsScreen';
 import OnboardingProfileScreen from './src/screens/OnboardingProfileScreen';
@@ -290,6 +290,8 @@ function RootNavigator() {
       <Stack.Screen name="DealO" component={DealOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FlowQuestionScreen" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Flow" component={FlowQuestionScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Quiz" component={QuizScreen} options={{ headerShown: false }} />
       <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: true, title: 'All Modules', headerStyle: { backgroundColor: colors.card }, headerTintColor: colors.text }} />
     </Stack.Navigator>
   );

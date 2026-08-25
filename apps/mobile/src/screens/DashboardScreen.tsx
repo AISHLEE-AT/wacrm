@@ -251,7 +251,8 @@ export default function DashboardScreen({ navigation }: any) {
       {/* ──── 4. Category-wise Purchase & Order History ──── */}
       <PurchaseOrderHistoryCard
         phone={phone || ''}
-        userId={userId}
+        userId={dbProfile?.id || user?.id}
+        navigation={navigation}
       />
 
       {/* ──── 5. Security (PIN Change) ──── */}

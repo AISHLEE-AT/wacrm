@@ -195,5 +195,48 @@ export const purchaseService = {
 
     return { success: false, message: 'Invalid or expired access code.' };
   },
+
+  /**
+   * Delete purchase order record permanently from Supabase & local caches
+   */
+  async deletePurchase(
+    orderId?: string,
+    itemId?: string,
+    dbId?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      // 1. Delete from Supabase user_purchases_orders
+      if (dbId) {
+        await supabase.from('user_purchases_orders').delete().eq('id', dbId);
+      }
+      if (orderId) {
+        await supabase.from('user_purchases_orders').delete().eq('order_id', orderId);
+      }
+
+      // 2. Delete from Supabase purchases table
+      if (itemId) {
+        await supabase.from('purchases').delete().eq('item_id', itemId);
+      }
+
+      // 3. Remove from AsyncStorage cache
+      if (itemId) {
+        await AsyncStorage.removeItem(`purchased_course_${itemId}`);
+        await AsyncStorage.removeItem(`purchased_o_test_${itemId}`);
+        await AsyncStorage.removeItem(`purchased_rental_${itemId}`);
+
+        const allPurchasesRaw = await AsyncStorage.getItem('user_unlocked_items');
+        if (allPurchasesRaw) {
+          const allList: string[] = JSON.parse(allPurchasesRaw);
+          const filtered = allList.filter((id) => id !== itemId && id !== orderId);
+          await AsyncStorage.setItem('user_unlocked_items', JSON.stringify(filtered));
+        }
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error deleting purchase:', err);
+      return { success: false, error: err?.message || 'Failed to delete order' };
+    }
+  },
 };
 export default purchaseService;

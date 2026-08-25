@@ -33,6 +33,8 @@ import {
   Flame,
   Award,
   Lock,
+  Send,
+  Zap,
 } from 'lucide-react-native';
 
 import { AppContext } from '../context/AppContext';
@@ -46,7 +48,7 @@ import {
   DayPlanSummaryItem,
 } from '../data/curriculum/wholeYearDayPlanEngine';
 
-import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard } from '../data/coursesCatalog';
+import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '../data/coursesCatalog';
 
 const { width } = Dimensions.get('window');
 
@@ -296,6 +298,119 @@ export default function TutOHubScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
+            {/* ─── 2.3 DAILY 10 QUIZ & TELEGRAM CHALLENGE BANNER ─── */}
+            <TouchableOpacity
+              style={styles.dailyQuizBanner}
+              activeOpacity={0.88}
+              onPress={() => navigation.navigate('QuizScreen')}
+            >
+              <View style={styles.dailyQuizBannerLeft}>
+                <View style={styles.dailyQuizIconCircle}>
+                  <Zap size={22} color="#070C18" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={styles.dailyQuizBadgeRow}>
+                    <Text style={styles.dailyQuizBadgeText}>🎯 DAILY 10 QUIZ CHALLENGE</Text>
+                    <View style={styles.quizLivePill}>
+                      <Text style={styles.quizLivePillText}>LIVE NOW</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.dailyQuizTitle}>Test Today's 10 High-Yield MCQs</Text>
+                  <Text style={styles.dailyQuizSubtitle}>
+                    Bilingual (Tamil + English) • Telegram Quiz Group Sync • +150 XP
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.dailyQuizArrowWrap}>
+                <ArrowRight size={16} color="#00D084" />
+              </View>
+            </TouchableOpacity>
+
+            {/* ─── 2.5 FEATURED JUNIOR LEADERSHIP & CAREER TRACKS ─── */}
+            <View style={styles.featuredSection}>
+              <View style={styles.featuredHeaderRow}>
+                <View style={styles.featuredTitleWrap}>
+                  <Sparkles size={15} color="#F59E0B" />
+                  <Text style={styles.featuredSectionTitle}>⭐ FEATURED JUNIOR CAREERS</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setIsCoursePickerOpen(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.viewAllFeaturedText}>View All 10 Tracks →</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.featuredSectionSub}>
+                Civil Services, Medicine, Engineering, Law, Police, Defense & Governance
+              </Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.featuredScrollContent}
+              >
+                {FEATURED_JUNIOR_COURSES.map((jr) => {
+                  const isCurrent = selectedCourse.id === jr.id;
+                  return (
+                    <TouchableOpacity
+                      key={jr.id}
+                      style={[
+                        styles.featuredCard,
+                        isCurrent && styles.featuredCardActive,
+                        { borderColor: isCurrent ? '#00D084' : (jr.badgeColor + '50') },
+                      ]}
+                      onPress={() => handleSelectCourse(jr)}
+                      activeOpacity={0.8}
+                    >
+                      {/* Top Tag & Icon */}
+                      <View style={styles.featuredCardTop}>
+                        <Text style={styles.featuredEmoji}>{jr.icon || '⭐'}</Text>
+                        <View
+                          style={[
+                            styles.featuredTagPill,
+                            { backgroundColor: jr.badgeColor + '20', borderColor: jr.badgeColor + '60' },
+                          ]}
+                        >
+                          <Text style={[styles.featuredTagText, { color: jr.badgeColor }]}>
+                            {jr.badge}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Title & Sub */}
+                      <Text style={styles.featuredCardTitle} numberOfLines={1}>
+                        {jr.short}
+                      </Text>
+                      <Text style={styles.featuredCardSub} numberOfLines={2}>
+                        {jr.subtitle}
+                      </Text>
+
+                      {/* Action CTA */}
+                      <View style={styles.featuredCtaRow}>
+                        {isCurrent ? (
+                          <View style={styles.activeTrackBadge}>
+                            <CheckCircle2 size={11} color="#00D084" />
+                            <Text style={styles.activeTrackText}>ENROLLED</Text>
+                          </View>
+                        ) : (
+                          <View
+                            style={[
+                              styles.enrollTrackBtn,
+                              { backgroundColor: jr.badgeColor + '20', borderColor: jr.badgeColor + '50' },
+                            ]}
+                          >
+                            <Text style={[styles.enrollTrackBtnText, { color: jr.badgeColor }]}>
+                              Learn Track →
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
             {/* Quick Day Search & Jump Bar */}
             <View style={styles.searchBarContainer}>
               <Search size={16} color="#00D084" />
@@ -515,6 +630,119 @@ export default function TutOHubScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  featuredSection: {
+    marginBottom: 14,
+    marginTop: 4,
+  },
+  featuredHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+    paddingHorizontal: 2,
+  },
+  featuredTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  featuredSectionTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#F8FAFC',
+    letterSpacing: 0.5,
+  },
+  viewAllFeaturedText: {
+    fontSize: 11,
+    color: '#38BDF8',
+    fontWeight: '700',
+  },
+  featuredSectionSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  featuredScrollContent: {
+    gap: 10,
+    paddingRight: 10,
+  },
+  featuredCard: {
+    width: 220,
+    backgroundColor: '#0E172A',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    justifyContent: 'space-between',
+  },
+  featuredCardActive: {
+    backgroundColor: '#081A24',
+    borderColor: '#00D084',
+  },
+  featuredCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  featuredEmoji: {
+    fontSize: 20,
+  },
+  featuredTagPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 5,
+    borderWidth: 1,
+  },
+  featuredTagText: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  featuredCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#F8FAFC',
+    marginBottom: 4,
+  },
+  featuredCardSub: {
+    fontSize: 10,
+    color: '#94A3B8',
+    lineHeight: 14,
+    marginBottom: 10,
+  },
+  featuredCtaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  activeTrackBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 208, 132, 0.3)',
+  },
+  activeTrackText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#00D084',
+  },
+  enrollTrackBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  enrollTrackBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#070C18',
@@ -909,5 +1137,72 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     color: '#00D084',
+  },
+  dailyQuizBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F172A',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#00D08450',
+    marginBottom: 16,
+  },
+  dailyQuizBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  dailyQuizIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#00D084',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dailyQuizBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  dailyQuizBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#00D084',
+    letterSpacing: 0.5,
+  },
+  quizLivePill: {
+    backgroundColor: 'rgba(0, 208, 132, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  quizLivePillText: {
+    fontSize: 8,
+    fontWeight: '900',
+    color: '#00D084',
+  },
+  dailyQuizTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  dailyQuizSubtitle: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 2,
+    lineHeight: 14,
+  },
+  dailyQuizArrowWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
 });

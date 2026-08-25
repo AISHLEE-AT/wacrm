@@ -37,7 +37,6 @@ import {
   Database,
   Cloud,
   Globe,
-  PenTool,
   Check,
 } from 'lucide-react-native';
 
@@ -105,9 +104,8 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
   const [isLoadingCloud, setIsLoadingCloud] = useState<boolean>(false);
   const [cloudLoadedQuestions, setCloudLoadedQuestions] = useState<StructuredMCQ[]>([]);
 
-  // Interactive User Selection & Typed Answer State
+  // Interactive User Selection & Answer State
   const [userSelectedOptions, setUserSelectedOptions] = useState<Record<string, 'A' | 'B' | 'C' | 'D'>>({});
-  const [userTypedAnswers, setUserTypedAnswers] = useState<Record<string, string>>({});
   const [expandedSolutions, setExpandedSolutions] = useState<Record<string, boolean>>({});
 
   // Taxonomist Studio State
@@ -186,17 +184,17 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
     }
   };
 
-  // Unified Questions Pool (Local Master Store + Loaded Cloud Data)
+  // Unified Questions Pool (Local Master Store + Loaded Cloud Data) - Clean Objective MCQs
   const combinedPool = useMemo(() => {
+    let pool: StructuredMCQ[] = MASTER_QBANK_STORE;
     if (cloudLoadedQuestions && cloudLoadedQuestions.length > 0) {
       const map = new Map<string, StructuredMCQ>();
-      // First populate with local master store
       MASTER_QBANK_STORE.forEach((q) => map.set(q.question_uid, q));
-      // Overlay/Add cloud loaded questions
       cloudLoadedQuestions.forEach((q) => map.set(q.question_uid, q));
-      return Array.from(map.values());
+      pool = Array.from(map.values());
     }
-    return MASTER_QBANK_STORE;
+    // Filter out fill_in_the_blank questions and ensure clean objective MCQs
+    return pool.filter(q => q.question_format !== 'fill_in_the_blank');
   }, [cloudLoadedQuestions]);
 
   // Synchronous, instant search across UID, Number, Range, Format, and Keywords
@@ -220,26 +218,6 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
       ...prev,
       [questionUid]: true,
     }));
-  };
-
-  const handleCheckTypedAnswer = (questionUid: string, correctAnsText: string) => {
-    const typed = (userTypedAnswers[questionUid] || '').trim().toLowerCase();
-    const target = correctAnsText.trim().toLowerCase();
-
-    if (!typed) {
-      Alert.alert('Input Required', 'Please type your answer in the blank first.');
-      return;
-    }
-
-    const isMatch = target.includes(typed) || typed.includes(target);
-    if (isMatch) {
-      setUserSelectedOptions((prev) => ({ ...prev, [questionUid]: 'A' }));
-      setExpandedSolutions((prev) => ({ ...prev, [questionUid]: true }));
-      Alert.alert('Correct! 🎉', `Great job! "${typed}" matches the expected blank answer.`);
-    } else {
-      setExpandedSolutions((prev) => ({ ...prev, [questionUid]: true }));
-      Alert.alert('Not Quite Right', `Expected: "${correctAnsText}". See full explanation below.`);
-    }
   };
 
   const toggleSolution = (uid: string) => {
@@ -299,11 +277,11 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                 </View>
                 <View style={styles.cloudBadge}>
                   <Globe size={11} color="#38BDF8" />
-                  <Text style={styles.cloudBadgeText}>2 LAKH+ MCQS & BLANKS MAPPED</Text>
+                  <Text style={styles.cloudBadgeText}>2 LAKH+ OBJECTIVE MCQS MAPPED</Text>
                 </View>
               </View>
-              <Text style={styles.title}>Complete MCQ & Fill-in-Blanks QBank</Text>
-              <Text style={styles.subtitle}>Objective MCQs · Fill in the Blanks · Range (100 to 200) · Word Search</Text>
+              <Text style={styles.title}>Complete MCQ Question Bank</Text>
+              <Text style={styles.subtitle}>Objective MCQs · High-Yield Question Bank · Range Search · Instant Practice</Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <X size={20} color="#94A3B8" />
@@ -342,6 +320,7 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
               windowSize={5}
               removeClippedSubviews={Platform.OS === 'android'}
               style={styles.scrollArea}
+              contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={
                 <View>
@@ -350,7 +329,7 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                     <Search size={16} color="#00D084" />
                     <TextInput
                       style={styles.searchInput}
-                      placeholder="Word search (e.g. gravity, blank) or Number (e.g. 100 or 100 to 200)..."
+                      placeholder="Search by keyword (e.g. velocity, friction, cell), UID, or range..."
                       placeholderTextColor="#64748B"
                       value={inputVal}
                       onChangeText={setInputVal}
@@ -366,7 +345,7 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                     )}
                   </View>
 
-                  {/* 2. TYPE-WISE: Question Format Selector with Fill-in-the-Blank */}
+                  {/* 2. TYPE-WISE: Question Format Selector */}
                   <View style={styles.categorySection}>
                     <View style={styles.sectionHeaderRow}>
                       <Text style={styles.sectionHeaderLabel}>📑 QUESTION FORMAT & TYPE SEARCH:</Text>
@@ -594,7 +573,6 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                 const isAnswered = Boolean(selectedOpt);
                 const isCorrect = selectedOpt === qItem.correct_option;
                 const isSolExpanded = expandedSolutions[qItem.question_uid] !== false;
-                const isFITB = qItem.question_format === 'fill_in_the_blank' || qItem.question_text.includes('_______');
 
                 const formatObj = QUESTION_FORMATS.find(f => f.id === qItem.question_format);
                 const examObj = EXAM_CATEGORIES.find(e => e.id === qItem.exam_category);
@@ -613,14 +591,14 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                       </TouchableOpacity>
 
                       <View style={styles.badgeGroup}>
-                        {formatObj && (
-                          <View style={[styles.formatTag, { borderColor: '#38BDF850' }]}>
-                            <Text style={styles.formatTagText}>{formatObj.icon} {formatObj.label}</Text>
+                        {formatObj && formatObj.id !== 'ALL' && (
+                          <View style={styles.formatTagBadge}>
+                            <Text style={styles.formatTagBadgeText}>{formatObj.icon} {formatObj.label}</Text>
                           </View>
                         )}
                         {examObj && examObj.id !== 'ALL' && (
-                          <View style={[styles.examTag, { borderColor: '#F59E0B50' }]}>
-                            <Text style={styles.examTagText}>{examObj.icon} {examObj.label}</Text>
+                          <View style={styles.examTagBadge}>
+                            <Text style={styles.examTagBadgeText}>{examObj.icon} {examObj.label}</Text>
                           </View>
                         )}
                         <View
@@ -631,7 +609,16 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                             qItem.taxonomy.difficulty === 'Hard' && styles.diffHard,
                           ]}
                         >
-                          <Text style={styles.diffBadgeText}>{qItem.taxonomy.difficulty}</Text>
+                          <Text
+                            style={[
+                              styles.diffBadgeText,
+                              qItem.taxonomy.difficulty === 'Easy' && { color: '#10B981' },
+                              qItem.taxonomy.difficulty === 'Medium' && { color: '#F59E0B' },
+                              qItem.taxonomy.difficulty === 'Hard' && { color: '#F43F5E' },
+                            ]}
+                          >
+                            {qItem.taxonomy.difficulty}
+                          </Text>
                         </View>
                       </View>
                     </View>
@@ -645,54 +632,11 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                       </Text>
                     </View>
 
-                    {/* Fill in the Blank Indicator Pill */}
-                    {isFITB && (
-                      <View style={styles.fitbNoticePill}>
-                        <PenTool size={12} color="#F59E0B" />
-                        <Text style={styles.fitbNoticeText}>
-                          Fill in the Blank: Type your answer or tap an option to complete the statement.
-                        </Text>
-                      </View>
-                    )}
-
                     {/* Question Text */}
-                    <Text style={styles.qText}>{qItem.question_text}</Text>
+                    <Text style={styles.questionText}>{qItem.question_text}</Text>
                     {qItem.question_text_ta ? (
-                      <Text style={styles.qTextTamil}>{qItem.question_text_ta}</Text>
+                      <Text style={styles.questionTextTa}>{qItem.question_text_ta}</Text>
                     ) : null}
-
-                    {/* Fill-in-the-Blank Typed Input Box */}
-                    {isFITB && (
-                      <View style={styles.fitbInputCard}>
-                        <Text style={styles.fitbInputLabel}>✍️ PRACTICE RECALL (TYPE BLANK ANSWER):</Text>
-                        <View style={styles.fitbInputRow}>
-                          <TextInput
-                            style={styles.fitbTextInput}
-                            placeholder="Type the word that belongs in _______"
-                            placeholderTextColor="#64748B"
-                            value={userTypedAnswers[qItem.question_uid] || ''}
-                            onChangeText={(val) =>
-                              setUserTypedAnswers((prev) => ({
-                                ...prev,
-                                [qItem.question_uid]: val,
-                              }))
-                            }
-                          />
-                          <TouchableOpacity
-                            style={styles.fitbCheckBtn}
-                            onPress={() =>
-                              handleCheckTypedAnswer(
-                                qItem.question_uid,
-                                qItem.blank_answer || qItem.options[qItem.correct_option] || ''
-                              )
-                            }
-                          >
-                            <Check size={14} color="#070C18" />
-                            <Text style={styles.fitbCheckBtnText}>Verify</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
 
                     {/* Options (A, B, C, D) */}
                     <View style={styles.optionsContainer}>
@@ -796,13 +740,12 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
             /* ═════════════════════════════════════════════════════════════════
                🛠️ TAXONOMIST STUDIO (RAW QUESTION -> DETERMINISTIC SUPABASE JSON)
                ═════════════════════════════════════════════════════════════════ */
-            <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
               <View style={styles.taxonomistContainer}>
                 <View style={styles.taxonomistHero}>
                   <Text style={styles.taxonomistTitle}>Taxonomy Classifier & UID Generator</Text>
                   <Text style={styles.taxonomistDesc}>
-                    Paste raw MCQs or Fill-in-the-Blank questions to automatically construct standard
-                    deterministic UIDs and export formatted JSON for Supabase import.
+                    Paste raw MCQs to automatically construct standard deterministic UIDs and export formatted JSON for Supabase import.
                   </Text>
                 </View>
 
@@ -812,7 +755,7 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                     style={styles.rawTextInput}
                     multiline
                     numberOfLines={8}
-                    placeholder={`[\n  {\n    "question": "The speed of light in vacuum is _______ m/s.",\n    "options": ["3 x 10^8", "3 x 10^6", "9.8", "Zero"],\n    "subject": "Physics",\n    "subject_code": "PHY",\n    "domain": "Optics",\n    "domain_code": "OPT",\n    "difficulty": "Easy",\n    "question_format": "fill_in_the_blank",\n    "correctAnswer": "A",\n    "explanation": "c = 3 x 10^8 m/s in vacuum."\n  }\n]`}
+                    placeholder={`[\n  {\n    "question": "The speed of light in vacuum is approximately:",\n    "options": ["3 x 10^8 m/s", "3 x 10^6 m/s", "9.8 m/s^2", "Zero"],\n    "subject": "Physics",\n    "subject_code": "PHY",\n    "domain": "Optics",\n    "domain_code": "OPT",\n    "difficulty": "Easy",\n    "question_format": "single_choice",\n    "correctAnswer": "A",\n    "explanation": "c = 3 x 10^8 m/s in vacuum."\n  }\n]`}
                     placeholderTextColor="#64748B"
                     value={rawInputText}
                     onChangeText={setRawInputText}
@@ -955,7 +898,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#131F37',
   },
   tabBtnActive: {
-    backgroundColor: '#00D08420',
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
     borderWidth: 1,
     borderColor: '#00D084',
   },
@@ -970,7 +913,10 @@ const styles = StyleSheet.create({
   },
   scrollArea: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   searchBarContainer: {
     flexDirection: 'row',
@@ -1015,6 +961,9 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -1047,8 +996,8 @@ const styles = StyleSheet.create({
     borderColor: '#1E293B',
   },
   formatPillActive: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    borderColor: '#F59E0B',
+    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+    borderColor: '#38BDF8',
   },
   formatPillText: {
     fontSize: 10,
@@ -1056,46 +1005,26 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   formatPillTextActive: {
-    color: '#F59E0B',
-    fontWeight: '900',
-  },
-  rangeControlContainer: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
-    gap: 8,
-    marginBottom: 10,
-  },
-  rangeHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  rangeControlLabel: {
-    fontSize: 9,
-    fontWeight: '900',
     color: '#38BDF8',
-    letterSpacing: 0.5,
+    fontWeight: '900',
   },
-  clearRangeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#F43F5E',
+  rangeSection: {
+    gap: 6,
+    marginBottom: 10,
   },
   rangeInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    marginBottom: 6,
   },
   rangeInputBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#131F37',
+    backgroundColor: '#0E172A',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -1107,19 +1036,27 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#94A3B8',
   },
-  rangeTextInput: {
+  rangeNumberInput: {
     flex: 1,
     fontSize: 12,
     fontWeight: '800',
     color: '#00D084',
     padding: 0,
   },
+  rangeSeparator: {
+    paddingHorizontal: 4,
+  },
+  rangeSeparatorText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#64748B',
+  },
   rangePresetsRow: {
     gap: 6,
     paddingVertical: 2,
   },
   rangePresetPill: {
-    backgroundColor: '#131F37',
+    backgroundColor: '#0E172A',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -1207,10 +1144,6 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontWeight: '600',
   },
-  questionList: {
-    gap: 14,
-    paddingBottom: 40,
-  },
   emptyCard: {
     backgroundColor: '#0E172A',
     borderRadius: 16,
@@ -1220,6 +1153,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: '#1E293B',
+    marginTop: 20,
   },
   emptyTitle: {
     fontSize: 15,
@@ -1245,10 +1179,11 @@ const styles = StyleSheet.create({
   },
   qCard: {
     backgroundColor: '#0E172A',
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#1E293B',
+    marginBottom: 14,
     gap: 8,
   },
   qHeader: {
@@ -1261,13 +1196,13 @@ const styles = StyleSheet.create({
   uidBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     backgroundColor: 'rgba(56, 189, 248, 0.15)',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
+    borderColor: 'rgba(56, 189, 248, 0.35)',
   },
   uidBadgeText: {
     fontSize: 10,
@@ -1282,9 +1217,11 @@ const styles = StyleSheet.create({
   },
   examTagBadge: {
     backgroundColor: '#131F37',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
   },
   examTagBadgeText: {
     fontSize: 9,
@@ -1293,9 +1230,11 @@ const styles = StyleSheet.create({
   },
   formatTagBadge: {
     backgroundColor: '#131F37',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
   },
   formatTagBadgeText: {
     fontSize: 9,
@@ -1304,184 +1243,198 @@ const styles = StyleSheet.create({
   },
   diffBadge: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 4,
     borderWidth: 1,
+  },
+  diffEasy: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: '#10B981',
+  },
+  diffMedium: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderColor: '#F59E0B',
+  },
+  diffHard: {
+    backgroundColor: 'rgba(244, 63, 94, 0.15)',
+    borderColor: '#F43F5E',
   },
   diffBadgeText: {
     fontSize: 9,
     fontWeight: '800',
   },
-  breadcrumbText: {
-    fontSize: 10,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  questionTextBox: {
+  taxonomyTrail: {
     backgroundColor: '#131F37',
-    padding: 10,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#F59E0B',
-  },
-  questionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    lineHeight: 19,
-  },
-  questionTextTa: {
-    fontSize: 11,
-    color: '#94A3B8',
-    lineHeight: 16,
-  },
-  fitbTypePracticeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#070C18',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#F59E0B50',
+    borderColor: '#1E293B',
     marginTop: 2,
   },
-  fitbTextInput: {
-    flex: 1,
-    fontSize: 12,
-    color: '#F8FAFC',
-    padding: 0,
-  },
-  fitbCheckBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F59E0B',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  fitbCheckBtnText: {
+  taxonomyTrailText: {
     fontSize: 10,
-    fontWeight: '900',
-    color: '#070C18',
+    color: '#CBD5E1',
+    fontWeight: '600',
+    lineHeight: 15,
   },
-  optionsList: {
-    gap: 6,
+  questionText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#F8FAFC',
+    lineHeight: 21,
     marginTop: 4,
   },
-  optionsHeaderLabel: {
-    fontSize: 8,
-    fontWeight: '900',
+  questionTextTa: {
+    fontSize: 12,
     color: '#94A3B8',
-    letterSpacing: 0.5,
-    marginBottom: 2,
+    lineHeight: 18,
+    marginTop: 2,
   },
-  optionCard: {
+  optionsContainer: {
+    gap: 8,
+    marginTop: 6,
+  },
+  optionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     backgroundColor: '#131F37',
-    padding: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#1E293B',
   },
-  optionCardSelected: {
-    borderColor: '#38BDF8',
-    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-  },
-  optionCardCorrect: {
+  optionBtnCorrect: {
     borderColor: '#00D084',
     backgroundColor: 'rgba(0, 208, 132, 0.15)',
   },
-  optionCardWrong: {
+  optionBtnWrong: {
     borderColor: '#F43F5E',
     backgroundColor: 'rgba(244, 63, 94, 0.15)',
   },
-  optKeyBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  optionLetterBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#0E172A',
+    borderWidth: 1,
+    borderColor: '#334155',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  optKeyBoxSelected: {
-    backgroundColor: '#38BDF8',
-  },
-  optKeyBoxCorrect: {
+  optionLetterCorrect: {
     backgroundColor: '#00D084',
+    borderColor: '#00D084',
   },
-  optKeyBoxWrong: {
+  optionLetterWrong: {
     backgroundColor: '#F43F5E',
+    borderColor: '#F43F5E',
   },
-  optKeyText: {
+  optionLetterText: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#F8FAFC',
-  },
-  optText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  optTextTa: {
-    fontSize: 10,
     color: '#94A3B8',
-    marginTop: 1,
   },
-  solutionContainer: {
-    backgroundColor: '#131F37',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: '#00D084',
-    gap: 6,
+  optionLetterTextCorrect: {
+    color: '#070C18',
+  },
+  optionLetterTextWrong: {
+    color: '#FFFFFF',
+  },
+  optionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#F1F5F9',
+    lineHeight: 18,
+  },
+  optionTextCorrect: {
+    color: '#00D084',
+    fontWeight: '800',
+  },
+  optionTextWrong: {
+    color: '#F43F5E',
+    fontWeight: '800',
+  },
+  optionTamil: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
   },
   solutionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: '#131F37',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 8,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#1E293B',
   },
-  solutionTitle: {
+  solutionHeaderTitle: {
     fontSize: 11,
     fontWeight: '800',
     color: '#00D084',
   },
-  solutionBody: {
-    gap: 4,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: '#1E293B',
+  solutionBox: {
+    backgroundColor: '#091020',
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: '#00D084',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    gap: 8,
+  },
+  correctPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 208, 132, 0.3)',
+    alignSelf: 'flex-start',
+  },
+  correctPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#00D084',
   },
   explanationText: {
-    fontSize: 11,
-    color: '#CBD5E1',
-    lineHeight: 16,
+    fontSize: 12,
+    color: '#E2E8F0',
+    lineHeight: 18,
   },
-  explanationTextTa: {
-    fontSize: 10,
+  explanationTamil: {
+    fontSize: 11,
     color: '#94A3B8',
-    lineHeight: 14,
+    lineHeight: 16,
   },
   formulaBox: {
     backgroundColor: '#0E172A',
     borderRadius: 6,
-    padding: 6,
-    gap: 2,
-    marginTop: 2,
+    padding: 8,
+    gap: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.25)',
   },
   formulaLabel: {
     fontSize: 8,
     fontWeight: '900',
     color: '#38BDF8',
+    letterSpacing: 0.5,
   },
   formulaText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#F8FAFC',
+    color: '#38BDF8',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   taxonomistContainer: {

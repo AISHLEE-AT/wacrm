@@ -136,6 +136,20 @@ const CATEGORIES: CategoryItem[] = [
     featured: true,
   },
   {
+    id: 'quiz',
+    title: 'Daily Quiz',
+    desc: 'Daily 10 MCQs & Telegram Quiz Hub',
+    categoryGroup: 'education',
+    tag: '🎯 Daily 10',
+    tagColor: '#10b981',
+    icon: Zap,
+    iconName: 'Zap',
+    color: '#10b981',
+    bg: 'rgba(16, 185, 129, 0.15)',
+    path: '/quiz',
+    featured: true,
+  },
+  {
     id: 'touro',
     title: 'TourO',
     desc: 'Temple Trails & Village Tours',
@@ -209,6 +223,8 @@ export default function CategoryScreen() {
 
     if (cat.path === '/tuto') {
       navigation.navigate('TutOHubScreen');
+    } else if (cat.path === '/quiz') {
+      navigation.navigate('QuizScreen');
     } else if (cat.path === '/drivo') {
       navigation.navigate('DriveOScreen');
     } else if (cat.path === '/rideo') {

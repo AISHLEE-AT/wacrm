@@ -87,6 +87,8 @@ screen_*.png
 *.log
 scratch/
 scripts/
+!scripts/telegram_daily_quiz_bot.js
+!scripts/get_telegram_chat_id.js
 *.apk
 *.json.gz
 apps/mobile/src/lib/coursePlayerPrecompiledCache.json

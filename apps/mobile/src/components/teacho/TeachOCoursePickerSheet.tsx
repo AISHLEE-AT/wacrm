@@ -37,6 +37,7 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
   const [search, setSearch] = useState('');
   const [selectedTab, setSelectedTab] = useState<
     | 'all'
+    | 'featured'
     | 'school'
     | 'degree'
     | 'entrance'
@@ -49,6 +50,7 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = { all: safeCourses.length };
     safeCourses.forEach((c) => {
+      if (c.category === 'featured_junior' || c.id.startsWith('jr-')) counts['featured'] = (counts['featured'] || 0) + 1;
       if (c.category === 'school_k12' || c.category.startsWith('school_')) counts['school'] = (counts['school'] || 0) + 1;
       if (c.category === 'college_degree' || c.gradeLevel === 'college') counts['degree'] = (counts['degree'] || 0) + 1;
       if (c.category === 'entrance') counts['entrance'] = (counts['entrance'] || 0) + 1;
@@ -78,6 +80,9 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
       }
 
       // 2. Category Tab Filter
+      if (selectedTab === 'featured') {
+        return c.category === 'featured_junior' || c.id.startsWith('jr-');
+      }
       if (selectedTab === 'school') {
         return c.category === 'school_k12' || c.category.startsWith('school_');
       }
@@ -152,6 +157,7 @@ export const TeachOCoursePickerSheet: React.FC<TeachOCoursePickerSheetProps> = (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
               {[
                 { key: 'all', label: `All Programs (${tabCounts.all || safeCourses.length})` },
+                { key: 'featured', label: `⭐ Jr Leaders (${tabCounts.featured || 10})` },
                 { key: 'school', label: `🏫 School LKG-12th (${tabCounts.school || 0})` },
                 { key: 'degree', label: `🎓 Top Degrees (${tabCounts.degree || 0})` },
                 { key: 'entrance', label: `🎯 NEET / JEE (${tabCounts.entrance || 0})` },

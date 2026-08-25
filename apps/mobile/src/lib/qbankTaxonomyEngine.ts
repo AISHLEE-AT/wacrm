@@ -13,7 +13,7 @@
 import { aishleeSupabase } from '../services/aishleeSupabase';
 
 export type QuestionFormat =
-  | 'fill_in_the_blank'
+  | 'single_choice'
   | 'single_choice'
   | 'assertion_reason'
   | 'numerical'
@@ -108,7 +108,6 @@ export const EXAM_CATEGORIES: { id: ExamCategory; label: string; icon: string; d
  */
 export const QUESTION_FORMATS: { id: QuestionFormat | 'ALL'; label: string; icon: string; badgeColor: string }[] = [
   { id: 'ALL', label: 'All Types', icon: '📑', badgeColor: '#00D084' },
-  { id: 'fill_in_the_blank', label: 'Fill in Blanks', icon: '✏️', badgeColor: '#F59E0B' },
   { id: 'single_choice', label: 'Single MCQ', icon: '🔘', badgeColor: '#38BDF8' },
   { id: 'assertion_reason', label: 'Assertion & Reason', icon: '⚖️', badgeColor: '#EAB308' },
   { id: 'numerical', label: 'Numerical / NAT', icon: '🧮', badgeColor: '#EC4899' },
@@ -319,9 +318,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Medium",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0001] In two-dimensional projectile motion without air resistance, the horizontal velocity component remains _______ throughout the flight.",
     "question_text_ta": "[#0001] காற்று உராய்வு இல்லாத இருபரிமாண எறிபொருள் இயக்கத்தில் கிடைமட்ட திசைவேகக் கூறு இயக்கம் முழுவதும் _______ ஆக இருக்கும்.",
@@ -543,9 +542,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Easy",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0008] The famous Uttaramerur Inscription of Parantaka Chola I describes the _______ system of secret ballot village democracy.",
     "question_text_ta": "[#0008] முதலாம் பராந்தக சோழனின் உத்திரமேரூர் கல்வெட்டு கிராம நிர்வாகத்திற்கான _______ தேர்தல் முறையை விவரிக்கிறது.",
@@ -767,9 +766,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0015] The sum of all eigenvalues of an n x n square matrix A is identically equal to the _______ of matrix A.",
     "question_text_ta": "[#0015] ஒரு சதுர அணி A இன் அனைத்து ஐகன் மதிப்புகளின் கூடுதல் அந்த அணியின் _______ க்குச் சமமாகும்.",
@@ -991,9 +990,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Easy",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0022] According to microscopic Ohm's law, the electrical conductivity σ is given by the formula _______ .",
     "question_text_ta": "[#0022] நுண்ணோக்கி ஓம் விதியின்படி ஒரு கடத்தியின் மின்கடத்துத்திறன் σ சமன்பாடு _______ ஆகும்.",
@@ -1215,9 +1214,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M3",
       "difficulty": "Hard",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0029] Tamil Nadu receives nearly 48% to 50% of its annual precipitation from the _______ Monsoon season.",
     "question_text_ta": "[#0029] தமிழ்நாடு தனது ஆண்டு மழையில் சுமார் 48% முதல் 50% பங்கை _______ பருவமழை காலத்தில் பெறுகிறது.",
@@ -1439,9 +1438,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Easy",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0036] In an AVL Tree, the balance factor for every node is strictly constrained to the set _______ .",
     "question_text_ta": "[#0036] AVL மரத்தில் ஒவ்வொரு முனையின் சமநிலை காரணி (Balance Factor) எப்போதும் _______ கணத்திற்குள் இருக்க வேண்டும்.",
@@ -1663,9 +1662,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M3",
       "difficulty": "Hard",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0043] For a first-order chemical reaction, the half-life period t_1/2 is _______ of initial reactant concentration.",
     "question_text_ta": "[#0043] ஒரு முதல் வகை வேதிவினைக்கு அரைவாழ்வு காலம் தொடக்கச் செறிவை _______ .",
@@ -1887,9 +1886,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Hard",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0050] If SI = (P * R * N) / 100, the total accumulated amount A is calculated by the formula A = _______ .",
     "question_text_ta": "[#0050] தனிவட்டி SI = (P * R * N) / 100 எனில், மொத்தத் தொகை A கணக்கிடும் சூத்திரம் A = _______ ஆகும்.",
@@ -2111,9 +2110,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "SSC_BANK",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SSC_BANK",
     "question_text": "[#0057] Under Article _______ of the Constitution of India, High Courts have the power to issue Writs for Fundamental Rights and other legal rights.",
     "question_text_ta": "[#0057] இந்திய அரசியலமைப்பின் சட்டப்பிரிவு _______ இன் கீழ் உயர்நீதிமன்றங்கள் நீதிப்பேராணைகளை வெளியிடும் அதிகாரம் பெற்றுள்ளன.",
@@ -2335,9 +2334,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Hard",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0064] During photosynthesis in chloroplasts, photolysis of water occurs at the _______ complex of PS II.",
     "question_text_ta": "[#0064] ஒளிச்சேர்க்கையின் போது நீர் மூலக்கூறு ஒளிச்சிதைவு PS II இன் _______ வளாகத்தில் நடைபெறுகிறது.",
@@ -2559,9 +2558,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0071] In two-dimensional projectile motion without air resistance, the horizontal velocity component remains _______ throughout the flight.",
     "question_text_ta": "[#0071] காற்று உராய்வு இல்லாத இருபரிமாண எறிபொருள் இயக்கத்தில் கிடைமட்ட திசைவேகக் கூறு இயக்கம் முழுவதும் _______ ஆக இருக்கும்.",
@@ -2783,9 +2782,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Easy",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0078] The famous Uttaramerur Inscription of Parantaka Chola I describes the _______ system of secret ballot village democracy.",
     "question_text_ta": "[#0078] முதலாம் பராந்தக சோழனின் உத்திரமேரூர் கல்வெட்டு கிராம நிர்வாகத்திற்கான _______ தேர்தல் முறையை விவரிக்கிறது.",
@@ -3007,9 +3006,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0085] The sum of all eigenvalues of an n x n square matrix A is identically equal to the _______ of matrix A.",
     "question_text_ta": "[#0085] ஒரு சதுர அணி A இன் அனைத்து ஐகன் மதிப்புகளின் கூடுதல் அந்த அணியின் _______ க்குச் சமமாகும்.",
@@ -3231,9 +3230,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Medium",
       "exam_category": "SSC_BANK",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SSC_BANK",
     "question_text": "[#0092] According to microscopic Ohm's law, the electrical conductivity σ is given by the formula _______ .",
     "question_text_ta": "[#0092] நுண்ணோக்கி ஓம் விதியின்படி ஒரு கடத்தியின் மின்கடத்துத்திறன் σ சமன்பாடு _______ ஆகும்.",
@@ -3455,9 +3454,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0099] Tamil Nadu receives nearly 48% to 50% of its annual precipitation from the _______ Monsoon season.",
     "question_text_ta": "[#0099] தமிழ்நாடு தனது ஆண்டு மழையில் சுமார் 48% முதல் 50% பங்கை _______ பருவமழை காலத்தில் பெறுகிறது.",
@@ -3679,9 +3678,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M3",
       "difficulty": "Medium",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0106] In an AVL Tree, the balance factor for every node is strictly constrained to the set _______ .",
     "question_text_ta": "[#0106] AVL மரத்தில் ஒவ்வொரு முனையின் சமநிலை காரணி (Balance Factor) எப்போதும் _______ கணத்திற்குள் இருக்க வேண்டும்.",
@@ -3903,9 +3902,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Easy",
       "exam_category": "SSC_BANK",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SSC_BANK",
     "question_text": "[#0113] For a first-order chemical reaction, the half-life period t_1/2 is _______ of initial reactant concentration.",
     "question_text_ta": "[#0113] ஒரு முதல் வகை வேதிவினைக்கு அரைவாழ்வு காலம் தொடக்கச் செறிவை _______ .",
@@ -4127,9 +4126,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Easy",
       "exam_category": "SSC_BANK",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SSC_BANK",
     "question_text": "[#0120] If SI = (P * R * N) / 100, the total accumulated amount A is calculated by the formula A = _______ .",
     "question_text_ta": "[#0120] தனிவட்டி SI = (P * R * N) / 100 எனில், மொத்தத் தொகை A கணக்கிடும் சூத்திரம் A = _______ ஆகும்.",
@@ -4351,9 +4350,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Medium",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0127] Under Article _______ of the Constitution of India, High Courts have the power to issue Writs for Fundamental Rights and other legal rights.",
     "question_text_ta": "[#0127] இந்திய அரசியலமைப்பின் சட்டப்பிரிவு _______ இன் கீழ் உயர்நீதிமன்றங்கள் நீதிப்பேராணைகளை வெளியிடும் அதிகாரம் பெற்றுள்ளன.",
@@ -4575,9 +4574,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Easy",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0134] During photosynthesis in chloroplasts, photolysis of water occurs at the _______ complex of PS II.",
     "question_text_ta": "[#0134] ஒளிச்சேர்க்கையின் போது நீர் மூலக்கூறு ஒளிச்சிதைவு PS II இன் _______ வளாகத்தில் நடைபெறுகிறது.",
@@ -4799,9 +4798,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Medium",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0141] In two-dimensional projectile motion without air resistance, the horizontal velocity component remains _______ throughout the flight.",
     "question_text_ta": "[#0141] காற்று உராய்வு இல்லாத இருபரிமாண எறிபொருள் இயக்கத்தில் கிடைமட்ட திசைவேகக் கூறு இயக்கம் முழுவதும் _______ ஆக இருக்கும்.",
@@ -5023,9 +5022,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Easy",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0148] The famous Uttaramerur Inscription of Parantaka Chola I describes the _______ system of secret ballot village democracy.",
     "question_text_ta": "[#0148] முதலாம் பராந்தக சோழனின் உத்திரமேரூர் கல்வெட்டு கிராம நிர்வாகத்திற்கான _______ தேர்தல் முறையை விவரிக்கிறது.",
@@ -5247,9 +5246,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0155] The sum of all eigenvalues of an n x n square matrix A is identically equal to the _______ of matrix A.",
     "question_text_ta": "[#0155] ஒரு சதுர அணி A இன் அனைத்து ஐகன் மதிப்புகளின் கூடுதல் அந்த அணியின் _______ க்குச் சமமாகும்.",
@@ -5471,9 +5470,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Easy",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0162] According to microscopic Ohm's law, the electrical conductivity σ is given by the formula _______ .",
     "question_text_ta": "[#0162] நுண்ணோக்கி ஓம் விதியின்படி ஒரு கடத்தியின் மின்கடத்துத்திறன் σ சமன்பாடு _______ ஆகும்.",
@@ -5695,9 +5694,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M3",
       "difficulty": "Hard",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0169] Tamil Nadu receives nearly 48% to 50% of its annual precipitation from the _______ Monsoon season.",
     "question_text_ta": "[#0169] தமிழ்நாடு தனது ஆண்டு மழையில் சுமார் 48% முதல் 50% பங்கை _______ பருவமழை காலத்தில் பெறுகிறது.",
@@ -5919,9 +5918,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Easy",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0176] In an AVL Tree, the balance factor for every node is strictly constrained to the set _______ .",
     "question_text_ta": "[#0176] AVL மரத்தில் ஒவ்வொரு முனையின் சமநிலை காரணி (Balance Factor) எப்போதும் _______ கணத்திற்குள் இருக்க வேண்டும்.",
@@ -6143,9 +6142,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M3",
       "difficulty": "Hard",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0183] For a first-order chemical reaction, the half-life period t_1/2 is _______ of initial reactant concentration.",
     "question_text_ta": "[#0183] ஒரு முதல் வகை வேதிவினைக்கு அரைவாழ்வு காலம் தொடக்கச் செறிவை _______ .",
@@ -6367,9 +6366,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Hard",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0190] If SI = (P * R * N) / 100, the total accumulated amount A is calculated by the formula A = _______ .",
     "question_text_ta": "[#0190] தனிவட்டி SI = (P * R * N) / 100 எனில், மொத்தத் தொகை A கணக்கிடும் சூத்திரம் A = _______ ஆகும்.",
@@ -6591,9 +6590,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "SSC_BANK",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SSC_BANK",
     "question_text": "[#0197] Under Article _______ of the Constitution of India, High Courts have the power to issue Writs for Fundamental Rights and other legal rights.",
     "question_text_ta": "[#0197] இந்திய அரசியலமைப்பின் சட்டப்பிரிவு _______ இன் கீழ் உயர்நீதிமன்றங்கள் நீதிப்பேராணைகளை வெளியிடும் அதிகாரம் பெற்றுள்ளன.",
@@ -6815,9 +6814,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Hard",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0204] During photosynthesis in chloroplasts, photolysis of water occurs at the _______ complex of PS II.",
     "question_text_ta": "[#0204] ஒளிச்சேர்க்கையின் போது நீர் மூலக்கூறு ஒளிச்சிதைவு PS II இன் _______ வளாகத்தில் நடைபெறுகிறது.",
@@ -7039,9 +7038,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0211] In two-dimensional projectile motion without air resistance, the horizontal velocity component remains _______ throughout the flight.",
     "question_text_ta": "[#0211] காற்று உராய்வு இல்லாத இருபரிமாண எறிபொருள் இயக்கத்தில் கிடைமட்ட திசைவேகக் கூறு இயக்கம் முழுவதும் _______ ஆக இருக்கும்.",
@@ -7263,9 +7262,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Easy",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0218] The famous Uttaramerur Inscription of Parantaka Chola I describes the _______ system of secret ballot village democracy.",
     "question_text_ta": "[#0218] முதலாம் பராந்தக சோழனின் உத்திரமேரூர் கல்வெட்டு கிராம நிர்வாகத்திற்கான _______ தேர்தல் முறையை விவரிக்கிறது.",
@@ -7487,9 +7486,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "NEET_JEE",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "NEET_JEE",
     "question_text": "[#0225] The sum of all eigenvalues of an n x n square matrix A is identically equal to the _______ of matrix A.",
     "question_text_ta": "[#0225] ஒரு சதுர அணி A இன் அனைத்து ஐகன் மதிப்புகளின் கூடுதல் அந்த அணியின் _______ க்குச் சமமாகும்.",
@@ -7711,9 +7710,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M1",
       "difficulty": "Medium",
       "exam_category": "SSC_BANK",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SSC_BANK",
     "question_text": "[#0232] According to microscopic Ohm's law, the electrical conductivity σ is given by the formula _______ .",
     "question_text_ta": "[#0232] நுண்ணோக்கி ஓம் விதியின்படி ஒரு கடத்தியின் மின்கடத்துத்திறன் σ சமன்பாடு _______ ஆகும்.",
@@ -7935,9 +7934,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M2",
       "difficulty": "Medium",
       "exam_category": "TNPSC",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "TNPSC",
     "question_text": "[#0239] Tamil Nadu receives nearly 48% to 50% of its annual precipitation from the _______ Monsoon season.",
     "question_text_ta": "[#0239] தமிழ்நாடு தனது ஆண்டு மழையில் சுமார் 48% முதல் 50% பங்கை _______ பருவமழை காலத்தில் பெறுகிறது.",
@@ -8159,9 +8158,9 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
       "microtopic_code": "M3",
       "difficulty": "Medium",
       "exam_category": "SCHOOL_K12",
-      "question_format": "fill_in_the_blank"
+      "question_format": "single_choice"
     },
-    "question_format": "fill_in_the_blank",
+    "question_format": "single_choice",
     "exam_category": "SCHOOL_K12",
     "question_text": "[#0246] In an AVL Tree, the balance factor for every node is strictly constrained to the set _______ .",
     "question_text_ta": "[#0246] AVL மரத்தில் ஒவ்வொரு முனையின் சமநிலை காரணி (Balance Factor) எப்போதும் _______ கணத்திற்குள் இருக்க வேண்டும்.",
@@ -8487,7 +8486,7 @@ export function extractStructuredQuestionsFromKindleRow(
 
     const qText = rawMcq.question || rawMcq.q || 'Question';
     const isFitb = qText.includes('____') || qText.includes('_______') || qText.includes('...');
-    const format: QuestionFormat = isFitb ? 'fill_in_the_blank' : 'single_choice';
+    const format: QuestionFormat = isFitb ? 'single_choice' : 'single_choice';
 
     questions.push({
       question_uid: uid,
@@ -8545,10 +8544,10 @@ export function extractStructuredQuestionsFromKindleRow(
         microtopic_code: 'V1',
         difficulty: 'Easy',
         exam_category: tax.examCat,
-        question_format: 'fill_in_the_blank',
+        question_format: 'single_choice',
       },
       exam_category: tax.examCat,
-      question_format: 'fill_in_the_blank',
+      question_format: 'single_choice',
       question_text: `[#${seqPadded}] ${rawQ} _______ .`,
       options: {
         A: ansText,
@@ -8796,7 +8795,7 @@ export function classifyAndFormatRawMCQs(
       const microtopic_code = (raw.taxonomy?.microtopic_code || raw.microtopic_code || 'M1').toUpperCase();
       const difficulty = (raw.taxonomy?.difficulty || raw.difficulty || 'Medium') as 'Easy' | 'Medium' | 'Hard';
       const exam_category = (raw.taxonomy?.exam_category || raw.exam_category || 'ALL') as ExamCategory;
-      const question_format = (raw.taxonomy?.question_format || raw.question_format || 'fill_in_the_blank') as QuestionFormat;
+      const question_format = (raw.taxonomy?.question_format || raw.question_format || 'single_choice') as QuestionFormat;
 
       const branchKey = `${subject_code}-${domain_code}-${topic_code}-${subtopic_code}-${microtopic_code}-${difficulty}`;
       seqCounter[branchKey] = (seqCounter[branchKey] || 0) + 1;
