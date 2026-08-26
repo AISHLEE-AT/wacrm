@@ -3,7 +3,7 @@ import {
   fetchDaily10Questions,
   sendQuizPoll,
   sendTextMessage,
-} from '../../../../../../scripts/telegram_daily_quiz_bot';
+} from '@/lib/telegramQuizBot';
 
 export const dynamic = 'force-dynamic';
 

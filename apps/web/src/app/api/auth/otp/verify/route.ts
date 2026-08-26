@@ -164,6 +164,7 @@ export async function POST(request: Request) {
       main_category: finalCategory,
       default_module: isDriverPartner ? '/drivo' : ((existingProfile as any)?.default_module || '/rideo'),
       updated_at: new Date().toISOString(),
+      last_whatsapp_inbound_at: new Date().toISOString(),
     }
 
     if (driverMatch) {
@@ -177,6 +178,18 @@ export async function POST(request: Request) {
     }
 
     await admin.from('profiles').upsert(profileData, { onConflict: 'id' })
+
+    // Sync 24h WhatsApp window: touch contacts and conversations
+    // so the session timer in the inbox sees fresh timestamps.
+    const now = new Date().toISOString()
+    await admin.from('contacts')
+      .update({ updated_at: now } as any)
+      .or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/^91/, '')}`)
+    await admin.from('conversations')
+      .update({ last_message_at: now, updated_at: now } as any)
+      .in('contact_id',
+        (await admin.from('contacts').select('id').or(`phone.eq.${cleanPhone},phone.eq.${cleanPhone.replace(/^91/, '')}`)).data?.map((c: any) => c.id) || []
+      )
 
     // Determine if user still needs to set a PIN (no pin_hash in DB and none provided now)
     const hasPinNow = !!(pin && pin.length === 4)

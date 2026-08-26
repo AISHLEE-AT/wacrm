@@ -724,20 +724,34 @@ export const AppProvider = ({ children }: any) => {
       const p = user?.phone;
       if (p) {
         const cleanPhone = p.replace(/\D/g, '').slice(-10);
+        const isoTs = new Date(ts).toISOString();
+
         await supabase
           .from('profiles')
           .update({
-            last_whatsapp_inbound_at: new Date(ts).toISOString(),
-            updated_at: new Date(ts).toISOString(),
+            last_whatsapp_inbound_at: isoTs,
+            updated_at: isoTs,
           })
           .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
 
         await supabase
           .from('contacts')
           .update({
-            updated_at: new Date(ts).toISOString(),
+            updated_at: isoTs,
           })
           .ilike('phone', `%${cleanPhone}%`);
+
+        // Also touch conversations so 24h window stays alive in CRM
+        const { data: matchingContacts } = await supabase
+          .from('contacts')
+          .select('id')
+          .ilike('phone', `%${cleanPhone}%`);
+        if (matchingContacts && matchingContacts.length > 0) {
+          await supabase
+            .from('conversations')
+            .update({ last_message_at: isoTs, updated_at: isoTs })
+            .in('contact_id', matchingContacts.map((c: any) => c.id));
+        }
       }
     } catch (e) {}
   }, [user?.phone]);

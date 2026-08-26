@@ -234,23 +234,52 @@ export function MessageThread({
   // Previously this was hardcoded to never-expired, which hid the template
   // prompt from agents even when the window had genuinely closed.
   const sessionInfo = useMemo(() => {
+    const timestamps: number[] = [];
+
+    // 1. Check last customer inbound message
     const lastInbound = messages
       .filter((m) => m.sender_type === "customer")
       .at(-1);
+    if (lastInbound?.created_at) {
+      const t = new Date(lastInbound.created_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
+    }
 
-    let lastActiveTime: number | null = null;
-    if (lastInbound) {
-      lastActiveTime = new Date(lastInbound.created_at).getTime();
-    } else {
-      const lastMsg = messages.at(-1);
-      if (lastMsg) {
-        lastActiveTime = new Date(lastMsg.created_at).getTime();
-      } else if (conversation?.last_message_at) {
-        lastActiveTime = new Date(conversation.last_message_at).getTime();
-      } else if (conversation?.updated_at) {
-        lastActiveTime = new Date(conversation.updated_at).getTime();
+    // 2. Check latest message of any kind in thread
+    const lastMsg = messages.at(-1);
+    if (lastMsg?.created_at) {
+      const t = new Date(lastMsg.created_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
+    }
+
+    // 3. Check conversation timestamps
+    if (conversation?.last_message_at) {
+      const t = new Date(conversation.last_message_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
+    }
+    if (conversation?.updated_at) {
+      const t = new Date(conversation.updated_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
+    }
+
+    // 4. Check contact timestamps if present
+    const contact = (conversation as any)?.contact;
+    if (contact?.last_inbound_at) {
+      const t = new Date(contact.last_inbound_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
+    }
+    if (contact?.updated_at) {
+      const t = new Date(contact.updated_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
+    }
+    if (contact?.whatsapp_window_expires_at) {
+      const exp = new Date(contact.whatsapp_window_expires_at).getTime();
+      if (!isNaN(exp) && exp > 0) {
+        timestamps.push(exp - 24 * 60 * 60 * 1000);
       }
     }
+
+    const lastActiveTime = timestamps.length > 0 ? Math.max(...timestamps) : null;
 
     if (!lastActiveTime || isNaN(lastActiveTime)) {
       return {
