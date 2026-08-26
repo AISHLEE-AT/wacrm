@@ -28,6 +28,7 @@ import TutOAdminScreen  from './src/screens/TutOAdminScreen';
 import CareerHubScreen  from './src/screens/CareerHubScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
+import DealOScreen      from './src/screens/DealOScreen';
 import FlowQuestionScreen from './src/screens/FlowQuestionScreen';
 import QuizScreen from './src/screens/QuizScreen';
 
