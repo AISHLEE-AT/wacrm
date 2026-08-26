@@ -82,28 +82,16 @@ export const ALL_MODULES: ModuleItem[] = [
 
   // Learning & Career
   {
-    id: "teacho",
-    href: "/teacho",
-    name: "TeachO",
-    tamilName: "கல்வி & வகுப்புகள்",
+    id: "tuto",
+    href: "/tuto",
+    name: "TutO",
+    tamilName: "கல்வி & பயிற்சி",
     category: "learning",
     icon: GraduationCap,
     color: "text-indigo-400",
     bgGradient: "from-indigo-500/20 to-purple-500/10 border-indigo-500/30",
-    badge: "Tamil & English",
-    description: "Online masterclasses, skills & lecture notes"
-  },
-  {
-    id: "testo",
-    href: "/testo",
-    name: "TestO",
-    tamilName: "தேர்வு பயிற்சி மையம்",
-    category: "learning",
-    icon: FileCheck,
-    color: "text-purple-400",
-    bgGradient: "from-purple-500/20 to-pink-500/10 border-purple-500/30",
-    badge: "TNPSC / NEET",
-    description: "Interactive mock exams with timed scoring"
+    badge: "Super LMS",
+    description: "Unified LMS: TeachO + TestO All-in-One"
   },
 
   {
