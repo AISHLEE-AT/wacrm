@@ -850,11 +850,13 @@ async function processMessage(
 
   // -- WELCOME AUTO-REPLY HOOK --
   if (isFirstInboundMessage && contentText?.trim().toLowerCase() === 'hi') {
-    let flutterUrl = ''
-    let reactUrl = 'https://watscrm.vercel.app'
+    const reactUrl = 'https://watscrm.vercel.app'
+    // Primary: Cloudflare R2 APK URL; Fallback: app_builds table
+    const r2ApkUrl = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL || 'https://672098863d97ed3208c7c47a8091e5dd.r2.cloudflarestorage.com/teacho-course-assets') + '/supro-app.apk'
     
     // Fire and forget to not block webhook response
     ;(async () => {
+      let apkUrl = r2ApkUrl
       try {
         const gameo = gameoAdmin()
         if (gameo) {
@@ -867,19 +869,14 @@ async function processMessage(
             
           if (builds) {
             const latestFlutter = builds.find((b: any) => b.platform === 'flutter')
-            const latestReact = builds.find((b: any) => b.platform === 'react')
-            if (latestFlutter?.download_url) flutterUrl = latestFlutter.download_url
+            if (latestFlutter?.download_url) apkUrl = latestFlutter.download_url
           }
         }
       } catch (e) {
         console.error('Failed to fetch from Gameo DB:', e)
       }
 
-      let welcomeMsg = `Welcome to SuprO! 🚀\n\n🌐 Access our web app here:\n${reactUrl}`
-      
-      if (flutterUrl) {
-         welcomeMsg += `\n\n📱 Download the latest Android app:\n${flutterUrl}\n\n*Installation Methods:*\n1. Tap the Android app link above to download the APK file.\n2. Once downloaded, tap to open the file.\n3. If prompted, select "Allow from this source" in your settings to install the app.\n4. Enjoy SuprO!`
-      }
+      const welcomeMsg = `Welcome to SuprO! 🚀\n\n🌐 *Web App Link:*\n${reactUrl}\n\n*Guide to use the Web App:*\n1. Tap the link above to open SuprO on any browser.\n2. Log in using your phone number.\n3. Explore services directly from the menu.\n\n📱 *Android App Download:*\n${apkUrl}\n\n*Installation Guide:*\n1. Tap the Android app link above to download the APK file.\n2. Once downloaded, tap to open the file.\n3. If prompted, select "Allow from this source" in your settings to install the app.\n4. Open the app and enjoy SuprO!`
       
       sendTextMessage({
         phoneNumberId,
@@ -906,11 +903,13 @@ async function processMessage(
 
   // -- APP LINK AUTO-REPLY HOOK --
   if (contentText?.trim().toLowerCase() === 'app') {
-    let flutterUrl = ''
-    let reactUrl = 'https://watscrm.vercel.app'
+    const reactUrl = 'https://watscrm.vercel.app'
+    // Primary: Cloudflare R2 APK URL; Fallback: app_builds table
+    const r2ApkUrl = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL || 'https://672098863d97ed3208c7c47a8091e5dd.r2.cloudflarestorage.com/teacho-course-assets') + '/supro-app.apk'
     
     // Fire and forget to not block webhook response
     ;(async () => {
+      let apkUrl = r2ApkUrl
       try {
         const gameo = gameoAdmin()
         if (gameo) {
@@ -923,19 +922,14 @@ async function processMessage(
             
           if (builds) {
             const latestFlutter = builds.find((b: any) => b.platform === 'flutter')
-            const latestReact = builds.find((b: any) => b.platform === 'react')
-            if (latestFlutter?.download_url) flutterUrl = latestFlutter.download_url
+            if (latestFlutter?.download_url) apkUrl = latestFlutter.download_url
           }
         }
       } catch (e) {
         console.error('Failed to fetch from Gameo DB:', e)
       }
 
-      let appMsg = `Here is the SuprO App! 🚀\n\n🌐 *Web App Link:*\n${reactUrl}\n\n*Guide to use the Web App:*\n1. Tap the link above to open SuprO on any browser.\n2. Log in using your phone number.\n3. Explore services directly from the menu.`
-      
-      if (flutterUrl) {
-         appMsg += `\n\n📱 *Android App Download:*\n${flutterUrl}\n\n*Installation Guide:*\n1. Tap the Android app link above to download the APK file.\n2. Once downloaded, tap to open the file.\n3. If prompted, select "Allow from this source" in your settings to install the app.\n4. Open the app and enjoy SuprO!`
-      }
+      const appMsg = `Here is the SuprO App! 🚀\n\n🌐 *Web App Link:*\n${reactUrl}\n\n*Guide to use the Web App:*\n1. Tap the link above to open SuprO on any browser.\n2. Log in using your phone number.\n3. Explore services directly from the menu.\n\n📱 *Android App Download:*\n${apkUrl}\n\n*Installation Guide:*\n1. Tap the Android app link above to download the APK file.\n2. Once downloaded, tap to open the file.\n3. If prompted, select "Allow from this source" in your settings to install the app.\n4. Open the app and enjoy SuprO!`
       
       sendTextMessage({
         phoneNumberId,

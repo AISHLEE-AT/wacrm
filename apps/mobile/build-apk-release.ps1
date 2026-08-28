@@ -25,6 +25,11 @@ Write-Host "`n[2/2] Installing and Launching the App on the Device..."
 adb install -r -d android\app\build\outputs\apk\release\app-release.apk
 adb shell am start -n com.poovisri.mobile/.MainActivity
 
+Write-Host "`n[3/3] Uploading the new APK to Cloudflare R2 Database..."
+Set-Location ..\..
+node scripts\upload_apk_to_r2.js
+Set-Location apps\mobile
+
 Write-Host "`n====================================="
-Write-Host " Done! The release app should now launch successfully."
+Write-Host " Done! The release app should now launch successfully and is available on Cloudflare R2."
 Write-Host "====================================="
