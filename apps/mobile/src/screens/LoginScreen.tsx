@@ -217,7 +217,7 @@ export default function LoginScreen({ navigation }: any) {
     // Instantly update the 24-hour sync timestamp in SecureStore and Supabase
     await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
     if (recordWhatsAppSync) {
-      await recordWhatsAppSync(Date.now());
+      await recordWhatsAppSync(Date.now(), phone);
     }
 
     // If user has saved session token, fast-track directly into the app
@@ -254,7 +254,7 @@ export default function LoginScreen({ navigation }: any) {
       await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
       await SecureStore.setItemAsync('onboarding-complete', 'true');
       if (recordWhatsAppSync) {
-        await recordWhatsAppSync(Date.now());
+        await recordWhatsAppSync(Date.now(), phone);
       }
 
       if (data.user) {

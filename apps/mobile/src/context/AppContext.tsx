@@ -716,12 +716,12 @@ export const AppProvider = ({ children }: any) => {
 
   // ─── 23-Hour WhatsApp CRM Session & Notification Sync Methods ───
 
-  const recordWhatsAppSync = useCallback(async (timestamp?: number) => {
+  const recordWhatsAppSync = useCallback(async (timestamp?: number, phoneOverride?: string) => {
     const ts = timestamp || Date.now();
     setLastWhatsAppSync(ts);
     await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', ts.toString());
     try {
-      const p = user?.phone;
+      const p = phoneOverride || user?.phone;
       if (p) {
         const cleanPhone = p.replace(/\D/g, '').slice(-10);
         const isoTs = new Date(ts).toISOString();
