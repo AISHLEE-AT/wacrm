@@ -7,60 +7,33 @@ import {
 } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
-import { GroupRepository, UserGroupStatus, DbGroup, DbMember } from '@/lib/groupRepository';
+import { GroupRepository, UserGroupStatus, DbGroup, DbMember, GroupData } from '@/lib/groupRepository';
 
 // Import newly ported Web Modals
 import { CreateGroupWizardWebModal } from '@/components/groupo/CreateGroupWizardWebModal';
 import { GroupAdminConsoleWebModal } from '@/components/groupo/GroupAdminConsoleWebModal';
 import { GroupAiAssistantWebModal } from '@/components/groupo/GroupAiAssistantWebModal';
 
+import { GroupSavingsLedgerWebModal } from '@/components/groupo/GroupSavingsLedgerWebModal';
+import { GroupMeetingNotesWebModal } from '@/components/groupo/GroupMeetingNotesWebModal';
+import { GroupMeetingVideoWebModal } from '@/components/groupo/GroupMeetingVideoWebModal';
+import { GroupMemberViewWebCard } from '@/components/groupo/GroupMemberViewWebCard';
+
 const supabase = createClient();
 
-interface GroupData {
-  id: string;
-  name: string;
-  category: string;
-  categoryLabel: string;
-  tagline: string;
-  village: string;
-  district: string;
-  regCode: string;
-  monthlySavingsPerMember: number;
-  totalMembersCount: number;
-  totalSavingsPool: number;
-  activeLoanPool: number;
-  meetingDay: string;
-  members: DbMember[];
-  leaderName: string;
-}
-
-const mapDbGroupToGroupData = async (g: DbGroup): Promise<GroupData> => {
-  let members: DbMember[] = [];
-  try {
-    members = await GroupRepository.fetchMembers(g.id);
-  } catch (e) {
-    console.error(e);
-  }
-
-  const leader = members.find(m => m.role.toLowerCase().includes('president')) || members[0];
-  const leaderName = leader ? leader.name : g.leader_name || 'Group Leader';
-
+const mapDbGroupToGroupData = async (grp: DbGroup): Promise<GroupData> => {
+  const members = await GroupRepository.getGroupMembers(grp.id);
+  const activeLoanPool = members.reduce((sum, m) => sum + (m.active_loan_amount || 0), 0);
+  
   return {
-    id: g.id,
-    name: g.name,
-    category: g.category || 'WomenSHG',
-    categoryLabel: g.category_label || 'Self Help Group',
-    tagline: g.tagline || 'Community Empowerment',
-    village: g.village || 'Local Village',
-    district: g.district || 'District',
-    regCode: g.reg_code || 'TN-GROUPO',
-    monthlySavingsPerMember: g.monthly_savings_per_member || 500,
+    ...grp,
+    meetingDay: grp.meeting_day || 'Sunday',
+    leaderName: grp.leader_name || 'Admin',
+    monthlySavingsPerMember: grp.monthly_savings_amount || 1000,
+    totalSavingsPool: grp.total_savings_pool || (members.length * (grp.monthly_savings_amount || 1000)),
+    activeLoanPool,
     totalMembersCount: members.length,
-    totalSavingsPool: (g as any).total_savings_pool ?? 0,
-    activeLoanPool: (g as any).active_loan_pool ?? 0,
-    meetingDay: (g as any).meeting_schedule || '5th & 20th',
-    members,
-    leaderName,
+    members
   };
 };
 
@@ -78,18 +51,27 @@ export default function GroupOWebPage() {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isAdminConsoleOpen, setIsAdminConsoleOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isSavingsModalOpen, setIsSavingsModalOpen] = useState(false);
+  const [isMeetingNotesModalOpen, setIsMeetingNotesModalOpen] = useState(false);
+  const [isMeetingVideoModalOpen, setIsMeetingVideoModalOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const phone = authData?.user?.phone || '';
-      setUserPhone(phone);
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      let phone = user.phone;
+      if (!phone && user.email) {
+        const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+        if (profile?.phone) phone = profile.phone;
+      }
       if (phone) {
-        const rawGroups = await GroupRepository.getUserGroups(phone);
+        setUserPhone(phone);
+        
+        const myGroups = await GroupRepository.getUserGroups(phone);
         const mappedList: GroupData[] = [];
-        for (const g of rawGroups) {
+        for (const g of myGroups) {
           mappedList.push(await mapDbGroupToGroupData(g));
         }
         setUserGroups(mappedList);
@@ -191,6 +173,7 @@ export default function GroupOWebPage() {
           { id: 'overview', label: 'Overview', icon: Users },
           { id: 'savings', label: 'Savings & Loans', icon: Wallet },
           { id: 'meetings', label: 'Meetings', icon: MessageCircle },
+          { id: 'videos', label: 'Video Proofs', icon: Video },
           { id: 'ai_docs', label: 'AI Resolutions', icon: Sparkles },
         ].map(tab => (
           <button
@@ -215,16 +198,14 @@ export default function GroupOWebPage() {
             <h3 className="text-xl font-black text-gray-800 border-b pb-4">Group Members ({selectedGroup?.totalMembersCount})</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {selectedGroup?.members.map(m => (
-                <div key={m.id} className="p-4 border rounded-xl flex justify-between items-center bg-gray-50">
-                  <div>
-                    <p className="font-bold text-gray-900">{m.name}</p>
-                    <p className="text-sm text-gray-500">{m.role}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">Savings</p>
-                    <p className="font-bold text-emerald-600">₹{m.savings_amount ?? selectedGroup.monthlySavingsPerMember}</p>
-                  </div>
-                </div>
+                <GroupMemberViewWebCard
+                  key={m.id}
+                  member={m}
+                  group={selectedGroup}
+                  onOpenSavings={() => setIsSavingsModalOpen(true)}
+                  onOpenMeetingVideos={() => setIsMeetingVideoModalOpen(true)}
+                  onOpenResolutions={() => setIsMeetingNotesModalOpen(true)}
+                />
               ))}
             </div>
           </div>
@@ -234,10 +215,16 @@ export default function GroupOWebPage() {
           <div className="text-center py-12">
             <Wallet className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
             <h3 className="text-2xl font-black text-gray-800">Financial Ledger</h3>
-            <p className="text-gray-500 max-w-md mx-auto mt-2">
-              Total Savings Pool: ₹{selectedGroup?.totalSavingsPool.toLocaleString('en-IN')} <br/>
-              Active Loan Pool: ₹{selectedGroup?.activeLoanPool.toLocaleString('en-IN')}
+            <p className="text-gray-500 max-w-md mx-auto mt-2 mb-6">
+              Total Savings Pool: '{selectedGroup?.totalSavingsPool.toLocaleString('en-IN')} <br/>
+              Active Loan Pool: '{selectedGroup?.activeLoanPool.toLocaleString('en-IN')}
             </p>
+            <button 
+              onClick={() => setIsSavingsModalOpen(true)}
+              className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg hover:bg-emerald-700"
+            >
+              Open Savings Ledger
+            </button>
           </div>
         )}
 
@@ -245,7 +232,27 @@ export default function GroupOWebPage() {
           <div className="text-center py-12">
             <MessageCircle className="w-16 h-16 text-blue-400 mx-auto mb-4" />
             <h3 className="text-2xl font-black text-gray-800">Meeting Records</h3>
-            <p className="text-gray-500 mt-2">Next meeting scheduled for {selectedGroup?.meetingDay}</p>
+            <p className="text-gray-500 mt-2 mb-6">Next meeting scheduled for {selectedGroup?.meetingDay}</p>
+            <button 
+              onClick={() => setIsMeetingNotesModalOpen(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700"
+            >
+              Open Meeting Notes
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'videos' && (
+          <div className="text-center py-12">
+            <Video className="w-16 h-16 text-rose-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-black text-gray-800">Video Proofs</h3>
+            <p className="text-gray-500 mt-2 mb-6">View transparent meeting video uploads by group leaders.</p>
+            <button 
+              onClick={() => setIsMeetingVideoModalOpen(true)}
+              className="px-6 py-3 bg-rose-600 text-white rounded-xl font-bold shadow-lg hover:bg-rose-700"
+            >
+              Open Video Proofs
+            </button>
           </div>
         )}
 
@@ -295,6 +302,37 @@ export default function GroupOWebPage() {
           memberCount={selectedGroup.totalMembersCount}
           monthlySavings={selectedGroup.monthlySavingsPerMember}
           leaderName={selectedGroup.leaderName}
+        />
+      )}
+
+      {isSavingsModalOpen && selectedGroup && (
+        <GroupSavingsLedgerWebModal
+          isOpen={isSavingsModalOpen}
+          onClose={() => setIsSavingsModalOpen(false)}
+          group={selectedGroup}
+          members={selectedGroup.members}
+          currentMember={userStatus?.memberRecord}
+          onDataRefresh={loadData}
+        />
+      )}
+
+      {isMeetingNotesModalOpen && selectedGroup && (
+        <GroupMeetingNotesWebModal
+          isOpen={isMeetingNotesModalOpen}
+          onClose={() => setIsMeetingNotesModalOpen(false)}
+          group={selectedGroup}
+          members={selectedGroup.members}
+          currentMember={userStatus?.memberRecord}
+        />
+      )}
+
+      {isMeetingVideoModalOpen && selectedGroup && (
+        <GroupMeetingVideoWebModal
+          isOpen={isMeetingVideoModalOpen}
+          onClose={() => setIsMeetingVideoModalOpen(false)}
+          group={selectedGroup}
+          members={selectedGroup.members}
+          currentMember={userStatus?.memberRecord}
         />
       )}
     </div>
