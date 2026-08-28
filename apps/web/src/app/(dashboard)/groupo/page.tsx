@@ -10,9 +10,9 @@ import { createClient } from '@/lib/supabase/client';
 import { GroupRepository, UserGroupStatus, DbGroup, DbMember } from '@/lib/groupRepository';
 
 // Import newly ported Web Modals
-import CreateGroupWizardWebModal from '@/components/groupo/CreateGroupWizardWebModal';
-import GroupAdminConsoleWebModal from '@/components/groupo/GroupAdminConsoleWebModal';
-import GroupAiAssistantWebModal from '@/components/groupo/GroupAiAssistantWebModal';
+import { CreateGroupWizardWebModal } from '@/components/groupo/CreateGroupWizardWebModal';
+import { GroupAdminConsoleWebModal } from '@/components/groupo/GroupAdminConsoleWebModal';
+import { GroupAiAssistantWebModal } from '@/components/groupo/GroupAiAssistantWebModal';
 
 const supabase = createClient();
 

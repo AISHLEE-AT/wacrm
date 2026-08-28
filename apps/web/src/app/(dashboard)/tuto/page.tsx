@@ -11,8 +11,8 @@ import { getReleasedDaySummariesForCourse, getCompletedDaysForCourse, DayPlanSum
 
 // Modals
 import { StudentOnboardingWebModal } from '@/components/teacho/StudentOnboardingWebModal';
-import TutOQBankWebModal from '@/components/teacho/TutOQBankWebModal';
-import TutODayCoursePlayerWebModal from '@/components/teacho/TutODayCoursePlayerWebModal';
+import { TutOQBankWebModal } from '@/components/teacho/TutOQBankWebModal';
+import { TutODayCoursePlayerWebModal } from '@/components/teacho/TutODayCoursePlayerWebModal';
 
 export default function TutOWebPage() {
   // Global State
