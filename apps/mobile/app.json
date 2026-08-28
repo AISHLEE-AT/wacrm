@@ -3,7 +3,7 @@
     "name": "SuprO",
     "slug": "supro",
     "scheme": "supro",
-    "version": "3.3.3",
+    "version": "3.3.5-stable-SuprO",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

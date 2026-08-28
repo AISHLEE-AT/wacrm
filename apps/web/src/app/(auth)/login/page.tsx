@@ -74,7 +74,7 @@ function LoginPageInner() {
         let isDriver = false;
         let isAdmin = false;
 
-        const isBootstrapAdmin = ['6381029380', '9486335870', '9876543210'].some(num => cleanPhone.includes(num));
+        const isBootstrapAdmin = ['6381029380', '9486335870'].some(num => cleanPhone.includes(num));
 
         if (cleanPhone) {
           const { data: driverData } = await supabase

@@ -1,6 +1,4 @@
 // @ts-nocheck
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import { geminiToolsService } from './geminiToolsService';
 
 export interface GroupPdfMetadata {
@@ -397,21 +395,13 @@ ${text}
 </html>
 `;
 
-    // 1. Generate PDF file via expo-print
-    const { uri } = await Print.printToFileAsync({
-      html: htmlContent,
-      base64: false,
-    });
-
-    // 2. Open native share sheet via expo-sharing
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: `${meta.title} — PDF`,
-        UTI: 'com.adobe.pdf',
-      });
+    // In a web environment, we open a new window and render the HTML for printing
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      // Auto trigger print when loaded
+      newWindow.document.write('<script>window.onload = function() { window.print(); }</script>');
+      newWindow.document.close();
     }
-
-    return uri;
   },
 };

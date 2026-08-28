@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Share,
   Platform,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -27,6 +28,7 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
+  ArrowLeft,
   Plus,
   Share2,
   HardDrive,
@@ -43,6 +45,8 @@ import {
   Calendar,
   X,
   Printer,
+  Search,
+  RefreshCw,
 } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { colors, spacing, radius, fontSize } from '../lib/theme';
@@ -79,180 +83,79 @@ interface GroupData {
   customMetrics?: { label1: string; val1: string; label2: string; val2: string; label3: string; val3: string };
 }
 
-const PRESET_GROUPS: GroupData[] = [
-  {
-    id: 'grp-shg-01',
-    name: 'தாமரை மகளிர் சுய உதவிக் குழு (Thamarai Women SHG)',
-    category: 'WomenSHG',
-    categoryLabel: 'மகளிர் சுய உதவிக் குழு (Mathi TNCDW)',
-    tagline: 'மாதாந்திர சேமிப்பு, தையல் & சிறுதொழில் கூட்டமைப்பு',
-    village: 'அலங்காநல்லூர் (Alanganallur)',
-    district: 'மதுரை (Madurai)',
-    regCode: 'TNCDW-MDU-2024-8842',
-    bankName: 'Canara Bank (அலங்காநல்லூர்)',
-    bankAccount: '*******8920',
-    monthlySavingsPerMember: 500,
-    totalMembersCount: 15,
-    totalSavingsPool: 145000,
-    activeLoanPool: 40000,
-    meetingDay: 'Every Month 5th & 20th',
+// Helper to map DB Group and its members into active GroupData format
+const mapDbGroupToGroupData = async (g: DbGroup): Promise<GroupData> => {
+  let members: GroupMember[] = [];
+  try {
+    const rawMembers = await GroupRepository.fetchMembers(g.id);
+    if (rawMembers && rawMembers.length > 0) {
+      members = rawMembers.map((m) => ({
+        id: m.id,
+        name: m.name,
+        role: m.role || 'Member',
+        phone: m.phone,
+        savingsPaid: m.current_month_paid ?? false,
+        savingsAmount: m.savings_amount ?? (g.monthly_savings_per_member || 500),
+        loanBalance: m.active_loan_balance ?? 0,
+      }));
+    }
+  } catch (e) {}
+
+  if (members.length === 0) {
+    members = [
+      {
+        id: `m-ldr-${g.id}`,
+        name: g.leader_name || 'Group Leader',
+        role: 'President',
+        phone: g.leader_phone,
+        savingsPaid: true,
+        savingsAmount: g.monthly_savings_per_member || 500,
+        loanBalance: 0,
+      },
+    ];
+  }
+
+  return {
+    id: g.id,
+    name: g.name,
+    category: g.category || 'WomenSHG',
+    categoryLabel: g.category_label || 'மகளிர் சுய உதவிக் குழு',
+    tagline: g.tagline || 'மாதாந்திர சேமிப்பு & கூட்டமைப்பு',
+    village: g.village || 'தமிழ்நாடு',
+    district: g.district || 'சென்னை',
+    regCode: g.reg_code || 'TN-GROUPO-2026',
+    bankName: g.bank_name || 'Canara Bank',
+    bankAccount: g.bank_account || '*******8920',
+    monthlySavingsPerMember: g.monthly_savings_per_member || 500,
+    totalMembersCount: members.length,
+    totalSavingsPool: (g as any).total_savings_pool ?? (g as any).totalSavingsPool ?? 0,
+    activeLoanPool: (g as any).active_loan_pool ?? (g as any).activeLoanPool ?? 0,
+    meetingDay: (g as any).meeting_schedule || 'Every Month 5th & 20th',
+    members,
     customMetrics: {
-      label1: 'உறுப்பினர்கள் (Members)', val1: '15',
-      label2: 'சேமிப்பு நிதி (Savings)', val2: '₹1,45,000',
-      label3: 'சுழல் உள் கடன் (Loans)', val3: '₹40,000',
+      label1: 'உறுப்பினர்கள் (Members)', val1: `${members.length}`,
+      label2: 'சேமிப்பு நிதி (Savings)', val2: `₹${((g as any).total_savings_pool ?? 0).toLocaleString('en-IN')}`,
+      label3: 'சுழல் கடன் (Loans)', val3: `₹${((g as any).active_loan_pool ?? 0).toLocaleString('en-IN')}`,
     },
-    members: [
-      { id: 'm1', name: 'K. Meenakshi (மீனாட்சி)', role: 'President', phone: '+91 98421 11223', savingsPaid: true, savingsAmount: 500 },
-      { id: 'm2', name: 'M. Anandhi (ஆனந்தி)', role: 'Secretary', phone: '+91 98422 22334', savingsPaid: true, savingsAmount: 500 },
-      { id: 'm3', name: 'S. Lakshmi (லட்சுமி)', role: 'Treasurer', phone: '+91 98423 33445', savingsPaid: true, savingsAmount: 500, loanBalance: 16500 },
-      { id: 'm4', name: 'P. Kavitha (கவிதா)', role: 'Member', phone: '+91 98424 44556', savingsPaid: true, savingsAmount: 500 },
-      { id: 'm5', name: 'R. Revathi (ரேவதி)', role: 'Member', phone: '+91 98425 55667', savingsPaid: false, savingsAmount: 500 },
-      { id: 'm6', name: 'T. Saranya (சரண்யா)', role: 'Member', phone: '+91 98426 66778', savingsPaid: true, savingsAmount: 500 },
-    ],
-  },
-  {
-    id: 'grp-fpo-02',
-    name: 'பசுமை உழவர் உற்பத்தியாளர் சங்கம் (Pasumai Farmers FPO)',
-    category: 'FarmerFPO',
-    categoryLabel: 'உழவர் உற்பத்தியாளர் சங்கம் (Agri FPO)',
-    tagline: 'இயற்கை உரம் கொள்முதல், கூட்டு நெல் சாகுபடி & நேரடி சந்தை',
-    village: 'திருவையாறு (Thiruvaiyaru)',
-    district: 'தஞ்சாவூர் (Thanjavur)',
-    regCode: 'NABARD-TNJ-FPO-1049',
-    bankName: 'SBI Agri Branch',
-    bankAccount: '*******4410',
-    monthlySavingsPerMember: 1000,
-    totalMembersCount: 22,
-    totalSavingsPool: 320000,
-    activeLoanPool: 85000,
-    meetingDay: 'Every Month 10th',
-    customMetrics: {
-      label1: 'விவசாயிகள் (Farmers)', val1: '22',
-      label2: 'கூட்டு நிதி (Agri Pool)', val2: '₹3,20,000',
-      label3: 'சாகுபடி பரப்பு (Acres)', val3: '140 Acres',
-    },
-    members: [
-      { id: 'f1', name: 'V. Sundaram (சுந்தரம்)', role: 'President', phone: '+91 94431 10101', savingsPaid: true, savingsAmount: 1000 },
-      { id: 'f2', name: 'P. Marimuthu (மாரிமுத்து)', role: 'Secretary', phone: '+91 94432 20202', savingsPaid: true, savingsAmount: 1000 },
-      { id: 'f3', name: 'K. Durairaj (துரைராஜ்)', role: 'Treasurer', phone: '+91 94433 30303', savingsPaid: true, savingsAmount: 1000 },
-    ],
-  },
-  {
-    id: 'grp-sport-03',
-    name: 'வீரத்தமிழன் கபடி & விளையாட்டு சங்கம் (Youth Sports Club)',
-    category: 'SportsClub',
-    categoryLabel: 'விளையாட்டு & இளைஞர் நல சங்கம்',
-    tagline: 'மாவட்ட அளவிலான கபடி, கிரிக்கெட் & தடகள பயிற்சி மற்றும் நிதி',
-    village: 'உசிலம்பட்டி (Usilampatti)',
-    district: 'மதுரை (Madurai)',
-    regCode: 'TN-SDAT-MDU-552',
-    bankName: 'Indian Bank',
-    bankAccount: '*******3319',
-    monthlySavingsPerMember: 300,
-    totalMembersCount: 18,
-    totalSavingsPool: 54000,
-    activeLoanPool: 12000,
-    meetingDay: 'Every Sunday Evening',
-    customMetrics: {
-      label1: 'வீரர்கள் (Players)', val1: '18',
-      label2: 'விளையாட்டு நிதி (Fund)', val2: '₹54,000',
-      label3: 'வெற்றி (Matches Won)', val3: '9 Wins (28 Played)',
-    },
-    members: [
-      { id: 's1', name: 'M. Manikandan (மணிகண்டன்)', role: 'Captain / President', phone: '+91 97891 00011', savingsPaid: true, savingsAmount: 300 },
-      { id: 's2', name: 'K. Vignesh (விக்னேஷ்)', role: 'Secretary', phone: '+91 97892 00022', savingsPaid: true, savingsAmount: 300 },
-      { id: 's3', name: 'R. Surya (சூர்யா)', role: 'Treasurer', phone: '+91 97893 00033', savingsPaid: true, savingsAmount: 300 },
-    ],
-  },
-  {
-    id: 'grp-biz-04',
-    name: 'கொங்கு சிறுவணிகர் & வர்த்தக கூட்டமைப்பு (Merchant Network)',
-    category: 'BusinessGroup',
-    categoryLabel: 'வணிகர் & சிறுதொழில் கூட்டமைப்பு',
-    tagline: 'மொத்த கொள்முதல், B2B வர்த்தக வட்டம் & பண்டிகை விற்பனை',
-    village: 'பொள்ளாச்சி (Pollachi)',
-    district: 'கோயம்புத்தூர் (Coimbatore)',
-    regCode: 'TN-MSME-CBE-9801',
-    bankName: 'HDFC Bank',
-    bankAccount: '*******5521',
-    monthlySavingsPerMember: 2000,
-    totalMembersCount: 28,
-    totalSavingsPool: 480000,
-    activeLoanPool: 150000,
-    meetingDay: 'Every Month 1st',
-    customMetrics: {
-      label1: 'வர்த்தகர்கள் (Merchants)', val1: '28',
-      label2: 'வணிக நிதி (Trade Pool)', val2: '₹4,80,000',
-      label3: 'B2B வர்த்தகம் (Monthly)', val3: '₹12 Lakhs/Mo',
-    },
-    members: [
-      { id: 'b1', name: 'T. Murugan (முருகன்)', role: 'President', phone: '+91 98941 01010', savingsPaid: true, savingsAmount: 2000 },
-      { id: 'b2', name: 'S. Rajendran (ராஜேந்திரன்)', role: 'Secretary', phone: '+91 98942 02020', savingsPaid: true, savingsAmount: 2000 },
-    ],
-  },
-  {
-    id: 'grp-rwa-05',
-    name: 'அன்னை சத்யா நகர் கிராம குடியிருப்போர நலச் சங்கம் (Village RWA)',
-    category: 'VillageRWA',
-    categoryLabel: 'கிராம நலச் சங்கம் & குடியிருப்போர சங்கம்',
-    tagline: 'குடிநீர், தெருவிளக்கு, தூய்மைப் பணி & ஊர் திருவிழா நிதி',
-    village: 'ஆத்தூர் (Attur)',
-    district: 'சேலம் (Salem)',
-    regCode: 'TN-RWA-SLM-342',
-    bankName: 'Indian Overseas Bank',
-    bankAccount: '*******1109',
-    monthlySavingsPerMember: 200,
-    totalMembersCount: 240,
-    totalSavingsPool: 78000,
-    activeLoanPool: 5000,
-    meetingDay: 'Every Month 15th',
-    customMetrics: {
-      label1: 'குடும்பங்கள் (Households)', val1: '240',
-      label2: 'ஊர் நல நிதி (Ward Fund)', val2: '₹78,000',
-      label3: 'நிறைவேறிய திட்டங்கள்', val3: '14 Civic Projects',
-    },
-    members: [
-      { id: 'r1', name: 'P. Shanmugam (சண்முகம்)', role: 'President', phone: '+91 98432 02020', savingsPaid: true, savingsAmount: 200 },
-      { id: 'r2', name: 'K. Balakrishnan (பாலகிருஷ்ணன்)', role: 'Secretary', phone: '+91 98433 03030', savingsPaid: true, savingsAmount: 200 },
-    ],
-  },
-  {
-    id: 'grp-study-06',
-    name: 'பாரதி இளைஞர் & போட்டித் தேர்வு கல்வி வட்டம் (Youth Study Circle)',
-    category: 'YouthStudy',
-    categoryLabel: 'மாணவர் கல்வி & போட்டித் தேர்வு வட்டம்',
-    tagline: 'TNPSC, NEET & பள்ளி பொதுத்தேர்வு கூட்டு படிப்பு மற்றும் புத்தக வங்கி',
-    village: 'ஸ்ரீரங்கம் (Srirangam)',
-    district: 'திருச்சிராப்பள்ளி (Trichy)',
-    regCode: 'TN-EDU-TRY-882',
-    bankName: 'Bank of Baroda',
-    bankAccount: '*******7765',
-    monthlySavingsPerMember: 100,
-    totalMembersCount: 32,
-    totalSavingsPool: 24000,
-    activeLoanPool: 0,
-    meetingDay: 'Every Saturday 5 PM',
-    customMetrics: {
-      label1: 'மாணவர்கள் (Students)', val1: '32',
-      label2: 'புத்தக வங்கி நிதி', val2: '₹24,000',
-      label3: 'மாதிரி தேர்வுகள் (Mock Tests)', val3: '36 Completed',
-    },
-    members: [
-      { id: 'e1', name: 'Dr. S. Karthik (கார்த்திக்)', role: 'Convener', phone: '+91 97903 03030', savingsPaid: true, savingsAmount: 100 },
-      { id: 'e2', name: 'M. Divya (திவ்யா)', role: 'Student Leader', phone: '+91 97904 04040', savingsPaid: true, savingsAmount: 100 },
-    ],
-  },
-];
+  };
+};
 
 export default function GroupOScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user } = useContext(AppContext);
 
-  const [selectedGroup, setSelectedGroup] = useState<GroupData>(PRESET_GROUPS[0]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'savings' | 'meetings' | 'videos' | 'schemes'>('overview');
-  const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
+  // User's own associated groups & System-wide groups (for admin)
+  const [userGroups, setUserGroups] = useState<GroupData[]>([]);
+  const [allSystemGroups, setAllSystemGroups] = useState<GroupData[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<GroupData | null>(null);
 
-  // Dynamic Leader vs Member status from Supabase
+  // Group Switcher Modal state
+  const [isGroupPickerOpen, setIsGroupPickerOpen] = useState(false);
+  const [adminPickerTab, setAdminPickerTab] = useState<'my_groups' | 'all_system_groups'>('my_groups');
+  const [pickerSearch, setPickerSearch] = useState('');
+
+  // Active Tab & Status state
+  const [activeTab, setActiveTab] = useState<'overview' | 'savings' | 'meetings' | 'videos' | 'schemes'>('overview');
   const [userStatus, setUserStatus] = useState<UserGroupStatus | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
@@ -269,55 +172,70 @@ export default function GroupOScreen({ navigation }: any) {
     user?.isAdmin ||
     ADMIN_PHONES.some((ap: string) => cleanPhone.includes(ap) || ap.includes(cleanPhone));
 
-  useEffect(() => {
-    const checkRole = async () => {
-      setIsLoadingStatus(true);
-      try {
-        const phone = user?.phone || '9842111223';
-        const status = await GroupRepository.getUserGroupStatus(phone);
-        setUserStatus(status);
-        if (status.group) {
-          const mapped: GroupData = {
-            id: status.group.id || 'grp-dynamic',
-            name: status.group.name,
-            category: status.group.category || 'WomenSHG',
-            categoryLabel: status.group.category_label || 'மகளிர் சுய உதவிக் குழு',
-            tagline: status.group.tagline || 'மாதாந்திர சேமிப்பு & கூட்டமைப்பு',
-            village: status.group.village || 'அலங்காநல்லூர்',
-            district: status.group.district || 'மதுரை',
-            regCode: status.group.reg_code || 'TNCDW-2024',
-            bankName: status.group.bank_name || 'Canara Bank',
-            bankAccount: status.group.bank_account || '*******8920',
-            monthlySavingsPerMember: status.group.monthly_savings_per_member || 500,
-            totalMembersCount: 15,
-            totalSavingsPool: status.group.total_savings_pool ?? 0,
-            activeLoanPool: status.group.active_loan_pool ?? 0,
-            meetingDay: status.group.meeting_schedule || 'Every Month 5th & 20th',
-            members: status.members && status.members.length > 0 
-              ? status.members.map((m: any) => ({
-                  id: m.id,
-                  name: m.name || m.full_name,
-                  role: m.role || 'Member',
-                  phone: m.phone,
-                  savingsPaid: m.current_month_paid ?? false,
-                  savingsAmount: m.savings_amount ?? 0,
-                  loanBalance: m.active_loan_balance ?? 0,
-                }))
-              : PRESET_GROUPS[0].members,
-          };
-          setSelectedGroup(mapped);
-        }
-      } catch (err) {
-        console.warn('Error checking user group role:', err);
-      } finally {
-        setIsLoadingStatus(false);
+  // Load user groups and system groups from Supabase
+  const loadGroupsData = useCallback(async () => {
+    setIsLoadingStatus(true);
+    try {
+      const rawPhone = user?.phone || '';
+
+      // 1. Fetch user's own groups where they are Leader or Member
+      const dbUserGroups = await GroupRepository.getUserGroups(rawPhone);
+      const mappedUserList: GroupData[] = [];
+      for (const g of dbUserGroups) {
+        const mapped = await mapDbGroupToGroupData(g);
+        mappedUserList.push(mapped);
       }
-    };
-    checkRole();
-  }, [user?.phone]);
+      setUserGroups(mappedUserList);
+
+      // 2. If Super Admin, also fetch system-wide directory
+      let mappedAllList: GroupData[] = [];
+      if (isUserAdmin) {
+        const dbAllGroups = await GroupRepository.fetchAllGroupsForAdmin();
+        for (const g of dbAllGroups) {
+          const mapped = await mapDbGroupToGroupData(g);
+          mappedAllList.push(mapped);
+        }
+        setAllSystemGroups(mappedAllList);
+      }
+
+      // 3. Set Active Selected Group
+      if (mappedUserList.length > 0) {
+        setSelectedGroup(mappedUserList[0]);
+      } else if (isUserAdmin && mappedAllList.length > 0) {
+        setSelectedGroup(mappedAllList[0]);
+      } else {
+        setSelectedGroup(null);
+      }
+
+      // 4. Also fetch user status role
+      if (rawPhone) {
+        const status = await GroupRepository.getUserGroupStatus(rawPhone);
+        setUserStatus(status);
+      }
+    } catch (err) {
+      console.warn('Error loading GroupO groups:', err);
+    } finally {
+      setIsLoadingStatus(false);
+    }
+  }, [user?.phone, isUserAdmin]);
+
+  useEffect(() => {
+    loadGroupsData();
+  }, [loadGroupsData]);
+
+  // Handle dynamic group creation
+  const handleGroupCreated = async (newGrp: DbGroup) => {
+    const mapped = await mapDbGroupToGroupData(newGrp);
+    setUserGroups((prev) => [mapped, ...prev]);
+    if (isUserAdmin) {
+      setAllSystemGroups((prev) => [mapped, ...prev]);
+    }
+    setSelectedGroup(mapped);
+  };
 
   // 1-Click WhatsApp Group Call
   const handleLaunchWhatsAppGroupCall = () => {
+    if (!selectedGroup) return;
     const msg = `📞 *${selectedGroup.name} — Monthly Group Meeting Calling* 👥\n\n` +
       `வணக்கம் உறுப்பினர்களே! நமது குழுவின் மாதாந்திர கலந்தாய்வு கூட்டம் இப்போது தொடங்குகிறது.\n\n` +
       `📅 *Meeting:* August 2026 Regular Assembly\n` +
@@ -341,6 +259,171 @@ export default function GroupOScreen({ navigation }: any) {
       Alert.alert('Telegram', 'Opening SuprO Community Channel...');
     });
   };
+
+  // Filter groups for picker modal
+  const activePickerList = isUserAdmin && adminPickerTab === 'all_system_groups' ? allSystemGroups : userGroups;
+  const filteredPickerGroups = activePickerList.filter((g) => {
+    if (!pickerSearch.trim()) return true;
+    const q = pickerSearch.toLowerCase();
+    return (
+      g.name.toLowerCase().includes(q) ||
+      g.village.toLowerCase().includes(q) ||
+      g.district.toLowerCase().includes(q) ||
+      g.categoryLabel.toLowerCase().includes(q)
+    );
+  });
+
+  // ─── 0. LOADING STATE ───
+  if (isLoadingStatus) {
+    return (
+      <View style={[styles.screenContainer, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#EC4899" />
+        <Text style={{ color: '#94A3B8', marginTop: 12, fontSize: 13, fontWeight: '700' }}>
+          குழு விவரங்கள் ஏற்றப்படுகிறது (Loading GroupO)...
+        </Text>
+      </View>
+    );
+  }
+
+  // ─── 0. EMPTY STATE (NEW USERS WITH NO GROUPS) ───
+  if (!selectedGroup) {
+    return (
+      <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
+        {/* Top App Bar with back */}
+        <View
+          style={[
+            styles.topBar,
+            {
+              paddingTop:
+                Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0) + 8,
+            },
+          ]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
+              <ArrowLeft size={20} color="#F8FAFC" />
+            </TouchableOpacity>
+            <View>
+              <View style={styles.groupBadge}>
+                <Users size={12} color="#EC4899" />
+                <Text style={styles.groupBadgeText}>GROUPO • சங்கம் & குழுக்கள்</Text>
+              </View>
+              <Text style={{ color: '#F8FAFC', fontSize: 16, fontWeight: '800' }}>
+                குழு மேலாண்மை மையம்
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Empty State Body */}
+        <ScrollView
+          style={styles.mainScroll}
+          contentContainerStyle={[styles.mainScrollContent, { paddingBottom: Math.max(insets.bottom, 16) + 40 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.emptyHeroCard}>
+            <View style={styles.emptyIconCircle}>
+              <Users size={32} color="#EC4899" />
+            </View>
+            <Text style={styles.emptyHeroTitle}>குழு மேலாண்மைக்கு வருக!</Text>
+            <Text style={styles.emptyHeroSubTitle}>Welcome to SuprO GroupO Suite</Text>
+            <Text style={styles.emptyHeroDesc}>
+              உங்கள் மகளிர் சுய உதவிக் குழு (SHG), உழவர் உற்பத்தியாளர் சங்கம் (FPO), விளையாட்டு சங்கம் அல்லது வணிகர் சங்கத்தை பதிவு செய்து நிதி, கூட்ட குறிப்புகள், மாதாந்திர பாஸ்புக் மற்றும் வங்கி உதவிகளை எளிதில் நிர்வகியுங்கள்.
+            </Text>
+
+            {/* Action Buttons */}
+            <View style={{ gap: 10, width: '100%', marginTop: 14 }}>
+              <TouchableOpacity
+                style={styles.createGroupMainBtn}
+                onPress={() => setIsCreateGroupOpen(true)}
+                activeOpacity={0.85}
+              >
+                <Plus size={18} color="#FFFFFF" />
+                <Text style={styles.createGroupMainBtnText}>
+                  + புதிய குழு / சங்கம் பதிவு செய்க (Create Group)
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.joinGroupBtn}
+                onPress={() => {
+                  Alert.alert(
+                    '🤝 குழுவில் இணைதல் (Join Group)',
+                    'உங்கள் குழு தலைவர் (Leader) அல்லது நிர்வாகியிடம் உங்கள் கைபேசி எண்ணை (+91 ' + (user?.phone || '...') + ') சேர்க்குமாறு கூறவும்.\n\nஅவர்கள் சேர்த்தவுடன், உங்கள் குழு பாஸ்புக் மற்றும் விவரங்கள் தானாகவே இங்கு காண்பிக்கப்படும்!',
+                    [{ text: 'சரி (OK)' }]
+                  );
+                }}
+                activeOpacity={0.85}
+              >
+                <Users size={16} color="#38BDF8" />
+                <Text style={styles.joinGroupBtnText}>
+                  🤝 ஏற்கனவே உள்ள குழுவில் இணைக (Join Existing)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 4 Feature Highlight Cards */}
+          <Text style={{ fontSize: 13, fontWeight: '800', color: '#F1F5F9', marginTop: 18, marginBottom: 8 }}>
+            GROUPO முக்கிய சிறப்பம்சங்கள் (Features):
+          </Text>
+
+          <View style={styles.featureGrid}>
+            <View style={styles.featureCard}>
+              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
+                <Wallet size={18} color="#EC4899" />
+              </View>
+              <Text style={styles.featureCardTitle}>மாதாந்திர சேமிப்பு & பாஸ்புக்</Text>
+              <Text style={styles.featureCardDesc}>
+                உறுப்பினர்களின் சேமிப்புத் தொகை மற்றும் கடன் நிலுவை கணக்குகள் 100% வெளிப்படையானது.
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
+                <BookOpen size={18} color="#38BDF8" />
+              </View>
+              <Text style={styles.featureCardTitle}>கூட்ட குறிப்பு & தீர்மானங்கள்</Text>
+              <Text style={styles.featureCardDesc}>
+                மாதாந்திர கூட்ட தீர்மானங்கள், வருகைப் பதிவு மற்றும் வரவு-செலவு டிஜிட்டல் ஆவணம்.
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(0, 208, 132, 0.15)' }]}>
+                <Video size={18} color="#00D084" />
+              </View>
+              <Text style={styles.featureCardTitle}>கூட்ட வீடியோ & Drive பதிவு</Text>
+              <Text style={styles.featureCardDesc}>
+                BDO மற்றும் வங்கி அலுவலர் சரிபார்ப்பிற்கு நேரடி வீடியோ பதிவு மற்றும் கூகுள் டிரைவ் சேமிப்பு.
+              </Text>
+            </View>
+
+            <View style={styles.featureCard}>
+              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                <Sparkles size={18} color="#F59E0B" />
+              </View>
+              <Text style={styles.featureCardTitle}>Group AI Suite & வங்கி கடிதங்கள்</Text>
+              <Text style={styles.featureCardDesc}>
+                வங்கி கடன் விண்ணப்ப கடிதம், தீர்மானம் மற்றும் தொழில் திட்ட அறிக்கை 1-கிளிக்கில் தயார்.
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Create Group Wizard Modal */}
+        <CreateGroupWizardModal
+          visible={isCreateGroupOpen}
+          onClose={() => setIsCreateGroupOpen(false)}
+          onGroupCreated={handleGroupCreated}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.screenContainer, { backgroundColor: colors.background }]}>
@@ -484,8 +567,8 @@ export default function GroupOScreen({ navigation }: any) {
                     village: selectedGroup.village,
                     district: selectedGroup.district,
                     reg_code: selectedGroup.regCode,
-                    leader_name: 'K. Meenakshi',
-                    leader_phone: '9842111223',
+                    leader_name: selectedGroup.members.find(m => m.role === 'President')?.name || selectedGroup.members[0]?.name || '',
+                    leader_phone: selectedGroup.members.find(m => m.role === 'President')?.phone || selectedGroup.members[0]?.phone || '',
                     total_savings_pool: selectedGroup.totalSavingsPool,
                     active_loan_pool: selectedGroup.activeLoanPool,
                   }
@@ -829,36 +912,109 @@ export default function GroupOScreen({ navigation }: any) {
         <View style={styles.pickerBackdrop}>
           <View style={[styles.pickerContainer, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
             <View style={styles.pickerHeader}>
-              <Text style={styles.pickerTitle}>Select Group (குழு தேர்வு)</Text>
+              <View>
+                <Text style={styles.pickerTitle}>Select Group (குழு தேர்வு)</Text>
+                <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                  {isUserAdmin ? 'System Admin Group Directory' : 'உங்கள் சங்கங்கள் & குழுக்கள்'}
+                </Text>
+              </View>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setIsGroupPickerOpen(false)}>
                 <X size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
-              {PRESET_GROUPS.map((grp) => {
-                const isSelected = grp.id === selectedGroup.id;
-                return (
-                  <TouchableOpacity
-                    key={grp.id}
-                    style={[styles.pickerGroupItem, isSelected && styles.pickerGroupItemSelected]}
-                    onPress={() => {
-                      setSelectedGroup(grp);
-                      setIsGroupPickerOpen(false);
-                    }}
-                  >
-                    <View style={styles.pickerIconCircle}>
-                      <Users size={18} color="#EC4899" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.pickerGroupName}>{grp.name}</Text>
-                      <Text style={styles.pickerGroupSub}>{grp.categoryLabel} • {grp.district}</Text>
-                    </View>
-                    {isSelected && <CheckCircle2 size={18} color="#00D084" />}
+            {/* If Admin: Tabs for My Groups vs All System Groups */}
+            {isUserAdmin && (
+              <View style={styles.adminPickerTabRow}>
+                <TouchableOpacity
+                  style={[styles.adminPickerTab, adminPickerTab === 'my_groups' && styles.adminPickerTabActive]}
+                  onPress={() => setAdminPickerTab('my_groups')}
+                >
+                  <Text style={[styles.adminPickerTabText, adminPickerTab === 'my_groups' && styles.adminPickerTabTextActive]}>
+                    📌 எனது குழுக்கள் ({userGroups.length})
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.adminPickerTab, adminPickerTab === 'all_system_groups' && styles.adminPickerTabActive]}
+                  onPress={() => setAdminPickerTab('all_system_groups')}
+                >
+                  <Text style={[styles.adminPickerTabText, adminPickerTab === 'all_system_groups' && styles.adminPickerTabTextActive]}>
+                    🌐 அனைத்து குழுக்கள் ({allSystemGroups.length})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Search Input for fast lookup */}
+            {(isUserAdmin || userGroups.length > 3) && (
+              <View style={styles.pickerSearchBox}>
+                <Search size={16} color="#64748B" />
+                <TextInput
+                  style={styles.pickerSearchInput}
+                  placeholder="தேடு (Search name, village, reg code...)"
+                  placeholderTextColor="#64748B"
+                  value={pickerSearch}
+                  onChangeText={setPickerSearch}
+                  autoCapitalize="none"
+                />
+                {pickerSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setPickerSearch('')}>
+                    <X size={16} color="#94A3B8" />
                   </TouchableOpacity>
-                );
-              })}
+                )}
+              </View>
+            )}
+
+            <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+              {filteredPickerGroups.length === 0 ? (
+                <View style={{ padding: 24, alignItems: 'center' }}>
+                  <Text style={{ color: '#94A3B8', fontSize: 12 }}>குழுக்கள் எதுவும் இல்லை (No groups found)</Text>
+                </View>
+              ) : (
+                filteredPickerGroups.map((grp) => {
+                  const isSelected = selectedGroup && grp.id === selectedGroup.id;
+                  return (
+                    <TouchableOpacity
+                      key={grp.id}
+                      style={[styles.pickerGroupItem, isSelected && styles.pickerGroupItemSelected]}
+                      onPress={() => {
+                        setSelectedGroup(grp);
+                        setIsGroupPickerOpen(false);
+                      }}
+                    >
+                      <View style={styles.pickerIconCircle}>
+                        <Users size={18} color="#EC4899" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.pickerGroupName}>{grp.name}</Text>
+                        <Text style={styles.pickerGroupSub}>
+                          {grp.categoryLabel} • {grp.district} • {grp.village}
+                        </Text>
+                        <Text style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>
+                          சேமிப்பு: ₹{(grp.totalSavingsPool ?? 0).toLocaleString('en-IN')} • {grp.totalMembersCount} உறுப்பினர்கள்
+                        </Text>
+                      </View>
+                      {isSelected && <CheckCircle2 size={18} color="#00D084" />}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
+
+            {/* Add New Group Action */}
+            <TouchableOpacity
+              style={styles.pickerAddGroupBtn}
+              onPress={() => {
+                setIsGroupPickerOpen(false);
+                setIsCreateGroupOpen(true);
+              }}
+              activeOpacity={0.85}
+            >
+              <Plus size={16} color="#FFFFFF" />
+              <Text style={styles.pickerAddGroupBtnText}>
+                + புதிய குழு சேர்க்க (Register New Group)
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -895,40 +1051,24 @@ export default function GroupOScreen({ navigation }: any) {
         regCode={selectedGroup.regCode}
         village={selectedGroup.village}
         district={selectedGroup.district}
+        totalSavingsPool={selectedGroup.totalSavingsPool}
+        activeLoanPool={selectedGroup.activeLoanPool}
+        memberCount={selectedGroup.totalMembersCount}
+        monthlySavings={selectedGroup.monthlySavingsPerMember}
+        leaderName={selectedGroup.members.find(m => m.role === 'President')?.name}
       />
 
       <CreateGroupWizardModal
         visible={isCreateGroupOpen}
         onClose={() => setIsCreateGroupOpen(false)}
-        onGroupCreated={(newGrp) => {
-          setSelectedGroup({
-            id: newGrp.id,
-            name: newGrp.name,
-            category: newGrp.category,
-            categoryLabel: newGrp.category_label,
-            tagline: newGrp.tagline || 'மாதாந்திர சேமிப்பு & கூட்டமைப்பு',
-            village: newGrp.village,
-            district: newGrp.district,
-            regCode: newGrp.reg_code || 'TNCDW-2024',
-            bankName: newGrp.bank_name || 'Canara Bank',
-            bankAccount: newGrp.bank_account || '*******8920',
-            monthlySavingsPerMember: newGrp.monthly_savings_per_member,
-            totalMembersCount: 15,
-            totalSavingsPool: 0,
-            activeLoanPool: 0,
-            meetingDay: 'Every Month 5th & 20th',
-            members: PRESET_GROUPS[0].members,
-          });
-        }}
+        onGroupCreated={handleGroupCreated}
       />
 
       <GroupAdminConsoleModal
         visible={isGroupAdminModalOpen}
         onClose={() => setIsGroupAdminModalOpen(false)}
         group={selectedGroup}
-        onGroupUpdated={() => {
-          // Re-fetch or refresh group state
-        }}
+        onGroupUpdated={loadGroupsData}
       />
     </View>
   );
@@ -1419,5 +1559,170 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontSize: 11,
     marginTop: 2,
+  },
+  backBtn: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: '#1E293B',
+  },
+  emptyHeroCard: {
+    backgroundColor: '#111827',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(236, 72, 153, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.3)',
+  },
+  emptyHeroTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#F8FAFC',
+    textAlign: 'center',
+  },
+  emptyHeroSubTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#EC4899',
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  emptyHeroDesc: {
+    fontSize: 12,
+    color: '#94A3B8',
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  createGroupMainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EC4899',
+    paddingVertical: 14,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#EC4899',
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+  },
+  createGroupMainBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  joinGroupBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0F172A',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+  },
+  joinGroupBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#38BDF8',
+  },
+  featureGrid: {
+    gap: 10,
+  },
+  featureCard: {
+    backgroundColor: '#111827',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#1F2937',
+  },
+  featureIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  featureCardTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  featureCardDesc: {
+    fontSize: 11,
+    color: '#94A3B8',
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  adminPickerTabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#0B1120',
+    borderRadius: 10,
+    padding: 4,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  adminPickerTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  adminPickerTabActive: {
+    backgroundColor: '#1E293B',
+  },
+  adminPickerTabText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  adminPickerTabTextActive: {
+    color: '#EC4899',
+  },
+  pickerSearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0B1120',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 10,
+    height: 40,
+    gap: 8,
+  },
+  pickerSearchInput: {
+    flex: 1,
+    color: '#F8FAFC',
+    fontSize: 12,
+  },
+  pickerAddGroupBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#059669',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  pickerAddGroupBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });

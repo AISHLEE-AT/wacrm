@@ -170,18 +170,39 @@ export function UserCategoryCard({
   const [modalVisible, setModalVisible] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Determine current active category
-  const activeKey = profile?.main_category || user?.category || 'Traveller';
+  const cleanPhone = (phone || user?.phone || '').replace(/\D/g, '').slice(-10);
+  const isSuperAdmin =
+    user?.isAdmin ||
+    (cleanPhone && ADMIN_PHONES.includes(cleanPhone)) ||
+    user?.role === 'admin';
+
+  // Filter out Admin category from regular users
+  const visibleCategories = USER_CATEGORIES.filter((c) => {
+    if (c.key === 'Admin' && !isSuperAdmin) return false;
+    return true;
+  });
+
+  // Determine current active category (if regular user has Admin set, fallback to Traveller)
+  let activeKey = profile?.main_category || user?.category || 'Traveller';
+  if (activeKey.toLowerCase() === 'admin' && !isSuperAdmin) {
+    activeKey = 'Traveller';
+  }
+
   const currentCategory =
-    USER_CATEGORIES.find(
+    visibleCategories.find(
       (c) =>
         c.key.toLowerCase() === activeKey.toLowerCase() ||
         (activeKey.toLowerCase() === 'partner' && c.key === 'Group')
-    ) || USER_CATEGORIES[0];
+    ) || visibleCategories[0];
 
   const CurrentIcon = currentCategory.icon;
 
   const handleSelectCategory = async (cat: UserCategoryItem) => {
+    if (cat.key === 'Admin' && !isSuperAdmin) {
+      Alert.alert('Access Restricted', 'Admin console is restricted to system administrators.');
+      return;
+    }
+
     if (cat.key === currentCategory.key) {
       setModalVisible(false);
       return;
@@ -189,9 +210,7 @@ export function UserCategoryCard({
 
     setIsUpdating(true);
     try {
-      const cleanPhone = (phone || user?.phone || '').replace(/\D/g, '').slice(-10);
-      const isAdminUser = user?.isAdmin || (cleanPhone && ADMIN_PHONES.includes(cleanPhone)) || user?.role === 'admin';
-      const newRole = isAdminUser ? 'admin' : cat.key.toLowerCase();
+      const newRole = isSuperAdmin ? 'admin' : cat.key.toLowerCase();
 
       // 1. Update AppContext (updates user state, pinnedModules, defaultModule, and SecureStore)
       if (updateUserProfile) {
@@ -250,6 +269,10 @@ export function UserCategoryCard({
   };
 
   const handleLaunchModule = () => {
+    if (currentCategory.key === 'Admin' && !isSuperAdmin) {
+      Alert.alert('Access Restricted', 'Admin console is restricted to system administrators.');
+      return;
+    }
     if (currentCategory.screenName === 'ModuleView') {
       navigation.navigate('ModuleView', {
         path: currentCategory.path,
@@ -353,7 +376,7 @@ export function UserCategoryCard({
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalScrollContent}
             >
-              {USER_CATEGORIES.map((cat) => {
+              {visibleCategories.map((cat) => {
                 const IconComponent = cat.icon;
                 const isSelected =
                   cat.key.toLowerCase() === currentCategory.key.toLowerCase();

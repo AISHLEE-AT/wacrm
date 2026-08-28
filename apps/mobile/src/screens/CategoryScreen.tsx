@@ -32,7 +32,7 @@ import {
   Layers,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
-import { AppContext } from '../context/AppContext';
+import { AppContext, ADMIN_PHONES } from '../context/AppContext';
 import { colors } from '../lib/theme';
 
 const { width } = Dimensions.get('window');
@@ -201,14 +201,24 @@ const FILTER_GROUPS = [
 
 export default function CategoryScreen() {
   const navigation = useNavigation<any>();
-  const { addRecentModule, userRole, pinnedModules, togglePinnedModule, themeMode, themeVer } = useContext(AppContext);
+  const { user, addRecentModule, userRole, isAdmin, pinnedModules, togglePinnedModule, themeMode, themeVer } = useContext(AppContext);
 
   const [setupMode, setSetupMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeGroup, setActiveGroup] = useState<string>('all');
 
+  const cleanPhone = (user?.phone || '').replace(/\D/g, '').slice(-10);
+  const isSuperAdmin =
+    isAdmin ||
+    user?.isAdmin ||
+    (cleanPhone && ADMIN_PHONES.includes(cleanPhone)) ||
+    userRole === 'admin';
+
   // Handle module navigation
   const handleSelect = (cat: CategoryItem) => {
+    if (cat.adminOnly && !isSuperAdmin) {
+      return;
+    }
     if (setupMode) {
       togglePinnedModule(cat.id);
       return;
@@ -246,7 +256,7 @@ export default function CategoryScreen() {
   // Filtered categories
   const filteredCategories = useMemo(() => {
     return CATEGORIES.filter((c) => {
-      if (c.adminOnly && userRole !== 'admin') return false;
+      if (c.adminOnly && !isSuperAdmin) return false;
       if (activeGroup !== 'all' && c.categoryGroup !== activeGroup) return false;
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase();
@@ -258,7 +268,7 @@ export default function CategoryScreen() {
       }
       return true;
     });
-  }, [userRole, activeGroup, searchQuery]);
+  }, [isSuperAdmin, activeGroup, searchQuery]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

@@ -55,6 +55,11 @@ interface GroupAiAssistantModalProps {
   regCode?: string;
   village?: string;
   district?: string;
+  totalSavingsPool?: number;
+  activeLoanPool?: number;
+  memberCount?: number;
+  monthlySavings?: number;
+  leaderName?: string;
   onApplyResolution?: (resolutionText: string) => void;
 }
 
@@ -76,6 +81,11 @@ export const GroupAiAssistantModal: React.FC<GroupAiAssistantModalProps> = ({
   regCode = 'TNCDW-MDU-2024-8842',
   village = 'அலங்காநல்லூர் (Alanganallur)',
   district = 'மதுரை (Madurai)',
+  totalSavingsPool = 0,
+  activeLoanPool = 0,
+  memberCount = 0,
+  monthlySavings = 500,
+  leaderName,
   onApplyResolution,
 }) => {
   const insets = useSafeAreaInsets();
@@ -183,10 +193,10 @@ export const GroupAiAssistantModal: React.FC<GroupAiAssistantModalProps> = ({
       } else if (activeTool === 'savings_statement') {
         result = await GroupAiService.generateSavingsStatement({
           month: 'August 2026',
-          totalSavingsPool: 145000,
-          activeLoanPool: 40000,
-          memberCount: 15,
-          monthlyTarget: 500,
+          totalSavingsPool,
+          activeLoanPool,
+          memberCount,
+          monthlyTarget: monthlySavings,
           groupName,
           regCode,
           village,
@@ -275,6 +285,7 @@ export const GroupAiAssistantModal: React.FC<GroupAiAssistantModalProps> = ({
         village,
         district,
         content: generatedResult,
+        officers: leaderName ? { president: leaderName } : undefined,
       });
     } catch (err: any) {
       Alert.alert('PDF Export Error', err.message || 'Failed to generate PDF.');

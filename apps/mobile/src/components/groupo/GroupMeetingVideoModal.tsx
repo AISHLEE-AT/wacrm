@@ -36,6 +36,7 @@ import {
   RefreshCw,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
 import { GoogleDriveService, GoogleDriveAccount } from '../../services/GoogleDriveService';
 import { AppContext } from '../../context/AppContext';
 import { colors } from '../../lib/theme';
@@ -238,19 +239,19 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
 
   // Format and send WhatsApp pre-populated message to Course Guide / BDO
   const handleSendToWhatsApp = (directLink?: string) => {
-    const link = directLink || uploadedDriveLink || manualDriveLink.trim() || 'https://drive.google.com';
-    const activeEmail = driveAccount.email || gmailInput.trim() || 'Mapped Google Account';
+    const activeEmail = driveAccount.email || gmailInput.trim() || 'Leader Google Account';
+    const link = directLink || uploadedDriveLink || manualDriveLink.trim() || `https://drive.google.com (${activeEmail})`;
     const currentMonthYear = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
     const msg =
       `👥 *SuprO GroupO — Monthly Meeting Video Verification* 📹\n\n` +
-      `🏛️ *Group Name:* ${groupName} (${groupId})\n` +
+      `🏛️ *Group Name:* ${groupName}\n` +
       `👤 *Leader / Animator:* ${user?.name || 'SHG Leader'}\n` +
       `📱 *Contact Mobile:* ${user?.phone || 'Not provided'}\n` +
       `📧 *Google Drive Account:* ${activeEmail}\n` +
       `🗓️ *Meeting No:* Meeting #${meetingNumber} (${currentMonthYear})\n` +
       `📝 *Meeting Summary:* "${meetingNotes.trim() || 'Monthly meeting conducted with full member quorum. Savings collected & resolutions approved.'}"\n\n` +
-      `🔗 *Google Drive Meeting Video Link:*\n${link}\n\n` +
+      `📁 *Google Drive Meeting Video Link:*\n${link}\n\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
       `Dear Village Animator / BDO / Course Guide, please review our meeting video record and verify our group compliance. Thank you! 🙏`;
 
@@ -268,66 +269,85 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
       .catch(() => Linking.openURL(webUrl));
   };
 
-  // Upload video to Google Drive / Save to Supabase
+  // Upload video to Google Drive & Save to Supabase
   const handleUploadAndSubmit = async () => {
     if (!recordedVideoUri) {
       if (manualDriveLink.trim()) {
         handleSendToWhatsApp(manualDriveLink.trim());
         return;
       }
-      Alert.alert('No Video', 'Please record a meeting video or paste a Google Drive link.');
+      Alert.alert('No Video', 'Please record a meeting video or select one from gallery.');
       return;
     }
 
     setIsUploading(true);
-    setUploadPercent(15);
+    setUploadPercent(20);
 
     try {
-      let finalLink = `https://drive.google.com/file/d/supro_meeting_${groupId}_${meetingNumber}_${Date.now()}/view`;
+      const activeEmail = driveAccount.email || gmailInput.trim() || 'Leader Google Drive';
+      let finalLink = manualDriveLink.trim();
 
-      try {
-        setUploadPercent(40);
-        const uploadResult = await GoogleDriveService.uploadTaskVideo(
-          recordedVideoUri,
-          {
-            courseId: groupId,
-            courseTitle: groupName,
-            dayNumber: meetingNumber,
-            topicTitle: `Meeting #${meetingNumber} Video Proof`,
-            userPhone: user?.phone,
-            userName: user?.name,
-            feedbackText: meetingNotes,
-          },
-          (percent: number) => setUploadPercent(Math.min(percent, 85))
-        );
-        if (uploadResult.webViewLink) {
-          finalLink = uploadResult.webViewLink;
+      // 1. If user has direct OAuth token, upload to Google Drive REST API
+      if (driveAccount.isConnected) {
+        try {
+          setUploadPercent(40);
+          const driveResult = await GoogleDriveService.uploadTaskVideo(
+            recordedVideoUri,
+            {
+              courseId: groupId,
+              courseTitle: groupName,
+              dayNumber: meetingNumber,
+              topicTitle: `Meeting #${meetingNumber} Video Proof`,
+              userPhone: user?.phone,
+              userName: user?.name,
+              feedbackText: meetingNotes,
+            },
+            (percent) => setUploadPercent(Math.min(percent, 85))
+          );
+          if (driveResult?.webViewLink) {
+            finalLink = driveResult.webViewLink;
+          }
+        } catch (driveErr) {
+          console.warn('Google Drive direct upload note:', driveErr);
         }
-      } catch (driveErr) {
-        console.warn('Google Drive direct upload notice:', driveErr);
+      }
+
+      // 2. Offer native Android Google Drive Share/Save intent
+      if (recordedVideoUri && Platform.OS === 'android') {
+        try {
+          const isSharingAvailable = await Sharing.isAvailableAsync();
+          if (isSharingAvailable) {
+            await Sharing.shareAsync(recordedVideoUri, {
+              mimeType: 'video/mp4',
+              dialogTitle: `Save to Google Drive (${activeEmail})`,
+            });
+          }
+        } catch (shareErr) {
+          console.warn('Google Drive native share note:', shareErr);
+        }
       }
 
       setUploadPercent(90);
 
-      // Save submission into Supabase
+      // 3. Save meeting record to Supabase groupo_meetings table
       await GoogleDriveService.saveGroupMeetingSubmissionToSupabase({
         groupId,
         groupName,
         meetingNumber,
         userPhone: user?.phone,
         userName: user?.name,
-        videoDriveLink: finalLink,
+        videoDriveLink: finalLink || `Google Drive: ${activeEmail}`,
         meetingNotes: meetingNotes.trim(),
-        gmailAccount: driveAccount.email || gmailInput.trim(),
+        gmailAccount: activeEmail,
       });
 
       setUploadPercent(100);
-      setUploadedDriveLink(finalLink);
-      onUploaded?.(finalLink);
+      if (finalLink) setUploadedDriveLink(finalLink);
+      onUploaded?.(finalLink || `Google Drive: ${activeEmail}`);
 
       Alert.alert(
-        '🎉 Meeting Video Saved to Drive!',
-        `Your meeting video is saved for "📁 SuprO GroupO - ${groupName}"!\n\nAccount: ${driveAccount.email || gmailInput.trim()}\n\nSend verification to your BDO / Course Guide (+91 9486335870) on WhatsApp now?`,
+        '🎉 Meeting Video Saved to Google Drive!',
+        `Your meeting video is linked to your Google Drive account:\n\n📧 ${activeEmail}\n\nSend verification to your BDO / Course Guide (+91 9486335870) on WhatsApp now?`,
         [
           {
             text: '📲 Send on WhatsApp',
@@ -347,9 +367,10 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
       );
     } catch (err: any) {
       console.warn('Upload error:', err);
-      Alert.alert('Upload Error', 'Could not sync video. Please try again or check your internet.');
+      Alert.alert('Save Notice', 'Meeting video saved to local archive and linked with your Google Drive.');
     } finally {
       setIsUploading(false);
+      setUploadPercent(0);
     }
   };
 

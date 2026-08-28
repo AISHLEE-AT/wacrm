@@ -149,7 +149,7 @@ export default function RideOBookingPage() {
 
     const otp = String(1000 + Math.floor(Math.random() * 9000));
     const { data: userAuth } = await supabase.auth.getUser();
-    const passengerPhone = userAuth?.user?.phone || '9876543210';
+    const passengerPhone = userAuth?.user?.phone || '';
     const passengerName = userAuth?.user?.user_metadata?.full_name || 'Passenger';
 
     try {

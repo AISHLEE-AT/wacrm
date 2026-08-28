@@ -48,7 +48,7 @@ export const GroupMemberViewCard: React.FC<GroupMemberViewCardProps> = ({
   // Contact Leader via WhatsApp
   const handleContactLeaderWhatsApp = () => {
     const leaderPhone = group.leader_phone || '9486335870';
-    const cleanLeaderPhone = (leaderPhone || '').replace(/^\+/, '').replace(/^91/, '');
+    const cleanLeaderPhone = (leaderPhone || '').replace(/[^0-9]/g, '').replace(/^91(?=\d{10}$)/, '');
     const msg = `வணக்கம் தலைவர் (${group.leader_name}) அவர்களே! நான் ${member.name} (${group.name} உறுப்பினர்).\n\nஎனது மாதாந்திர சேமிப்பு / கூட்ட விபரம் தொடர்பாக பேச விரும்புகிறேன்.`;
     const url = `whatsapp://send?phone=91${cleanLeaderPhone}&text=${encodeURIComponent(msg)}`;
     Linking.openURL(url).catch(() => {
@@ -86,7 +86,7 @@ export const GroupMemberViewCard: React.FC<GroupMemberViewCardProps> = ({
         <View style={styles.leaderBar}>
           <View style={{ flex: 1 }}>
             <Text style={styles.leaderLabel}>குழு தலைவர் (Group Leader):</Text>
-            <Text style={styles.leaderName}>{group.leader_name || 'K. Meenakshi'}</Text>
+            <Text style={styles.leaderName}>{group.leader_name || 'குழு தலைவர் (Leader)'}</Text>
           </View>
           <View style={styles.leaderActionsRow}>
             <TouchableOpacity style={styles.leaderCallBtn} onPress={handleCallLeader}>
@@ -146,7 +146,7 @@ export const GroupMemberViewCard: React.FC<GroupMemberViewCardProps> = ({
 
             <View style={styles.statusHighlightBox}>
               <View>
-                <Text style={styles.amountLarge}>₹{member.savings_amount || 500}</Text>
+                <Text style={styles.amountLarge}>₹{member.savings_amount ?? 500}</Text>
                 <Text style={styles.amountSub}>August 2026 Monthly Due</Text>
               </View>
               <View

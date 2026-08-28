@@ -121,8 +121,14 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const leaderPhone = user?.phone || '9842111223';
+      const leaderPhone = user?.phone || '';
       const leaderName = user?.name || 'Group Leader (குழு தலைவர்)';
+
+      if (!leaderPhone) {
+        Alert.alert('Phone Required', 'உங்கள் கைபேசி எண் தேவை. Profile பகுதியில் உங்கள் எண்ணை சேர்க்கவும்.');
+        setIsSubmitting(false);
+        return;
+      }
 
       const createdGroup = await GroupRepository.createGroupWithMembers({
         leaderPhone,
