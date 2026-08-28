@@ -1,5 +1,6 @@
 import React, { useContext, useState, useMemo } from 'react';
 import {
+  Users,
   View,
   Text,
   StyleSheet,
@@ -54,6 +55,22 @@ interface CategoryItem {
 }
 
 const CATEGORIES: CategoryItem[] = [
+
+  {
+    id: 'groupo',
+    title: 'GroupO',
+    desc: 'SHG & Village Ecosystem Management',
+    categoryGroup: 'finance',
+    tag: '👥 Self-Help',
+    tagColor: '#8b5cf6',
+    icon: Users,
+    iconName: 'Users',
+    color: '#8b5cf6',
+    bg: 'rgba(139, 92, 246, 0.15)',
+    path: '/groupo',
+    featured: true,
+  },
+
   {
     id: 'rideo',
     title: 'RideO',
@@ -231,7 +248,9 @@ export default function CategoryScreen() {
       iconName: cat.iconName || 'Map',
     });
 
-    if (cat.path === '/tuto') {
+        if (cat.path === '/groupo') {
+      navigation.navigate('GroupOScreen');
+    } else if (cat.path === '/tuto') {
       navigation.navigate('TutOHubScreen');
     } else if (cat.path === '/quiz') {
       navigation.navigate('QuizScreen');
