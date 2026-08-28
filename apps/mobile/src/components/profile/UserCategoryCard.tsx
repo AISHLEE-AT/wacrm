@@ -22,6 +22,7 @@ import {
   Sparkles,
   ArrowRight,
   UserCheck,
+  Users,
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { AppContext, ADMIN_PHONES } from '../../context/AppContext';
@@ -55,16 +56,16 @@ export const USER_CATEGORIES: UserCategoryItem[] = [
     bg: 'rgba(59, 130, 246, 0.15)',
   },
   {
-    key: 'Partner',
-    label: 'Delivery & Business Partner',
-    badge: '🤝 DealO & Services',
-    desc: 'Hyperlocal merchant delivery, rentals & service store partner',
-    moduleName: 'DealO',
-    screenName: 'DealOScreen',
-    path: '/dealo',
-    icon: ShoppingBag,
-    color: '#f97316',
-    bg: 'rgba(249, 115, 22, 0.15)',
+    key: 'Group',
+    label: 'Self-Help & Community Groups',
+    badge: '👥 GroupO / சங்கம்',
+    desc: 'தமிழ்நாடு மகளிர் சுய உதவிக் குழு, உழவர் உற்பத்தியாளர், விளையாட்டு & தொழில் குழுக்கள்',
+    moduleName: 'GroupO',
+    screenName: 'GroupOScreen',
+    path: '/groupo',
+    icon: Users,
+    color: '#ec4899',
+    bg: 'rgba(236, 72, 153, 0.15)',
   },
   {
     key: 'Farmer',
@@ -173,7 +174,9 @@ export function UserCategoryCard({
   const activeKey = profile?.main_category || user?.category || 'Traveller';
   const currentCategory =
     USER_CATEGORIES.find(
-      (c) => c.key.toLowerCase() === activeKey.toLowerCase()
+      (c) =>
+        c.key.toLowerCase() === activeKey.toLowerCase() ||
+        (activeKey.toLowerCase() === 'partner' && c.key === 'Group')
     ) || USER_CATEGORIES[0];
 
   const CurrentIcon = currentCategory.icon;

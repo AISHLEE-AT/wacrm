@@ -194,7 +194,7 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
       pool = Array.from(map.values());
     }
     // Filter out fill_in_the_blank questions and ensure clean objective MCQs
-    return pool.filter(q => q.question_format !== 'fill_in_the_blank');
+    return pool.filter(q => (q.question_format as string) !== 'fill_in_the_blank');
   }, [cloudLoadedQuestions]);
 
   // Synchronous, instant search across UID, Number, Range, Format, and Keywords
@@ -648,10 +648,10 @@ export const TutOQBankModal: React.FC<TutOQBankModalProps> = ({
                         const isUserChoice = selectedOpt === optKey;
                         const isCorrectChoice = optKey === qItem.correct_option;
 
-                        let optStyle = styles.optionBtn;
-                        let textStyle = styles.optionText;
-                        let badgeStyle = styles.optionLetterBadge;
-                        let badgeTextStyle = styles.optionLetterText;
+                        let optStyle: any = styles.optionBtn;
+                        let textStyle: any = styles.optionText;
+                        let badgeStyle: any = styles.optionLetterBadge;
+                        let badgeTextStyle: any = styles.optionLetterText;
 
                         if (isAnswered) {
                           if (isCorrectChoice) {

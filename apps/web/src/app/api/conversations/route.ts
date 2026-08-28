@@ -55,7 +55,7 @@ export async function GET(request: Request) {
       const { data: adminProfiles } = await supabaseAdmin()
         .from('profiles')
         .select('id')
-        .or('role.eq.admin,phone.in.(6381029380,9876543210,9486335870),whatsapp.in.(6381029380,9876543210,9486335870),full_name.ilike.%admin%')
+        .or('role.eq.admin,phone.in.(6381029380,9486335870),whatsapp.in.(6381029380,9486335870),full_name.ilike.%admin%')
         .limit(1)
       if (adminProfiles && adminProfiles.length > 0) {
         user = { id: adminProfiles[0].id } as any

@@ -106,6 +106,9 @@ export interface WholeYearDayPlan {
   // 4. 1 Yoga & Extra-Curricular Task
   yogaAndActivity: DayYogaAndActivity;
 
+  // 5. Google Sheet Daily Multi-Subject Task Deck (if synced)
+  googleSheetTask?: any;
+
   // Monday Holiday Specific Content
   mondayHolidayContent?: {
     theme: string;
@@ -589,7 +592,7 @@ export function getAllDaySummariesForCourse(
         const firstNano = (top.nanoConcepts && top.nanoConcepts[0]) || undefined;
         topicsList.push({
           subjectName: subj.subjectName,
-          subjectCode: subj.subjectCode || 'GEN',
+          subjectCode: subj.subjectId || (subj as any).subjectCode || 'GEN',
           chapterTitle: ch.chapterTitle,
           topicTitle: top.title,
           tamilTitle: top.tamilTitle,

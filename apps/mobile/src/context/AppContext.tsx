@@ -4,7 +4,7 @@ import { Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // Admin phone numbers (same as web app)
-export const ADMIN_PHONES = ['6381029380', '9876543210', '9486335870'];
+export const ADMIN_PHONES = ['6381029380', '9486335870'];
 
 export interface AppUser {
   id?: string;

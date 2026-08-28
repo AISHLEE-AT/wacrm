@@ -177,7 +177,7 @@ export async function middleware(request: NextRequest) {
     '/admin', '/profile', '/wallet',
     '/rideo', '/moneyo', '/mandi', '/agro', '/rento', '/dealo',
     '/touro', '/tasko', '/gameo', '/tvo', '/tradeo', '/toolso',
-    '/ai-assistant', '/teacho', '/testo',
+    '/ai-assistant', '/teacho', '/testo', '/groupo',
   ]
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)

@@ -17,7 +17,7 @@ export const RIDE_STATUS = {
 export const API_BASE_URL = 'https://watscrm.vercel.app';
 export const ADMIN_UPI = '9486335870@hdfcbank';
 export const ADMIN_PHONE = '916381029380';
-export const ADMIN_PHONES = ['6381029380', '9876543210', '9486335870'];
+export const ADMIN_PHONES = ['6381029380', '9486335870'];
 
 // ─── THEME COLORS ───
 export const COLORS = {

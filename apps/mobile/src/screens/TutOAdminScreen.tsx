@@ -58,6 +58,11 @@ import {
 } from '../data/curriculum/wholeYearDayPlanEngine';
 import { geminiToolsService } from '../services/geminiToolsService';
 import {
+  GoogleSheetsDayPlanService,
+  GoogleSheetDayPlanItem,
+  GoogleSheetConfig,
+} from '../services/GoogleSheetsDayPlanService';
+import {
   StructuredMCQ,
   MASTER_QBANK_STORE,
   searchQuestions,
@@ -70,7 +75,27 @@ export default function TutOAdminScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { geminiApiKey } = useContext(AppContext);
 
-  const [activeTab, setActiveTab] = useState<'syllabus' | 'day_plan' | 'qbank_mapper' | 'purchases' | 'telegram'>('day_plan');
+  const [activeTab, setActiveTab] = useState<'syllabus' | 'day_plan' | 'qbank_mapper' | 'purchases' | 'telegram' | 'google_sheets'>('google_sheets');
+
+  // Google Sheet Manager States
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [sheetTabName, setSheetTabName] = useState('Sheet1');
+  const [isSyncingSheet, setIsSyncingSheet] = useState(false);
+  const [sheetPlans, setSheetPlans] = useState<Record<string, GoogleSheetDayPlanItem>>({});
+  const [sheetConfig, setSheetConfig] = useState<GoogleSheetConfig | null>(null);
+
+  useEffect(() => {
+    GoogleSheetsDayPlanService.getSavedConfig().then((cfg) => {
+      if (cfg) {
+        setSheetConfig(cfg);
+        if (cfg.sheetUrl) setSheetUrl(cfg.sheetUrl);
+        if (cfg.sheetName) setSheetTabName(cfg.sheetName);
+      }
+    });
+    GoogleSheetsDayPlanService.getCachedDayPlans().then((plans) => {
+      setSheetPlans(plans);
+    });
+  }, []);
 
   // Telegram Quiz Bot Admin States
   const [isTelegramPosting, setIsTelegramPosting] = useState(false);
@@ -134,6 +159,25 @@ export default function TutOAdminScreen({ navigation }: any) {
     const arr = await releaseBatchDays(selectedCourse.id, from, to);
     setReleasedDaySet(new Set(arr));
     Alert.alert('Batch Released! ✨', `Days ${from} to ${to} are now officially released and visible to students!`);
+  };
+
+  const handleSyncGoogleSheet = async () => {
+    if (!sheetUrl.trim()) {
+      Alert.alert('Missing Link', 'Please enter a valid Google Spreadsheet URL or Sheet ID.');
+      return;
+    }
+    setIsSyncingSheet(true);
+    const res = await GoogleSheetsDayPlanService.syncGoogleSheet(sheetUrl.trim(), sheetTabName.trim() || 'Sheet1');
+    setIsSyncingSheet(false);
+    if (res.success) {
+      const plans = await GoogleSheetsDayPlanService.getCachedDayPlans();
+      setSheetPlans(plans);
+      const cfg = await GoogleSheetsDayPlanService.getSavedConfig();
+      setSheetConfig(cfg);
+      Alert.alert('Google Sheet Synced! ⚡', `Successfully synchronized ${res.count} day plans across ${res.courses.length} courses!`);
+    } else {
+      Alert.alert('Sync Failed ❌', res.error || 'Failed to sync Google Sheet. Please check permissions.');
+    }
   };
 
   // Load active day plan
@@ -255,6 +299,16 @@ export default function TutOAdminScreen({ navigation }: any) {
           <Send size={13} color={activeTab === 'telegram' ? '#00D084' : '#94A3B8'} />
           <Text style={[styles.tabBtnText, activeTab === 'telegram' && styles.tabBtnTextActive]}>
             📢 Telegram Bot
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'google_sheets' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('google_sheets')}
+        >
+          <Layers size={13} color={activeTab === 'google_sheets' ? '#00D084' : '#94A3B8'} />
+          <Text style={[styles.tabBtnText, activeTab === 'google_sheets' && styles.tabBtnTextActive]}>
+            📊 Google Sheet Sync
           </Text>
         </TouchableOpacity>
       </View>
@@ -668,7 +722,7 @@ export default function TutOAdminScreen({ navigation }: any) {
 
               <TouchableOpacity
                 style={[
-                  styles.saveBtn,
+                  styles.saveBroadcastBtn,
                   { backgroundColor: '#0284C7' },
                   isTelegramPosting && { opacity: 0.6 },
                 ]}
@@ -706,7 +760,7 @@ export default function TutOAdminScreen({ navigation }: any) {
                 ) : (
                   <>
                     <Send size={15} color="#FFFFFF" />
-                    <Text style={[styles.saveBtnText, { color: '#FFFFFF' }]}>
+                    <Text style={[styles.saveBroadcastBtnText, { color: '#FFFFFF' }]}>
                       📢 Post {telegramPostCount} Daily MCQs to Telegram Now
                     </Text>
                   </>
@@ -740,12 +794,145 @@ export default function TutOAdminScreen({ navigation }: any) {
             ))}
           </View>
         )}
+
+        {/* TAB 5: GOOGLE SHEET WHOLE-YEAR PLAN SYNC */}
+        {activeTab === 'google_sheets' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.infoCard}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Layers size={18} color="#00D084" style={{ marginRight: 8 }} />
+                <Text style={styles.infoTitle}>Google Sheets Whole-Year Curriculum Sync</Text>
+              </View>
+              <Text style={styles.infoRef}>
+                Manage all 365 days of learning tasks (ICLE Tech Official Guidance, Tamil, English, Maths, Science, Social, Life Skills, Homework & Yoga) from ONE single Google Sheet.
+              </Text>
+            </View>
+
+            {/* Sync Controls Card */}
+            <View style={[styles.editSectionCard, { borderColor: '#00D084' }]}>
+              <Text style={[styles.editSectionTitle, { color: '#00D084' }]}>
+                ⚡ GOOGLE SPREADSHEET SETTINGS
+              </Text>
+
+              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 6, marginBottom: 4 }}>
+                Google Sheet URL or ID (Public / Anyone with Link can view):
+              </Text>
+              <TextInput
+                style={[styles.editInput, { color: '#F8FAFC', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }]}
+                placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+                placeholderTextColor="#475569"
+                value={sheetUrl}
+                onChangeText={setSheetUrl}
+                autoCapitalize="none"
+              />
+
+              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 8, marginBottom: 4 }}>
+                Tab Sheet Name:
+              </Text>
+              <TextInput
+                style={[styles.editInput, { color: '#F8FAFC' }]}
+                placeholder="Sheet1"
+                placeholderTextColor="#475569"
+                value={sheetTabName}
+                onChangeText={setSheetTabName}
+              />
+
+              {/* Sync Button */}
+              <TouchableOpacity
+                style={[
+                  styles.saveBroadcastBtn,
+                  { backgroundColor: '#00D084', marginTop: 12 },
+                  isSyncingSheet && { opacity: 0.6 },
+                ]}
+                disabled={isSyncingSheet}
+                onPress={handleSyncGoogleSheet}
+              >
+                {isSyncingSheet ? (
+                  <ActivityIndicator color="#070C18" />
+                ) : (
+                  <>
+                    <RefreshCw size={15} color="#070C18" />
+                    <Text style={[styles.saveBroadcastBtnText, { color: '#070C18' }]}>
+                      ⚡ Sync Whole Year Plans from Google Sheet
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Live Stats */}
+            <View style={{ flexDirection: 'row', gap: 8, marginVertical: 10 }}>
+              <View style={[styles.infoCard, { flex: 1, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 10, color: '#94A3B8', fontWeight: '800' }}>TOTAL DAYS</Text>
+                <Text style={{ fontSize: 18, color: '#FFFFFF', fontWeight: '900', marginTop: 2 }}>
+                  {Object.keys(sheetPlans).length}
+                </Text>
+              </View>
+              <View style={[styles.infoCard, { flex: 1, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 10, color: '#94A3B8', fontWeight: '800' }}>PROGRAMS</Text>
+                <Text style={{ fontSize: 18, color: '#00D084', fontWeight: '900', marginTop: 2 }}>
+                  {sheetConfig?.coursesFound?.length || 0}
+                </Text>
+              </View>
+              <View style={[styles.infoCard, { flex: 1, alignItems: 'center' }]}>
+                <Text style={{ fontSize: 10, color: '#94A3B8', fontWeight: '800' }}>ICLE GUIDANCE</Text>
+                <Text style={{ fontSize: 18, color: '#38BDF8', fontWeight: '900', marginTop: 2 }}>
+                  Active
+                </Text>
+              </View>
+            </View>
+
+            {/* List of Synced Plans */}
+            <Text style={[styles.editSectionTitle, { marginTop: 10, marginBottom: 8 }]}>
+              📋 LIVE SYNCED CURRICULUM DAYS ({Object.keys(sheetPlans).length}):
+            </Text>
+            {Object.keys(sheetPlans).length === 0 ? (
+              <View style={styles.infoCard}>
+                <Text style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center' }}>
+                  No Google Sheet plans synced yet. Paste the URL above and tap Sync.
+                </Text>
+              </View>
+            ) : (
+              Object.entries(sheetPlans).slice(0, 30).map(([key, item]) => (
+                <View key={key} style={[styles.subjectCard, { marginBottom: 8 }]}>
+                  <View style={styles.subjectHeader}>
+                    <Text style={{ fontSize: 13, fontWeight: '900', color: '#00D084' }}>
+                      Day {item.dayNumber} • [{item.courseId.toUpperCase()}]
+                    </Text>
+                    <View style={styles.badgeBox}>
+                      <Text style={styles.badgeBoxText}>10 Tasks</Text>
+                    </View>
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#38BDF8', fontWeight: '800', marginTop: 3 }}>
+                    🏛️ {item.officialGuidanceVideo?.title}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#E2E8F0', marginTop: 2 }}>
+                    📖 {item.tamilTask?.title}
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
+                    📐 {item.mathsTask?.title} • 🔬 {item.scienceTask?.title}
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  editInput: {
+    backgroundColor: '#131F37',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 12,
+    color: '#F8FAFC',
+  },
 
   batchReleaseBar: {
     backgroundColor: '#070C18',

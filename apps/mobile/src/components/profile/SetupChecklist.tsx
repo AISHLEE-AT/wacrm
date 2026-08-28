@@ -25,6 +25,7 @@ export function SetupChecklist({
     { id: 'api_key', label: 'Gemini API Key', isComplete: !!(geminiApiKey || profile?.gemini_api_key) },
     { id: 'push', label: 'Push Notifications', isComplete: !!pushToken },
     { id: 'upi', label: 'UPI ID Configured', isComplete: !!profile?.upi_id },
+    { id: 'gdrive', label: 'Google Drive Storage Mapped', isComplete: !!(profile?.google_drive_connected || profile?.google_account_email) },
     { id: 'driver', label: 'Driver Profile', isComplete: !!driverProfile },
   ];
 

@@ -19,8 +19,11 @@ import {
   HelpCircle,
   Clock,
   Target,
+  Video,
+  HardDrive,
 } from 'lucide-react';
 import { geminiNanoPlayerEngine, GeneratedNanoLesson } from '@/lib/geminiNanoPlayerEngine';
+import { TaskVideoFeedbackWebModal } from './TaskVideoFeedbackWebModal';
 
 interface TeachONanoPlayerModalProps {
   isOpen: boolean;
@@ -69,6 +72,9 @@ export const TeachONanoPlayerModal: React.FC<TeachONanoPlayerModalProps> = ({
   const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([]);
   const [chatInput, setChatInput] = useState('');
   const [isSendingChat, setIsSendingChat] = useState(false);
+
+  // Google Drive Task Video Recording State
+  const [isVideoFeedbackOpen, setIsVideoFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && topicTitle) {
@@ -540,13 +546,35 @@ export const TeachONanoPlayerModal: React.FC<TeachONanoPlayerModalProps> = ({
           <div className="text-xs text-slate-400">
             Day {dayNumber} • Step {stepNumber}
           </div>
-          <button
-            onClick={handleCompleteAndEarn}
-            className="px-6 py-2.5 bg-[#00D084] hover:bg-[#00B774] text-[#070C18] text-xs font-black rounded-xl shadow-lg flex items-center gap-2 transition"
-          >
-            <CheckCircle2 className="w-4 h-4" /> Complete Task & Earn XP
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsVideoFeedbackOpen(true)}
+              className="px-4 py-2.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
+            >
+              <Video className="w-4 h-4" />
+              <span>Record Video Feedback</span>
+            </button>
+            <button
+              onClick={handleCompleteAndEarn}
+              className="px-6 py-2.5 bg-[#00D084] hover:bg-[#00B774] text-[#070C18] text-xs font-black rounded-xl shadow-lg flex items-center gap-2 transition"
+            >
+              <CheckCircle2 className="w-4 h-4" /> Complete Task & Earn XP
+            </button>
+          </div>
         </div>
+
+        {/* Google Drive Task Video Recording & Feedback Modal */}
+        <TaskVideoFeedbackWebModal
+          isOpen={isVideoFeedbackOpen}
+          onClose={() => setIsVideoFeedbackOpen(false)}
+          courseId={courseId}
+          courseTitle={courseTitle}
+          dayNumber={dayNumber}
+          topicTitle={topicTitle}
+          onSubmitted={(earnedXp) => {
+            onCompleteTask?.(earnedXp);
+          }}
+        />
 
       </div>
     </div>

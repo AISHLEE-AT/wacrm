@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WebView } from 'react-native-webview';
 import {
   X,
   Play,
@@ -39,6 +38,10 @@ import {
   Sliders,
   Send,
   Video,
+  HardDrive,
+  UploadCloud,
+  ShieldCheck,
+  Target,
 } from 'lucide-react-native';
 
 import {
@@ -46,6 +49,13 @@ import {
   resolveWholeYearDayPlan,
   getAdminCustomDayPlan,
 } from '../../data/curriculum/wholeYearDayPlanEngine';
+import {
+  GoogleSheetsDayPlanService,
+  GoogleSheetDayPlanItem,
+  DEFAULT_ICLE_GUIDANCE_VIDEO,
+} from '../../services/GoogleSheetsDayPlanService';
+import { ImmersiveVideoPlayer } from './ImmersiveVideoPlayer';
+import { TaskVideoFeedbackModal } from './TaskVideoFeedbackModal';
 
 const { width } = Dimensions.get('window');
 
@@ -55,11 +65,26 @@ interface TutODayCoursePlayerModalProps {
   courseId: string;
   courseTitle: string;
   initialDay?: number;
+  dayNumber?: number;
+  dayPlan?: any;
   board?: string;
-  onCompleteDay?: (dayNumber: number, earnedXp: number) => void;
+  schoolBoard?: string;
+  onCompleteDay?: (dayNumber: number, earnedXp?: number) => void;
 }
 
-type StepKey = 'vid1' | 'vid2' | 'vid3' | 'note1' | 'note2' | 'note3' | 'test' | 'yoga';
+export type StepKey =
+  | 'guidance'
+  | 'tamil'
+  | 'english'
+  | 'maths'
+  | 'science'
+  | 'social'
+  | 'lifeskill'
+  | 'homework'
+  | 'yoga'
+  | 'currentaffairs'
+  | 'test'
+  | 'drive_feedback';
 
 export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> = ({
   visible,
@@ -67,14 +92,19 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
   courseId,
   courseTitle,
   initialDay = 1,
+  dayNumber,
+  dayPlan,
   board = 'TNSB',
+  schoolBoard,
   onCompleteDay,
 }) => {
   const insets = useSafeAreaInsets();
-  const [currentDay, setCurrentDay] = useState<number>(initialDay);
-  const [activeStep, setActiveStep] = useState<StepKey>('vid1');
+  const activeBoard = schoolBoard || board;
+  const [currentDay, setCurrentDay] = useState<number>(dayNumber || initialDay);
+  const [activeStep, setActiveStep] = useState<StepKey>('guidance');
   const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
   const [dayPlanData, setDayPlanData] = useState<WholeYearDayPlan | null>(null);
+  const [sheetPlan, setSheetPlan] = useState<GoogleSheetDayPlanItem | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Daily MCQ Test State
@@ -82,10 +112,8 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
   const [testSubmitted, setTestSubmitted] = useState<boolean>(false);
   const [testScore, setTestScore] = useState<number>(0);
 
-  // Student Interactive AI Note State
-  const [aiCustomPrompt, setAiCustomPrompt] = useState<string>('');
-  const [aiResponseText, setAiResponseText] = useState<string>('');
-  const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
+  // Google Drive Task Video Recording State
+  const [isVideoFeedbackOpen, setIsVideoFeedbackOpen] = useState<boolean>(false);
 
   // Load and resolve day plan
   useEffect(() => {
@@ -95,12 +123,16 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
     async function loadDay() {
       setIsLoading(true);
       try {
-        // 1. Check for admin custom overrides
+        // 1. Check for Google Sheet synced day plans
+        const sheet = await GoogleSheetsDayPlanService.getDayPlan(courseId, currentDay);
+        if (isMounted) setSheetPlan(sheet);
+
+        // 2. Check for admin custom overrides
         const custom = await getAdminCustomDayPlan(courseId, currentDay);
         if (custom && isMounted) {
           setDayPlanData(custom);
         } else {
-          // 2. Resolve default authentic syllabus plan
+          // 3. Resolve default authentic syllabus plan
           const resolved = resolveWholeYearDayPlan(courseId, courseTitle, currentDay, board);
           if (isMounted) setDayPlanData(resolved);
         }
@@ -117,7 +149,6 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
         setSelectedAnswers({});
         setTestSubmitted(false);
         setTestScore(0);
-        setAiResponseText('');
       } catch (e) {
         console.warn('Error loading day plan:', e);
       } finally {
@@ -126,128 +157,238 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
     }
 
     loadDay();
+
     return () => {
       isMounted = false;
     };
   }, [visible, courseId, courseTitle, currentDay, board]);
 
+  // Fallback day plan data
   const plan = dayPlanData || resolveWholeYearDayPlan(courseId, courseTitle, currentDay, board);
 
-  // Step Completion Handler
-  const handleMarkStepComplete = async (step: StepKey, stepXp: number = 25) => {
+  // Active micro-tasks (from Google Sheet or fallback)
+  const guidanceVid = sheetPlan?.officialGuidanceVideo || {
+    title: `Day ${currentDay}: Official Rule & Guidance — ICLE Technology`,
+    youtubeVideoId: plan.videos[0]?.youtubeVideoId || DEFAULT_ICLE_GUIDANCE_VIDEO.youtubeVideoId,
+    channelName: 'ICLE Technology Official',
+    summary: 'Daily official guidelines, discipline rules, and micro-learning targets for all scholars.',
+    durationMinutes: 10,
+  };
+
+  const tamilTask = sheetPlan?.tamilTask || {
+    title: `Day ${currentDay} தமிழ்: ${plan.topicTamilTitle || plan.topicTitle}`,
+    topic: plan.topicTamilTitle || plan.topicTitle,
+    youtubeVideoId: plan.videos[0]?.youtubeVideoId || 'dQw4w9WgXcQ',
+    channelName: 'SuprO Tamil Masterclass',
+    summary: plan.notes[0]?.contentTamil || 'இன்றைய தமிழ் இலக்கணம், பாடல் கருத்து மற்றும் உரைநடை விளக்கம்.',
+    durationMinutes: 15,
+  };
+
+  const englishTask = sheetPlan?.englishTask || {
+    title: `Day ${currentDay} English: ${plan.topicTitle} & Grammar`,
+    topic: `${plan.topicTitle} & Applied Grammar`,
+    youtubeVideoId: plan.videos[1]?.youtubeVideoId || 'dQw4w9WgXcQ',
+    channelName: 'SuprO English Academy',
+    summary: 'Master core vocabulary, sentence structuring and English comprehension rules.',
+    durationMinutes: 15,
+  };
+
+  const mathsTask = sheetPlan?.mathsTask || {
+    title: `Day ${currentDay} Mathematics: Problem Solving & Formulas`,
+    topic: `${plan.subject}: ${plan.chapterTitle}`,
+    youtubeVideoId: plan.videos[1]?.youtubeVideoId || 'dQw4w9WgXcQ',
+    channelName: 'SuprO Maths Lab',
+    summary: plan.notes[0]?.formulasOrKeyRules?.[0] || 'Core theorem derivation and step-by-step problem workout.',
+    durationMinutes: 20,
+  };
+
+  const scienceTask = sheetPlan?.scienceTask || {
+    title: `Day ${currentDay} Science: Experimental Laws & Key Diagrams`,
+    topic: plan.topicTitle,
+    youtubeVideoId: plan.videos[2]?.youtubeVideoId || 'dQw4w9WgXcQ',
+    channelName: 'SuprO Science Discovery',
+    summary: plan.notes[1]?.content || 'Scientific observations, molecular principles, and physical derivations.',
+    durationMinutes: 20,
+  };
+
+  const socialScienceTask = sheetPlan?.socialScienceTask || {
+    title: `Day ${currentDay} Social Science & Civic Governance`,
+    topic: 'Indian Constitution, History Timeline & World Geography',
+    youtubeVideoId: plan.videos[0]?.youtubeVideoId || 'dQw4w9WgXcQ',
+    channelName: 'SuprO Civics & History',
+    summary: 'Historical context, constitutional rights, and geographic mapping.',
+    durationMinutes: 15,
+  };
+
+  const lifeSkillTask = sheetPlan?.lifeSkillTask || {
+    title: 'Daily Practical Wisdom & Ethical Leadership',
+    description: 'Developing proactive focus, time blocking, emotional resilience, and integrity.',
+    actionPrompt: 'Write down 2 actionable steps you will take today to practice proactive discipline.',
+  };
+
+  const homeworkTask = sheetPlan?.homeworkTask || {
+    title: `Day ${currentDay} Self-Study Homework & Practice Questions`,
+    description: 'Solve the textbook questions for today and write a short summary.',
+    questions: [
+      `1. Explain the fundamental concept of ${plan.topicTitle}.`,
+      `2. Work out 2 practice problems related to ${plan.chapterTitle}.`,
+      `3. Write 3 key vocabulary or formula takeaways from today's lectures.`,
+    ],
+  };
+
+  const exerciseYoga = sheetPlan?.exercisePhysicVideo || {
+    title: `Daily Physical Fitness & ${plan.yogaAndActivity.asanaName}`,
+    youtubeVideoId: 'dQw4w9WgXcQ',
+    asanaOrWorkout: plan.yogaAndActivity.asanaName,
+    benefits: plan.yogaAndActivity.benefits,
+    durationMinutes: 10,
+  };
+
+  const currentAffairs = sheetPlan?.currentAffairsGkVideo || {
+    title: 'Daily Current Affairs & All-India General Knowledge',
+    youtubeVideoId: 'dQw4w9WgXcQ',
+    keyPoints: [
+      'National & Tamil Nadu Key Governance Milestones',
+      'Science, Space (ISRO) & Defense Breakthroughs',
+      'Supreme Court Precedents & Civics Updates',
+    ],
+    durationMinutes: 10,
+  };
+
+  // Mark a specific step complete
+  const handleMarkStepComplete = async (step: StepKey, xpEarned: number = 25) => {
     const updated = { ...completedSteps, [step]: true };
     setCompletedSteps(updated);
-    await AsyncStorage.setItem(`tuto_day_progress_${courseId}_${currentDay}`, JSON.stringify(updated));
+    try {
+      await AsyncStorage.setItem(`tuto_day_progress_${courseId}_${currentDay}`, JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to save step progress:', e);
+    }
 
-    // Next step navigation
-    const stepOrder: StepKey[] = ['vid1', 'vid2', 'vid3', 'note1', 'note2', 'note3', 'test', 'yoga'];
-    const currIdx = stepOrder.indexOf(step);
-    if (currIdx < stepOrder.length - 1) {
-      setActiveStep(stepOrder[currIdx + 1]);
-    } else {
-      // Completed all 8 steps of the day!
-      Alert.alert('🎉 Day Plan Completed!', `You've completed all tasks for Day ${currentDay}! Earned +${plan.totalXpReward} XP.`);
-      onCompleteDay?.(currentDay, plan.totalXpReward);
+    // Auto advance to next step
+    const stepOrder: StepKey[] = [
+      'guidance',
+      'tamil',
+      'english',
+      'maths',
+      'science',
+      'social',
+      'lifeskill',
+      'homework',
+      'yoga',
+      'currentaffairs',
+      'test',
+      'drive_feedback',
+    ];
+    const currentIndex = stepOrder.indexOf(step);
+    if (currentIndex < stepOrder.length - 1) {
+      setActiveStep(stepOrder[currentIndex + 1]);
     }
   };
 
-  // MCQ Test Submission
-  const handleMCQSubmit = () => {
+  // Submit Daily MCQ Assessment
+  const handleTestOptionSelect = (qId: string, opt: 'A' | 'B' | 'C' | 'D') => {
+    if (testSubmitted) return;
+    setSelectedAnswers((prev) => ({ ...prev, [qId]: opt }));
+  };
+
+  const handleSubmitDailyTest = async () => {
+    const questions = plan.mcqTest.questions;
     let score = 0;
-    plan.mcqTest.questions.forEach((q) => {
+    questions.forEach((q) => {
       if (selectedAnswers[q.id] === q.correctOption) {
         score++;
       }
     });
+
     setTestScore(score);
     setTestSubmitted(true);
-    handleMarkStepComplete('test', 50);
+    await handleMarkStepComplete('test', score * 20);
+
+    Alert.alert(
+      score >= 3 ? '🎉 Excellent Performance!' : '📚 Good Attempt!',
+      `You scored ${score} / ${questions.length} on today's CBT assessment. +${score * 20} XP Earned!`,
+      [{ text: 'Continue to Drive Video Feedback', onPress: () => setActiveStep('drive_feedback') }]
+    );
   };
 
-  // Interactive AI Note Generation
-  const handleGenerateAINote = async (customRequest?: string) => {
-    setIsAiGenerating(true);
-    const query = customRequest || aiCustomPrompt || 'Explain core principles with 2 real-world applications';
-
-    setTimeout(() => {
-      setAiResponseText(
-        `🤖 **Topic-Grounded AI Study Summary: ${plan.topicTitle}**\n\n` +
-        `**Key Inquiry:** "${query}"\n\n` +
-        `1. **Fundamental Axiom:** In ${plan.subject}, "${plan.topicTitle}" operates under universal conservation and thermodynamic equilibria.\n\n` +
-        `2. **Visual Memory Hook:** Visualize the system as an energetic continuum where input work equals output response plus internal entropy.\n\n` +
-        `3. **High-Yield Exam Pro-Tip:** Whenever answering 5-mark questions on ${plan.topicTitle}, explicitly state the dimensional formula and standard units.\n\n` +
-        `*Grounded in authentic ${board} curriculum guidelines.*`
-      );
-      setIsAiGenerating(false);
-      handleMarkStepComplete('note3', 25);
-    }, 800);
+  // Finish whole day
+  const handleCompleteWholeDay = () => {
+    if (onCompleteDay) {
+      onCompleteDay(currentDay, 150);
+    }
+    Alert.alert('🌟 Day Complete!', `Congratulations on finishing Day ${currentDay} micro-learning targets!`);
+    onClose();
   };
 
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        {/* Top Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <X size={20} color="#94A3B8" />
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={onClose}>
+      <View style={[styles.modalRoot, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        {/* ─── 1. TOP APP BAR ────────────────────────────────────────── */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.closeBtn} activeOpacity={0.8} onPress={onClose}>
+            <X size={20} color="#CBD5E1" />
           </TouchableOpacity>
 
-          <View style={styles.headerCenter}>
+          <View style={styles.topBarCenter}>
             <View style={styles.dayBadgeRow}>
-              <View style={[styles.dayPill, plan.isMondayHoliday && styles.dayPillHoliday]}>
-                <Calendar size={11} color={plan.isMondayHoliday ? '#F59E0B' : '#00D084'} />
-                <Text style={[styles.dayPillText, plan.isMondayHoliday && styles.dayPillTextHoliday]}>
-                  DAY {plan.dayNumber} · WEEK {plan.weekNumber} · {plan.dayOfWeekName.toUpperCase()}
-                </Text>
+              <View style={styles.dayBadge}>
+                <Text style={styles.dayBadgeText}>DAY {currentDay} OF 200</Text>
               </View>
-              {plan.isMondayHoliday ? (
-                <View style={styles.holidayTag}>
-                  <Smile size={10} color="#F59E0B" />
-                  <Text style={styles.holidayTagText}>HOLIDAY / REST & REVIEW</Text>
-                </View>
-              ) : (
-                <View style={styles.subjectTag}>
-                  <Text style={styles.subjectTagText}>{plan.subject}</Text>
+              {sheetPlan && (
+                <View style={styles.sheetBadge}>
+                  <Sparkles size={9} color="#00D084" />
+                  <Text style={styles.sheetBadgeText}>Google Sheet Live</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.topicHeaderTitle} numberOfLines={1}>
-              {plan.topicTitle}
+            <Text style={styles.topBarCourseTitle} numberOfLines={1}>
+              {courseTitle}
             </Text>
           </View>
 
-          {/* Day Jumper Controls */}
-          <View style={styles.dayJumperRow}>
+          {/* Quick Actions: Drive Record & Day Jumpers */}
+          <View style={styles.topBarRight}>
+            <TouchableOpacity
+              style={styles.driveRecordPill}
+              activeOpacity={0.8}
+              onPress={() => setIsVideoFeedbackOpen(true)}
+            >
+              <Video size={13} color="#38BDF8" />
+              <Text style={styles.driveRecordPillText}>Record</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.jumperBtn, currentDay <= 1 && styles.jumperBtnDisabled]}
               disabled={currentDay <= 1}
               onPress={() => setCurrentDay((prev) => Math.max(1, prev - 1))}
             >
-              <ArrowLeft size={14} color={currentDay <= 1 ? '#475569' : '#00D084'} />
+              <ArrowLeft size={13} color={currentDay <= 1 ? '#475569' : '#00D084'} />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.jumperBtn}
-              onPress={() => setCurrentDay((prev) => prev + 1)}
-            >
-              <ArrowRight size={14} color="#00D084" />
+            <TouchableOpacity style={styles.jumperBtn} onPress={() => setCurrentDay((prev) => prev + 1)}>
+              <ArrowRight size={13} color="#00D084" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* 8-Step Linear Progress Bar */}
+        {/* ─── 2. 12-STEP MULTI-SUBJECT MICRO-LEARNING BAR ───────────── */}
         <View style={styles.stepsBarContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stepsBarScroll}>
             {[
-              { id: 'vid1' as StepKey, label: '📹 Video 1 (Foundation)', isDone: completedSteps.vid1 },
-              { id: 'vid2' as StepKey, label: '📹 Video 2 (Derivation)', isDone: completedSteps.vid2 },
-              { id: 'vid3' as StepKey, label: '📹 Video 3 (PYQ)', isDone: completedSteps.vid3 },
-              { id: 'note1' as StepKey, label: '📝 Core AI Notes', isDone: completedSteps.note1 },
-              { id: 'note2' as StepKey, label: '📝 Exam Notes', isDone: completedSteps.note2 },
-              { id: 'note3' as StepKey, label: '🤖 Topic AI Notes', isDone: completedSteps.note3 },
-              { id: 'test' as StepKey, label: '🎯 Daily MCQ Test', isDone: completedSteps.test },
-              { id: 'yoga' as StepKey, label: '🧘 Yoga & Brain Booster', isDone: completedSteps.yoga },
+              { id: 'guidance' as StepKey, label: '🏛️ ICLE Guidance', isDone: completedSteps.guidance },
+              { id: 'tamil' as StepKey, label: '📖 தமிழ் பாடம்', isDone: completedSteps.tamil },
+              { id: 'english' as StepKey, label: '🔤 English Masterclass', isDone: completedSteps.english },
+              { id: 'maths' as StepKey, label: '📐 Maths Lab', isDone: completedSteps.maths },
+              { id: 'science' as StepKey, label: '🔬 Science Practical', isDone: completedSteps.science },
+              { id: 'social' as StepKey, label: '🌍 Social Science', isDone: completedSteps.social },
+              { id: 'lifeskill' as StepKey, label: '💡 Life Skills', isDone: completedSteps.lifeskill },
+              { id: 'homework' as StepKey, label: '✍️ Daily Homework', isDone: completedSteps.homework },
+              { id: 'yoga' as StepKey, label: '🧘 Fitness & Yoga', isDone: completedSteps.yoga },
+              { id: 'currentaffairs' as StepKey, label: '📰 Current Affairs', isDone: completedSteps.currentaffairs },
+              { id: 'test' as StepKey, label: '🎯 CBT Test', isDone: completedSteps.test },
+              { id: 'drive_feedback' as StepKey, label: '📹 Drive Video Upload', isDone: completedSteps.drive_feedback },
             ].map((stepItem, idx) => {
               const isActive = activeStep === stepItem.id;
               return (
@@ -261,7 +402,13 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
                   ) : (
                     <Text style={[styles.stepIndexText, isActive && styles.stepIndexTextActive]}>{idx + 1}</Text>
                   )}
-                  <Text style={[styles.stepTabText, isActive && styles.stepTabTextActive, stepItem.isDone && styles.stepTabTextDone]}>
+                  <Text
+                    style={[
+                      styles.stepTabText,
+                      isActive && styles.stepTabTextActive,
+                      stepItem.isDone && styles.stepTabTextDone,
+                    ]}
+                  >
                     {stepItem.label}
                   </Text>
                 </TouchableOpacity>
@@ -270,570 +417,493 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
           </ScrollView>
         </View>
 
-        {/* Main Content Area */}
+        {/* ─── 3. MAIN CONTENT AREA ──────────────────────────────────── */}
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#00D084" />
-            <Text style={styles.loadingText}>Loading Day {currentDay} Course Blueprint...</Text>
+            <Text style={styles.loadingText}>Loading Day {currentDay} Curriculum Deck...</Text>
           </View>
-        ) : plan.isMondayHoliday ? (
-          /* ═════════════════════════════════════════════════════════════════
-             🌿 MONDAY HOLIDAY / WEEKLY REVIEW & REST SCREEN
-             ═════════════════════════════════════════════════════════════════ */
-          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <View style={styles.holidayCard}>
-              <View style={styles.holidayIconBox}>
-                <Smile size={32} color="#F59E0B" />
-              </View>
-              <Text style={styles.holidayThemeTitle}>{plan.mondayHolidayContent?.theme}</Text>
-              <Text style={styles.holidayQuote}>{plan.mondayHolidayContent?.quote}</Text>
-
-              <View style={styles.revisionBox}>
-                <Text style={styles.revisionBoxTitle}>📋 WEEKLY REVISION & MINDFUL REST CHECKLIST:</Text>
-                {plan.mondayHolidayContent?.weeklyRevisionSummary.map((item, idx) => (
-                  <View key={idx} style={styles.revisionItemRow}>
-                    <CheckCircle2 size={14} color="#00D084" style={{ marginTop: 2 }} />
-                    <Text style={styles.revisionItemText}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.mindfulnessBox}>
-                <Heart size={16} color="#EC4899" />
-                <Text style={styles.mindfulnessText}>
-                  {plan.mondayHolidayContent?.mindfulnessExercise}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.holidayCompleteBtn}
-                onPress={() => handleMarkStepComplete('yoga', 50)}
-              >
-                <CheckCircle2 size={16} color="#070C18" />
-                <Text style={styles.holidayCompleteBtnText}>Complete Monday Reflection (+50 XP)</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
         ) : (
-          /* ═════════════════════════════════════════════════════════════════
-             ACTIVE LEARNING DAY FLOW (VIDEOS -> NOTES -> TEST -> YOGA)
-             ═════════════════════════════════════════════════════════════════ */
           <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* ── STEP 1: Video 1 (Foundation) ────────────────────────────── */}
-            {activeStep === 'vid1' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <Video size={13} color="#38BDF8" />
-                  <Text style={styles.stepHeroBadgeText}>VIDEO 1 OF 3: CONCEPT FOUNDATIONS</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.videos[0].title}</Text>
-                <Text style={styles.stepSubtitle}>{plan.videos[0].summary}</Text>
-
-                {/* In-App Playable Video Embed */}
-                <View style={styles.videoPlayerContainer}>
-                  {Platform.OS === 'web' ? (
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${plan.videos[0].youtubeVideoId}?rel=0&autoplay=0`}
-                      style={{ width: '100%', height: 210, border: 0, borderRadius: 10 }}
-                      allowFullScreen
-                    />
-                  ) : (
-                    <WebView
-                      style={styles.nativeWebView}
-                      source={{ uri: `https://www.youtube.com/embed/${plan.videos[0].youtubeVideoId}?playsinline=1` }}
-                      allowsFullscreenVideo
-                      javaScriptEnabled
-                    />
-                  )}
+            {/* ── STEP 1: Official Rule & Guidance Video (ICLE Technology) ── */}
+            {activeStep === 'guidance' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <ShieldCheck size={12} color="#00D084" />
+                    <Text style={styles.stepBadgeText}>TASK 1: OFFICIAL RULE & GUIDANCE</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{guidanceVid.title}</Text>
+                  <Text style={styles.stepSub}>{guidanceVid.summary}</Text>
                 </View>
 
-                <View style={styles.metaRow}>
-                  <Text style={styles.channelNameText}>Channel: {plan.videos[0].channelName}</Text>
-                  <Text style={styles.durationText}>⏱️ {plan.videos[0].durationMinutes} Mins</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('vid1', 25)}
-                >
-                  <Text style={styles.actionCompleteBtnText}>Mark Video 1 Complete & Next ➡️</Text>
-                </TouchableOpacity>
+                <ImmersiveVideoPlayer
+                  videoId={guidanceVid.youtubeVideoId}
+                  title={guidanceVid.title}
+                  channelName="ICLE Technology Official"
+                  summary={guidanceVid.summary}
+                  durationMinutes={guidanceVid.durationMinutes}
+                  isCompleted={completedSteps.guidance}
+                  onMarkComplete={() => handleMarkStepComplete('guidance', 30)}
+                  xpReward={30}
+                />
               </View>
             )}
 
-            {/* ── STEP 2: Video 2 (Derivations) ───────────────────────────── */}
-            {activeStep === 'vid2' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <Video size={13} color="#38BDF8" />
-                  <Text style={styles.stepHeroBadgeText}>VIDEO 2 OF 3: WORKED DERIVATIONS & PROBLEMS</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.videos[1].title}</Text>
-                <Text style={styles.stepSubtitle}>{plan.videos[1].summary}</Text>
-
-                <View style={styles.videoPlayerContainer}>
-                  {Platform.OS === 'web' ? (
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${plan.videos[1].youtubeVideoId}?rel=0&autoplay=0`}
-                      style={{ width: '100%', height: 210, border: 0, borderRadius: 10 }}
-                      allowFullScreen
-                    />
-                  ) : (
-                    <WebView
-                      style={styles.nativeWebView}
-                      source={{ uri: `https://www.youtube.com/embed/${plan.videos[1].youtubeVideoId}?playsinline=1` }}
-                      allowsFullscreenVideo
-                      javaScriptEnabled
-                    />
-                  )}
+            {/* ── STEP 2: Tamil Daily Concept & Video ── */}
+            {activeStep === 'tamil' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <BookOpen size={12} color="#EC4899" />
+                    <Text style={[styles.stepBadgeText, { color: '#EC4899' }]}>TASK 2: தமிழ் பாடப் பிரிவு</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{tamilTask.title}</Text>
+                  <Text style={styles.stepSub}>{tamilTask.summary}</Text>
                 </View>
 
-                <View style={styles.metaRow}>
-                  <Text style={styles.channelNameText}>Channel: {plan.videos[1].channelName}</Text>
-                  <Text style={styles.durationText}>⏱️ {plan.videos[1].durationMinutes} Mins</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('vid2', 25)}
-                >
-                  <Text style={styles.actionCompleteBtnText}>Mark Video 2 Complete & Next ➡️</Text>
-                </TouchableOpacity>
+                <ImmersiveVideoPlayer
+                  videoId={tamilTask.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={tamilTask.title}
+                  channelName={tamilTask.channelName || 'SuprO Tamil Masterclass'}
+                  summary={tamilTask.summary}
+                  durationMinutes={tamilTask.durationMinutes || 15}
+                  isCompleted={completedSteps.tamil}
+                  onMarkComplete={() => handleMarkStepComplete('tamil', 25)}
+                  xpReward={25}
+                />
               </View>
             )}
 
-            {/* ── STEP 3: Video 3 (PYQ Analysis) ──────────────────────────── */}
-            {activeStep === 'vid3' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <Video size={13} color="#38BDF8" />
-                  <Text style={styles.stepHeroBadgeText}>VIDEO 3 OF 3: EXAM PYQ ANALYSIS & STRATEGY</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.videos[2].title}</Text>
-                <Text style={styles.stepSubtitle}>{plan.videos[2].summary}</Text>
-
-                <View style={styles.videoPlayerContainer}>
-                  {Platform.OS === 'web' ? (
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${plan.videos[2].youtubeVideoId}?rel=0&autoplay=0`}
-                      style={{ width: '100%', height: 210, border: 0, borderRadius: 10 }}
-                      allowFullScreen
-                    />
-                  ) : (
-                    <WebView
-                      style={styles.nativeWebView}
-                      source={{ uri: `https://www.youtube.com/embed/${plan.videos[2].youtubeVideoId}?playsinline=1` }}
-                      allowsFullscreenVideo
-                      javaScriptEnabled
-                    />
-                  )}
+            {/* ── STEP 3: English Masterclass ── */}
+            {activeStep === 'english' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Sparkles size={12} color="#38BDF8" />
+                    <Text style={[styles.stepBadgeText, { color: '#38BDF8' }]}>TASK 3: ENGLISH & GRAMMAR</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{englishTask.title}</Text>
+                  <Text style={styles.stepSub}>{englishTask.summary}</Text>
                 </View>
 
-                <View style={styles.metaRow}>
-                  <Text style={styles.channelNameText}>Channel: {plan.videos[2].channelName}</Text>
-                  <Text style={styles.durationText}>⏱️ {plan.videos[2].durationMinutes} Mins</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('vid3', 25)}
-                >
-                  <Text style={styles.actionCompleteBtnText}>Mark Video 3 Complete & Go to Notes ➡️</Text>
-                </TouchableOpacity>
+                <ImmersiveVideoPlayer
+                  videoId={englishTask.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={englishTask.title}
+                  channelName={englishTask.channelName || 'SuprO English Academy'}
+                  summary={englishTask.summary}
+                  durationMinutes={englishTask.durationMinutes || 15}
+                  isCompleted={completedSteps.english}
+                  onMarkComplete={() => handleMarkStepComplete('english', 25)}
+                  xpReward={25}
+                />
               </View>
             )}
 
-            {/* ── STEP 4: Note 1 (Admin AI Core Notes) ─────────────────────── */}
-            {activeStep === 'note1' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <FileText size={13} color="#00D084" />
-                  <Text style={styles.stepHeroBadgeText}>NOTE 1 OF 3: ADMIN AI CORE CONCEPTS</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.notes[0].title}</Text>
-
-                <View style={styles.noteContentCard}>
-                  <Text style={styles.noteBodyText}>{plan.notes[0].content}</Text>
-
-                  {plan.notes[0].contentTamil && (
-                    <View style={styles.tamilNoteCard}>
-                      <Text style={styles.tamilNoteText}>{plan.notes[0].contentTamil}</Text>
-                    </View>
-                  )}
-
-                  {plan.notes[0].formulasOrKeyRules && (
-                    <View style={styles.formulaSection}>
-                      <Text style={styles.formulaSectionTitle}>📐 CORE FORMULAS & GOVERNING LAWS:</Text>
-                      {plan.notes[0].formulasOrKeyRules.map((f, i) => (
-                        <View key={i} style={styles.formulaBox}>
-                          <Text style={styles.formulaText}>{f}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
+            {/* ── STEP 4: Mathematics Lab ── */}
+            {activeStep === 'maths' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Layers size={12} color="#F59E0B" />
+                    <Text style={[styles.stepBadgeText, { color: '#F59E0B' }]}>TASK 4: MATHEMATICS & DERIVATIONS</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{mathsTask.title}</Text>
+                  <Text style={styles.stepSub}>{mathsTask.summary}</Text>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('note1', 25)}
-                >
-                  <Text style={styles.actionCompleteBtnText}>Mark Core Notes Complete & Next ➡️</Text>
-                </TouchableOpacity>
+                <ImmersiveVideoPlayer
+                  videoId={mathsTask.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={mathsTask.title}
+                  channelName={mathsTask.channelName || 'SuprO Maths Lab'}
+                  summary={mathsTask.summary}
+                  durationMinutes={mathsTask.durationMinutes || 20}
+                  isCompleted={completedSteps.maths}
+                  onMarkComplete={() => handleMarkStepComplete('maths', 25)}
+                  xpReward={25}
+                />
               </View>
             )}
 
-            {/* ── STEP 5: Note 2 (Admin Exam Deep-Dive Notes) ───────────────── */}
-            {activeStep === 'note2' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <FileText size={13} color="#F59E0B" />
-                  <Text style={styles.stepHeroBadgeText}>NOTE 2 OF 3: EXAM DEEP-DIVE & COMMON TRAPS</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.notes[1].title}</Text>
-
-                <View style={styles.noteContentCard}>
-                  <Text style={styles.noteBodyText}>{plan.notes[1].content}</Text>
-
-                  {plan.notes[1].examTrapsToAvoid && (
-                    <View style={styles.trapsSection}>
-                      <Text style={styles.trapsSectionTitle}>⚠️ CRITICAL EXAMINATION TRAPS TO AVOID:</Text>
-                      {plan.notes[1].examTrapsToAvoid.map((trap, i) => (
-                        <View key={i} style={styles.trapItemRow}>
-                          <Text style={styles.trapItemBullet}>•</Text>
-                          <Text style={styles.trapItemText}>{trap}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
+            {/* ── STEP 5: Science Practical & Concepts ── */}
+            {activeStep === 'science' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Zap size={12} color="#10B981" />
+                    <Text style={[styles.stepBadgeText, { color: '#10B981' }]}>TASK 5: SCIENCE CORE DISCOVERY</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{scienceTask.title}</Text>
+                  <Text style={styles.stepSub}>{scienceTask.summary}</Text>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('note2', 25)}
-                >
-                  <Text style={styles.actionCompleteBtnText}>Mark Exam Notes Complete & Next ➡️</Text>
-                </TouchableOpacity>
+                <ImmersiveVideoPlayer
+                  videoId={scienceTask.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={scienceTask.title}
+                  channelName={scienceTask.channelName || 'SuprO Science Discovery'}
+                  summary={scienceTask.summary}
+                  durationMinutes={scienceTask.durationMinutes || 20}
+                  isCompleted={completedSteps.science}
+                  onMarkComplete={() => handleMarkStepComplete('science', 25)}
+                  xpReward={25}
+                />
               </View>
             )}
 
-            {/* ── STEP 6: Note 3 (Student Interactive Topic AI Notes) ──────── */}
-            {activeStep === 'note3' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <Sparkles size={13} color="#EC4899" />
-                  <Text style={styles.stepHeroBadgeText}>NOTE 3 OF 3: STUDENT INTERACTIVE TOPIC AI</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.notes[2].title}</Text>
-                <Text style={styles.stepSubtitle}>
-                  Dynamic interactive study guide generated strictly for: **{plan.topicTitle}**
-                </Text>
-
-                {/* Quick Interactive Prompt Chips */}
-                <View style={styles.quickPromptChipsRow}>
-                  {[
-                    'Explain with real-world analogies',
-                    '3-step rapid memory flashcard',
-                    'Key differences table',
-                    'Tamil summary with formula',
-                  ].map((chip, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={styles.promptChip}
-                      onPress={() => handleGenerateAINote(chip)}
-                    >
-                      <Sparkles size={11} color="#EC4899" />
-                      <Text style={styles.promptChipText}>{chip}</Text>
-                    </TouchableOpacity>
-                  ))}
+            {/* ── STEP 6: Social Science & Civics ── */}
+            {activeStep === 'social' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Target size={12} color="#8B5CF6" />
+                    <Text style={[styles.stepBadgeText, { color: '#8B5CF6' }]}>TASK 6: SOCIAL SCIENCE & CIVICS</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{socialScienceTask.title}</Text>
+                  <Text style={styles.stepSub}>{socialScienceTask.summary}</Text>
                 </View>
 
-                {/* Custom User AI Query */}
-                <View style={styles.customAiInputRow}>
-                  <TextInput
-                    style={styles.customAiInput}
-                    placeholder={`Ask AI about "${plan.topicTitle}"...`}
-                    placeholderTextColor="#64748B"
-                    value={aiCustomPrompt}
-                    onChangeText={setAiCustomPrompt}
-                  />
-                  <TouchableOpacity
-                    style={styles.customAiSendBtn}
-                    onPress={() => handleGenerateAINote()}
-                    disabled={isAiGenerating}
-                  >
-                    {isAiGenerating ? (
-                      <ActivityIndicator size="small" color="#070C18" />
-                    ) : (
-                      <Send size={14} color="#070C18" />
-                    )}
-                  </TouchableOpacity>
+                <ImmersiveVideoPlayer
+                  videoId={socialScienceTask.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={socialScienceTask.title}
+                  channelName={socialScienceTask.channelName || 'SuprO Civics & History'}
+                  summary={socialScienceTask.summary}
+                  durationMinutes={socialScienceTask.durationMinutes || 15}
+                  isCompleted={completedSteps.social}
+                  onMarkComplete={() => handleMarkStepComplete('social', 25)}
+                  xpReward={25}
+                />
+              </View>
+            )}
+
+            {/* ── STEP 7: Life Skills & Practical Leadership ── */}
+            {activeStep === 'lifeskill' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Sparkles size={12} color="#F59E0B" />
+                    <Text style={[styles.stepBadgeText, { color: '#F59E0B' }]}>TASK 7: LIFE SKILLS & LEADERSHIP</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{lifeSkillTask.title}</Text>
+                  <Text style={styles.stepSub}>{lifeSkillTask.description}</Text>
                 </View>
 
-                {/* AI Output Card */}
-                <View style={styles.aiOutputCard}>
-                  <Text style={styles.aiOutputText}>
-                    {aiResponseText || plan.notes[2].content}
+                <View style={styles.cardContentBox}>
+                  <Text style={styles.cardContentHeading}>💡 ACTION TAKEAWAY PROMPT:</Text>
+                  <Text style={styles.cardContentBody}>
+                    {lifeSkillTask.actionPrompt || 'Summarize how you applied this leadership principle today.'}
                   </Text>
                 </View>
 
                 <TouchableOpacity
                   style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('note3', 25)}
+                  onPress={() => handleMarkStepComplete('lifeskill', 20)}
                 >
-                  <Text style={styles.actionCompleteBtnText}>Mark Interactive Note Complete & Take Daily Test ➡️</Text>
+                  <CheckCircle2 size={16} color="#070C18" />
+                  <Text style={styles.actionCompleteBtnText}>Mark Life Skill Complete (+20 XP) ➡️</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {/* ── STEP 7: Daily MCQ Assessment Test ────────────────────────── */}
-            {activeStep === 'test' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <Award size={13} color="#00D084" />
-                  <Text style={styles.stepHeroBadgeText}>DAILY ASSESSMENT TEST · 5 QUESTIONS</Text>
-                </View>
-                <Text style={styles.stepTitle}>{plan.mcqTest.testTitle}</Text>
-                <Text style={styles.stepSubtitle}>
-                  Pass requirement: {plan.mcqTest.passScore}/5 questions correct.
-                </Text>
-
-                {/* Questions List */}
-                <View style={styles.testQuestionsList}>
-                  {plan.mcqTest.questions.map((q, qIdx) => {
-                    const selected = selectedAnswers[q.id];
-                    const isAnswered = Boolean(selected);
-
-                    return (
-                      <View key={q.id} style={styles.testQuestionCard}>
-                        <Text style={styles.testQuestionNumber}>Question {qIdx + 1} of 5</Text>
-                        <Text style={styles.testQuestionText}>{q.question}</Text>
-                        {q.questionTamil && <Text style={styles.testQuestionTamil}>{q.questionTamil}</Text>}
-
-                        <View style={styles.testOptionsList}>
-                          {(['A', 'B', 'C', 'D'] as const).map((optKey) => {
-                            const isOptSelected = selected === optKey;
-                            const isCorrect = q.correctOption === optKey;
-
-                            let optCardStyle = styles.testOptionCard;
-                            if (testSubmitted) {
-                              if (isCorrect) optCardStyle = styles.testOptionCardCorrect;
-                              else if (isOptSelected && !isCorrect) optCardStyle = styles.testOptionCardWrong;
-                            } else if (isOptSelected) {
-                              optCardStyle = styles.testOptionCardSelected;
-                            }
-
-                            return (
-                              <TouchableOpacity
-                                key={optKey}
-                                style={optCardStyle}
-                                disabled={testSubmitted}
-                                onPress={() => setSelectedAnswers((prev) => ({ ...prev, [q.id]: optKey }))}
-                              >
-                                <View style={styles.testOptKeyBox}>
-                                  <Text style={styles.testOptKeyText}>{optKey}</Text>
-                                </View>
-                                <Text style={styles.testOptText}>{q.options[optKey]}</Text>
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </View>
-
-                        {testSubmitted && (
-                          <View style={styles.testExplanationBox}>
-                            <Text style={styles.testExplanationText}>
-                              💡 <Text style={{ fontWeight: '800', color: '#00D084' }}>Correct: Option {q.correctOption}.</Text> {q.explanation}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-
-                {!testSubmitted ? (
-                  <TouchableOpacity
-                    style={[styles.actionCompleteBtn, Object.keys(selectedAnswers).length < 5 && styles.actionCompleteBtnDisabled]}
-                    onPress={handleMCQSubmit}
-                  >
-                    <Text style={styles.actionCompleteBtnText}>Submit Daily MCQ Test (+50 XP) 🎯</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.testScoreSummaryCard}>
-                    <Text style={styles.testScoreTitle}>
-                      Test Result: {testScore} / 5 Correct ({Math.round((testScore / 5) * 100)}%)
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.actionCompleteBtn}
-                      onPress={() => setActiveStep('yoga')}
-                    >
-                      <Text style={styles.actionCompleteBtnText}>Proceed to Yoga & Extra-Curricular ➡️</Text>
-                    </TouchableOpacity>
+            {/* ── STEP 8: Daily Homework & Self-Study ── */}
+            {activeStep === 'homework' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <FileText size={12} color="#38BDF8" />
+                    <Text style={[styles.stepBadgeText, { color: '#38BDF8' }]}>TASK 8: HOMEWORK & SELF-PRACTICE</Text>
                   </View>
-                )}
-              </View>
-            )}
-
-            {/* ── STEP 8: Yoga & Extra-Curricular Task ──────────────────────── */}
-            {activeStep === 'yoga' && (
-              <View style={styles.stepContainer}>
-                <View style={styles.stepHeroBadge}>
-                  <Heart size={13} color="#EC4899" />
-                  <Text style={styles.stepHeroBadgeText}>YOGA & MINDFUL BRAIN BOOSTER</Text>
+                  <Text style={styles.stepHeading}>{homeworkTask.title}</Text>
+                  <Text style={styles.stepSub}>{homeworkTask.description}</Text>
                 </View>
-                <Text style={styles.stepTitle}>{plan.yogaAndActivity.asanaName}</Text>
-                {plan.yogaAndActivity.asanaTamil && (
-                  <Text style={styles.stepSubtitle}>{plan.yogaAndActivity.asanaTamil} · {plan.yogaAndActivity.sanskritName}</Text>
-                )}
 
-                {/* Yoga Guide Card */}
-                <View style={styles.yogaCard}>
-                  <Text style={styles.yogaSectionTitle}>🧘 ASANA STEP-BY-STEP PRACTICE ({plan.yogaAndActivity.durationMinutes} MINS):</Text>
-                  {plan.yogaAndActivity.stepByStepGuide.map((stepText, idx) => (
-                    <View key={idx} style={styles.yogaStepRow}>
-                      <Text style={styles.yogaStepNum}>{idx + 1}.</Text>
-                      <Text style={styles.yogaStepText}>{stepText}</Text>
+                <View style={styles.cardContentBox}>
+                  <Text style={styles.cardContentHeading}>✍️ PRACTICE QUESTIONS TO SOLVE IN NOTEBOOK:</Text>
+                  {(homeworkTask.questions || []).map((q, idx) => (
+                    <View key={idx} style={styles.questionBulletRow}>
+                      <Text style={styles.bulletIndex}>{idx + 1}.</Text>
+                      <Text style={styles.bulletText}>{q}</Text>
                     </View>
                   ))}
-
-                  <View style={styles.breathingCard}>
-                    <Text style={styles.breathingCardTitle}>🌬️ Breathing Rhythm:</Text>
-                    <Text style={styles.breathingCardText}>{plan.yogaAndActivity.breathingPattern}</Text>
-                  </View>
-
-                  <View style={styles.benefitsCard}>
-                    <Text style={styles.benefitsCardTitle}>✨ Key Health & Focus Benefits:</Text>
-                    {plan.yogaAndActivity.benefits.map((b, idx) => (
-                      <Text key={idx} style={styles.benefitItemText}>• {b}</Text>
-                    ))}
-                  </View>
-                </View>
-
-                {/* Extra-Curricular Brain Booster Challenge */}
-                <View style={styles.extraCurricularCard}>
-                  <View style={styles.extraHeaderRow}>
-                    <Sparkles size={14} color="#00D084" />
-                    <Text style={styles.extraCategoryTag}>{plan.yogaAndActivity.extraCurricularTask.category}</Text>
-                  </View>
-                  <Text style={styles.extraTitle}>{plan.yogaAndActivity.extraCurricularTask.title}</Text>
-                  <Text style={styles.extraDesc}>{plan.yogaAndActivity.extraCurricularTask.description}</Text>
-
-                  {plan.yogaAndActivity.extraCurricularTask.challengeQuestion && (
-                    <View style={styles.challengeBox}>
-                      <Text style={styles.challengeBoxTitle}>🎯 Today's Brain Challenge:</Text>
-                      <Text style={styles.challengeBoxText}>{plan.yogaAndActivity.extraCurricularTask.challengeQuestion}</Text>
-                    </View>
-                  )}
                 </View>
 
                 <TouchableOpacity
                   style={styles.actionCompleteBtn}
-                  onPress={() => handleMarkStepComplete('yoga', 50)}
+                  onPress={() => handleMarkStepComplete('homework', 25)}
                 >
                   <CheckCircle2 size={16} color="#070C18" />
-                  <Text style={styles.actionCompleteBtnText}>Complete Today's Course Plan! 🎉 (+150 XP)</Text>
+                  <Text style={styles.actionCompleteBtnText}>Mark Homework Complete (+25 XP) ➡️</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ── STEP 9: Fitness, Exercise & Yoga Video ── */}
+            {activeStep === 'yoga' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Heart size={12} color="#EC4899" />
+                    <Text style={[styles.stepBadgeText, { color: '#EC4899' }]}>TASK 9: FITNESS, EXERCISE & YOGA</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{exerciseYoga.title}</Text>
+                  <Text style={styles.stepSub}>Asana / Routine: {exerciseYoga.asanaOrWorkout}</Text>
+                </View>
+
+                <ImmersiveVideoPlayer
+                  videoId={exerciseYoga.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={exerciseYoga.title}
+                  channelName="SuprO Wellness & Fitness"
+                  summary={`Key Asana: ${exerciseYoga.asanaOrWorkout}`}
+                  durationMinutes={exerciseYoga.durationMinutes || 10}
+                  isCompleted={completedSteps.yoga}
+                  onMarkComplete={() => handleMarkStepComplete('yoga', 25)}
+                  xpReward={25}
+                />
+              </View>
+            )}
+
+            {/* ── STEP 10: Current Affairs & GK Video ── */}
+            {activeStep === 'currentaffairs' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Sparkles size={12} color="#00D084" />
+                    <Text style={styles.stepBadgeText}>TASK 10: CURRENT AFFAIRS & GK (ALL USERS)</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{currentAffairs.title}</Text>
+                  <Text style={styles.stepSub}>Common daily knowledge bulletin across all programs.</Text>
+                </View>
+
+                <ImmersiveVideoPlayer
+                  videoId={currentAffairs.youtubeVideoId || 'dQw4w9WgXcQ'}
+                  title={currentAffairs.title}
+                  channelName="SuprO Current Affairs & GK"
+                  summary="All-India national schemes, defense updates & civics knowledge."
+                  durationMinutes={currentAffairs.durationMinutes || 10}
+                  isCompleted={completedSteps.currentaffairs}
+                  onMarkComplete={() => handleMarkStepComplete('currentaffairs', 25)}
+                  xpReward={25}
+                />
+              </View>
+            )}
+
+            {/* ── STEP 11: 5-Minute Topic CBT Drill ── */}
+            {activeStep === 'test' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <Target size={12} color="#F59E0B" />
+                    <Text style={[styles.stepBadgeText, { color: '#F59E0B' }]}>TASK 11: DAILY MCQ ASSESSMENT</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>{plan.mcqTest.testTitle}</Text>
+                  <Text style={styles.stepSub}>
+                    {plan.mcqTest.questions.length} High-Yield Exam Questions • Instant Scoring
+                  </Text>
+                </View>
+
+                {plan.mcqTest.questions.map((q, qIdx) => (
+                  <View key={q.id} style={styles.mcqCard}>
+                    <Text style={styles.mcqQuestionText}>
+                      {qIdx + 1}. {q.question}
+                    </Text>
+
+                    {(['A', 'B', 'C', 'D'] as const).map((optKey) => {
+                      const isSelected = selectedAnswers[q.id] === optKey;
+                      const isCorrect = testSubmitted && q.correctOption === optKey;
+                      const isWrong = testSubmitted && isSelected && !isCorrect;
+
+                      return (
+                        <TouchableOpacity
+                          key={optKey}
+                          style={[
+                            styles.mcqOptionBtn,
+                            isSelected && styles.mcqOptionBtnSelected,
+                            isCorrect && styles.mcqOptionBtnCorrect,
+                            isWrong && styles.mcqOptionBtnWrong,
+                          ]}
+                          activeOpacity={0.8}
+                          onPress={() => handleTestOptionSelect(q.id, optKey)}
+                          disabled={testSubmitted}
+                        >
+                          <Text style={styles.mcqOptionKey}>{optKey}</Text>
+                          <Text style={styles.mcqOptionLabel}>{q.options[optKey]}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+
+                {!testSubmitted ? (
+                  <TouchableOpacity style={styles.actionCompleteBtn} onPress={handleSubmitDailyTest}>
+                    <Award size={16} color="#070C18" />
+                    <Text style={styles.actionCompleteBtnText}>Submit Assessment & Reveal Score</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.actionCompleteBtn}
+                    onPress={() => setActiveStep('drive_feedback')}
+                  >
+                    <ArrowRight size={16} color="#070C18" />
+                    <Text style={styles.actionCompleteBtnText}>Go to Drive Video Feedback ➡️</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* ── STEP 12: Google Drive Task Video Reflection ── */}
+            {activeStep === 'drive_feedback' && (
+              <View style={styles.stepSection}>
+                <View style={styles.stepHeaderCard}>
+                  <View style={styles.stepBadge}>
+                    <HardDrive size={12} color="#38BDF8" />
+                    <Text style={[styles.stepBadgeText, { color: '#38BDF8' }]}>TASK 12: DRIVE VIDEO RECORDING</Text>
+                  </View>
+                  <Text style={styles.stepHeading}>📹 Record & Upload Today's Video Reflection</Text>
+                  <Text style={styles.stepSub}>
+                    Record a 30-60 second video explaining what you learned today. Your video will be automatically
+                    stored in your Google Drive and sent to your course guide on WhatsApp (9486335870).
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.actionCompleteBtn, { backgroundColor: '#38BDF8' }]}
+                  onPress={() => setIsVideoFeedbackOpen(true)}
+                >
+                  <Video size={16} color="#070C18" />
+                  <Text style={styles.actionCompleteBtnText}>Launch In-App Video Recorder & Drive Upload</Text>
+                </TouchableOpacity>
+
+                {/* Direct Course Guide WhatsApp CRM Verification Button */}
+                <TouchableOpacity
+                  style={[styles.actionCompleteBtn, { backgroundColor: '#25D366', marginTop: 10 }]}
+                  onPress={() => setIsVideoFeedbackOpen(true)}
+                >
+                  <Send size={16} color="#FFFFFF" />
+                  <Text style={[styles.actionCompleteBtnText, { color: '#FFFFFF' }]}>
+                    📲 Send Video to Course Guide on WhatsApp (9486335870)
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionCompleteBtn, { marginTop: 12 }]}
+                  onPress={handleCompleteWholeDay}
+                >
+                  <CheckCircle2 size={16} color="#070C18" />
+                  <Text style={styles.actionCompleteBtnText}>🎉 Complete Entire Day {currentDay} Deck (+150 XP)</Text>
                 </TouchableOpacity>
               </View>
             )}
           </ScrollView>
         )}
+
+        {/* ─── 4. TASK VIDEO FEEDBACK MODAL (GOOGLE DRIVE) ───────────── */}
+        <TaskVideoFeedbackModal
+          visible={isVideoFeedbackOpen}
+          onClose={() => setIsVideoFeedbackOpen(false)}
+          courseId={courseId}
+          courseTitle={courseTitle}
+          dayNumber={currentDay}
+          topicTitle={`Day ${currentDay} Curriculum Completion`}
+          onSubmitted={async (earnedXp) => {
+            await handleMarkStepComplete('drive_feedback', earnedXp);
+          }}
+        />
       </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  modalRoot: {
     flex: 1,
     backgroundColor: '#070C18',
   },
-  header: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#0E172A',
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
-    backgroundColor: '#0E172A',
   },
   closeBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 8,
     backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerCenter: {
+  topBarCenter: {
     flex: 1,
-    marginHorizontal: 10,
+    alignItems: 'center',
+    marginHorizontal: 8,
   },
   dayBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginBottom: 2,
   },
-  dayPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  dayBadge: {
     backgroundColor: 'rgba(0, 208, 132, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 208, 132, 0.3)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  dayPillHoliday: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-  },
-  dayPillText: {
+  dayBadgeText: {
     fontSize: 9,
     fontWeight: '900',
     color: '#00D084',
   },
-  dayPillTextHoliday: {
-    color: '#F59E0B',
-  },
-  subjectTag: {
-    backgroundColor: '#131F37',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  subjectTagText: {
-    fontSize: 8,
-    color: '#94A3B8',
-    fontWeight: '700',
-  },
-  holidayTag: {
+  sheetBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    backgroundColor: 'rgba(0, 208, 132, 0.1)',
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  holidayTagText: {
+  sheetBadgeText: {
     fontSize: 8,
-    color: '#F59E0B',
-    fontWeight: '900',
-  },
-  topicHeaderTitle: {
-    fontSize: 13,
     fontWeight: '800',
-    color: '#F8FAFC',
-    marginTop: 2,
+    color: '#00D084',
   },
-  dayJumperRow: {
+  topBarCourseTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  topBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+  },
+  driveRecordPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  driveRecordPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#38BDF8',
   },
   jumperBtn: {
     width: 28,
     height: 28,
-    borderRadius: 14,
-    backgroundColor: '#131F37',
+    borderRadius: 6,
+    backgroundColor: '#1E293B',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -841,23 +911,23 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   stepsBarContainer: {
-    backgroundColor: '#0E172A',
+    backgroundColor: '#0A1020',
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   stepsBarScroll: {
     paddingHorizontal: 12,
-    gap: 6,
+    gap: 8,
   },
   stepTab: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#131F37',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: '#131F37',
     borderWidth: 1,
     borderColor: '#1E293B',
   },
@@ -870,538 +940,171 @@ const styles = StyleSheet.create({
   },
   stepIndexText: {
     fontSize: 10,
-    fontWeight: '900',
-    color: '#64748B',
+    fontWeight: '800',
+    color: '#94A3B8',
   },
   stepIndexTextActive: {
     color: '#00D084',
+    fontWeight: '900',
   },
   stepTabText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: '#94A3B8',
   },
   stepTabTextActive: {
-    color: '#00D084',
+    color: '#FFFFFF',
     fontWeight: '900',
   },
   stepTabTextDone: {
-    color: '#CBD5E1',
+    color: '#00D084',
   },
   scrollContent: {
     flex: 1,
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  loadingText: {
-    fontSize: 12,
-    color: '#94A3B8',
-  },
-  holidayCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#F59E0B50',
-    alignItems: 'center',
-    gap: 12,
-  },
-  holidayIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  holidayThemeTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#F8FAFC',
-    textAlign: 'center',
-  },
-  holidayQuote: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  revisionBox: {
-    width: '100%',
-    backgroundColor: '#131F37',
-    borderRadius: 12,
     padding: 14,
-    gap: 8,
-    marginTop: 6,
   },
-  revisionBoxTitle: {
-    fontSize: 10,
+  stepSection: {
+    gap: 12,
+    marginBottom: 40,
+  },
+  stepHeaderCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    padding: 14,
+    gap: 6,
+  },
+  stepBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+  },
+  stepBadgeText: {
+    fontSize: 9,
     fontWeight: '900',
     color: '#00D084',
     letterSpacing: 0.5,
   },
-  revisionItemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
+  stepHeading: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
-  revisionItemText: {
-    flex: 1,
+  stepSub: {
     fontSize: 11,
-    color: '#E2E8F0',
-    lineHeight: 16,
-  },
-  mindfulnessBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(236, 72, 153, 0.1)',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.3)',
-    width: '100%',
-  },
-  mindfulnessText: {
-    flex: 1,
-    fontSize: 11,
-    color: '#F472B6',
-    fontWeight: '600',
-  },
-  holidayCompleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#F59E0B',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    width: '100%',
-    marginTop: 6,
-  },
-  holidayCompleteBtnText: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#070C18',
-  },
-  stepContainer: {
-    gap: 12,
-    paddingBottom: 40,
-  },
-  stepHeroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: '#131F37',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  stepHeroBadgeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#38BDF8',
-    letterSpacing: 0.5,
-  },
-  stepTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#F8FAFC',
-    lineHeight: 22,
-  },
-  stepSubtitle: {
-    fontSize: 12,
     color: '#94A3B8',
     lineHeight: 16,
   },
-  videoPlayerContainer: {
-    width: '100%',
-    height: 220,
-    backgroundColor: '#000',
+  cardContentBox: {
+    backgroundColor: '#0E172A',
     borderRadius: 12,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#1E293B',
+    padding: 14,
+    gap: 8,
   },
-  nativeWebView: {
-    flex: 1,
-    backgroundColor: '#000',
+  cardContentHeading: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#00D084',
+    letterSpacing: 0.5,
   },
-  metaRow: {
+  cardContentBody: {
+    fontSize: 12,
+    color: '#E2E8F0',
+    lineHeight: 18,
+  },
+  questionBulletRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    gap: 6,
+    alignItems: 'flex-start',
   },
-  channelNameText: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  durationText: {
-    fontSize: 11,
+  bulletIndex: {
+    fontSize: 12,
+    fontWeight: '800',
     color: '#38BDF8',
-    fontWeight: '700',
+  },
+  bulletText: {
+    fontSize: 12,
+    color: '#E2E8F0',
+    flex: 1,
+    lineHeight: 18,
   },
   actionCompleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     backgroundColor: '#00D084',
     paddingVertical: 12,
     borderRadius: 10,
-    marginTop: 10,
-  },
-  actionCompleteBtnDisabled: {
-    opacity: 0.5,
+    shadowColor: '#00D084',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   actionCompleteBtnText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '900',
     color: '#070C18',
   },
-  noteContentCard: {
+  mcqCard: {
     backgroundColor: '#0E172A',
     borderRadius: 12,
-    padding: 16,
     borderWidth: 1,
     borderColor: '#1E293B',
-    gap: 12,
+    padding: 12,
+    gap: 8,
   },
-  noteBodyText: {
-    fontSize: 12,
-    color: '#E2E8F0',
-    lineHeight: 18,
-  },
-  tamilNoteCard: {
-    backgroundColor: '#131F37',
-    padding: 10,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#00D084',
-  },
-  tamilNoteText: {
-    fontSize: 11,
-    color: '#94A3B8',
-    lineHeight: 16,
-  },
-  formulaSection: {
-    gap: 6,
-    marginTop: 4,
-  },
-  formulaSectionTitle: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#38BDF8',
-    letterSpacing: 0.5,
-  },
-  formulaBox: {
-    backgroundColor: '#131F37',
-    padding: 8,
-    borderRadius: 6,
-  },
-  formulaText: {
+  mcqQuestionText: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#00D084',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  trapsSection: {
-    gap: 6,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
-  },
-  trapsSectionTitle: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#F59E0B',
-    letterSpacing: 0.5,
-  },
-  trapItemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  trapItemBullet: {
-    color: '#F59E0B',
-    fontWeight: '900',
-  },
-  trapItemText: {
-    flex: 1,
-    fontSize: 11,
-    color: '#E2E8F0',
-    lineHeight: 16,
-  },
-  quickPromptChipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  promptChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#131F37',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  promptChipText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#CBD5E1',
-  },
-  customAiInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#0E172A',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  customAiInput: {
-    flex: 1,
-    fontSize: 12,
-    color: '#F8FAFC',
-    padding: 0,
-  },
-  customAiSendBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 6,
-    backgroundColor: '#00D084',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiOutputCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(236, 72, 153, 0.3)',
-  },
-  aiOutputText: {
-    fontSize: 12,
-    color: '#F8FAFC',
+    color: '#FFFFFF',
     lineHeight: 18,
   },
-  testQuestionsList: {
-    gap: 12,
-  },
-  testQuestionCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    gap: 8,
-  },
-  testQuestionNumber: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#00D084',
-    letterSpacing: 0.5,
-  },
-  testQuestionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    lineHeight: 18,
-  },
-  testQuestionTamil: {
-    fontSize: 11,
-    color: '#94A3B8',
-  },
-  testOptionsList: {
-    gap: 6,
-    marginTop: 4,
-  },
-  testOptionCard: {
+  mcqOptionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#131F37',
-    padding: 10,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#1E293B',
+    padding: 10,
+    borderRadius: 8,
   },
-  testOptionCardSelected: {
-    backgroundColor: 'rgba(56, 189, 248, 0.15)',
-    borderColor: '#38BDF8',
-  },
-  testOptionCardCorrect: {
+  mcqOptionBtnSelected: {
     backgroundColor: 'rgba(0, 208, 132, 0.15)',
     borderColor: '#00D084',
   },
-  testOptionCardWrong: {
-    backgroundColor: 'rgba(244, 63, 94, 0.15)',
-    borderColor: '#F43F5E',
+  mcqOptionBtnCorrect: {
+    backgroundColor: 'rgba(0, 208, 132, 0.25)',
+    borderColor: '#00D084',
   },
-  testOptKeyBox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#0E172A',
+  mcqOptionBtnWrong: {
+    backgroundColor: 'rgba(239, 68, 68, 0.25)',
+    borderColor: '#EF4444',
+  },
+  mcqOptionKey: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#00D084',
+  },
+  mcqOptionLabel: {
+    fontSize: 11,
+    color: '#E2E8F0',
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
   },
-  testOptKeyText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#F8FAFC',
-  },
-  testOptText: {
-    flex: 1,
+  loadingText: {
     fontSize: 12,
-    color: '#E2E8F0',
-  },
-  testExplanationBox: {
-    backgroundColor: '#131F37',
-    padding: 8,
-    borderRadius: 6,
-    marginTop: 4,
-  },
-  testExplanationText: {
-    fontSize: 11,
-    color: '#CBD5E1',
-    lineHeight: 15,
-  },
-  testScoreSummaryCard: {
-    backgroundColor: '#0E172A',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#00D084',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
-  },
-  testScoreTitle: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#00D084',
-  },
-  yogaCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    gap: 10,
-  },
-  yogaSectionTitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#EC4899',
-    letterSpacing: 0.5,
-  },
-  yogaStepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  yogaStepNum: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#EC4899',
-  },
-  yogaStepText: {
-    flex: 1,
-    fontSize: 11,
-    color: '#E2E8F0',
-    lineHeight: 16,
-  },
-  breathingCard: {
-    backgroundColor: '#131F37',
-    padding: 8,
-    borderRadius: 6,
-  },
-  breathingCardTitle: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#38BDF8',
-  },
-  breathingCardText: {
-    fontSize: 10,
-    color: '#CBD5E1',
-    marginTop: 2,
-  },
-  benefitsCard: {
-    backgroundColor: '#131F37',
-    padding: 8,
-    borderRadius: 6,
-    gap: 3,
-  },
-  benefitsCardTitle: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#00D084',
-  },
-  benefitItemText: {
-    fontSize: 10,
-    color: '#CBD5E1',
-  },
-  extraCurricularCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#00D08450',
-    gap: 8,
-  },
-  extraHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  extraCategoryTag: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#00D084',
-    letterSpacing: 0.5,
-  },
-  extraTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  extraDesc: {
-    fontSize: 11,
     color: '#94A3B8',
-    lineHeight: 16,
-  },
-  challengeBox: {
-    backgroundColor: '#131F37',
-    padding: 8,
-    borderRadius: 6,
-    gap: 2,
-  },
-  challengeBoxTitle: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#F59E0B',
-  },
-  challengeBoxText: {
-    fontSize: 11,
     fontWeight: '700',
-    color: '#F8FAFC',
   },
 });

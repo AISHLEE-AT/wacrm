@@ -35,12 +35,14 @@ import {
   Lock,
   Send,
   Zap,
+  Target,
 } from 'lucide-react-native';
 
 import { AppContext } from '../context/AppContext';
 import { TeachOCoursePickerSheet } from '../components/teacho/TeachOCoursePickerSheet';
 import { TutOQBankModal } from '../components/teacho/TutOQBankModal';
 import { TutODayCoursePlayerModal } from '../components/teacho/TutODayCoursePlayerModal';
+import { StudentOnboardingModal, StudentProfileData } from '../components/teacho/StudentOnboardingModal';
 import {
   getReleasedDaySummariesForCourse,
   getCompletedDaysForCourse,
@@ -54,7 +56,16 @@ const { width } = Dimensions.get('window');
 
 export default function TutOHubScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { user } = useContext(AppContext) || {};
+  const { user, isAdmin: ctxIsAdmin } = useContext(AppContext) || {};
+  const isAdmin = Boolean(
+    ctxIsAdmin ||
+    user?.isAdmin ||
+    (user?.role && user.role.toLowerCase() === 'admin') ||
+    (user?.phone && ['6381029380', '9486335870'].includes(user.phone.replace(/\D/g, '').slice(-10)))
+  );
+
+  // ─── 0. Student Onboarding & Career Profiling State ──────────────────────────
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   // ─── 1. Active Course & Board State ──────────────────────────────────────────
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
@@ -113,6 +124,12 @@ export default function TutOHubScreen({ navigation }: any) {
         const doneSet = await getCompletedDaysForCourse(course.id);
         setCompletedDays(doneSet);
         await refreshReleasedDays(course.id, course.title, board, doneSet);
+
+        // Check if first-time student onboarding has been completed
+        const onboardingDone = await AsyncStorage.getItem('tuto_student_onboarding_completed');
+        if (!onboardingDone) {
+          setIsOnboardingModalOpen(true);
+        }
       } catch (e) {
         console.warn('Failed to load saved course state:', e);
       }
@@ -225,26 +242,28 @@ export default function TutOHubScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Header Quick Buttons */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <TouchableOpacity
-              style={styles.qbankHeaderBtn}
-              onPress={() => handleOpenQBankWithQuery('')}
-              activeOpacity={0.8}
-            >
-              <Hash size={13} color="#070C18" />
-              <Text style={styles.qbankHeaderBtnText}>2L+ QBank</Text>
-            </TouchableOpacity>
+          {/* Header Quick Buttons (Admin Only) */}
+          {isAdmin && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <TouchableOpacity
+                style={styles.qbankHeaderBtn}
+                onPress={() => handleOpenQBankWithQuery('')}
+                activeOpacity={0.8}
+              >
+                <Hash size={13} color="#070C18" />
+                <Text style={styles.qbankHeaderBtnText}>2L+ QBank</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.adminStudioBtn}
-              onPress={() => navigation?.navigate?.('TutOAdminScreen')}
-              activeOpacity={0.8}
-            >
-              <ShieldCheck size={13} color="#38BDF8" />
-              <Text style={styles.adminStudioBtnText}>Admin Studio</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={styles.adminStudioBtn}
+                onPress={() => navigation?.navigate?.('TutOAdminScreen')}
+                activeOpacity={0.8}
+              >
+                <ShieldCheck size={13} color="#38BDF8" />
+                <Text style={styles.adminStudioBtnText}>Admin Studio</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* ─── 2. ACTIVE PURCHASED COURSE CARD & SWITCH BUTTON ─── */}
@@ -260,15 +279,27 @@ export default function TutOHubScreen({ navigation }: any) {
               </Text>
             </View>
 
-            {/* ONLY ONE OPTION: CHANGE / SWITCH COURSE */}
-            <TouchableOpacity
-              style={styles.changeCourseBtn}
-              activeOpacity={0.8}
-              onPress={() => setIsCoursePickerOpen(true)}
-            >
-              <Text style={styles.changeCourseBtnText}>Change Course</Text>
-              <ArrowRight size={12} color="#070C18" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {/* Button to update Student Profile & Career Goals */}
+              <TouchableOpacity
+                style={styles.careerProfilePill}
+                activeOpacity={0.8}
+                onPress={() => setIsOnboardingModalOpen(true)}
+              >
+                <Target size={11} color="#38BDF8" />
+                <Text style={styles.careerProfilePillText}>Goals & Class</Text>
+              </TouchableOpacity>
+
+              {/* CHANGE / SWITCH COURSE */}
+              <TouchableOpacity
+                style={styles.changeCourseBtn}
+                activeOpacity={0.8}
+                onPress={() => setIsCoursePickerOpen(true)}
+              >
+                <Text style={styles.changeCourseBtnText}>Change</Text>
+                <ArrowRight size={11} color="#070C18" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Progress Bar & Stats */}
@@ -576,8 +607,8 @@ export default function TutOHubScreen({ navigation }: any) {
                   </Text>
                 </TouchableOpacity>
 
-                {/* 2. Secondary Action: Practice Topic QBank MCQs */}
-                {!dayItem.isMondayHoliday && (
+                {/* 2. Secondary Action: Practice Topic QBank MCQs (Admin Only) */}
+                {isAdmin && !dayItem.isMondayHoliday && (
                   <TouchableOpacity
                     style={styles.topicQBankBtn}
                     activeOpacity={0.8}
@@ -623,6 +654,24 @@ export default function TutOHubScreen({ navigation }: any) {
         onClose={() => setIsCoursePlayerOpen(false)}
         onCompleteDay={async (completedDay) => {
           await handleToggleDone(completedDay);
+        }}
+      />
+
+      {/* ─── 7. FIRST-TIME STUDENT ONBOARDING & CAREER GOAL MODAL ─── */}
+      <StudentOnboardingModal
+        visible={isOnboardingModalOpen}
+        initialName={user?.name || user?.full_name || ''}
+        userPhone={user?.phone || ''}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onComplete={(course, board, profile) => {
+          setSelectedCourse(course);
+          setSelectedBoard(board);
+          AsyncStorage.setItem('tuto_active_course_id', course.id).catch(() => {});
+          AsyncStorage.setItem(`tuto_selected_board_${course.id}`, board).catch(() => {});
+          getCompletedDaysForCourse(course.id).then((doneSet) => {
+            setCompletedDays(doneSet);
+            refreshReleasedDays(course.id, course.title, board, doneSet);
+          });
         }}
       />
     </View>
@@ -874,6 +923,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
     color: '#070C18',
+  },
+  careerProfilePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.35)',
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  careerProfilePillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#38BDF8',
   },
   progressSection: {
     gap: 4,

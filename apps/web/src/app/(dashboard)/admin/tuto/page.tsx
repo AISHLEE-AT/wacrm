@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
@@ -41,8 +41,14 @@ import {
   UserCheck,
   Zap,
   Bot,
+  Play,
+  HardDrive,
+  Star,
+  FileSpreadsheet,
+  Copy,
 } from 'lucide-react';
-import { ALL_COURSES, CourseOption, SCHOOL_BOARDS, SchoolBoard } from '@/data/coursesCatalog';
+import { createClient } from '../../../../lib/supabase/client';
+import { ALL_COURSES, CourseOption, SCHOOL_BOARDS, SchoolBoard } from '../../../../data/coursesCatalog';
 import {
   getOfficialGovernmentSyllabus,
   OfficialCourseSyllabus,
@@ -50,14 +56,29 @@ import {
   OfficialChapter,
   OfficialMicroTopic,
   OfficialNanoConcept,
-} from '@/data/curriculum/officialGovernmentSyllabusRegistry';
-import { resolveNanoDayPlan, NanoDayPlan } from '@/data/curriculum/dayPlanNanoEngine';
-import { geminiToolsService, GEMINI_MODELS } from '@/lib/geminiToolsService';
+} from '../../../../data/curriculum/officialGovernmentSyllabusRegistry';
+import { resolveNanoDayPlan, NanoDayPlan } from '../../../../data/curriculum/dayPlanNanoEngine';
+import { geminiToolsService, GEMINI_MODELS } from '../../../../lib/geminiToolsService';
+import {
+  GoogleSheetsDayPlanService,
+  GoogleSheetDayPlanItem,
+  GoogleSheetConfig,
+} from '../../../../lib/googleSheetsDayPlanService';
 
 export default function TutOAdminStudioPage() {
   const [activeTab, setActiveTab] = useState<
-    'catalog' | 'syllabus' | 'day_plan' | 'question_bank' | 'lecture_studio' | 'purchases'
+    'catalog' | 'syllabus' | 'day_plan' | 'question_bank' | 'lecture_studio' | 'purchases' | 'submissions' | 'google_sheets'
   >('catalog');
+
+  // Google Sheet Manager States
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [sheetTabName, setSheetTabName] = useState('Sheet1');
+  const [isSyncingSheet, setIsSyncingSheet] = useState(false);
+  const [sheetPlans, setSheetPlans] = useState<Record<string, GoogleSheetDayPlanItem>>({});
+  const [sheetConfig, setSheetConfig] = useState<GoogleSheetConfig | null>(null);
+
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState<boolean>(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -95,7 +116,7 @@ export default function TutOAdminStudioPage() {
       const matchesQuery =
         !q ||
         c.title.toLowerCase().includes(q) ||
-        (c.tamilTitle || '').toLowerCase().includes(q) ||
+        ((c as any).tamilTitle || (c as any).titleTa || '').toLowerCase().includes(q) ||
         c.id.toLowerCase().includes(q);
       return matchesCat && matchesQuery;
     });
@@ -105,6 +126,47 @@ export default function TutOAdminStudioPage() {
     setStatusMessage(msg);
     setStatusType(type);
     setTimeout(() => setStatusMessage(''), 5000);
+  };
+
+  useEffect(() => {
+    const cfg = GoogleSheetsDayPlanService.getSavedConfig();
+    if (cfg) {
+      setSheetConfig(cfg);
+      if (cfg.sheetUrl) setSheetUrl(cfg.sheetUrl);
+      if (cfg.sheetName) setSheetTabName(cfg.sheetName);
+    }
+    const cached = GoogleSheetsDayPlanService.getCachedDayPlans();
+    setSheetPlans(cached);
+  }, []);
+
+  const handleSyncGoogleSheet = async () => {
+    if (!sheetUrl.trim()) {
+      showStatus('Please enter a valid Google Spreadsheet URL or ID', 'error');
+      return;
+    }
+    setIsSyncingSheet(true);
+    showStatus('Connecting to Google Sheet and parsing whole-year day plans...', 'info');
+
+    const result = await GoogleSheetsDayPlanService.syncGoogleSheet(sheetUrl.trim(), sheetTabName.trim() || 'Sheet1');
+    setIsSyncingSheet(false);
+
+    if (result.success) {
+      const updatedPlans = GoogleSheetsDayPlanService.getCachedDayPlans();
+      setSheetPlans(updatedPlans);
+      const updatedConfig = GoogleSheetsDayPlanService.getSavedConfig();
+      setSheetConfig(updatedConfig);
+      showStatus(`🎉 Successfully synchronized ${result.count} day plans across ${result.courses.length} courses!`, 'success');
+    } else {
+      showStatus(`Sync failed: ${result.error || 'Check Google Sheet permissions'}`, 'error');
+    }
+  };
+
+  const handleCopyTemplateCsv = () => {
+    const csv = GoogleSheetsDayPlanService.getTemplateCsv();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(csv);
+      showStatus('Copied Google Sheet CSV Template headers to clipboard! 📋', 'success');
+    }
   };
 
   // AI Syllabus Generator Handler
@@ -299,7 +361,44 @@ Output JSON only matching OfficialCourseSyllabus interface with:
             }`}
           >
             <CreditCard className="w-4 h-4" />
-            <span>6. Purchases & Access Passes</span>
+            <span>6. Purchases & Passes</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('submissions');
+              const supabase = createClient();
+              setIsLoadingSubmissions(true);
+              supabase
+                .from('daily_task_submissions')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50)
+                .then(({ data, error }: any) => {
+                  if (data) setSubmissions(data);
+                  setIsLoadingSubmissions(false);
+                });
+            }}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 whitespace-nowrap transition ${
+              activeTab === 'submissions'
+                ? 'bg-[#00D084] text-[#070C18] shadow-md font-black'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <HardDrive className="w-4 h-4" />
+            <span>7. Student Video Feedback</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('google_sheets')}
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 whitespace-nowrap transition ${
+              activeTab === 'google_sheets'
+                ? 'bg-[#00D084] text-[#070C18] shadow-md font-black'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>8. Google Sheet Plan Manager</span>
           </button>
         </div>
 
@@ -388,7 +487,11 @@ Output JSON only matching OfficialCourseSyllabus interface with:
                         <td className="p-4">
                           <div className="font-bold text-white text-sm">{c.title}</div>
                           <div className="text-[11px] font-mono text-slate-400">{c.id}</div>
-                          {c.tamilTitle && <div className="text-[11px] text-emerald-400">{c.tamilTitle}</div>}
+                          {((c as any).tamilTitle || (c as any).titleTa) && (
+                            <div className="text-[11px] text-emerald-400">
+                              {(c as any).tamilTitle || (c as any).titleTa}
+                            </div>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px]">
@@ -799,6 +902,326 @@ Output JSON only matching OfficialCourseSyllabus interface with:
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ═════════════════════════════════════════════════════════════════════
+            TAB 7: STUDENT DAILY TASK VIDEO SUBMISSIONS & GOOGLE DRIVE
+            ═════════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'submissions' && (
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0E172A] border border-slate-800 p-6 rounded-3xl">
+              <div>
+                <span className="text-[10px] uppercase font-black text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
+                  Google Drive Cloud Submissions
+                </span>
+                <h3 className="text-base font-bold text-white mt-1">Student Video Reflections & Daily Feedback</h3>
+                <p className="text-xs text-slate-400">Review task video recordings uploaded directly to students' Google Drive storage</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const supabase = createClient();
+                    setIsLoadingSubmissions(true);
+                    supabase
+                      .from('daily_task_submissions')
+                      .select('*')
+                      .order('created_at', { ascending: false })
+                      .limit(50)
+                      .then(({ data }: any) => {
+                        if (data) setSubmissions(data);
+                        setIsLoadingSubmissions(false);
+                      });
+                  }}
+                  className="px-3.5 py-2 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-sky-400 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSubmissions ? 'animate-spin' : ''}`} />
+                  <span>Refresh Submissions</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Submissions Table */}
+            <div className="bg-[#0E172A] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#131F37] text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                  <tr>
+                    <th className="p-4">Student</th>
+                    <th className="p-4">Course & Day</th>
+                    <th className="p-4">Topic & Rating</th>
+                    <th className="p-4">Feedback Notes</th>
+                    <th className="p-4">Google Drive Video</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Review Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {submissions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                        {isLoadingSubmissions ? 'Loading submissions from Supabase...' : 'No student video submissions recorded yet.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    submissions.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-slate-800/30 transition">
+                        <td className="p-4">
+                          <div className="font-bold text-white">{sub.user_name || 'Student'}</div>
+                          <div className="text-[11px] text-slate-400">{sub.user_phone}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-sky-400">Day {sub.day_number}</div>
+                          <div className="text-[10px] text-slate-400 truncate max-w-[140px]">{sub.course_title || sub.course_id}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-bold text-white truncate max-w-[180px]">{sub.topic_title}</div>
+                          <div className="flex items-center gap-0.5 mt-0.5 text-amber-400">
+                            {Array.from({ length: sub.rating || 5 }).map((_, i) => (
+                              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                            ))}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="text-[11px] text-slate-300 max-w-[200px] line-clamp-2">
+                            {sub.feedback_text || 'Completed daily task'}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <a
+                            href={sub.video_drive_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-400 hover:bg-sky-500/25 transition font-bold text-[11px]"
+                          >
+                            <Play className="w-3 h-3 fill-sky-400" />
+                            <span>Watch on Drive</span>
+                          </a>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                            sub.status === 'approved'
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : sub.status === 'reviewed'
+                              ? 'bg-sky-500/20 text-sky-400'
+                              : 'bg-amber-500/20 text-amber-400'
+                          }`}>
+                            {(sub.status || 'submitted').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button
+                            onClick={async () => {
+                              const supabase = createClient();
+                              await supabase
+                                .from('daily_task_submissions')
+                                .update({ status: 'approved', updated_at: new Date().toISOString() })
+                                .eq('id', sub.id);
+                              setSubmissions((prev) =>
+                                prev.map((item) => (item.id === sub.id ? { ...item, status: 'approved' } : item))
+                              );
+                              showStatus(`Task submission for ${sub.user_name || sub.user_phone} marked as Approved!`, 'success');
+                            }}
+                            className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition"
+                          >
+                            Approve
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ═════════════════════════════════════════════════════════════════════
+            TAB 8: GOOGLE SHEET WHOLE-YEAR PLAN MANAGER & CLOUD SYNC
+            ═════════════════════════════════════════════════════════════════════ */}
+        {activeTab === 'google_sheets' && (
+          <div className="space-y-6">
+            {/* Header & Sync Form */}
+            <div className="bg-[#0E172A] border border-slate-800 p-6 rounded-3xl space-y-6 shadow-xl">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] uppercase font-black text-[#00D084] bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                      <FileSpreadsheet className="w-3 h-3" />
+                      Google Sheets Live Engine
+                    </span>
+                    {sheetConfig?.lastSyncedAt && (
+                      <span className="text-[10px] text-slate-400">
+                        Last Synced: {new Date(sheetConfig.lastSyncedAt).toLocaleDateString()} {new Date(sheetConfig.lastSyncedAt).toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-base md:text-lg font-bold text-white">Whole Year Day Plan Google Sheet Manager</h3>
+                  <p className="text-xs text-slate-400">
+                    Manage all 200/300 day plans across Tamil, English, Maths, Science, Social, Life Skills, Homework & ICLE Tech Guidance from ONE Google Sheet.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={handleCopyTemplateCsv}
+                    className="px-3.5 py-2.5 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-sky-400 text-xs font-bold rounded-xl flex items-center gap-2 transition shadow"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>Copy CSV Headers</span>
+                  </button>
+
+                  <a
+                    href="https://docs.google.com/spreadsheets/create"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2.5 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-bold rounded-xl flex items-center gap-2 transition shadow"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>New Google Sheet</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Input Form */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-[#070C18] border border-slate-800 rounded-2xl">
+                <div className="md:col-span-3 space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300">
+                    Google Spreadsheet URL or Sheet ID (Public / Link Sharing Enabled):
+                  </label>
+                  <input
+                    type="text"
+                    value={sheetUrl}
+                    onChange={(e) => setSheetUrl(e.target.value)}
+                    placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+                    className="w-full bg-[#0E172A] border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300">Sheet Tab Name:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={sheetTabName}
+                      onChange={(e) => setSheetTabName(e.target.value)}
+                      placeholder="Sheet1"
+                      className="w-full bg-[#0E172A] border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
+                    />
+
+                    <button
+                      onClick={handleSyncGoogleSheet}
+                      disabled={isSyncingSheet}
+                      className="px-5 py-3 bg-[#00D084] hover:bg-[#00B774] disabled:opacity-50 text-[#070C18] text-xs font-black rounded-xl shadow-lg flex items-center gap-2 transition shrink-0"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isSyncingSheet ? 'animate-spin' : ''}`} />
+                      <span>{isSyncingSheet ? 'Syncing...' : '⚡ Sync Plans'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Banner */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-3.5 bg-[#131F37] border border-slate-800 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Total Days Synced</div>
+                  <div className="text-xl font-black text-white mt-1">{Object.keys(sheetPlans).length} Days</div>
+                </div>
+                <div className="p-3.5 bg-[#131F37] border border-slate-800 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Courses Covered</div>
+                  <div className="text-xl font-black text-[#00D084] mt-1">{sheetConfig?.coursesFound?.length || 0} Programs</div>
+                </div>
+                <div className="p-3.5 bg-[#131F37] border border-slate-800 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">ICLE Official Guidance</div>
+                  <div className="text-xl font-black text-sky-400 mt-1">100% In-App</div>
+                </div>
+                <div className="p-3.5 bg-[#131F37] border border-slate-800 rounded-xl">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase">Student Auto-Sync</div>
+                  <div className="text-xl font-black text-amber-400 mt-1">Real-Time Active</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Table of Parsed Google Sheet Days */}
+            <div className="bg-[#0E172A] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <div className="p-4 bg-[#131F37] border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white">Live Synced Curriculum Days</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-bold">
+                    {Object.keys(sheetPlans).length} records
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#0b1120] text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
+                    <tr>
+                      <th className="p-3.5">Day & Course</th>
+                      <th className="p-3.5">ICLE Guidance Video</th>
+                      <th className="p-3.5">தமிழ் (Tamil)</th>
+                      <th className="p-3.5">English</th>
+                      <th className="p-3.5">Mathematics</th>
+                      <th className="p-3.5">Science</th>
+                      <th className="p-3.5">Social Science</th>
+                      <th className="p-3.5">Life Skills</th>
+                      <th className="p-3.5">Fitness & Yoga</th>
+                      <th className="p-3.5">Current Affairs</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 font-medium">
+                    {Object.keys(sheetPlans).length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="p-8 text-center text-slate-400">
+                          No Google Sheet day plans synced yet. Paste your Google Sheet URL above and click ⚡ Sync Plans.
+                        </td>
+                      </tr>
+                    ) : (
+                      Object.entries(sheetPlans).map(([key, item]) => (
+                        <tr key={key} className="hover:bg-slate-800/30 transition">
+                          <td className="p-3.5">
+                            <div className="font-bold text-white">Day {item.dayNumber}</div>
+                            <div className="text-[10px] text-[#00D084] uppercase font-bold">{item.courseId}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-sky-400 font-bold truncate max-w-[130px]">{item.officialGuidanceVideo?.title}</div>
+                            <div className="text-[10px] text-slate-500 font-mono">ID: {item.officialGuidanceVideo?.youtubeVideoId}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-white truncate max-w-[120px]">{item.tamilTask?.title}</div>
+                            <div className="text-[10px] text-slate-500">{item.tamilTask?.youtubeVideoId ? '📹 Video' : '📝 Notes'}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-white truncate max-w-[120px]">{item.englishTask?.title}</div>
+                            <div className="text-[10px] text-slate-500">{item.englishTask?.youtubeVideoId ? '📹 Video' : '📝 Notes'}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-white truncate max-w-[120px]">{item.mathsTask?.title}</div>
+                            <div className="text-[10px] text-slate-500">{item.mathsTask?.summary}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-white truncate max-w-[120px]">{item.scienceTask?.title}</div>
+                            <div className="text-[10px] text-slate-500">{item.scienceTask?.summary}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-white truncate max-w-[120px]">{item.socialScienceTask?.title}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-amber-400 font-bold truncate max-w-[110px]">{item.lifeSkillTask?.title}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-pink-400 font-bold truncate max-w-[110px]">{item.exercisePhysicVideo?.asanaOrWorkout}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="text-emerald-400 font-bold truncate max-w-[110px]">{item.currentAffairsGkVideo?.title}</div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

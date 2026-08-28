@@ -10,7 +10,7 @@ import {
   BookOpen, MonitorPlay, Wallet, Map,
   MessageSquare, LayoutGrid, User, Bot,
   Shield, Tv, GraduationCap, ShoppingBag,
-  Compass, Zap, Wrench, MapPin, Car, Gamepad2, Award
+  Compass, Zap, Wrench, MapPin, Car, Gamepad2, Award, Users
 } from 'lucide-react-native';
 
 import LoginScreen      from './src/screens/LoginScreen';
@@ -29,6 +29,7 @@ import CareerHubScreen  from './src/screens/CareerHubScreen';
 import AgrOScreen       from './src/screens/AgrOScreen';
 import RentOScreen      from './src/screens/RentOScreen';
 import DealOScreen      from './src/screens/DealOScreen';
+import GroupOScreen     from './src/screens/GroupOScreen';
 import FlowQuestionScreen from './src/screens/FlowQuestionScreen';
 import QuizScreen from './src/screens/QuizScreen';
 
@@ -114,6 +115,7 @@ function UserTabs() {
 
   const getModuleConfig = (id: string) => {
     switch (id) {
+      case 'groupo': return { name: 'GroupOTab', path: '/groupo', label: 'GroupO', icon: Users, nativeComponent: GroupOScreen };
       case 'tuto': return { name: 'TutOTab', path: '/tuto', label: 'TutO', icon: GraduationCap, nativeComponent: TutOHubScreen };
       case 'driveo': return { name: 'DriveOTab', path: '/drivo', label: 'DriveO', icon: MapPin, nativeComponent: DriveOScreen };
       case 'rideo': return { name: 'RideOTab', path: '/rideo', label: 'RideO', icon: Car, nativeComponent: RideOScreen };
@@ -165,9 +167,9 @@ function UserTabs() {
   if (category.includes('driver')) {
     primaryModId = 'driveo';
     relatedModId = 'rideo';
-  } else if (category.includes('partner')) {
-    primaryModId = 'dealo';
-    relatedModId = 'rento';
+  } else if (category.includes('group') || category.includes('shg') || category.includes('partner')) {
+    primaryModId = 'groupo';
+    relatedModId = 'dealo';
   } else if (category.includes('farmer') || category.includes('agri')) {
     primaryModId = 'agro';
     relatedModId = 'rento';
@@ -289,6 +291,8 @@ function RootNavigator() {
       <Stack.Screen name="RentOScreen" component={RentOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DealOScreen" component={DealOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="DealO" component={DealOScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="GroupOScreen" component={GroupOScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="GroupO" component={GroupOScreen} options={{ headerShown: false }} />
       <Stack.Screen name="FlowQuestionScreen" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Flow" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ headerShown: false }} />
@@ -324,7 +328,7 @@ function NavigationWrapper() {
              let modulePath = null;
              if (currentRouteName === 'ModuleView' && currentRoute.params?.path) {
                 modulePath = currentRoute.params.path;
-             } else if (currentRouteName === 'DriveO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO') {
+             } else if (currentRouteName === 'DriveO' || currentRouteName === 'AgrO' || currentRouteName === 'DealO' || currentRouteName === 'TourO' || currentRouteName === 'MoneyO' || currentRouteName === 'GroupO') {
                 // If they navigated via Bottom Tabs directly
                 const routeParams = currentRoute.params as any;
                 if (routeParams?.path) modulePath = routeParams.path;
@@ -334,6 +338,8 @@ function NavigationWrapper() {
                 modulePath = '/tuto';
              } else if (currentRouteName === 'DealOScreen' || currentRouteName === 'DealO') {
                 modulePath = '/dealo';
+             } else if (currentRouteName === 'GroupOScreen' || currentRouteName === 'GroupO') {
+                modulePath = '/groupo';
              }
 
              if (modulePath) {

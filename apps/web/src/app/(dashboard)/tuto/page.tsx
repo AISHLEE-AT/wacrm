@@ -25,22 +25,29 @@ import {
   Video,
   FileText,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  HardDrive,
+  Target,
 } from 'lucide-react';
-import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, SCHOOL_BOARDS } from '@/data/coursesCatalog';
-import { TeachOCoursePickerModal } from '@/components/teacho/TeachOCoursePickerModal';
-import { TeachOSyllabusViewerModal } from '@/components/teacho/TeachOSyllabusViewerModal';
-import { TeachONanoPlayerModal } from '@/components/teacho/TeachONanoPlayerModal';
-import { resolveNanoDayPlan, NanoDayPlan } from '@/data/curriculum/dayPlanNanoEngine';
+import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, SCHOOL_BOARDS } from '../../../data/coursesCatalog';
+import { TeachOCoursePickerModal } from '../../../components/teacho/TeachOCoursePickerModal';
+import { TeachOSyllabusViewerModal } from '../../../components/teacho/TeachOSyllabusViewerModal';
+import { TeachONanoPlayerModal } from '../../../components/teacho/TeachONanoPlayerModal';
+import { TaskVideoFeedbackWebModal } from '../../../components/teacho/TaskVideoFeedbackWebModal';
+import { StudentOnboardingWebModal } from '../../../components/teacho/StudentOnboardingWebModal';
+import { resolveNanoDayPlan, NanoDayPlan } from '../../../data/curriculum/dayPlanNanoEngine';
 
 type TutOMode = 'STUDY' | 'TESTS' | 'AI_TUTOR';
 type TestCategoryTab = 'ALL' | 'FULL_MOCKS' | 'CHAPTER_TESTS' | 'PYQ' | 'CURRENT_AFFAIRS';
 
 export default function TutOWebPage() {
   const [activeMode, setActiveMode] = useState<TutOMode>('STUDY');
-  const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
+  const [selectedCourse, setSelectedCourse] = useState<CourseOption>(ALL_COURSES[0] || DEFAULT_COURSE);
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [isCoursePickerModalOpen, setIsCoursePickerModalOpen] = useState(false);
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isVideoFeedbackModalOpen, setIsVideoFeedbackModalOpen] = useState(false);
+  const [videoFeedbackTopic, setVideoFeedbackTopic] = useState('Daily Curriculum Task');
   const [currentDay, setCurrentDay] = useState(1);
   const [streak, setStreak] = useState(5);
   const [xp, setXp] = useState(180);
@@ -51,6 +58,21 @@ export default function TutOWebPage() {
   const [isNanoPlayerOpen, setIsNanoPlayerOpen] = useState(false);
   const [activeNanoTask, setActiveNanoTask] = useState<any>(null);
   const [isPassProSubscribed, setIsPassProSubscribed] = useState(false);
+
+  // Check first-time student onboarding on mount
+  useEffect(() => {
+    const onboardingDone = localStorage.getItem('tuto_student_onboarding_completed');
+    if (!onboardingDone) {
+      setIsOnboardingModalOpen(true);
+    }
+    const savedCourseId = localStorage.getItem('tuto_active_course_id');
+    if (savedCourseId) {
+      const found = ALL_COURSES.find((c: CourseOption) => c.id === savedCourseId);
+      if (found) setSelectedCourse(found);
+      const savedBoard = localStorage.getItem(`tuto_selected_board_${savedCourseId}`);
+      if (savedBoard) setSelectedBoard(savedBoard as SchoolBoard);
+    }
+  }, []);
 
   // Active CBT Exam Modal
   const [activeExam, setActiveExam] = useState<any | null>(null);
@@ -224,9 +246,23 @@ export default function TutOWebPage() {
                 <div className="text-xs text-slate-400">{selectedCourse.subtitle}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#00D084] bg-[#1E293B] border border-[#334155] px-3.5 py-2 rounded-xl group-hover:bg-[#00D084]/10 transition">
-              <span>Change Program ({ALL_COURSES.length})</span>
-              <ChevronDown className="w-4 h-4" />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOnboardingModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 text-xs font-bold text-sky-400 bg-sky-500/15 border border-sky-500/30 hover:bg-sky-500/25 px-3 py-2 rounded-xl transition"
+              >
+                <Target className="w-3.5 h-3.5" />
+                <span>Goals & Class</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-[#00D084] bg-[#1E293B] border border-[#334155] px-3.5 py-2 rounded-xl group-hover:bg-[#00D084]/10 transition">
+                <span>Change Program ({ALL_COURSES.length})</span>
+                <ChevronDown className="w-4 h-4" />
+              </div>
             </div>
           </button>
 
@@ -248,7 +284,7 @@ export default function TutOWebPage() {
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto">
-                {SCHOOL_BOARDS.map((b) => {
+                {SCHOOL_BOARDS.map((b: any) => {
                   const isCurrent = selectedBoard === b.id;
                   return (
                     <button
@@ -359,7 +395,7 @@ export default function TutOWebPage() {
                   Complete your 5 daily micro-learning tasks: Concept notes reading, curated YouTube faculty lecture, brain stimulation, formulas & 10-minute speed test.
                 </p>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center gap-3 pt-2">
                   <button
                     onClick={() => setActiveMode('TESTS')}
                     className="flex items-center gap-2 bg-[#F59E0B] text-[#070C18] text-xs font-black px-4 py-2.5 rounded-xl shadow hover:brightness-110 transition"
@@ -367,14 +403,25 @@ export default function TutOWebPage() {
                     <Zap className="w-4 h-4" />
                     <span>Launch Day {currentDay} Assessment</span>
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setVideoFeedbackTopic(`Day ${currentDay} Core Concept Mastery`);
+                      setIsVideoFeedbackModalOpen(true);
+                    }}
+                    className="flex items-center gap-2 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span>📹 Record Video Feedback (Google Drive)</span>
+                  </button>
                 </div>
               </div>
 
-              {/* 5 Daily Tasks */}
+              {/* 6 Daily Tasks */}
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#00D084]" />
-                  <span>5 Structured Daily Micro-Tasks</span>
+                  <span>Structured Daily Micro-Tasks</span>
                 </h3>
 
                 {[
@@ -383,6 +430,7 @@ export default function TutOWebPage() {
                   { step: 3, title: 'Kids Yoga / Cognitive Focus Exercise', type: 'activity', duration: '5 Mins' },
                   { step: 4, title: 'Formulas, Mnemonics & 1-Line Q&A', type: 'notes', duration: '10 Mins' },
                   { step: 5, title: '10-Minute Topic CBT Practice Drill', type: 'test', duration: '10 Mins' },
+                  { step: 6, title: '📹 Task Video Reflection (Google Drive Cloud Storage)', type: 'video_feedback', duration: '5 Mins' },
                 ].map((task) => (
                   <div
                     key={task.step}
@@ -402,13 +450,20 @@ export default function TutOWebPage() {
                       onClick={() => {
                         if (task.type === 'test') {
                           setActiveExam(sampleExamQuestions);
+                        } else if (task.type === 'video_feedback') {
+                          setVideoFeedbackTopic(`Day ${currentDay} Task ${task.step}`);
+                          setIsVideoFeedbackModalOpen(true);
                         } else {
                           alert(`Opening ${task.title}`);
                         }
                       }}
-                      className="px-3 py-1.5 bg-[#1E293B] hover:bg-[#00D084] hover:text-[#070C18] text-xs font-bold text-[#00D084] rounded-lg transition"
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition ${
+                        task.type === 'video_feedback'
+                          ? 'bg-sky-500 hover:bg-sky-400 text-slate-950 font-black'
+                          : 'bg-[#1E293B] hover:bg-[#00D084] hover:text-[#070C18] text-[#00D084]'
+                      }`}
                     >
-                      Start Task
+                      {task.type === 'video_feedback' ? 'Record Video' : 'Start Task'}
                     </button>
                   </div>
                 ))}
@@ -711,7 +766,7 @@ export default function TutOWebPage() {
         isOpen={isCoursePickerModalOpen}
         onClose={() => setIsCoursePickerModalOpen(false)}
         selectedCourseId={selectedCourse.id}
-        onSelectCourse={(course) => {
+        onSelectCourse={(course: CourseOption) => {
           setSelectedCourse(course);
           setIsCoursePickerModalOpen(false);
         }}
@@ -724,7 +779,7 @@ export default function TutOWebPage() {
         board={selectedBoard}
         isPurchased={isPassProSubscribed}
         onClose={() => setIsSyllabusModalOpen(false)}
-        onLaunchNanoPlayer={(concept, topic, subj, tab) => {
+        onLaunchNanoPlayer={(concept: any, topic: any, subj: string, tab?: any) => {
           setIsSyllabusModalOpen(false);
           setActiveNanoTask({
             topicTitle: concept.name || topic.title,
@@ -740,6 +795,29 @@ export default function TutOWebPage() {
         onUnlockCourse={() => {
           setIsSyllabusModalOpen(false);
           setIsPassProModalOpen(true);
+        }}
+      />
+
+      {/* Google Drive Task Video Recording & Feedback Web Modal */}
+      <TaskVideoFeedbackWebModal
+        isOpen={isVideoFeedbackModalOpen}
+        onClose={() => setIsVideoFeedbackModalOpen(false)}
+        courseId={selectedCourse.id}
+        courseTitle={selectedCourse.title}
+        dayNumber={currentDay}
+        topicTitle={videoFeedbackTopic}
+        onSubmitted={(earnedXp: number) => {
+          setXp((prev) => prev + earnedXp);
+        }}
+      />
+
+      {/* First-Time Student Onboarding & Career Personalization Web Modal */}
+      <StudentOnboardingWebModal
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        onComplete={(course: CourseOption, board: SchoolBoard, profile: any) => {
+          setSelectedCourse(course);
+          setSelectedBoard(board);
         }}
       />
     </div>

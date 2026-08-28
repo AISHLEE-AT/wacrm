@@ -22,11 +22,13 @@ import {
   FileText,
   ClipboardList,
   Calculator,
-  Image as ImageIcon
+  Image as ImageIcon,
+  HardDrive,
 } from 'lucide-react';
 import { loadCoursePlayerContent, CoursePlayerContent } from '@/lib/coursePlayerEngine';
 import { resolveAuthenticEducationalVideo } from '@/data/curriculum/educationalVideoRegistry';
 import { getStepAiPrompt } from '@/data/curriculum';
+import { TaskVideoFeedbackWebModal } from './TaskVideoFeedbackWebModal';
 
 interface TeachOCoursePlayerModalProps {
   isOpen: boolean;
@@ -59,6 +61,7 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isVideoFeedbackOpen, setIsVideoFeedbackOpen] = useState(false);
 
   
   
@@ -71,8 +74,8 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
   };
 
   const handleContactAdminWhatsApp = () => {
-    const adminPhone = '916381029380';
-    const msg = `Hello SuprO Admin,\n\nI am studying *${courseTitle || 'Tuition Course'}* (Day ${dayNumber || 1}).\n\n📌 Subject: *${subject || 'Core Subject'}*\n📖 Topic: *${topicTitle || 'Lesson'}*\n\nPlease provide the official study notes, lesson material, and teacher guidance for this topic.\n\nThank you!`;
+    const adminPhone = '919486335870';
+    const msg = `🎓 *SuprO TutO — Course Guide Support & Verification*\n\n👤 *Student:* Enrolled Scholar\n📚 *Course:* *${courseTitle || 'Tuition Course'}* (Day ${dayNumber || 1})\n📌 *Subject:* *${subject || 'Core Subject'}*\n📖 *Topic / Task:* *${topicTitle || 'Lesson'}*\n\nPlease provide guidance and verify my daily learning task submission.\n\nThank you! 🙏`;
     const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
     window.open(webLink, '_blank');
   };
@@ -750,7 +753,15 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
                 <span>Day {dayNumber} Interactive Study Complete</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setIsVideoFeedbackOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 border border-sky-500/30 font-bold text-xs flex items-center gap-1.5 transition shadow-lg"
+                >
+                  <Video className="w-4 h-4" />
+                  <span>Record Video Feedback</span>
+                </button>
+
                 <a
                   href={`/testo?courseId=${courseId || ''}&topic=${encodeURIComponent(topicTitle)}&subject=${encodeURIComponent(subject)}&day=${dayNumber}`}
                   className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-amber-500/20"
@@ -769,6 +780,19 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
                 </button>
               </div>
             </div>
+
+            {/* Google Drive Task Video Recording & Feedback Modal */}
+            <TaskVideoFeedbackWebModal
+              isOpen={isVideoFeedbackOpen}
+              onClose={() => setIsVideoFeedbackOpen(false)}
+              courseId={courseId}
+              courseTitle={courseTitle}
+              dayNumber={dayNumber}
+              topicTitle={topicTitle}
+              onSubmitted={(earnedXp) => {
+                onComplete?.(earnedXp);
+              }}
+            />
 
           </div>
         </div>

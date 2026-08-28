@@ -8306,6 +8306,29 @@ export const MASTER_QBANK_STORE: StructuredMCQ[] = [
 ];
 
 /**
+ * Build lower-cased searchable text blob for question search
+ */
+export function buildSearchIndexForQuestion(item: StructuredMCQ, seqNum: number): string {
+  const parts = [
+    item.question_uid,
+    String(seqNum),
+    String(seqNum).padStart(4, '0'),
+    item.question_text || '',
+    item.question_text_ta || '',
+    item.taxonomy?.subject || '',
+    item.taxonomy?.topic || '',
+    item.taxonomy?.subtopic || '',
+    item.taxonomy?.microtopic || '',
+    item.options?.A || '',
+    item.options?.B || '',
+    item.options?.C || '',
+    item.options?.D || '',
+    item.formula_or_law || '',
+  ];
+  return parts.join(' ').toLowerCase();
+}
+
+/**
  * Unified Search Engine across Custom or Master Dataset
  */
 export function searchQuestions(
