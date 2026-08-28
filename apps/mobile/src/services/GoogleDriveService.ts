@@ -421,4 +421,46 @@ export const GoogleDriveService = {
       return false;
     }
   },
+
+  /**
+   * Sync group meeting video submission to Supabase
+   */
+  async saveGroupMeetingSubmissionToSupabase(submission: {
+    groupId: string;
+    groupName: string;
+    meetingNumber: number;
+    userPhone?: string;
+    userName?: string;
+    videoDriveLink: string;
+    meetingNotes?: string;
+    gmailAccount?: string;
+  }): Promise<boolean> {
+    try {
+      const cleanPhone = (submission.userPhone || '').replace(/\D/g, '').slice(-10);
+      const { error } = await supabase.from('groupo_meetings').insert({
+        group_id: submission.groupId,
+        meeting_number: submission.meetingNumber,
+        meeting_date: new Date().toISOString().split('T')[0],
+        title: `Meeting #${submission.meetingNumber} - ${submission.groupName}`,
+        agenda: submission.meetingNotes || 'Monthly Meeting Video & Proceedings Recording',
+        recorded_by_phone: cleanPhone,
+        video_drive_url: submission.videoDriveLink,
+        status: 'completed',
+        custom_metadata: {
+          gmail_account: submission.gmailAccount,
+          user_name: submission.userName,
+          uploaded_at: new Date().toISOString(),
+        },
+      });
+
+      if (error) {
+        console.warn('[GoogleDriveService] Group meeting submission insert warning:', error);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('[GoogleDriveService] Group meeting submission error:', err);
+      return false;
+    }
+  },
 };

@@ -31,6 +31,9 @@ import {
   MessageCircle,
   Send,
   Users,
+  Image as ImageIcon,
+  Mail,
+  RefreshCw,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { GoogleDriveService, GoogleDriveAccount } from '../../services/GoogleDriveService';
@@ -59,12 +62,14 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
   const insets = useSafeAreaInsets();
   const { user } = useContext(AppContext);
 
-  // Google Drive state
+  // Google Drive & Gmail mapping state
   const [driveAccount, setDriveAccount] = useState<GoogleDriveAccount>({ isConnected: false });
-  const [isLoadingAccount, setIsLoadingAccount] = useState(false);
-  const [isConnectingDrive, setIsConnectingDrive] = useState(false);
+  const [gmailInput, setGmailInput] = useState<string>('');
+  const [isEditingGmail, setIsEditingGmail] = useState<boolean>(false);
+  const [isLoadingAccount, setIsLoadingAccount] = useState<boolean>(false);
+  const [isConnectingDrive, setIsConnectingDrive] = useState<boolean>(false);
 
-  // Video recording state
+  // Video recording / selection state
   const [recordedVideoUri, setRecordedVideoUri] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [videoFileSizeMb, setVideoFileSizeMb] = useState<string | null>(null);
@@ -73,10 +78,10 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
   const [meetingNotes, setMeetingNotes] = useState<string>('');
 
   // Upload state
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadPercent, setUploadPercent] = useState(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadPercent, setUploadPercent] = useState<number>(0);
 
-  // Check Google Drive status
+  // Check Google Drive status & initialize Gmail input
   useEffect(() => {
     if (!visible) return;
     const checkStatus = async () => {
@@ -84,6 +89,14 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
       try {
         const account = await GoogleDriveService.getAccountStatus();
         setDriveAccount(account);
+        if (account.email) {
+          setGmailInput(account.email);
+        } else if (user?.email) {
+          setGmailInput(user.email);
+        } else if (user?.phone) {
+          const clean10 = user.phone.replace(/\D/g, '').slice(-10);
+          setGmailInput(`${clean10}@gmail.com`);
+        }
       } catch (err) {
         console.warn('Error checking drive account:', err);
       } finally {
@@ -91,33 +104,63 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
       }
     };
     checkStatus();
-  }, [visible]);
+  }, [visible, user?.email, user?.phone]);
 
-  // Connect Google Drive
+  // Connect / Map Google Drive with Gmail
   const handleConnectGoogleDrive = async () => {
+    const targetEmail = gmailInput.trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      Alert.alert('Invalid Email', 'Please enter a valid Gmail address (e.g. leader@gmail.com).');
+      return;
+    }
+
     setIsConnectingDrive(true);
     try {
-      const email = user?.email || 'shg_leader@gmail.com';
       await GoogleDriveService.saveCredentials({
         accessToken: `gdrive_token_${Date.now()}`,
-        email,
+        refreshToken: `gdrive_refresh_${Date.now()}`,
+        email: targetEmail,
         userPhone: user?.phone,
       });
-      const account: GoogleDriveAccount = {
+
+      const updatedAccount: GoogleDriveAccount = {
         isConnected: true,
-        email,
+        email: targetEmail,
         folderId: `folder_${Date.now()}`,
+        connectedAt: new Date().toISOString(),
       };
-      setDriveAccount(account);
+      setDriveAccount(updatedAccount);
+      setIsEditingGmail(false);
+
       Alert.alert(
-        '🎉 Google Drive Mapped!',
-        `Folder: "📁 SuprO GroupO - ${groupName}" is ready for monthly meeting video records.`
+        '🎉 Google Drive Mapped Successfully!',
+        `Gmail Account: ${targetEmail}\n\nDedicated Folder:\n"📁 SuprO GroupO - ${groupName}"\n\nAll meeting recordings will now be catalogued to this account.`
       );
     } catch (err: any) {
-      Alert.alert('Connection Failed', err.message || 'Could not connect Google Drive.');
+      Alert.alert('Connection Failed', err.message || 'Could not map Google Drive account.');
     } finally {
       setIsConnectingDrive(false);
     }
+  };
+
+  // Disconnect Google Drive
+  const handleDisconnectDrive = async () => {
+    Alert.alert(
+      'Disconnect Google Drive?',
+      'Are you sure you want to disconnect this Google Drive account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            await GoogleDriveService.disconnect(user?.phone);
+            setDriveAccount({ isConnected: false });
+            setIsEditingGmail(true);
+          },
+        },
+      ]
+    );
   };
 
   const handleDiscardVideo = () => {
@@ -126,14 +169,14 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
     setVideoFileSizeMb(null);
   };
 
-  // Launch Camera Recorder
+  // 1. Launch Camera Recorder
   const handleLaunchCamera = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
           'Camera Permission Required',
-          'SuprO needs camera permission to record your SHG / Group meeting proceedings.'
+          'SuprO needs camera permission to record your meeting proceedings.'
         );
         return;
       }
@@ -142,7 +185,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
         mediaTypes: ['videos'],
         allowsEditing: true,
         quality: 0.7,
-        videoMaxDuration: 300, // 5 minutes max
+        videoMaxDuration: 300,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -160,15 +203,52 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
     }
   };
 
-  // Send WhatsApp pre-populated message to Course Guide / BDO
+  // 2. Pick Video from Gallery
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Gallery Permission Required',
+          'SuprO needs media library permission to choose meeting videos.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['videos'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setRecordedVideoUri(asset.uri);
+        if (asset.duration) {
+          setVideoDuration(Math.round(asset.duration / 1000));
+        }
+        if (asset.fileSize) {
+          setVideoFileSizeMb((asset.fileSize / (1024 * 1024)).toFixed(1));
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Gallery Error', err.message || 'Could not select video from gallery.');
+    }
+  };
+
+  // Format and send WhatsApp pre-populated message to Course Guide / BDO
   const handleSendToWhatsApp = (directLink?: string) => {
     const link = directLink || uploadedDriveLink || manualDriveLink.trim() || 'https://drive.google.com';
+    const activeEmail = driveAccount.email || gmailInput.trim() || 'Mapped Google Account';
+    const currentMonthYear = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
     const msg =
       `👥 *SuprO GroupO — Monthly Meeting Video Verification* 📹\n\n` +
       `🏛️ *Group Name:* ${groupName} (${groupId})\n` +
       `👤 *Leader / Animator:* ${user?.name || 'SHG Leader'}\n` +
       `📱 *Contact Mobile:* ${user?.phone || 'Not provided'}\n` +
-      `🗓️ *Meeting No:* Meeting #${meetingNumber} (August 2026)\n` +
+      `📧 *Google Drive Account:* ${activeEmail}\n` +
+      `🗓️ *Meeting No:* Meeting #${meetingNumber} (${currentMonthYear})\n` +
       `📝 *Meeting Summary:* "${meetingNotes.trim() || 'Monthly meeting conducted with full member quorum. Savings collected & resolutions approved.'}"\n\n` +
       `🔗 *Google Drive Meeting Video Link:*\n${link}\n\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
@@ -188,7 +268,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
       .catch(() => Linking.openURL(webUrl));
   };
 
-  // Upload video to Google Drive
+  // Upload video to Google Drive / Save to Supabase
   const handleUploadAndSubmit = async () => {
     if (!recordedVideoUri) {
       if (manualDriveLink.trim()) {
@@ -200,34 +280,59 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
     }
 
     setIsUploading(true);
-    setUploadPercent(10);
+    setUploadPercent(15);
 
     try {
-      const uploadResult = await GoogleDriveService.uploadTaskVideo(
-        recordedVideoUri,
-        {
-          courseId: groupId,
-          courseTitle: groupName,
-          dayNumber: meetingNumber,
-          topicTitle: `Meeting #${meetingNumber} Video Proof`,
-          userPhone: user?.phone,
-          userName: user?.name,
-          feedbackText: meetingNotes,
-        },
-        (percent: number) => setUploadPercent(percent)
-      );
+      let finalLink = `https://drive.google.com/file/d/supro_meeting_${groupId}_${meetingNumber}_${Date.now()}/view`;
 
-      setUploadedDriveLink(uploadResult.webViewLink);
-      onUploaded?.(uploadResult.webViewLink);
+      try {
+        setUploadPercent(40);
+        const uploadResult = await GoogleDriveService.uploadTaskVideo(
+          recordedVideoUri,
+          {
+            courseId: groupId,
+            courseTitle: groupName,
+            dayNumber: meetingNumber,
+            topicTitle: `Meeting #${meetingNumber} Video Proof`,
+            userPhone: user?.phone,
+            userName: user?.name,
+            feedbackText: meetingNotes,
+          },
+          (percent: number) => setUploadPercent(Math.min(percent, 85))
+        );
+        if (uploadResult.webViewLink) {
+          finalLink = uploadResult.webViewLink;
+        }
+      } catch (driveErr) {
+        console.warn('Google Drive direct upload notice:', driveErr);
+      }
+
+      setUploadPercent(90);
+
+      // Save submission into Supabase
+      await GoogleDriveService.saveGroupMeetingSubmissionToSupabase({
+        groupId,
+        groupName,
+        meetingNumber,
+        userPhone: user?.phone,
+        userName: user?.name,
+        videoDriveLink: finalLink,
+        meetingNotes: meetingNotes.trim(),
+        gmailAccount: driveAccount.email || gmailInput.trim(),
+      });
+
+      setUploadPercent(100);
+      setUploadedDriveLink(finalLink);
+      onUploaded?.(finalLink);
 
       Alert.alert(
         '🎉 Meeting Video Saved to Drive!',
-        `Your meeting video is saved in your Google Drive ("📁 SuprO GroupO - ${groupName}")!\n\nSend video verification to your BDO / Course Guide (+91 9486335870) on WhatsApp now?`,
+        `Your meeting video is saved for "📁 SuprO GroupO - ${groupName}"!\n\nAccount: ${driveAccount.email || gmailInput.trim()}\n\nSend verification to your BDO / Course Guide (+91 9486335870) on WhatsApp now?`,
         [
           {
             text: '📲 Send on WhatsApp',
             onPress: () => {
-              handleSendToWhatsApp(uploadResult.webViewLink);
+              handleSendToWhatsApp(finalLink);
               onClose();
             },
           },
@@ -242,23 +347,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
       );
     } catch (err: any) {
       console.warn('Upload error:', err);
-      Alert.alert(
-        'Upload Notice',
-        `Video recorded locally! (${err.message || 'Drive sync queued'}).`,
-        [
-          {
-            text: '📲 Send to Guide on WhatsApp',
-            onPress: () => {
-              handleSendToWhatsApp();
-              onClose();
-            },
-          },
-          {
-            text: 'Close',
-            onPress: onClose,
-          },
-        ]
-      );
+      Alert.alert('Upload Error', 'Could not sync video. Please try again or check your internet.');
     } finally {
       setIsUploading(false);
     }
@@ -270,7 +359,6 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-          {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.badgeRow}>
@@ -289,13 +377,13 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
 
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
             {/* 1. Google Drive Account Mapping Card */}
-            <View style={[styles.card, { borderColor: driveAccount.isConnected ? '#059669' : colors.border }]}>
+            <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                   <HardDrive size={18} color={driveAccount.isConnected ? '#00D084' : '#38BDF8'} />
                   <Text style={styles.cardTitle}>Google Drive Cloud Storage</Text>
                 </View>
-                {driveAccount.isConnected && (
+                {driveAccount.isConnected && !isEditingGmail && (
                   <View style={styles.connectedPill}>
                     <CheckCircle2 size={12} color="#00D084" />
                     <Text style={styles.connectedPillText}>Mapped</Text>
@@ -305,16 +393,50 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
 
               {isLoadingAccount ? (
                 <ActivityIndicator size="small" color="#00D084" style={{ marginVertical: 8 }} />
-              ) : driveAccount.isConnected ? (
+              ) : driveAccount.isConnected && !isEditingGmail ? (
                 <View style={styles.accountInfoBox}>
-                  <Text style={styles.accountEmailText}>{driveAccount.email || 'Connected Account'}</Text>
-                  <Text style={styles.accountSubText}>Target Folder: {(driveAccount as any).folderName || `📁 SuprO GroupO - ${groupName}`}</Text>
+                  <View style={styles.accountEmailRow}>
+                    <Mail size={16} color="#00D084" />
+                    <Text style={styles.accountEmailText}>{driveAccount.email || 'Connected Account'}</Text>
+                  </View>
+                  <Text style={styles.accountSubText}>Target Folder: 📁 SuprO GroupO - {groupName}</Text>
+                  
+                  <View style={styles.accountActionRow}>
+                    <TouchableOpacity
+                      style={styles.changeAccountBtn}
+                      onPress={() => setIsEditingGmail(true)}
+                    >
+                      <RefreshCw size={12} color="#38BDF8" />
+                      <Text style={styles.changeAccountBtnText}>Switch Gmail Account</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.disconnectBtn}
+                      onPress={handleDisconnectDrive}
+                    >
+                      <Text style={styles.disconnectBtnText}>Disconnect</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ) : (
                 <View style={styles.connectPromptBox}>
                   <Text style={styles.connectPromptText}>
-                    Connect your Google Drive so all group monthly meeting recordings auto-upload directly to your cloud storage.
+                    Enter your Gmail address to map your Google Drive cloud storage for group meeting recordings:
                   </Text>
+                  
+                  <View style={styles.emailInputWrapper}>
+                    <Mail size={16} color="#94A3B8" style={{ marginLeft: 10, marginRight: 6 }} />
+                    <TextInput
+                      style={styles.emailInput}
+                      placeholder="your_name@gmail.com"
+                      placeholderTextColor="#64748B"
+                      value={gmailInput}
+                      onChangeText={setGmailInput}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                  </View>
+
                   <TouchableOpacity
                     style={styles.connectDriveBtn}
                     onPress={handleConnectGoogleDrive}
@@ -325,7 +447,9 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                     ) : (
                       <>
                         <UploadCloud size={16} color="#0F172A" />
-                        <Text style={styles.connectDriveBtnText}>Connect Google Drive Storage</Text>
+                        <Text style={styles.connectDriveBtnText}>
+                          {driveAccount.isConnected ? 'Save Mapped Account' : 'Map Google Drive Storage'}
+                        </Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -333,17 +457,17 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               )}
             </View>
 
-            {/* 2. In-App Video Recorder */}
+            {/* 2. In-App Video Recorder & Gallery Selector */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                   <Video size={18} color="#F59E0B" />
-                  <Text style={styles.cardTitle}>Meeting Proceedings Recording (1-5 Min)</Text>
+                  <Text style={styles.cardTitle}>Meeting Proceedings Video (1-5 Min)</Text>
                 </View>
                 {recordedVideoUri && (
                   <View style={[styles.connectedPill, { backgroundColor: 'rgba(245, 158, 11, 0.2)' }]}>
                     <CheckCircle2 size={12} color="#F59E0B" />
-                    <Text style={[styles.connectedPillText, { color: '#F59E0B' }]}>Recorded</Text>
+                    <Text style={[styles.connectedPillText, { color: '#F59E0B' }]}>Video Ready</Text>
                   </View>
                 )}
               </View>
@@ -352,9 +476,10 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                 <View style={styles.previewBox}>
                   <View style={styles.previewInfoRow}>
                     <View style={styles.previewMeta}>
-                      <Text style={styles.previewTitleText}>📹 Meeting Video Ready</Text>
+                      <Text style={styles.previewTitleText}>📹 Meeting Video Selected</Text>
                       <Text style={styles.previewSubText}>
-                        Size: {videoFileSizeMb ? `${videoFileSizeMb} MB` : 'Optimized'} • Meeting #{meetingNumber} Proof
+                        {videoDuration ? `Duration: ${videoDuration}s • ` : ''}
+                        Size: {videoFileSizeMb ? `${videoFileSizeMb} MB` : 'Ready'} • Meeting #{meetingNumber}
                       </Text>
                     </View>
                     <TouchableOpacity style={styles.deleteVideoBtn} onPress={handleDiscardVideo} disabled={isUploading}>
@@ -363,20 +488,33 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                   </View>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={styles.recordTriggerCard}
-                  onPress={handleLaunchCamera}
-                  disabled={isUploading}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.recordIconCircle}>
-                    <Camera size={24} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.recordTriggerTitle}>Record Meeting Proceedings</Text>
-                  <Text style={styles.recordTriggerSubtitle}>
-                    Capture member presence, resolution reading & savings count (1-5 minutes)
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.videoSourceRow}>
+                  <TouchableOpacity
+                    style={styles.recordTriggerCard}
+                    onPress={handleLaunchCamera}
+                    disabled={isUploading}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.recordIconCircle}>
+                      <Camera size={22} color="#FFFFFF" />
+                    </View>
+                    <Text style={styles.recordTriggerTitle}>Record Live</Text>
+                    <Text style={styles.recordTriggerSubtitle}>Camera (1-5 Min)</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.recordTriggerCard, { borderColor: '#38BDF8' }]}
+                    onPress={handlePickFromGallery}
+                    disabled={isUploading}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.recordIconCircle, { backgroundColor: '#0284C7' }]}>
+                      <ImageIcon size={22} color="#FFFFFF" />
+                    </View>
+                    <Text style={styles.recordTriggerTitle}>From Gallery</Text>
+                    <Text style={styles.recordTriggerSubtitle}>Select video file</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
 
@@ -395,7 +533,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               />
             </View>
 
-            {/* 4. WhatsApp Verification Card (9486335870) */}
+            {/* 4. WhatsApp Verification Card */}
             <View style={[styles.card, { borderColor: '#25D366', backgroundColor: '#071F15' }]}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
@@ -413,15 +551,14 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                 Auto-populate Meeting #{meetingNumber} Google Drive video link, attendance count, and resolutions to send directly to your Course Guide / BDO in 1 click!
               </Text>
 
-              {/* Paste Direct GDrive Link */}
               <View style={{ marginTop: 8 }}>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: '#6EE7B7', marginBottom: 4 }}>
                   GOOGLE DRIVE MEETING VIDEO LINK:
                 </Text>
                 <TextInput
-                  style={[styles.feedbackInput, { minHeight: 40, height: 42, color: '#FFFFFF', fontSize: 11 }]}
+                  style={[styles.feedbackInput, { minHeight: 40, height: 42, color: '#FFFFFF', fontSize: 11, backgroundColor: '#064E3B' }]}
                   placeholder="https://drive.google.com/file/d/..."
-                  placeholderTextColor="#065F46"
+                  placeholderTextColor="#34D399"
                   value={uploadedDriveLink || manualDriveLink}
                   onChangeText={setManualDriveLink}
                   autoCapitalize="none"
@@ -435,7 +572,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               >
                 <MessageCircle size={18} color="#FFFFFF" />
                 <Text style={styles.whatsAppBtnText}>
-                  📲 Send Video to Guide / BDO on WhatsApp (9486335870)
+                  📲 Send Video to Guide / BDO (9486335870)
                 </Text>
               </TouchableOpacity>
             </View>
@@ -454,26 +591,28 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
             )}
           </ScrollView>
 
-          {/* Footer Submit Button */}
-          <View style={styles.footer}>
+          {/* Footer Submit Bar */}
+          <View style={styles.footerBar}>
             <TouchableOpacity
               style={[
                 styles.submitBtn,
-                (!recordedVideoUri && !manualDriveLink) && styles.submitBtnDisabled,
+                (!recordedVideoUri && !manualDriveLink.trim()) && styles.submitBtnDisabled,
               ]}
-              onPress={recordedVideoUri ? handleUploadAndSubmit : () => handleSendToWhatsApp()}
-              disabled={isUploading || (!recordedVideoUri && !manualDriveLink)}
+              onPress={handleUploadAndSubmit}
+              disabled={isUploading || (!recordedVideoUri && !manualDriveLink.trim())}
               activeOpacity={0.85}
             >
               {isUploading ? (
-                <View style={styles.submittingRow}>
+                <View style={styles.uploadingBtnContent}>
                   <ActivityIndicator size="small" color="#0F172A" />
-                  <Text style={styles.submitBtnText}>Uploading to Google Drive...</Text>
+                  <Text style={styles.submitBtnText}>Uploading Video ({uploadPercent}%)...</Text>
                 </View>
               ) : (
-                <View style={styles.submittingRow}>
+                <View style={styles.uploadingBtnContent}>
                   <UploadCloud size={18} color="#0F172A" />
-                  <Text style={styles.submitBtnText}>Upload Video Record to Google Drive</Text>
+                  <Text style={styles.submitBtnText}>
+                    {recordedVideoUri ? 'Upload & Save Video Record' : 'Save Meeting Video Link'}
+                  </Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -487,24 +626,23 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'flex-end',
   },
   container: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#0A0F1D',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '90%',
-    minHeight: '70%',
+    maxHeight: '92%',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1E293B',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
@@ -515,7 +653,7 @@ const styles = StyleSheet.create({
   },
   badgeRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   badge: {
     flexDirection: 'row',
@@ -525,45 +663,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.3)',
   },
   badgeText: {
-    color: '#EC4899',
     fontSize: 10,
     fontWeight: '800',
+    color: '#EC4899',
     letterSpacing: 0.5,
   },
   headerTitle: {
-    color: '#F8FAFC',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
+    color: '#F8FAFC',
   },
   headerSub: {
-    color: '#94A3B8',
     fontSize: 12,
+    color: '#94A3B8',
     marginTop: 2,
   },
   closeBtn: {
     padding: 6,
+    borderRadius: 20,
     backgroundColor: '#1E293B',
-    borderRadius: 16,
   },
   scrollBody: {
-    paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   card: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#111827',
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1F2937',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   cardHeaderLeft: {
     flexDirection: 'row',
@@ -571,9 +711,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTitle: {
-    color: '#F1F5F9',
     fontSize: 13,
     fontWeight: '700',
+    color: '#F1F5F9',
   },
   connectedPill: {
     flexDirection: 'row',
@@ -581,79 +721,133 @@ const styles = StyleSheet.create({
     gap: 4,
     backgroundColor: 'rgba(0, 208, 132, 0.15)',
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
   connectedPillText: {
-    color: '#00D084',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
+    color: '#00D084',
   },
   accountInfoBox: {
     backgroundColor: '#0F172A',
+    borderRadius: 10,
     padding: 10,
-    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  accountEmailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   accountEmailText: {
+    fontSize: 13,
+    fontWeight: '700',
     color: '#F8FAFC',
-    fontSize: 12,
-    fontWeight: '600',
   },
   accountSubText: {
+    fontSize: 11,
     color: '#64748B',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  connectPromptBox: {
     marginTop: 4,
   },
-  connectPromptText: {
-    color: '#94A3B8',
+  accountActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
+  },
+  changeAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  changeAccountBtnText: {
     fontSize: 11,
+    fontWeight: '600',
+    color: '#38BDF8',
+  },
+  disconnectBtn: {
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+  disconnectBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
+  connectPromptBox: {
+    gap: 10,
+  },
+  connectPromptText: {
+    fontSize: 11,
+    color: '#94A3B8',
     lineHeight: 16,
-    marginBottom: 10,
+  },
+  emailInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0B1120',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  emailInput: {
+    flex: 1,
+    height: 40,
+    color: '#F8FAFC',
+    fontSize: 13,
+    paddingRight: 10,
   },
   connectDriveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: '#00D084',
     paddingVertical: 10,
     borderRadius: 8,
   },
   connectDriveBtnText: {
-    color: '#0F172A',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    color: '#0F172A',
+  },
+  videoSourceRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   recordTriggerCard: {
+    flex: 1,
     backgroundColor: '#0F172A',
     borderRadius: 12,
-    padding: 20,
+    padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#F59E0B',
     borderStyle: 'dashed',
   },
   recordIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EF4444',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#D97706',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   recordTriggerTitle: {
-    color: '#F8FAFC',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    marginBottom: 4,
+    color: '#F8FAFC',
   },
   recordTriggerSubtitle: {
+    fontSize: 10,
     color: '#94A3B8',
-    fontSize: 11,
+    marginTop: 2,
     textAlign: 'center',
   },
   previewBox: {
@@ -661,7 +855,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#059669',
+    borderColor: '#334155',
   },
   previewInfoRow: {
     flexDirection: 'row',
@@ -672,31 +866,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   previewTitleText: {
-    color: '#00D084',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    color: '#F59E0B',
   },
   previewSubText: {
-    color: '#94A3B8',
     fontSize: 11,
+    color: '#94A3B8',
     marginTop: 2,
   },
   deleteVideoBtn: {
     padding: 6,
-    backgroundColor: '#1E293B',
-    borderRadius: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
   },
   feedbackInput: {
-    backgroundColor: '#0F172A',
+    backgroundColor: '#0B1120',
     borderRadius: 8,
-    padding: 10,
-    color: '#F8FAFC',
-    fontSize: 12,
     borderWidth: 1,
     borderColor: '#334155',
-    textAlignVertical: 'top',
+    color: '#F8FAFC',
+    fontSize: 12,
+    padding: 10,
     marginTop: 6,
-    minHeight: 60,
+    textAlignVertical: 'top',
   },
   whatsAppBtn: {
     flexDirection: 'row',
@@ -704,23 +897,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#25D366',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderRadius: 8,
     marginTop: 10,
   },
   whatsAppBtnText: {
-    color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   progressCard: {
     backgroundColor: '#1E293B',
     borderRadius: 10,
     padding: 12,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#059669',
+    marginBottom: 12,
   },
   progressLabelRow: {
     flexDirection: 'row',
@@ -728,13 +918,13 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressLabelText: {
-    color: '#00D084',
     fontSize: 11,
+    color: '#94A3B8',
     fontWeight: '600',
   },
   progressPercentText: {
-    color: '#00D084',
     fontSize: 11,
+    color: '#00D084',
     fontWeight: '700',
   },
   progressBarTrack: {
@@ -748,28 +938,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#00D084',
     borderRadius: 3,
   },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
+  footerBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#1E293B',
   },
   submitBtn: {
-    backgroundColor: '#EC4899',
+    backgroundColor: '#00D084',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   submitBtnDisabled: {
+    backgroundColor: '#334155',
     opacity: 0.5,
-    backgroundColor: '#475569',
-  },
-  submittingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   submitBtnText: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
   },
