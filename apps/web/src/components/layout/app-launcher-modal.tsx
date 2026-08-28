@@ -118,6 +118,18 @@ export const ALL_MODULES: ModuleItem[] = [
     description: "Hyperlocal marketplace & store discounts"
   },
   {
+    id: "groupo",
+    href: "/groupo",
+    name: "GroupO",
+    tamilName: "சுயஉதவிக் குழு",
+    category: "commerce",
+    icon: Users,
+    color: "text-purple-400",
+    bgGradient: "from-purple-500/20 to-violet-500/10 border-purple-500/30",
+    badge: "Community",
+    description: "SHG & Village Ecosystem Management"
+  },
+  {
     id: "touro",
     href: "/touro",
     name: "TourO",
