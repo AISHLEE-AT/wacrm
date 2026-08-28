@@ -4,7 +4,7 @@ import { Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // Admin phone numbers (same as web app)
-export const ADMIN_PHONES = ['6381029380', '9486335870'];
+export const ADMIN_PHONES = ['9486335870'];
 
 export interface AppUser {
   id?: string;
@@ -788,7 +788,7 @@ export const AppProvider = ({ children }: any) => {
   }, [lastWhatsAppSync]);
 
   const renewWhatsAppWindow = useCallback(async (customMsg?: string) => {
-    const waba = '916381029380';
+    const waba = '919486335870';
     const locSnippet = user?.location ? ` (Location: ${user.location})` : '';
     const msg = customMsg || `Hi SuprO, keep my 24h WhatsApp notification window active 🔔${locSnippet}`;
     const url = `whatsapp://send?phone=${waba}&text=${encodeURIComponent(msg)}`;

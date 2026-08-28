@@ -117,7 +117,7 @@ export async function POST(request: Request) {
 
     // ── 3b. Sync profile to profiles table (same as verify-otp) ─────
     const phoneDigitsClean = phoneDigits.replace(/^91/, '').slice(-10)
-    const adminPhones = ['6381029380']
+    const adminPhones = ['9486335870']
     const adminEmails = ['aishleetechnology@gmail.com']
     const isAdmin = adminPhones.includes(phoneDigitsClean) || adminEmails.includes(user.email || '')
 

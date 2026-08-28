@@ -62,7 +62,7 @@ function LoginPageInner() {
   // Steps: 'phone' → 'otp' → 'set-pin' (if no PIN set) → done
   //        'phone' → 'pin' (fallback)
   const [step, setStep] = useState<'phone' | 'otp' | 'set-pin' | 'pin'>('phone');
-  const [wabaPhone, setWabaPhone] = useState("916381029380");
+  const [wabaPhone, setWabaPhone] = useState("919486335870");
 
   const supabase = createClient();
 
@@ -74,7 +74,7 @@ function LoginPageInner() {
         let isDriver = false;
         let isAdmin = false;
 
-        const isBootstrapAdmin = ['6381029380', '9486335870'].some(num => cleanPhone.includes(num));
+        const isBootstrapAdmin = ['9486335870'].some(num => cleanPhone.includes(num));
 
         if (cleanPhone) {
           const { data: driverData } = await supabase

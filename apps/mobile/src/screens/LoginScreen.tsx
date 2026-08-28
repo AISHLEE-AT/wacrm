@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }: any) {
   
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [wabaPhone, setWabaPhone] = useState('916381029380');
+  const [wabaPhone, setWabaPhone] = useState('919486335870');
   const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
 
   // Daily Deepam Video Player states

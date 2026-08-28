@@ -281,7 +281,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {/* CRM Section — STRICTLY Only Visible to 6381029380 / aishleetechnology@gmail.com */}
+          {/* CRM Section — STRICTLY Only Visible to 9486335870 / aishleetechnology@gmail.com */}
           {isAdmin && (
             <>
               <div className="px-3 mb-2 mt-2">
@@ -370,7 +370,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
 
 
-          {/* Administration Section — STRICTLY Only Visible to 6381029380 / aishleetechnology@gmail.com */}
+          {/* Administration Section — STRICTLY Only Visible to 9486335870 / aishleetechnology@gmail.com */}
           {isAdmin && (
             <>
               <div className="px-3 mb-2 mt-4">

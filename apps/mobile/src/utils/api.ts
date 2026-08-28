@@ -130,9 +130,9 @@ export const API = {
     try {
       const res = await fetch(endpoints.authWaba);
       const data = await res.json();
-      return data.phone || "916381029380"; // Fallback just in case
+      return data.phone || "919486335870"; // Fallback just in case
     } catch (e) {
-      return "916381029380";
+      return "919486335870";
     }
   },
 

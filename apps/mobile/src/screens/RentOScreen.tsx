@@ -506,7 +506,7 @@ export default function RentOScreen({ navigation }) {
       {
         id: 'op4',
         name: 'Tamil Nadu Tour & Taxi',
-        phone: '916381029380',
+        phone: '919486335870',
         vehicle: 'Toyota Innova Crysta / Ertiga (AC)',
         category: 'tour',
         icon: '🚕',

@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const isAdmin =
       profile?.role === "admin" ||
-      ["6381029380", "9486335870"].includes(profile?.phone || "") ||
+      ["9486335870"].includes(profile?.phone || "") ||
       profile?.email === "aishleetechnology@gmail.com";
 
     if (!isAdmin) {

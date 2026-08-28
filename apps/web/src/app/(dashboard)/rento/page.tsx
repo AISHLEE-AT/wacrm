@@ -75,7 +75,7 @@ export default function RentOPage() {
       `*Location:* ${bookingLocation || 'Thanjavur / Tamil Nadu'}\n\n` +
       `Hi, I would like to book this via SuprO RentO. Please confirm operator availability!`;
 
-    window.open(`https://wa.me/916381029380?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/919486335870?text=${encodeURIComponent(text)}`, '_blank');
     setSelectedItem(null);
   };
 

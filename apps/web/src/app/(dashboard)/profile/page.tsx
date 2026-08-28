@@ -206,12 +206,12 @@ function ProfilePageInner() {
 
   const isAdmin = Boolean(
     activeProfile?.email?.includes("aishleetechnology@gmail.com") ||
-    activeProfile?.email?.includes("6381029380") ||
-    activeProfile?.phone?.includes("6381029380") ||
+    activeProfile?.email?.includes("9486335870") ||
+    activeProfile?.phone?.includes("9486335870") ||
     activeProfile?.phone?.includes("9486335870") ||
     user?.email?.includes("aishleetechnology@gmail.com") ||
-    user?.email?.includes("6381029380") ||
-    user?.phone?.includes("6381029380") ||
+    user?.email?.includes("9486335870") ||
+    user?.phone?.includes("9486335870") ||
     user?.phone?.includes("9486335870")
   );
 
@@ -247,7 +247,7 @@ function ProfilePageInner() {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'profiles' },
             (payload: any) => {
-              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("6381029380") || payload.new.phone?.includes("9486335870"))) {
+              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("9486335870"))) {
                 setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
                 if (payload.new.upi_id) setUpiIdState(payload.new.upi_id);
                 if (payload.new.location) setLocationState(payload.new.location);
@@ -346,7 +346,7 @@ function ProfilePageInner() {
     const name = activeProfile?.full_name || 'Driver Partner';
     const vehicle = driverProfile?.vehicle_number || driverProfile?.vehicle_registration || 'Vehicle';
     const text = `Hello Admin! I have registered as a DriveO Driver Partner (Name: ${name}, Vehicle: ${vehicle}). Please verify my driver account.`;
-    const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '916381029380';
+    const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '919486335870';
     return `https://api.whatsapp.com/send?phone=${supportPhone}&text=${encodeURIComponent(text)}`;
   };
 
@@ -497,7 +497,7 @@ function ProfilePageInner() {
 
           <button
             onClick={() => {
-              window.open('https://wa.me/916381029380?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
+              window.open('https://wa.me/919486335870?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
             }}
             className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
           >
@@ -938,7 +938,7 @@ function ProfilePageInner() {
   );
 
   const renderDigitalId = () => {
-    const idHash = (profile as any)?.digital_id_hash || `FAGO-TN-${displayPhone.replace(/\D/g, '') || user?.id || '6381029380'}`;
+    const idHash = (profile as any)?.digital_id_hash || `FAGO-TN-${displayPhone.replace(/\D/g, '') || user?.id || '9486335870'}`;
     const qrData = `https://watscrm.vercel.app/profile?id=${idHash}`;
 
     return (

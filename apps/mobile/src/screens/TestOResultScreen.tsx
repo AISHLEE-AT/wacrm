@@ -104,7 +104,7 @@ export default function TestOResultScreen() {
   };
 
   const handleContactTeacherWhatsApp = () => {
-    const adminPhone = '916381029380';
+    const adminPhone = '919486335870';
     const msg = `Hello Teacher / SuprO Admin,\n\nI just completed the TestO exam *${testTitle}*.\n📊 My Score: ${score} Marks (${percentage}% Accuracy)\n✅ Correct: ${correctCount} | ❌ Incorrect: ${incorrectCount}\n\nPlease guide me on resolving my doubts and improving my score for this topic.\n\nThank you!`;
     const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
     Linking.openURL(webLink).catch(() => {});
