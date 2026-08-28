@@ -90,20 +90,11 @@ interface NavItem {
 }
 
 const crmItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/pipelines", label: "Pipelines", icon: GitBranch },
-  { href: "/broadcasts", label: "Broadcasts", icon: Radio },
-  { href: "/automations", label: "Automations", icon: Zap },
-  { href: "/flows", label: "Flows", icon: Workflow, beta: true },
+  { href: "/admin/tuto", label: "TutO Admin", icon: GraduationCap },
+  { href: "/groupo", label: "GroupO Admin", icon: Users },
 ];
 
 const adminItems: NavItem[] = [
-  { href: "/admin", label: "Admin Overview", icon: Shield },
-  { href: "/admin/demands", label: "Student Demands", icon: TrendingUp },
-  { href: "/admin/drivers", label: "Manage Drivers", icon: Car },
-  { href: "/admin/providers", label: "Manage Providers", icon: UsersRound },
 ];
 
 const bottomNavItems = [
@@ -285,7 +276,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           {isAdmin && (
             <>
               <div className="px-3 mb-2 mt-2">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">WAPP CRM</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Admin</h3>
               </div>
               <ul className="flex flex-col gap-1">
                 {crmItems.map((item) => {
@@ -368,41 +359,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             })}
           </ul>
 
-
-
-          {/* Administration Section — STRICTLY Only Visible to 9486335870 / aishleetechnology@gmail.com */}
-          {isAdmin && (
-            <>
-              <div className="px-3 mb-2 mt-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administration</h3>
-              </div>
-              <ul className="flex flex-col gap-1">
-                {adminItems.map((item) => {
-                  const isActive =
-                    item.href === "/admin"
-                      ? pathname === "/admin"
-                      : pathname.startsWith(item.href);
-
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:py-2",
-                          isActive
-                            ? "bg-primary/15 text-primary shadow-[0_0_15px_var(--color-primary-soft)] border border-primary/20"
-                            : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                        )}
-                      >
-                        <item.icon className="h-4 w-4" />
-                        <span className="flex-1">{item.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
 
           <div className="my-4 border-t border-border" />
 

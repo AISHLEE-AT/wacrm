@@ -51,7 +51,7 @@ const tabOpts = (title: string, Icon: any) => ({
 });
 
 // ─── Admin Bottom Tabs ─────────────────────────────────────────────────────
-// Admin sees: Grid | WhatsApp CRM Inbox | Admin Dashboard | AI Assistant | Profile
+// Admin sees: TutO Admin | GroupO Admin | AI Assistant | Profile
 function AdminTabs() {
   const { themeVer } = useContext(AppContext);
   return (
@@ -67,37 +67,28 @@ function AdminTabs() {
         tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
-      {/* 1. Grid — all modules */}
+      {/* 1. TutO Admin — Content Studio & CMS */}
       <Tab.Screen
-        name="Category"
-        component={CategoryScreen}
-        options={tabOpts('Grid', LayoutGrid)}
+        name="TutOAdmin"
+        component={TutOAdminScreen}
+        options={tabOpts('TutO Admin', GraduationCap)}
       />
 
-      {/* 2. WhatsApp CRM Inbox — admin only */}
+      {/* 2. GroupO Admin — SHG & Village Ecosystem */}
       <Tab.Screen
-        name="WhatsApp"
-        component={EcosystemWebView}
-        initialParams={{ path: '/inbox', moduleName: 'WhatsApp CRM' }}
-        options={tabOpts('CRM Inbox', MessageSquare)}
+        name="GroupOAdmin"
+        component={GroupOScreen}
+        options={tabOpts('GroupO', Users)}
       />
 
-      {/* 3. Admin Overview Panel */}
-      <Tab.Screen
-        name="AdminPanel"
-        component={EcosystemWebView}
-        initialParams={{ path: '/admin', moduleName: 'Admin Panel' }}
-        options={tabOpts('Admin', Shield)}
-      />
-
-      {/* 4. AI Assistant */}
+      {/* 3. AI Assistant */}
       <Tab.Screen
         name="AIBot"
         component={AishleeToolsScreen}
         options={tabOpts('AI Hub', Bot)}
       />
 
-      {/* 5. Profile */}
+      {/* 4. Profile */}
       <Tab.Screen
         name="DashboardTab"
         component={DashboardScreen}

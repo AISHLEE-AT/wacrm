@@ -146,7 +146,7 @@ export async function middleware(request: NextRequest) {
         }
 
         if (isAdmin) {
-          defaultModule = '/admin'
+          defaultModule = '/admin/tuto'
         } else if (isDriver) {
           defaultModule = '/drivo'
         } else {

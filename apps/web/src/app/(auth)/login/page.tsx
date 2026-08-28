@@ -20,7 +20,7 @@ export default function LoginPage() {
 }
 
 const CATEGORIES = [
-  { key: 'Admin',      label: '👑 Admin (CRM & All Modules)', route: '/admin' },
+  { key: 'Admin',      label: '👑 Admin (TutO & GroupO)', route: '/admin/tuto' },
   { key: 'Traveller',  label: '🧳 Traveller (RideO)',     route: '/rideo' },
   { key: 'Farmer',    label: '🚜 Farmer (RentO Agri)',   route: '/rento' },
   { key: 'Shopper',   label: '🛍️ Shopper (DealO)',       route: '/dealo' },
@@ -102,7 +102,7 @@ function LoginPageInner() {
         }
 
         if (isAdmin) {
-          router.replace('/admin');
+          router.replace('/admin/tuto');
         } else if (isDriver) {
           router.replace('/drivo');
         } else {
