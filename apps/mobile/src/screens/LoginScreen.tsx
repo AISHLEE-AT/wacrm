@@ -114,12 +114,12 @@ export default function LoginScreen({ navigation }: any) {
 
             if (result.success) {
               await SecureStore.setItemAsync('onboarding-complete', 'true');
-              navigation.replace('Dashboard');
+              navigation.replace('OnboardingModule');
               return;
             }
           } else {
             await SecureStore.setItemAsync('onboarding-complete', 'true');
-            navigation.replace('Dashboard');
+            navigation.replace('OnboardingModule');
             return;
           }
         }
@@ -225,7 +225,7 @@ export default function LoginScreen({ navigation }: any) {
     if (savedToken && isExistingUser) {
       setTimeout(async () => {
         await SecureStore.setItemAsync('onboarding-complete', 'true');
-        navigation.replace('Dashboard');
+        navigation.replace('OnboardingModule');
       }, 200);
     } else {
       setStep('otp');
@@ -275,7 +275,7 @@ export default function LoginScreen({ navigation }: any) {
         setStep('set-pin');
       } else {
         setTimeout(async () => {
-          navigation.replace('Dashboard');
+          navigation.replace('OnboardingModule');
         }, 100);
       }
     } catch (err: any) {
@@ -295,7 +295,7 @@ export default function LoginScreen({ navigation }: any) {
       await API.setPin(phone, newPin, confirmPin);
       await SecureStore.setItemAsync('onboarding-complete', 'true');
       setTimeout(async () => {
-        navigation.replace('Dashboard');
+        navigation.replace('OnboardingModule');
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Failed to save PIN');
@@ -351,7 +351,7 @@ export default function LoginScreen({ navigation }: any) {
 
       // Direct navigation to Dashboard
       setTimeout(async () => {
-        navigation.replace('Dashboard');
+        navigation.replace('OnboardingModule');
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Login failed');

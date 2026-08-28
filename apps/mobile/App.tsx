@@ -14,7 +14,6 @@ import {
 } from 'lucide-react-native';
 
 import LoginScreen      from './src/screens/LoginScreen';
-import CategoryScreen   from './src/screens/CategoryScreen';
 import DashboardScreen  from './src/screens/DashboardScreen';
 import EcosystemWebView from './src/screens/EcosystemWebView';
 import DriveOScreen     from './src/screens/DriveOScreen';
@@ -244,7 +243,7 @@ function RootNavigator() {
     );
   }
 
-  const initialRoute = user?.phone ? 'Dashboard' : 'Login';
+  const initialRoute = user?.phone ? 'OnboardingModule' : 'Login';
 
   return (
     <Stack.Navigator

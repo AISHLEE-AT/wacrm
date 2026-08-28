@@ -1,56 +1,47 @@
 // @ts-nocheck
 import React, { useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { CheckCircle } from 'lucide-react-native';
+import { Car, Truck, Store, GraduationCap, Wrench, Users, Compass, Shield } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../lib/supabase';
 import { AppContext } from '../context/AppContext';
 
-const MODULES = [
-  { id: '/rideo', name: 'RideO' },
-  { id: '/drivo', name: 'DriveO' },
-  { id: '/dealo', name: 'DealO' },
-  { id: '/teacho', name: 'TeachO' },
-  { id: '/rento', name: 'RentO' },
-  { id: '/agro', name: 'AgrO' },
-  { id: '/touro', name: 'TourO' },
-  { id: '/testo', name: 'TestO' },
-  { id: '/moneyo', name: 'MoneyO' },
-  { id: '/gameo', name: 'GameO' }
+const CATEGORIES = [
+  { id: 'Traveller', name: 'RideO', label: 'Passenger', icon: Car, color: '#34d399' },
+  { id: 'Driver', name: 'DriveO', label: 'Driver', icon: Truck, color: '#38bdf8' },
+  { id: 'Student', name: 'TutO', label: 'Student', icon: GraduationCap, color: '#818cf8' },
+  { id: 'Farmer', name: 'AgrO & RentO', label: 'Farmer', icon: Wrench, color: '#fbbf24' },
+  { id: 'Shopper', name: 'DealO', label: 'Shopper', icon: Store, color: '#f472b6' },
+  { id: 'Group', name: 'GroupO', label: 'SHG Member', icon: Users, color: '#c084fc' },
+  { id: 'Tourist', name: 'TourO', label: 'Tourist', icon: Compass, color: '#22d3ee' }
 ];
 
 export default function OnboardingModuleScreen({ navigation }: any) {
-  const { user, setSelectedModule } = useContext(AppContext);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { user, setUser } = useContext(AppContext);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const handleFinish = async () => {
-    if (!selected) {
-      Alert.alert('Selection Required', 'Please select a primary module.');
-      return;
-    }
-
-    setLoading(true);
+  const handleSelect = async (categoryId: string) => {
+    setLoadingId(categoryId);
     try {
-      await SecureStore.setItemAsync('user-selected-module', selected);
-      await SecureStore.setItemAsync('onboarding-complete', 'true');
+      await SecureStore.setItemAsync('user-role', categoryId); // We use role/category interchangeably for now
       
+      // Update in local context instantly
+      if (user) {
+        setUser({ ...user, category: categoryId });
+      }
+
       if (user?.phone) {
+        const clean = user.phone.replace(/\D/g, '').slice(-10);
         await supabase.from('profiles').update({ 
-          selected_module: selected,
-          onboarding_complete: true
-        }).eq('phone', user.phone);
+          category: categoryId,
+        }).ilike('phone', `%${clean}%`);
       }
 
-      if (setSelectedModule) {
-        setSelectedModule(selected);
-      }
-
+      // Navigate instantly to dashboard where bottom tabs will read the new category
       navigation.replace('Dashboard');
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to save preference');
-    } finally {
-      setLoading(false);
+      Alert.alert('Error', err.message || 'Failed to switch module');
+      setLoadingId(null);
     }
   };
 
@@ -58,83 +49,73 @@ export default function OnboardingModuleScreen({ navigation }: any) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Choose Your Module</Text>
-          <Text style={styles.subtitle}>Select the primary service you'll use.</Text>
+          <Text style={styles.title}>Welcome to SuprO</Text>
+          <Text style={styles.subtitle}>Select what you need to do right now. You can change this anytime.</Text>
         </View>
 
         <View style={styles.grid}>
-          {MODULES.map((mod) => {
-            const isSelected = selected === mod.id;
+          {CATEGORIES.map((cat) => {
+            const isLoading = loadingId === cat.id;
+            const Icon = cat.icon;
+            
             return (
               <TouchableOpacity
-                key={mod.id}
-                style={[styles.card, isSelected && styles.cardSelected]}
-                onPress={() => setSelected(mod.id)}
+                key={cat.id}
+                style={[styles.card, { borderColor: cat.color + '40' }]}
+                onPress={() => handleSelect(cat.id)}
+                disabled={loadingId !== null}
               >
-                <Text style={[styles.cardText, isSelected && styles.cardTextSelected]}>{mod.name}</Text>
-                {isSelected && (
-                  <View style={styles.checkIcon}>
-                    <CheckCircle color="#10b981" size={20} />
-                  </View>
+                {isLoading ? (
+                  <ActivityIndicator color={cat.color} size="large" />
+                ) : (
+                  <>
+                    <View style={[styles.iconWrapper, { backgroundColor: cat.color + '20' }]}>
+                      <Icon color={cat.color} size={32} />
+                    </View>
+                    <Text style={[styles.cardText, { color: cat.color }]}>{cat.name}</Text>
+                    <Text style={styles.cardLabel}>{cat.label}</Text>
+                  </>
                 )}
               </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.primaryButton, (!selected || loading) && styles.disabledButton]} 
-          onPress={handleFinish}
-          disabled={!selected || loading}
-        >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Finish Setup</Text>}
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0f1e' },
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  header: { marginBottom: 30, marginTop: 40 },
-  title: { fontSize: 32, fontWeight: '900', color: '#34d399', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#94a3b8' },
+  scrollContent: { padding: 20, paddingBottom: 60, paddingTop: 60 },
+  header: { marginBottom: 40 },
+  title: { fontSize: 32, fontWeight: '900', color: '#fff', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#94a3b8', lineHeight: 24 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   card: { 
-    width: '48%', 
+    width: '47%', 
     backgroundColor: '#111827', 
-    borderRadius: 16, 
+    borderRadius: 20, 
     padding: 20, 
     marginBottom: 16, 
-    borderWidth: 1, 
-    borderColor: 'rgba(52,211,153,0.1)',
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-    height: 100
+    height: 140,
   },
-  cardSelected: {
-    borderColor: '#34d399',
-    backgroundColor: 'rgba(52,211,153,0.1)'
+  iconWrapper: {
+    padding: 12,
+    borderRadius: 100,
+    marginBottom: 12
   },
   cardText: {
-    color: '#94a3b8',
-    fontSize: 16,
-    fontWeight: 'bold'
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4
   },
-  cardTextSelected: {
-    color: '#34d399'
-  },
-  checkIcon: {
-    position: 'absolute',
-    top: 8,
-    right: 8
-  },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#0a0f1e', borderTopWidth: 1, borderTopColor: 'rgba(52,211,153,0.1)' },
-  primaryButton: { backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center' },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  disabledButton: { opacity: 0.5 },
+  cardLabel: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '600'
+  }
 });
