@@ -851,7 +851,7 @@ async function processMessage(
   // -- WELCOME AUTO-REPLY HOOK --
   if (isFirstInboundMessage && contentText?.trim().toLowerCase() === 'hi') {
     const reactUrl = 'https://watscrm.vercel.app'
-    const apkUrl = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL || 'https://672098863d97ed3208c7c47a8091e5dd.r2.cloudflarestorage.com/teacho-course-assets') + '/supro-app.apk'
+    const apkUrl = 'https://watscrm.vercel.app/api/download/app'
     
     // Fire and forget to not block webhook response
     ;(async () => {
@@ -883,7 +883,7 @@ async function processMessage(
   // -- APP LINK AUTO-REPLY HOOK --
   if (contentText?.trim().toLowerCase() === 'app') {
     const reactUrl = 'https://watscrm.vercel.app'
-    const apkUrl = (process.env.NEXT_PUBLIC_R2_PUBLIC_URL || 'https://672098863d97ed3208c7c47a8091e5dd.r2.cloudflarestorage.com/teacho-course-assets') + '/supro-app.apk'
+    const apkUrl = 'https://watscrm.vercel.app/api/download/app'
     
     // Fire and forget to not block webhook response
     ;(async () => {
