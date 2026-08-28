@@ -158,15 +158,21 @@ export function shareLocationWhatsApp(lat, lng, message = '') {
   });
 }
 
-// ─── WHATSAPP TO SPECIFIC PHONE (FREE — deep link) ───
+// 💬 WHATSAPP TO SPECIFIC PHONE (FREE 👉 deep link) 💬
 export function whatsappToPhone(phone, message = '') {
-  const cleanPhone = phone?.replace(/\D/g, '') || '';
-  const waPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+  let cleanPhone = phone?.replace(/\D/g, '') || '';
+  // If exactly 10 digits, it's an Indian mobile without country code.
+  const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
   const url = message
     ? `whatsapp://send?phone=${waPhone}&text=${encodeURIComponent(message)}`
     : `whatsapp://send?phone=${waPhone}`;
-  Linking.openURL(url).catch(() => {
-    Alert.alert('WhatsApp not available', 'Please install WhatsApp.');
+
+  Linking.canOpenURL(url).then(supported => {
+    if (supported) {
+      Linking.openURL(url);
+    } else {
+      Alert.alert('WhatsApp Not Installed', 'Please install WhatsApp to send messages.');
+    }
   });
 }
 
@@ -198,7 +204,7 @@ export async function fetchOSRMRoute(pickupLat, pickupLng, dropoffLat, dropoffLn
 // ─── FORMAT PHONE FOR WHATSAPP ───
 export function formatPhoneForWhatsApp(phone) {
   const clean = phone?.replace(/\D/g, '') || '';
-  return clean.startsWith('91') ? clean : `91${clean}`;
+  return clean.length === 10 ? `91${clean}` : clean;
 }
 
 // ─── PAY VIA UPI (FREE — deep link to UPI apps) ───
