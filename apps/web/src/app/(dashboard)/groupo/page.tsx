@@ -196,11 +196,11 @@ export default function GroupOWebPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={\`flex items-center gap-2 px-5 py-3 rounded-xl font-bold whitespace-nowrap transition-colors \${
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold whitespace-nowrap transition-colors ${
               activeTab === tab.id 
                 ? 'bg-pink-600 text-white shadow-md' 
                 : 'bg-white text-gray-600 hover:bg-pink-50'
-            }\`}
+            }`}
           >
             <tab.icon className="w-5 h-5" />
             {tab.label}

@@ -59,7 +59,7 @@ export default function TutOWebPage() {
           const matched = ALL_COURSES.find(c => c.id === savedCourseId);
           if (matched) course = matched;
           
-          const savedBoard = window.localStorage.getItem(\`tuto_selected_board_\${savedCourseId}\`);
+          const savedBoard = window.localStorage.getItem(`tuto_selected_board_${savedCourseId}`);
           if (savedBoard) board = savedBoard as SchoolBoard;
         }
       }
@@ -82,7 +82,7 @@ export default function TutOWebPage() {
     let board: SchoolBoard = 'TNSB';
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('tuto_active_course_id', course.id);
-      const savedBoard = window.localStorage.getItem(\`tuto_selected_board_\${course.id}\`);
+      const savedBoard = window.localStorage.getItem(`tuto_selected_board_${course.id}`);
       if (savedBoard) board = savedBoard as SchoolBoard;
     }
     
@@ -172,14 +172,14 @@ export default function TutOWebPage() {
                 <div 
                   key={day.dayNumber}
                   onClick={() => handleOpenDay(day.dayNumber)}
-                  className={\`border-2 rounded-2xl p-4 cursor-pointer transition-transform hover:scale-[1.02] \${
+                  className={`border-2 rounded-2xl p-4 cursor-pointer transition-transform hover:scale-[1.02] ${
                     isDone 
                       ? 'border-green-200 bg-green-50/50' 
                       : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm'
-                  }\`}
+                  }`}
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <div className={\`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg \${isDone ? 'bg-green-200 text-green-700' : 'bg-indigo-100 text-indigo-700'}\`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${isDone ? 'bg-green-200 text-green-700' : 'bg-indigo-100 text-indigo-700'}`}>
                       D{day.dayNumber}
                     </div>
                     {isDone ? (
