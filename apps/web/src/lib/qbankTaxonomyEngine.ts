@@ -10,7 +10,8 @@
  *   7. 2 Lakh+ Live Cloud Mapping (47,716 Topics in Supabase kindle_content_cache)
  */
 
-import { aishleeSupabase } from '../services/aishleeSupabase';
+import { createClient } from '@/lib/supabase/client';
+const aishleeSupabase = createClient();
 
 export type QuestionFormat =
   | 'single_choice'

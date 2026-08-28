@@ -19,7 +19,8 @@ const AsyncStorage = {
   }
 };
 
-import { supabase } from '../lib/supabase';
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 
 export interface DailySubjectTask {
   title: string;
