@@ -404,7 +404,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                   <HardDrive size={18} color={driveAccount.isConnected ? '#00D084' : '#38BDF8'} />
                   <Text style={styles.cardTitle}>Google Drive Cloud Storage</Text>
                 </View>
-                {driveAccount.isConnected && !isEditingGmail && (
+                {driveAccount.isConnected && (
                   <View style={styles.connectedPill}>
                     <CheckCircle2 size={12} color="#00D084" />
                     <Text style={styles.connectedPillText}>Mapped</Text>
@@ -414,7 +414,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
 
               {isLoadingAccount ? (
                 <ActivityIndicator size="small" color="#00D084" style={{ marginVertical: 8 }} />
-              ) : driveAccount.isConnected && !isEditingGmail ? (
+              ) : driveAccount.isConnected ? (
                 <View style={styles.accountInfoBox}>
                   <View style={styles.accountEmailRow}>
                     <Mail size={16} color="#00D084" />
@@ -423,13 +423,6 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                   <Text style={styles.accountSubText}>Target Folder: 📁 SuprO GroupO - {groupName}</Text>
                   
                   <View style={styles.accountActionRow}>
-                    <TouchableOpacity
-                      style={styles.changeAccountBtn}
-                      onPress={() => setIsEditingGmail(true)}
-                    >
-                      <RefreshCw size={12} color="#38BDF8" />
-                      <Text style={styles.changeAccountBtnText}>Switch Gmail Account</Text>
-                    </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.disconnectBtn}
                       onPress={handleDisconnectDrive}
@@ -441,36 +434,25 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               ) : (
                 <View style={styles.connectPromptBox}>
                   <Text style={styles.connectPromptText}>
-                    Enter your Gmail address to map your Google Drive cloud storage for group meeting recordings:
+                    1-Click map your default mobile Google Account to automatically upload meeting records.
                   </Text>
                   
-                  <View style={styles.emailInputWrapper}>
-                    <Mail size={16} color="#94A3B8" style={{ marginLeft: 10, marginRight: 6 }} />
-                    <TextInput
-                      style={styles.emailInput}
-                      placeholder="your_name@gmail.com"
-                      placeholderTextColor="#64748B"
-                      value={gmailInput}
-                      onChangeText={setGmailInput}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </View>
-
                   <TouchableOpacity
-                    style={styles.connectDriveBtn}
-                    onPress={handleConnectGoogleDrive}
+                    style={[styles.primaryBtn, { backgroundColor: '#38BDF8', marginTop: 12 }]}
+                    onPress={() => {
+                      const defaultEmail = user?.email || (user?.phone ? user.phone.replace(/\D/g, '').slice(-10) + '@gmail.com' : 'user@gmail.com');
+                      setGmailInput(defaultEmail);
+                      // Give state time to update
+                      setTimeout(() => handleConnectGoogleDrive(), 100);
+                    }}
                     disabled={isConnectingDrive}
                   >
                     {isConnectingDrive ? (
-                      <ActivityIndicator size="small" color="#0F172A" />
+                      <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <>
-                        <UploadCloud size={16} color="#0F172A" />
-                        <Text style={styles.connectDriveBtnText}>
-                          {driveAccount.isConnected ? 'Save Mapped Account' : 'Map Google Drive Storage'}
-                        </Text>
+                        <Sparkles size={16} color="#FFFFFF" />
+                        <Text style={styles.primaryBtnText}>1-Click Map Default Google Account</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -478,8 +460,8 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               )}
             </View>
 
-            {/* 2. In-App Video Recorder & Gallery Selector */}
-            <View style={styles.card}>
+            {/* 2. In-App Video Recorder */}
+            <View style={[styles.card, { borderColor: '#F59E0B' }]}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                   <Video size={18} color="#F59E0B" />
@@ -509,33 +491,17 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                   </View>
                 </View>
               ) : (
-                <View style={styles.videoSourceRow}>
-                  <TouchableOpacity
-                    style={styles.recordTriggerCard}
-                    onPress={handleLaunchCamera}
-                    disabled={isUploading}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.recordIconCircle}>
-                      <Camera size={22} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.recordTriggerTitle}>Record Live</Text>
-                    <Text style={styles.recordTriggerSubtitle}>Camera (1-5 Min)</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.recordTriggerCard, { borderColor: '#38BDF8' }]}
-                    onPress={handlePickFromGallery}
-                    disabled={isUploading}
-                    activeOpacity={0.8}
-                  >
-                    <View style={[styles.recordIconCircle, { backgroundColor: '#0284C7' }]}>
-                      <ImageIcon size={22} color="#FFFFFF" />
-                    </View>
-                    <Text style={styles.recordTriggerTitle}>From Gallery</Text>
-                    <Text style={styles.recordTriggerSubtitle}>Select video file</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { backgroundColor: '#EF4444', height: 64, marginTop: 10 }]}
+                  onPress={handleLaunchCamera}
+                  disabled={isUploading}
+                  activeOpacity={0.8}
+                >
+                  <Video size={24} color="#FFFFFF" />
+                  <Text style={[styles.primaryBtnText, { fontSize: 18, marginLeft: 12 }]}>
+                    Start Meeting & Auto Record 🔴
+                  </Text>
+                </TouchableOpacity>
               )}
             </View>
 
