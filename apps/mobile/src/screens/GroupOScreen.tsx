@@ -231,6 +231,11 @@ export default function GroupOScreen({ navigation }: any) {
       setAllSystemGroups((prev) => [mapped, ...prev]);
     }
     setSelectedGroup(mapped);
+    setIsCreateGroupOpen(false);
+
+    // Also fetch the user status so they have leader permissions immediately
+    const status = await GroupRepository.getUserGroupStatus(user?.phone || '');
+    setUserStatus(status);
   };
 
   // 1-Click WhatsApp Group Call

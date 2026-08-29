@@ -15,8 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Users,
   Building,
-  Plus,
-  Trash2,
   CheckCircle2,
   X,
   ArrowRight,
@@ -52,7 +50,7 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
   const insets = useSafeAreaInsets();
   const { user } = useContext(AppContext);
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Step 1: Basics
@@ -71,51 +69,15 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
   const [monthlySavings, setMonthlySavings] = useState('500');
   const [meetingSchedule, setMeetingSchedule] = useState('Every Month 5th & 20th');
 
-  // Step 3: Members
-  const [members, setMembers] = useState<NewMemberDraft[]>([
-    { id: '1', name: '', phone: '', role: 'Member' }
-  ]);
-
   const handleSelectCategory = (cat: typeof groupCategory, label: string) => {
     setGroupCategory(cat);
     setCategoryLabel(label);
-  };
-
-  const handleAddMemberRow = () => {
-    setMembers([
-      ...members,
-      {
-        id: `m-${Date.now()}`,
-        name: '',
-        phone: '',
-        role: 'Member',
-      },
-    ]);
-  };
-
-  const handleUpdateMember = (id: string, field: keyof NewMemberDraft, value: string) => {
-    setMembers(members.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
-  };
-
-  const handleRemoveMember = (id: string) => {
-    if (members.length <= 1) {
-      Alert.alert('Notice', 'At least 1 member is required.');
-      return;
-    }
-    setMembers(members.filter((m) => m.id !== id));
   };
 
   const handleSubmitGroup = async () => {
     if (!groupName.trim()) {
       Alert.alert('Required', 'Please enter a Group Name.');
       setStep(1);
-      return;
-    }
-
-    const validMembers = members.filter((m) => m.name.trim() && m.phone.trim());
-    if (validMembers.length === 0) {
-      Alert.alert('Members Required', 'Please add at least 1 group member with a phone number.');
-      setStep(3);
       return;
     }
 
@@ -143,12 +105,12 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
         bankName: bankName.trim(),
         bankAccount: bankAccount.trim(),
         monthlySavings: parseFloat(monthlySavings) || 500,
-        members: validMembers,
+        members: [],
       });
 
       Alert.alert(
         '🎉 Group Successfully Created!',
-        `"${createdGroup.name}" is now live! All ${validMembers.length + 1} members' phone numbers are auto-linked.\n\nWhen they log into SuprO, they will automatically see their linked Group Passbook!`,
+        `"${createdGroup.name}" is now live!\n\nYou can now add members to your group from the Admin Console inside the UI.`,
         [
           {
             text: 'Open Group Dashboard',
@@ -179,7 +141,7 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
                 <Text style={styles.badgeText}>GROUP REGISTRATION WIZARD</Text>
               </View>
               <Text style={styles.title}>புதிய குழு பதிவு (Create Group)</Text>
-              <Text style={styles.subText}>Step {step} of 3 • {step === 1 ? 'அடிப்படை விவரங்கள்' : step === 2 ? 'வங்கி & சேமிப்பு' : 'உறுப்பினர்கள் சேர்த்தல்'}</Text>
+              <Text style={styles.subText}>Step {step} of 2 • {step === 1 ? 'அடிப்படை விவரங்கள்' : 'வங்கி & சேமிப்பு'}</Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <X size={20} color="#94A3B8" />
@@ -189,10 +151,8 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
           {/* Step Progress Bar */}
           <View style={styles.progressRow}>
             <View style={[styles.progressDot, step >= 1 && styles.progressDotActive]} />
-            <View style={[styles.progressLine, step >= 2 && styles.progressLineActive]} />
+            <View style={[styles.progressLine, { width: 64 }, step >= 2 && styles.progressLineActive]} />
             <View style={[styles.progressDot, step >= 2 && styles.progressDotActive]} />
-            <View style={[styles.progressLine, step >= 3 && styles.progressLineActive]} />
-            <View style={[styles.progressDot, step >= 3 && styles.progressDotActive]} />
           </View>
 
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
@@ -357,75 +317,6 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
                 </View>
               </View>
             )}
-
-            {/* ──── STEP 3: MEMBERS & PHONE NUMBERS ──── */}
-            {step === 3 && (
-              <View style={{ gap: 12 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={styles.sectionLabel}>உறுப்பினர்கள் பட்டியல் (Member Phone Roster):</Text>
-                  <TouchableOpacity style={styles.addMemberBtn} onPress={handleAddMemberRow}>
-                    <Plus size={13} color="#00D084" />
-                    <Text style={styles.addMemberBtnText}>+ Add Member</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.infoCallout}>
-                  💡 <Text style={{ fontWeight: 'bold' }}>Auto-Linking:</Text> When you enter member phone numbers below, those members will automatically see their linked Group Passbook as soon as they log into SuprO!
-                </Text>
-
-                {members.map((m, index) => (
-                  <View key={m.id} style={styles.memberCard}>
-                    <View style={styles.memberCardHeader}>
-                      <Text style={styles.memberIndex}>Member #{index + 1}</Text>
-                      <TouchableOpacity onPress={() => handleRemoveMember(m.id)}>
-                        <Trash2 size={16} color="#EF4444" />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', gap: 10 }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.inputMiniLabel}>பெயர் (Name) *</Text>
-                        <TextInput
-                          style={styles.miniInput}
-                          placeholder="Member Name"
-                          placeholderTextColor="#64748B"
-                          value={m.name}
-                          onChangeText={(val) => handleUpdateMember(m.id, 'name', val)}
-                        />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.inputMiniLabel}>கைபேசி எண் (Phone) *</Text>
-                        <TextInput
-                          style={styles.miniInput}
-                          placeholder="9842111223"
-                          placeholderTextColor="#64748B"
-                          keyboardType="phone-pad"
-                          value={m.phone}
-                          onChangeText={(val) => handleUpdateMember(m.id, 'phone', val)}
-                        />
-                      </View>
-                    </View>
-
-                    <View style={{ marginTop: 6 }}>
-                      <Text style={styles.inputMiniLabel}>பொறுப்பு (Role):</Text>
-                      <View style={styles.roleChipsRow}>
-                        {['Secretary', 'Treasurer', 'Member', 'Animator'].map((r) => (
-                          <TouchableOpacity
-                            key={r}
-                            style={[styles.roleChip, m.role === r && styles.roleChipActive]}
-                            onPress={() => handleUpdateMember(m.id, 'role', r)}
-                          >
-                            <Text style={[styles.roleChipText, m.role === r && styles.roleChipTextActive]}>
-                              {r}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
           </ScrollView>
 
           {/* Navigation Footer Buttons */}
@@ -437,7 +328,7 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
               </TouchableOpacity>
             ) : <View style={{ flex: 1 }} />}
 
-            {step < 3 ? (
+            {step < 2 ? (
               <TouchableOpacity
                 style={styles.nextBtn}
                 onPress={() => {
@@ -457,11 +348,11 @@ export const CreateGroupWizardModal: React.FC<CreateGroupWizardModalProps> = ({
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#0F172A" />
                 ) : (
                   <>
-                    <CheckCircle2 size={16} color="#FFFFFF" />
-                    <Text style={styles.submitBtnText}>Create Group & Link Members 🚀</Text>
+                    <CheckCircle2 size={16} color="#0F172A" />
+                    <Text style={styles.submitBtnText}>Create Group 🚀</Text>
                   </>
                 )}
               </TouchableOpacity>

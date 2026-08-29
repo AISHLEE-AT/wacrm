@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
   Sparkles,
   X,
-  Plus,
-  Trash2,
   ArrowLeft,
   CheckCircle2,
 } from 'lucide-react';
@@ -29,7 +27,7 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
   user,
   onGroupCreated,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Step 1: Basics
@@ -48,11 +46,6 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
   const [monthlySavings, setMonthlySavings] = useState('500');
   const [meetingSchedule, setMeetingSchedule] = useState('Every Month 5th & 20th');
 
-  // Step 3: Members
-  const [members, setMembers] = useState<NewMemberDraft[]>([
-    { id: '1', name: '', phone: '', role: 'Member' }
-  ]);
-
   if (!isOpen) return null;
 
   const handleSelectCategory = (cat: typeof groupCategory, label: string) => {
@@ -60,41 +53,10 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
     setCategoryLabel(label);
   };
 
-  const handleAddMemberRow = () => {
-    setMembers([
-      ...members,
-      {
-        id: `m-${Date.now()}`,
-        name: '',
-        phone: '',
-        role: 'Member',
-      },
-    ]);
-  };
-
-  const handleUpdateMember = (id: string, field: keyof NewMemberDraft, value: string) => {
-    setMembers(members.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
-  };
-
-  const handleRemoveMember = (id: string) => {
-    if (members.length <= 1) {
-      window.alert('Notice: At least 1 member is required.');
-      return;
-    }
-    setMembers(members.filter((m) => m.id !== id));
-  };
-
   const handleSubmitGroup = async () => {
     if (!groupName.trim()) {
       window.alert('Required: Please enter a Group Name.');
       setStep(1);
-      return;
-    }
-
-    const validMembers = members.filter((m) => m.name.trim() && m.phone.trim());
-    if (validMembers.length === 0) {
-      window.alert('Members Required: Please add at least 1 group member with a phone number.');
-      setStep(3);
       return;
     }
 
@@ -122,10 +84,10 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
         bankName: bankName.trim(),
         bankAccount: bankAccount.trim(),
         monthlySavings: parseFloat(monthlySavings) || 500,
-        members: validMembers,
+        members: [],
       });
 
-      window.alert(`🎉 Group Successfully Created!\n"${createdGroup.name}" is now live! All ${validMembers.length + 1} members' phone numbers are auto-linked.\n\nWhen they log into SuprO, they will automatically see their linked Group Passbook!`);
+      window.alert(`🎉 Group Successfully Created!\n"${createdGroup.name}" is now live!\n\nYou can now add members to your group from the Admin Console inside the UI.`);
       
       onGroupCreated?.(createdGroup);
       onClose();
@@ -149,7 +111,7 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
             </div>
             <div className="text-slate-50 text-base font-extrabold">புதிய குழு பதிவு (Create Group)</div>
             <div className="text-slate-400 text-[11px] mt-0.5">
-              Step {step} of 3 • {step === 1 ? 'அடிப்படை விவரங்கள்' : step === 2 ? 'வங்கி & சேமிப்பு' : 'உறுப்பினர்கள் சேர்த்தல்'}
+              Step {step} of 2 • {step === 1 ? 'அடிப்படை விவரங்கள்' : 'வங்கி & சேமிப்பு'}
             </div>
           </div>
           <button className="p-1.5 bg-slate-800 rounded-2xl cursor-pointer hover:bg-slate-700 transition-colors" onClick={onClose}>
@@ -160,10 +122,8 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
         {/* Step Progress Bar */}
         <div className="flex flex-row items-center justify-center my-3">
           <div className={`w-2.5 h-2.5 rounded-full ${step >= 1 ? 'bg-pink-500 w-3 h-3' : 'bg-slate-700'}`} />
-          <div className={`w-10 h-0.5 ${step >= 2 ? 'bg-pink-500' : 'bg-slate-700'}`} />
+          <div className={`w-16 h-0.5 ${step >= 2 ? 'bg-pink-500' : 'bg-slate-700'}`} />
           <div className={`w-2.5 h-2.5 rounded-full ${step >= 2 ? 'bg-pink-500 w-3 h-3' : 'bg-slate-700'}`} />
-          <div className={`w-10 h-0.5 ${step >= 3 ? 'bg-pink-500' : 'bg-slate-700'}`} />
-          <div className={`w-2.5 h-2.5 rounded-full ${step >= 3 ? 'bg-pink-500 w-3 h-3' : 'bg-slate-700'}`} />
         </div>
 
         <div className="overflow-y-auto max-h-[60vh] pb-4 flex flex-col gap-3 scrollbar-hide">
@@ -319,73 +279,6 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
               </div>
             </div>
           )}
-
-          {/* ──── STEP 3: MEMBERS & PHONE NUMBERS ──── */}
-          {step === 3 && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-row justify-between items-center">
-                <span className="text-slate-50 text-xs font-bold">உறுப்பினர்கள் பட்டியல் (Member Phone Roster):</span>
-                <button className="flex flex-row items-center gap-1 bg-[#00D084]/15 px-2.5 py-1 rounded-lg cursor-pointer hover:bg-[#00D084]/25 transition-colors" onClick={handleAddMemberRow}>
-                  <Plus size={13} color="#00D084" />
-                  <span className="text-[#00D084] text-[11px] font-bold">+ Add Member</span>
-                </button>
-              </div>
-
-              <div className="bg-sky-400/10 rounded-lg p-2.5 border border-sky-400/30 text-blue-300 text-[11px] leading-relaxed block">
-                💡 <span className="font-bold">Auto-Linking:</span> When you enter member phone numbers below, those members will automatically see their linked Group Passbook as soon as they log into SuprO!
-              </div>
-
-              {members.map((m, index) => (
-                <div key={m.id} className="bg-slate-800 rounded-xl p-3 border border-slate-700 flex flex-col gap-2">
-                  <div className="flex flex-row justify-between items-center">
-                    <span className="text-pink-500 text-[11px] font-extrabold">Member #{index + 1}</span>
-                    <button onClick={() => handleRemoveMember(m.id)} className="hover:opacity-75 transition-opacity">
-                      <Trash2 size={16} color="#EF4444" />
-                    </button>
-                  </div>
-
-                  <div className="flex flex-row gap-2.5">
-                    <div className="flex-1">
-                      <span className="text-slate-400 text-[10px] mb-0.5 block">பெயர் (Name) *</span>
-                      <input
-                        className="bg-slate-900 rounded-lg border border-slate-700 px-2 py-1.5 text-slate-50 text-[11px] outline-none w-full placeholder:text-slate-500 focus:border-slate-500 transition-colors"
-                        placeholder="Member Name"
-                        value={m.name}
-                        onChange={(e) => handleUpdateMember(m.id, 'name', e.target.value)}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-slate-400 text-[10px] mb-0.5 block">கைபேசி எண் (Phone) *</span>
-                      <input
-                        className="bg-slate-900 rounded-lg border border-slate-700 px-2 py-1.5 text-slate-50 text-[11px] outline-none w-full placeholder:text-slate-500 focus:border-slate-500 transition-colors"
-                        placeholder="9842111223"
-                        type="tel"
-                        value={m.phone}
-                        onChange={(e) => handleUpdateMember(m.id, 'phone', e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-1">
-                    <span className="text-slate-400 text-[10px] mb-1 block">பொறுப்பு (Role):</span>
-                    <div className="flex flex-row gap-1.5 flex-wrap">
-                      {['Secretary', 'Treasurer', 'Member', 'Animator'].map((r) => (
-                        <button
-                          key={r}
-                          className={`px-2 py-1 rounded-md border cursor-pointer transition-colors ${m.role === r ? 'border-pink-500 bg-pink-500' : 'bg-slate-900 border-slate-700 hover:border-slate-500'}`}
-                          onClick={() => handleUpdateMember(m.id, 'role', r)}
-                        >
-                          <span className={`text-[10px] font-bold ${m.role === r ? 'text-white' : 'text-slate-400'}`}>
-                            {r}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Navigation Footer Buttons */}
@@ -397,7 +290,7 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
             </button>
           ) : <div className="flex-1" />}
 
-          {step < 3 ? (
+          {step < 2 ? (
             <button
               className="flex-1 flex flex-row items-center justify-center gap-1.5 bg-pink-500 py-3 rounded-xl cursor-pointer hover:bg-pink-600 transition-colors"
               onClick={() => {
@@ -421,7 +314,7 @@ export const CreateGroupWizardWebModal: React.FC<CreateGroupWizardWebModalProps>
               ) : (
                 <>
                   <CheckCircle2 size={16} color="#0F172A" />
-                  <span className="text-slate-900 text-[13px] font-extrabold">Create Group & Link Members 🚀</span>
+                  <span className="text-slate-900 text-[13px] font-extrabold">Create Group 🚀</span>
                 </>
               )}
             </button>

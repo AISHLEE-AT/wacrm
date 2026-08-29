@@ -99,6 +99,10 @@ export default function GroupOWebPage() {
     setUserGroups(prev => [mapped, ...prev]);
     setSelectedGroup(mapped);
     setIsCreateGroupOpen(false);
+
+    // Also fetch the user status so they have leader permissions immediately
+    const status = await GroupRepository.getUserGroupStatus(userPhone);
+    setUserStatus(status);
   };
 
   if (isLoading) {
