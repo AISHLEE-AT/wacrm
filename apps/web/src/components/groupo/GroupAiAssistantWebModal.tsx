@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sparkles,
   Mic,
@@ -80,6 +80,16 @@ export const GroupAiAssistantWebModal: React.FC<GroupAiAssistantModalProps> = ({
   // Voice Typing State
   const [isListening, setIsListening] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
+  const recognitionRef = useRef<any>(null);
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   // Specific Form Inputs
   const [recipient, setRecipient] = useState('கிளை மேலாளர், கனரா வங்கி (Branch Manager, Canara Bank)');
@@ -89,17 +99,65 @@ export const GroupAiAssistantWebModal: React.FC<GroupAiAssistantModalProps> = ({
   const [venue, setVenue] = useState('Panchayat Community Hall / கிராம அரங்கம்');
 
   const handleToggleVoiceTyping = () => {
-    // Basic Web Speech Recognition Mock or implementation could go here
     if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setIsListening(false);
       if (liveTranscript) {
         setInputText((prev) => (prev ? `${prev} ${liveTranscript}` : liveTranscript));
         setLiveTranscript('');
       }
-    } else {
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      window.alert('Speech Recognition is not supported in this browser. Please try Chrome, Edge, or Safari.');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = selectedLanguage === 'Tamil' ? 'ta-IN' : 'en-IN';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onstart = () => {
       setIsListening(true);
       setLiveTranscript('');
-      window.alert('Web Speech Recognition not implemented in this mock.');
+    };
+
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      let finalStr = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalStr += transcript + ' ';
+        } else {
+          interim += transcript;
+        }
+      }
+      if (finalStr) {
+        setInputText((prev) => (prev ? `${prev} ${finalStr}`.trim() : finalStr.trim()));
+      }
+      setLiveTranscript(interim);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {
+      console.error(e);
       setIsListening(false);
     }
   };
