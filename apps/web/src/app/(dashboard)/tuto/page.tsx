@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  GraduationCap, Target, Calendar, Search, 
+  GraduationCap, Target, Calendar, Search, ChevronDown,
   CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers
 } from 'lucide-react';
 

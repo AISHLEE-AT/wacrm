@@ -13,7 +13,8 @@ import {
   Gamepad2,
   Settings,
   LayoutGrid,
-  Sparkles
+  Sparkles,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppLauncherModal } from "./app-launcher-modal";
@@ -25,6 +26,7 @@ const PRIMARY_DOCK_ITEMS = [
   { href: "/tuto", label: "TutO", tamil: "கல்வி", icon: GraduationCap, color: "text-indigo-400" },
   { href: "/inbox", label: "CRM", tamil: "இன்பாக்ஸ்", icon: MessageSquare, color: "text-emerald-400" },
   { href: "/agro", label: "AgrO", tamil: "உழவர்", icon: Tractor, color: "text-emerald-400" },
+  { href: "/groupo", label: "GrupO", tamil: "சுயஉதவிக் குழு", icon: Users, color: "text-purple-400" },
   { href: "/profile", label: "Profile", tamil: "சுயவிவரம்", icon: Settings, color: "text-zinc-300" },
 ];
 

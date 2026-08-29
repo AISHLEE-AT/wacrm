@@ -287,7 +287,6 @@ function RootNavigator() {
       <Stack.Screen name="Flow" component={FlowQuestionScreen} options={{ headerShown: false }} />
       <Stack.Screen name="QuizScreen" component={QuizScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Quiz" component={QuizScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="CategoryScreen" component={CategoryScreen} options={{ headerShown: true, title: 'All Modules', headerStyle: { backgroundColor: colors.card }, headerTintColor: colors.text }} />
     </Stack.Navigator>
   );
 }

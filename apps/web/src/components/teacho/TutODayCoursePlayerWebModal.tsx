@@ -30,7 +30,7 @@ import {
 } from '@/services/GoogleSheetsDayPlanService';
 import { getOfficialGovernmentSyllabus } from '@/data/curriculum/officialGovernmentSyllabusRegistry';
 
-import { ImmersiveVideoPlayer } from './ImmersiveVideoPlayer';
+import { ImmersiveVideoWebPlayer } from './ImmersiveVideoWebPlayer';
 import { TaskVideoFeedbackModal } from './TaskVideoFeedbackModal';
 
 interface TutODayCoursePlayerWebModalProps {
@@ -405,7 +405,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{guidanceVid.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{guidanceVid.summary}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={guidanceVid.youtubeVideoId}
                     title={guidanceVid.title}
                     channelName="ICLE Technology Official"
@@ -429,7 +429,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{tamilTask.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{tamilTask.summary}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={tamilTask.youtubeVideoId}
                     title={tamilTask.title}
                     channelName={tamilTask.channelName}
@@ -453,7 +453,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{englishTask.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{englishTask.summary}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={englishTask.youtubeVideoId}
                     title={englishTask.title}
                     channelName={englishTask.channelName}
@@ -477,7 +477,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{mathsTask.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{mathsTask.summary}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={mathsTask.youtubeVideoId}
                     title={mathsTask.title}
                     channelName={mathsTask.channelName}
@@ -501,7 +501,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{scienceTask.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{scienceTask.summary}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={scienceTask.youtubeVideoId}
                     title={scienceTask.title}
                     channelName={scienceTask.channelName}
@@ -525,7 +525,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{socialScienceTask.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{socialScienceTask.summary}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={socialScienceTask.youtubeVideoId}
                     title={socialScienceTask.title}
                     channelName={socialScienceTask.channelName}
@@ -613,7 +613,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{exerciseYoga.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">Asana / Routine: {exerciseYoga.asanaOrWorkout}</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={exerciseYoga.youtubeVideoId}
                     title={exerciseYoga.title}
                     channelName="SuprO Wellness & Fitness"
@@ -637,7 +637,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">{currentAffairs.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">Common daily knowledge bulletin across all programs.</p>
                   </div>
-                  <ImmersiveVideoPlayer
+                  <ImmersiveVideoWebPlayer
                     videoId={currentAffairs.youtubeVideoId}
                     title={currentAffairs.title}
                     channelName="SuprO Current Affairs & GK"

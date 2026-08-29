@@ -57,8 +57,8 @@ const SECURITY_HEADERS = [
       // Allow the Aishlee Web App modules to be embedded as iframes.
       // Without frame-src, Chromium/Edge blocks cross-origin iframes even
       // if the child page allows frame-ancestors.
-      "frame-src 'self' https://thamizhan.vercel.app",
-      "child-src 'self' https://thamizhan.vercel.app",
+      "frame-src 'self' https://thamizhan.vercel.app https://www.youtube.com https://www.youtube-nocookie.com",
+      "child-src 'self' https://thamizhan.vercel.app https://www.youtube.com https://www.youtube-nocookie.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
