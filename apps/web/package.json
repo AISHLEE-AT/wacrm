@@ -87,6 +87,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/leaflet": "^1.9.22",

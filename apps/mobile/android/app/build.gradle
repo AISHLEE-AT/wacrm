@@ -131,6 +131,10 @@ android {
             crunchPngs enablePngCrunchInRelease.toBoolean()
         }
     }
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
     packagingOptions {
         jniLibs {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'

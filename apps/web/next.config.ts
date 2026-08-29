@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from "next";
 
 /**
@@ -134,4 +135,11 @@ const nextConfig: NextConfig = {
   },
 } as any;
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "sentry",
+  project: "nextjs",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  hideSourceMaps: true,
+  disableLogger: true,
+});

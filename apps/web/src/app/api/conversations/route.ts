@@ -52,10 +52,11 @@ export async function GET(request: Request) {
                     cookieHeader.includes('supro_is_embed=true')
 
     if (!user && isEmbed) {
+      const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE || '9486335870';
       const { data: adminProfiles } = await supabaseAdmin()
         .from('profiles')
         .select('id')
-        .or('role.eq.admin,phone.eq.9486335870,whatsapp.eq.9486335870,full_name.ilike.%admin%')
+        .or(`role.eq.admin,phone.eq.${adminPhone},whatsapp.eq.${adminPhone},full_name.ilike.%admin%`)
         .limit(1)
       if (adminProfiles && adminProfiles.length > 0) {
         user = { id: adminProfiles[0].id } as any
