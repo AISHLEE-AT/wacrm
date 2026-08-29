@@ -22,8 +22,8 @@ import { GroupMemberViewWebCard } from '@/components/groupo/GroupMemberViewWebCa
 const supabase = createClient();
 
 const mapDbGroupToGroupData = async (grp: DbGroup): Promise<GroupData> => {
-  const members = await GroupRepository.getGroupMembers(grp.id);
-  const activeLoanPool = members.reduce((sum, m) => sum + (m.active_loan_amount || 0), 0);
+  const members = await GroupRepository.fetchMembers(grp.id);
+  const activeLoanPool = members.reduce((sum, m) => sum + (m.active_loan_balance || 0), 0);
   
   return {
     ...grp,

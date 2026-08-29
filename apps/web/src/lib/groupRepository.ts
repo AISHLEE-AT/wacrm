@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import { createClient } from '@/lib/supabase/client';
 const supabase = createClient();
 
@@ -461,3 +461,4 @@ export const GroupRepository = {
     if (error) throw new Error(error.message);
   },
 };
+export interface GroupData extends DbGroup { meetingDay?: string; leaderName?: string; monthlySavingsPerMember?: number; totalMembersCount?: number; members?: DbMember[]; customMetrics?: any; }
