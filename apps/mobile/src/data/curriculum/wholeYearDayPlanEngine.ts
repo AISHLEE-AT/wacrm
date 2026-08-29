@@ -712,12 +712,12 @@ export async function getAdminReleasedDayNumbers(courseId: string): Promise<Set<
       }
     }
 
-    // Default starter: Days 1 to 7 (Week 1)
-    const starterSet = new Set([1, 2, 3, 4, 5, 6, 7]);
+    // Default starter: Days 1 to 12 (as requested for demo)
+    const starterSet = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     await AsyncStorage.setItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`, JSON.stringify(Array.from(starterSet)));
     return starterSet;
   } catch (e) {
-    return new Set([1, 2, 3, 4, 5, 6, 7]);
+    return new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   }
 }
 

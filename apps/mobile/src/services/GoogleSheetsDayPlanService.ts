@@ -181,6 +181,71 @@ export const GoogleSheetsDayPlanService = {
       const allKey = `all_day_${dayNumber}`;
       if (all[allKey]) return all[allKey];
 
+      // INJECT DEMO DATA FOR DAYS 1, 2, 3
+      if (dayNumber >= 1 && dayNumber <= 3) {
+        return {
+          dayNumber,
+          courseId,
+          board: 'ALL',
+          officialGuidanceVideo: {
+            title: `Demo Day ${dayNumber} - Admin Sheet Rules`,
+            youtubeVideoId: 'V93C5_YqX4Q',
+            channelName: 'SuprO Admin',
+            summary: `This is a demo auto-populated Day ${dayNumber} plan. Admin can edit this via Google Sheets.`,
+            durationMinutes: 10,
+          },
+          tamilTask: {
+            title: 'Tamil Ilakkanam Demo',
+            youtubeVideoId: 'k1J9_949i0k',
+            actionOrActivity: 'Read chapter 1',
+            durationMinutes: 30,
+          },
+          englishTask: {
+            title: 'English Grammar Demo',
+            youtubeVideoId: 'h8q6KjXG5z8',
+            actionOrActivity: 'Practice exercises',
+            durationMinutes: 30,
+          },
+          mathsTask: {
+            title: 'Algebra Basics Demo',
+            youtubeVideoId: 'v8k_h7r6wqw',
+            actionOrActivity: 'Solve 10 problems',
+            durationMinutes: 45,
+          },
+          scienceTask: {
+            title: 'Physics Motion Demo',
+            youtubeVideoId: '1w5yH2T4lMw',
+            actionOrActivity: 'Draw diagrams',
+            durationMinutes: 45,
+          },
+          socialScienceTask: {
+            title: 'History Timeline Demo',
+            youtubeVideoId: '7Q3Z8y3e5uE',
+            actionOrActivity: 'Memorize dates',
+            durationMinutes: 30,
+          },
+          lifeSkillTask: {
+            title: 'Time Management',
+            description: 'Demo life skill for students.',
+          },
+          homeworkTask: {
+            title: `Day ${dayNumber} Assignment`,
+            description: 'Complete the demo worksheet.',
+          },
+          exercisePhysicVideo: {
+            title: 'Morning Yoga',
+            youtubeVideoId: 'v7AYKMP6rOE',
+            asanaOrWorkout: 'Surya Namaskar',
+            durationMinutes: 15,
+          },
+          currentAffairsGkVideo: {
+            title: 'Today Current Affairs',
+            youtubeVideoId: '8q2H2z2l3aQ',
+            durationMinutes: 15,
+          }
+        };
+      }
+
       return null;
     } catch {
       return null;
