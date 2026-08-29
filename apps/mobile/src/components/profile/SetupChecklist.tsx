@@ -11,6 +11,8 @@ interface SetupChecklistProps {
   pushToken: string | null;
 }
 
+import { Alert, TouchableOpacity } from 'react-native';
+
 export function SetupChecklist({
   profile,
   driverProfile,
@@ -32,6 +34,30 @@ export function SetupChecklist({
   const completedCount = checks.filter(c => c.isComplete).length;
   const progressPercent = Math.round((completedCount / checks.length) * 100);
 
+  const handleSetupPress = (id: string) => {
+    switch (id) {
+      case 'gdrive':
+        Alert.alert('Google Drive Setup', 'To map your Google Drive, go to the GroupO or TeachO module and tap on the Video Recording section. You will find a button to map your Google account.');
+        break;
+      case 'api_key':
+        Alert.alert('Gemini API Setup', 'To configure your AI Assistant, go to the AI Hub tab at the bottom and enter your API key.');
+        break;
+      case 'driver':
+        Alert.alert('Driver Profile', 'Switch your user category to Driver Partner and go to the DriveO module to complete your vehicle registration.');
+        break;
+      case 'upi':
+        Alert.alert('UPI ID', 'You can update your UPI ID in the Account Settings page.');
+        break;
+      case 'name':
+      case 'location':
+        Alert.alert('Profile Setup', 'Please update your details in the main settings.');
+        break;
+      case 'push':
+        Alert.alert('Push Notifications', 'Please enable Push Notifications in your phone settings for SuprO.');
+        break;
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
@@ -45,7 +71,13 @@ export function SetupChecklist({
 
       <View style={styles.list}>
         {checks.map((check) => (
-          <View key={check.id} style={styles.item}>
+          <TouchableOpacity 
+            key={check.id} 
+            style={styles.item}
+            onPress={() => handleSetupPress(check.id)}
+            disabled={check.isComplete}
+            activeOpacity={0.7}
+          >
             <View style={styles.itemLeft}>
               {check.isComplete ? (
                 <CheckCircle2 size={20} color={colors.primary} />
@@ -59,7 +91,7 @@ export function SetupChecklist({
             {!check.isComplete && (
               <Text style={[styles.setupAction, { color: colors.primary }]}>Set up →</Text>
             )}
-          </View>
+          </TouchableOpacity>
         ))}
       </View>
     </View>

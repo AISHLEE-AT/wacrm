@@ -273,14 +273,10 @@ export function UserCategoryCard({
       Alert.alert('Access Restricted', 'Admin console is restricted to system administrators.');
       return;
     }
-    if (currentCategory.screenName === 'ModuleView') {
-      navigation.navigate('ModuleView', {
-        path: currentCategory.path,
-        moduleName: currentCategory.moduleName,
-      });
-    } else {
-      navigation.navigate(currentCategory.screenName);
-    }
+    
+    // Instead of navigating to the standalone Stack.Screen (which hides the bottom bar),
+    // navigate to the root Dashboard which will render the UserTabs with the correct primary module.
+    navigation.navigate('Dashboard');
   };
 
   return (
