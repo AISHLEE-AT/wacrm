@@ -48,6 +48,7 @@ import {
   getCompletedDaysForCourse,
   toggleDayCompletion,
   DayPlanSummaryItem,
+  getMaxUnlockedDay,
 } from '../data/curriculum/wholeYearDayPlanEngine';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '../data/coursesCatalog';
@@ -83,6 +84,7 @@ export default function TutOHubScreen({ navigation }: any) {
 
   // ─── 4. Completed Days Set State ──────────────────────────────────────────
   const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
+  const [maxUnlockedDay, setMaxUnlockedDay] = useState<number>(1);
 
   // ─── 5. Admin-Released Days Pool ─────────────────────────────────────────
   const [adminReleasedDays, setAdminReleasedDays] = useState<DayPlanSummaryItem[]>([]);
@@ -123,6 +125,8 @@ export default function TutOHubScreen({ navigation }: any) {
 
         const doneSet = await getCompletedDaysForCourse(course.id);
         setCompletedDays(doneSet);
+        const maxDay = await getMaxUnlockedDay(course.id);
+        setMaxUnlockedDay(maxDay);
         await refreshReleasedDays(course.id, course.title, board, doneSet);
 
         // Check if first-time student onboarding has been completed
@@ -150,6 +154,8 @@ export default function TutOHubScreen({ navigation }: any) {
       AsyncStorage.setItem('tuto_active_course_id', course.id).catch(() => {});
       const doneSet = await getCompletedDaysForCourse(course.id);
       setCompletedDays(doneSet);
+      const maxDay = await getMaxUnlockedDay(course.id);
+      setMaxUnlockedDay(maxDay);
       await refreshReleasedDays(course.id, course.title, courseBoard, doneSet);
     } catch (err) {
       console.warn('Error applying selected course:', err);
@@ -165,6 +171,8 @@ export default function TutOHubScreen({ navigation }: any) {
     if (isDone) next.add(dayNum);
     else next.delete(dayNum);
     setCompletedDays(next);
+    const maxDay = await getMaxUnlockedDay(selectedCourse.id);
+    setMaxUnlockedDay(maxDay);
     await refreshReleasedDays(selectedCourse.id, selectedCourse.title, selectedBoard, next);
   };
 
@@ -507,6 +515,7 @@ export default function TutOHubScreen({ navigation }: any) {
         }
         renderItem={({ item: dayItem }) => {
           const isDone = completedDays.has(dayItem.dayNumber);
+          const isLocked = dayItem.dayNumber > maxUnlockedDay;
 
           return (
             <View
@@ -515,6 +524,7 @@ export default function TutOHubScreen({ navigation }: any) {
                 styles.dayCard,
                 dayItem.isMondayHoliday && styles.dayCardHoliday,
                 isDone && styles.dayCardDone,
+                isLocked && { opacity: 0.6 },
               ]}
             >
               {/* Day Header Row */}
@@ -556,6 +566,7 @@ export default function TutOHubScreen({ navigation }: any) {
                     style={[styles.doneCheckBtn, isDone && styles.doneCheckBtnActive]}
                     onPress={() => handleToggleDone(dayItem.dayNumber)}
                     activeOpacity={0.7}
+                    disabled={isLocked}
                   >
                     <CheckCircle2 size={16} color={isDone ? '#00D084' : '#64748B'} />
                   </TouchableOpacity>
@@ -594,18 +605,27 @@ export default function TutOHubScreen({ navigation }: any) {
               {/* Action Buttons Row */}
               <View style={styles.dayActionRow}>
                 {/* 1. Main Action: Start Day Course Player */}
-                <TouchableOpacity
-                  style={[styles.startPlayerBtn, dayItem.isMondayHoliday && styles.startPlayerBtnHoliday]}
-                  activeOpacity={0.85}
-                  onPress={() => handleOpenDayPlayer(dayItem.dayNumber)}
-                >
-                  <Play size={13} color="#070C18" fill="#070C18" />
-                  <Text style={styles.startPlayerBtnText}>
-                    {dayItem.isMondayHoliday
-                      ? `Open Monday Review (Day ${dayItem.dayNumber}) 🌿`
-                      : `Start Day ${dayItem.dayNumber} Player ▶️`}
-                  </Text>
-                </TouchableOpacity>
+                {isLocked ? (
+                  <View style={[styles.startPlayerBtn, { backgroundColor: '#1E293B' }]}>
+                    <Lock size={13} color="#64748B" />
+                    <Text style={[styles.startPlayerBtnText, { color: '#64748B' }]}>
+                      Complete Day {dayItem.dayNumber - 1} to unlock
+                    </Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.startPlayerBtn, dayItem.isMondayHoliday && styles.startPlayerBtnHoliday]}
+                    activeOpacity={0.85}
+                    onPress={() => handleOpenDayPlayer(dayItem.dayNumber)}
+                  >
+                    <Play size={13} color="#070C18" fill="#070C18" />
+                    <Text style={styles.startPlayerBtnText}>
+                      {dayItem.isMondayHoliday
+                        ? `Open Monday Review (Day ${dayItem.dayNumber}) 🌿`
+                        : `Start Day ${dayItem.dayNumber} Player ▶️`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* 2. Secondary Action: Practice Topic QBank MCQs (Admin Only) */}
                 {isAdmin && !dayItem.isMondayHoliday && (

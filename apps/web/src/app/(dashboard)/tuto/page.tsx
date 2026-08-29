@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   GraduationCap, Target, Calendar, Search, ChevronDown,
-  CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers
+  CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers, Lock
 } from 'lucide-react';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard } from '@/data/coursesCatalog';
-import { getReleasedDaySummariesForCourse, getCompletedDaysForCourse, DayPlanSummaryItem } from '@/data/curriculum/wholeYearDayPlanEngine';
+import { getReleasedDaySummariesForCourse, getCompletedDaysForCourse, DayPlanSummaryItem, getMaxUnlockedDay } from '@/data/curriculum/wholeYearDayPlanEngine';
 
 // Modals
 import { StudentOnboardingWebModal } from '@/components/teacho/StudentOnboardingWebModal';
@@ -24,6 +24,7 @@ export default function TutOWebPage() {
 
   // Days Engine State
   const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
+  const [maxUnlockedDay, setMaxUnlockedDay] = useState<number>(1);
   const [adminReleasedDays, setAdminReleasedDays] = useState<DayPlanSummaryItem[]>([]);
   const [isLoadingDays, setIsLoadingDays] = useState(true);
 
@@ -69,6 +70,8 @@ export default function TutOWebPage() {
 
       const doneSet = await getCompletedDaysForCourse(course.id);
       setCompletedDays(doneSet);
+      const maxDay = await getMaxUnlockedDay(course.id);
+      setMaxUnlockedDay(maxDay);
       await refreshReleasedDays(course.id, course.title, board, doneSet);
     };
     
@@ -89,6 +92,8 @@ export default function TutOWebPage() {
     setSelectedBoard(board);
     const doneSet = await getCompletedDaysForCourse(course.id);
     setCompletedDays(doneSet);
+    const maxDay = await getMaxUnlockedDay(course.id);
+    setMaxUnlockedDay(maxDay);
     await refreshReleasedDays(course.id, course.title, board, doneSet);
   };
 
@@ -168,14 +173,17 @@ export default function TutOWebPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {adminReleasedDays.map((day) => {
               const isDone = completedDays.has(day.dayNumber);
+              const isLocked = day.dayNumber > maxUnlockedDay;
               return (
                 <div 
                   key={day.dayNumber}
-                  onClick={() => handleOpenDay(day.dayNumber)}
-                  className={`border-2 rounded-2xl p-4 cursor-pointer transition-transform hover:scale-[1.02] ${
-                    isDone 
-                      ? 'border-green-200 bg-green-50/50' 
-                      : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm'
+                  onClick={() => !isLocked && handleOpenDay(day.dayNumber)}
+                  className={`border-2 rounded-2xl p-4 transition-transform ${
+                    isLocked
+                      ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                      : isDone 
+                      ? 'border-green-200 bg-green-50/50 cursor-pointer hover:scale-[1.02]' 
+                      : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm cursor-pointer hover:scale-[1.02]'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-3">
@@ -184,6 +192,8 @@ export default function TutOWebPage() {
                     </div>
                     {isDone ? (
                       <CheckCircle2 className="w-6 h-6 text-green-500" />
+                    ) : isLocked ? (
+                      <Lock className="w-5 h-5 text-gray-400" />
                     ) : (
                       <div className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold flex items-center gap-1">
                         <Clock className="w-3 h-3" /> ~45m
@@ -193,6 +203,9 @@ export default function TutOWebPage() {
                   
                   <h3 className="font-bold text-gray-900 mb-1">{day.title}</h3>
                   <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4">{day.description}</p>
+                  {isLocked && (
+                    <p className="text-xs text-orange-500 font-bold mb-2">🔒 Complete Day {day.dayNumber - 1} to unlock</p>
+                  )}
                   
                   <div className="flex gap-2">
                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-slate-100 text-slate-600 rounded">
@@ -234,7 +247,11 @@ export default function TutOWebPage() {
           dayNumber={playerDayNumber}
           course={selectedCourse}
           onDayComplete={async (d) => {
-            await refreshReleasedDays(selectedCourse.id, selectedCourse.title, selectedBoard, new Set([...completedDays, d]));
+            const newDoneSet = new Set([...completedDays, d]);
+            setCompletedDays(newDoneSet);
+            await refreshReleasedDays(selectedCourse.id, selectedCourse.title, selectedBoard, newDoneSet);
+            const maxDay = await getMaxUnlockedDay(selectedCourse.id);
+            setMaxUnlockedDay(maxDay);
           }}
         />
       )}

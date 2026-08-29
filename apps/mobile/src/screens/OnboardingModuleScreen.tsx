@@ -17,26 +17,15 @@ const CATEGORIES = [
 ];
 
 export default function OnboardingModuleScreen({ navigation }: any) {
-  const { user, setUser } = useContext(AppContext);
+  const { user, updateUserProfile } = useContext(AppContext);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   const handleSelect = async (categoryId: string) => {
     setLoadingId(categoryId);
     try {
-      await SecureStore.setItemAsync('user-role', categoryId); // We use role/category interchangeably for now
-      
-      // Update in local context instantly
-      if (user) {
-        setUser({ ...user, category: categoryId });
+      if (updateUserProfile) {
+        await updateUserProfile({ category: categoryId });
       }
-
-      if (user?.phone) {
-        const clean = user.phone.replace(/\D/g, '').slice(-10);
-        await supabase.from('profiles').update({ 
-          category: categoryId,
-        }).ilike('phone', `%${clean}%`);
-      }
-
       // Navigate instantly to dashboard where bottom tabs will read the new category
       navigation.replace('Dashboard');
     } catch (err: any) {

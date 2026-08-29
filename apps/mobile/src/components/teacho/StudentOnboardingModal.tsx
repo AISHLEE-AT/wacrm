@@ -37,6 +37,7 @@ import {
   SCHOOL_BOARDS,
   FEATURED_JUNIOR_COURSES,
 } from '../../data/coursesCatalog';
+import { setEnrollmentDate } from '../../data/curriculum/wholeYearDayPlanEngine';
 
 const { width, height } = Dimensions.get('window');
 
@@ -157,6 +158,7 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
     try {
       // 1. Save local completion flags
       await AsyncStorage.setItem('tuto_student_onboarding_completed', 'true');
+      await setEnrollmentDate(finalCourse.id, new Date().toISOString());
       await AsyncStorage.setItem('user-course-id', finalCourse.id);
       await AsyncStorage.setItem('user-board', selectedBoard);
       await AsyncStorage.setItem('user-name', fullName.trim());

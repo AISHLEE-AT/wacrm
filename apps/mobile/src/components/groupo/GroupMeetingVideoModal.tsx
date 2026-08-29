@@ -434,25 +434,31 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               ) : (
                 <View style={styles.connectPromptBox}>
                   <Text style={styles.connectPromptText}>
-                    1-Click map your default mobile Google Account to automatically upload meeting records.
+                    Enter your Google Account email to map your drive for meeting records.
                   </Text>
                   
+                  <TextInput
+                    style={[styles.feedbackInput, { minHeight: 44, marginTop: 10, marginBottom: 10 }]}
+                    placeholder="leader@gmail.com"
+                    placeholderTextColor="#64748B"
+                    value={gmailInput}
+                    onChangeText={setGmailInput}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    editable={!isConnectingDrive}
+                  />
+                  
                   <TouchableOpacity
-                    style={[styles.primaryBtn, { backgroundColor: '#38BDF8', marginTop: 12 }]}
-                    onPress={() => {
-                      const defaultEmail = user?.email || (user?.phone ? user.phone.replace(/\D/g, '').slice(-10) + '@gmail.com' : 'user@gmail.com');
-                      setGmailInput(defaultEmail);
-                      // Give state time to update
-                      setTimeout(() => handleConnectGoogleDrive(), 100);
-                    }}
-                    disabled={isConnectingDrive}
+                    style={[styles.primaryBtn, { backgroundColor: '#38BDF8' }]}
+                    onPress={handleConnectGoogleDrive}
+                    disabled={isConnectingDrive || !gmailInput.trim()}
                   >
                     {isConnectingDrive ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <>
                         <Sparkles size={16} color="#FFFFFF" />
-                        <Text style={styles.primaryBtnText}>1-Click Map Default Google Account</Text>
+                        <Text style={styles.primaryBtnText}>Map Google Account</Text>
                       </>
                     )}
                   </TouchableOpacity>

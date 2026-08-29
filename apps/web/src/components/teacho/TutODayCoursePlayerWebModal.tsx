@@ -16,12 +16,15 @@ import {
   HardDrive,
   ShieldCheck,
   Target,
+  Lock,
 } from 'lucide-react';
 
 import {
   WholeYearDayPlan,
   resolveWholeYearDayPlan,
   getAdminCustomDayPlan,
+  isDayUnlocked,
+  toggleDayCompletion,
 } from '@/data/curriculum/wholeYearDayPlanEngine';
 import {
   GoogleSheetsDayPlanService,
@@ -81,6 +84,17 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
   // Google Drive Task Video Recording State
   const [isVideoFeedbackOpen, setIsVideoFeedbackOpen] = useState<boolean>(false);
 
+  const stepOrder: StepKey[] = [
+    'guidance', 'tamil', 'english', 'maths', 'science', 'social',
+    'lifeskill', 'homework', 'yoga', 'currentaffairs', 'test', 'drive_feedback',
+  ];
+
+  const isStepUnlocked = (stepKey: StepKey): boolean => {
+    const idx = stepOrder.indexOf(stepKey);
+    if (idx === 0) return true;
+    return !!completedSteps[stepOrder[idx - 1]];
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -101,9 +115,13 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
 
         const progressRaw = localStorage.getItem(`tuto_day_progress_${courseId}_${currentDay}`);
         if (progressRaw && isMounted) {
-          setCompletedSteps(JSON.parse(progressRaw));
+          const parsed = JSON.parse(progressRaw);
+          setCompletedSteps(parsed);
+          const firstIncomplete = stepOrder.find(s => !parsed[s]) || 'guidance';
+          setActiveStep(firstIncomplete as StepKey);
         } else if (isMounted) {
           setCompletedSteps({});
+          setActiveStep('guidance');
         }
 
         setSelectedAnswers({});
@@ -222,20 +240,6 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
       console.warn('Failed to save step progress:', e);
     }
 
-    const stepOrder: StepKey[] = [
-      'guidance',
-      'tamil',
-      'english',
-      'maths',
-      'science',
-      'social',
-      'lifeskill',
-      'homework',
-      'yoga',
-      'currentaffairs',
-      'test',
-      'drive_feedback',
-    ];
     const currentIndex = stepOrder.indexOf(step);
     if (currentIndex < stepOrder.length - 1) {
       setActiveStep(stepOrder[currentIndex + 1]);
@@ -268,7 +272,13 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
     setActiveStep('drive_feedback');
   };
 
-  const handleCompleteWholeDay = () => {
+  const handleCompleteWholeDay = async () => {
+    const allDone = stepOrder.every(s => completedSteps[s]);
+    if (!allDone) {
+      alert('🔒 Please complete all 12 tasks before finishing this day.');
+      return;
+    }
+    await toggleDayCompletion(courseId, currentDay);
     if (onDayComplete) {
       onDayComplete(currentDay, 150);
     }
@@ -326,7 +336,15 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
               <ArrowLeft size={14} className={currentDay <= 1 ? 'text-slate-600' : 'text-[#00D084]'} />
             </button>
             <button
-              onClick={() => setCurrentDay((prev) => prev + 1)}
+              onClick={async () => {
+                const nextDay = currentDay + 1;
+                const unlocked = await isDayUnlocked(courseId, nextDay);
+                if (unlocked) {
+                  setCurrentDay(nextDay);
+                } else {
+                  alert(`🔒 Complete all tasks of Day ${currentDay} first to unlock Day ${nextDay}`);
+                }
+              }}
               className="w-7 h-7 rounded-md bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition-colors"
             >
               <ArrowRight size={14} className="text-[#00D084]" />
@@ -355,9 +373,11 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
               return (
                 <button
                   key={stepItem.id}
-                  onClick={() => setActiveStep(stepItem.id)}
+                  onClick={() => isStepUnlocked(stepItem.id) && setActiveStep(stepItem.id)}
                   className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-colors ${
-                    isActive
+                    !isStepUnlocked(stepItem.id)
+                      ? 'bg-[#131F37] border-slate-800 opacity-40 cursor-not-allowed'
+                      : isActive
                       ? 'bg-[#00D084]/15 border-[#00D084]'
                       : stepItem.isDone
                       ? 'bg-[#131F37] border-[#00D084]/40'
@@ -366,6 +386,8 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                 >
                   {stepItem.isDone ? (
                     <CheckCircle2 size={14} className="text-[#00D084]" />
+                  ) : !isStepUnlocked(stepItem.id) ? (
+                    <Lock size={12} className="text-slate-600" />
                   ) : (
                     <span className={`text-[11px] font-extrabold ${isActive ? 'text-[#00D084]' : 'text-slate-400'}`}>
                       {idx + 1}

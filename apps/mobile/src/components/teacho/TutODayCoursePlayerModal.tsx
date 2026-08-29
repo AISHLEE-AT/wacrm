@@ -42,12 +42,15 @@ import {
   UploadCloud,
   ShieldCheck,
   Target,
+  Lock,
 } from 'lucide-react-native';
 
 import {
   WholeYearDayPlan,
   resolveWholeYearDayPlan,
   getAdminCustomDayPlan,
+  isDayUnlocked,
+  toggleDayCompletion,
 } from '../../data/curriculum/wholeYearDayPlanEngine';
 import {
   GoogleSheetsDayPlanService,
@@ -115,6 +118,24 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
   // Google Drive Task Video Recording State
   const [isVideoFeedbackOpen, setIsVideoFeedbackOpen] = useState<boolean>(false);
 
+  const stepOrder: StepKey[] = [
+    'guidance', 'tamil', 'english', 'maths', 'science', 'social',
+    'lifeskill', 'homework', 'yoga', 'currentaffairs', 'test', 'drive_feedback',
+  ];
+
+  const isStepUnlocked = (stepKey: StepKey): boolean => {
+    const idx = stepOrder.indexOf(stepKey);
+    if (idx === 0) return true;
+    return !!completedSteps[stepOrder[idx - 1]];
+  };
+
+  const getFirstIncompleteStep = (completed: Record<string, boolean>): StepKey => {
+    for (const step of stepOrder) {
+      if (!completed[step]) return step;
+    }
+    return stepOrder[stepOrder.length - 1];
+  };
+
   // Load and resolve day plan
   useEffect(() => {
     if (!visible) return;
@@ -140,9 +161,12 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
         // Load progress for current day
         const progressRaw = await AsyncStorage.getItem(`tuto_day_progress_${courseId}_${currentDay}`);
         if (progressRaw && isMounted) {
-          setCompletedSteps(JSON.parse(progressRaw));
+          const parsed = JSON.parse(progressRaw);
+          setCompletedSteps(parsed);
+          setActiveStep(getFirstIncompleteStep(parsed));
         } else if (isMounted) {
           setCompletedSteps({});
+          setActiveStep('guidance');
         }
 
         // Reset test state for new day
@@ -313,7 +337,14 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
   };
 
   // Finish whole day
-  const handleCompleteWholeDay = () => {
+  const handleCompleteWholeDay = async () => {
+    const allComplete = stepOrder.every((s) => completedSteps[s]);
+    if (!allComplete) {
+      Alert.alert('Incomplete Day', 'Please complete all tasks in the day to proceed.');
+      return;
+    }
+
+    await toggleDayCompletion(courseId, currentDay);
     if (onCompleteDay) {
       onCompleteDay(currentDay, 150);
     }
@@ -367,7 +398,17 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
             >
               <ArrowLeft size={13} color={currentDay <= 1 ? '#475569' : '#00D084'} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.jumperBtn} onPress={() => setCurrentDay((prev) => prev + 1)}>
+            <TouchableOpacity 
+              style={styles.jumperBtn} 
+              onPress={async () => {
+                const unlocked = await isDayUnlocked(courseId, currentDay + 1);
+                if (unlocked) {
+                  setCurrentDay((prev) => prev + 1);
+                } else {
+                  Alert.alert('Locked', `Complete Day ${currentDay} to unlock Day ${currentDay + 1}.`);
+                }
+              }}
+            >
               <ArrowRight size={13} color="#00D084" />
             </TouchableOpacity>
           </View>
@@ -391,13 +432,23 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
               { id: 'drive_feedback' as StepKey, label: '📹 Drive Video Upload', isDone: completedSteps.drive_feedback },
             ].map((stepItem, idx) => {
               const isActive = activeStep === stepItem.id;
+              const unlocked = isStepUnlocked(stepItem.id);
+
               return (
                 <TouchableOpacity
                   key={stepItem.id}
-                  style={[styles.stepTab, isActive && styles.stepTabActive, stepItem.isDone && styles.stepTabDone]}
+                  style={[
+                    styles.stepTab, 
+                    isActive && styles.stepTabActive, 
+                    stepItem.isDone && styles.stepTabDone,
+                    !unlocked && { opacity: 0.5 }
+                  ]}
+                  disabled={!unlocked}
                   onPress={() => setActiveStep(stepItem.id)}
                 >
-                  {stepItem.isDone ? (
+                  {!unlocked ? (
+                    <Lock size={12} color="#64748B" />
+                  ) : stepItem.isDone ? (
                     <CheckCircle2 size={12} color="#00D084" />
                   ) : (
                     <Text style={[styles.stepIndexText, isActive && styles.stepIndexTextActive]}>{idx + 1}</Text>

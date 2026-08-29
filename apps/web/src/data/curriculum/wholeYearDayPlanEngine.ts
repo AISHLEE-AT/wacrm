@@ -767,6 +767,56 @@ export async function releaseBatchDays(
 }
 
 /**
+ * ─── ENROLLMENT DATE & DAY UNLOCK SYSTEM ─────────────────────────────────────
+ * Tracks when a student enrolled in a course and determines which days are unlocked.
+ * Completion-only progression: Day N unlocks when Day N-1 is completed.
+ */
+const TUTO_ENROLLMENT_DATE_PREFIX = 'tuto_enrollment_date_';
+
+export async function getEnrollmentDate(courseId: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(`${TUTO_ENROLLMENT_DATE_PREFIX}${courseId}`);
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function setEnrollmentDate(courseId: string, dateIso: string): Promise<void> {
+  try {
+    // Only set if not already enrolled (don't overwrite)
+    const existing = await AsyncStorage.getItem(`${TUTO_ENROLLMENT_DATE_PREFIX}${courseId}`);
+    if (!existing) {
+      await AsyncStorage.setItem(`${TUTO_ENROLLMENT_DATE_PREFIX}${courseId}`, dateIso);
+    }
+  } catch (e) {
+    console.warn('Failed to set enrollment date:', e);
+  }
+}
+
+/**
+ * Checks if a specific day is unlocked for the student.
+ * Day 1 is always unlocked. Day N (N>1) requires Day N-1 to be completed.
+ */
+export async function isDayUnlocked(courseId: string, dayNumber: number): Promise<boolean> {
+  if (dayNumber <= 1) return true;
+  const completedDays = await getCompletedDaysForCourse(courseId);
+  return completedDays.has(dayNumber - 1);
+}
+
+/**
+ * Returns the highest day number the student can currently access.
+ * This is 1 + the count of consecutive completed days starting from Day 1.
+ */
+export async function getMaxUnlockedDay(courseId: string): Promise<number> {
+  const completedDays = await getCompletedDaysForCourse(courseId);
+  let maxDay = 1;
+  while (completedDays.has(maxDay)) {
+    maxDay++;
+  }
+  return maxDay;
+}
+
+/**
  * Fetch ONLY the day summaries that the Admin has released.
  */
 export async function getReleasedDaySummariesForCourse(

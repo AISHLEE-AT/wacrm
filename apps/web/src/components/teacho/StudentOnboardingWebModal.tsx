@@ -27,6 +27,7 @@ import {
   SCHOOL_BOARDS,
   FEATURED_JUNIOR_COURSES,
 } from '../../data/coursesCatalog';
+import { setEnrollmentDate } from '@/data/curriculum/wholeYearDayPlanEngine';
 
 export interface StudentProfileData {
   fullName: string;
@@ -140,6 +141,7 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
 
     try {
       localStorage.setItem('tuto_student_onboarding_completed', 'true');
+      await setEnrollmentDate(finalCourse.id, new Date().toISOString());
       localStorage.setItem('tuto_active_course_id', finalCourse.id);
       localStorage.setItem(`tuto_selected_board_${finalCourse.id}`, selectedBoard);
       localStorage.setItem('user-name', fullName.trim());
