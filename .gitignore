@@ -95,3 +95,5 @@ apps/mobile/src/lib/coursePlayerPrecompiledCache.json
 apps/mobile/src/data/generated_catalog/
 apps/web/src/data/generated_catalog/
 apps/mobile/src/lib/dailyCoursePlans/
+scripts/*.log
+scripts/*.lock
