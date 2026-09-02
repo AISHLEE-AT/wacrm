@@ -155,7 +155,7 @@ export default function DealoPage() {
         district: formLocation.split(',')[1]?.trim() || 'Thanjavur',
         location_name: formLocation.trim(),
         status: autoApprove ? 'approved' : 'pending',
-
+      };
 
       const res = await fetch('/api/dealo/listings', {
         method: 'POST',
