@@ -189,7 +189,8 @@ export default function RideOBookingPage() {
       if (pollingRef.current) clearInterval(pollingRef.current);
       pollingRef.current = setInterval(async () => {
         try {
-          const { data } = await supabase.from('rides').select('*').eq('id', rideRecord.id).maybeSingle();
+          const res = await fetch('http://152.67.7.216:8080/api/rides/' + rideRecord.id);
+          const data = res.ok ? await res.json() : null;
           if (data) handleRideUpdate(data);
         } catch (_) {}
       }, 1500);
@@ -210,7 +211,11 @@ export default function RideOBookingPage() {
           if (prev <= 1) {
             if (countdownRef.current) clearInterval(countdownRef.current);
             if (pollingRef.current) clearInterval(pollingRef.current);
-            supabase.from('rides').update({ status: 'expired' }).eq('id', rideRecord.id).then(() => {});
+            fetch('http://152.67.7.216:8080/api/rides/' + rideRecord.id + '/status', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'expired' })
+            }).catch(() => {});
             alert('Ride Request Expired (5:00 mins)\n\nNo driver accepted your request within 5 minutes. Please try again.');
             setRideState('IDLE');
             return 0;
@@ -264,7 +269,11 @@ export default function RideOBookingPage() {
     if (pollingRef.current) clearInterval(pollingRef.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
     if (currentRide?.id) {
-      await supabase.from('rides').update({ status: 'cancelled' }).eq('id', currentRide.id);
+      await fetch('http://152.67.7.216:8080/api/rides/' + currentRide.id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
     }
     setRideState('IDLE');
     setCurrentRide(null);
