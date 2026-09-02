@@ -20,57 +20,37 @@ interface RentalItem {
   specs: string[];
 }
 
-const RENTAL_ITEMS: RentalItem[] = [
-  // ─── AGRI EQUIPMENT ───
-  { id: 'tractor_plow', name: 'Mahindra / Swaraj 50 HP Tractor', tamilName: 'டிராக்டர் (ஏர் உழுதல்)', rate: '₹450', unit: 'per hour', desc: 'Rotavator & Cultivator attachment included for deep field tillage.', icon: '🚜', category: 'agri', specs: ['50 HP Engine', 'Rotavator / Cultivator', 'Available with Driver'] },
-  { id: 'paddy_harvester', name: 'Kubota Track Paddy Harvester', tamilName: 'நெல் அறுவடை இயந்திரம்', rate: '₹1,800', unit: 'per acre', desc: 'Wet & dry field rubber track harvester with zero grain wastage.', icon: '🌾', category: 'agri', specs: ['Rubber Track Type', 'High Speed Threshing', 'Full Acre Coverage'] },
-  { id: 'sugarcane_harvester', name: 'Heavy Duty Sugarcane Harvester', tamilName: 'கரும்பு அறுவடை', rate: '₹2,400', unit: 'per acre', desc: 'High tonnage sugarcane crop cutter and field cleaner.', icon: '🎋', category: 'agri', specs: ['Auto-loading Chute', 'High Capacity Cutter', 'Fuel Included'] },
-  { id: 'pesticide_drone', name: 'Agri Drone Sprayer (16 Litre)', tamilName: 'மருந்து தெளிக்கும் ட்ரோன்', rate: '₹350', unit: 'per acre', desc: 'GPS-guided precision pesticide & liquid fertilizer spraying in 8 minutes.', icon: '🛸', category: 'agri', specs: ['16L Tank', '8 Mins / Acre', 'Certified Pilot Operator'] },
-  { id: 'power_tiller', name: 'Mini Power Tiller & Weeder', tamilName: 'பவர் டில்லர்', rate: '₹250', unit: 'per hour', desc: 'Ideal for vegetable beds, orchards, and small land weed management.', icon: '⚙️', category: 'agri', specs: ['7 HP Diesel', 'Compact & Agile', 'Easy Self-Operation'] },
-  { id: 'agri_trailer', name: 'High-Capacity Agri Goods Trailer', tamilName: 'விவசாய டிரெய்லர்', rate: '₹300', unit: 'per hour', desc: 'Tractor trailer for transporting paddy bags, straw bales, and vegetables.', icon: '🚛', category: 'agri', specs: ['3 Tons Payload', 'Hydraulic Tipping', 'All-Terrain Wheels'] },
-
-  // ─── CARGO & TRUCKS ───
-  { id: 'tata_ace', name: 'Tata Ace Gold (Chota Hathi)', tamilName: 'டாடா ஏஸ்', rate: '₹250 + ₹18/km', unit: '750 kg', desc: 'Perfect for local market supply, vegetable transport, and shifting.', icon: '🚚', category: 'cargo', specs: ['750 kg Payload', 'Intra-City Delivery', 'Tarpaulin Cover'] },
-  { id: 'bolero_maxi', name: 'Mahindra Bolero Maxi Truck Plus', tamilName: 'போலிரோ மேக்ஸி', rate: '₹400 + ₹22/km', unit: '1.5 Tons', desc: 'Heavy payload pickup truck for farm produce, grains, and construction.', icon: '🛻', category: 'cargo', specs: ['1.5 Ton Payload', 'Heavy-Duty Suspension', 'Rural Roads Ready'] },
-  { id: 'leyland_dost', name: 'Ashok Leyland Dost Strong', tamilName: 'அசோக் லேலேண்ட் தோஸ்ட்', rate: '₹450 + ₹24/km', unit: '1.8 Tons', desc: 'Inter-district commercial cargo transport with high reliability.', icon: '🚛', category: 'cargo', specs: ['1.8 Ton Payload', 'Long Body Cargo', 'GPS Tracking'] },
-  { id: 'eicher_lorry', name: 'Eicher Pro 10.90 Lorry', tamilName: 'ஐச்சர் லாரி', rate: '₹900 + ₹38/km', unit: '5 Tons', desc: 'Medium commercial freight lorry for bulk Mandi crops and sugarcane.', icon: '🚛', category: 'cargo', specs: ['5 Ton Payload', 'Covered Container Body', 'Permit All TN'] },
-  { id: 'tipper_10w', name: '10-Wheeler Heavy Tipper', tamilName: '10 சக்கர டிப்பர்', rate: '₹1,800 + ₹65/km', unit: '15 Tons', desc: 'Bulk soil, sand, blue metal, and heavy agricultural field leveling.', icon: '🏗️', category: 'cargo', specs: ['15 Ton Payload', 'Heavy Hydraulic Lift', 'Industrial Grade'] },
-
-  // ─── HOURLY PACKAGES ───
-  { id: 'pkg_2h20k', name: '2 Hours / 20 KM Package', tamilName: '2 மணி நேரம் / 20 கி.மீ', rate: '₹499 Sedan', unit: '₹799 SUV', desc: 'City hospital visits, business meetings, and local family errands.', icon: '⏱️', category: 'hourly', specs: ['AC Sedan / SUV', 'Fuel & Chauffeur Included', 'Flexible Extensions'] },
-  { id: 'pkg_4h40k', name: '4 Hours / 40 KM Package', tamilName: '4 மணி நேரம் / 40 கி.மீ', rate: '₹899 Sedan', unit: '₹1,399 SUV', desc: 'Half-day shopping, wedding attendance, and city tours.', icon: '⏱️', category: 'hourly', specs: ['Dedicated Driver', 'Multiple Stops Allowed', 'Clean Sanitized Cars'] },
-  { id: 'pkg_8h80k', name: '8 Hours / 80 KM Full Day', tamilName: '8 மணி நேரம் / 80 கி.மீ', rate: '₹1,699 Sedan', unit: '₹2,499 SUV', desc: 'Full-day corporate meetings, temple visits, and outstation trips.', icon: '⏱️', category: 'hourly', specs: ['Full 8hr Availability', 'Inter-City Support', 'Top Rated Chauffeur'] },
-  { id: 'pkg_12h120k', name: '12 Hours / 120 KM Extended', tamilName: '12 மணி நேரம் / 120 கி.மீ', rate: '₹2,399 Sedan', unit: '₹3,499 SUV', desc: 'Long-distance round trips, temple trails, and day-long events.', icon: '⏱️', category: 'hourly', specs: ['12hr Full Duty', 'Zero Surge Guarantee', 'Doorstep Pickup'] },
-
-  // ─── TOUR PACKAGES ───
-  { id: 'tour_ooty', name: 'Ooty Queen of Hills Tour', tamilName: 'ஊட்டி மலை சுற்றுலா', rate: '₹4,500 / Day', unit: 'All Inclusive', desc: 'Tea Gardens, Doddabetta, Ooty Lake, Pykara Falls & Botanical Gardens.', icon: '🏔️', category: 'tour', specs: ['Hill Certified Driver', 'Sightseeing Route', 'Toll & Parking Covered'] },
-  { id: 'tour_kodai', name: 'Kodaikanal Princess of Hills', tamilName: 'கொடைக்கானல் சுற்றுலா', rate: '₹4,800 / Day', unit: 'All Inclusive', desc: 'Pillar Rocks, Coakers Walk, Bryant Park & Berijam Lake tour.', icon: '🌲', category: 'tour', specs: ['Scenic Route Navigation', 'Full Day Cab', 'Pickup Anywhere in TN'] },
-  { id: 'tour_rameswaram', name: 'Rameswaram & Dhanushkodi Yatra', tamilName: 'ராமேஸ்வரம் ஆன்மீக பயணம்', rate: '₹5,200 / Day', unit: 'All Inclusive', desc: 'Ramanathaswamy Temple, Pamban Bridge & Dhanushkodi Beach Darshan.', icon: '🛕', category: 'tour', specs: ['Temple Timings Sync', 'Special Pooja Assistance', 'Beach Ride'] },
-  { id: 'tour_girivalam', name: 'Thiruvannamalai Girivalam Package', tamilName: 'திருவண்ணாமலை கிரிவலம்', rate: '₹3,800 / Day', unit: 'Special Darshan', desc: 'Full Moon Pournami Girivalam darshan and Annamalaiyar Temple visit.', icon: '🕉️', category: 'tour', specs: ['Direct Girivalam Drop', '24/7 Waiting Chauffeur', 'Comfort AC Cab'] },
-  { id: 'tour_madurai_tanjore', name: 'Madurai & Thanjavur Heritage Tour', tamilName: 'மதுரை & தஞ்சை சுற்றுலா', rate: '₹4,200 / Day', unit: 'Heritage Tour', desc: 'Meenakshi Amman Temple, Thirumalai Nayakkar Palace & Brihadeeswarar Big Temple.', icon: '🏰', category: 'tour', specs: ['UNESCO Heritage Sites', 'Historical Guide Support', 'Family Sedan / SUV'] },
-];
+// Rental items are now fetched from OCI Backend
 
 export default function RentOPage() {
+  const [machines, setMachines] = useState<any[]>([]);
+  React.useEffect(() => {
+    fetch('http://152.67.7.216:8080/api/rento/machinery')
+      .then(res => res.json())
+      .then(data => setMachines(data))
+      .catch(err => console.error(err));
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'all' | 'agri' | 'cargo' | 'hourly' | 'tour'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<RentalItem | null>(null);
   const [bookingLocation, setBookingLocation] = useState('');
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const filtered = RENTAL_ITEMS.filter((m) => {
+  const filtered = machines.filter((m: any) => {
     const matchesTab = activeTab === 'all' || m.category === activeTab;
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.tamilName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.desc.toLowerCase().includes(searchQuery.toLowerCase());
+      (m.specifications || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
   const handleBookWhatsApp = (item: RentalItem) => {
     const text = `🚜 *SuprO RentO Booking Inquiry* 🚜\n\n` +
-      `*Vehicle / Machine:* ${item.name} (${item.tamilName})\n` +
+      `*Vehicle / Machine:* ${item.name} (${item.tamil_name})\n` +
       `*Category:* ${item.category.toUpperCase()}\n` +
-      `*Rate:* ${item.rate} (${item.unit})\n` +
+      `*Rate:* ${'₹' + item.rate} (${item.unit})\n` +
       `*Required Date:* ${bookingDate}\n` +
       `*Location:* ${bookingLocation || 'Thanjavur / Tamil Nadu'}\n\n` +
       `Hi, I would like to book this via SuprO RentO. Please confirm operator availability!`;
@@ -141,14 +121,14 @@ export default function RentOPage() {
                   {item.icon}
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-black text-emerald-400">{item.rate}</div>
+                  <div className="text-lg font-black text-emerald-400">{'₹' + item.rate}</div>
                   <div className="text-[11px] text-slate-400 font-medium">{item.unit}</div>
                 </div>
               </div>
 
               <div className="mt-4">
                 <h3 className="font-bold text-base text-white">{item.name}</h3>
-                <p className="text-xs text-emerald-400 font-semibold mt-0.5">{item.tamilName}</p>
+                <p className="text-xs text-emerald-400 font-semibold mt-0.5">{item.tamil_name}</p>
                 <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">{item.desc}</p>
               </div>
 
