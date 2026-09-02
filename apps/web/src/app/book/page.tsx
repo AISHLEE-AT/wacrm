@@ -34,7 +34,8 @@ function BookRideContent() {
   useEffect(() => {
     if (activeRide?.status === 'accepted' && activeRide.driver_id) {
        const fetchDriverLocation = async () => {
-         const { data: driver } = await supabase.from('drivers').select('pickup_latitude, pickup_longitude').eq('id', activeRide.driver_id).maybeSingle();
+         const res = await fetch('http://152.67.7.216:8080/api/drivers/' + activeRide.driver_id);
+   const driver = res.ok ? await res.json() : null;
          if (driver && driver.pickup_latitude && activeRide.pickup_latitude) {
             const dist = getDistanceKm(driver.pickup_latitude, driver.pickup_longitude, activeRide.pickup_latitude, activeRide.pickup_longitude);
             const mins = Math.max(1, Math.ceil(dist * 3));
@@ -78,11 +79,9 @@ function BookRideContent() {
     setSearchingDrivers(true)
     
     try {
-      const { data, error } = await supabase.rpc('get_nearby_drivers', {
-        pickup_lat: pickup[0],
-        pickup_lon: pickup[1],
-        radius_km: 100
-      })
+      const res = await fetch(`http://152.67.7.216:8080/api/drivers/nearby?lat=${pickup[0]}&lng=${pickup[1]}&radius_km=100`);
+   const data = res.ok ? await res.json() : null;
+   const error = res.ok ? null : new Error('Failed to fetch from OCI');
 
       if (error) throw error
       
@@ -114,15 +113,24 @@ function BookRideContent() {
       const { data: userAuth } = await supabase.auth.getUser()
 
       const passengerPhone = userAuth?.user?.phone || phone || 'Unknown';
-      const { data: rideResponse, error } = await supabase.from('rides').insert({
-        passenger_phone: passengerPhone,
-        driver_id: driver.id,
-        vehicle_type: driver.vehicle_type,
-        fare: price,
-        status: 'pending',
-        otp: otp,
-        payment_mode: 'upi'
-      }).select().single()
+      const rideReq = await fetch('http://152.67.7.216:8080/api/rides', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_phone: passengerPhone,
+        service_type: driver.vehicle_type,
+        pickup_address: `GPS: ${pickup![0].toFixed(4)}, ${pickup![1].toFixed(4)}`,
+        pickup_lat: pickup![0],
+        pickup_lng: pickup![1],
+        dropoff_address: `GPS: ${dropoff![0].toFixed(4)}, ${dropoff![1].toFixed(4)}`,
+        dropoff_lat: dropoff![0],
+        dropoff_lng: dropoff![1],
+        distance_km: tripKm.toFixed(1),
+        estimated_fare: price
+      })
+   });
+   const error = rideReq.ok ? null : new Error('Failed to insert ride in OCI');
+   const rideResponse = rideReq.ok ? await rideReq.json() : null;
 
       if (error) throw error
 
@@ -152,24 +160,23 @@ function BookRideContent() {
       
       alert('Ride request successfully sent to the driver via WhatsApp!');
 
-      // Setup Realtime listener
-      supabase
-        .channel(`public:rides:id=${rideResponse.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${rideResponse.id}` },
-          (payload) => {
-            const updatedRide = payload.new
+      // Setup Polling (Replaces Supabase Realtime)
+      const pollInterval = setInterval(async () => {
+        try {
+          const checkRes = await fetch('http://152.67.7.216:8080/api/rides/' + rideResponse.id);
+          if (checkRes.ok) {
+            const updatedRide = await checkRes.json();
             if (updatedRide.status === 'declined') {
-               alert('The driver has declined the ride request. Please select another driver.');
+               alert('The driver has declined the ride request.');
                setActiveRide(null);
                setDriverETA(null);
-            } else {
+               clearInterval(pollInterval);
+            } else if (updatedRide.status !== 'requested') {
                setActiveRide(updatedRide);
             }
           }
-        )
-        .subscribe()
+        } catch (err) {}
+      }, 5000);
 
     } catch (e: any) {
       alert('Error booking ride: ' + e.message)
