@@ -102,10 +102,9 @@ export default function DealoPage() {
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('market_listings')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const res = await fetch('http://152.67.7.216:8080/api/dealo/listings');
+      const data = res.ok ? await res.json() : null;
+      const error = res.ok ? null : new Error('Failed to fetch listings');
 
       if (!error && data) {
         setListings(data);
@@ -121,23 +120,8 @@ export default function DealoPage() {
     fetchListings();
 
     // Subscribe to realtime changes
-    const channel = supabase
-      .channel('web_market_listings_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'market_listings' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setListings((prev) => [payload.new as MarketListing, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          setListings((prev) =>
-            prev.map((item) => (item.id === payload.new.id ? (payload.new as MarketListing) : item))
-          );
-        } else if (payload.eventType === 'DELETE') {
-          setListings((prev) => prev.filter((item) => item.id === payload.old.id));
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+    const interval = setInterval(() => fetchListings(), 10000);
+    return () => clearInterval(interval);
     };
   }, [fetchListings, supabase]);
 
@@ -173,7 +157,13 @@ export default function DealoPage() {
         status: autoApprove ? 'approved' : 'pending',
       };
 
-      const { data, error } = await supabase.from('market_listings').insert([newListing]).select().single();
+      const res = await fetch('http://152.67.7.216:8080/api/dealo/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newListing)
+      });
+      const data = res.ok ? await res.json() : null;
+      const error = res.ok ? null : new Error('Failed to create listing');
 
       if (error) {
         alert(error.message);
@@ -199,7 +189,11 @@ export default function DealoPage() {
   // Mark Sold
   const handleMarkSold = async (id: string) => {
     try {
-      await supabase.from('market_listings').update({ status: 'sold' }).eq('id', id);
+      await fetch('http://152.67.7.216:8080/api/dealo/listings/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'sold' })
+      });
       setListings((prev) => prev.map((item) => (item.id === id ? { ...item, status: 'sold' } : item)));
     } catch (e) {}
   };
