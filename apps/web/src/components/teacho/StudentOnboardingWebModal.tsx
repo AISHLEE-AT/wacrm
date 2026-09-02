@@ -149,20 +149,23 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
       localStorage.setItem('student-area-interest', selectedInterest);
 
       // Save to Supabase
-      const supabase = createClient();
-      const cleanPhone = (userPhone || localStorage.getItem('user-phone') || '').replace(/\D/g, '').slice(-10);
+      // Save to OCI
       if (cleanPhone) {
-        await supabase
-          .from('profiles')
-          .update({
+        await fetch('http://152.67.7.216:8080/api/profiles/onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone,
             full_name: fullName.trim(),
-            academic_class: selectedClass,
-            school_board: selectedBoard,
-            area_of_interest: selectedInterest,
-            enrolled_course_id: finalCourse.id,
-            updated_at: new Date().toISOString(),
+            custom_attributes: {
+              academic_class: selectedClass,
+              area_of_interest: selectedInterest,
+              preferred_board: selectedBoard,
+              target_course: selectedCourse.id
+            }
           })
-          .eq('phone', cleanPhone);
+        });
+      }
       }
 
       const profileData: StudentProfileData = {

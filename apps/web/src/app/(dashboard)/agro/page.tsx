@@ -275,12 +275,9 @@ export default function AgroPage() {
   useEffect(() => {
     const fetchAgriMedia = async () => {
       try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('unified_master_data')
-          .select('*')
-          .eq('item_type', 'AGRI_MEDIA')
-          .order('created_at', { ascending: false });
+        // Fetch from OCI instead of Supabase
+        const res = await fetch('http://152.67.7.216:8080/api/agro/media');
+        const data = res.ok ? await res.json() : [];
 
         if (data && data.length > 0) {
           const dynamicVideos: VideoItem[] = data.map((d: any) => ({
