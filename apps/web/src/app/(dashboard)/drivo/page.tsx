@@ -69,7 +69,7 @@ export default function DriveODashboard() {
         const rawPhone = currentUser.phone || profile?.phone || '';
         const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
         // Fetch by phone instead of user_id for OCI
-        const res = await fetch('http://152.67.7.216:8080/api/drivers/phone/' + cleanPhone);
+        const res = await fetch('/api/drivers/phone/' + cleanPhone);
         const data = res.ok ? await res.json() : null;
 
         if (existingCat) {
@@ -171,7 +171,7 @@ export default function DriveODashboard() {
         setActiveOrder({ ...ride, status: 'accepted', otp: tripOtp });
         setIncomingRequests((prev) => prev.filter((r) => r.id !== ride.id));
         if (driverRecord?.id) {
-          await fetch('http://152.67.7.216:8080/api/drivers/' + driverRecord.id + '/status', {
+          await fetch('/api/drivers/' + driverRecord.id + '/status', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'busy' })
@@ -186,7 +186,7 @@ export default function DriveODashboard() {
   const handleCompleteRide = async () => {
     if (!activeOrder) return;
     try {
-      await fetch('http://152.67.7.216:8080/api/rides/' + activeOrder.id + '/status', {
+      await fetch('/api/rides/' + activeOrder.id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' })
@@ -194,7 +194,7 @@ export default function DriveODashboard() {
       setActiveOrder(null);
       if (currentUser) {
         if (driverRecord?.id) {
-          await fetch('http://152.67.7.216:8080/api/drivers/' + driverRecord.id + '/status', {
+          await fetch('/api/drivers/' + driverRecord.id + '/status', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'online' })
@@ -209,7 +209,7 @@ export default function DriveODashboard() {
   const handleArrived = async () => {
     if (!activeOrder) return;
     try {
-      await fetch('http://152.67.7.216:8080/api/rides/' + activeOrder.id + '/status', {
+      await fetch('/api/rides/' + activeOrder.id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'driver_arrived' })
@@ -227,7 +227,7 @@ export default function DriveODashboard() {
       return;
     }
     try {
-      await fetch('http://152.67.7.216:8080/api/rides/' + activeOrder.id + '/status', {
+      await fetch('/api/rides/' + activeOrder.id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'in_progress' })
@@ -256,7 +256,7 @@ export default function DriveODashboard() {
       setCancelReason('');
       if (currentUser) {
         if (driverRecord?.id) {
-          await fetch('http://152.67.7.216:8080/api/drivers/' + driverRecord.id + '/status', {
+          await fetch('/api/drivers/' + driverRecord.id + '/status', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'online' })

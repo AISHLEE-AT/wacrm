@@ -25,7 +25,7 @@ interface RentalItem {
 export default function RentOPage() {
   const [machines, setMachines] = useState<any[]>([]);
   React.useEffect(() => {
-    fetch('http://152.67.7.216:8080/api/rento/machinery')
+    fetch('/api/rento/machinery')
       .then(res => res.json())
       .then(data => setMachines(data))
       .catch(err => console.error(err));

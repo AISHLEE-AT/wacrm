@@ -151,7 +151,7 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
       // Save to Supabase
       // Save to OCI
       if (cleanPhone) {
-        await fetch('http://152.67.7.216:8080/api/profiles/onboarding', {
+        await fetch('/api/profiles/onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

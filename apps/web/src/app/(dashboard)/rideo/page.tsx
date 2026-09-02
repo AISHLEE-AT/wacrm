@@ -189,7 +189,7 @@ export default function RideOBookingPage() {
       if (pollingRef.current) clearInterval(pollingRef.current);
       pollingRef.current = setInterval(async () => {
         try {
-          const res = await fetch('http://152.67.7.216:8080/api/rides/' + rideRecord.id);
+          const res = await fetch('/api/rides/' + rideRecord.id);
           const data = res.ok ? await res.json() : null;
           if (data) handleRideUpdate(data);
         } catch (_) {}
@@ -211,7 +211,7 @@ export default function RideOBookingPage() {
           if (prev <= 1) {
             if (countdownRef.current) clearInterval(countdownRef.current);
             if (pollingRef.current) clearInterval(pollingRef.current);
-            fetch('http://152.67.7.216:8080/api/rides/' + rideRecord.id + '/status', {
+            fetch('/api/rides/' + rideRecord.id + '/status', {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: 'expired' })
@@ -269,7 +269,7 @@ export default function RideOBookingPage() {
     if (pollingRef.current) clearInterval(pollingRef.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
     if (currentRide?.id) {
-      await fetch('http://152.67.7.216:8080/api/rides/' + currentRide.id + '/status', {
+      await fetch('/api/rides/' + currentRide.id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'cancelled' })

@@ -276,7 +276,7 @@ export default function AgroPage() {
     const fetchAgriMedia = async () => {
       try {
         // Fetch from OCI instead of Supabase
-        const res = await fetch('http://152.67.7.216:8080/api/agro/media');
+        const res = await fetch('/api/agro/media');
         const data = res.ok ? await res.json() : [];
 
         if (data && data.length > 0) {

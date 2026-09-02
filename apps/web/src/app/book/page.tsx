@@ -34,7 +34,7 @@ function BookRideContent() {
   useEffect(() => {
     if (activeRide?.status === 'accepted' && activeRide.driver_id) {
        const fetchDriverLocation = async () => {
-         const res = await fetch('http://152.67.7.216:8080/api/drivers/' + activeRide.driver_id);
+         const res = await fetch('/api/drivers/' + activeRide.driver_id);
    const driver = res.ok ? await res.json() : null;
          if (driver && driver.pickup_latitude && activeRide.pickup_latitude) {
             const dist = getDistanceKm(driver.pickup_latitude, driver.pickup_longitude, activeRide.pickup_latitude, activeRide.pickup_longitude);
@@ -79,7 +79,7 @@ function BookRideContent() {
     setSearchingDrivers(true)
     
     try {
-      const res = await fetch(`http://152.67.7.216:8080/api/drivers/nearby?lat=${pickup[0]}&lng=${pickup[1]}&radius_km=100`);
+      const res = await fetch(`/api/drivers/nearby?lat=${pickup[0]}&lng=${pickup[1]}&radius_km=100`);
    const data = res.ok ? await res.json() : null;
    const error = res.ok ? null : new Error('Failed to fetch from OCI');
 
@@ -113,7 +113,7 @@ function BookRideContent() {
       const { data: userAuth } = await supabase.auth.getUser()
 
       const passengerPhone = userAuth?.user?.phone || phone || 'Unknown';
-      const rideReq = await fetch('http://152.67.7.216:8080/api/rides', {
+      const rideReq = await fetch('/api/rides', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -163,7 +163,7 @@ function BookRideContent() {
       // Setup Polling (Replaces Supabase Realtime)
       const pollInterval = setInterval(async () => {
         try {
-          const checkRes = await fetch('http://152.67.7.216:8080/api/rides/' + rideResponse.id);
+          const checkRes = await fetch('/api/rides/' + rideResponse.id);
           if (checkRes.ok) {
             const updatedRide = await checkRes.json();
             if (updatedRide.status === 'declined') {

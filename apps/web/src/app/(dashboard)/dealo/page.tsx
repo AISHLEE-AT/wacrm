@@ -102,7 +102,7 @@ export default function DealoPage() {
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://152.67.7.216:8080/api/dealo/listings');
+      const res = await fetch('/api/dealo/listings');
       const data = res.ok ? await res.json() : null;
       const error = res.ok ? null : new Error('Failed to fetch listings');
 
@@ -157,7 +157,7 @@ export default function DealoPage() {
         status: autoApprove ? 'approved' : 'pending',
       };
 
-      const res = await fetch('http://152.67.7.216:8080/api/dealo/listings', {
+      const res = await fetch('/api/dealo/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newListing)
@@ -189,7 +189,7 @@ export default function DealoPage() {
   // Mark Sold
   const handleMarkSold = async (id: string) => {
     try {
-      await fetch('http://152.67.7.216:8080/api/dealo/listings/' + id, {
+      await fetch('/api/dealo/listings/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'sold' })
