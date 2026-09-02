@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       
     if (!driver) return NextResponse.json({ error: 'Driver not found' }, { status: 404 });
 
-    const driver_upi_id = driver.upi_id || '9486335870@hdfcbank';
+    const driver_upi_id = driver.upi_id || '6381029380@hdfcbank';
 
     // Update ride
     const { data: updatedRide, error: updateError } = await supabase

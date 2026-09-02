@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       amount: platform_fee,
       status: 'pending',
       ride_id: ride.id,
-      admin_upi: '9486335870@hdfcbank'
+      admin_upi: '6381029380@hdfcbank'
     });
 
     // Notify passenger

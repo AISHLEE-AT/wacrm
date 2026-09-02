@@ -15,7 +15,7 @@ BEGIN;
 -- --------------------------------------------------------------------
 -- 1. UNIFY PROFILES TO A SINGLE ACCOUNT ID & ELEVATE TO ADMIN/OWNER
 -- --------------------------------------------------------------------
--- This ensures all users (9486335870, 9123596988, 919123596988) share the same
+-- This ensures all users (6381029380, 9123596988, 919123596988) share the same
 -- active WhatsApp configuration and bypass RLS isolation.
 UPDATE public.profiles
 SET 

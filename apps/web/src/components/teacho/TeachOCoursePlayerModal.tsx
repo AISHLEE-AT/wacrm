@@ -74,7 +74,7 @@ export const TeachOCoursePlayerModal: React.FC<TeachOCoursePlayerModalProps> = (
   };
 
   const handleContactAdminWhatsApp = () => {
-    const adminPhone = '919486335870';
+    const adminPhone = '916381029380';
     const msg = `🎓 *SuprO TutO — Course Guide Support & Verification*\n\n👤 *Student:* Enrolled Scholar\n📚 *Course:* *${courseTitle || 'Tuition Course'}* (Day ${dayNumber || 1})\n📌 *Subject:* *${subject || 'Core Subject'}*\n📖 *Topic / Task:* *${topicTitle || 'Lesson'}*\n\nPlease provide guidance and verify my daily learning task submission.\n\nThank you! 🙏`;
     const webLink = `https://wa.me/${adminPhone}?text=${encodeURIComponent(msg)}`;
     window.open(webLink, '_blank');

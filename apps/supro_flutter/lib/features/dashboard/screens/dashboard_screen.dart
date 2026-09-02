@@ -171,7 +171,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final rawPhone = user?.phone ?? 'Unknown';
     final displayPhone = _formatPhone(rawPhone);
     final role = user?.userMetadata?['role'] ?? 'User';
-    final isAdmin = ['Admin', 'admin'].contains(role) || rawPhone.contains('6381029380') || rawPhone.contains('9486335870');
+    final isAdmin = ['Admin', 'admin'].contains(role) || rawPhone.contains('6381029380') || rawPhone.contains('6381029380');
 
     if (_isLoadingProfile) {
       return const Scaffold(
@@ -734,12 +734,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 child: const Text('Official UPI ID', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 10, fontWeight: FontWeight.bold)),
                               ),
                               const SizedBox(width: 12),
-                              const Text('9486335870@hdfcbank', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                              const Text('6381029380@hdfcbank', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
                             ],
                           ),
                           GestureDetector(
                             onTap: () {
-                              Clipboard.setData(const ClipboardData(text: '9486335870@hdfcbank'));
+                              Clipboard.setData(const ClipboardData(text: '6381029380@hdfcbank'));
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('UPI ID copied to clipboard!')));
                             },
                             child: Container(
@@ -765,7 +765,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          final url = Uri.parse('upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR');
+                          final url = Uri.parse('upi://pay?pa=6381029380@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR');
                           if (await canLaunchUrl(url)) {
                             await launchUrl(url, mode: LaunchMode.externalApplication);
                           }

@@ -70,7 +70,7 @@ TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '9486335870'))
+        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '6381029380'))
     )
 );
 
@@ -86,7 +86,7 @@ TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '9486335870'))
+        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '6381029380'))
     )
 );
 
@@ -96,7 +96,7 @@ TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '9486335870'))
+        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '6381029380'))
     )
 );
 
@@ -112,7 +112,7 @@ TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM public.profiles p
-        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '9486335870'))
+        WHERE p.id = auth.uid() AND (p.role = 'admin' OR p.phone IN ('6381029380', '9876543210', '6381029380'))
     )
 );
 

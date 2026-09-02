@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '../../lib/supabase/client';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 
 interface TaskVideoFeedbackWebModalProps {
   isOpen: boolean;
@@ -81,7 +81,7 @@ export const TaskVideoFeedbackWebModal: React.FC<TaskVideoFeedbackWebModalProps>
   const [uploadPercent, setUploadPercent] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Send pre-populated WhatsApp message to Course Guide (9486335870)
+  // Send pre-populated WhatsApp message to Course Guide (6381029380)
   const handleSendToWhatsApp = (directLink?: string) => {
     const link =
       directLink || uploadedDriveLink || manualDriveLink.trim() || 'https://drive.google.com';
@@ -312,7 +312,7 @@ export const TaskVideoFeedbackWebModal: React.FC<TaskVideoFeedbackWebModalProps>
 
       setTimeout(() => {
         const sendWa = window.confirm(
-          `🎉 Task Video Submitted to Google Drive!\n\nEarned +${earnedXp} Bonus XP!\n\nWould you like to send this video link to your Course Guide (+91 9486335870) on WhatsApp now for instant verification?`
+          `🎉 Task Video Submitted to Google Drive!\n\nEarned +${earnedXp} Bonus XP!\n\nWould you like to send this video link to your Course Guide (+91 6381029380) on WhatsApp now for instant verification?`
         );
         if (sendWa) {
           handleSendToWhatsApp(webViewLink);
@@ -543,7 +543,7 @@ export const TaskVideoFeedbackWebModal: React.FC<TaskVideoFeedbackWebModalProps>
             </div>
           </div>
 
-          {/* 4. Course Guide WhatsApp CRM Verification Card (9486335870) */}
+          {/* 4. Course Guide WhatsApp CRM Verification Card (6381029380) */}
           <div className="bg-[#071F15] border border-emerald-500/40 rounded-2xl p-4 space-y-3 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -551,7 +551,7 @@ export const TaskVideoFeedbackWebModal: React.FC<TaskVideoFeedbackWebModalProps>
                 <span className="text-xs font-bold text-[#25D366]">Course Guide WhatsApp CRM Verification</span>
               </div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/30">
-                +91 9486335870
+                +91 6381029380
               </span>
             </div>
 
@@ -575,7 +575,7 @@ export const TaskVideoFeedbackWebModal: React.FC<TaskVideoFeedbackWebModalProps>
               className="w-full py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black rounded-xl shadow flex items-center justify-center gap-2 transition"
             >
               <MessageCircle className="w-4 h-4 fill-white" />
-              <span>📲 Send Video to Course Guide on WhatsApp (9486335870)</span>
+              <span>📲 Send Video to Course Guide on WhatsApp (6381029380)</span>
             </button>
           </div>
 

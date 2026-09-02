@@ -13,7 +13,7 @@
 --      - broadcasts, automations, flows, contacts, tags, etc.
 --   4) Backfills accounts for ALL existing users so that nobody gets:
 --      "Your profile is not linked to an account"
---   5) Configures Admin account (9486335870) & Virtual Test Support account (9123596988)
+--   5) Configures Admin account (6381029380) & Virtual Test Support account (9123596988)
 --   6) Re-creates required RPC functions and reloads PostgREST schema cache
 -- ==============================================================================
 
@@ -382,15 +382,15 @@ BEGIN
 END $$;
 
 -- ==============================================================================
--- STEP 6: CONFIGURE USER ACCOUNTS (ADMIN 9486335870 & TEST SUPPORT 9123596988)
+-- STEP 6: CONFIGURE USER ACCOUNTS (ADMIN 6381029380 & TEST SUPPORT 9123596988)
 -- ==============================================================================
 
--- 6.1 Set 9486335870 as Admin
+-- 6.1 Set 6381029380 as Admin
 UPDATE public.profiles
 SET role = 'admin',
     account_role = 'owner'
-WHERE phone IN ('9486335870', '919486335870', '91919486335870')
-   OR whatsapp IN ('9486335870', '919486335870', '91919486335870');
+WHERE phone IN ('6381029380', '916381029380', '91916381029380')
+   OR whatsapp IN ('6381029380', '916381029380', '91916381029380');
 
 -- 6.2 Set 9123596988 as Virtual Support Test User (with owner access to their account)
 UPDATE public.profiles
@@ -445,5 +445,5 @@ SELECT
   '✅ WACRM JULY 29 DATABASE FULLY RESTORED AND WORKING FOR ALL LOGINS!' AS status,
   (SELECT COUNT(*) FROM public.accounts) AS total_accounts,
   (SELECT COUNT(*) FROM public.profiles WHERE account_id IS NOT NULL) AS profiles_linked_to_account,
-  (SELECT role FROM public.profiles WHERE phone LIKE '%9486335870%' LIMIT 1) AS admin_role,
+  (SELECT role FROM public.profiles WHERE phone LIKE '%6381029380%' LIMIT 1) AS admin_role,
   (SELECT role FROM public.profiles WHERE phone LIKE '%9123596988%' LIMIT 1) AS test_user_role;

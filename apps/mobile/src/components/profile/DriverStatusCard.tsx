@@ -46,7 +46,7 @@ export const DriverStatusCard: React.FC<DriverStatusCardProps> = ({
   const handleWhatsAppVerification = () => {
     const vehicle = driverProfile?.vehicle_number || 'N/A';
     const message = `Hello Admin! I have registered as a DriveO Driver Partner (Name: ${fullName}, Vehicle: ${vehicle}). Please verify my driver account.`;
-    const url = `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(
+    const url = `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(
       message
     )}`;
     Linking.openURL(url).catch((err) =>

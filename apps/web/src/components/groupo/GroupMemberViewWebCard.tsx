@@ -30,7 +30,7 @@ export const GroupMemberViewWebCard: React.FC<GroupMemberViewWebCardProps> = ({
 
   // Contact Leader via WhatsApp
   const handleContactLeaderWhatsApp = () => {
-    const leaderPhone = group.leader_phone || '9486335870';
+    const leaderPhone = group.leader_phone || '6381029380';
     const cleanLeaderPhone = (leaderPhone || '').replace(/[^0-9]/g, '').replace(/^91(?=\d{10}$)/, '');
     const msg = `வணக்கம் தலைவர் (${group.leader_name}) அவர்களே! நான் ${member.name} (${group.name} உறுப்பினர்).\n\nஎனது மாதாந்திர சேமிப்பு / கூட்ட விபரம் தொடர்பாக பேச விரும்புகிறேன்.`;
     window.open(`https://wa.me/91${cleanLeaderPhone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -38,7 +38,7 @@ export const GroupMemberViewWebCard: React.FC<GroupMemberViewWebCardProps> = ({
 
   // Direct Call to Leader
   const handleCallLeader = () => {
-    const leaderPhone = group.leader_phone || '9486335870';
+    const leaderPhone = group.leader_phone || '6381029380';
     window.open(`tel:${leaderPhone}`, '_self');
   };
 

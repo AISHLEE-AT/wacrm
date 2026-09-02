@@ -47,7 +47,7 @@ export const GroupMemberViewCard: React.FC<GroupMemberViewCardProps> = ({
 
   // Contact Leader via WhatsApp
   const handleContactLeaderWhatsApp = () => {
-    const leaderPhone = group.leader_phone || '9486335870';
+    const leaderPhone = group.leader_phone || '6381029380';
     const cleanLeaderPhone = (leaderPhone || '').replace(/[^0-9]/g, '').replace(/^91(?=\d{10}$)/, '');
     const msg = `வணக்கம் தலைவர் (${group.leader_name}) அவர்களே! நான் ${member.name} (${group.name} உறுப்பினர்).\n\nஎனது மாதாந்திர சேமிப்பு / கூட்ட விபரம் தொடர்பாக பேச விரும்புகிறேன்.`;
     const url = `whatsapp://send?phone=91${cleanLeaderPhone}&text=${encodeURIComponent(msg)}`;
@@ -58,7 +58,7 @@ export const GroupMemberViewCard: React.FC<GroupMemberViewCardProps> = ({
 
   // Direct Call to Leader
   const handleCallLeader = () => {
-    const leaderPhone = group.leader_phone || '9486335870';
+    const leaderPhone = group.leader_phone || '6381029380';
     Linking.openURL(`tel:${leaderPhone}`);
   };
 

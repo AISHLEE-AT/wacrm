@@ -206,13 +206,13 @@ function ProfilePageInner() {
 
   const isAdmin = Boolean(
     activeProfile?.email?.includes("aishleetechnology@gmail.com") ||
-    activeProfile?.email?.includes("9486335870") ||
-    activeProfile?.phone?.includes("9486335870") ||
-    activeProfile?.phone?.includes("9486335870") ||
+    activeProfile?.email?.includes("6381029380") ||
+    activeProfile?.phone?.includes("6381029380") ||
+    activeProfile?.phone?.includes("6381029380") ||
     user?.email?.includes("aishleetechnology@gmail.com") ||
-    user?.email?.includes("9486335870") ||
-    user?.phone?.includes("9486335870") ||
-    user?.phone?.includes("9486335870")
+    user?.email?.includes("6381029380") ||
+    user?.phone?.includes("6381029380") ||
+    user?.phone?.includes("6381029380")
   );
 
   // Real-Time Profile Data Subscription
@@ -247,7 +247,7 @@ function ProfilePageInner() {
             'postgres_changes',
             { event: '*', schema: 'public', table: 'profiles' },
             (payload: any) => {
-              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("9486335870"))) {
+              if (payload.new && (payload.new.id === user.id || payload.new.phone?.includes("6381029380"))) {
                 setDbProfile((prev: any) => ({ ...prev, ...payload.new }));
                 if (payload.new.upi_id) setUpiIdState(payload.new.upi_id);
                 if (payload.new.location) setLocationState(payload.new.location);
@@ -346,7 +346,7 @@ function ProfilePageInner() {
     const name = activeProfile?.full_name || 'Driver Partner';
     const vehicle = driverProfile?.vehicle_number || driverProfile?.vehicle_registration || 'Vehicle';
     const text = `Hello Admin! I have registered as a DriveO Driver Partner (Name: ${name}, Vehicle: ${vehicle}). Please verify my driver account.`;
-    const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '919486335870';
+    const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '916381029380';
     return `https://api.whatsapp.com/send?phone=${supportPhone}&text=${encodeURIComponent(text)}`;
   };
 
@@ -497,7 +497,7 @@ function ProfilePageInner() {
 
           <button
             onClick={() => {
-              window.open('https://wa.me/919486335870?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
+              window.open('https://wa.me/916381029380?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
             }}
             className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
           >
@@ -901,12 +901,12 @@ function ProfilePageInner() {
         <div className="flex flex-col sm:flex-row items-center gap-3 bg-background/60 border border-border/80 rounded-xl p-3">
           <div className="flex items-center gap-2 flex-1 w-full">
             <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-lg border border-amber-400/20">Official UPI ID</span>
-            <span className="text-sm font-mono font-bold text-foreground tracking-wide">9486335870@hdfcbank</span>
+            <span className="text-sm font-mono font-bold text-foreground tracking-wide">6381029380@hdfcbank</span>
           </div>
           <button
             onClick={() => {
-              navigator.clipboard.writeText("9486335870@hdfcbank");
-              alert("UPI ID copied to clipboard: 9486335870@hdfcbank");
+              navigator.clipboard.writeText("6381029380@hdfcbank");
+              alert("UPI ID copied to clipboard: 6381029380@hdfcbank");
             }}
             className="w-full sm:w-auto px-4 py-2 text-xs font-bold rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition flex items-center justify-center gap-1.5"
           >
@@ -916,7 +916,7 @@ function ProfilePageInner() {
 
         <div className="flex flex-wrap gap-2 pt-1">
           <a
-            href="upi://pay?pa=9486335870@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR"
+            href="upi://pay?pa=6381029380@hdfcbank&pn=Aishlee%20Technology&tn=FAGO%20Good%20Cause%20Contribution&cu=INR"
             className="flex-1 min-w-[200px] py-3 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg"
           >
             <Heart className="w-4 h-4" /> Contribute via UPI (₹10 / ₹100+)
@@ -938,7 +938,7 @@ function ProfilePageInner() {
   );
 
   const renderDigitalId = () => {
-    const idHash = (profile as any)?.digital_id_hash || `FAGO-TN-${displayPhone.replace(/\D/g, '') || user?.id || '9486335870'}`;
+    const idHash = (profile as any)?.digital_id_hash || `FAGO-TN-${displayPhone.replace(/\D/g, '') || user?.id || '6381029380'}`;
     const qrData = `https://watscrm.vercel.app/profile?id=${idHash}`;
 
     return (

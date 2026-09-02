@@ -1,4 +1,4 @@
-﻿import '../core/gameo_supabase.dart';
+import '../core/gameo_supabase.dart';
 
 /// Handles fetching balances and redeeming game rewards for portal coupons.
 class RewardsService {
@@ -8,7 +8,7 @@ class RewardsService {
       id: 'testo_mock_test',
       title: 'Testo Mock Test',
       description: '1 free full mock exam session on Testo',
-      icon: '📝',
+      icon: '??',
       pointsCost: 100,
       rewardType: 'testo',
       color: 0xFF8B5CF6,
@@ -17,7 +17,7 @@ class RewardsService {
       id: 'testo_premium_week',
       title: 'Testo Premium (7 Days)',
       description: '7-day premium access to all study materials',
-      icon: '🎓',
+      icon: '??',
       pointsCost: 500,
       rewardType: 'testo',
       color: 0xFF6D28D9,
@@ -29,16 +29,16 @@ class RewardsService {
       id: 'farm_discount_10',
       title: '10% Farm Input Discount',
       description: '10% off your next portal farm input order',
-      icon: '🌱',
+      icon: '??',
       pointsCost: 200,
       rewardType: 'farm',
       color: 0xFF10B981,
     ),
     RewardTier(
       id: 'free_seed_pack',
-      title: 'Free Seed Pack (₹100)',
-      description: '₹100 seed voucher applied to your cart',
-      icon: '🌾',
+      title: 'Free Seed Pack (?100)',
+      description: '?100 seed voucher applied to your cart',
+      icon: '??',
       pointsCost: 500,
       rewardType: 'farm',
       color: 0xFF059669,

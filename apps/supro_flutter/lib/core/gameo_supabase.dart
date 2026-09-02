@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Separate Supabase DB instance specifically for the GameO module
 /// This prevents high-frequency game telemetry (like Ghost racing coordinates)

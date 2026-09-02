@@ -1,4 +1,4 @@
-﻿import { getGameOClient } from './client'
+import { getGameOClient } from './client'
 
 export type UserBalance = {
   testoPoints: number

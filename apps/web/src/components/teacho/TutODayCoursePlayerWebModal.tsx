@@ -751,7 +751,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
                     <h3 className="text-lg font-extrabold text-white">📹 Record & Upload Today's Video Reflection</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">
                       Record a 30-60 second video explaining what you learned today. Your video will be automatically
-                      stored in your Google Drive and sent to your course guide on WhatsApp (9486335870).
+                      stored in your Google Drive and sent to your course guide on WhatsApp (6381029380).
                     </p>
                   </div>
 

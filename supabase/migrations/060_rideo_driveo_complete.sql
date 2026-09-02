@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS public.driver_subscriptions (
   driver_id UUID NOT NULL,
   ride_id UUID,
   amount NUMERIC NOT NULL DEFAULT 5.0,
-  admin_upi_id TEXT DEFAULT '9486335870@hdfcbank',
+  admin_upi_id TEXT DEFAULT '6381029380@hdfcbank',
   status TEXT DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

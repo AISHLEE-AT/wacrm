@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { GroupRepository } from '@/lib/groupRepository';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 
 interface GroupAdminConsoleWebModalProps {
   isOpen: boolean;
@@ -555,7 +555,7 @@ export const GroupAdminConsoleWebModal: React.FC<GroupAdminConsoleWebModalProps>
                 }}
               >
                 <MessageCircle size={16} className="text-green-500" />
-                <span className="text-green-500 text-[11px] font-bold">Contact State Course Guide / BDO Hotline (9486335870)</span>
+                <span className="text-green-500 text-[11px] font-bold">Contact State Course Guide / BDO Hotline (6381029380)</span>
               </button>
             </div>
           )}

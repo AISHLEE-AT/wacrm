@@ -18,16 +18,16 @@ export async function GET() {
       .maybeSingle()
 
     if (!config) {
-      return NextResponse.json({ phone: '919486335870' }) // Fallback to new admin default
+      return NextResponse.json({ phone: '916381029380' }) // Fallback to new admin default
     }
 
     // Usually the waba/phone number isn't stored explicitly without Graph API, 
     // but we can try to fetch it via Graph API or just use the default.
     // For now, if we don't store the exact display phone number in DB, we fallback to the known number.
-    // Assuming the user's primary business number is 919486335870
-    return NextResponse.json({ phone: '919486335870' })
+    // Assuming the user's primary business number is 916381029380
+    return NextResponse.json({ phone: '916381029380' })
 
   } catch (err) {
-    return NextResponse.json({ phone: '919486335870' })
+    return NextResponse.json({ phone: '916381029380' })
   }
 }

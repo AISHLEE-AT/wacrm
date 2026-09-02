@@ -59,7 +59,7 @@ export class TeachOWhatsAppService {
    * Dispatches WhatsApp alert via deep-link or Meta Cloud API
    */
   static async sendDayPlanAlert(payload: WhatsAppDayPlanAlertPayload): Promise<{ success: boolean; message: string }> {
-    const cleanPhone = (payload.studentPhone || '9486335870').replace(/\D/g, '');
+    const cleanPhone = (payload.studentPhone || '6381029380').replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
     const text = this.formatDayPlanMessage(payload);
 
@@ -85,7 +85,7 @@ export class TeachOWhatsAppService {
     courseTitle: string,
     totalDays: number
   ) {
-    const cleanPhone = (studentPhone || '9486335870').replace(/\D/g, '');
+    const cleanPhone = (studentPhone || '6381029380').replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
     const text =

@@ -24,7 +24,7 @@ export function SupportCard() {
     ).start();
   }, [pulseAnim]);
 
-  const upiId = '9486335870@hdfcbank';
+  const upiId = '6381029380@hdfcbank';
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(upiId);

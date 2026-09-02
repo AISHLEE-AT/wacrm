@@ -84,7 +84,7 @@ INSERT INTO public.market_listings (
   pincode, district, location_name, latitude, longitude, status
 ) VALUES
 (
-  'முருகன் (Murugan)', '9486335870', '9486335870', '9486335870@upi',
+  'முருகன் (Murugan)', '6381029380', '6381029380', '6381029380@upi',
   'நாட்டு காங்கேயம் காளை & கறவை பசு (Kangeyam Cow & Bull Pair)', 'livestock', 65000, 'per_head', 2,
   'நாட்டு இனம், நல்ல பால் கறவை (தினசரி 8 லிட்டர்), ஆரோக்கியமான மாடுகள். நேரடி பண்ணை பார்வைக்கு வரலாம்.',
   '614904', 'Thanjavur', 'Pattukkottai Rural', 10.4312, 79.3194, 'approved'
@@ -96,7 +96,7 @@ INSERT INTO public.market_listings (
   '614904', 'Thanjavur', 'Pattukkottai Town', 10.4289, 79.3150, 'approved'
 ),
 (
-  'கதிரவன் உழவர் குழு (Kathiravan Farmers)', '919486335870', '919486335870', 'kathir@upi',
+  'கதிரவன் உழவர் குழு (Kathiravan Farmers)', '916381029380', '916381029380', 'kathir@upi',
   'ஆர்கானிக் பொன்னி நெல் மூட்டை (Organic Ponni Paddy 75kg)', 'cereals', 2150, 'per_bag', 40,
   'இயற்கை உரத்தில் விளைந்த முதல் தர பொன்னி நெல். நேரடி கொள்முதல்.',
   '614904', 'Thanjavur', 'Madukkur', 10.4850, 79.4020, 'approved'
@@ -108,7 +108,7 @@ INSERT INTO public.market_listings (
   '614904', 'Thanjavur', 'Pattukkottai Bypass', 10.4350, 79.3240, 'approved'
 ),
 (
-  'அன்பு விவசாயிகள் சங்கம் (Anbu Farmers)', '9486335870', '9486335870', '9486335870@upi',
+  'அன்பு விவசாயிகள் சங்கம் (Anbu Farmers)', '6381029380', '6381029380', '6381029380@upi',
   'நாட்டு முருங்கை & தேங்காய் மொத்த விற்பனை (Fresh Farm Coconut)', 'farm_produce', 28, 'per_item', 500,
   'மரத்திலிருந்து பறிக்கப்பட்ட எண்ணெய் சத்து மிகுந்த பெரிய தேங்காய்.',
   '614601', 'Pudukkottai', 'Aranthangi Road', 10.3800, 78.8200, 'approved'

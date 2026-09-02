@@ -2,9 +2,9 @@
 // Primary source of truth is profiles.role = 'admin' in the database.
 // Adding 9123596988 which was missing from web (present in Flutter/Kotlin).
 export const BOOTSTRAP_ADMIN_PHONES = [
-  '9486335870',
-  '919486335870',
-  '9486335870',
+  '6381029380',
+  '916381029380',
+  '6381029380',
 ]
 
 export const BOOTSTRAP_ADMIN_EMAILS = [

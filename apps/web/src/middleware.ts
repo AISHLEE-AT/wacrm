@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 // Bootstrap admin phones (fallback — DB role='admin' is primary)
 const BOOTSTRAP_ADMIN_PHONES = [
-  '9486335870', '919486335870', '9486335870', '919486335870'
+  '6381029380', '916381029380', '6381029380', '916381029380'
 ]
 const BOOTSTRAP_ADMIN_EMAILS = ['aishleetechnology@gmail.com']
 

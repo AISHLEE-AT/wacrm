@@ -24,7 +24,7 @@ import {
 import { GoogleDriveService, type GoogleDriveAccount } from '@/lib/GoogleDriveService';
 import { createClient } from '@/lib/supabase/client';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 
 interface GroupMeetingVideoModalProps {
   isOpen: boolean;
@@ -269,7 +269,7 @@ export const GroupMeetingVideoWebModal: React.FC<GroupMeetingVideoModalProps> = 
       if (finalLink) setUploadedDriveLink(finalLink);
       onUploaded?.(finalLink || `Google Drive: ${activeEmail}`);
 
-      if (confirm(`🎉 Meeting Video Saved to Google Drive!\n\nYour meeting video is linked to your Google Drive account:\n\n📧 ${activeEmail}\n\nSend verification to your BDO / Course Guide (+91 9486335870) on WhatsApp now?`)) {
+      if (confirm(`🎉 Meeting Video Saved to Google Drive!\n\nYour meeting video is linked to your Google Drive account:\n\n📧 ${activeEmail}\n\nSend verification to your BDO / Course Guide (+91 6381029380) on WhatsApp now?`)) {
         handleSendToWhatsApp(finalLink);
         onClose();
       } else {
@@ -499,7 +499,7 @@ export const GroupMeetingVideoWebModal: React.FC<GroupMeetingVideoModalProps> = 
                 <h3 className="text-[13px] font-bold text-[#25D366]">BDO / Course Guide WhatsApp Verification</h3>
               </div>
               <div className="flex items-center bg-[#25D366]/20 px-2 py-0.5 rounded-full w-fit">
-                <span className="text-[11px] font-bold text-[#25D366]">+91 9486335870</span>
+                <span className="text-[11px] font-bold text-[#25D366]">+91 6381029380</span>
               </div>
             </div>
 
@@ -526,7 +526,7 @@ export const GroupMeetingVideoWebModal: React.FC<GroupMeetingVideoModalProps> = 
               className="flex items-center justify-center gap-2 w-full bg-[#25D366] py-2.5 rounded-lg mt-2.5 hover:bg-[#20bd5a] transition-colors"
             >
               <MessageCircle size={18} className="text-white" />
-              <span className="text-xs font-bold text-white">📲 Send Video to Guide / BDO (9486335870)</span>
+              <span className="text-xs font-bold text-white">📲 Send Video to Guide / BDO (6381029380)</span>
             </button>
           </div>
 

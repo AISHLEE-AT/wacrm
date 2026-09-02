@@ -781,7 +781,7 @@ class _ListGoodsBottomSheetState extends State<_ListGoodsBottomSheet> {
 
   void _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final phone = prefs.getString('user_phone') ?? '9486335870';
+    final phone = prefs.getString('user_phone') ?? '6381029380';
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
     final last10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
     setState(() {
@@ -802,7 +802,7 @@ class _ListGoodsBottomSheetState extends State<_ListGoodsBottomSheet> {
     try {
       final supabase = Supabase.instance.client;
       final prefs = await SharedPreferences.getInstance();
-      final phone = prefs.getString('user_phone') ?? supabase.auth.currentUser?.phone ?? '9486335870';
+      final phone = prefs.getString('user_phone') ?? supabase.auth.currentUser?.phone ?? '6381029380';
       final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       final last10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
       final name = prefs.getString('user_name') ?? 'Local Trader / உழவர்';
@@ -1052,7 +1052,7 @@ class _ListGoodsBottomSheetState extends State<_ListGoodsBottomSheet> {
               controller: _upiController,
               style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'e.g. 9486335870@upi',
+                hintText: 'e.g. 6381029380@upi',
                 hintStyle: const TextStyle(color: Color(0xFF475569)),
                 filled: true,
                 fillColor: const Color(0xFF111C35),

@@ -493,7 +493,7 @@ export default function RentOScreen({ navigation }) {
       {
         id: 'op3',
         name: 'Kaveri Drone Tech',
-        phone: '9486335870',
+        phone: '6381029380',
         vehicle: 'Precision 16L Agri Spraying Drone',
         category: 'agri',
         icon: '🛸',
@@ -506,7 +506,7 @@ export default function RentOScreen({ navigation }) {
       {
         id: 'op4',
         name: 'Tamil Nadu Tour & Taxi',
-        phone: '919486335870',
+        phone: '916381029380',
         vehicle: 'Toyota Innova Crysta / Ertiga (AC)',
         category: 'tour',
         icon: '🚕',
@@ -904,7 +904,7 @@ export default function RentOScreen({ navigation }) {
           rideId: rideRecordId || bookingCode,
           driverPhone: assignedPhone,
           passengerName: user?.name || 'Farmer / Customer',
-          passengerPhone: user?.phone || '919486335870',
+          passengerPhone: user?.phone || '916381029380',
           pickupAddress,
           dropoffAddress,
           pickupLat: location.latitude,

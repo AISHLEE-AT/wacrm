@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { createClient } from '@/lib/supabase/client';
 const supabase = createClient();
 

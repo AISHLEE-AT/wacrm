@@ -17,11 +17,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS main_category TEXT DEFAULT 'Traveller';
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
 
--- 2. Auto-heal Admin role for 9486335870
+-- 2. Auto-heal Admin role for 6381029380
 UPDATE public.profiles 
 SET role = 'admin' 
-WHERE phone IN ('9486335870', '919486335870', '+919486335870')
-   OR whatsapp IN ('9486335870', '919486335870', '+919486335870');
+WHERE phone IN ('6381029380', '916381029380', '+916381029380')
+   OR whatsapp IN ('6381029380', '916381029380', '+916381029380');
 
 -- 3. Ensure drivers table has is_verified flag
 ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;

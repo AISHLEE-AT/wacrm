@@ -268,7 +268,7 @@ BEGIN
         (v_grp1_id, '9842333445', 'S. Lakshmi (லட்சுமி)', 'Treasurer', true, 500.00, 18000.00, 16500.00),
         (v_grp1_id, '9842444556', 'P. Kavitha (கவிதா)', 'Member', true, 500.00, 18000.00, 0.00),
         (v_grp1_id, '9842555667', 'R. Revathi (ரேவதி)', 'Member', false, 500.00, 17500.00, 0.00),
-        (v_grp1_id, '9486335870', 'SuprO Guide / Animator', 'Animator', true, 500.00, 20000.00, 0.00)
+        (v_grp1_id, '6381029380', 'SuprO Guide / Animator', 'Animator', true, 500.00, 20000.00, 0.00)
     ON CONFLICT (group_id, phone) DO NOTHING;
 
     -- 2. FARMER PRODUCER FPO (உழவர் உற்பத்தியாளர் சங்கம்)

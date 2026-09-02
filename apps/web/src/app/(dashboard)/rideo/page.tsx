@@ -170,7 +170,7 @@ export default function RideOBookingPage() {
             address: dropoffAddress,
             distance_km: distanceKm
           },
-          driver_phone: '919486335870',
+          driver_phone: '916381029380',
           vehicle_category: selectedCategory.id,
           fare: estimatedFare,
           status: 'pending',
@@ -434,13 +434,13 @@ export default function RideOBookingPage() {
               {/* CALL & WHATSAPP ACTIONS */}
               <div className="grid grid-cols-2 gap-3">
                 <a
-                  href={`tel:${currentRide?.driver_phone || '919486335870'}`}
+                  href={`tel:${currentRide?.driver_phone || '916381029380'}`}
                   className="py-3 bg-slate-800 hover:bg-slate-700 font-bold text-white rounded-xl text-center flex items-center justify-center gap-2 text-sm transition-all"
                 >
                   <Phone className="w-4 h-4 text-emerald-400" /> Call Driver
                 </a>
                 <a
-                  href={`https://wa.me/${(currentRide?.driver_phone || '919486335870').replace(/\D/g, '')}?text=${encodeURIComponent('Hi, I am waiting at pickup: ' + pickupAddress)}`}
+                  href={`https://wa.me/${(currentRide?.driver_phone || '916381029380').replace(/\D/g, '')}?text=${encodeURIComponent('Hi, I am waiting at pickup: ' + pickupAddress)}`}
                   target="_blank"
                   rel="noreferrer"
                   className="py-3 bg-[#25D366] hover:bg-[#20bd5a] font-bold text-white rounded-xl text-center flex items-center justify-center gap-2 text-sm transition-all"

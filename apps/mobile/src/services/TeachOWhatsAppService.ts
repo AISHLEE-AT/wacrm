@@ -69,7 +69,7 @@ export const TeachOWhatsAppService = {
    * Dispatches WhatsApp notification via Meta API / Supabase CRM record or direct WhatsApp Intent
    */
   async sendDayPlanAlert(options: WhatsAppAlertOptions): Promise<{ success: boolean; message: string }> {
-    const rawPhone = options.studentPhone || '9486335870';
+    const rawPhone = options.studentPhone || '6381029380';
     const cleanPhone = rawPhone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const messageText = this.formatDayPlanMessage(options);

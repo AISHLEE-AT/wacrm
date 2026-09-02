@@ -24,7 +24,7 @@ import { GroupAiService } from '@/lib/GroupAiService';
 // If GroupPdfMetadata is available in GroupAiService, import it here
 // import { GroupPdfMetadata } from '@/lib/GroupAiService';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 const TELEGRAM_COMMUNITY_URL = 'https://t.me/supro_education';
 
 interface GroupAiAssistantModalProps {

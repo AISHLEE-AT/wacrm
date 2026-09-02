@@ -29,8 +29,8 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
   itemType,
   userId = 'guest-user',
   userName = 'Learner',
-  userPhone = '9486335870',
-  upiId = '9486335870@hdfcbank',
+  userPhone = '6381029380',
+  upiId = '6381029380@hdfcbank',
   payeeName = 'AISHLEE TECHNOLOGY',
 }) => {
   const [activeTab, setActiveTab] = useState<'upi' | 'code'>('upi');
@@ -44,7 +44,7 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
     payeeName
   )}&am=${amount}&cu=INR&tn=${encodeURIComponent(`SuprO ${title} Access`)}`;
 
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(
     `Hello Admin! I am paying ₹${amount} for SuprO ${title} (Item: ${itemId}, Phone: ${userPhone}, UPI: ${upiId}).`
   )}`;
 
@@ -171,7 +171,7 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
                 rel="noreferrer"
                 className="w-full py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition"
               >
-                <MessageSquare className="w-4 h-4" /> WhatsApp Admin Support (9486335870)
+                <MessageSquare className="w-4 h-4" /> WhatsApp Admin Support (6381029380)
               </a>
 
               {/* UTR Input */}

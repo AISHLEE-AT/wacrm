@@ -175,7 +175,7 @@ SELECT id,
        'Single owner, gently used in Coimbatore city.', 
        65000.00, 
        'AVAILABLE', 
-       '9486335870@hdfcbank', 
+       '6381029380@hdfcbank', 
        'Vehicles', 
        'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=400' 
 FROM auth.users LIMIT 1;
@@ -186,7 +186,7 @@ SELECT id,
        'Brand new, authentic handwoven Kanchipuram silk saree with pure zari.', 
        18500.00, 
        'AVAILABLE', 
-       '9486335870@hdfcbank', 
+       '6381029380@hdfcbank', 
        'Fashion', 
        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400' 
 FROM auth.users LIMIT 1;
@@ -203,5 +203,5 @@ FROM auth.users LIMIT 1;
 
 -- Assign Admin UPI to Dummy User
 UPDATE public.profiles 
-SET upi_id = '9486335870@hdfcbank', whatsapp_number = '6381029380' 
+SET upi_id = '6381029380@hdfcbank', whatsapp_number = '6381029380' 
 WHERE id = (SELECT id FROM auth.users LIMIT 1);

@@ -44,7 +44,7 @@ import { colors, radius, spacing } from '../../lib/theme';
 import { VoiceSpeechBridge, VoiceSpeechBridgeRef } from '../VoiceSpeechBridge';
 import { GroupAiService, GroupPdfMetadata } from '../../services/GroupAiService';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 const TELEGRAM_COMMUNITY_URL = 'https://t.me/supro_education';
 
 interface GroupAiAssistantModalProps {

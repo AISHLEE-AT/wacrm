@@ -62,7 +62,7 @@ export default function TutOHubScreen({ navigation }: any) {
     ctxIsAdmin ||
     user?.isAdmin ||
     (user?.role && user.role.toLowerCase() === 'admin') ||
-    (user?.phone && ['9486335870'].includes(user.phone.replace(/\D/g, '').slice(-10)))
+    (user?.phone && ['6381029380'].includes(user.phone.replace(/\D/g, '').slice(-10)))
   );
 
   // ─── 0. Student Onboarding & Career Profiling State ──────────────────────────

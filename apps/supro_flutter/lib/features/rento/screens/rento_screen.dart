@@ -223,7 +223,7 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
     _nearbyOperators = [
       OperatorItem(id: 'op1', name: 'Murugan Agri Services', phone: '9344532738', vehicle: 'Mahindra 575 DI (Plowing)', category: 'agri', icon: '🚜', rating: '4.9', distance: '1.2 km away', latitude: lat + 0.007, longitude: lng + 0.006),
       OperatorItem(id: 'op2', name: 'Selvam Cargo Transport', phone: '9123596988', vehicle: 'Tata Ace (TN 45 BB 8291)', category: 'cargo', icon: '🚚', rating: '4.85', distance: '1.8 km away', latitude: lat - 0.008, longitude: lng - 0.007),
-      OperatorItem(id: 'op3', name: 'Thanjavur Harvester Co.', phone: '9486335870', vehicle: 'Paddy Track Harvester', category: 'agri', icon: '🌾', rating: '4.95', distance: '2.5 km away', latitude: lat + 0.012, longitude: lng - 0.009),
+      OperatorItem(id: 'op3', name: 'Thanjavur Harvester Co.', phone: '6381029380', vehicle: 'Paddy Track Harvester', category: 'agri', icon: '🌾', rating: '4.95', distance: '2.5 km away', latitude: lat + 0.012, longitude: lng - 0.009),
     ];
     _updateMarkers();
   }

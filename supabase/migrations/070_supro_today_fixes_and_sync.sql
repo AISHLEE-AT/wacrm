@@ -245,9 +245,9 @@ INSERT INTO public.rento_machinery (
   id, name, category, operator_name, phone, whatsapp_number, vehicle_number, hourly_rate, acre_rate, specifications, rating, is_verified, is_virtual, status, latitude, longitude
 ) VALUES
   (gen_random_uuid(), 'Mahindra 575 DI Tractor (Rotavator + Cultivator)', 'Tractor', 'Farmer Murugan', '9789012345', '9789012345', 'TN 38 TR 4321', 700.0, 1200.0, '50 HP • 4WD • Rotary Tiller & Disc Plough Included', 4.9, true, true, 'available', 11.0168, 76.9558),
-  (gen_random_uuid(), 'Kubota DC-68G Rubber Track Paddy Harvester', 'Harvester', 'Captain Senthil Kumar', '9486335870', '9486335870', 'TN 38 HV 9988', 1800.0, 2200.0, '68 HP • Wetland Rubber Tracks • Paddy, Corn & Wheat', 5.0, true, true, 'available', 10.7905, 79.1378),
+  (gen_random_uuid(), 'Kubota DC-68G Rubber Track Paddy Harvester', 'Harvester', 'Captain Senthil Kumar', '6381029380', '6381029380', 'TN 38 HV 9988', 1800.0, 2200.0, '68 HP • Wetland Rubber Tracks • Paddy, Corn & Wheat', 5.0, true, true, 'available', 10.7905, 79.1378),
   (gen_random_uuid(), 'Tata Ace Gold Agri Mandi Mini-Truck', 'MiniVan', 'Driver Rajesh', '9894012345', '9894012345', 'TN 38 MV 8899', 450.0, 800.0, '750 kg Payload • Fresh Vegetable & Grain Transport', 4.8, true, true, 'available', 9.9252, 78.1198),
-  (gen_random_uuid(), 'DJI Agras T40 Agriculture Drone Sprayer', 'Drone', 'Drone Pilot Vignesh', '9486335870', '9486335870', 'TN 38 DR 0007', 800.0, 450.0, '40 Liter Tank • Nano-Mist Precision Pesticide & Fertilizer', 4.9, true, true, 'available', 11.6643, 78.1460),
+  (gen_random_uuid(), 'DJI Agras T40 Agriculture Drone Sprayer', 'Drone', 'Drone Pilot Vignesh', '6381029380', '6381029380', 'TN 38 DR 0007', 800.0, 450.0, '40 Liter Tank • Nano-Mist Precision Pesticide & Fertilizer', 4.9, true, true, 'available', 11.6643, 78.1460),
   (gen_random_uuid(), 'JCB 3CX Eco Heavy Excavator & Leveler', 'JCB', 'Operator Velu', '9123596988', '9123596988', 'TN 38 JCB 1122', 1400.0, 2500.0, '76 HP Heavy Land Clearing, Pond Digging & Leveling', 4.9, true, true, 'available', 10.3673, 77.9803)
 ON CONFLICT (id) DO NOTHING;
 

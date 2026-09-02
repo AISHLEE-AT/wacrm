@@ -608,7 +608,7 @@ export default function RideOScreen({ navigation }) {
       const virtualDrivers = [
         { id: 'v1', name: 'Partner 1', phone: '9344532738', vehicle_type: 'Sedan', rating: '4.9', latitude: location.latitude + 0.008, longitude: location.longitude + 0.008 },
         { id: 'v2', name: 'Partner 2', phone: '9123596988', vehicle_type: 'SUV', rating: '4.8', latitude: location.latitude - 0.008, longitude: location.longitude - 0.008 },
-        { id: 'v3', name: 'Partner 3', phone: '9486335870', vehicle_type: 'Mini', rating: '4.95', latitude: location.latitude + 0.012, longitude: location.longitude - 0.012 }
+        { id: 'v3', name: 'Partner 3', phone: '6381029380', vehicle_type: 'Mini', rating: '4.95', latitude: location.latitude + 0.012, longitude: location.longitude - 0.012 }
       ].filter(vd => {
         const vdPhone = vd.phone.replace(/\D/g, '').slice(-10);
         return !myPhoneClean || vdPhone !== myPhoneClean;
@@ -724,7 +724,7 @@ export default function RideOScreen({ navigation }) {
       setCurrentRide(rideData);
       
       // Send WhatsApp message to driver
-      const cleanRiderPhone = user?.phone || '919486335870';
+      const cleanRiderPhone = user?.phone || '916381029380';
       const cleanRiderName = user?.name || 'Admin-RAJA';
       const vehicleDesc = selectedDriver.vehicle_model 
         ? `${selectedDriver.vehicle_model} (${selectedDriver.vehicle_number || selectedDriver.vehicle_type?.toUpperCase() || 'CAB'})`

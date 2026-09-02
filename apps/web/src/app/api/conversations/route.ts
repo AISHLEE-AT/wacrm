@@ -52,7 +52,7 @@ export async function GET(request: Request) {
                     cookieHeader.includes('supro_is_embed=true')
 
     if (!user && isEmbed) {
-      const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE || '9486335870';
+      const adminPhone = process.env.NEXT_PUBLIC_ADMIN_PHONE || '6381029380';
       const { data: adminProfiles } = await supabaseAdmin()
         .from('profiles')
         .select('id')

@@ -124,7 +124,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 INSERT INTO public.user_purchases_orders (
     phone, order_id, item_id, item_title, item_type, category, amount, payment_method, utr_number, status, valid_until
 ) VALUES 
-('9486335870', 'ORD-2026-TCH-001', 'tn_12_commerce_centum', '+2 வணிகவியல் செண்டம் (Class 12 Commerce Centum)', 'course', 'School & Board Tuitions', 499.00, 'UPI (GPay)', 'UTR489201948201', 'active', now() + INTERVAL '365 days'),
-('9486335870', 'ORD-2026-TST-002', 'testo_all_access_pass', 'TestO All-Access Exam Pass (All 500+ Tests)', 'o_test', 'TestO All-Access Passes & Test Series', 99.00, 'UPI (PhonePe)', 'UTR782910394812', 'active', now() + INTERVAL '365 days'),
-('9486335870', 'ORD-2026-GOV-003', 'bank_po_clerk', 'Bank PO & Clerk (IBPS & SBI) Master Tuition', 'course', 'Competitive & Govt Exams', 499.00, 'UPI (Paytm)', 'UTR192830192830', 'active', now() + INTERVAL '365 days')
+('6381029380', 'ORD-2026-TCH-001', 'tn_12_commerce_centum', '+2 வணிகவியல் செண்டம் (Class 12 Commerce Centum)', 'course', 'School & Board Tuitions', 499.00, 'UPI (GPay)', 'UTR489201948201', 'active', now() + INTERVAL '365 days'),
+('6381029380', 'ORD-2026-TST-002', 'testo_all_access_pass', 'TestO All-Access Exam Pass (All 500+ Tests)', 'o_test', 'TestO All-Access Passes & Test Series', 99.00, 'UPI (PhonePe)', 'UTR782910394812', 'active', now() + INTERVAL '365 days'),
+('6381029380', 'ORD-2026-GOV-003', 'bank_po_clerk', 'Bank PO & Clerk (IBPS & SBI) Master Tuition', 'course', 'Competitive & Govt Exams', 499.00, 'UPI (Paytm)', 'UTR192830192830', 'active', now() + INTERVAL '365 days')
 ON CONFLICT (order_id) DO NOTHING;

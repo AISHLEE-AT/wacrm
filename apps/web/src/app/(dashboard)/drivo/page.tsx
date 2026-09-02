@@ -53,11 +53,11 @@ export default function DriveODashboard() {
   // Strict Admin Determination
   const isAdmin = Boolean(
     profile?.email === "aishleetechnology@gmail.com" ||
-    profile?.phone?.includes("9486335870") ||
-    profile?.phone?.includes("9486335870") ||
+    profile?.phone?.includes("6381029380") ||
+    profile?.phone?.includes("6381029380") ||
     currentUser?.email === "aishleetechnology@gmail.com" ||
-    currentUser?.phone?.includes("9486335870") ||
-    currentUser?.phone?.includes("9486335870")
+    currentUser?.phone?.includes("6381029380") ||
+    currentUser?.phone?.includes("6381029380")
   );
 
   // Fetch current user's driver partner record from Supabase
@@ -518,7 +518,7 @@ export default function DriveODashboard() {
       `👉 *Please send me customer ride/transport requests today!*`;
 
     const isMobileDevice = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const targetPhone = '919486335870';
+    const targetPhone = '916381029380';
 
     if (isMobileDevice) {
       return `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
@@ -632,13 +632,13 @@ export default function DriveODashboard() {
           <button
             onClick={() => {
               const driverName = profile?.full_name || 'Driver Partner';
-              const driverPhone = profile?.phone || currentUser?.phone || '9486335870';
+              const driverPhone = profile?.phone || currentUser?.phone || '6381029380';
               const msg = `💰 *DRIVER ZERO-COMMISSION UPI PAYOUT REQUEST* 💰\n\n` +
                 `👤 *Driver Partner*: ${driverName} (${driverPhone})\n` +
                 `💳 *Today's Earnings*: ₹1,250 (5 Trips Completed)\n` +
                 `🏦 *Settlement UPI ID*: ${upiId || 'driver@upi'}\n\n` +
                 `👉 *Please process instant 0% commission UPI settlement to my UPI ID!*`;
-              window.open(`https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(msg)}`, '_blank');
+              window.open(`https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(msg)}`, '_blank');
             }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500 text-emerald-400 font-bold text-xs hover:bg-emerald-500/30 transition shadow-sm"
           >

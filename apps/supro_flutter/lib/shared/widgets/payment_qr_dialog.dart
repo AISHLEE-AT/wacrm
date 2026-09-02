@@ -19,7 +19,7 @@ class PaymentQrDialog extends StatefulWidget {
     required this.amount,
     required this.itemId,
     this.itemType = 'course',
-    this.upiId = '9486335870@hdfcbank',
+    this.upiId = '6381029380@hdfcbank',
     this.payeeName = 'AISHLEE TECHNOLOGY',
     required this.onSuccess,
   });
@@ -106,7 +106,7 @@ class _PaymentQrDialogState extends State<PaymentQrDialog> with SingleTickerProv
 
   Future<void> _openWhatsAppAdmin() async {
     final text = 'Hello Admin! I am paying ₹${widget.amount} for SuprO ${widget.title} (UPI: ${widget.upiId}).';
-    final uri = Uri.parse('https://wa.me/919486335870?text=${Uri.encodeComponent(text)}');
+    final uri = Uri.parse('https://wa.me/916381029380?text=${Uri.encodeComponent(text)}');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -329,7 +329,7 @@ class _PaymentQrDialogState extends State<PaymentQrDialog> with SingleTickerProv
                           child: OutlinedButton.icon(
                             onPressed: _openWhatsAppAdmin,
                             icon: const Icon(LucideIcons.messageSquare, size: 14, color: Color(0xFF25D366)),
-                            label: const Text('WhatsApp Admin Support (9486335870)', style: TextStyle(color: Color(0xFF25D366), fontSize: 11, fontWeight: FontWeight.bold)),
+                            label: const Text('WhatsApp Admin Support (6381029380)', style: TextStyle(color: Color(0xFF25D366), fontSize: 11, fontWeight: FontWeight.bold)),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(color: const Color(0xFF25D366).withValues(alpha: 0.4)),
                               padding: const EdgeInsets.symmetric(vertical: 10),

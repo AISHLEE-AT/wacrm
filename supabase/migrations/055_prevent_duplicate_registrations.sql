@@ -21,13 +21,13 @@ BEGIN
     END IF;
 END $$;
 
--- 3. Upsert Admin Driver Profile for 9486335870
+-- 3. Upsert Admin Driver Profile for 6381029380
 INSERT INTO public.drivers (id, user_id, driver_name, mobile_number, vehicle_number, vehicle_type, status, is_verified, verification_status, created_at)
 VALUES (
   '00000000-0000-0000-0000-000000009486',
   '00000000-0000-0000-0000-000000009486',
   'Captain Rajakumaran (Area Admin)',
-  '9486335870',
+  '6381029380',
   'TN 38 BL 9486',
   'Car',
   'online',

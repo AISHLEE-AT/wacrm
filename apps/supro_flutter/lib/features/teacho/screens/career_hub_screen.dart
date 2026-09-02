@@ -1,4 +1,4 @@
-ï»¿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -337,9 +337,9 @@ Format cleanly with:
                     const Icon(LucideIcons.mapPin, size: 12, color: Color(0xFF64748B)),
                     const SizedBox(width: 4),
                     Text(job['location'], style: const TextStyle(color: Color(0xFF64748B), fontSize: 11)),
-                    const Text(' â€¢ ', style: TextStyle(color: Color(0xFF64748B))),
+                    const Text(' • ', style: TextStyle(color: Color(0xFF64748B))),
                     Text(job['vacancies'], style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
-                    const Text(' â€¢ ', style: TextStyle(color: Color(0xFF64748B))),
+                    const Text(' • ', style: TextStyle(color: Color(0xFF64748B))),
                     Text(job['deadline'], style: const TextStyle(color: Color(0xFFF59E0B), fontSize: 11)),
                   ],
                 ),

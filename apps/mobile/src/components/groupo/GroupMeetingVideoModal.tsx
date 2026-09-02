@@ -41,7 +41,7 @@ import { GoogleDriveService, GoogleDriveAccount } from '../../services/GoogleDri
 import { AppContext } from '../../context/AppContext';
 import { colors } from '../../lib/theme';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 
 interface GroupMeetingVideoModalProps {
   visible: boolean;
@@ -347,7 +347,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
 
       Alert.alert(
         '🎉 Meeting Video Saved to Google Drive!',
-        `Your meeting video is linked to your Google Drive account:\n\n📧 ${activeEmail}\n\nSend verification to your BDO / Course Guide (+91 9486335870) on WhatsApp now?`,
+        `Your meeting video is linked to your Google Drive account:\n\n📧 ${activeEmail}\n\nSend verification to your BDO / Course Guide (+91 6381029380) on WhatsApp now?`,
         [
           {
             text: '📲 Send on WhatsApp',
@@ -536,7 +536,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
                   </Text>
                 </View>
                 <View style={[styles.connectedPill, { backgroundColor: 'rgba(37, 211, 102, 0.2)' }]}>
-                  <Text style={[styles.connectedPillText, { color: '#25D366' }]}>+91 9486335870</Text>
+                  <Text style={[styles.connectedPillText, { color: '#25D366' }]}>+91 6381029380</Text>
                 </View>
               </View>
 
@@ -565,7 +565,7 @@ export const GroupMeetingVideoModal: React.FC<GroupMeetingVideoModalProps> = ({
               >
                 <MessageCircle size={18} color="#FFFFFF" />
                 <Text style={styles.whatsAppBtnText}>
-                  📲 Send Video to Guide / BDO (9486335870)
+                  📲 Send Video to Guide / BDO (6381029380)
                 </Text>
               </TouchableOpacity>
             </View>

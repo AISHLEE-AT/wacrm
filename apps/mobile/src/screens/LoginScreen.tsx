@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }: any) {
   
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [wabaPhone, setWabaPhone] = useState('919486335870');
+  const [wabaPhone, setWabaPhone] = useState('916381029380');
   const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
 
   // Daily Deepam Video Player states
@@ -166,8 +166,8 @@ export default function LoginScreen({ navigation }: any) {
           }
         }
         
-        if (clean === '9486335870') {
-          // Hardcode admin role for 9486335870
+        if (clean === '6381029380') {
+          // Hardcode admin role for 6381029380
           setCategory('Admin');
           await SecureStore.setItemAsync('user-role', 'admin');
         }

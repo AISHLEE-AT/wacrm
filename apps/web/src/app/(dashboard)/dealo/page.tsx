@@ -151,7 +151,7 @@ export default function DealoPage() {
 
     setIsSubmitting(true);
     try {
-      const cleanPhone = profile?.phone?.replace(/\D/g, '').slice(-10) || user?.phone?.replace(/\D/g, '').slice(-10) || '9486335870';
+      const cleanPhone = profile?.phone?.replace(/\D/g, '').slice(-10) || user?.phone?.replace(/\D/g, '').slice(-10) || '6381029380';
       const cleanUpi = formUpi.trim() || `${cleanPhone}@upi`;
       const autoApprove = profile?.role === 'admin';
 
@@ -630,7 +630,7 @@ export default function DealoPage() {
                 <label className="block text-xs font-bold text-foreground mb-1">Trader UPI ID (நேரடி கட்டணம்)</label>
                 <input
                   type="text"
-                  placeholder="e.g. 9486335870@upi"
+                  placeholder="e.g. 6381029380@upi"
                   value={formUpi}
                   onChange={(e) => setFormUpi(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm font-semibold focus:outline-none focus:border-primary"
@@ -652,7 +652,7 @@ export default function DealoPage() {
               {/* Profile banner */}
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2 text-xs text-emerald-400">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Linked Phone: +91 {profile?.phone || '9486335870'} • Auto-receives direct WhatsApp inquiries.</span>
+                <span>Linked Phone: +91 {profile?.phone || '6381029380'} • Auto-receives direct WhatsApp inquiries.</span>
               </div>
 
               {/* Submit */}

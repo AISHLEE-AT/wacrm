@@ -283,7 +283,7 @@ export default function DealOScreen({ navigation }: any) {
 
     setIsSubmitting(true);
     try {
-      const cleanPhone = user?.phone?.replace(/\D/g, '').slice(-10) || '9486335870';
+      const cleanPhone = user?.phone?.replace(/\D/g, '').slice(-10) || '6381029380';
       const cleanUpi = formUpi.trim() || `${cleanPhone}@upi`;
       const autoApprove = isAdmin || false;
 
@@ -919,7 +919,7 @@ export default function DealOScreen({ navigation }: any) {
               </Text>
               <TextInput
                 style={[styles.formInput, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
-                placeholder="e.g. 9486335870@upi or gpay/paytm id"
+                placeholder="e.g. 6381029380@upi or gpay/paytm id"
                 placeholderTextColor={colors.textSecondary}
                 value={formUpi}
                 onChangeText={setFormUpi}
@@ -985,7 +985,7 @@ export default function DealOScreen({ navigation }: any) {
                     Profile Linked Trading
                   </Text>
                   <Text style={[styles.profileBannerSub, { color: colors.textSecondary }]}>
-                    Linked Phone: +91 {user?.phone || '9486335870'} • Auto-receives direct WhatsApp inquiries and UPI payments.
+                    Linked Phone: +91 {user?.phone || '6381029380'} • Auto-receives direct WhatsApp inquiries and UPI payments.
                   </Text>
                 </View>
               </View>

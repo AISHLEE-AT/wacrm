@@ -91,7 +91,7 @@ export function validateDrivingLicense(licenseNo: string): ValidationResult {
 }
 
 /**
- * Validates UPI ID (e.g. 9486335870@hdfcbank, user@upi, 9876543210@paytm)
+ * Validates UPI ID (e.g. 6381029380@hdfcbank, user@upi, 9876543210@paytm)
  */
 export function validateUpiId(upi: string): ValidationResult {
   const trimmed = upi.trim();
@@ -100,7 +100,7 @@ export function validateUpiId(upi: string): ValidationResult {
   }
   const upiRegex = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
   if (!upiRegex.test(trimmed)) {
-    return { isValid: false, error: 'Invalid UPI ID format. Example: 9486335870@hdfcbank or phone@upi' };
+    return { isValid: false, error: 'Invalid UPI ID format. Example: 6381029380@hdfcbank or phone@upi' };
   }
 
   return { isValid: true };

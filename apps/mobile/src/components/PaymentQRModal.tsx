@@ -40,8 +40,8 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
   itemType,
   userId = 'guest-user',
   userName = 'Learner',
-  userPhone = '9486335870',
-  upiId = '9486335870@hdfcbank',
+  userPhone = '6381029380',
+  upiId = '6381029380@hdfcbank',
   payeeName = 'AISHLEE TECHNOLOGY',
 }) => {
   const [utrNumber, setUtrNumber] = useState('');
@@ -53,7 +53,7 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
     payeeName
   )}&am=${amount}&cu=INR&tn=${encodeURIComponent(`SuprO ${title} Access`)}`;
 
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=919486335870&text=${encodeURIComponent(
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=916381029380&text=${encodeURIComponent(
     `Hello Admin! I am paying ₹${amount} for SuprO ${title} (Item: ${itemId}, Phone: ${userPhone}, UPI: ${upiId}).`
   )}`;
 
@@ -77,7 +77,7 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
     try {
       await Linking.openURL(whatsappUrl);
     } catch (e) {
-      Alert.alert('WhatsApp Error', 'Could not open WhatsApp. Admin contact: 9486335870');
+      Alert.alert('WhatsApp Error', 'Could not open WhatsApp. Admin contact: 6381029380');
     }
   };
 
@@ -227,7 +227,7 @@ export const PaymentQRModal: React.FC<PaymentQRModalProps> = ({
                 >
                   <MessageSquare size={15} color="#25D366" />
                   <Text style={styles.waVerifyBtnText}>
-                    WhatsApp Admin Support (9486335870)
+                    WhatsApp Admin Support (6381029380)
                   </Text>
                 </TouchableOpacity>
 

@@ -39,7 +39,7 @@ import * as Sharing from 'expo-sharing';
 import { colors, radius, spacing } from '../../lib/theme';
 import { GroupRepository, DbGroup, DbMember } from '../../services/GroupRepository';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 
 interface GroupAdminConsoleModalProps {
   visible: boolean;
@@ -559,7 +559,7 @@ export const GroupAdminConsoleModal: React.FC<GroupAdminConsoleModalProps> = ({
                   }}
                 >
                   <MessageCircle size={16} color="#25D366" />
-                  <Text style={styles.hotlineBtnText}>Contact State Course Guide / BDO Hotline (9486335870)</Text>
+                  <Text style={styles.hotlineBtnText}>Contact State Course Guide / BDO Hotline (6381029380)</Text>
                 </TouchableOpacity>
               </View>
             )}

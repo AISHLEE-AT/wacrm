@@ -811,7 +811,7 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
                   <Text style={styles.stepHeading}>📹 Record & Upload Today's Video Reflection</Text>
                   <Text style={styles.stepSub}>
                     Record a 30-60 second video explaining what you learned today. Your video will be automatically
-                    stored in your Google Drive and sent to your course guide on WhatsApp (9486335870).
+                    stored in your Google Drive and sent to your course guide on WhatsApp (6381029380).
                   </Text>
                 </View>
 
@@ -830,7 +830,7 @@ export const TutODayCoursePlayerModal: React.FC<TutODayCoursePlayerModalProps> =
                 >
                   <Send size={16} color="#FFFFFF" />
                   <Text style={[styles.actionCompleteBtnText, { color: '#FFFFFF' }]}>
-                    📲 Send Video to Course Guide on WhatsApp (9486335870)
+                    📲 Send Video to Course Guide on WhatsApp (6381029380)
                   </Text>
                 </TouchableOpacity>
 

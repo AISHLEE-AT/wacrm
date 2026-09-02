@@ -40,7 +40,7 @@ import { colors, spacing, radius, fontSize } from '../../lib/theme';
 import { AppContext } from '../../context/AppContext';
 import { GoogleDriveService, GoogleDriveAccount } from '../../services/GoogleDriveService';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 
 interface TaskVideoFeedbackModalProps {
   visible: boolean;
@@ -86,7 +86,7 @@ export const TaskVideoFeedbackModal: React.FC<TaskVideoFeedbackModalProps> = ({
   const [uploadPercent, setUploadPercent] = useState<number>(0);
   const [uploadedDriveLink, setUploadedDriveLink] = useState<string | null>(null);
 
-  // Send pre-populated WhatsApp message to Course Guide (9486335870)
+  // Send pre-populated WhatsApp message to Course Guide (6381029380)
   const handleSendToWhatsApp = async (directLink?: string) => {
     const gdriveUrl =
       directLink || uploadedDriveLink || manualDriveLink.trim() || 'https://drive.google.com';
@@ -267,7 +267,7 @@ export const TaskVideoFeedbackModal: React.FC<TaskVideoFeedbackModalProps> = ({
 
       Alert.alert(
         '🎉 Video Saved to Google Drive!',
-        `Your video is saved in your Google Drive ("📁 SuprO Daily Tasks") and recorded!\n\nSend it to your Course Guide (+91 9486335870) on WhatsApp for instant verification?`,
+        `Your video is saved in your Google Drive ("📁 SuprO Daily Tasks") and recorded!\n\nSend it to your Course Guide (+91 6381029380) on WhatsApp for instant verification?`,
         [
           {
             text: '📲 Send on WhatsApp',
@@ -465,7 +465,7 @@ export const TaskVideoFeedbackModal: React.FC<TaskVideoFeedbackModalProps> = ({
               />
             </View>
 
-            {/* 4. WhatsApp Course Guide Direct Verification Card (9486335870) */}
+            {/* 4. WhatsApp Course Guide Direct Verification Card (6381029380) */}
             <View style={[styles.card, { borderColor: '#25D366', backgroundColor: '#071F15' }]}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
@@ -475,7 +475,7 @@ export const TaskVideoFeedbackModal: React.FC<TaskVideoFeedbackModalProps> = ({
                   </Text>
                 </View>
                 <View style={[styles.connectedPill, { backgroundColor: 'rgba(37, 211, 102, 0.2)' }]}>
-                  <Text style={[styles.connectedPillText, { color: '#25D366' }]}>+91 9486335870</Text>
+                  <Text style={[styles.connectedPillText, { color: '#25D366' }]}>+91 6381029380</Text>
                 </View>
               </View>
 
@@ -505,7 +505,7 @@ export const TaskVideoFeedbackModal: React.FC<TaskVideoFeedbackModalProps> = ({
               >
                 <MessageCircle size={18} color="#FFFFFF" />
                 <Text style={styles.whatsAppBtnText}>
-                  📲 Send Video to Course Guide on WhatsApp (9486335870)
+                  📲 Send Video to Course Guide on WhatsApp (6381029380)
                 </Text>
               </TouchableOpacity>
             </View>

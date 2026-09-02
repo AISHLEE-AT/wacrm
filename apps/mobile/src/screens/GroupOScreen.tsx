@@ -60,7 +60,7 @@ import { GroupAdminConsoleModal } from '../components/groupo/GroupAdminConsoleMo
 import { GroupRepository, UserGroupStatus, DbGroup, DbMember } from '../services/GroupRepository';
 import { ADMIN_PHONES } from '../context/AppContext';
 
-const COURSE_GUIDE_WHATSAPP = '919486335870';
+const COURSE_GUIDE_WHATSAPP = '916381029380';
 const TELEGRAM_COMMUNITY_URL = 'https://t.me/supro_education';
 
 interface GroupData {
@@ -837,7 +837,7 @@ export default function GroupOScreen({ navigation }: any) {
                 <Text style={styles.benefitItem}>• ✅ Official proof of member attendance and quorum.</Text>
                 <Text style={styles.benefitItem}>• ✅ Direct video submission to BDO, Village Animator & Bank.</Text>
                 <Text style={styles.benefitItem}>• ✅ Never lose records — permanently backed up on personal Google Drive.</Text>
-                <Text style={styles.benefitItem}>• ✅ 1-Click WhatsApp verification to Guide (+91 9486335870).</Text>
+                <Text style={styles.benefitItem}>• ✅ 1-Click WhatsApp verification to Guide (+91 6381029380).</Text>
               </View>
             </View>
           </View>
