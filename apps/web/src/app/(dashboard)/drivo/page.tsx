@@ -68,9 +68,255 @@ export default function DriveODashboard() {
       try {
         const rawPhone = currentUser.phone || profile?.phone || '';
         const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
-        // Fetch by phone instead of user_id for OCI
-        const res = await fetch('/api/drivers/phone/' + cleanPhone);
-        const data = res.ok ? await res.json() : null;
+        const { data } = await supabase
+          .from('drivers')
+          .select('*')
+          .or(`user_id.eq.${currentUser.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%` : ''}`)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (data && data.length > 0) {
+          const driver = data[0];
+          setDriverRecord(driver);
+          if (driver.vehicle_type) setOperatorCategory(driver.vehicle_type);
+          if (driver.vehicle_number) setRegNumber(driver.vehicle_number);
+          if (driver.upi_id) setUpiId(driver.upi_id);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingDriverRecord(false);
+      }
+    };
+
+    fetchDriverRecord();
+  }, [currentUser?.id]);
+
+  // Live driver location streaming
+  useEffect(() => {
+    if (!driverRecord?.is_verified || !isOnline) return;
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        await fetch('/api/drivers/location', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ driver_id: driverRecord.id, latitude, longitude })
+          });
+      },
+      (err) => console.error('Geo error:', err),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [driverRecord?.id, driverRecord?.is_verified, isOnline]);
+
+  // Fetch earnings history
+  useEffect(() => {
+    if (!driverRecord?.id) return;
+    const fetchHistory = async () => {
+      const { data } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('driver_id', driverRecord.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (data) setEarningsHistory(data);
+    };
+    fetchHistory();
+  }, [driverRecord?.id, activeOrder?.status]);
+
+  // User Enrollment Form State
+  const [regForm, setRegForm] = useState({
+    name: profile?.full_name || '',
+    mobile: '',
+    category: 'auto',
+    regNo: '',
+    licenseNo: '',
+    upi: '',
+    aadharNo: '',
+    vehicleModel: '',
+  });
+  const [regStep, setRegStep] = useState(1);
+
+  // Auto pre-fill user's real name and WhatsApp phone number upon auth resolve
+  useEffect(() => {
+    const rawPhone = profile?.phone || (profile as any)?.whatsapp || currentUser?.phone || currentUser?.email?.split('@')[0] || '';
+    const cleanDigits = rawPhone.replace(/\D/g, '').slice(-10);
+    const autoPhone = cleanDigits.length === 10 ? `+91 ${cleanDigits}` : rawPhone;
+    const resolvedName = (profile?.full_name && profile.full_name !== 'User') ? profile.full_name : (currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || '');
+    const resolvedUpi = (profile as any)?.upi_id || '';
+
+    setRegForm((prev) => ({
+      ...prev,
+      name: resolvedName || prev.name,
+      mobile: prev.mobile || autoPhone,
+      upi: resolvedUpi || prev.upi,
+    }));
+  }, [profile, currentUser]);
+
+  // All driver IDs linked to same phone (for seeded test drivers across TN)
+  const [allDriverIds, setAllDriverIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!driverRecord?.id) return;
+    const fetchAllDriverIds = async () => {
+      const rawPhone = currentUser?.phone || profile?.phone || '';
+      const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+      if (!cleanPhone) {
+        setAllDriverIds([driverRecord.id]);
+        return;
+      }
+      const { data } = await supabase
+        .from('drivers')
+        .select('id')
+        .or(`phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%`);
+      const ids = data?.map((d: any) => d.id) || [driverRecord.id];
+      setAllDriverIds(ids.length > 0 ? ids : [driverRecord.id]);
+    };
+    fetchAllDriverIds();
+  }, [driverRecord?.id]);
+
+  // Fetch real-time rides from Supabase matching ALL driver IDs for this phone
+  useEffect(() => {
+    if (allDriverIds.length === 0) return;
+
+    const fetchRequests = async () => {
+      try {
+        // Fetch active order across all driver IDs
+        const { data: activeData } = await supabase
+          .from('rides')
+          .select('*')
+          .in('driver_id', allDriverIds)
+          .in('status', ['accepted', 'driver_arrived', 'in_progress'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+          
+        if (activeData) {
+          setActiveOrder(activeData);
+        }
+
+        const { data } = await supabase
+          .from('rides')
+          .select('*')
+          .in('driver_id', allDriverIds)
+          .in('status', ['requested', 'pending'])
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (data) {
+          const now = Date.now();
+          const myClean = (currentUser?.phone || profile?.phone || '').replace(/\D/g, '').slice(-10);
+          const valid = data.filter((r: any) => {
+            const age = now - new Date(r.created_at).getTime();
+            if (age >= 300000 || handledRidesRef.current.has(r.id)) return false;
+
+            // Exclude self-requests
+            const rPassengerPhone = (r.passenger_phone || r.user_phone || '').replace(/\D/g, '').slice(-10);
+            if (rPassengerPhone && myClean && rPassengerPhone === myClean) return false;
+            if (r.user_id && currentUser?.id && r.user_id === currentUser.id) return false;
+
+            return true;
+          });
+          setIncomingRequests(valid);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchRequests();
+
+    // Listen for rides on the primary driver record
+    const channel = supabase
+      .channel(`public:rides:driver_${driverRecord?.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
+        if (allDriverIds.includes(payload.new.driver_id)) {
+          const age = Date.now() - new Date(payload.new.created_at).getTime();
+          const rPassengerPhone = (payload.new.passenger_phone || payload.new.user_phone || '').replace(/\D/g, '').slice(-10);
+          const myClean = (currentUser?.phone || profile?.phone || '').replace(/\D/g, '').slice(-10);
+          const isSelf = (rPassengerPhone && myClean && rPassengerPhone === myClean) || (payload.new.user_id && currentUser?.id && payload.new.user_id === currentUser.id);
+
+          if (age < 300000 && !handledRidesRef.current.has(payload.new.id) && !isSelf) {
+            setIncomingRequests((prev) => [payload.new, ...prev.filter((r) => r.id !== payload.new.id)]);
+          }
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides' }, (payload) => {
+        if (!allDriverIds.includes(payload.new.driver_id)) return;
+        if (['accepted', 'driver_arrived', 'in_progress'].includes(payload.new.status)) {
+           handledRidesRef.current.add(payload.new.id);
+           setActiveOrder(payload.new);
+           setIncomingRequests((prev) => prev.filter((r) => r.id !== payload.new.id));
+        } else if (payload.new.status === 'completed' || payload.new.status === 'cancelled' || payload.new.status === 'expired') {
+           handledRidesRef.current.add(payload.new.id);
+           setIncomingRequests((prev) => prev.filter((r) => r.id !== payload.new.id));
+           if (activeOrder?.id === payload.new.id) {
+             setActiveOrder(null);
+           }
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [allDriverIds]);
+
+  const handleUserDriverRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (regStep !== 3) return;
+
+    // 0. Strict Content Validations
+    const nameVal = validateFullName(regForm.name);
+    if (!nameVal.isValid) {
+      alert(`⚠️ INVALID FULL NAME:\n${nameVal.error}`);
+      return;
+    }
+
+    const phoneVal = validateIndianPhone(regForm.mobile);
+    if (!phoneVal.isValid) {
+      alert(`⚠️ INVALID MOBILE NUMBER:\n${phoneVal.error}`);
+      return;
+    }
+
+    const vehicleVal = validateVehicleRegNumber(regForm.regNo);
+    if (!vehicleVal.isValid) {
+      alert(`⚠️ INVALID VEHICLE REGISTRATION NUMBER:\n${vehicleVal.error}`);
+      return;
+    }
+
+    if (regForm.licenseNo) {
+      const dlVal = validateDrivingLicense(regForm.licenseNo);
+      if (!dlVal.isValid) {
+        alert(`⚠️ INVALID DRIVING LICENSE:\n${dlVal.error}`);
+        return;
+      }
+    }
+
+    if (regForm.upi) {
+      const upiVal = validateUpiId(regForm.upi);
+      if (!upiVal.isValid) {
+        alert(`⚠️ INVALID UPI ID:\n${upiVal.error}`);
+        return;
+      }
+    }
+
+    const cleanPhone = regForm.mobile.replace(/\D/g, '').slice(-10);
+    const cleanRegNo = regForm.regNo.trim().toUpperCase();
+    const cleanLicenseNo = regForm.licenseNo.trim().toUpperCase();
+
+    try {
+      // 1. Check duplicate registration for the SAME category under this user
+      if (currentUser?.id) {
+        const { data: existingCat } = await supabase
+          .from('drivers')
+          .select('id, vehicle_type')
+          .eq('user_id', currentUser.id)
+          .eq('vehicle_type', regForm.category)
+          .maybeSingle();
 
         if (existingCat) {
           alert(`⚠️ DUPLICATE REGISTRATION BLOCKED:\nYou are already registered as an operator for vehicle category (${regForm.category.toUpperCase()}). You cannot submit duplicate applications for the same vehicle category!`);

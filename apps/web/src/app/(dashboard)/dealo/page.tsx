@@ -122,7 +122,7 @@ export default function DealoPage() {
     // Subscribe to realtime changes
     const interval = setInterval(() => fetchListings(), 10000);
     return () => clearInterval(interval);
-    };
+
   }, [fetchListings, supabase]);
 
   // Submit Listing
@@ -155,7 +155,7 @@ export default function DealoPage() {
         district: formLocation.split(',')[1]?.trim() || 'Thanjavur',
         location_name: formLocation.trim(),
         status: autoApprove ? 'approved' : 'pending',
-      };
+
 
       const res = await fetch('/api/dealo/listings', {
         method: 'POST',
@@ -184,7 +184,7 @@ export default function DealoPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+
 
   // Mark Sold
   const handleMarkSold = async (id: string) => {
@@ -196,7 +196,7 @@ export default function DealoPage() {
       });
       setListings((prev) => prev.map((item) => (item.id === id ? { ...item, status: 'sold' } : item)));
     } catch (e) {}
-  };
+
 
   // Direct 1-Tap Trade Actions
   const handleWhatsApp = (item: MarketListing) => {
@@ -205,7 +205,7 @@ export default function DealoPage() {
       `வணக்கம் ${item.seller_name}! 👋\n\nநான் SuprO DealO Web Portal-ல் உங்களுடைய "${item.title}" (விலை: ₹${item.price} / ${item.unit.replace('per_', '')}) பார்த்தேன்.\n\nநேரில் பார்த்து வாங்க விரும்புகிறேன். விவரங்களை கூறவும்.`
     );
     window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
-  };
+
 
   const handleUpiPay = (item: MarketListing) => {
     const upi = item.seller_upi || `${item.seller_phone.replace(/\D/g, '').slice(-10)}@upi`;
@@ -213,7 +213,7 @@ export default function DealoPage() {
     const note = encodeURIComponent(`SuprO DealO: ${item.title.substring(0, 30)}`);
     const upiUrl = `upi://pay?pa=${upi}&pn=${name}&am=${item.price}&cu=INR&tn=${note}`;
     window.location.href = upiUrl;
-  };
+
 
   // Filtered Listings
   const filteredListings = useMemo(() => {

@@ -65,7 +65,7 @@ export const GroupRepository = {
     const cleanPhone = this.normalizePhone(rawPhone);
     if (!cleanPhone) return { isLeader: false, isMember: false, role: 'None' };
     try {
-      const res = await fetch('http://152.67.7.216:8080/api/groupo/status?phone=' + cleanPhone);
+      const res = await fetch('/api/groupo/status?phone=' + cleanPhone);
       return res.ok ? await res.json() : { isLeader: false, isMember: false, role: 'None' };
     } catch (err) {
       return { isLeader: false, isMember: false, role: 'None' };
@@ -79,7 +79,7 @@ export const GroupRepository = {
     const cleanPhone = this.normalizePhone(rawPhone);
     if (!cleanPhone) return [];
     try {
-      const res = await fetch('http://152.67.7.216:8080/api/groupo/groups?phone=' + cleanPhone);
+      const res = await fetch('/api/groupo/groups?phone=' + cleanPhone);
       return res.ok ? await res.json() : [];
     } catch (err) {
       return [];
@@ -191,7 +191,7 @@ export const GroupRepository = {
    */
   async fetchMembers(groupId: string): Promise<DbMember[]> {
     try {
-      const res = await fetch('http://152.67.7.216:8080/api/groupo/groups/' + groupId + '/members');
+      const res = await fetch('/api/groupo/groups/' + groupId + '/members');
       return res.ok ? await res.json() : [];
     } catch (err) {
       return [];
@@ -236,7 +236,7 @@ export const GroupRepository = {
    */
   async fetchAllGroupsForAdmin(): Promise<DbGroup[]> {
     try {
-      const res = await fetch('http://152.67.7.216:8080/api/groupo/groups');
+      const res = await fetch('/api/groupo/groups');
       return res.ok ? await res.json() : [];
     } catch (err) {
       console.warn('[GroupRepository] fetchAllGroupsForAdmin error:', err);
