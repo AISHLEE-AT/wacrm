@@ -63,75 +63,11 @@ export const GroupRepository = {
    */
   async getUserGroupStatus(rawPhone: string): Promise<UserGroupStatus> {
     const cleanPhone = this.normalizePhone(rawPhone);
-    if (!cleanPhone) {
-      return { isLeader: false, isMember: false, role: 'None' };
-    }
-
+    if (!cleanPhone) return { isLeader: false, isMember: false, role: 'None' };
     try {
-      // 1. Try RPC function if present
-      const { data: rpcData, error: rpcError } = await supabase.rpc('groupo_get_user_role', {
-        p_phone: cleanPhone,
-      });
-
-      if (!rpcError && rpcData && rpcData.role !== 'None') {
-        return {
-          isLeader: !!rpcData.is_leader,
-          isMember: !!rpcData.is_member,
-          role: rpcData.role || 'Member',
-          group: rpcData.group_details || {
-            id: rpcData.group_id,
-            name: rpcData.group_name,
-            category_label: rpcData.category_label,
-            reg_code: rpcData.reg_code,
-            village: rpcData.village,
-            district: rpcData.district,
-            leader_name: rpcData.leader_name,
-            leader_phone: rpcData.leader_phone,
-            total_savings_pool: rpcData.total_savings_pool ?? 0,
-            active_loan_pool: rpcData.active_loan_pool ?? 0,
-            monthly_savings_per_member: rpcData.monthly_savings_per_member ?? 500,
-          },
-          memberRecord: rpcData.member_details,
-        };
-      }
-
-      // 2. Fallback direct table query: Check if user is Leader
-      const { data: leaderGroups, error: leaderError } = await supabase
-        .from('groupo_groups')
-        .select('*')
-        .ilike('leader_phone', `%${cleanPhone}%`)
-        .limit(1);
-
-      if (leaderGroups && leaderGroups.length > 0) {
-        return {
-          isLeader: true,
-          isMember: true,
-          role: 'Leader',
-          group: leaderGroups[0],
-        };
-      }
-
-      // 3. Check if user is a Member added by a Leader
-      const { data: memberRows, error: memberError } = await supabase
-        .from('groupo_members')
-        .select('*, group:groupo_groups(*)')
-        .ilike('phone', `%${cleanPhone}%`)
-        .limit(1);
-
-      if (memberRows && memberRows.length > 0) {
-        const m = memberRows[0];
-        return {
-          isLeader: false,
-          isMember: true,
-          role: m.role || 'Member',
-          group: m.group,
-          memberRecord: m,
-        };
-      }
-
-      return { isLeader: false, isMember: false, role: 'None' };
+      const res = await fetch('http://152.67.7.216:8080/api/groupo/status?phone=' + cleanPhone);
+      return res.ok ? await res.json() : { isLeader: false, isMember: false, role: 'None' };
     } catch (err) {
-      console.warn('[GroupRepository] getUserGroupStatus error:', err);
       return { isLeader: false, isMember: false, role: 'None' };
     }
   },
@@ -142,35 +78,10 @@ export const GroupRepository = {
   async getUserGroups(rawPhone: string): Promise<DbGroup[]> {
     const cleanPhone = this.normalizePhone(rawPhone);
     if (!cleanPhone) return [];
-
     try {
-      // 1. Groups led by user
-      const { data: leaderGroups } = await supabase
-        .from('groupo_groups')
-        .select('*')
-        .ilike('leader_phone', `%${cleanPhone}%`);
-
-      // 2. Groups where user is a registered member
-      const { data: memberRows } = await supabase
-        .from('groupo_members')
-        .select('group_id, group:groupo_groups(*)')
-        .ilike('phone', `%${cleanPhone}%`);
-
-      const groupMap = new Map<string, DbGroup>();
-
-      (leaderGroups || []).forEach((g: DbGroup) => {
-        if (g && g.id) groupMap.set(g.id, g);
-      });
-
-      (memberRows || []).forEach((m: any) => {
-        if (m && m.group && m.group.id) {
-          groupMap.set(m.group.id, m.group);
-        }
-      });
-
-      return Array.from(groupMap.values());
+      const res = await fetch('http://152.67.7.216:8080/api/groupo/groups?phone=' + cleanPhone);
+      return res.ok ? await res.json() : [];
     } catch (err) {
-      console.warn('[GroupRepository] getUserGroups error:', err);
       return [];
     }
   },
@@ -279,14 +190,12 @@ export const GroupRepository = {
    * Fetch all members for a group
    */
   async fetchMembers(groupId: string): Promise<DbMember[]> {
-    const { data, error } = await supabase
-      .from('groupo_members')
-      .select('*')
-      .eq('group_id', groupId)
-      .order('role', { ascending: false });
-
-    if (error) throw new Error(error.message);
-    return data || [];
+    try {
+      const res = await fetch('http://152.67.7.216:8080/api/groupo/groups/' + groupId + '/members');
+      return res.ok ? await res.json() : [];
+    } catch (err) {
+      return [];
+    }
   },
 
   /**
@@ -327,16 +236,8 @@ export const GroupRepository = {
    */
   async fetchAllGroupsForAdmin(): Promise<DbGroup[]> {
     try {
-      const { data, error } = await supabase
-        .from('groupo_groups')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.warn('[GroupRepository] fetchAllGroupsForAdmin error:', error);
-        return [];
-      }
-      return data || [];
+      const res = await fetch('http://152.67.7.216:8080/api/groupo/groups');
+      return res.ok ? await res.json() : [];
     } catch (err) {
       console.warn('[GroupRepository] fetchAllGroupsForAdmin error:', err);
       return [];
