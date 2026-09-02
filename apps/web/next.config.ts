@@ -135,11 +135,4 @@ const nextConfig: NextConfig = {
   },
 } as any;
 
-export default withSentryConfig(nextConfig, {
-  org: "sentry",
-  project: "nextjs",
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  hideSourceMaps: true,
-  disableLogger: true,
-});
+export default nextConfig;
