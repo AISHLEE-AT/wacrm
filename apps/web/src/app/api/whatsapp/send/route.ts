@@ -26,6 +26,25 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
+    // 1. Try OCI backend directly for zero-delay sending and dual-sync
+    try {
+      const clonedReq = request.clone();
+      const rawBody = await clonedReq.json().catch(() => null);
+      if (rawBody && rawBody.conversation_id && (rawBody.content_text || rawBody.text)) {
+        const ociRes = await fetch('https://mysupro.duckdns.org/api/whatsapp/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rawBody),
+        });
+        if (ociRes.ok) {
+          const json = await ociRes.json();
+          return NextResponse.json(json);
+        }
+      }
+    } catch (ociErr) {
+      console.warn('[POST /api/whatsapp/send] OCI backend fallback to Meta API:', ociErr);
+    }
+
     const authHeader = request.headers.get('authorization')
     const cookieStore = await cookies()
     

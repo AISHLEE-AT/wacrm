@@ -14,6 +14,20 @@ function supabaseAdmin() {
 
 export async function GET(request: Request) {
   try {
+    // 1. Try OCI backend directly for high-speed, zero-RLS live conversations
+    try {
+      const ociRes = await fetch('https://mysupro.duckdns.org/api/conversations', { cache: 'no-store' });
+      if (ociRes.ok) {
+        const json = await ociRes.json();
+        const convs = Array.isArray(json) ? json : (json.conversations || json.data || []);
+        if (convs && convs.length > 0) {
+          return NextResponse.json({ conversations: convs });
+        }
+      }
+    } catch (ociErr) {
+      console.warn('[GET /api/conversations] OCI fetch fallback to Supabase:', ociErr);
+    }
+
     const authHeader = request.headers.get('authorization')
     const suproToken = request.headers.get('x-supro-access-token')
     const userAgent = request.headers.get('user-agent') || ''
