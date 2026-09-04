@@ -14,7 +14,7 @@ export const RIDE_STATUS = {
 };
 
 // ─── APP CONFIGURATION ───
-export const API_BASE_URL = 'https://watscrm.vercel.app';
+export const API_BASE_URL = 'https://mysupro.duckdns.org';
 export const ADMIN_UPI = '6381029380@hdfcbank';
 export const ADMIN_PHONE = '916381029380';
 export const ADMIN_PHONES = ['6381029380'];

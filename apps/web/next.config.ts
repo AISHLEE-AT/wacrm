@@ -53,7 +53,7 @@ const SECURITY_HEADERS = [
       "font-src 'self' data:",
       // Supabase REST + realtime (WSS). All Meta API calls happen
       // server-side, so graph.facebook.com does not belong here.
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://thamizhan.vercel.app",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://thamizhan.vercel.app https://mysupro.duckdns.org wss://mysupro.duckdns.org",
       // Allow the Aishlee Web App modules to be embedded as iframes.
       // Without frame-src, Chromium/Edge blocks cross-origin iframes even
       // if the child page allows frame-ancestors.
@@ -136,7 +136,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://152.67.7.216:8080/api/:path*',
+        destination: 'https://mysupro.duckdns.org/api/:path*',
       },
     ];
   },
