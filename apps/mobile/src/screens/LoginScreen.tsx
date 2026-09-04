@@ -101,7 +101,7 @@ export default function LoginScreen({ navigation }: any) {
         const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
         const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 24 * 60 * 60 * 1000;
 
-        if (!isWindowExpired || savedToken) {
+        if (!isWindowExpired && savedToken) {
           // Allow fast biometric authentication if available
           const hasHardware = await LocalAuthentication.hasHardwareAsync();
           const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -150,19 +150,26 @@ export default function LoginScreen({ navigation }: any) {
           if (data.name) setFullName(data.name);
           if (data.category) setCategory(data.category);
           if (data.role) await SecureStore.setItemAsync('user-role', data.role);
+          let windowActive = !!data.is_whatsapp_session_active;
           if (data.last_whatsapp_inbound_at || data.whatsapp_window_expires_at) {
             const inboundTs = data.last_whatsapp_inbound_at 
               ? new Date(data.last_whatsapp_inbound_at).getTime()
               : new Date(data.whatsapp_window_expires_at).getTime() - (24 * 60 * 60 * 1000);
             if (!isNaN(inboundTs) && inboundTs > 0) {
               await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', inboundTs.toString());
-              setIs23hSyncRequired(false);
+              const isStillValid = (Date.now() - inboundTs) < 24 * 60 * 60 * 1000;
+              setIs23hSyncRequired(!isStillValid);
+              windowActive = isStillValid;
             }
           } else if (data.is_whatsapp_session_active === false) {
             setIs23hSyncRequired(true);
+            windowActive = false;
           }
-          if (data.has_pin) {
+          // Only advance to PIN if user has PIN AND 24h session is currently active
+          if (data.has_pin && windowActive) {
             setStep('pin');
+          } else {
+            setStep('phone');
           }
         }
         

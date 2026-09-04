@@ -472,44 +472,98 @@ function ProfilePageInner() {
       </div>
 
       {/* ─── Unified WhatsApp 24-Hour Live Window Card ─── */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-              <MessageCircle size={22} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">WHATSAPP 24H LIVE WINDOW</p>
-                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-                  ACTIVE
-                </span>
+      {(() => {
+        const lastInboundTs = activeProfile?.last_whatsapp_inbound_at 
+          ? new Date(activeProfile.last_whatsapp_inbound_at).getTime() 
+          : 0;
+        const isWindowActive = lastInboundTs > 0 && (Date.now() - lastInboundTs) < 24 * 60 * 60 * 1000;
+        const msRemaining = isWindowActive ? (lastInboundTs + 24 * 60 * 60 * 1000 - Date.now()) : 0;
+        const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+        const minsRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        const isExpiringSoon = isWindowActive && hoursRemaining < 2;
+        const progressPct = isWindowActive ? Math.min(100, Math.max(5, Math.round((msRemaining / (24 * 60 * 60 * 1000)) * 100))) : 0;
+
+        const badgeText = !isWindowActive ? "EXPIRED" : isExpiringSoon ? "EXPIRING" : "ACTIVE";
+        const badgeColorClass = !isWindowActive
+          ? "border-red-500/30 bg-red-500/10 text-red-400"
+          : isExpiringSoon
+          ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400";
+
+        const barColorClass = !isWindowActive
+          ? "bg-red-500/40"
+          : isExpiringSoon
+          ? "bg-amber-400"
+          : "bg-emerald-500";
+
+        const iconColorClass = !isWindowActive
+          ? "bg-red-500/10 text-red-400"
+          : isExpiringSoon
+          ? "bg-amber-500/10 text-amber-400"
+          : "bg-emerald-500/10 text-emerald-400";
+
+        const statusTitle = !isWindowActive
+          ? "24h Session Window Closed (>24h since inbound message)"
+          : isExpiringSoon
+          ? `24h Session Expiring Soon (${hoursRemaining}h ${minsRemaining}m left)`
+          : `24h Session Window Active & Ready (${hoursRemaining}h ${minsRemaining}m remaining)`;
+
+        return (
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${iconColorClass}`}>
+                  <MessageCircle size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">WHATSAPP 24H LIVE WINDOW</p>
+                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${badgeColorClass}`}>
+                      {badgeText}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-extrabold text-foreground mt-0.5 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    {statusTitle}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {!isWindowActive
+                      ? "Meta 24h messaging window is closed. Send a quick keep-alive ping to renew real-time CRM messaging and RideO dispatch."
+                      : "Inbound WhatsApp connection renewed daily for instant RideO bookings, RentO machinery alerts, and CRM replies."}
+                  </p>
+                </div>
               </div>
-              <h3 className="text-sm font-extrabold text-foreground mt-0.5 flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-emerald-400" />
-                24h Session Window Active & Ready
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Inbound WhatsApp connection renewed daily for instant RideO bookings, RentO machinery alerts, and CRM replies.
-              </p>
+
+              <button
+                onClick={() => {
+                  window.open('https://wa.me/916381029380?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
+                }}
+                className={`px-4 py-2 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 self-start sm:self-auto shrink-0 ${
+                  !isWindowActive
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white"
+                    : isExpiringSoon
+                    ? "bg-amber-400 hover:bg-amber-300 text-slate-950"
+                    : "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {!isWindowActive
+                  ? "Re-Activate 24h Window (WhatsApp)"
+                  : isExpiringSoon
+                  ? "Renew 24h Window (WhatsApp)"
+                  : "Keep-Alive Ping (WhatsApp)"}
+              </button>
+            </div>
+
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${barColorClass} rounded-full transition-all duration-500`}
+                style={{ width: `${progressPct}%` }}
+              />
             </div>
           </div>
-
-          <button
-            onClick={() => {
-              window.open('https://wa.me/916381029380?text=' + encodeURIComponent('SuprO WhatsApp CRM Keep-Alive Ping ⚡'), '_blank');
-            }}
-            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5 self-start sm:self-auto shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Keep-Alive Ping (WhatsApp)
-          </button>
-        </div>
-
-        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-          <div className="h-full bg-emerald-500 rounded-full w-4/5 transition-all duration-500" />
-        </div>
-      </div>
+        );
+      })()}
 
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
         <div className="flex items-center gap-4 text-foreground">

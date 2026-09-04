@@ -285,6 +285,14 @@ function ConversationItem({
       })
     : "";
 
+  const lastActiveTimestamp = Math.max(
+    conversation.last_message_at ? new Date(conversation.last_message_at).getTime() : 0,
+    (contact as any)?.last_inbound_at ? new Date((contact as any).last_inbound_at).getTime() : 0,
+    (contact as any)?.updated_at ? new Date((contact as any).updated_at).getTime() : 0
+  );
+  const is24hActive = lastActiveTimestamp > 0 && (Date.now() - lastActiveTimestamp) < 24 * 60 * 60 * 1000;
+  const is24hExpiring = is24hActive && (Date.now() - lastActiveTimestamp) >= 22 * 60 * 60 * 1000;
+
   return (
     <button
       onClick={handleClick}
@@ -313,19 +321,19 @@ function ConversationItem({
             <span className="truncate text-sm font-medium text-foreground">
               {displayName}
             </span>
-            {conversation.last_message_at && (
+            {lastActiveTimestamp > 0 && (
               <span
                 className={cn(
                   "w-1.5 h-1.5 rounded-full shrink-0",
-                  Date.now() - new Date(conversation.last_message_at).getTime() < 22 * 60 * 60 * 1000
-                    ? "bg-emerald-400"
-                    : Date.now() - new Date(conversation.last_message_at).getTime() < 24 * 60 * 60 * 1000
+                  !is24hActive
+                    ? "bg-muted-foreground/40"
+                    : is24hExpiring
                     ? "bg-amber-400"
-                    : "bg-muted-foreground/40"
+                    : "bg-emerald-400"
                 )}
                 title={
-                  Date.now() - new Date(conversation.last_message_at).getTime() < 24 * 60 * 60 * 1000
-                    ? "24h Window Active"
+                  is24hActive
+                    ? (is24hExpiring ? "24h Window Expiring Soon (<2h)" : "24h Window Active")
                     : "24h Window Expired"
                 }
               />

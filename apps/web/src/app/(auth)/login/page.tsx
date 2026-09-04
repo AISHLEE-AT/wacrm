@@ -167,9 +167,12 @@ function LoginPageInner() {
           setIsExistingUser(true);
           setFullName(data.name || data.full_name || "");
           if (data.category) setCategory(data.category);
-          setIsWhatsAppActive(!!data.is_whatsapp_session_active);
+          const activeSession = !!data.is_whatsapp_session_active;
+          setIsWhatsAppActive(activeSession);
           setWhatsAppHoursRemaining(data.whatsapp_hours_remaining || 0);
-          if (data.has_pin) {
+          // Only advance to PIN automatically if user has PIN AND their 24h WhatsApp window is active.
+          // If the 24h window is expired, keep user on WhatsApp OTP so login renews the window!
+          if (data.has_pin && activeSession) {
             setStep('pin');
           }
         } else {
@@ -445,12 +448,21 @@ function LoginPageInner() {
                         <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
                           <UserCheck className="w-5 h-5 text-emerald-400" />
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Welcome Back</p>
-                          <p className="text-white font-black">{fullName}</p>
+                          <p className="text-white font-black truncate">{fullName}</p>
                           <p className="text-gray-400 text-xs">{CATEGORIES.find(c => c.key === category)?.label || category}</p>
                         </div>
                       </div>
+                      {!isWhatsAppActive && (
+                        <div className="mt-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                            <span className="text-amber-300 font-bold">24h WhatsApp Session Closed</span>
+                          </div>
+                          <span className="text-amber-400 text-[11px] font-semibold">Login with OTP to renew</span>
+                        </div>
+                      )}
                     </motion.div>
                   )}
 

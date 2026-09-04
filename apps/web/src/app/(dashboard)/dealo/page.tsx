@@ -102,13 +102,28 @@ export default function DealoPage() {
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/dealo/listings');
-      const data = res.ok ? await res.json() : null;
-      const error = res.ok ? null : new Error('Failed to fetch listings');
+      // 1. Prioritize Supabase (unified with mobile live database)
+      const { data, error } = await supabase
+        .from('market_listings')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         setListings(data);
+        return;
       }
+
+      // 2. Fallback to API endpoint
+      const res = await fetch('/api/dealo/listings').catch(() => null);
+      if (res && res.ok) {
+        const apiData = await res.json().catch(() => null);
+        if (Array.isArray(apiData) && apiData.length > 0) {
+          setListings(apiData);
+          return;
+        }
+      }
+
+      if (data) setListings(data);
     } catch (e) {
       console.error('Error fetching market listings:', e);
     } finally {
@@ -172,16 +187,20 @@ export default function DealoPage() {
         status: autoApprove ? 'approved' : 'pending',
       };
 
-      const res = await fetch('/api/dealo/listings', {
+      // 1. Insert into Supabase market_listings (unified with mobile)
+      const { error: sbError } = await supabase
+        .from('market_listings')
+        .insert(newListing);
+
+      // 2. Dual-sync to OCI backend
+      fetch('/api/dealo/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newListing)
-      });
-      const data = res.ok ? await res.json() : null;
-      const error = res.ok ? null : new Error('Failed to create listing');
+      }).catch(() => {});
 
-      if (error) {
-        alert(error.message);
+      if (sbError) {
+        alert(sbError.message);
       } else {
         alert(
           autoApprove
@@ -204,7 +223,8 @@ export default function DealoPage() {
   // Mark Sold
   const handleMarkSold = async (id: string) => {
     try {
-      await fetch('/api/dealo/listings/' + id, {
+      await supabase.from('market_listings').update({ status: 'sold' }).eq('id', id);
+      fetch('/api/dealo/listings/' + id, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'sold' })

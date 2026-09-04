@@ -65,9 +65,50 @@ export const GroupRepository = {
     const cleanPhone = this.normalizePhone(rawPhone);
     if (!cleanPhone) return { isLeader: false, isMember: false, role: 'None' };
     try {
-      const res = await fetch('/api/groupo/status?phone=' + cleanPhone);
-      return res.ok ? await res.json() : { isLeader: false, isMember: false, role: 'None' };
+      // 1. Check if user is Leader in Supabase groupo_groups
+      const { data: leaderGroups } = await supabase
+        .from('groupo_groups')
+        .select('*')
+        .or(`leader_phone.ilike.%${cleanPhone}%,leader_phone.ilike.%91${cleanPhone}%`)
+        .limit(1);
+
+      if (leaderGroups && leaderGroups.length > 0) {
+        return {
+          isLeader: true,
+          isMember: true,
+          role: 'Leader',
+          group: leaderGroups[0],
+        };
+      }
+
+      // 2. Check if user is a Member in Supabase groupo_members
+      const { data: memberRows } = await supabase
+        .from('groupo_members')
+        .select('*, group:groupo_groups(*)')
+        .or(`phone.ilike.%${cleanPhone}%,phone.ilike.%91${cleanPhone}%`)
+        .limit(1);
+
+      if (memberRows && memberRows.length > 0) {
+        const m = memberRows[0];
+        return {
+          isLeader: false,
+          isMember: true,
+          role: m.role || 'Member',
+          group: m.group,
+          memberRecord: m,
+        };
+      }
+
+      // 3. Optional fallback to OCI API endpoint
+      const res = await fetch('/api/groupo/status?phone=' + cleanPhone).catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && (data.isLeader || data.isMember)) return data;
+      }
+
+      return { isLeader: false, isMember: false, role: 'None' };
     } catch (err) {
+      console.warn('[GroupRepository] getUserGroupStatus error:', err);
       return { isLeader: false, isMember: false, role: 'None' };
     }
   },
@@ -79,9 +120,44 @@ export const GroupRepository = {
     const cleanPhone = this.normalizePhone(rawPhone);
     if (!cleanPhone) return [];
     try {
-      const res = await fetch('/api/groupo/groups?phone=' + cleanPhone);
-      return res.ok ? await res.json() : [];
+      // 1. Groups led by user from Supabase
+      const { data: leaderGroups } = await supabase
+        .from('groupo_groups')
+        .select('*')
+        .or(`leader_phone.ilike.%${cleanPhone}%,leader_phone.ilike.%91${cleanPhone}%`);
+
+      // 2. Groups where user is a registered member
+      const { data: memberRows } = await supabase
+        .from('groupo_members')
+        .select('group_id, group:groupo_groups(*)')
+        .or(`phone.ilike.%${cleanPhone}%,phone.ilike.%91${cleanPhone}%`);
+
+      const groupMap = new Map<string, DbGroup>();
+
+      (leaderGroups || []).forEach((g: DbGroup) => {
+        if (g && g.id) groupMap.set(g.id, g);
+      });
+
+      (memberRows || []).forEach((m: any) => {
+        if (m && m.group && m.group.id) {
+          groupMap.set(m.group.id, m.group);
+        }
+      });
+
+      if (groupMap.size > 0) {
+        return Array.from(groupMap.values());
+      }
+
+      // 3. Fallback to API endpoint
+      const res = await fetch('/api/groupo/groups?phone=' + cleanPhone).catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+        if (Array.isArray(data)) return data;
+      }
+
+      return [];
     } catch (err) {
+      console.warn('[GroupRepository] getUserGroups error:', err);
       return [];
     }
   },
@@ -191,8 +267,23 @@ export const GroupRepository = {
    */
   async fetchMembers(groupId: string): Promise<DbMember[]> {
     try {
-      const res = await fetch('/api/groupo/groups/' + groupId + '/members');
-      return res.ok ? await res.json() : [];
+      const { data, error } = await supabase
+        .from('groupo_members')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('role', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data as DbMember[];
+      }
+
+      const res = await fetch('/api/groupo/groups/' + groupId + '/members').catch(() => null);
+      if (res && res.ok) {
+        const fallbackData = await res.json().catch(() => null);
+        if (Array.isArray(fallbackData)) return fallbackData;
+      }
+
+      return (data as DbMember[]) || [];
     } catch (err) {
       return [];
     }
@@ -236,8 +327,22 @@ export const GroupRepository = {
    */
   async fetchAllGroupsForAdmin(): Promise<DbGroup[]> {
     try {
-      const res = await fetch('/api/groupo/groups');
-      return res.ok ? await res.json() : [];
+      const { data, error } = await supabase
+        .from('groupo_groups')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        return data as DbGroup[];
+      }
+
+      const res = await fetch('/api/groupo/groups').catch(() => null);
+      if (res && res.ok) {
+        const fallbackData = await res.json().catch(() => null);
+        if (Array.isArray(fallbackData)) return fallbackData;
+      }
+
+      return (data as DbGroup[]) || [];
     } catch (err) {
       console.warn('[GroupRepository] fetchAllGroupsForAdmin error:', err);
       return [];
@@ -362,4 +467,12 @@ export const GroupRepository = {
     if (error) throw new Error(error.message);
   },
 };
-export interface GroupData extends DbGroup { meetingDay?: string; leaderName?: string; monthlySavingsPerMember?: number; totalMembersCount?: number; members?: DbMember[]; customMetrics?: any; }
+
+export interface GroupData extends DbGroup {
+  meetingDay?: string;
+  leaderName?: string;
+  monthlySavingsPerMember?: number;
+  totalMembersCount?: number;
+  members?: DbMember[];
+  customMetrics?: any;
+}

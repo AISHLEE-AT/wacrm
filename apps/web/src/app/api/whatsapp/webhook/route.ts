@@ -602,10 +602,9 @@ async function processMessage(
 
   // -- META 24-HOUR CUSTOMER SERVICE WINDOW STAMPING --
   const nowIso = new Date().toISOString();
-  const windowExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const clean10Phone = senderPhone.slice(-10);
 
-  // Asynchronously update profiles, contacts, and drivers so webhook response is never delayed
+  // Asynchronously update profiles and conversations so webhook response is never delayed
   ;(async () => {
     try {
       await supabaseAdmin()
@@ -616,23 +615,15 @@ async function processMessage(
         })
         .or(`phone.ilike.%${clean10Phone}%,whatsapp.ilike.%${clean10Phone}%`);
 
-      await supabaseAdmin()
-        .from('contacts')
-        .update({
-          last_active_at: nowIso,
-          whatsapp_window_expires_at: windowExpiresAt,
-          updated_at: nowIso,
-        })
-        .eq('id', contactRecord.id);
-
-      await supabaseAdmin()
-        .from('drivers')
-        .update({
-          is_whatsapp_active: true,
-          whatsapp_last_active_at: nowIso,
-          updated_at: nowIso,
-        })
-        .or(`phone.ilike.%${clean10Phone}%,mobile_number.ilike.%${clean10Phone}%,whatsapp_number.ilike.%${clean10Phone}%`);
+      if (conversation?.id) {
+        await supabaseAdmin()
+          .from('conversations')
+          .update({
+            last_message_at: nowIso,
+            updated_at: nowIso,
+          })
+          .eq('id', conversation.id);
+      }
     } catch (e) {
       console.error('[webhook] Error stamping 24h WhatsApp window:', e);
     }
@@ -648,31 +639,88 @@ async function processMessage(
     contentText.includes('24h') ||
     contentText.includes('Check-in')
   )) {
-    await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: senderPhone,
-        type: 'text',
-        text: {
-          body: `✅ SuprO 24-Hour Active Session is renewed! 🎉\n\nYou now have full real-time access to RideO, RentO, Agro, and DriveO updates for the next 24 hours.`
-        }
-      })
-    }).catch(err => console.error('Failed to send daily sync confirmation:', err));
+    const confirmationText = `✅ SuprO 24-Hour Active Session is renewed! 🎉\n\nYou now have full real-time access to RideO, RentO, Agro, and DriveO updates for the next 24 hours.`;
+    
+    let sentMsgId: string | null = null;
+    try {
+      const fbRes = await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: senderPhone,
+          type: 'text',
+          text: {
+            body: confirmationText
+          }
+        })
+      });
+      const fbData = await fbRes.json().catch(() => ({}));
+      if (fbData?.messages && fbData.messages[0]?.id) {
+        sentMsgId = fbData.messages[0].id;
+      }
+    } catch (err) {
+      console.error('Failed to send daily sync confirmation:', err);
+    }
 
-    return; // Keep-alive handled, skip polluting inbox
+    // 1. Record inbound customer Keep-Alive message in CRM messages
+    await supabaseAdmin().from('messages').insert({
+      conversation_id: conversation.id,
+      sender_type: 'customer',
+      content_type: 'text',
+      content_text: contentText,
+      message_id: message.id,
+      status: 'delivered',
+      created_at: nowIso,
+    }).catch(err => console.error('Error recording keep-alive ping in CRM:', err));
+
+    // 2. Record outbound confirmation message in CRM messages
+    if (sentMsgId) {
+      await supabaseAdmin().from('messages').insert({
+        conversation_id: conversation.id,
+        sender_type: 'agent',
+        content_type: 'text',
+        content_text: confirmationText,
+        message_id: sentMsgId,
+        status: 'sent',
+        created_at: new Date(Date.now() + 500).toISOString(),
+      }).catch(err => console.error('Error recording renewal confirmation in CRM:', err));
+    }
+
+    // 3. Update conversation last_message_at, last_message_text, and updated_at
+    await supabaseAdmin()
+      .from('conversations')
+      .update({
+        last_message_text: '⚡ SuprO 24-Hour Active Session Renewed',
+        last_message_at: nowIso,
+        updated_at: nowIso,
+      })
+      .eq('id', conversation.id)
+      .catch(err => console.error('Error updating conversation on keep-alive:', err));
+
+    // 4. Update profile last_whatsapp_inbound_at
+    await supabaseAdmin()
+      .from('profiles')
+      .update({
+        last_whatsapp_inbound_at: nowIso,
+        updated_at: nowIso,
+      })
+      .or(`phone.ilike.%${clean10Phone}%,whatsapp.ilike.%${clean10Phone}%`)
+      .catch(err => console.error('Error updating profile on keep-alive:', err));
+
+    return; // Keep-alive handled & mapped to CRM
   }
   // ---------------------------------------
 
   // -- OTP AUTHENTICATION HOOK --
-  if (contentText && (contentText.trim() === 'Requesting OTP for Login' || contentText.includes('Request OTP'))) {
+  if (contentText && (contentText.trim() === 'Requesting OTP for Login' || contentText.includes('Request OTP') || contentText.includes('Login Verification'))) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const otpMsgText = `Your SuprO login OTP is ${otp}. Valid for 5 minutes.`;
     
     const { error: upsertErr } = await supabaseAdmin().from('whatsapp_otps').upsert({
       phone_number: senderPhone,
@@ -684,25 +732,77 @@ async function processMessage(
       console.error('Failed to upsert OTP:', upsertErr);
     }
 
-    await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: senderPhone,
-        type: 'text',
-        text: {
-          body: `Your SuprO login OTP is ${otp}. Valid for 5 minutes.`
-        }
-      })
-    }).catch(err => console.error('Failed to send OTP:', err));
+    let otpMsgId: string | null = null;
+    try {
+      const fbRes = await fetch(`https://graph.facebook.com/v19.0/${phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: senderPhone,
+          type: 'text',
+          text: {
+            body: otpMsgText
+          }
+        })
+      });
+      const fbData = await fbRes.json().catch(() => ({}));
+      if (fbData?.messages && fbData.messages[0]?.id) {
+        otpMsgId = fbData.messages[0].id;
+      }
+    } catch (err) {
+      console.error('Failed to send OTP:', err);
+    }
     
-    return; // Stop processing so we don't pollute the CRM inbox
+    // Record inbound OTP request and outbound OTP in CRM to renew the 24h window
+    await supabaseAdmin().from('messages').insert({
+      conversation_id: conversation.id,
+      sender_type: 'customer',
+      content_type: 'text',
+      content_text: contentText,
+      message_id: message.id,
+      status: 'delivered',
+      created_at: nowIso,
+    }).catch(err => console.error('Error recording OTP request in CRM:', err));
+
+    if (otpMsgId) {
+      await supabaseAdmin().from('messages').insert({
+        conversation_id: conversation.id,
+        sender_type: 'agent',
+        content_type: 'text',
+        content_text: otpMsgText,
+        message_id: otpMsgId,
+        status: 'sent',
+        created_at: new Date(Date.now() + 500).toISOString(),
+      }).catch(err => console.error('Error recording OTP reply in CRM:', err));
+    }
+
+    await supabaseAdmin()
+      .from('conversations')
+      .update({
+        last_message_text: '🔐 Login OTP Sent',
+        last_message_at: nowIso,
+        updated_at: nowIso,
+      })
+      .eq('id', conversation.id)
+      .catch(err => console.error('Error updating conversation on OTP:', err));
+
+    await supabaseAdmin()
+      .from('profiles')
+      .update({
+        last_whatsapp_inbound_at: nowIso,
+        updated_at: nowIso,
+      })
+      .or(`phone.ilike.%${clean10Phone}%,whatsapp.ilike.%${clean10Phone}%`)
+      .catch(err => console.error('Error updating profile on OTP:', err));
+
+    return; // OTP handled & 24h window mapped in CRM
   }
+  // ------------------------------------
   // ------------------------------------
 
   // -- STANDALONE BIDDING SYSTEM HOOK --
