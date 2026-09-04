@@ -1,4 +1,6 @@
-const API_URL = 'https://watscrm.vercel.app';
+import { ENV } from '../config/env';
+
+const API_URL = ENV.CRM_URL;
 const endpoints = {
   authCheck: `${API_URL}/api/auth/check`,
   authVerify: `${API_URL}/api/auth/otp/verify`,
@@ -130,9 +132,9 @@ export const API = {
     try {
       const res = await fetch(endpoints.authWaba);
       const data = await res.json();
-      return data.phone || "916381029380"; // Fallback just in case
+      return data.phone || ENV.WABA_PHONE;
     } catch (e) {
-      return "916381029380";
+      return ENV.WABA_PHONE;
     }
   },
 

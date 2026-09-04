@@ -11,6 +11,7 @@ import {
 import { KeyRound, Eye, EyeOff, ShieldCheck, Check, AlertTriangle } from 'lucide-react-native';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
 import { supabase } from '../../lib/supabase';
+import { ENV } from '../../config/env';
 
 interface SecuritySectionProps {
   phone: string;
@@ -37,7 +38,7 @@ export const SecuritySection: React.FC<SecuritySectionProps> = ({ phone }) => {
     setSuccess(null);
     
     try {
-      const response = await fetch('https://watscrm.vercel.app/api/auth/pin/set', {
+      const response = await fetch(`${ENV.CRM_URL}/api/auth/pin/set`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

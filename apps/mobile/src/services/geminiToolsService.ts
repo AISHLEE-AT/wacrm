@@ -31,7 +31,7 @@ const CANDIDATE_MODELS = [
 const FALLBACK_KEYS = (process.env.EXPO_PUBLIC_GEMINI_API_KEY || '').split(',').map(k => k.trim()).filter(Boolean);
 
 const DEFAULT_MODEL = 'gemini-3.1-flash-lite';
-const CLOUD_AI_API = 'https://watscrm.vercel.app/api/ai';
+const CLOUD_AI_API = `${ENV.CRM_URL}/api/ai`;
 
 export const geminiToolsService = {
   /**

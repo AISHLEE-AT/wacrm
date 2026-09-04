@@ -5,6 +5,7 @@ import { colors, spacing, radius, fontSize } from '../../lib/theme';
 import { LocationContext } from '../../context/LocationContext';
 
 import { AppContext } from '../../context/AppContext';
+import { ENV } from '../../config/env';
 
 interface ContactInfoCardProps {
   profile: any;
@@ -55,7 +56,7 @@ export const ContactInfoCard: React.FC<ContactInfoCardProps> = ({ profile, userI
         await appContext?.updateGeminiKey?.(editValue.trim());
       }
 
-      fetch('https://watscrm.vercel.app/api/profile/update', {
+      fetch(`${ENV.CRM_URL}/api/profile/update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

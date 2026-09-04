@@ -4,6 +4,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { CheckCircle, Copy, Share2 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
+import { ENV } from '../../config/env';
 
 interface DigitalIdCardProps {
   profile: any;
@@ -14,7 +15,7 @@ interface DigitalIdCardProps {
 export const DigitalIdCard: React.FC<DigitalIdCardProps> = ({ profile, isAdmin, phone }) => {
   const idHash = profile?.digital_id_hash || `SUPRO-${phone.replace(/\D/g, '')}`;
   const userId = profile?.id || idHash;
-  const qrData = `https://watscrm.vercel.app/profile?id=${userId}`;
+  const qrData = `${ENV.CRM_URL}/profile?id=${userId}`;
   const fullName = profile?.full_name || 'User Name';
   const role = isAdmin ? 'Admin' : (profile?.role || 'Member');
 

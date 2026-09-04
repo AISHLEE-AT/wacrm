@@ -16,6 +16,7 @@ import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '../../lib/supabase';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
+import { ENV } from '../../config/env';
 
 interface ProfileHeaderProps {
   profile: any;
@@ -70,7 +71,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
         const avatar_url = publicUrlData.publicUrl;
 
-        const response = await fetch('https://watscrm.vercel.app/api/profile/update', {
+        const response = await fetch(`${ENV.CRM_URL}/api/profile/update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId, phone, avatar_url }),
@@ -94,7 +95,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     if (!editNameValue.trim()) return;
     try {
       setIsSavingName(true);
-      const response = await fetch('https://watscrm.vercel.app/api/profile/update', {
+      const response = await fetch(`${ENV.CRM_URL}/api/profile/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, phone, full_name: editNameValue.trim() }),

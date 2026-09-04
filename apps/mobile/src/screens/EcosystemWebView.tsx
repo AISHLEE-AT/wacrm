@@ -7,8 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { AppContext } from '../context/AppContext';
 import { RefreshCw, ArrowLeft, Home } from 'lucide-react-native';
+import { ENV } from '../config/env';
 
-const BASE_URL = 'https://watscrm.vercel.app';
+const BASE_URL = ENV.CRM_URL;
 
 interface Props {
   route: {

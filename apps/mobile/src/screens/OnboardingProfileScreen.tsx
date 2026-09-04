@@ -7,6 +7,7 @@ import { User, CreditCard, Camera, MapPin, Navigation, RefreshCw } from 'lucide-
 import { AppContext } from '../context/AppContext';
 import { LocationContext } from '../context/LocationContext';
 import { supabase } from '../lib/supabase';
+import { ENV } from '../config/env';
 
 export default function OnboardingProfileScreen({ navigation }: any) {
   const { user, signIn } = useContext(AppContext);
@@ -175,7 +176,7 @@ export default function OnboardingProfileScreen({ navigation }: any) {
       }
 
       // 2. Call backend profile API endpoint
-      fetch('https://watscrm.vercel.app/api/profile/update', {
+      fetch(`${ENV.CRM_URL}/api/profile/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -8,6 +8,7 @@ import { API } from '../utils/api';
 import { AppContext } from '../context/AppContext';
 import { aishleeChannelService, AishleeVideoInfo } from '../services/aishleeChannelService';
 import { DailyDeepamVideoPlayer } from '../components/login/DailyDeepamVideoPlayer';
+import { ENV } from '../config/env';
 
 const CATEGORIES = [
   { key: 'Admin',      label: '👑 Admin (CRM & All Modules)' },
@@ -40,7 +41,7 @@ export default function LoginScreen({ navigation }: any) {
   
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [wabaPhone, setWabaPhone] = useState('916381029380');
+  const [wabaPhone, setWabaPhone] = useState(ENV.WABA_PHONE);
   const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
 
   // Daily Deepam Video Player states

@@ -2,9 +2,10 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { ENV } from '../config/env';
 
 // Admin phone numbers (same as web app)
-export const ADMIN_PHONES = ['6381029380'];
+export const ADMIN_PHONES = ENV.ADMIN_PHONES;
 
 export interface AppUser {
   id?: string;
@@ -292,7 +293,7 @@ export const AppProvider = ({ children }: any) => {
           });
 
           // Background sync API key from server across all devices
-          fetch(`https://watscrm.vercel.app/api/auth/check?phone=${phone}`)
+          fetch(`${ENV.CRM_URL}/api/auth/check?phone=${phone}`)
             .then(res => res.json())
             .then(data => {
               if (data.gemini_api_key && data.gemini_api_key !== apiKey) {
@@ -592,7 +593,7 @@ export const AppProvider = ({ children }: any) => {
           .update({ gemini_api_key: key })
           .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`);
 
-        fetch('https://watscrm.vercel.app/api/profile/update', {
+        fetch(`${ENV.CRM_URL}/api/profile/update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id, phone: user.phone, gemini_api_key: key }),
@@ -788,7 +789,7 @@ export const AppProvider = ({ children }: any) => {
   }, [lastWhatsAppSync]);
 
   const renewWhatsAppWindow = useCallback(async (customMsg?: string) => {
-    const waba = '916381029380';
+    const waba = ENV.WABA_PHONE;
     const locSnippet = user?.location ? ` (Location: ${user.location})` : '';
     const msg = customMsg || `Hi SuprO, keep my 24h WhatsApp notification window active 🔔${locSnippet}`;
     const url = `whatsapp://send?phone=${waba}&text=${encodeURIComponent(msg)}`;

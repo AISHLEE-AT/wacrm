@@ -28,6 +28,7 @@ import * as SecureStore from 'expo-secure-store';
 import { AppContext, ADMIN_PHONES } from '../../context/AppContext';
 import { supabase } from '../../lib/supabase';
 import { colors, spacing, radius, fontSize } from '../../lib/theme';
+import { ENV } from '../../config/env';
 
 export interface UserCategoryItem {
   key: string;
@@ -235,7 +236,7 @@ export function UserCategoryCard({
       }
 
       // 3. Update backend profile API
-      fetch('https://watscrm.vercel.app/api/profile/update', {
+      fetch(`${ENV.CRM_URL}/api/profile/update`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -33,9 +33,10 @@ import { SetupChecklist } from '../components/profile/SetupChecklist';
 import { UserCategoryCard } from '../components/profile/UserCategoryCard';
 import { PurchaseOrderHistoryCard } from '../components/profile/PurchaseOrderHistoryCard';
 import { SupportCard } from '../components/profile/SupportCard';
+import { ENV } from '../config/env';
 
 const endpoints = {
-  updateProfile: 'https://watscrm.vercel.app/api/profile/update',
+  updateProfile: `${ENV.CRM_URL}/api/profile/update`,
 };
 
 export default function DashboardScreen({ navigation }: any) {

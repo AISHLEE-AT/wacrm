@@ -44,6 +44,7 @@ import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../context/AppContext';
 import { colors } from '../lib/theme';
+import { ENV } from '../config/env';
 import {
   AgriService,
   AgriMediaItem,
@@ -122,7 +123,7 @@ export default function AgrOScreen() {
 
   // ─── Share Video / Content to WhatsApp ───
   const handleShareWhatsApp = (title: string, url: string) => {
-    const msg = `🌾 *SuprO AgrO உழவர் வழிகாட்டி:* \n\n📌 *${title}*\n🔗 வீடியோ/விவரம்: ${url}\n\n📲 தமிழ்நாடு விவசாயிகள் பயன்பெற SuprO செயலியை பதிவிறக்கவும்: https://watscrm.vercel.app/agro`;
+    const msg = `🌾 *SuprO AgrO உழவர் வழிகாட்டி:* \n\n📌 *${title}*\n🔗 வீடியோ/விவரம்: ${url}\n\n📲 தமிழ்நாடு விவசாயிகள் பயன்பெற SuprO செயலியை பதிவிறக்கவும்: ${ENV.CRM_URL}/agro`;
     const shareUrl = `whatsapp://send?text=${encodeURIComponent(msg)}`;
     Linking.openURL(shareUrl).catch(() => {
       Linking.openURL(`https://wa.me/?text=${encodeURIComponent(msg)}`);

@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
 import { AppContext } from './AppContext';
+import { ENV } from '../config/env';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface LocationData {
@@ -78,7 +79,7 @@ function buildFullAddress(geo: Location.LocationGeocodedAddress): string {
   return parts.join(', ');
 }
 
-const PROFILE_UPDATE_URL = 'https://watscrm.vercel.app/api/profile/update';
+const PROFILE_UPDATE_URL = `${ENV.CRM_URL}/api/profile/update`;
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 export const LocationProvider = ({ children }: { children: React.ReactNode }) => {

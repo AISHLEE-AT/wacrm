@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
+import { ENV } from '../config/env';
 
-const API_URL = 'https://watscrm.vercel.app';
+const API_URL = ENV.API_URL;
 
 let _trackingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -10,7 +11,7 @@ const sendLocationToServer = async (lat: number, lng: number) => {
     const phone = await SecureStore.getItemAsync('user-phone');
     if (!phone) return;
 
-    await fetch(`${API_URL}/api/driver/location`, {
+    await fetch(`${API_URL}/api/drivers/location`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, lat, lng, timestamp: new Date().toISOString() }),
