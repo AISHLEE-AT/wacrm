@@ -39,6 +39,17 @@ function supabaseAdmin() {
  */
 export async function GET() {
   try {
+    // 1. Try OCI backend directly
+    try {
+      const ociRes = await fetch('https://mysupro.duckdns.org/api/whatsapp/config', { cache: 'no-store' });
+      if (ociRes.ok) {
+        const json = await ociRes.json();
+        return NextResponse.json(json);
+      }
+    } catch (ociErr) {
+      console.warn('[GET /api/whatsapp/config] OCI fetch fallback to local:', ociErr);
+    }
+
     const supabase = await createClient()
 
     const {
