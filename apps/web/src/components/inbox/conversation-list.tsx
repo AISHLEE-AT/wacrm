@@ -103,9 +103,10 @@ export function ConversationList({
         }
         const res = await fetch(`/api/conversations${query}`, { cache: 'no-store', credentials: 'include', headers });
         const json = await res.json();
-        if (json.conversations && Array.isArray(json.conversations)) {
+        const convList = Array.isArray(json) ? json : (json.conversations && Array.isArray(json.conversations) ? json.conversations : (json.data && Array.isArray(json.data) ? json.data : null));
+        if (convList) {
           if (!cancelled) {
-            onConversationsLoadedRef.current(json.conversations);
+            onConversationsLoadedRef.current(convList);
             setLoading(false);
           }
           return;

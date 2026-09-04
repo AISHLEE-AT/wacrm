@@ -371,9 +371,10 @@ export function MessageThread({
         }
         const res = await fetch(`/api/conversations/${conversationId}/messages${query}`, { cache: 'no-store', credentials: 'include', headers });
         const json = await res.json();
-        if (json.messages && Array.isArray(json.messages)) {
+        const msgList = Array.isArray(json) ? json : (json.messages && Array.isArray(json.messages) ? json.messages : (json.data && Array.isArray(json.data) ? json.data : null));
+        if (msgList) {
           if (!cancelled) {
-            onMessagesLoadedRef.current(json.messages);
+            onMessagesLoadedRef.current(msgList);
             setLoading(false);
           }
           return;

@@ -115,6 +115,30 @@ export default function InboxPage() {
     if (hydratingConvIdsRef.current.has(convId)) return;
     hydratingConvIdsRef.current.add(convId);
     try {
+      try {
+        const res = await fetch(`/api/conversations/${convId}`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          const fetched = (json.conversation || json.data || (json.id ? json : null)) as Conversation | null;
+          if (fetched && fetched.id) {
+            setConversations((prev) => {
+              const existing = prev.find((c) => c.id === fetched.id);
+              if (existing) {
+                return prev.map((c) =>
+                  c.id === fetched.id
+                    ? { ...c, contact: c.contact ?? fetched.contact }
+                    : c,
+                );
+              }
+              return [fetched, ...prev];
+            });
+            return;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('Hydrate via API failed, falling back to Supabase:', apiErr);
+      }
+
       const supabase = createClient();
       const { data, error } = await supabase
         .from("conversations")
