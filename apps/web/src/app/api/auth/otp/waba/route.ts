@@ -18,16 +18,13 @@ export async function GET() {
       .maybeSingle()
 
     if (!config) {
-      return NextResponse.json({ phone: '916381029380' }) // Fallback to new admin default
+      return NextResponse.json({ phone: '919486335870' }) // Meta verified WhatsApp Business Account
     }
 
-    // Usually the waba/phone number isn't stored explicitly without Graph API, 
-    // but we can try to fetch it via Graph API or just use the default.
-    // For now, if we don't store the exact display phone number in DB, we fallback to the known number.
-    // Assuming the user's primary business number is 916381029380
-    return NextResponse.json({ phone: '916381029380' })
+    // Meta verified WhatsApp Business Account phone number (+91 94863 35870)
+    return NextResponse.json({ phone: '919486335870' })
 
   } catch (err) {
-    return NextResponse.json({ phone: '916381029380' })
+    return NextResponse.json({ phone: '919486335870' })
   }
 }
