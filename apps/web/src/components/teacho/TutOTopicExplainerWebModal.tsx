@@ -82,6 +82,40 @@ export const TutOTopicExplainerWebModal: React.FC<TutOTopicExplainerModalProps> 
   // Quiz State
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [topicCompleted, setTopicCompleted] = useState<boolean>(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
+
+  const handleGenerateWithAI = async () => {
+    setIsGeneratingAI(true);
+    setApiError(null);
+    try {
+      const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gemini-api-key') || '' : '';
+      const cId = course?.id || 'school-std-10';
+      const topic = `${course?.title || 'Academic'} Day ${currentDay} Core Concepts`;
+
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/ai/generate-topic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: cId,
+          dayNumber: currentDay,
+          topicTitle: topic,
+          subject: 'Core Curriculum',
+          userApiKey: apiKey || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.content) {
+        setContent(data.content);
+      } else {
+        setApiError(data.error || 'Failed to generate topic content. Please configure your Gemini API Key.');
+      }
+    } catch (e: any) {
+      setApiError(e.message || 'Error connecting to AI generator');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
 
   // Sync initialDayNumber when changed
   useEffect(() => {
@@ -101,8 +135,7 @@ export const TutOTopicExplainerWebModal: React.FC<TutOTopicExplainerModalProps> 
       setQuizAnswers({});
 
       try {
-        const isBrowser = typeof window !== 'undefined';
-        const ociBase = isBrowser ? '' : 'https://mysupro.duckdns.org';
+        const ociBase = 'https://mysupro.duckdns.org';
         const cId = course?.id || 'school-std-10';
 
         const res = await fetch(`${ociBase}/api/tuto/content?courseId=${encodeURIComponent(cId)}&dayNumber=${currentDay}`, {
@@ -254,11 +287,21 @@ export const TutOTopicExplainerWebModal: React.FC<TutOTopicExplainerModalProps> 
                 <HelpCircle className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-800">{apiError}</h3>
-              <p className="text-xs text-slate-500">Please choose another day or refresh.</p>
-              <div className="pt-2">
+              <p className="text-xs text-slate-500">
+                You can generate dynamic study notes, flashcards &amp; quiz for this day using Gemini AI.
+              </p>
+              <div className="pt-2 flex flex-wrap justify-center gap-2">
+                <button
+                  onClick={handleGenerateWithAI}
+                  disabled={isGeneratingAI}
+                  className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-indigo-200 transition-all"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>{isGeneratingAI ? 'Generating with Gemini AI...' : '✨ Generate with Gemini AI'}</span>
+                </button>
                 <button
                   onClick={() => setCurrentDay(1)}
-                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
                 >
                   Return to Day 1
                 </button>
