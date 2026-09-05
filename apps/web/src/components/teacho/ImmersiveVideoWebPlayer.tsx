@@ -26,7 +26,7 @@ interface ImmersiveVideoWebPlayerProps {
 export const ImmersiveVideoWebPlayer: React.FC<ImmersiveVideoWebPlayerProps> = ({
   videoId,
   title,
-  channelName = 'ICLE Technology Official',
+  channelName = 'TutO Learning Academy',
   summary,
   durationMinutes = 15,
   isCompleted = false,
@@ -38,7 +38,7 @@ export const ImmersiveVideoWebPlayer: React.FC<ImmersiveVideoWebPlayerProps> = (
 
   const cleanId = (videoId || '').replace(/[^a-zA-Z0-9-_]/g, '').trim() || 'dQw4w9WgXcQ';
   const embedUrl = `https://www.youtube-nocookie.com/embed/${cleanId}?modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&fs=1&controls=1`;
-  const isIcleOfficial = (channelName || '').toLowerCase().includes('icle');
+  const isOfficial = (channelName || '').toLowerCase().includes('tuto') || (channelName || '').toLowerCase().includes('icle');
 
   return (
     <div className="bg-[#0F172A] border border-slate-800 rounded-2xl p-4 space-y-3.5 shadow-xl">
@@ -57,10 +57,10 @@ export const ImmersiveVideoWebPlayer: React.FC<ImmersiveVideoWebPlayerProps> = (
         {/* Header Bar */}
         <div className="px-3.5 py-2.5 bg-[#090E1A] border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {isIcleOfficial ? (
+            {isOfficial ? (
               <span className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-[#00D084] text-[10px] font-black px-2.5 py-1 rounded-md tracking-wide">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                ICLE TECHNOLOGY OFFICIAL
+                TUTO ACADEMY OFFICIAL
               </span>
             ) : (
               <span className="flex items-center gap-1.5 bg-sky-500/10 border border-sky-500/30 text-sky-400 text-[10px] font-extrabold px-2.5 py-1 rounded-md">

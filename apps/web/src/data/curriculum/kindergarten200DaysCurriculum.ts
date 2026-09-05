@@ -1,7 +1,7 @@
 /**
- * Kindergarten (LKG & UKG) 200-Day Comprehensive Nano-Level Day Plan
+ * Kindergarten (LKG & UKG) 365-Day Comprehensive Nano-Level Day Plan
  * Standard: Tamil Nadu State Board (Samacheer Kalvi) & CBSE Early Childhood (ECCE)
- * Structure: 200 Days × 6 Tasks (10 mins each = 60 mins/day)
+ * Structure: 365 Days × 6 Tasks (10 mins each = 60 mins/day)
  *   Task 1: 🎥 Video Class 1 (Tamil Rhymes / English Phonics / Maths)
  *   Task 2: 🎥 Video Class 2 (EVS, Science & Moral Stories)
  *   Task 3: 💃 Aerobic Kids Dance & Rhythm Movement
@@ -129,12 +129,12 @@ const SIGHT_WORDS_PROGRESSION = [
 ];
 
 /**
- * Generate full 200 Days Kindergarten Plan
+ * Generate full 365 Days Kindergarten Plan
  */
 export function generateKindergarten200DaysPlan(): KindergartenDayPlan[] {
   const plan: KindergartenDayPlan[] = [];
 
-  for (let day = 1; day <= 200; day++) {
+  for (let day = 1; day <= 365; day++) {
     const quarter = (day <= 50 ? 1 : day <= 100 ? 2 : day <= 150 ? 3 : 4) as (1 | 2 | 3 | 4);
     const quarterLabel = `Quarter ${quarter} • ${
       quarter === 1

@@ -318,13 +318,13 @@ export default function TutOWebPage() {
         />
       )}
 
-      {/* 5. TAB 2: 300-Day Curriculum Roadmap Grid */}
+      {/* 5. TAB 2: 365-Day Curriculum Roadmap Grid */}
       {activeTab === 'curriculum_grid' && (
         <div className="space-y-4">
           <div className="flex justify-between items-end mb-2">
             <div>
               <h2 className="text-xl md:text-2xl font-black text-foreground">Whole Year Academic Roadmap</h2>
-              <p className="text-muted-foreground text-xs">300 progressive daily missions aligned with official syllabus.</p>
+              <p className="text-muted-foreground text-xs">365 progressive daily missions aligned with official syllabus.</p>
             </div>
             <div className="text-right">
               <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-full border border-primary/20">

@@ -1,6 +1,6 @@
 /**
  * TutO Whole Year Day Plan Engine
- * Provides authentic day-by-day academic schedules for the entire academic year (300 Days / 52 Weeks)
+ * Provides authentic day-by-day academic schedules for the entire academic year (365 Days / 52 Weeks)
  * based on the official syllabus of each course.
  *
  * Routine Blueprint:

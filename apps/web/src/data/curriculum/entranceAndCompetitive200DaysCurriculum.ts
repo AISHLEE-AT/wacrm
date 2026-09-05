@@ -1,7 +1,7 @@
 /**
- * Entrance Exams (NEET UG / JEE Main) & Competitive Exams (TNPSC / UPSC / Banking / SSC / Police) 200-Day Mastery Plan
+ * Entrance Exams (NEET UG / JEE Main) & Competitive Exams (TNPSC / UPSC / Banking / SSC / Police) 365-Day Mastery Plan
  * Standard: NTA NEET/JEE Syllabus 2026 & TNPSC/UPSC Commission Standards
- * Structure: 200 Days × 5 Comprehensive Tasks (30 Mins each = 150 mins/day)
+ * Structure: 365 Days × 5 Comprehensive Tasks (30 Mins each = 150 mins/day)
  *   Task 1: 🧬 Domain Major 1 (Biology / Higher Maths / TNPSC General Tamil / UPSC History)
  *   Task 2: ⚡ Domain Major 2 (Physics / Quantitative Aptitude / UPSC Polity & Governance)
  *   Task 3: 🧪 Domain Major 3 (Chemistry / Reasoning Ability / UPSC Economy & Geography)
@@ -49,7 +49,7 @@ const NEET_JEE_SYLLABUS_ROTATION = [
 export function generateExam200DaysPlan(category: 'TNPSC' | 'NEET' | 'JEE' | 'UPSC' = 'TNPSC'): ExamDayPlan[] {
   const plan: ExamDayPlan[] = [];
 
-  for (let day = 1; day <= 200; day++) {
+  for (let day = 1; day <= 365; day++) {
     const quarter = (day <= 50 ? 1 : day <= 100 ? 2 : day <= 150 ? 3 : 4) as (1 | 2 | 3 | 4);
     const quarterLabel = `Quarter ${quarter} • ${
       quarter === 1

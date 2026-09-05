@@ -46,10 +46,15 @@ interface StudentOnboardingWebModalProps {
 }
 
 const ACADEMIC_CLASSES = [
-  { id: 'class_6', label: 'Class 6th Std', gradeLevel: 'middle', category: 'school_k12' },
-  { id: 'class_7', label: 'Class 7th Std', gradeLevel: 'middle', category: 'school_k12' },
-  { id: 'class_8', label: 'Class 8th Std', gradeLevel: 'middle', category: 'school_k12' },
-  { id: 'class_9', label: 'Class 9th Std', gradeLevel: 'high', category: 'school_k12' },
+  { id: 'class_1', label: 'Class 1st Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_2', label: 'Class 2nd Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_3', label: 'Class 3rd Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_4', label: 'Class 4th Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_5', label: 'Class 5th Std (Primary)', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_6', label: 'Class 6th Std (Middle)', gradeLevel: 'middle', category: 'school_k12' },
+  { id: 'class_7', label: 'Class 7th Std (Middle)', gradeLevel: 'middle', category: 'school_k12' },
+  { id: 'class_8', label: 'Class 8th Std (Middle)', gradeLevel: 'middle', category: 'school_k12' },
+  { id: 'class_9', label: 'Class 9th Std (High)', gradeLevel: 'high', category: 'school_k12' },
   { id: 'class_10', label: 'Class 10th (SSLC)', gradeLevel: 'high', category: 'school_k12' },
   { id: 'class_11', label: 'Class 11th (HSC +1)', gradeLevel: 'hsc', category: 'school_k12' },
   { id: 'class_12', label: 'Class 12th (HSC +2)', gradeLevel: 'hsc', category: 'school_k12' },
@@ -58,14 +63,14 @@ const ACADEMIC_CLASSES = [
 ];
 
 const CAREER_INTERESTS = [
-  { id: 'civil_services', label: 'Civil Services / IAS / IPS', icon: '🏛️', color: '#F59E0B', recommendedCourseId: 'jr-ias' },
+  { id: 'civil_services', label: 'Civil Services / IAS / Administration', icon: '🏛️', color: '#F59E0B', recommendedCourseId: 'jr-ias' },
+  { id: 'auditor_ca', label: 'Chartered Accountant & Auditor (CA / Finance)', icon: '📊', color: '#10B981', recommendedCourseId: 'jr-ar' },
   { id: 'medical_neet', label: 'Medical & Healthcare (NEET / Doctor)', icon: '🩺', color: '#EC4899', recommendedCourseId: 'jr-dr' },
   { id: 'engineering_ai', label: 'Engineering, Coding & AI (JEE / Tech)', icon: '💻', color: '#3B82F6', recommendedCourseId: 'jr-er' },
-  { id: 'law_judiciary', label: 'Law, Justice & Judiciary (Judge / Advocate)', icon: '⚖️', color: '#8B5CF6', recommendedCourseId: 'jr-judge' },
   { id: 'police_defense', label: 'Police, Armed Forces & Defense', icon: '👮', color: '#10B981', recommendedCourseId: 'jr-ips' },
   { id: 'business_banking', label: 'Business, Banking & Corporate CEO', icon: '🏦', color: '#06B6D4', recommendedCourseId: 'jr-ceo' },
   { id: 'science_research', label: 'Pure Science & Space Research (ISRO)', icon: '🔬', color: '#14B8A6', recommendedCourseId: 'jr-scientist' },
-  { id: 'arts_teaching', label: 'Teaching, Literature & Public Policy', icon: '📚', color: '#F97316', recommendedCourseId: 'jr-ias' },
+  { id: 'law_judiciary', label: 'Law, Justice & Judiciary (Judge / Advocate)', icon: '⚖️', color: '#8B5CF6', recommendedCourseId: 'jr-judge' },
 ];
 
 export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps> = ({
@@ -79,9 +84,10 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
 
   // Step 1: Profile fields
   const [fullName, setFullName] = useState(initialName || 'SuprO Scholar');
-  const [selectedClass, setSelectedClass] = useState('class_10');
+  const [selectedClass, setSelectedClass] = useState('class_5');
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [selectedInterest, setSelectedInterest] = useState('civil_services');
+
 
   // Step 2: Course Selection
   const [selectedCourseOption, setSelectedCourseOption] = useState<CourseOption | null>(null);
@@ -136,21 +142,36 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
   };
 
   const handleFinishOnboarding = async () => {
-    const finalCourse = selectedCourseOption || recommendedFeaturedCourse || ALL_COURSES[0];
+    const ambitionId = recommendedFeaturedCourse?.id || 'jr-ias';
+    const numMatch = selectedClass.replace(/\D/g, '');
+    let finalCourse = selectedCourseOption;
+    if (!finalCourse && numMatch) {
+      finalCourse = ALL_COURSES.find(c => c.id === `school-std-${numMatch}`) || ALL_COURSES.find(c => c.id === 'school-std-5');
+    }
+    if (!finalCourse) finalCourse = recommendedFeaturedCourse || ALL_COURSES[0];
+
     setIsSaving(true);
 
     try {
       localStorage.setItem('tuto_student_onboarding_completed', 'true');
       await setEnrollmentDate(finalCourse.id, new Date().toISOString());
       localStorage.setItem('tuto_active_course_id', finalCourse.id);
+      localStorage.setItem('tuto_active_ambition_id', ambitionId);
+      localStorage.setItem('tuto_student_registered_class', selectedClass);
+      localStorage.setItem('tuto_student_registered_ambition', ambitionId);
+      localStorage.setItem('tuto_student_registered_name', fullName.trim());
       localStorage.setItem(`tuto_selected_board_${finalCourse.id}`, selectedBoard);
       localStorage.setItem('user-name', fullName.trim());
       localStorage.setItem('student-academic-class', selectedClass);
       localStorage.setItem('student-area-interest', selectedInterest);
 
+      const cleanPhone = (userPhone || localStorage.getItem('user-phone') || '').replace(/\D/g, '').slice(-10);
+      try {
+        fetch(`https://mysupro.duckdns.org/api/tuto/planner/today?phone=${encodeURIComponent(cleanPhone || 'anonymous')}&courseId=${encodeURIComponent(finalCourse.id)}&ambitionId=${encodeURIComponent(ambitionId)}&dayNumber=1`);
+      } catch (_) {}
+
       // Save to Supabase
       const supabase = createClient();
-      const cleanPhone = (userPhone || localStorage.getItem('user-phone') || '').replace(/\D/g, '').slice(-10);
       if (cleanPhone) {
         await supabase
           .from('profiles')
@@ -186,6 +207,7 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
       });
       onClose();
     } finally {
+
       setIsSaving(false);
     }
   };
@@ -493,7 +515,7 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
             ) : isSaving ? (
               <span>Personalizing...</span>
             ) : (
-              <span>🚀 Start 200-Day TutO Deck</span>
+              <span>🚀 Start 365-Day Academic Journey</span>
             )}
           </button>
         </div>

@@ -1,7 +1,7 @@
 /**
- * Middle Stage (Classes 6 to 8) 200-Day Comprehensive Nano-Level Day Plan
+ * Middle Stage (Classes 6 to 8) 365-Day Comprehensive Nano-Level Day Plan
  * Standard: Tamil Nadu State Board (Samacheer Kalvi) & CBSE NCERT
- * Structure: 200 Days × 5 Structured Subject Tasks (20 Mins each = 100 mins/day)
+ * Structure: 365 Days × 5 Structured Subject Tasks (20 Mins each = 100 mins/day)
  *   Task 1: 📜 Tamil (9 இயல்கள் - செய்யுள், உரைநடை, துணைப்பாடம், இலக்கணம்)
  *   Task 2: 📚 English (Prose, Poetry, Supplementary, Grammar & Composition)
  *   Task 3: 📐 Mathematics (Number Systems, Algebra, Ratio & Proportion, Geometry, Statistics)
@@ -84,7 +84,7 @@ const MIDDLE_SOCIAL_TOPICS = [
 export function generateMiddle200DaysPlan(): MiddleDayPlan[] {
   const plan: MiddleDayPlan[] = [];
 
-  for (let day = 1; day <= 200; day++) {
+  for (let day = 1; day <= 365; day++) {
     const quarter = (day <= 50 ? 1 : day <= 100 ? 2 : day <= 150 ? 3 : 4) as (1 | 2 | 3 | 4);
     const quarterLabel = `Quarter ${quarter} • ${
       quarter === 1

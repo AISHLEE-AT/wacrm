@@ -91,7 +91,7 @@ export function resolveNanoDayPlan(
   }
 
   const totalItems = flattenedItems.length;
-  const totalDays = 200;
+  const totalDays = 365;
 
   // Pick the scheduled item for safeDay using circular index
   const activeItemIndex = totalItems > 0 ? (safeDay - 1) % totalItems : 0;

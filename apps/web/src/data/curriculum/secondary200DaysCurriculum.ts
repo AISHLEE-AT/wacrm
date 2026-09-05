@@ -1,7 +1,7 @@
 /**
- * Secondary Stage (Classes 9 & 10 SSLC) 200-Day Board Exam Mastery Day Plan
+ * Secondary Stage (Classes 9 & 10 SSLC) 365-Day Board Exam Mastery Day Plan
  * Standard: Tamil Nadu State Board (Samacheer Kalvi 10th SSLC) & CBSE Class 10 NCERT
- * Structure: 200 Days × 5 High-Yield Subject Tasks (25 Mins each = 125 mins/day)
+ * Structure: 365 Days × 5 High-Yield Subject Tasks (25 Mins each = 125 mins/day)
  *   Task 1: 📜 10th Tamil (9 இயல்கள், திருக்குறள், நெடுவினா & தொல்காப்பிய இலக்கணம்)
  *   Task 2: 📚 10th English (Prose, Poems, Supplementary, Grammar & 100/100 Strategy)
  *   Task 3: 📐 10th Mathematics (Functions, Algebra, Geometry, Trigonometry, Mensuration, Stats)
@@ -80,7 +80,7 @@ const SECONDARY_SOCIAL_TOPICS = [
 export function generateSecondary200DaysPlan(): SecondaryDayPlan[] {
   const plan: SecondaryDayPlan[] = [];
 
-  for (let day = 1; day <= 200; day++) {
+  for (let day = 1; day <= 365; day++) {
     const quarter = (day <= 50 ? 1 : day <= 100 ? 2 : day <= 150 ? 3 : 4) as (1 | 2 | 3 | 4);
     const quarterLabel = `Quarter ${quarter} • ${
       quarter === 1

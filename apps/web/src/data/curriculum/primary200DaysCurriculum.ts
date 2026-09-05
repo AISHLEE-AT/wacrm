@@ -1,7 +1,7 @@
 /**
- * Primary Stage (Classes 1 to 5) 200-Day Comprehensive Nano-Level Day Plan
+ * Primary Stage (Classes 1 to 5) 365-Day Comprehensive Nano-Level Day Plan
  * Standard: Tamil Nadu State Board (Samacheer Kalvi) & CBSE NCERT
- * Structure: 200 Days × 5 Structured Subject Tasks (15-20 Mins each = ~80-90 mins/day)
+ * Structure: 365 Days × 5 Structured Subject Tasks (15-20 Mins each = ~80-90 mins/day)
  *   Task 1: 📖 Tamil Language (தமிழ் மொழி - செய்யுள், உரைநடை, இலக்கணம்)
  *   Task 2: 🔤 English (Grammar, Vocabulary, Phonics & Reading Comprehension)
  *   Task 3: 🔢 Mathematics (Numbers, Four Operations, Fractions, Geometry & Word Problems)
@@ -79,7 +79,7 @@ const PRIMARY_SOCIAL_TOPICS = [
 export function generatePrimary200DaysPlan(): PrimaryDayPlan[] {
   const plan: PrimaryDayPlan[] = [];
 
-  for (let day = 1; day <= 200; day++) {
+  for (let day = 1; day <= 365; day++) {
     const quarter = (day <= 50 ? 1 : day <= 100 ? 2 : day <= 150 ? 3 : 4) as (1 | 2 | 3 | 4);
     const quarterLabel = `Quarter ${quarter} • ${
       quarter === 1

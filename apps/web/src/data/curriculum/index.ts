@@ -76,7 +76,7 @@ export function resolveMasterCurriculumPlan(
   let courseTitle = 'Foundation Course';
   let category = 'school_primary';
   let day = 1;
-  let totalDays = 200;
+  let totalDays = 365;
   let phaseTitle = 'Phase 1: Foundation Building';
 
   if (typeof courseOrTitle === 'object' && courseOrTitle !== null) {

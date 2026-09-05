@@ -121,14 +121,15 @@ const STORAGE_KEYS = {
   DAY_PLANS: 'tuto_google_sheet_day_plans',
 };
 
-// Default ICLE Technology Official Guidance fallback video
-export const DEFAULT_ICLE_GUIDANCE_VIDEO = {
-  title: 'Official Rule & Daily Learning Guidance — ICLE Technology',
-  youtubeVideoId: 'dQw4w9WgXcQ', // Default or replace with actual ICLE channel ID
-  channelName: 'ICLE Technology Official',
-  summary: 'Follow official daily instructions, complete all micro-tasks and submit video reflections for verified certification.',
+// Default TutO Learning Academy Official Guidance fallback video
+export const DEFAULT_TUTO_GUIDANCE_VIDEO = {
+  title: 'Daily Academic Orientation & Concept Mastery — TutO Learning Academy',
+  youtubeVideoId: 'dQw4w9WgXcQ', // Default fallback
+  channelName: 'TutO Learning Academy',
+  summary: 'Follow official daily curriculum targets, complete all 10 micro-classes, daily yoga, and submit homework questions.',
   durationMinutes: 10,
 };
+export const DEFAULT_ICLE_GUIDANCE_VIDEO = DEFAULT_TUTO_GUIDANCE_VIDEO;
 
 // Extract YouTube ID from full URL, short URL or raw ID
 export function extractYouTubeId(urlOrId?: string): string {

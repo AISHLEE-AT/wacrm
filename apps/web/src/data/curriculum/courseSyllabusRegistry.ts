@@ -672,7 +672,7 @@ export function getFoundationalClass1to2Syllabus(
     category: 'school_foundational',
     board: 'TNSB Samacheer Kalvi / CBSE',
     medium: isTa ? 'Tamil' : 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -1385,7 +1385,7 @@ export function getPreparatoryClass3to5Syllabus(
     category: 'school_preparatory',
     board: 'TNSB Samacheer Kalvi / CBSE',
     medium: isTa ? 'Tamil' : 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -2996,7 +2996,7 @@ export function getMiddleClass6to8Syllabus(
     category: 'school_middle',
     board: 'TNSB Samacheer Kalvi / CBSE',
     medium: isTa ? 'Tamil' : 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -4607,7 +4607,7 @@ export function getSecondaryClass9to10Syllabus(courseId: string, courseTitle: st
     category: 'school_secondary',
     board: 'TNSB Samacheer Kalvi / CBSE',
     medium: isTa ? 'Tamil' : 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -5666,7 +5666,7 @@ export function getCommerceClass11Syllabus(
     category: 'school_cbse',
     board: 'CBSE / NCERT / State Board',
     medium: 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + (s.totalChapters || s.chapters.length), 0),
     totalMicroTopics: subjects.reduce(
@@ -6219,7 +6219,7 @@ export function getHigherSecondaryScienceCompleteSyllabus(
     category: 'school_hsc',
     board: 'TNSB / CBSE / ISC',
     medium: isTa ? 'Tamil' : 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -6626,7 +6626,7 @@ export function getCollegeAndTechSkillsCompleteSyllabus(
     category: 'skills',
     board: 'Industry Standard / University Degree',
     medium: 'English',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -7528,7 +7528,7 @@ export function getSscAndRailwayCompleteSyllabus(
     category: 'ssc_railway',
     board: 'SSC / RRB',
     medium: 'English / Tamil',
-    totalDays: 200,
+    totalDays: 365,
     totalSubjects: subjects.length,
     totalChapters: subjects.reduce((a, s) => a + s.chapters.length, 0),
     totalMicroTopics: subjects.reduce(
@@ -8122,7 +8122,7 @@ export function resolveCompleteCourseSyllabus(
       category: 'kindergarten',
       board: 'TNSB / CBSE / Matric',
       medium: isTa ? 'Tamil' : 'English',
-      totalDays: 200,
+      totalDays: 365,
       totalSubjects: 4,
       totalChapters: 8,
       totalMicroTopics: 24,

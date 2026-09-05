@@ -24,7 +24,7 @@ function getApiKeys(clientApiKey?: string): string[] {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, type, apiKey: clientApiKey, base64Audio, courseContext, day } = await req.json();
+    const { prompt, type, apiKey: clientApiKey, base64Audio, base64Image, imageMimeType, grade, subject, courseContext, day } = await req.json();
 
     const keys = getApiKeys(clientApiKey);
     if (keys.length === 0) {
@@ -32,7 +32,41 @@ export async function POST(req: NextRequest) {
     }
 
     let systemPrompt = '';
-    if (type === 'teacho_tutor') {
+    if (type === 'teacho_book_scanner') {
+      systemPrompt = `You are the TutO AI Textbook Scanner & Personal Tutor for Indian Students (Class ${grade || '5'}, Subject: ${subject || 'General'}).
+Analyze the provided textbook page image or text content.
+Return STRICTLY a JSON object without markdown fences, conforming to this exact structure:
+{
+  "pageTitle": "Chapter and Topic Name",
+  "grade": "${grade || 'Class 5'}",
+  "subject": "${subject || 'General'}",
+  "howToRead": [
+    { "step": 1, "title": "Step 1 Title", "instruction": "Clear reading instruction", "tip": "Practical study tip" },
+    { "step": 2, "title": "Step 2 Title", "instruction": "Clear reading instruction", "tip": "Practical study tip" },
+    { "step": 3, "title": "Step 3 Title", "instruction": "Clear reading instruction", "tip": "Practical study tip" },
+    { "step": 4, "title": "Step 4 Title", "instruction": "Clear reading instruction", "tip": "Practical study tip" }
+  ],
+  "conceptBreakdown": {
+    "summaryEnglish": "Detailed English conceptual explanation with formulas",
+    "summaryTamil": "விரிவான தமிழ் விளக்கம் மற்றும் எளிய எடுத்துக்காட்டு",
+    "keyPoints": ["Point 1", "Point 2", "Point 3"],
+    "keyFormulasOrRules": ["Formula 1", "Rule 2"]
+  },
+  "textbookQA": [
+    { "question": "Question 1 from page", "answer": "Step-by-step solution for homework", "type": "short" },
+    { "question": "Question 2 from page", "answer": "Step-by-step solution for homework", "type": "short" },
+    { "question": "Question 3 from page", "answer": "Step-by-step solution for homework", "type": "short" }
+  ],
+  "mcqDrill": [
+    { "id": 1, "question": "MCQ 1", "options": { "A": "...", "B": "...", "C": "...", "D": "..." }, "correctOption": "A", "explanation": "..." },
+    { "id": 2, "question": "MCQ 2", "options": { "A": "...", "B": "...", "C": "...", "D": "..." }, "correctOption": "B", "explanation": "..." },
+    { "id": 3, "question": "MCQ 3", "options": { "A": "...", "B": "...", "C": "...", "D": "..." }, "correctOption": "C", "explanation": "..." },
+    { "id": 4, "question": "MCQ 4", "options": { "A": "...", "B": "...", "C": "...", "D": "..." }, "correctOption": "D", "explanation": "..." },
+    { "id": 5, "question": "MCQ 5", "options": { "A": "...", "B": "...", "C": "...", "D": "..." }, "correctOption": "A", "explanation": "..." }
+  ]
+}
+`;
+    } else if (type === 'teacho_tutor') {
       systemPrompt = `You are the TeachO 1-on-1 AI Personal Tutor for Indian Students (covering CBSE NCERT, Tamil Nadu State Board Samacheer Kalvi, Matriculation, TNPSC, UPSC, Engineering, and Tech Skills).
 Current Course Context: ${courseContext || 'General Academics'} (Day ${day || 1}).
 Your goal:
@@ -81,6 +115,17 @@ Student Question:
             const contentParts: any[] = [audioPart];
             if (prompt) contentParts.push({ text: systemPrompt + prompt });
             else contentParts.push({ text: 'Please respond to the audio in Tamil.' });
+
+            result = await model.generateContent(contentParts);
+          } else if (base64Image) {
+            const imagePart = {
+              inlineData: {
+                data: base64Image,
+                mimeType: imageMimeType || 'image/jpeg',
+              },
+            };
+            const contentParts: any[] = [imagePart];
+            contentParts.push({ text: systemPrompt + (prompt || 'Please analyze this textbook page.') });
 
             result = await model.generateContent(contentParts);
           } else {

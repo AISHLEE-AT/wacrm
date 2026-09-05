@@ -27,9 +27,11 @@ import {
   Moon,
   GraduationCap,
   Calendar,
-  X
+  X,
+  Camera
 } from 'lucide-react';
 import { CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '@/data/coursesCatalog';
+import { TutOBookPageScannerModal } from './TutOBookPageScannerModal';
 
 export interface DailyClassItem {
   id: number;
@@ -101,8 +103,8 @@ export const AMBITION_FEATURE_TRACKS = [
 ];
 
 export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[] => {
-  let ambitionClass7: DailyClassItem = {
-    id: 7,
+  let ambitionClass8: DailyClassItem = {
+    id: 8,
     type: 'ambition',
     title: 'JrIAS (Civil Servant): Indian Constitution, District Administration & Public Policy',
     subject: 'JrIAS (Civil Servant)',
@@ -110,19 +112,10 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
     xp: 30,
     icon: '🏛️'
   };
-  let ambitionClass8: DailyClassItem = {
-    id: 8,
-    type: 'ambition',
-    title: 'JrIAS (Civil Servant): District Collector Case Study & Citizen Welfare',
-    subject: 'JrIAS (Civil Servant)',
-    duration: '15 Min',
-    xp: 30,
-    icon: '🚀'
-  };
 
   if (ambitionId === 'jr-ar' || ambitionId === 'auditor') {
-    ambitionClass7 = {
-      id: 7,
+    ambitionClass8 = {
+      id: 8,
       type: 'ambition',
       title: 'JrAR (Auditor): Double-Entry Bookkeeping, Financial Statements & Balance Sheets',
       subject: 'JrAR (Auditor)',
@@ -130,18 +123,9 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
       xp: 30,
       icon: '📊'
     };
+  } else if (ambitionId === 'jr-dr' || ambitionId === 'doctor') {
     ambitionClass8 = {
       id: 8,
-      type: 'ambition',
-      title: 'JrAR (Auditor): Auditing Standards, Fraud Forensics, GST & CA Foundation',
-      subject: 'JrAR (Auditor)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '💼'
-    };
-  } else if (ambitionId === 'jr-dr' || ambitionId === 'doctor') {
-    ambitionClass7 = {
-      id: 7,
       type: 'ambition',
       title: 'JrDR (Doctor): Human Anatomy, Major Organ Systems & Clinical Diagnostics',
       subject: 'JrDR (Doctor)',
@@ -149,79 +133,78 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
       xp: 30,
       icon: '🩺'
     };
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrDR (Doctor): Emergency First Aid, Vital Signs (BP, Pulse) & NEET Bridge',
-      subject: 'JrDR (Doctor)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '🫀'
-    };
   }
 
   return [
     {
       id: 1,
       type: 'academic',
-      title: '5th Std Mathematics: Factors, Multiples, Decimals & LCM/HCF (கணிதம்)',
+      title: '5th Std Mathematics Core: Factors, Multiples, Decimals & LCM/HCF (கணிதம்)',
       subject: 'Mathematics',
-      duration: '20 Min',
+      duration: '15 Min',
       xp: 25,
       icon: '📐'
     },
     {
       id: 2,
       type: 'academic',
-      title: '5th Std Science: States of Matter, Energy & Plant Life (அறிவியல்)',
+      title: '5th Std Science Core: States of Matter, Energy & Plant Life (அறிவியல்)',
       subject: 'Science',
-      duration: '20 Min',
+      duration: '15 Min',
       xp: 25,
       icon: '🔬'
     },
     {
       id: 3,
       type: 'academic',
-      title: '5th Std Social Science: Our Earth, Continents, Oceans & TN Heritage (சமூக அறிவியல்)',
-      subject: 'Social Science',
-      duration: '20 Min',
+      title: '5th Std Languages: பருவம் 1 - தமிழின் இனிமை & English Grammar (Sentences & Conjunctions)',
+      subject: 'Languages',
+      duration: '15 Min',
       xp: 25,
-      icon: '🌍'
+      icon: '📖'
     },
     {
       id: 4,
       type: 'academic',
-      title: '5th Std Languages: பருவம் 1 - தமிழின் இனிமை & English Grammar (Sentences & Conjunctions)',
-      subject: 'Languages',
-      duration: '20 Min',
+      title: '5th Std Social Science Awareness: Our Earth, Continents, Oceans & TN Heritage (சமூக அறிவியல்)',
+      subject: 'Social Science',
+      duration: '15 Min',
       xp: 25,
-      icon: '✍️'
+      icon: '🌍'
     },
     {
       id: 5,
-      type: 'homework',
-      title: 'Class 5 Homework Assistant: Decimals, Science Sums & Book-Back Step-by-Step Solver',
-      subject: 'Homework Assist',
-      duration: '25 Min',
-      xp: 35,
-      icon: '📚'
+      type: 'academic',
+      title: '5th Std General Knowledge (GK) & Current Affairs: Tamil Nadu & India Milestones',
+      subject: 'GK & Current Affairs',
+      duration: '10 Min',
+      xp: 20,
+      icon: '📰'
     },
     {
       id: 6,
       type: 'homework',
-      title: '5th Std Practice Workbook: Math LCM/HCF Worksheets & Grammar Drills',
-      subject: 'Practice Sheet',
-      duration: '20 Min',
-      xp: 30,
-      icon: '📝'
+      title: '5th Std Handwriting & Penmanship Practice: Cursive English & Tamil Calligraphy',
+      subject: 'Penmanship',
+      duration: '10 Min',
+      xp: 20,
+      icon: '✍️'
     },
-    ambitionClass7,
+    {
+      id: 7,
+      type: 'academic',
+      title: '5th Std Extracurricular & Creative Skills: Logical Reasoning, Puzzles & Ethics',
+      subject: 'Extracurricular',
+      duration: '10 Min',
+      xp: 20,
+      icon: '🎨'
+    },
     ambitionClass8,
     {
       id: 9,
       type: 'masterclass',
       title: '5th Std Visual Masterclass: 3D Animated Simulation of Solar System & States of Matter',
-      subject: 'Video Masterclass',
+      subject: 'Visual Masterclass',
       duration: '15 Min',
       xp: 25,
       icon: '🎥'
@@ -230,7 +213,7 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
       id: 10,
       type: 'revision',
       title: '5th Std Bedtime Revision: Daily Formula Vault, Vocabulary Flashcards & 1-Min Recap',
-      subject: 'Concept Notes',
+      subject: 'Bedtime Revision',
       duration: '10 Min',
       xp: 20,
       icon: '🌙'
@@ -262,7 +245,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   const [streak, setStreak] = useState<number>(1);
   const [totalXp, setTotalXp] = useState<number>(0);
 
-  // Active Stage Accordion (default open all or first)
+  // Active Stage Accordion (default open all)
   const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -274,6 +257,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   const [isYogaDrawerOpen, setIsYogaDrawerOpen] = useState(false);
   const [isHomeworkDrawerOpen, setIsHomeworkDrawerOpen] = useState(false);
   const [isKeyDrawerOpen, setIsKeyDrawerOpen] = useState(false);
+  const [isBookScannerOpen, setIsBookScannerOpen] = useState(false);
 
   // Homework Assistant State
   const [homeworkQuestion, setHomeworkQuestion] = useState('');
@@ -319,7 +303,6 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
       setGeminiApiKey(savedKey);
     }
   }, [course.id, activeAmbitionId, dayNumber, userPhone]);
-
 
   // Toggle class completion
   const handleToggleClass = async (classIndex: number, xp: number) => {
@@ -416,36 +399,36 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
     setIsKeyDrawerOpen(false);
   };
 
-  // 4 Pedagogical Stages
+  // 4 Structured Pedagogical Stages for 10 Classes
   const stages = useMemo(() => [
     {
       id: 1,
-      title: 'Stage 1: Morning Academic Core',
-      subtitle: 'Core concept building & fundamentals (Classes 1 to 4)',
+      title: 'Stage 1: Morning Academic & Language Core',
+      subtitle: 'Maths, Science, Languages & Social Science (Classes 1 to 4)',
       icon: '🌅',
       color: 'from-blue-500/20 to-indigo-500/10 text-blue-500 border-blue-500/30',
       classes: classes.filter(c => c.id >= 1 && c.id <= 4)
     },
     {
       id: 2,
-      title: 'Stage 2: Homework & Problem Solving',
-      subtitle: 'Guided homework assistant & workbook practice (Classes 5 to 6)',
-      icon: '🎒',
+      title: 'Stage 2: Holistic Knowledge & Penmanship',
+      subtitle: 'GK, Handwriting Practice & Creative Skills (Classes 5 to 7)',
+      icon: '🧠',
       color: 'from-amber-500/20 to-orange-500/10 text-amber-500 border-amber-500/30',
-      classes: classes.filter(c => c.id >= 5 && c.id <= 6)
+      classes: classes.filter(c => c.id >= 5 && c.id <= 7)
     },
     {
       id: 3,
-      title: 'Stage 3: Futuristic Ambition Foundation',
-      subtitle: `${currentAmbition.short} career leadership & applied case study (Classes 7 to 8)`,
+      title: 'Stage 3: Futuristic Career Track',
+      subtitle: `${currentAmbition.short} Career Foundation & Leadership (Class 8)`,
       icon: '🚀',
       color: 'from-purple-500/20 to-pink-500/10 text-purple-500 border-purple-500/30',
-      classes: classes.filter(c => c.id >= 7 && c.id <= 8)
+      classes: classes.filter(c => c.id === 8)
     },
     {
       id: 4,
-      title: 'Stage 4: Evening Masterclass & Revision',
-      subtitle: 'Video visual simulation & 1-minute bedtime exam recap (Classes 9 to 10)',
+      title: 'Stage 4: Evening Masterclass & Bedtime Revision',
+      subtitle: '3D Simulation & 1-minute memory consolidation (Classes 9 to 10)',
       icon: '🌙',
       color: 'from-emerald-500/20 to-teal-500/10 text-emerald-500 border-emerald-500/30',
       classes: classes.filter(c => c.id >= 9 && c.id <= 10)
@@ -467,7 +450,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
     return (
       <div className="py-20 flex flex-col items-center justify-center text-center space-y-3">
         <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs font-semibold text-muted-foreground">Preparing today&apos;s holistic study mission...</p>
+        <p className="text-xs font-semibold text-muted-foreground">Preparing today&apos;s holistic 365-day study mission...</p>
       </div>
     );
   }
@@ -475,7 +458,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   return (
     <div className="space-y-6">
       
-      {/* 1. HERO ACTIVE MISSION BANNER (Khan Academy / Duolingo Style) */}
+      {/* 1. HERO ACTIVE MISSION BANNER (365 DAYS UNIFIED) */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/90 via-slate-900/95 to-slate-950 border border-indigo-500/30 p-6 md:p-8 shadow-2xl text-white">
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -491,7 +474,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                 {totalXp} XP Total
               </span>
               <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 text-xs px-3 py-1 rounded-full font-bold">
-                Day {dayNumber} of 300
+                Day {dayNumber} of 365
               </span>
             </div>
 
@@ -541,7 +524,6 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             </div>
           </div>
 
-
           {/* Primary CTA + Progress Ring */}
           <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 w-full lg:w-auto">
             {nextClass && (
@@ -565,6 +547,14 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
+              onClick={() => setIsBookScannerOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all hover:scale-105"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+              <span>📸 AI Textbook Scanner</span>
+            </button>
+
+            <button
               onClick={() => setIsYogaDrawerOpen(true)}
               className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
             >
@@ -585,7 +575,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
               className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
             >
               <BookOpen className="w-3.5 h-3.5 text-indigo-300" />
-              <span>School Homework AI</span>
+              <span>Homework Q&A Solver</span>
             </button>
           </div>
 
@@ -597,6 +587,36 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             <span>{geminiApiKey ? 'Gemini AI Ready' : 'Configure Gemini Key'}</span>
           </button>
         </div>
+      </div>
+
+      {/* AI BOOK SCANNER PROMINENT HERO CARD */}
+      <div className="bg-gradient-to-r from-amber-500/10 via-card to-amber-500/5 border border-amber-500/30 rounded-3xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 shadow-inner">
+            <Camera className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm md:text-base font-black text-foreground">
+                School Homework: AI Textbook Scanner & Personal Tutor
+              </h3>
+              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 text-[10px] font-black uppercase rounded-full">
+                AI Guided
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Photograph or upload your school textbook page to get step-by-step reading guidance, notebook answers, and 5 interactive MCQs.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsBookScannerOpen(true)}
+          className="w-full md:w-auto px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 shrink-0"
+        >
+          <Sparkles className="w-4 h-4 fill-slate-950" />
+          <span>Open AI Textbook Scanner</span>
+        </button>
       </div>
 
       {/* 2. THE 4 STAGED DAILY PEDAGOGICAL BLOCKS */}
@@ -661,7 +681,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                             <span>Select Your Feature-Restricted Career Track:</span>
                           </h4>
                           <p className="text-[11px] text-muted-foreground">
-                            Selecting a track tailors Class 7 & Class 8 tasks exclusively for this dream profession.
+                            Selecting a track tailors Class 8 tasks exclusively for this dream profession.
                           </p>
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded-md shrink-0 w-fit">
@@ -712,91 +732,91 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                   )}
 
                   <div className="p-4 pt-0 border-t border-border/60 divide-y divide-border/40">
+                    {stg.classes.map((cls) => {
+                      const isDone = completedClasses.includes(cls.id);
+                      return (
+                        <div
+                          key={cls.id}
+                          className={`py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                            isDone ? 'opacity-70' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3 min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleClass(cls.id, cls.xp)}
+                              className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                              title={isDone ? 'Mark Incomplete' : 'Mark Completed'}
+                            >
+                              {isDone ? (
+                                <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-background" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-muted-foreground/60 hover:text-muted-foreground" />
+                              )}
+                            </button>
 
-                  {stg.classes.map((cls) => {
-                    const isDone = completedClasses.includes(cls.id);
-                    return (
-                      <div
-                        key={cls.id}
-                        className={`py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                          isDone ? 'opacity-70' : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleClass(cls.id, cls.xp)}
-                            className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors"
-                            title={isDone ? 'Mark Incomplete' : 'Mark Completed'}
-                          >
-                            {isDone ? (
-                              <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-background" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-muted-foreground/60 hover:text-muted-foreground" />
-                            )}
-                          </button>
-
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                              <span className="text-xs">{cls.icon}</span>
-                              <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                                Class {cls.id} · {cls.subject}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {cls.duration}
-                              </span>
-                              <span className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
-                                <Award className="w-3 h-3" /> +{cls.xp} XP
-                              </span>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                <span className="text-xs">{cls.icon}</span>
+                                <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                  Class {cls.id} · {cls.subject}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> {cls.duration}
+                                </span>
+                                <span className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
+                                  <Award className="w-3 h-3" /> +{cls.xp} XP
+                                </span>
+                              </div>
+                              <h4 className={`text-sm font-semibold truncate ${isDone ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                {cls.title}
+                              </h4>
                             </div>
-                            <h4 className={`text-sm font-semibold truncate ${isDone ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                              {cls.title}
-                            </h4>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
+                            <button
+                              onClick={() => onOpenExplainer(dayNumber, cls.title)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 transition-all flex items-center gap-1"
+                            >
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>Notes</span>
+                            </button>
+                            <button
+                              onClick={() => onOpenCoursePlayer(dayNumber)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-muted hover:bg-muted/80 text-foreground transition-all flex items-center gap-1"
+                            >
+                              <Play className="w-3.5 h-3.5" />
+                              <span>Lesson</span>
+                            </button>
                           </div>
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
-                          <button
-                            onClick={() => onOpenExplainer(dayNumber, cls.title)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 transition-all flex items-center gap-1"
-                          >
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span>Notes</span>
-                          </button>
-                          <button
-                            onClick={() => onOpenCoursePlayer(dayNumber)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-muted hover:bg-muted/80 text-foreground transition-all flex items-center gap-1"
-                          >
-                            <Play className="w-3.5 h-3.5" />
-                            <span>Lesson</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-
+              )}
+            </div>
+          );
         })}
       </div>
 
-      {/* 3. YOGA & WELLNESS MODAL DRAWER */}
+      {/* 3. YOGA MODAL DRAWER */}
       {isYogaDrawerOpen && yoga && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-150">
           <div className="relative w-full max-w-lg bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">🧘</span>
+                <div className="w-12 h-12 rounded-2xl bg-pink-500/10 text-pink-500 flex items-center justify-center text-2xl shrink-0">
+                  🧘
+                </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">
-                    Daily Wellness Session
+                  <span className="text-[10px] uppercase font-bold text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded">
+                    10-Min Wellness Practice
                   </span>
                   <h3 className="text-lg font-black text-foreground mt-0.5">
-                    {yoga.name} {yoga.tamil && <span className="text-sm font-normal text-muted-foreground">· {yoga.tamil}</span>}
+                    {yoga.name} {yoga.tamil ? `(${yoga.tamil})` : ''}
                   </h3>
                 </div>
               </div>
@@ -1003,6 +1023,20 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             </p>
           </div>
         </div>
+      )}
+
+      {/* 6. AI TEXTBOOK SCANNER & TUTOR MODAL */}
+      {isBookScannerOpen && (
+        <TutOBookPageScannerModal
+          isOpen={isBookScannerOpen}
+          onClose={() => setIsBookScannerOpen(false)}
+          defaultGrade={course.title.includes('5') ? 'Class 5' : 'Class 10'}
+          defaultSubject="Mathematics"
+          onXpEarned={(earned) => {
+            setDailyXp(prev => prev + earned);
+            setTotalXp(prev => prev + earned);
+          }}
+        />
       )}
 
     </div>
