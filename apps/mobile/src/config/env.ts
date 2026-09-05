@@ -3,11 +3,12 @@ export const ENV = {
   // ─── DuckDNS Unified Endpoints ───
   API_URL: 'https://mysupro.duckdns.org',           // OCI Express Backend (Webhooks, WebSockets, APIs)
   CRM_URL: 'https://mysupro-crm.duckdns.org',       // Web CRM App & WebViews
+  AUTH_URL: 'https://mysupro.duckdns.org',          // 100% OCI Backend (Zero Vercel)
   CDN_URL: 'https://mysupro-cdn.duckdns.org',       // Static CDN & APK Distribution
 
   // ─── WhatsApp Integration Numbers ───
-  // Meta WhatsApp Business Account (WABA) — Verified automated bot receiving webhooks & sending OTPs
-  WABA_PHONE: '919486335870',
+  // User Configured: Route OTP requests via Admin Phone 916381029380
+  WABA_PHONE: '916381029380',
   
   // Admin Support & Hotline (Course Guide, BDO Hotline, Human Support)
   ADMIN_PHONE: '916381029380',

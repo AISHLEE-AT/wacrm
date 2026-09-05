@@ -698,6 +698,25 @@ export async function getAdminReleasedDayNumbers(courseId: string): Promise<Set<
       const arr: number[] = JSON.parse(raw);
       return new Set(arr.sort((a, b) => a - b));
     }
+
+    // Try fetching official released days from OCI Backend API
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch(`/api/tuto/courses/${encodeURIComponent(courseId)}/days`);
+        if (res.ok) {
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            const released = rows.filter((r: any) => r.admin_released !== false).map((r: any) => r.day_number);
+            if (released.length > 0) {
+              const s = new Set<number>(released);
+              await AsyncStorage.setItem(`${TUTO_ADMIN_RELEASED_DAYS_PREFIX}${courseId}`, JSON.stringify(released));
+              return s;
+            }
+          }
+        }
+      } catch (apiErr) {}
+    }
+
     // Also check if admin has saved any custom day plans for this course
     const customRaw = await AsyncStorage.getItem(ADMIN_CUSTOM_PLANS_KEY);
     if (customRaw) {

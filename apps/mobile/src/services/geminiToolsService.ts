@@ -1,5 +1,6 @@
 // @ts-nocheck
 import * as SecureStore from 'expo-secure-store';
+import { ENV } from '../config/env';
 
 export interface ToolResponse {
   text: string;

@@ -1,6 +1,6 @@
 import { ENV } from '../config/env';
 
-const API_URL = ENV.CRM_URL;
+const API_URL = ENV.AUTH_URL || 'https://mysupro.duckdns.org';
 const endpoints = {
   authCheck: `${API_URL}/api/auth/check`,
   authVerify: `${API_URL}/api/auth/otp/verify`,
@@ -123,18 +123,26 @@ export const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Server returned unexpected response (${res.status})`);
+    }
     if (!res.ok) throw new Error(data.error || 'Authentication failed');
     return data;
   },
   
   getWabaPhone: async () => {
+    // Prioritize configured Admin / WABA number: 916381029380
+    if (ENV.WABA_PHONE) return ENV.WABA_PHONE;
     try {
       const res = await fetch(endpoints.authWaba);
       const data = await res.json();
-      return data.phone || ENV.WABA_PHONE;
+      return data.phone || '916381029380';
     } catch (e) {
-      return ENV.WABA_PHONE;
+      return '916381029380';
     }
   },
 
@@ -144,7 +152,13 @@ export const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, pin, confirmPin }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Server returned unexpected response (${res.status})`);
+    }
     if (!res.ok) throw new Error(data.error || 'Failed to save PIN');
     return data;
   },
@@ -155,7 +169,13 @@ export const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, pin }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`Server returned unexpected response (${res.status})`);
+    }
     if (!res.ok) throw new Error(data.error || 'Authentication failed');
     return data;
   }

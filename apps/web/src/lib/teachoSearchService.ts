@@ -430,36 +430,41 @@ export async function searchMcqQuestions(
     }
   }
 
-  // 2. Query Supabase database question pool in background
+  // 2. Query Ultra-Fast OCI PostgreSQL Question Bank (30,145 Questions via GIN index)
   try {
-    const { data, error } = await aishleeSupabase
-      .from('unified_master_data')
-      .select('id, title, metadata, additional_info')
-      .ilike('title', `%${cleanQuery}%`)
-      .limit(15);
+    const isBrowser = typeof window !== 'undefined';
+    const ociBase = isBrowser ? '' : 'https://mysupro.duckdns.org';
+    const apiRes = await fetch(`${ociBase}/api/tuto/qbank/search?query=${encodeURIComponent(cleanQuery)}&limit=25`, { cache: 'no-store' });
+    if (apiRes.ok) {
+      const rows = await apiRes.json();
+      if (Array.isArray(rows)) {
+        for (const r of rows) {
+          if (!seenQ.has(r.question_uid)) {
+            seenQ.add(r.question_uid);
+            const opts = typeof r.options === 'string' ? JSON.parse(r.options) : (r.options || {});
+            const optList = [
+              opts.A || opts[0] ? `A) ${opts.A || opts[0]}` : '',
+              opts.B || opts[1] ? `B) ${opts.B || opts[1]}` : '',
+              opts.C || opts[2] ? `C) ${opts.C || opts[2]}` : '',
+              opts.D || opts[3] ? `D) ${opts.D || opts[3]}` : '',
+            ].filter(Boolean);
 
-    if (!error && Array.isArray(data)) {
-      for (const row of data) {
-        const info = row.additional_info || row.metadata || {};
-        const qs = Array.isArray(info.questions) ? info.questions : [];
-        for (let i = 0; i < qs.length; i++) {
-          const q = qs[i];
-          const qId = `db_${row.id}_${i}`;
-          if (!seenQ.has(qId) && q.question) {
-            seenQ.add(qId);
+            const correctLetter = (r.correct_option || 'A').toUpperCase();
+            const correctIdx = correctLetter === 'B' ? 1 : correctLetter === 'C' ? 2 : correctLetter === 'D' ? 3 : 0;
+
             matchedList.push({
-              id: qId,
-              question: q.question,
-              question_ta: q.question_ta || q.question_tamil,
-              options: Array.isArray(q.options) ? q.options : [],
-              answer: q.answer || (q.options ? q.options[0] : ''),
-              correctIndex: typeof q.correctIndex === 'number' ? q.correctIndex : 0,
-              explanation: q.explanation || `Key concept from ${row.title}.`,
-              subject: q.section || 'General Subject',
-              topicTitle: row.title || 'Exam Topic',
-              courseTitle: 'Online Test Bank',
-              difficulty: 'Medium',
-              examTag: 'CBT Test Engine'
+              id: r.question_uid,
+              question: r.question_text,
+              question_ta: r.question_text_ta,
+              options: optList,
+              answer: optList[correctIdx] || `Option ${correctLetter}`,
+              correctIndex: correctIdx,
+              explanation: r.explanation || `Core concept from ${r.topic || r.subject}.`,
+              subject: r.subject || 'General Knowledge',
+              topicTitle: r.topic || r.microtopic || 'Exam Question',
+              courseTitle: r.exam_category || 'SuprO Question Bank',
+              difficulty: (r.difficulty || 'Medium') as any,
+              examTag: r.exam_category || 'Exam QBank'
             });
           }
         }

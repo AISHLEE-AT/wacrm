@@ -1885,6 +1885,40 @@ export async function getCoursePlayerContent(
     }
   }
 
+  // 1.9. Ultra-Fast OCI PostgreSQL Micro-Topic Fetch (3,439+ Micro-Topics on OCI)
+  try {
+    const isBrowser = typeof window !== 'undefined';
+    const ociBase = isBrowser ? '' : 'https://mysupro.duckdns.org';
+    const params = new URLSearchParams();
+    if (courseId) params.set('courseId', courseId);
+    if (dayNumber) params.set('dayNumber', String(dayNumber));
+    if (resolvedTaskNum) params.set('taskNumber', String(resolvedTaskNum));
+    if (directTaskKey) params.set('topicKey', directTaskKey);
+
+    const ociUrl = `${ociBase}/api/tuto/content?${params.toString()}`;
+    const ociRes = await fetch(ociUrl, { cache: 'no-store' });
+    if (ociRes.ok) {
+      const ociJson = await ociRes.json();
+      const contentObj = ociJson?.content || ociJson;
+      if (contentObj && (contentObj.notes || contentObj.overview || contentObj.coreConcepts || contentObj.mcqs)) {
+        const normalized = normalizeCoursePlayerPayload(
+          contentObj,
+          topicTitle,
+          subject,
+          courseTitle,
+          dayNumber,
+          courseId,
+          resolvedTaskNum
+        );
+        inMemoryContentCache.set(daySpecificKey, normalized);
+        if (directTaskKey) inMemoryContentCache.set(directTaskKey, normalized);
+        return normalized;
+      }
+    }
+  } catch (ociErr) {
+    // Non-blocking fallback to secondary sources
+  }
+
   // 2. Check Unified Master Data (o_course_micro_topic_content) in Supabase
   try {
     const { data: umdRows, error: umdErr } = await aishleeSupabase
