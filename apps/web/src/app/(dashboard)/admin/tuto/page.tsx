@@ -79,6 +79,83 @@ export default function TutOAdminStudioPage() {
 
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [isLoadingSubmissions, setIsLoadingSubmissions] = useState<boolean>(false);
+  const [submissionStatusFilter, setSubmissionStatusFilter] = useState<'all' | 'submitted' | 'approved'>('all');
+  const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
+  const [bonusXpMap, setBonusXpMap] = useState<Record<string, number>>({});
+
+  const fetchMissionSubmissions = async () => {
+    setIsLoadingSubmissions(true);
+    try {
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/submissions/list');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.submissions) {
+          setSubmissions(data.submissions);
+          setIsLoadingSubmissions(false);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('OCI submissions fetch error, falling back to Supabase:', e);
+    }
+
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('daily_task_submissions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (data) setSubmissions(data);
+    } catch (err) {
+      console.warn('Supabase fallback error:', err);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  };
+
+  const handleReviewAndAlert = async (sub: any, customRemarks?: string, customBonusXp?: number) => {
+    setIsLoadingSubmissions(true);
+    const finalRemarks = customRemarks || remarksMap[sub.id] || 'Outstanding work! Mission verified by academic guide.';
+    const finalBonusXp = customBonusXp || bonusXpMap[sub.id] || 50;
+
+    try {
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/submissions/review-and-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId: sub.id,
+          teacherRemarks: finalRemarks,
+          teacherBonusXp: finalBonusXp,
+          teacherRating: 5,
+          teacherName: 'Lead Academic Guide',
+          status: 'approved'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmissions(prev =>
+          prev.map(s => s.id === sub.id ? { ...s, status: 'approved', teacher_remarks: finalRemarks, teacher_bonus_xp: finalBonusXp } : s)
+        );
+        showStatus(
+          `🎉 Student ${sub.student_name || sub.user_name || ''} Alerted! ${data.whatsappSent ? 'WhatsApp message dispatched' : 'In-App alert recorded'}.`,
+          'success'
+        );
+      } else {
+        showStatus('Error: ' + (data.error || 'Failed to review'), 'error');
+      }
+    } catch (err: any) {
+      showStatus('Error alerting student: ' + err.message, 'error');
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'submissions') {
+      fetchMissionSubmissions();
+    }
+  }, [activeTab]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -907,133 +984,240 @@ Output JSON only matching OfficialCourseSyllabus interface with:
         )}
 
         {/* ═════════════════════════════════════════════════════════════════════
-            TAB 7: STUDENT DAILY TASK VIDEO SUBMISSIONS & GOOGLE DRIVE
+            TAB 7: TEACHER / GUIDE DAILY MISSION EVALUATION STUDIO & ALERT DISPATCH
             ═════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'submissions' && (
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0E172A] border border-slate-800 p-6 rounded-3xl">
+            {/* Header & Controls */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0E172A] border border-slate-800 p-6 rounded-3xl shadow-xl">
               <div>
-                <span className="text-[10px] uppercase font-black text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
-                  Google Drive Cloud Submissions
-                </span>
-                <h3 className="text-base font-bold text-white mt-1">Student Video Reflections & Daily Feedback</h3>
-                <p className="text-xs text-slate-400">Review task video recordings uploaded directly to students' Google Drive storage</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] uppercase font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    Two-Module Verification Engine
+                  </span>
+                  <span className="text-xs text-slate-400 font-semibold">Teacher / Guide Evaluation Studio</span>
+                </div>
+                <h3 className="text-base font-bold text-white">Student Day Missions & Alert Dispatch</h3>
+                <p className="text-xs text-slate-400">
+                  Evaluate student daily missions (10 classes, test, yoga, book scanner homework), award remarks &amp; bonus XP, and alert students in real-time.
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex bg-[#131F37] p-1 rounded-xl border border-slate-800 text-xs font-bold">
+                  {(['all', 'submitted', 'approved'] as const).map((filterVal) => (
+                    <button
+                      key={filterVal}
+                      onClick={() => setSubmissionStatusFilter(filterVal)}
+                      className={`px-3 py-1.5 rounded-lg capitalize transition ${
+                        submissionStatusFilter === filterVal
+                          ? 'bg-[#00D084] text-slate-950 font-black shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {filterVal === 'all' ? 'All' : filterVal === 'submitted' ? 'Pending Review' : 'Approved'}
+                    </button>
+                  ))}
+                </div>
+
                 <button
-                  onClick={() => {
-                    const supabase = createClient();
-                    setIsLoadingSubmissions(true);
-                    supabase
-                      .from('daily_task_submissions')
-                      .select('*')
-                      .order('created_at', { ascending: false })
-                      .limit(50)
-                      .then(({ data }: any) => {
-                        if (data) setSubmissions(data);
-                        setIsLoadingSubmissions(false);
-                      });
-                  }}
-                  className="px-3.5 py-2 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-sky-400 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
+                  onClick={fetchMissionSubmissions}
+                  className="px-3.5 py-2 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSubmissions ? 'animate-spin' : ''}`} />
-                  <span>Refresh Submissions</span>
+                  <span>Refresh Queue</span>
                 </button>
               </div>
             </div>
 
-            {/* Submissions Table */}
-            <div className="bg-[#0E172A] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#131F37] text-slate-400 uppercase font-black text-[10px] tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th className="p-4">Student</th>
-                    <th className="p-4">Course & Day</th>
-                    <th className="p-4">Topic & Rating</th>
-                    <th className="p-4">Feedback Notes</th>
-                    <th className="p-4">Google Drive Video</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Review Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {submissions.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
-                        {isLoadingSubmissions ? 'Loading submissions from Supabase...' : 'No student video submissions recorded yet.'}
-                      </td>
-                    </tr>
-                  ) : (
-                    submissions.map((sub) => (
-                      <tr key={sub.id} className="hover:bg-slate-800/30 transition">
-                        <td className="p-4">
-                          <div className="font-bold text-white">{sub.user_name || 'Student'}</div>
-                          <div className="text-[11px] text-slate-400">{sub.user_phone}</div>
-                        </td>
-                        <td className="p-4">
-                          <div className="font-bold text-sky-400">Day {sub.day_number}</div>
-                          <div className="text-[10px] text-slate-400 truncate max-w-[140px]">{sub.course_title || sub.course_id}</div>
-                        </td>
-                        <td className="p-4">
-                          <div className="font-bold text-white truncate max-w-[180px]">{sub.topic_title}</div>
-                          <div className="flex items-center gap-0.5 mt-0.5 text-amber-400">
-                            {Array.from({ length: sub.rating || 5 }).map((_, i) => (
-                              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                            ))}
+            {/* Submissions List */}
+            {isLoadingSubmissions && submissions.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 bg-[#0E172A] border border-slate-800 rounded-3xl">
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 text-emerald-400" />
+                <p className="text-xs font-bold text-white">Fetching Student Missions from OCI PostgreSQL...</p>
+              </div>
+            ) : submissions.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 bg-[#0E172A] border border-slate-800 rounded-3xl">
+                <ShieldCheck className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                <p className="text-sm font-bold text-white">No student missions recorded yet.</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Once a student completes Day 1 or any day tasks and submits their mission, it will appear here for evaluation.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {submissions
+                  .filter((sub) => {
+                    if (submissionStatusFilter === 'submitted') return sub.status === 'submitted';
+                    if (submissionStatusFilter === 'approved') return sub.status === 'approved';
+                    return true;
+                  })
+                  .map((sub) => {
+                    const currentRemarks = remarksMap[sub.id] || sub.teacher_remarks || '';
+                    const currentBonusXp = bonusXpMap[sub.id] ?? (sub.teacher_bonus_xp || 50);
+                    const isApproved = sub.status === 'approved';
+
+                    return (
+                      <div
+                        key={sub.id}
+                        className={`p-6 rounded-3xl border transition-all ${
+                          isApproved
+                            ? 'bg-[#0E172A]/80 border-slate-800'
+                            : 'bg-gradient-to-br from-[#0E172A] to-[#131F37] border-amber-500/30 shadow-lg shadow-amber-500/5'
+                        }`}
+                      >
+                        {/* Header Row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black text-sm">
+                              {(sub.student_name || sub.user_name || 'S')[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-black text-white">
+                                  {sub.student_name || sub.user_name || 'Student Scholar'}
+                                </h4>
+                                <span className="text-xs text-slate-400 font-semibold">
+                                  📱 {sub.student_phone || sub.user_phone || 'No phone'}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 mt-1">
+                                <span className="px-2 py-0.5 rounded bg-sky-500/15 border border-sky-500/30 text-sky-400 text-[10px] font-bold">
+                                  {sub.academic_class || 'Class 5'}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-purple-500/15 border border-purple-500/30 text-purple-400 text-[10px] font-bold uppercase">
+                                  {sub.ambition_id || 'JrIAS'}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
+                                  Day {sub.day_number || 1} of 365
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="text-[11px] text-slate-300 max-w-[200px] line-clamp-2">
-                            {sub.feedback_text || 'Completed daily task'}
+
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                                isApproved
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse-subtle'
+                              }`}
+                            >
+                              {isApproved ? '✅ Approved & Alerted' : '⏳ Pending Review'}
+                            </span>
                           </div>
-                        </td>
-                        <td className="p-4">
-                          <a
-                            href={sub.video_drive_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/15 border border-sky-500/30 text-sky-400 hover:bg-sky-500/25 transition font-bold text-[11px]"
-                          >
-                            <Play className="w-3 h-3 fill-sky-400" />
-                            <span>Watch on Drive</span>
-                          </a>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                            sub.status === 'approved'
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : sub.status === 'reviewed'
-                              ? 'bg-sky-500/20 text-sky-400'
-                              : 'bg-amber-500/20 text-amber-400'
-                          }`}>
-                            {(sub.status || 'submitted').toUpperCase()}
+                        </div>
+
+                        {/* Performance Metrics & Reflection */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-4 border-b border-slate-800/60">
+                          <div className="p-3 bg-[#0B1120] rounded-xl border border-slate-800/80">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Classes Completed</span>
+                            <span className="text-sm font-black text-white">
+                              {sub.classes_completed ?? 10} / {sub.total_classes ?? 10}
+                            </span>
+                          </div>
+                          <div className="p-3 bg-[#0B1120] rounded-xl border border-slate-800/80">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Mock Test Score</span>
+                            <span className="text-sm font-black text-emerald-400">
+                              {sub.test_score ?? 100}%
+                            </span>
+                          </div>
+                          <div className="p-3 bg-[#0B1120] rounded-xl border border-slate-800/80">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Yoga Practice</span>
+                            <span className="text-sm font-black text-emerald-400">
+                              {sub.yoga_completed ? '✅ Done' : 'Pending'}
+                            </span>
+                          </div>
+                          <div className="p-3 bg-[#0B1120] rounded-xl border border-slate-800/80">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Daily XP Earned</span>
+                            <span className="text-sm font-black text-amber-400">
+                              +{sub.xp_earned ?? 250} XP
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Student Reflection Notes */}
+                        <div className="py-3">
+                          <span className="text-[11px] font-bold text-slate-400 block mb-1">
+                            Student Notes &amp; Doubts:
                           </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <button
-                            onClick={async () => {
-                              const supabase = createClient();
-                              await supabase
-                                .from('daily_task_submissions')
-                                .update({ status: 'approved', updated_at: new Date().toISOString() })
-                                .eq('id', sub.id);
-                              setSubmissions((prev) =>
-                                prev.map((item) => (item.id === sub.id ? { ...item, status: 'approved' } : item))
-                              );
-                              showStatus(`Task submission for ${sub.user_name || sub.user_phone} marked as Approved!`, 'success');
-                            }}
-                            className="px-3 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition"
-                          >
-                            Approve
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                          <p className="text-xs text-slate-200 bg-[#0B1120] p-3 rounded-xl border border-slate-800/80 italic leading-relaxed">
+                            {sub.student_notes || sub.feedback_text || 'Student finished day mission without custom notes.'}
+                          </p>
+                        </div>
+
+                        {/* Teacher Evaluation & Alert Dispatch Panel */}
+                        <div className="mt-2 pt-4 border-t border-slate-800 space-y-3 bg-[#0B1120]/60 p-4 rounded-2xl border border-slate-800/60">
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Teacher Evaluation &amp; Guidance Remarks:</span>
+                            </label>
+
+                            {/* Praise chips */}
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                '🌟 Outstanding work on Day 1!',
+                                '🎯 Accurate math steps and neat work.',
+                                '✍️ Great handwriting practice!',
+                                '👍 Well done! Keep up the daily streak.',
+                              ].map((phrase) => (
+                                <button
+                                  key={phrase}
+                                  type="button"
+                                  onClick={() => setRemarksMap((prev) => ({ ...prev, [sub.id]: phrase }))}
+                                  className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold transition"
+                                >
+                                  {phrase}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <textarea
+                            rows={2}
+                            value={currentRemarks}
+                            onChange={(e) => setRemarksMap((prev) => ({ ...prev, [sub.id]: e.target.value }))}
+                            placeholder="Enter teacher comments, guidance, or words of encouragement for the student..."
+                            className="w-full bg-[#0E172A] border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                          />
+
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-bold text-slate-400">Award Bonus XP:</span>
+                              {[50, 100, 200].map((xp) => (
+                                <button
+                                  key={xp}
+                                  type="button"
+                                  onClick={() => setBonusXpMap((prev) => ({ ...prev, [sub.id]: xp }))}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                                    currentBonusXp === xp
+                                      ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
+                                      : 'bg-[#0E172A] border border-slate-800 text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  +{xp} XP
+                                </button>
+                              ))}
+                            </div>
+
+                            <button
+                              onClick={() => handleReviewAndAlert(sub, currentRemarks, currentBonusXp)}
+                              disabled={isLoadingSubmissions}
+                              className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>
+                                {isApproved ? 'Update & Re-Alert Student' : '🔔 Alert Student (App & WhatsApp)'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </div>
         )}
 

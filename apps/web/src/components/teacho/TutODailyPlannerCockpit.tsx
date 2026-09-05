@@ -99,10 +99,53 @@ export const AMBITION_FEATURE_TRACKS = [
     roleTag: 'Clinical Biology & NEET',
     desc: 'Human Anatomy, Major Organ Systems, First Aid & Clinical Diagnostics',
     icon: '🩺'
+  },
+  {
+    id: 'jr-er',
+    title: 'Engineer (Robotics & AI)',
+    short: 'JrEngineer',
+    roleTag: 'Coding, AI & Robotics',
+    desc: 'Algorithms, Circuit Analysis, Embedded Robotics & Applied Physics',
+    icon: '💻'
+  },
+  {
+    id: 'jr-ips',
+    title: 'Police (Law & Forensics)',
+    short: 'JrIPS',
+    roleTag: 'Criminology & Public Safety',
+    desc: 'Forensics, Cyber Crime Investigation, Law & Tactical Leadership',
+    icon: '👮'
+  },
+  {
+    id: 'jr-ceo',
+    title: 'CEO (Entrepreneur)',
+    short: 'JrCEO',
+    roleTag: 'Startup & Business Leader',
+    desc: 'Venture Creation, Unit Economics, Marketing & Pitch Decks',
+    icon: '🚀'
+  },
+  {
+    id: 'jr-scientist',
+    title: 'Scientist (ISRO / Space)',
+    short: 'JrScientist',
+    roleTag: 'Space Tech & Deep Physics',
+    desc: 'Rocket Propulsion, Satellite Systems & Planetary Science',
+    icon: '🔬'
+  },
+  {
+    id: 'jr-judge',
+    title: 'Judge (Judiciary & Law)',
+    short: 'JrJudge',
+    roleTag: 'Justice & Legal Master',
+    desc: 'Constitutional Rights, Courtroom Ethics & Landmark Case Analysis',
+    icon: '⚖️'
   }
 ];
 
-export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[] => {
+export const getInitialClassesForGrade = (courseId: string, ambitionId: string): DailyClassItem[] => {
+  const isLkg = courseId.includes('lkg');
+  const isUkg = courseId.includes('ukg');
+
   let ambitionClass8: DailyClassItem = {
     id: 8,
     type: 'ambition',
@@ -133,6 +176,72 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
       xp: 30,
       icon: '🩺'
     };
+  } else if (ambitionId === 'jr-er' || ambitionId === 'engineer') {
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrER (Engineer): Code Logic, Algorithms & Robotics Engineering',
+      subject: 'JrER (Engineer)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '🤖'
+    };
+  } else if (ambitionId === 'jr-ips' || ambitionId === 'police') {
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrIPS (Police): Forensics, Cyber Crime Investigation & Public Safety',
+      subject: 'JrIPS (Police)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '👮'
+    };
+  } else if (ambitionId === 'jr-ceo' || ambitionId === 'entrepreneur') {
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrCEO (Entrepreneur): Startup Venture Ideation, Business Models & Pitch Decks',
+      subject: 'JrCEO (Entrepreneur)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '🚀'
+    };
+  } else if (ambitionId === 'jr-scientist' || ambitionId === 'jr-sc') {
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrScientist (ISRO): Rocket Propulsion, Satellite Systems & Deep Space',
+      subject: 'JrScientist (ISRO)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '🔬'
+    };
+  } else if (ambitionId === 'jr-judge' || ambitionId === 'law') {
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrJudge (Justice): Constitutional Rights, Courtroom Ethics & Legal Reasoning',
+      subject: 'JrJudge (Justice)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '⚖️'
+    };
+  }
+
+  if (isLkg || isUkg) {
+    const kg = isLkg ? 'LKG' : 'UKG';
+    return [
+      { id: 1, type: 'academic', title: `${kg} English Phonics: Letter Sounds, Sight Words & Action Rhymes`, subject: 'Phonics & English', duration: '15 Min', xp: 25, icon: '🔤' },
+      { id: 2, type: 'academic', title: `${kg} Number Magic: Counting 1 to 20/50, Shapes & Spatial Logic`, subject: 'Number Magic', duration: '15 Min', xp: 25, icon: '🔢' },
+      { id: 3, type: 'academic', title: `${kg} தமிழ் உயிர்/மெய் எழுத்துக்கள் & பாப்பா பாட்டு`, subject: 'தமிழ் (Tamil)', duration: '15 Min', xp: 25, icon: '🗣️' },
+      { id: 4, type: 'academic', title: `${kg} Nature & EVS: Animals, Birds, Seasons & Colors`, subject: 'Nature & EVS', duration: '15 Min', xp: 25, icon: '🌿' },
+      { id: 5, type: 'academic', title: `${kg} Story Time & Moral Fables: Panchatantra Tales`, subject: 'Story & Values', duration: '10 Min', xp: 20, icon: '📖' },
+      { id: 6, type: 'homework', title: `${kg} Fine Motor & Tracing Practice: Strokes, Lines & Pencil Grip`, subject: 'Tracing & Strokes', duration: '10 Min', xp: 20, icon: '✍️' },
+      { id: 7, type: 'academic', title: `${kg} Creative Arts & Expression: Clay Modeling & Origami`, subject: 'Creative Arts', duration: '10 Min', xp: 20, icon: '🎨' },
+      ambitionClass8,
+      { id: 9, type: 'masterclass', title: `${kg} Visual Masterclass: 3D Cartoon Explainer & Nursery Sing-Along`, subject: 'Visual Masterclass', duration: '15 Min', xp: 25, icon: '🎥' },
+      { id: 10, type: 'revision', title: `${kg} Bedtime Recap: 3-Picture Visual Quiz & Star Reward`, subject: 'Bedtime Revision', duration: '10 Min', xp: 20, icon: '🌙' }
+    ];
   }
 
   return [
@@ -221,6 +330,10 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
   ];
 };
 
+export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[] => {
+  return getInitialClassesForGrade('school-std-5', ambitionId);
+};
+
 export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = ({
   course,
   selectedBoard,
@@ -266,8 +379,108 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   const [homeworkError, setHomeworkError] = useState<string | null>(null);
   const [geminiApiKey, setGeminiApiKey] = useState('');
 
+  // Module 1: Day Mission Submission States
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isSubmittingMission, setIsSubmittingMission] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<'none' | 'submitted' | 'approved'>('none');
+  const [studentNotes, setStudentNotes] = useState('');
+  const [submissionSuccessMsg, setSubmissionSuccessMsg] = useState<string | null>(null);
+
+  // Module 2: Active Teacher Alert
+  const [activeAlert, setActiveAlert] = useState<any | null>(null);
+
   // Current Ambition
   const currentAmbition = AMBITION_FEATURE_TRACKS.find(c => c.id === activeAmbitionId) || AMBITION_FEATURE_TRACKS[0];
+
+  const checkSubmissionStatus = () => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`tuto_sub_status_${course.id}_day_${dayNumber}`);
+      if (saved === 'submitted' || saved === 'approved') {
+        setSubmissionStatus(saved as any);
+      } else {
+        setSubmissionStatus('none');
+      }
+    }
+  };
+
+  const fetchStudentAlerts = async () => {
+    try {
+      const cleanPhone = (userPhone || (typeof window !== 'undefined' && localStorage.getItem('user-phone')) || '').replace(/\D/g, '').slice(-10);
+      if (!cleanPhone) return;
+      const res = await fetch(`https://mysupro.duckdns.org/api/tuto/student/alerts?phone=${encodeURIComponent(cleanPhone)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.alerts && data.alerts.length > 0) {
+          setActiveAlert(data.alerts[0]);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch student alerts:', err);
+    }
+  };
+
+  const handleDismissAlert = async () => {
+    if (!activeAlert) return;
+    try {
+      if (activeAlert.bonus_xp > 0) {
+        setTotalXp(prev => prev + activeAlert.bonus_xp);
+        setDailyXp(prev => prev + activeAlert.bonus_xp);
+      }
+      await fetch('https://mysupro.duckdns.org/api/tuto/student/alerts/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alertId: activeAlert.id })
+      });
+      setActiveAlert(null);
+    } catch (err) {
+      setActiveAlert(null);
+    }
+  };
+
+  const handleSubmitDayMission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingMission(true);
+    try {
+      const studentName = (typeof window !== 'undefined' && localStorage.getItem('user-name')) || 'SuprO Scholar';
+      const cleanPhone = (userPhone || (typeof window !== 'undefined' && localStorage.getItem('user-phone')) || '').replace(/\D/g, '').slice(-10);
+
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/submissions/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentName,
+          studentPhone: cleanPhone || '9876543210',
+          academicClass: course.id,
+          ambitionId: activeAmbitionId,
+          courseId: course.id,
+          dayNumber,
+          classesCompleted: completedClasses.length,
+          totalClasses: 10,
+          yogaCompleted,
+          testScore: testCompleted ? 100 : 0,
+          xpEarned: dailyXp,
+          studentNotes: studentNotes.trim(),
+          homeworkUrl: ''
+        })
+      });
+
+      if (res.ok) {
+        setSubmissionStatus('submitted');
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`tuto_sub_status_${course.id}_day_${dayNumber}`, 'submitted');
+        }
+        setIsSubmitModalOpen(false);
+        setSubmissionSuccessMsg(`🎉 Mission Day ${dayNumber} successfully submitted to your Teacher/Guide for review!`);
+        setTimeout(() => setSubmissionSuccessMsg(null), 7000);
+      } else {
+        alert('Could not submit mission. Please try again.');
+      }
+    } catch (err: any) {
+      alert('Error submitting mission: ' + err.message);
+    } finally {
+      setIsSubmittingMission(false);
+    }
+  };
 
   const fetchPlanner = async () => {
     try {
@@ -296,8 +509,10 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   };
 
   useEffect(() => {
-    setClasses(getInitialClassesFor5thStd(activeAmbitionId));
+    setClasses(getInitialClassesForGrade(course.id, activeAmbitionId));
     fetchPlanner();
+    fetchStudentAlerts();
+    checkSubmissionStatus();
     if (typeof window !== 'undefined') {
       const savedKey = localStorage.getItem('gemini-api-key') || '';
       setGeminiApiKey(savedKey);
@@ -457,6 +672,107 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
 
   return (
     <div className="space-y-6">
+
+      {/* MODULE 2: CELEBRATORY TEACHER/GUIDE ALERT BANNER */}
+      {activeAlert && (
+        <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-emerald-500/25 border-2 border-amber-400 shadow-2xl animate-in fade-in duration-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-2xl shadow-lg shrink-0">
+              🎉
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[10px] uppercase">
+                  Teacher Verified & Alerted
+                </span>
+                <span className="text-xs text-amber-200 font-bold">
+                  {activeAlert.teacher_name || 'Academic Guide'}
+                </span>
+              </div>
+              <h3 className="text-base font-black text-white">{activeAlert.title}</h3>
+              <p className="text-xs text-amber-100/90 leading-relaxed font-medium italic">
+                &ldquo;{activeAlert.message}&rdquo;
+              </p>
+              {activeAlert.bonus_xp > 0 && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs mt-1">
+                  <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                  <span>+{activeAlert.bonus_xp} Bonus XP Awarded!</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={handleDismissAlert}
+            className="w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition shrink-0"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Celebrate & Claim XP 🎉</span>
+          </button>
+        </div>
+      )}
+
+      {/* SUBMISSION SUCCESS TOAST */}
+      {submissionSuccessMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>{submissionSuccessMsg}</span>
+          </div>
+          <button onClick={() => setSubmissionSuccessMsg(null)} className="text-emerald-400 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* MODULE 1: DAY MISSION COMPLETION & SUBMISSION TO TEACHER / GUIDE */}
+      <div className="p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-xl">
+            {submissionStatus === 'approved' ? '🎖️' : submissionStatus === 'submitted' ? '⏳' : '🚀'}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white">Day {dayNumber} Daily Mission</span>
+              {submissionStatus === 'approved' ? (
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase">
+                  Approved & Commended
+                </span>
+              ) : submissionStatus === 'submitted' ? (
+                <span className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-black uppercase">
+                  Submitted — Under Review
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[10px] font-black uppercase">
+                  Ready to Submit
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {completedClasses.length}/10 Classes Done • Test: {testCompleted ? 'Passed (100%)' : 'Pending'} • Yoga: {yogaCompleted ? 'Done' : 'Pending'} • Today: +{dailyXp} XP
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsSubmitModalOpen(true)}
+          className={`w-full md:w-auto px-5 py-2.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-lg transition ${
+            submissionStatus === 'approved'
+              ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30'
+              : submissionStatus === 'submitted'
+              ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
+              : 'bg-[#00D084] hover:bg-[#00B774] text-slate-950'
+          }`}
+        >
+          <Send className="w-3.5 h-3.5" />
+          <span>
+            {submissionStatus === 'approved'
+              ? `View Day ${dayNumber} Teacher Review`
+              : submissionStatus === 'submitted'
+              ? `Update Day ${dayNumber} Submission`
+              : `Submit Day ${dayNumber} Mission to Teacher / Guide`}
+          </span>
+        </button>
+      </div>
       
       {/* 1. HERO ACTIVE MISSION BANNER (365 DAYS UNIFIED) */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/90 via-slate-900/95 to-slate-950 border border-indigo-500/30 p-6 md:p-8 shadow-2xl text-white">
@@ -1037,6 +1353,107 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             setTotalXp(prev => prev + earned);
           }}
         />
+      )}
+
+      {/* 7. DAY MISSION SUBMISSION MODAL (MODULE 1) */}
+      {isSubmitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg bg-[#0b1120] border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 text-white">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-[#00D084] font-black text-[10px] uppercase">
+                  Module 1 • Student Submission
+                </span>
+                <h3 className="text-lg font-black text-white mt-1">
+                  Submit Day {dayNumber} Mission to Teacher
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Your academic guide will evaluate your daily progress and award remarks & bonus XP.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsSubmitModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Mission Performance Summary */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="p-3 bg-[#0E172A] border border-slate-800 rounded-2xl text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Classes</span>
+                <span className="text-base font-black text-white">{completedClasses.length}/10</span>
+              </div>
+              <div className="p-3 bg-[#0E172A] border border-slate-800 rounded-2xl text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Mock Test</span>
+                <span className={`text-base font-black ${testCompleted ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {testCompleted ? '100%' : 'Pending'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#0E172A] border border-slate-800 rounded-2xl text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Yoga Session</span>
+                <span className={`text-base font-black ${yogaCompleted ? 'text-emerald-400' : 'text-slate-400'}`}>
+                  {yogaCompleted ? 'Done' : 'Pending'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#0E172A] border border-slate-800 rounded-2xl text-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Day XP</span>
+                <span className="text-base font-black text-amber-400">+{dailyXp} XP</span>
+              </div>
+            </div>
+
+            {/* Reflection Notes */}
+            <form onSubmit={handleSubmitDayMission} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 block">
+                  Student Reflection Notes & Doubts for Teacher:
+                </label>
+                <textarea
+                  rows={4}
+                  value={studentNotes}
+                  onChange={(e) => setStudentNotes(e.target.value)}
+                  placeholder="e.g. Mastered today's math factors and phonics! Practiced 10 mins of cursive writing. Please check my formula sheet..."
+                  className="w-full bg-[#0E172A] border border-slate-800 rounded-2xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                />
+              </div>
+
+              <div className="p-3.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-[11px] text-indigo-300 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span>
+                  Submitted to Lead Academic Guide for verification. You will receive an instant notification in your Cockpit and WhatsApp once reviewed!
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSubmitModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingMission}
+                  className="px-6 py-2.5 bg-[#00D084] hover:bg-[#00B774] disabled:opacity-50 text-slate-950 rounded-xl text-xs font-black shadow-lg flex items-center gap-2 transition"
+                >
+                  {isSubmittingMission ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>🚀 Submit Mission to Teacher</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>

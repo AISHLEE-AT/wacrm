@@ -46,6 +46,8 @@ interface StudentOnboardingWebModalProps {
 }
 
 const ACADEMIC_CLASSES = [
+  { id: 'class_lkg', label: '🧸 LKG (Lower KG)', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_ukg', label: '🎨 UKG (Upper KG)', gradeLevel: 'primary', category: 'school_k12' },
   { id: 'class_1', label: 'Class 1st Std', gradeLevel: 'primary', category: 'school_k12' },
   { id: 'class_2', label: 'Class 2nd Std', gradeLevel: 'primary', category: 'school_k12' },
   { id: 'class_3', label: 'Class 3rd Std', gradeLevel: 'primary', category: 'school_k12' },
@@ -107,6 +109,12 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
 
   // Find class-matching curriculum courses
   const matchingClassCourses = useMemo(() => {
+    if (selectedClass === 'class_lkg') {
+      return ALL_COURSES.filter((c: CourseOption) => c.id === 'school-lkg');
+    }
+    if (selectedClass === 'class_ukg') {
+      return ALL_COURSES.filter((c: CourseOption) => c.id === 'school-ukg');
+    }
     if (selectedClass.includes('college')) {
       return ALL_COURSES.filter((c: CourseOption) => c.category === 'college_degree');
     }
@@ -143,10 +151,16 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
 
   const handleFinishOnboarding = async () => {
     const ambitionId = recommendedFeaturedCourse?.id || 'jr-ias';
-    const numMatch = selectedClass.replace(/\D/g, '');
     let finalCourse = selectedCourseOption;
-    if (!finalCourse && numMatch) {
-      finalCourse = ALL_COURSES.find(c => c.id === `school-std-${numMatch}`) || ALL_COURSES.find(c => c.id === 'school-std-5');
+    if (selectedClass === 'class_lkg') {
+      finalCourse = ALL_COURSES.find(c => c.id === 'school-lkg') || finalCourse;
+    } else if (selectedClass === 'class_ukg') {
+      finalCourse = ALL_COURSES.find(c => c.id === 'school-ukg') || finalCourse;
+    } else {
+      const numMatch = selectedClass.replace(/\D/g, '');
+      if (!finalCourse && numMatch) {
+        finalCourse = ALL_COURSES.find(c => c.id === `school-std-${numMatch}`) || ALL_COURSES.find(c => c.id === 'school-std-5');
+      }
     }
     if (!finalCourse) finalCourse = recommendedFeaturedCourse || ALL_COURSES[0];
 
@@ -396,48 +410,63 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
 
               {/* Course Options */}
               {coursePickType === 'featured' ? (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="p-3 bg-[#131F37] border border-slate-800 rounded-xl flex items-center gap-2 text-xs text-slate-300">
                     <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Curated 200-Day Leadership & Knowledge Track based on your interest:</span>
+                    <span>Choose your Futuristic Career Aim (Interactive Button Options):</span>
                   </div>
 
-                  {FEATURED_JUNIOR_COURSES.map((course: CourseOption) => {
-                    const isSelected = selectedCourseOption?.id === course.id;
-                    return (
-                      <div
-                        key={course.id}
-                        onClick={() => setSelectedCourseOption(course)}
-                        className={`p-3.5 rounded-xl border cursor-pointer flex items-center justify-between transition ${
-                          isSelected
-                            ? 'bg-emerald-500/10 border-[#00D084] shadow-md'
-                            : 'bg-[#0E172A] border-slate-800 hover:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{course.icon || '⭐'}</span>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-white">{course.short}</span>
-                              <span
-                                className="px-2 py-0.5 rounded text-[10px] font-bold"
-                                style={{ backgroundColor: course.badgeColor + '25', color: course.badgeColor }}
-                              >
-                                {course.badge}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-400 line-clamp-1">{course.subtitle}</p>
+                  {/* High-Impact Futuristic Course Buttons */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {FEATURED_JUNIOR_COURSES.map((course: CourseOption) => {
+                      const isSelected = selectedCourseOption?.id === course.id;
+                      return (
+                        <button
+                          key={course.id}
+                          type="button"
+                          onClick={() => setSelectedCourseOption(course)}
+                          className={`p-2.5 rounded-xl border text-left flex flex-col gap-1 transition ${
+                            isSelected
+                              ? 'bg-emerald-500/15 border-[#00D084] shadow-md ring-1 ring-[#00D084]'
+                              : 'bg-[#0E172A] border-slate-800 text-slate-400 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xl">{course.icon || '⭐'}</span>
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                          </div>
+                          <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                            {course.short}
+                          </span>
+                          <span className="text-[10px] text-slate-400 line-clamp-1">
+                            {course.title.split('—')[1] || course.subtitle}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="p-3 bg-[#0E172A] border border-slate-800 rounded-xl">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Selected 365-Day Learning Mission:
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-2xl">{selectedCourseOption?.icon || '⭐'}</span>
+                        <div>
+                          <div className="text-xs font-bold text-white">
+                            {selectedCourseOption?.title || '365-Day Academic Mission'}
+                          </div>
+                          <div className="text-[11px] text-emerald-400 font-semibold">
+                            Full Year 365 Days • Daily 10 Micro-Classes + Yoga + Daily Online Test
                           </div>
                         </div>
-
-                        {isSelected ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                        ) : (
-                          <div className="w-4 h-4 rounded-full border border-slate-600 shrink-0" />
-                        )}
                       </div>
-                    );
-                  })}
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-[#00D084] text-[10px] font-black uppercase">
+                        365 Days
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2.5">
