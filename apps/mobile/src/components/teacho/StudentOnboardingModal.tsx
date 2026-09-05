@@ -29,7 +29,7 @@ import {
   Check,
   X,
 } from 'lucide-react-native';
-import { supabase } from '../../lib/supabase';
+import { ENV } from '../../config/env';
 import {
   ALL_COURSES,
   CourseOption,
@@ -180,20 +180,23 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       await AsyncStorage.setItem('student-academic-class', selectedClass);
       await AsyncStorage.setItem('student-area-interest', selectedInterest);
 
-      // 2. Sync to Supabase profile if phone is available
-      if (userPhone) {
-        const cleanPhone = userPhone.replace(/\D/g, '').slice(-10);
-        await supabase
-          .from('profiles')
-          .update({
-            full_name: fullName.trim(),
-            academic_class: selectedClass,
-            school_board: selectedBoard,
-            area_of_interest: selectedInterest,
-            enrolled_course_id: finalCourse.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('phone', cleanPhone);
+      // 2. Sync directly to OCI Cloud Backend (100% Fullstack OCI, Zero Supabase)
+      const cleanPhone = (userPhone || (await AsyncStorage.getItem('user-phone')) || '').replace(/\D/g, '').slice(-10);
+      try {
+        await fetch(`${ENV.API_URL}/api/tuto/profile/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone || 'anonymous',
+            fullName: fullName.trim(),
+            academicClass: selectedClass,
+            schoolBoard: selectedBoard,
+            futuristicAmbition: selectedInterest,
+            activeCourseId: finalCourse.id,
+          }),
+        });
+      } catch (ociErr) {
+        console.warn('OCI profile sync notice:', ociErr);
       }
 
       const profileData: StudentProfileData = {

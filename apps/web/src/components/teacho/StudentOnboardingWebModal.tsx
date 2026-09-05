@@ -19,7 +19,6 @@ import {
   Star,
   Check,
 } from 'lucide-react';
-import { createClient } from '../../lib/supabase/client';
 import {
   ALL_COURSES,
   CourseOption,
@@ -184,20 +183,22 @@ export const StudentOnboardingWebModal: React.FC<StudentOnboardingWebModalProps>
         fetch(`https://mysupro.duckdns.org/api/tuto/planner/today?phone=${encodeURIComponent(cleanPhone || 'anonymous')}&courseId=${encodeURIComponent(finalCourse.id)}&ambitionId=${encodeURIComponent(ambitionId)}&dayNumber=1`);
       } catch (_) {}
 
-      // Save to Supabase
-      const supabase = createClient();
-      if (cleanPhone) {
-        await supabase
-          .from('profiles')
-          .update({
-            full_name: fullName.trim(),
-            academic_class: selectedClass,
-            school_board: selectedBoard,
-            area_of_interest: selectedInterest,
-            enrolled_course_id: finalCourse.id,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('phone', cleanPhone);
+      // Sync directly to OCI Cloud Backend (100% Fullstack OCI, Zero Supabase)
+      try {
+        await fetch('https://mysupro.duckdns.org/api/tuto/profile/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone || 'anonymous',
+            fullName: fullName.trim(),
+            academicClass: selectedClass,
+            schoolBoard: selectedBoard,
+            futuristicAmbition: ambitionId,
+            activeCourseId: finalCourse.id,
+          }),
+        });
+      } catch (ociErr) {
+        console.warn('OCI profile sync note:', ociErr);
       }
 
       const profileData: StudentProfileData = {
