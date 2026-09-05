@@ -2376,4 +2376,4 @@ export const ALL_COURSES: CourseOption[] = [
   },
 ];
 
-export const DEFAULT_COURSE: CourseOption = ALL_COURSES.find((c) => c.id === 'school-std-10') || ALL_COURSES[0];
+export const DEFAULT_COURSE: CourseOption = ALL_COURSES.find((c) => c.id === 'school-std-5') || ALL_COURSES[0];

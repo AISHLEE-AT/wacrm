@@ -73,6 +73,171 @@ interface TutODailyPlannerCockpitProps {
   userPhone?: string;
 }
 
+export const AMBITION_FEATURE_TRACKS = [
+  {
+    id: 'jr-ias',
+    title: 'IAS (Civil Servant)',
+    short: 'JrIAS',
+    roleTag: 'District Collector & Polity',
+    desc: 'Indian Constitution, Public Policy & District Administration',
+    icon: '🏛️'
+  },
+  {
+    id: 'jr-ar',
+    title: 'Auditor (Chartered Accountant)',
+    short: 'JrAuditor',
+    roleTag: 'CA & Corporate Finance',
+    desc: 'Double-Entry Bookkeeping, Financial Statements, GST & Auditing Standards',
+    icon: '📊'
+  },
+  {
+    id: 'jr-dr',
+    title: 'Doctor (Medical Sciences)',
+    short: 'JrDoctor',
+    roleTag: 'Clinical Biology & NEET',
+    desc: 'Human Anatomy, Major Organ Systems, First Aid & Clinical Diagnostics',
+    icon: '🩺'
+  }
+];
+
+export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[] => {
+  let ambitionClass7: DailyClassItem = {
+    id: 7,
+    type: 'ambition',
+    title: 'JrIAS (Civil Servant): Indian Constitution, District Administration & Public Policy',
+    subject: 'JrIAS (Civil Servant)',
+    duration: '15 Min',
+    xp: 30,
+    icon: '🏛️'
+  };
+  let ambitionClass8: DailyClassItem = {
+    id: 8,
+    type: 'ambition',
+    title: 'JrIAS (Civil Servant): District Collector Case Study & Citizen Welfare',
+    subject: 'JrIAS (Civil Servant)',
+    duration: '15 Min',
+    xp: 30,
+    icon: '🚀'
+  };
+
+  if (ambitionId === 'jr-ar' || ambitionId === 'auditor') {
+    ambitionClass7 = {
+      id: 7,
+      type: 'ambition',
+      title: 'JrAR (Auditor): Double-Entry Bookkeeping, Financial Statements & Balance Sheets',
+      subject: 'JrAR (Auditor)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '📊'
+    };
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrAR (Auditor): Auditing Standards, Fraud Forensics, GST & CA Foundation',
+      subject: 'JrAR (Auditor)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '💼'
+    };
+  } else if (ambitionId === 'jr-dr' || ambitionId === 'doctor') {
+    ambitionClass7 = {
+      id: 7,
+      type: 'ambition',
+      title: 'JrDR (Doctor): Human Anatomy, Major Organ Systems & Clinical Diagnostics',
+      subject: 'JrDR (Doctor)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '🩺'
+    };
+    ambitionClass8 = {
+      id: 8,
+      type: 'ambition',
+      title: 'JrDR (Doctor): Emergency First Aid, Vital Signs (BP, Pulse) & NEET Bridge',
+      subject: 'JrDR (Doctor)',
+      duration: '15 Min',
+      xp: 30,
+      icon: '🫀'
+    };
+  }
+
+  return [
+    {
+      id: 1,
+      type: 'academic',
+      title: '5th Std Mathematics: Factors, Multiples, Decimals & LCM/HCF (கணிதம்)',
+      subject: 'Mathematics',
+      duration: '20 Min',
+      xp: 25,
+      icon: '📐'
+    },
+    {
+      id: 2,
+      type: 'academic',
+      title: '5th Std Science: States of Matter, Energy & Plant Life (அறிவியல்)',
+      subject: 'Science',
+      duration: '20 Min',
+      xp: 25,
+      icon: '🔬'
+    },
+    {
+      id: 3,
+      type: 'academic',
+      title: '5th Std Social Science: Our Earth, Continents, Oceans & TN Heritage (சமூக அறிவியல்)',
+      subject: 'Social Science',
+      duration: '20 Min',
+      xp: 25,
+      icon: '🌍'
+    },
+    {
+      id: 4,
+      type: 'academic',
+      title: '5th Std Languages: பருவம் 1 - தமிழின் இனிமை & English Grammar (Sentences & Conjunctions)',
+      subject: 'Languages',
+      duration: '20 Min',
+      xp: 25,
+      icon: '✍️'
+    },
+    {
+      id: 5,
+      type: 'homework',
+      title: 'Class 5 Homework Assistant: Decimals, Science Sums & Book-Back Step-by-Step Solver',
+      subject: 'Homework Assist',
+      duration: '25 Min',
+      xp: 35,
+      icon: '📚'
+    },
+    {
+      id: 6,
+      type: 'homework',
+      title: '5th Std Practice Workbook: Math LCM/HCF Worksheets & Grammar Drills',
+      subject: 'Practice Sheet',
+      duration: '20 Min',
+      xp: 30,
+      icon: '📝'
+    },
+    ambitionClass7,
+    ambitionClass8,
+    {
+      id: 9,
+      type: 'masterclass',
+      title: '5th Std Visual Masterclass: 3D Animated Simulation of Solar System & States of Matter',
+      subject: 'Video Masterclass',
+      duration: '15 Min',
+      xp: 25,
+      icon: '🎥'
+    },
+    {
+      id: 10,
+      type: 'revision',
+      title: '5th Std Bedtime Revision: Daily Formula Vault, Vocabulary Flashcards & 1-Min Recap',
+      subject: 'Concept Notes',
+      duration: '10 Min',
+      xp: 20,
+      icon: '🌙'
+    }
+  ];
+};
+
 export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = ({
   course,
   selectedBoard,
@@ -84,8 +249,8 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   onOpenCoursePlayer,
   userPhone = 'anonymous'
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [classes, setClasses] = useState<DailyClassItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [classes, setClasses] = useState<DailyClassItem[]>(() => getInitialClassesFor5thStd(activeAmbitionId));
   const [yoga, setYoga] = useState<DailyYogaItem | null>(null);
   const [dailyTest, setDailyTest] = useState<DailyTestConfig | null>(null);
   
@@ -118,10 +283,9 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   const [geminiApiKey, setGeminiApiKey] = useState('');
 
   // Current Ambition
-  const currentAmbition = FEATURED_JUNIOR_COURSES.find(c => c.id === activeAmbitionId) || FEATURED_JUNIOR_COURSES[0];
+  const currentAmbition = AMBITION_FEATURE_TRACKS.find(c => c.id === activeAmbitionId) || AMBITION_FEATURE_TRACKS[0];
 
   const fetchPlanner = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch(
         `https://mysupro.duckdns.org/api/tuto/planner/today?phone=${encodeURIComponent(userPhone)}&courseId=${encodeURIComponent(course.id)}&ambitionId=${encodeURIComponent(activeAmbitionId)}&dayNumber=${dayNumber}`
@@ -129,7 +293,9 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setClasses(data.classes || []);
+          if (data.classes && data.classes.length > 0) {
+            setClasses(data.classes);
+          }
           setYoga(data.yoga || null);
           setDailyTest(data.dailyTest || null);
           setCompletedClasses(data.progress?.completedClasses || []);
@@ -142,18 +308,18 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
       }
     } catch (e) {
       console.warn('Failed to fetch daily planner:', e);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    setClasses(getInitialClassesFor5thStd(activeAmbitionId));
     fetchPlanner();
     if (typeof window !== 'undefined') {
       const savedKey = localStorage.getItem('gemini-api-key') || '';
       setGeminiApiKey(savedKey);
     }
   }, [course.id, activeAmbitionId, dayNumber, userPhone]);
+
 
   // Toggle class completion
   const handleToggleClass = async (classIndex: number, xp: number) => {
@@ -343,7 +509,38 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             <p className="text-xs text-slate-300">
               Complete today&apos;s 10 classes, daily yoga session, and online mock test to stay ahead in your syllabus.
             </p>
+
+            {/* Quick Ambition Track Switcher */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[11px] font-bold text-indigo-200">
+                Career Track:
+              </span>
+              {AMBITION_FEATURE_TRACKS.map((trk) => {
+                const isAct = activeAmbitionId === trk.id;
+                return (
+                  <button
+                    key={trk.id}
+                    type="button"
+                    onClick={() => onSelectAmbition(trk.id)}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isAct
+                        ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300/50'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                    }`}
+                  >
+                    <span>{trk.icon}</span>
+                    <span>{trk.short}</span>
+                    {isAct && (
+                      <span className="text-[9px] uppercase bg-black/20 px-1 py-0.2 rounded font-black">
+                        Active
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
 
           {/* Primary CTA + Progress Ring */}
           <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 w-full lg:w-auto">
@@ -454,7 +651,68 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
 
               {/* Stage Classes Accordion Content */}
               {isExpanded && (
-                <div className="p-4 pt-0 border-t border-border/60 divide-y divide-border/40">
+                <div>
+                  {stg.id === 3 && (
+                    <div className="p-4 bg-muted/30 border-t border-border/60">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div>
+                          <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                            <span>Select Your Feature-Restricted Career Track:</span>
+                          </h4>
+                          <p className="text-[11px] text-muted-foreground">
+                            Selecting a track tailors Class 7 & Class 8 tasks exclusively for this dream profession.
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded-md shrink-0 w-fit">
+                          Exclusive Track Selection
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {AMBITION_FEATURE_TRACKS.map((track) => {
+                          const isSelected = activeAmbitionId === track.id;
+                          return (
+                            <button
+                              key={track.id}
+                              type="button"
+                              onClick={() => onSelectAmbition(track.id)}
+                              className={`p-3 rounded-2xl border text-left transition-all relative overflow-hidden flex flex-col justify-between gap-2 ${
+                                isSelected
+                                  ? 'bg-card border-primary ring-2 ring-primary/20 shadow-md'
+                                  : 'bg-card/50 border-border/70 hover:bg-card hover:border-border'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-xl shrink-0">{track.icon}</span>
+                                  <div className="min-w-0">
+                                    <h5 className="text-xs font-bold text-foreground truncate">{track.title}</h5>
+                                    <span className="text-[10px] text-muted-foreground">{track.roleTag}</span>
+                                  </div>
+                                </div>
+                                {isSelected ? (
+                                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary text-primary-foreground shrink-0">
+                                    Active
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] text-muted-foreground hover:text-foreground font-semibold shrink-0">
+                                    Select
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground leading-relaxed line-clamp-2">
+                                {track.desc}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="p-4 pt-0 border-t border-border/60 divide-y divide-border/40">
+
                   {stg.classes.map((cls) => {
                     const isDone = completedClasses.includes(cls.id);
                     return (
@@ -518,9 +776,11 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                     );
                   })}
                 </div>
-              )}
-            </div>
-          );
+              </div>
+            )}
+          </div>
+        );
+
         })}
       </div>
 

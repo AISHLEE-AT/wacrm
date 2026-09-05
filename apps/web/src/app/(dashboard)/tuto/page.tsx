@@ -70,16 +70,20 @@ export default function TutOWebPage() {
         if (!onboardingDone) setIsOnboardingModalOpen(true);
 
         const savedCourseId = window.localStorage.getItem('tuto_active_course_id');
-        if (savedCourseId) {
+        if (savedCourseId && savedCourseId !== 'school-std-10') {
           const matched = ALL_COURSES.find(c => c.id === savedCourseId);
           if (matched) course = matched;
           
           const savedBoard = window.localStorage.getItem(`tuto_selected_board_${savedCourseId}`);
           if (savedBoard) board = savedBoard as SchoolBoard;
+        } else {
+          const std5 = ALL_COURSES.find(c => c.id === 'school-std-5');
+          if (std5) course = std5;
         }
 
         const savedAmbition = window.localStorage.getItem('tuto_active_ambition_id');
         if (savedAmbition) ambition = savedAmbition;
+
 
         const savedPhone = window.localStorage.getItem('user_phone') || window.localStorage.getItem('supro_phone') || window.localStorage.getItem('tuto_phone');
         if (savedPhone) phone = savedPhone;
