@@ -12,7 +12,7 @@ import { getReleasedDaySummariesForCourse, getCompletedDaysForCourse, DayPlanSum
 // Modals
 import { StudentOnboardingWebModal } from '@/components/teacho/StudentOnboardingWebModal';
 import { TutOOnlineTestWebModal } from '@/components/teacho/TutOOnlineTestWebModal';
-import { TutOQBankWebModal } from '@/components/teacho/TutOQBankWebModal';
+import { TutOTopicExplainerWebModal } from '@/components/teacho/TutOTopicExplainerWebModal';
 import { TutODayCoursePlayerWebModal } from '@/components/teacho/TutODayCoursePlayerWebModal';
 
 export default function TutOWebPage() {
@@ -31,7 +31,8 @@ export default function TutOWebPage() {
 
   // Modal State
   const [isOnlineTestModalOpen, setIsOnlineTestModalOpen] = useState(false);
-  const [isQBankModalOpen, setIsQBankModalOpen] = useState(false);
+  const [isExplainerModalOpen, setIsExplainerModalOpen] = useState(false);
+  const [explainerDayNumber, setExplainerDayNumber] = useState(1);
   const [isCoursePlayerOpen, setIsCoursePlayerOpen] = useState(false);
   const [playerDayNumber, setPlayerDayNumber] = useState(1);
   const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
@@ -144,7 +145,21 @@ export default function TutOWebPage() {
           )}
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+          <button 
+            onClick={() => {
+              setExplainerDayNumber(1);
+              setIsExplainerModalOpen(true);
+            }}
+            className="flex-1 md:flex-none px-4 py-3 bg-white hover:bg-indigo-50/80 text-indigo-700 border border-indigo-200 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <BookOpen className="w-5 h-5 text-indigo-600" />
+            <span>Daily Explainer</span>
+            <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+              Notes
+            </span>
+          </button>
+
           <button 
             onClick={() => setIsOnlineTestModalOpen(true)}
             className="flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl font-bold flex items-center justify-center gap-2.5 shadow-md shadow-indigo-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
@@ -183,7 +198,7 @@ export default function TutOWebPage() {
                 <div 
                   key={day.dayNumber}
                   onClick={() => !isLocked && handleOpenDay(day.dayNumber)}
-                  className={`border-2 rounded-2xl p-4 transition-transform ${
+                  className={`border-2 rounded-2xl p-4 transition-transform flex flex-col justify-between ${
                     isLocked
                       ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
                       : isDone 
@@ -191,34 +206,70 @@ export default function TutOWebPage() {
                       : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm cursor-pointer hover:scale-[1.02]'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${isDone ? 'bg-green-200 text-green-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                      D{day.dayNumber}
-                    </div>
-                    {isDone ? (
-                      <CheckCircle2 className="w-6 h-6 text-green-500" />
-                    ) : isLocked ? (
-                      <Lock className="w-5 h-5 text-gray-400" />
-                    ) : (
-                      <div className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> ~45m
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${isDone ? 'bg-green-200 text-green-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                        D{day.dayNumber}
                       </div>
+                      {isDone ? (
+                        <CheckCircle2 className="w-6 h-6 text-green-500" />
+                      ) : isLocked ? (
+                        <Lock className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <div className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> ~45m
+                        </div>
+                      )}
+                    </div>
+                    
+                    <h3 className="font-bold text-gray-900 mb-1">{day.title}</h3>
+                    <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-3">{day.description}</p>
+                    {isLocked && (
+                      <p className="text-xs text-orange-500 font-bold mb-2">🔒 Complete Day {day.dayNumber - 1} to unlock</p>
                     )}
+                    
+                    <div className="flex gap-2 mb-3">
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-slate-100 text-slate-600 rounded">
+                        {day.subjectLabel}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-pink-50 text-pink-600 rounded">
+                        {day.taskCount} Tasks
+                      </span>
+                    </div>
                   </div>
-                  
-                  <h3 className="font-bold text-gray-900 mb-1">{day.title}</h3>
-                  <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4">{day.description}</p>
-                  {isLocked && (
-                    <p className="text-xs text-orange-500 font-bold mb-2">🔒 Complete Day {day.dayNumber - 1} to unlock</p>
-                  )}
-                  
-                  <div className="flex gap-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-slate-100 text-slate-600 rounded">
-                      {day.subjectLabel}
-                    </span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-pink-50 text-pink-600 rounded">
-                      {day.taskCount} Tasks
-                    </span>
+
+                  {/* Quick Action Footer: Topic Notes & Start Day */}
+                  <div className="mt-2 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExplainerDayNumber(day.dayNumber);
+                        setIsExplainerModalOpen(true);
+                      }}
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline py-1 px-2 rounded-lg hover:bg-indigo-50 transition-colors"
+                      title="Read daily topic notes, flashcards & micro-quiz"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Topic Notes</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isLocked) handleOpenDay(day.dayNumber);
+                      }}
+                      disabled={isLocked}
+                      className={`text-xs font-bold flex items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+                        isLocked 
+                          ? 'text-gray-400 cursor-not-allowed' 
+                          : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <span>Start Day</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -243,13 +294,16 @@ export default function TutOWebPage() {
         />
       )}
 
-      {isQBankModalOpen && (
-        <TutOQBankWebModal 
-          isOpen={isQBankModalOpen}
-          onClose={() => setIsQBankModalOpen(false)}
+      {isExplainerModalOpen && (
+        <TutOTopicExplainerWebModal 
+          isOpen={isExplainerModalOpen}
+          onClose={() => setIsExplainerModalOpen(false)}
           course={selectedCourse}
-          initialQuery=""
-          initialSubject="ALL"
+          initialDayNumber={explainerDayNumber}
+          onOpenTest={(category, subject) => {
+            setIsExplainerModalOpen(false);
+            setIsOnlineTestModalOpen(true);
+          }}
         />
       )}
 
