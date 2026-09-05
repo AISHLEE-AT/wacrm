@@ -11,7 +11,7 @@ import 'dart:io';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/gemini_service.dart';
 import '../services/history_service.dart';
@@ -165,23 +165,16 @@ class _AiHubScreenState extends State<AiHubScreen> {
     await _secureStorage.write(key: 'gemini_api_key', value: cleanKey);
     if (mounted) setState(() => _apiKey = cleanKey);
 
-    // Sync to backend CRM & Supabase
+    // Sync to backend CRM (100% OCI Cloud)
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      final phone = user?.phone;
-      if (phone != null && phone.isNotEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      final phone = prefs.getString('user_phone') ?? '';
+      if (phone.isNotEmpty) {
         http.post(
           Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'phone': phone, 'gemini_api_key': cleanKey}),
-        ).catchError((_) {});
-
-        final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-        final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-        await Supabase.instance.client
-            .from('profiles')
-            .update({'gemini_api_key': cleanKey})
-            .or('phone.ilike.%$tenDigit%,whatsapp.ilike.%$tenDigit%');
+        ).catchError((_) => http.Response('', 500));
       }
     } catch (_) {}
   }

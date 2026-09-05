@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/env.dart';
 
 class ToolResponse {
   final String text;
@@ -17,8 +18,6 @@ const List<String> _candidateModels = [
   'gemini-2.5-pro',
   'gemini-1.5-pro',
 ];
-
-import '../../../core/env.dart';
 
 const String _defaultModel = 'gemini-2.5-flash';
 final String _cloudAiApi = '${AppEnv.apiUrl}/api/ai';

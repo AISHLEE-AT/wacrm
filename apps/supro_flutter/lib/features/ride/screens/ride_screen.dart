@@ -8,7 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/env.dart';
 
@@ -83,7 +83,6 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
   Map<String, dynamic>? _currentRide;
   Map<String, dynamic>? _driverInfo;
   Timer? _pollingTimer;
-  RealtimeChannel? _rideChannel;
   int _searchCountdown = 300;
   Timer? _countdownTimer;
 
@@ -112,9 +111,6 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     _feedbackController.dispose();
     _pollingTimer?.cancel();
     _countdownTimer?.cancel();
-    if (_rideChannel != null) {
-      Supabase.instance.client.removeChannel(_rideChannel!);
-    }
     super.dispose();
   }
 
@@ -194,27 +190,21 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     }
   }
 
-  // ─── CHECK ACTIVE RIDE ───
+  // ─── CHECK ACTIVE RIDE (100% OCI Cloud) ───
   Future<void> _checkActiveRideOnMount() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    final phone = user?.phone ?? '';
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString('user_phone') ?? '';
     if (phone.isEmpty) return;
 
     try {
-      final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-      final tenDigit = cleanPhone.length > 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-      
-      final data = await Supabase.instance.client
-          .from('rides')
-          .select('*')
-          .or('user_phone.ilike.%$tenDigit%,customer_phone.ilike.%$tenDigit%')
-          .inFilter('status', ['pending', 'requested', 'accepted', 'driver_arrived', 'in_progress'])
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (data != null && mounted) {
-        _handleRideStatusUpdate(data);
+      final res = await http.get(
+        Uri.parse('${AppEnv.apiUrl}/api/rides?phone=$phone&status=pending,requested,accepted,driver_arrived,in_progress'),
+      );
+      if (res.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(res.body);
+        if (list.isNotEmpty && mounted) {
+          _handleRideStatusUpdate(list.first as Map<String, dynamic>);
+        }
       }
     } catch (e) {
       debugPrint('Error checking active ride: $e');
@@ -358,7 +348,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     }
   }
 
-  // ─── BOOK RIDE DISPATCH & REALTIME POLLING ───
+  // ─── BOOK RIDE DISPATCH & REALTIME POLLING (100% OCI Cloud) ───
   Future<void> _bookRide() async {
     if (_pickup == null || _dropoff == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -367,9 +357,9 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
       return;
     }
 
-    final user = Supabase.instance.client.auth.currentUser;
-    final phone = user?.phone ?? '9876543210';
-    final customerName = user?.userMetadata?['full_name'] ?? 'Passenger';
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString('user_phone') ?? '9876543210';
+    final customerName = prefs.getString('user_name') ?? 'Passenger';
     final otpCode = (1000 + Random().nextInt(9000)).toString();
 
     setState(() {
@@ -378,48 +368,60 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     });
 
     final ridePayload = {
-      'user_id': user?.id,
+      'customer_phone': phone,
       'passenger_phone': phone,
       'passenger_name': customerName,
-      'driver_phone': _defaultAdminPhone,
-      'pickup_location': {'lat': _pickup!.lat, 'lng': _pickup!.lng, 'address': _pickup!.name},
-      'drop_location': {'lat': _dropoff!.lat, 'lng': _dropoff!.lng, 'address': _dropoff!.name, 'distance_km': _distanceKm},
+      'service_type': _selectedCategory.id,
       'vehicle_category': _selectedCategory.id,
+      'pickup_address': _pickup!.name,
+      'pickup_lat': _pickup!.lat,
+      'pickup_lng': _pickup!.lng,
+      'dropoff_address': _dropoff!.name,
+      'dropoff_lat': _dropoff!.lat,
+      'dropoff_lng': _dropoff!.lng,
+      'distance_km': _distanceKm,
+      'estimated_fare': _estimatedFare,
       'fare': _estimatedFare,
       'status': 'pending',
       'otp': otpCode,
-      'created_at': DateTime.now().toIso8601String(),
     };
 
     try {
-      final inserted = await Supabase.instance.client
-          .from('rides')
-          .insert(ridePayload)
-          .select()
-          .single();
-
-      _currentRide = inserted;
-
-      // Start active 1.5s polling loop
-      _startPollingRideStatus(inserted['id']);
-
-      // Start 300s (5:00 min) countdown timer with auto-expiry
-      _startCountdownTimer();
-
-      // Dispatch notification to OCI backend
-      http.post(
+      final res = await http.post(
         Uri.parse('${AppEnv.apiUrl}/api/rides'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'ride_id': inserted['id'],
-          'customer_name': customerName,
-          'customer_phone': phone,
-          'pickup': _pickup!.name,
-          'dropoff': _dropoff!.name,
-          'fare': _estimatedFare,
-          'vehicle': _selectedCategory.name,
-        }),
-      ).catchError((_) => http.Response('', 500));
+        body: jsonEncode(ridePayload),
+      );
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final inserted = jsonDecode(res.body) as Map<String, dynamic>;
+        _currentRide = inserted;
+
+        // Start active 1.5s polling loop on OCI
+        _startPollingRideStatus(inserted['id']);
+
+        // Start 300s (5:00 min) countdown timer with auto-expiry
+        _startCountdownTimer();
+
+        // Dispatch alert to OCI driver endpoint
+        http.post(
+          Uri.parse('${AppEnv.apiUrl}/api/ride/request-driver'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'ride_id': inserted['id'],
+            'driver_phone': _defaultAdminPhone,
+            'passenger_name': customerName,
+            'passenger_phone': phone,
+            'pickup_address': _pickup!.name,
+            'dropoff_address': _dropoff!.name,
+            'distance_km': _distanceKm.toStringAsFixed(1),
+            'estimated_fare': _estimatedFare.toString(),
+            'service_type': _selectedCategory.name,
+          }),
+        ).catchError((_) => http.Response('', 500));
+      } else {
+        throw Exception('Server error: ${res.statusCode}');
+      }
     } catch (e) {
       debugPrint('Ride booking error: $e');
       if (mounted) {
@@ -438,11 +440,11 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
         timer.cancel();
         if (_rideState == RideState.searching && mounted) {
           if (_currentRide != null && _currentRide!['id'] != null) {
-            Supabase.instance.client
-                .from('rides')
-                .update({'status': 'expired'})
-                .eq('id', _currentRide!['id'])
-                .catchError((_) => null);
+            http.patch(
+              Uri.parse('${AppEnv.apiUrl}/api/rides/${_currentRide!['id']}/status'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({'status': 'expired'}),
+            ).catchError((_) => http.Response('', 500));
           }
           _cancelSearching('Ride Request Expired (5:00 mins)\n\nNo driver accepted your request within 5 minutes. Please try again.');
         }
@@ -456,14 +458,12 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) async {
       try {
-        final data = await Supabase.instance.client
-            .from('rides')
-            .select('*')
-            .eq('id', rideId)
-            .maybeSingle();
-
-        if (data != null && mounted) {
-          _handleRideStatusUpdate(data);
+        final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/rides/$rideId'));
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          if (mounted) {
+            _handleRideStatusUpdate(data);
+          }
         }
       } catch (_) {}
     });
@@ -509,11 +509,16 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
   Future<void> _cancelSearching([String? msg]) async {
     _pollingTimer?.cancel();
     _countdownTimer?.cancel();
-    if (_currentRide != null) {
-      await Supabase.instance.client
-          .from('rides')
-          .update({'status': 'cancelled'})
-          .eq('id', _currentRide!['id']);
+    if (_currentRide != null && _currentRide!['id'] != null) {
+      http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/rides/cancel'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'ride_id': _currentRide!['id'],
+          'reason': msg ?? 'Passenger Cancelled',
+          'cancelled_by': 'passenger'
+        }),
+      ).catchError((_) => http.Response('', 500));
     }
     setState(() {
       _rideState = RideState.idle;
@@ -577,6 +582,17 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () {
+                      if (_currentRide != null && _currentRide!['id'] != null) {
+                        http.post(
+                          Uri.parse('${AppEnv.apiUrl}/api/rides/rate'),
+                          headers: {'Content-Type': 'application/json'},
+                          body: jsonEncode({
+                            'ride_id': _currentRide!['id'],
+                            'rating': _ratingStars,
+                            'review': _feedbackController.text.trim(),
+                          }),
+                        ).catchError((_) => http.Response('', 500));
+                      }
                       Navigator.pop(ctx);
                       setState(() {
                         _rideState = RideState.idle;

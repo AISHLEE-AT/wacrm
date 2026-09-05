@@ -1,5 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/gameo_supabase.dart';
+import '../core/env.dart';
 
 class OfflineSyncService {
   // Two separate point pools
@@ -39,8 +41,7 @@ class OfflineSyncService {
     return testo + farm;
   }
 
-  /// Syncs both point pools to Gameo Supabase.
-  /// Calls the updated sync_offline_points RPC with two buckets.
+  /// Syncs both point pools to OCI Cloud.
   static Future<bool> syncPointsToServer(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final testoPoints = prefs.getInt(_testoPointsKey) ?? 0;
@@ -49,25 +50,26 @@ class OfflineSyncService {
     if (testoPoints <= 0 && farmPoints <= 0) return true; // Nothing to sync
 
     try {
-      final response = await GameOSupabase.client.rpc(
-        'sync_offline_points',
-        params: {
-          'p_user_id': userId,
-          'p_testo_points': testoPoints,
-          'p_farm_points': farmPoints,
-        },
-      );
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/gameo/sync'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'testo_points': testoPoints,
+          'farm_points': farmPoints,
+        }),
+      ).timeout(const Duration(seconds: 4));
 
-      if (response != null && response['success'] == true) {
-        // Clear local caches on success
-        await prefs.setInt(_testoPointsKey, 0);
-        await prefs.setInt(_farmPointsKey, 0);
-        return true;
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true) {
+          await prefs.setInt(_testoPointsKey, 0);
+          await prefs.setInt(_farmPointsKey, 0);
+          return true;
+        }
       }
       return false;
-    } catch (e) {
-      // ignore: avoid_print
-      print('Sync Error: $e');
+    } catch (_) {
       return false;
     }
   }

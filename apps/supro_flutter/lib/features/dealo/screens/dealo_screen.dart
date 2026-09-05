@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MarketListing {
@@ -81,7 +83,6 @@ class DealoScreen extends StatefulWidget {
 }
 
 class _DealoScreenState extends State<DealoScreen> {
-  final supabase = Supabase.instance.client;
   List<MarketListing> _listings = [];
   bool _isLoading = true;
   String _searchQuery = '';
@@ -91,8 +92,6 @@ class _DealoScreenState extends State<DealoScreen> {
 
   String? _currentUserPhone;
   String? _currentUserId;
-
-  RealtimeChannel? _listingsChannel;
 
   final List<Map<String, String>> _categories = [
     {'id': 'all', 'label': 'All Items', 'labelTa': 'அனைத்தும்', 'icon': '🌟'},
@@ -117,56 +116,37 @@ class _DealoScreenState extends State<DealoScreen> {
     super.initState();
     _loadUserContext();
     _fetchListings();
-    _subscribeToListings();
   }
 
   Future<void> _loadUserContext() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _currentUserPhone = prefs.getString('user_phone') ?? supabase.auth.currentUser?.phone;
-      _currentUserId = supabase.auth.currentUser?.id;
+      _currentUserPhone = prefs.getString('user_phone');
+      _currentUserId = prefs.getString('user_id');
     });
   }
 
   Future<void> _fetchListings() async {
     setState(() => _isLoading = true);
     try {
-      final data = await supabase
-          .from('market_listings')
-          .select('*')
-          .order('created_at', ascending: false);
+      final res = await http.get(
+        Uri.parse('${AppEnv.apiUrl}/api/dealo/listings'),
+      ).timeout(const Duration(seconds: 5));
 
-      if (mounted) {
-        setState(() {
-          _listings = (data as List).map((i) => MarketListing.fromJson(i)).toList();
-          _isLoading = false;
-        });
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (mounted) {
+          setState(() {
+            _listings = (data as List).map((i) => MarketListing.fromJson(i)).toList();
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _subscribeToListings() {
-    _listingsChannel = supabase
-        .channel('public:market_listings')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'market_listings',
-          callback: (payload) {
-            _fetchListings();
-          },
-        )
-        .subscribe();
-  }
-
-  @override
-  void dispose() {
-    if (_listingsChannel != null) {
-      supabase.removeChannel(_listingsChannel!);
-    }
-    super.dispose();
   }
 
   void _openWhatsApp(MarketListing item) async {
@@ -219,7 +199,11 @@ class _DealoScreenState extends State<DealoScreen> {
 
   void _markSold(String id) async {
     try {
-      await supabase.from('market_listings').update({'status': 'sold'}).eq('id', id);
+      await http.patch(
+        Uri.parse('${AppEnv.apiUrl}/api/dealo/listings/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status': 'sold'}),
+      ).timeout(const Duration(seconds: 4));
       _fetchListings();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -800,30 +784,38 @@ class _ListGoodsBottomSheetState extends State<_ListGoodsBottomSheet> {
     setState(() => _isSubmitting = true);
 
     try {
-      final supabase = Supabase.instance.client;
       final prefs = await SharedPreferences.getInstance();
-      final phone = prefs.getString('user_phone') ?? supabase.auth.currentUser?.phone ?? '6381029380';
+      final phone = prefs.getString('user_phone') ?? '6381029380';
       final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       final last10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
       final name = prefs.getString('user_name') ?? 'Local Trader / உழவர்';
+      final userId = prefs.getString('user_id') ?? 'user_$last10';
 
-      await supabase.from('market_listings').insert({
-        'user_id': supabase.auth.currentUser?.id,
-        'seller_name': name,
-        'seller_phone': last10,
-        'seller_whatsapp': last10,
-        'seller_upi': _upiController.text.trim().isNotEmpty ? _upiController.text.trim() : '$last10@upi',
-        'title': _titleController.text.trim(),
-        'category': _selectedCategory,
-        'price': int.tryParse(_priceController.text.trim()) ?? 0,
-        'unit': _selectedUnit,
-        'quantity': int.tryParse(_quantityController.text.trim()) ?? 1,
-        'description': _descController.text.trim(),
-        'pincode': _pincodeController.text.trim().replaceAll(RegExp(r'\D'), '').substring(0, 6),
-        'district': _locationController.text.split(',').length > 1 ? _locationController.text.split(',')[1].trim() : 'Thanjavur',
-        'location_name': _locationController.text.trim(),
-        'status': 'pending',
-      });
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/dealo/listings'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'seller_name': name,
+          'seller_phone': last10,
+          'seller_whatsapp': last10,
+          'seller_upi': _upiController.text.trim().isNotEmpty ? _upiController.text.trim() : '$last10@upi',
+          'title': _titleController.text.trim(),
+          'category': _selectedCategory,
+          'price': int.tryParse(_priceController.text.trim()) ?? 0,
+          'unit': _selectedUnit,
+          'quantity': int.tryParse(_quantityController.text.trim()) ?? 1,
+          'description': _descController.text.trim(),
+          'pincode': _pincodeController.text.trim().replaceAll(RegExp(r'\D'), '').substring(0, 6),
+          'district': _locationController.text.split(',').length > 1 ? _locationController.text.split(',')[1].trim() : 'Thanjavur',
+          'location_name': _locationController.text.trim(),
+          'status': 'pending',
+        }),
+      ).timeout(const Duration(seconds: 5));
+
+      if (res.statusCode != 200) {
+        throw Exception('Failed to save listing: ${res.body}');
+      }
 
       if (mounted) {
         Navigator.pop(context);

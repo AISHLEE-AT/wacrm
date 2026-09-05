@@ -1,7 +1,8 @@
-import '../core/gameo_supabase.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../core/env.dart';
 
-/// Handles fetching balances and redeeming game rewards for portal coupons.
+/// Handles fetching balances and redeeming game rewards for portal coupons via OCI.
 class RewardsService {
   // --- Reward Tiers ---
   static const List<RewardTier> studentRewards = [
@@ -9,7 +10,7 @@ class RewardsService {
       id: 'testo_mock_test',
       title: 'Testo Mock Test',
       description: '1 free full mock exam session on Testo',
-      icon: '??',
+      icon: '🎯',
       pointsCost: 100,
       rewardType: 'testo',
       color: 0xFF8B5CF6,
@@ -18,7 +19,7 @@ class RewardsService {
       id: 'testo_premium_week',
       title: 'Testo Premium (7 Days)',
       description: '7-day premium access to all study materials',
-      icon: '??',
+      icon: '⭐',
       pointsCost: 500,
       rewardType: 'testo',
       color: 0xFF6D28D9,
@@ -30,86 +31,80 @@ class RewardsService {
       id: 'farm_discount_10',
       title: '10% Farm Input Discount',
       description: '10% off your next portal farm input order',
-      icon: '??',
+      icon: '🌾',
       pointsCost: 200,
       rewardType: 'farm',
       color: 0xFF10B981,
     ),
     RewardTier(
       id: 'free_seed_pack',
-      title: 'Free Seed Pack (?100)',
-      description: '?100 seed voucher applied to your cart',
-      icon: '??',
+      title: 'Free Seed Pack (₹100)',
+      description: '₹100 seed voucher applied to your cart',
+      icon: '🌱',
       pointsCost: 500,
       rewardType: 'farm',
       color: 0xFF059669,
     ),
   ];
 
-  /// Fetches the user's live Testo Credits and Farm Points from Gameo DB.
+  /// Fetches the user's live Testo Credits and Farm Points from OCI backend.
   static Future<UserBalance> getUserBalance(String userId) async {
     try {
-      final response = await GameOSupabase.client.rpc(
-        'get_user_balance',
-        params: {'p_user_id': userId},
-      );
-      if (response != null) {
+      final res = await http.get(
+        Uri.parse('${AppEnv.apiUrl}/api/gameo/balance?user_id=$userId'),
+      ).timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
         return UserBalance(
-          testoPoints: (response['testo_points'] as num?)?.toInt() ?? 0,
-          farmPoints: (response['farm_points'] as num?)?.toInt() ?? 0,
+          testoPoints: (data['testo_points'] as num?)?.toInt() ?? 0,
+          farmPoints: (data['farm_points'] as num?)?.toInt() ?? 0,
         );
       }
-    } catch (e) {
-      // ignore: avoid_print
-      print('Balance fetch error: $e');
-    }
-    return UserBalance(testoPoints: 0, farmPoints: 0);
+    } catch (_) {}
+    return const UserBalance(testoPoints: 0, farmPoints: 0);
   }
 
   /// Redeems a reward and returns a unique coupon code.
-  /// Returns null if the redemption fails (e.g., insufficient points).
   static Future<String?> redeemReward({
     required String userId,
     required RewardTier reward,
   }) async {
     try {
-      final response = await GameOSupabase.client.rpc(
-        'redeem_points',
-        params: {
-          'p_user_id': userId,
-          'p_reward_id': reward.id,
-          'p_reward_type': reward.rewardType,
-          'p_points_cost': reward.pointsCost,
-        },
-      );
-      if (response != null && response['success'] == true) {
-        return response['coupon_code'] as String?;
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/gameo/redeem'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'reward_id': reward.id,
+          'reward_type': reward.rewardType,
+          'points_cost': reward.pointsCost,
+        }),
+      ).timeout(const Duration(seconds: 4));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['success'] == true) {
+          return data['coupon_code'] as String?;
+        }
       }
-    } catch (e) {
-      // ignore: avoid_print
-      print('Redemption error: $e');
-    }
+    } catch (_) {}
     return null;
   }
 
-  /// Fetches all previously generated coupons for this user.
+  /// Fetches all previously generated coupons for this user from OCI backend.
   static Future<List<GameCoupon>> getUserCoupons(String userId) async {
     try {
-      final response = await GameOSupabase.client
-          .from('game_rewards')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false)
-          .limit(20);
+      final res = await http.get(
+        Uri.parse('${AppEnv.apiUrl}/api/gameo/coupons?user_id=$userId'),
+      ).timeout(const Duration(seconds: 4));
 
-      return (response as List)
-          .map((row) => GameCoupon.fromJson(row))
-          .toList();
-    } catch (e) {
-      // ignore: avoid_print
-      print('Coupon fetch error: $e');
-      return [];
-    }
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((row) => GameCoupon.fromJson(row)).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
   /// Generates the portal deep link URL for a coupon.

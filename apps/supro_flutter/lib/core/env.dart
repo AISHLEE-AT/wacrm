@@ -15,8 +15,4 @@ class AppEnv {
 
   // ─── Payment Configuration ───
   static const String adminUpi = '6381029380@hdfcbank';
-
-  // ─── Supabase Project Refs (Secondary Fallbacks) ───
-  static const String supabaseUrl = 'https://gmahjdzqitbomtmdzlfp.supabase.co';
-  static const String lmsSupabaseUrl = 'https://jjgdatjthyeesmgunnlp.supabase.co';
 }

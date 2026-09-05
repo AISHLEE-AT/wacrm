@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/rewards_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/env.dart';
 
 class RewardsScreen extends StatefulWidget {
@@ -21,10 +21,8 @@ class _RewardsScreenState extends State<RewardsScreen>
   bool _isLoading = true;
   String? _redeemingId;
 
-  // Get user ID from main Supabase auth — used as TEXT key in Gameo DB
-  String? get _userId => Supabase.instance.client.auth.currentUser?.id;
-
-  bool get _isLoggedIn => _userId != null;
+  String? _userId;
+  bool get _isLoggedIn => _userId != null && _userId!.isNotEmpty;
 
   @override
   void initState() {
@@ -40,7 +38,9 @@ class _RewardsScreenState extends State<RewardsScreen>
   }
 
   Future<void> _loadData() async {
-    if (!_isLoggedIn) return; // Skip if not authenticated yet
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString('user_phone');
+    _userId = prefs.getString('user_id') ?? (phone != null ? 'user_$phone' : 'demo_user');
     setState(() => _isLoading = true);
     final balance = await RewardsService.getUserBalance(_userId!);
     final coupons = await RewardsService.getUserCoupons(_userId!);

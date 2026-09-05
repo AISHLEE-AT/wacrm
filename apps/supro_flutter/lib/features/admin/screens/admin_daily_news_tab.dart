@@ -104,7 +104,7 @@ class _AdminDailyNewsTabState extends State<AdminDailyNewsTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Color(0xFFef4444),
-            content: Text('❌ Publish failed. Check Supabase connection.'),
+            content: Text('❌ Publish failed. Check OCI Cloud connection.'),
           ),
         );
       }
@@ -119,7 +119,7 @@ class _AdminDailyNewsTabState extends State<AdminDailyNewsTab> {
         title: const Text('Clear Today\'s News?',
             style: TextStyle(color: Colors.white)),
         content: const Text(
-            'This will remove all today\'s news from Supabase. Users will see empty feeds until you re-publish.',
+            'This will remove all today\'s news from OCI Cloud. Users will see empty feeds until you re-publish.',
             style: TextStyle(color: Color(0xFF94a3b8))),
         actions: [
           TextButton(
@@ -146,7 +146,7 @@ class _AdminDailyNewsTabState extends State<AdminDailyNewsTab> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Color(0xFF334155),
-            content: Text('🗑️ Today\'s news cleared from Supabase.'),
+            content: Text('🗑️ Today\'s news cleared from OCI Cloud.'),
           ),
         );
       }

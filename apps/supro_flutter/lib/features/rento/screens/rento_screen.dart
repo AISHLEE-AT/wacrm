@@ -5,8 +5,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
+import '../../../core/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RentalItem {
@@ -298,32 +300,35 @@ class _RentoScreenState extends State<RentoScreen> with SingleTickerProviderStat
       }
     });
 
-    // Save to Supabase
+    // Save to OCI Backend
     try {
-      final supabase = Supabase.instance.client;
       final prefs = await SharedPreferences.getInstance();
       final phone = prefs.getString('user_phone') ?? '919344532738';
       final name = prefs.getString('user_name') ?? 'SuprO Customer';
       final bookingCode = 'RENTO-${1000 + Random().nextInt(9000)}';
 
-      final res = await supabase.from('rento_bookings').insert({
-        'user_id': supabase.auth.currentUser?.id,
-        'booking_code': bookingCode,
-        'user_name': name,
-        'user_phone': phone,
-        'vehicle_type': _selectedItem.name,
-        'category': _activeTab,
-        'pickup_location': {'lat': _location.latitude, 'lng': _location.longitude, 'address': _pickupAddress},
-        'dropoff_location': {'lat': _dropoffLocation.latitude, 'lng': _dropoffLocation.longitude, 'address': _dropoffAddress},
-        'quantity': _quantityCount,
-        'unit': _selectedItem.unit,
-        'total_fare': _estimatedFare,
-        'payment_mode': _paymentMode,
-        'status': 'searching',
-      }).select().maybeSingle();
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/rento/bookings'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'machinery_id': _selectedItem.id,
+          'customer_name': name,
+          'customer_phone': phone,
+          'booking_location': _pickupAddress,
+          'booking_date': DateTime.now().toIso8601String(),
+          'booking_code': bookingCode,
+          'vehicle_type': _selectedItem.name,
+          'category': _activeTab,
+          'quantity': _quantityCount,
+          'unit': _selectedItem.unit,
+          'total_fare': _estimatedFare,
+          'payment_mode': _paymentMode,
+          'status': 'searching',
+        }),
+      ).timeout(const Duration(seconds: 4));
 
-      if (res != null) {
-        _activeBooking = res;
+      if (res.statusCode == 200) {
+        _activeBooking = jsonDecode(res.body);
       }
     } catch (_) {}
   }

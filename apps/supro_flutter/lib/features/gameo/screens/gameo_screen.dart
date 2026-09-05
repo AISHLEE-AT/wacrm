@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/env.dart';
 
 class TurfZone {
   final int id;
@@ -230,19 +233,29 @@ class _GameoScreenState extends State<GameoScreen> {
     
     try {
       final nitroToSpend = (_nitroPoints ~/ 10) * 10;
-      final response = await Supabase.instance.client.rpc('convert_nitro_to_supro', params: {
-        'user_id': '11111111-1111-1111-1111-111111111111',
-        'nitro_spent': nitroToSpend
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id') ?? '11111111-1111-1111-1111-111111111111';
       
-      if (response != null && response['success'] == true) {
-        setState(() {
-          _nitroPoints = response['new_nitro_balance'];
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Successfully synced! Gained ${response['supro_gained']} SuprO Coins.')),
-          );
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/gameo/convert'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'nitro_spent': nitroToSpend,
+        }),
+      );
+
+      if (res.statusCode == 200) {
+        final response = jsonDecode(res.body);
+        if (response != null && response['success'] == true) {
+          setState(() {
+            _nitroPoints = response['new_nitro_balance'] ?? 0;
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Successfully synced! Gained ${response['supro_gained']} SuprO Coins.')),
+            );
+          }
         }
       }
     } catch (e) {

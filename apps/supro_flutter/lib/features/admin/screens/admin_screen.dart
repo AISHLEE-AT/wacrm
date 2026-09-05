@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/env.dart';
 import 'admin_daily_news_tab.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -13,7 +15,6 @@ class AdminScreen extends StatefulWidget {
 
 class _AdminScreenState extends State<AdminScreen> {
   int _currentIndex = 0;
-  final SupabaseClient _supabase = Supabase.instance.client;
 
   // Inbox & Data States
   List<dynamic> _recentMessages = [];
@@ -39,24 +40,28 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _fetchAdminData() async {
     setState(() => _isLoading = true);
     try {
-      // 1. Fetch recent rides
-      final rides = await _supabase
-          .from('rides')
-          .select('*')
-          .order('created_at', ascending: false)
-          .limit(20);
+      // 1. Fetch recent rides from OCI
+      List<dynamic> rides = [];
+      try {
+        final ridesRes = await http.get(Uri.parse('${AppEnv.apiUrl}/api/rides')).timeout(const Duration(seconds: 4));
+        if (ridesRes.statusCode == 200) {
+          rides = jsonDecode(ridesRes.body);
+        }
+      } catch (_) {}
 
-      // 2. Fetch drivers
-      final drivers = await _supabase
-          .from('drivers')
-          .select('*')
-          .order('created_at', ascending: false)
-          .limit(20);
+      // 2. Fetch drivers from OCI
+      List<dynamic> drivers = [];
+      try {
+        final driversRes = await http.get(Uri.parse('${AppEnv.apiUrl}/api/drivers')).timeout(const Duration(seconds: 4));
+        if (driversRes.statusCode == 200) {
+          drivers = jsonDecode(driversRes.body);
+        }
+      } catch (_) {}
 
       if (mounted) {
         setState(() {
-          _pendingRides = rides as List<dynamic>;
-          _driverPartners = drivers as List<dynamic>;
+          _pendingRides = rides;
+          _driverPartners = drivers;
           _recentMessages = [
             {
               'phone': '919344532738',

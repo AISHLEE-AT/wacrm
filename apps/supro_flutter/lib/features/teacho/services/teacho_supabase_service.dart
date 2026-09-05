@@ -1,9 +1,5 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-const String _teachoSupabaseUrl = 'https://jjgdatjthyeesmgunnlp.supabase.co';
-const String _teachoSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqZ2RhdGp0aHllZXNtZ3VubmxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MzU5NTYsImV4cCI6MjEwMDIxMTk1Nn0.iuSdvxW9VEtn_1yVLmf9ZN24CeXFxmF3aeVHEn-Dgcs';
 
 class StudyNoteSection {
   final String sectionTitle;
@@ -297,13 +293,6 @@ class LessonContent {
 }
 
 class TeachoSupabaseService {
-  static SupabaseClient? _client;
-
-  static SupabaseClient get client {
-    _client ??= SupabaseClient(_teachoSupabaseUrl, _teachoSupabaseAnonKey);
-    return _client!;
-  }
-
   static Future<LessonContent?> fetchLessonContent({
     required String courseId,
     required int dayNumber,
@@ -312,29 +301,6 @@ class TeachoSupabaseService {
     required String courseTitle,
     String? explicitTopicKey,
   }) async {
-    final candidateKeys = [
-      explicitTopicKey,
-      '${courseId}_day_${dayNumber}_task_1',
-      '${courseId}_day_$dayNumber',
-      '${courseTitle.toLowerCase().replaceAll(RegExp(r'[^a-z0-9_]'), '_')}_day_$dayNumber',
-    ].where((k) => k != null && k.isNotEmpty).cast<String>().toList();
-
-    // 1. Try Supabase Cache
-    try {
-      for (final key in candidateKeys) {
-        final res = await client
-            .from('kindle_content_cache')
-            .select('kindle_json')
-            .eq('topic_key', key)
-            .maybeSingle();
-
-        if (res != null && res['kindle_json'] is Map<String, dynamic>) {
-          return LessonContent.fromMap(res['kindle_json'] as Map<String, dynamic>);
-        }
-      }
-    } catch (e) {
-      // Non-blocking fallback
-    }
 
     // 2. Try Cloudflare R2 Primary DB Direct Fetch
     if (courseId.isNotEmpty) {

@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter/services.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -136,15 +135,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             await prefs.setString('gemini_api_key', cleanVal);
             await _secureStorage.write(key: 'gemini-api-key', value: cleanVal);
             await _secureStorage.write(key: 'gemini_api_key', value: cleanVal);
-
-            try {
-              final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-              final tenDigit = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-              await Supabase.instance.client
-                  .from('profiles')
-                  .update({'gemini_api_key': cleanVal})
-                  .or('phone.ilike.%$tenDigit%,whatsapp.ilike.%$tenDigit%');
-            } catch (_) {}
           }
         }
       }
@@ -261,9 +251,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         else
                           Row(
                             children: [
-                              Text(
-                                _nameState,
-                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                              Flexible(
+                                child: Text(
+                                  _nameState,
+                                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               GestureDetector(
@@ -855,32 +848,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(LucideIcons.messageSquare, color: Color(0xFF10B981), size: 20),
                     ),
-                    child: const Icon(LucideIcons.messageSquare, color: Color(0xFF10B981), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'WHATSAPP 24H LIVE WINDOW',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'WHATSAPP 24H LIVE WINDOW',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            'Meta CRM & Instant Alerts',
+                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Meta CRM & Instant Alerts',
-                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(

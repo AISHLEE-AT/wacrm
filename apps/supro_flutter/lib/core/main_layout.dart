@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'env.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -37,30 +39,36 @@ class _MainLayoutState extends State<MainLayout> {
 
   Future<void> _sendHeartbeat() async {
     try {
-      final supabase = Supabase.instance.client;
-      final user = supabase.auth.currentUser;
-      if (user == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      final phone = prefs.getString('user_phone');
+      if (phone == null || phone.isEmpty) return;
 
       final nowIso = DateTime.now().toIso8601String();
-      await supabase.from('profiles').update({'updated_at': nowIso}).eq('id', user.id);
+      await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'phone': phone, 'updated_at': nowIso}),
+      ).timeout(const Duration(seconds: 4));
     } catch (_) {}
   }
 
   void _trackLocation(String location) async {
-    // Only track actual core modules
     const modules = ['/ride', '/admin', '/driveo', '/dealo', '/teacho', '/rento', '/agro', '/touro', '/testo', '/tvo', '/moneyo', '/gameo'];
     if (modules.contains(location)) {
       try {
-        final supabase = Supabase.instance.client;
-        final user = supabase.auth.currentUser;
-        if (user != null) {
-          await supabase.from('profiles').update({'default_module': location}).eq('id', user.id);
+        final prefs = await SharedPreferences.getInstance();
+        final phone = prefs.getString('user_phone');
+        if (phone != null && phone.isNotEmpty) {
+          await http.post(
+            Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone, 'default_module': location}),
+          ).timeout(const Duration(seconds: 4));
         }
-      } catch (e) {
-        // ignore errors silently
-      }
+      } catch (_) {}
     }
   }
+
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
@@ -101,7 +109,6 @@ class _MainLayoutState extends State<MainLayout> {
     // Track location changes
     if (location != _lastTrackedLocation) {
       _lastTrackedLocation = location;
-      // Use microtask to avoid side effects during build phase
       Future.microtask(() => _trackLocation(location));
     }
     
@@ -121,7 +128,7 @@ class _MainLayoutState extends State<MainLayout> {
     else if (location.startsWith('/ride')) { moduleLabel = 'RideO'; moduleIcon = LucideIcons.car; }
     else if (location.startsWith('/gameo')) { moduleLabel = 'GameO'; moduleIcon = LucideIcons.gamepad2; }
     else if (location.startsWith('/gaming_hub')) { moduleLabel = 'GameHub'; moduleIcon = LucideIcons.library; }
-    else if (location.startsWith('/ai_hub')) { moduleLabel = 'AI Hub'; moduleIcon = LucideIcons.bot; }
+    else if (location.startsWith('/ai_hub')) { moduleLabel = 'AI Bot'; moduleIcon = LucideIcons.bot; }
     else if (location.startsWith('/rento')) { moduleLabel = 'RentO'; moduleIcon = LucideIcons.wrench; }
 
     return Scaffold(

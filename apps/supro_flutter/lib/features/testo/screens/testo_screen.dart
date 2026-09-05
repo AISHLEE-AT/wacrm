@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'package:http/http.dart' as http;
+import '../../../core/env.dart';
 import '../../teacho/screens/teacho_player_sheet.dart';
 
 class TestoScreen extends StatefulWidget {
@@ -377,11 +378,13 @@ class _TestoScreenState extends State<TestoScreen> {
 
   Future<void> _fetchTests() async {
     try {
-      final response = await Supabase.instance.client
-          .from('unified_master_data')
-          .select('*')
-          .eq('item_type', 'o_test')
-          .limit(2000);
+      List<dynamic> response = [];
+      try {
+        final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/testo/tests')).timeout(const Duration(seconds: 4));
+        if (res.statusCode == 200) {
+          response = jsonDecode(res.body);
+        }
+      } catch (_) {}
 
       Map<String, List<dynamic>> groups = {};
 

@@ -1,61 +1,57 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/env.dart';
 import '../models/daily_news_item.dart';
 
-/// Supabase CRUD service for the daily_news table.
-/// Admin writes once; all users read throughout the day.
+/// OCI Cloud Service for the daily news.
+/// 100% OCI Backend (https://mysupro.duckdns.org/api/news)
 class DailyNewsSupabaseService {
-  static final _client = Supabase.instance.client;
-
   // ─── READ ───────────────────────────────────────────────────────────────────
 
-  /// Fetch latest news for a specific module — last 1 day (not today-only)
+  /// Fetch latest news for a specific module
   static Future<List<DailyNewsItem>> fetchNewsForModule(String module) async {
     try {
-      final yesterday = _yesterdayString();
-      final data = await _client
-          .from('daily_news')
-          .select()
-          .eq('module', module)
-          .gte('loaded_date', yesterday)       // ← last 1 day tolerance
-          .order('loaded_date', ascending: false)
-          .order('created_at', ascending: true)
-          .limit(30);
+      final res = await http.get(
+        Uri.parse('${AppEnv.apiUrl}/api/news?module=$module'),
+      ).timeout(const Duration(seconds: 4));
 
-      return (data as List).map((e) => DailyNewsItem.fromJson(e)).toList();
-    } catch (e) {
-      print('DailyNewsService fetchNewsForModule error: $e');
-      return [];
-    }
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as List;
+        return data.map((e) => DailyNewsItem.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
-  /// Fetch ALL latest news (last 1 day) — admin preview
+  /// Fetch ALL latest news — admin preview
   static Future<List<DailyNewsItem>> fetchAllTodayNews() async {
     try {
-      final yesterday = _yesterdayString();
-      final data = await _client
-          .from('daily_news')
-          .select()
-          .gte('loaded_date', yesterday)
-          .order('loaded_date', ascending: false)
-          .order('module', ascending: true);
+      final res = await http.get(
+        Uri.parse('${AppEnv.apiUrl}/api/news'),
+      ).timeout(const Duration(seconds: 4));
 
-      return (data as List).map((e) => DailyNewsItem.fromJson(e)).toList();
-    } catch (e) {
-      print('DailyNewsService fetchAllTodayNews error: $e');
-      return [];
-    }
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as List;
+        return data.map((e) => DailyNewsItem.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
   }
 
   // ─── WRITE (Admin only) ──────────────────────────────────────────────────────
 
-  /// Bulk-insert a list of news items into Supabase
+  /// Bulk-insert a list of news items into OCI Backend
   static Future<bool> saveNewsItems(List<DailyNewsItem> items) async {
     try {
       final payload = items.map((e) => e.toJson()).toList();
-      await _client.from('daily_news').insert(payload);
-      return true;
-    } catch (e) {
-      print('DailyNewsService saveNewsItems error: $e');
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/news/bulk'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      ).timeout(const Duration(seconds: 6));
+
+      return res.statusCode == 200;
+    } catch (_) {
       return false;
     }
   }
@@ -63,11 +59,12 @@ class DailyNewsSupabaseService {
   /// Delete ALL of today's news (admin reset before re-loading)
   static Future<bool> deleteTodayNews() async {
     try {
-      final today = _todayString();
-      await _client.from('daily_news').delete().eq('loaded_date', today);
-      return true;
-    } catch (e) {
-      print('DailyNewsService deleteTodayNews error: $e');
+      final res = await http.delete(
+        Uri.parse('${AppEnv.apiUrl}/api/news/today'),
+      ).timeout(const Duration(seconds: 4));
+
+      return res.statusCode == 200;
+    } catch (_) {
       return false;
     }
   }
@@ -75,28 +72,13 @@ class DailyNewsSupabaseService {
   /// Delete today's news for a specific module only
   static Future<bool> deleteModuleNews(String module) async {
     try {
-      final today = _todayString();
-      await _client
-          .from('daily_news')
-          .delete()
-          .eq('module', module)
-          .eq('loaded_date', today);
-      return true;
-    } catch (e) {
-      print('DailyNewsService deleteModuleNews error: $e');
+      final res = await http.delete(
+        Uri.parse('${AppEnv.apiUrl}/api/news/today?module=$module'),
+      ).timeout(const Duration(seconds: 4));
+
+      return res.statusCode == 200;
+    } catch (_) {
       return false;
     }
-  }
-
-  // ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-  static String _todayString() {
-    final now = DateTime.now();
-    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-  }
-
-  static String _yesterdayString() {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
   }
 }

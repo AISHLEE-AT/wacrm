@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/env.dart';
 
@@ -19,13 +18,17 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
   @override
   void initState() {
     super.initState();
-    
-    final session = Supabase.instance.client.auth.currentSession;
+    _initWebView();
+  }
+
+  void _initWebView() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('oci_auth_token') ?? '';
+    final phone = prefs.getString('user_phone') ?? '';
+
     String authQueryParams = '?embed=true';
-    if (session != null) {
-      final token = session.accessToken;
-      final refresh = session.refreshToken ?? '';
-      authQueryParams += '&access_token=$token&refresh_token=$refresh';
+    if (token.isNotEmpty) {
+      authQueryParams += '&access_token=$token&phone=$phone';
     }
 
     final targetUrl = '${AppEnv.crmUrl}/inbox$authQueryParams';
@@ -51,9 +54,9 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 } else if (url.startsWith('whatsapp://send')) {
                   final uriParsed = Uri.parse(url);
-                  final phone = uriParsed.queryParameters['phone'] ?? '';
+                  final p = uriParsed.queryParameters['phone'] ?? '';
                   final text = uriParsed.queryParameters['text'] ?? '';
-                  final fallbackUri = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(text)}');
+                  final fallbackUri = Uri.parse('https://wa.me/$p?text=${Uri.encodeComponent(text)}');
                   await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
                 }
               } catch (e) {
@@ -64,9 +67,11 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
             return NavigationDecision.navigate;
           },
           onPageFinished: (String url) async {
-            setState(() {
-              _isLoading = false;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
             
             // Hide web app nav sidebar to make it feel native
             final js = '''

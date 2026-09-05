@@ -1,94 +1,171 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
 
-
 import '../../../core/env.dart';
 
-final supabaseClientProvider = Provider<SupabaseClient>((ref) {
-  return Supabase.instance.client;
+// ─── OCI User Model ──────────────────────────────────────────────────────────
+class OciUser {
+  final String id;
+  final String phone;
+  final String role;
+  final String category;
+  final Map<String, dynamic> userMetadata;
+
+  OciUser({
+    required this.id,
+    required this.phone,
+    required this.role,
+    required this.category,
+    Map<String, dynamic>? userMetadata,
+  }) : userMetadata = userMetadata ?? {'role': role, 'category': category};
+}
+
+// ─── OCI Auth State ──────────────────────────────────────────────────────────
+class OciAuthState {
+  final bool isLoggedIn;
+  final String? token;
+  final OciUser? user;
+
+  const OciAuthState({
+    this.isLoggedIn = false,
+    this.token,
+    this.user,
+  });
+
+  String? get phone => user?.phone;
+
+  OciAuthState copyWith({
+    bool? isLoggedIn,
+    String? token,
+    OciUser? user,
+  }) => OciAuthState(
+    isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+    token: token ?? this.token,
+    user: user ?? this.user,
+  );
+}
+
+// ─── Auth State Notifier (Riverpod 3 Notifier) ────────────────────────────────
+class OciAuthNotifier extends Notifier<OciAuthState> {
+  @override
+  OciAuthState build() {
+    _loadFromPrefs();
+    return const OciAuthState();
+  }
+
+  Future<void> _loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('oci_auth_token');
+    final phone = prefs.getString('user_phone');
+    final userId = prefs.getString('user_id') ?? 'user_$phone';
+    final role = prefs.getString('user_role') ?? 'user';
+    final category = prefs.getString('user_category') ?? 'Traveller';
+
+    if (token != null && phone != null) {
+      state = OciAuthState(
+        isLoggedIn: true,
+        token: token,
+        user: OciUser(
+          id: userId,
+          phone: phone,
+          role: role,
+          category: category,
+        ),
+      );
+    }
+  }
+
+  Future<void> setLoggedIn({
+    required String token,
+    required String phone,
+    String? userId,
+    String? role,
+    String? category,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('oci_auth_token', token);
+    await prefs.setString('user_phone', phone);
+    if (userId != null) await prefs.setString('user_id', userId);
+    if (role != null) await prefs.setString('user_role', role);
+    if (category != null) await prefs.setString('user_category', category);
+
+    final resolvedId = userId ?? 'user_$phone';
+    final resolvedRole = role ?? 'user';
+    final resolvedCat = category ?? 'Traveller';
+
+    state = OciAuthState(
+      isLoggedIn: true,
+      token: token,
+      user: OciUser(
+        id: resolvedId,
+        phone: phone,
+        role: resolvedRole,
+        category: resolvedCat,
+      ),
+    );
+  }
+
+  Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('oci_auth_token');
+    await prefs.remove('user_id');
+    await prefs.remove('user_role');
+    await prefs.remove('user_category');
+
+    state = const OciAuthState();
+  }
+}
+
+final ociAuthStateProvider = NotifierProvider<OciAuthNotifier, OciAuthState>(() {
+  return OciAuthNotifier();
 });
 
-final authStateProvider = StreamProvider<AuthState>((ref) {
-  final client = ref.watch(supabaseClientProvider);
-  return client.auth.onAuthStateChange;
+// ─── Backward-compatible Providers ──────────────────────────────────────────
+final currentUserProvider = Provider<OciUser?>((ref) {
+  return ref.watch(ociAuthStateProvider).user;
 });
 
-final currentUserProvider = Provider<User?>((ref) {
-  final authState = ref.watch(authStateProvider).value;
-  return authState?.session?.user;
+final isLoggedInProvider = Provider<bool>((ref) {
+  return ref.watch(ociAuthStateProvider).isLoggedIn;
 });
 
+final currentUserPhoneProvider = Provider<String?>((ref) {
+  return ref.watch(ociAuthStateProvider).phone;
+});
+
+// ─── Auth Controller (API calls) ────────────────────────────────────────────
 class AuthController extends AsyncNotifier<void> {
-  late final SupabaseClient _supabase;
-  final String _apiUrl = '${AppEnv.apiUrl}/api'; 
+  final String _apiUrl = '${AppEnv.apiUrl}/api';
 
   @override
-  FutureOr<void> build() {
-    _supabase = ref.watch(supabaseClientProvider);
-  }
+  FutureOr<void> build() {}
 
   Future<Map<String, dynamic>> checkUser(String phone) async {
     state = const AsyncValue.loading();
     final cleanPhone = phone.replaceAll(RegExp(r'\D'), '').replaceAll(' ', '');
     final clean10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
-    
-    // 1. Try API first with timeout
+
     try {
       final response = await http.get(
         Uri.parse('$_apiUrl/auth/check?phone=$clean10'),
-      ).timeout(const Duration(seconds: 3));
-      
+      ).timeout(const Duration(seconds: 5));
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         state = const AsyncValue.data(null);
         return data;
-      }
-    } catch (_) {
-      // Fallback to direct Supabase query
-    }
-
-    // 2. Direct Supabase Fallback (100% offline-resistant & self-healing)
-    try {
-      final profileRes = await _supabase
-          .from('profiles')
-          .select('id, full_name, main_category, role, pin_hash, gemini_api_key, last_whatsapp_inbound_at')
-          .or('phone.eq.$clean10,phone.eq.91$clean10,phone.ilike.%$clean10%,whatsapp.eq.$clean10,whatsapp.ilike.%$clean10%')
-          .order('updated_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (profileRes != null) {
+      } else {
         state = const AsyncValue.data(null);
-        final lastInboundStr = profileRes['last_whatsapp_inbound_at'];
-        final lastInbound = lastInboundStr != null ? DateTime.tryParse(lastInboundStr.toString()) : null;
-        final isWindowActive = lastInbound != null && DateTime.now().difference(lastInbound).inHours < 24;
-        
         return {
-          'exists': true,
-          'id': profileRes['id'],
-          'name': profileRes['full_name'] ?? 'SuprO User',
-          'full_name': profileRes['full_name'] ?? 'SuprO User',
-          'category': profileRes['main_category'] ?? 'Traveller',
-          'role': profileRes['role'] ?? 'user',
-          'has_pin': profileRes['pin_hash'] != null && profileRes['pin_hash'].toString().isNotEmpty,
-          'gemini_api_key': profileRes['gemini_api_key'],
-          'last_whatsapp_inbound_at': lastInboundStr,
-          'is_whatsapp_session_active': isWindowActive,
-          'whatsapp_window_expires_at': lastInbound?.add(const Duration(hours: 24)).toIso8601String(),
+          'exists': false,
+          'category': 'Traveller',
+          'role': 'user',
+          'has_pin': false,
         };
       }
-
-      state = const AsyncValue.data(null);
-      return {
-        'exists': false,
-        'category': 'Traveller',
-        'role': 'user',
-        'has_pin': false,
-        'is_whatsapp_session_active': false,
-      };
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       return {
@@ -98,10 +175,6 @@ class AuthController extends AsyncNotifier<void> {
         'has_pin': false,
       };
     }
-  }
-
-  Future<void> sendOtp(String phone) async {
-    // UI handles WhatsApp redirect
   }
 
   Future<Map<String, dynamic>> verifyOtp({
@@ -118,16 +191,28 @@ class AuthController extends AsyncNotifier<void> {
         body: json.encode({
           'phone': phone,
           'otp': otp,
-          'fullName': ?fullName,
-          'category': ?category,
+          if (fullName != null) 'fullName': fullName,
+          if (category != null) 'category': category,
         }),
-      );
-      
+      ).timeout(const Duration(seconds: 8));
+
       final data = json.decode(response.body);
       if (response.statusCode == 200) {
-        if (data['session'] != null) {
-          await _supabase.auth.setSession(data['session']['refresh_token']);
+        final token = data['session']?['access_token'] ?? data['token'] ?? '';
+        final userId = data['user']?['id']?.toString() ?? '';
+        final role = data['user']?['role'] ?? 'user';
+        final cat = data['user']?['category'] ?? category ?? 'Traveller';
+
+        if (token.isNotEmpty) {
+          await ref.read(ociAuthStateProvider.notifier).setLoggedIn(
+            token: token,
+            phone: phone,
+            userId: userId,
+            role: role,
+            category: cat,
+          );
         }
+
         state = const AsyncValue.data(null);
         return data;
       } else {
@@ -154,7 +239,8 @@ class AuthController extends AsyncNotifier<void> {
           'pin': pin,
           'confirmPin': confirmPin,
         }),
-      );
+      ).timeout(const Duration(seconds: 8));
+
       final data = json.decode(response.body);
       if (response.statusCode == 200) {
         state = const AsyncValue.data(null);
@@ -174,19 +260,33 @@ class AuthController extends AsyncNotifier<void> {
   }) async {
     state = const AsyncValue.loading();
     try {
+      final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       final response = await http.post(
         Uri.parse('$_apiUrl/auth/pin'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'phone': phone,
+          'phone': cleanPhone,
           'pin': pin,
         }),
-      );
+      ).timeout(const Duration(seconds: 8));
+
       final data = json.decode(response.body);
       if (response.statusCode == 200) {
-        if (data['session'] != null) {
-          await _supabase.auth.setSession(data['session']['refresh_token']);
+        final token = data['session']?['access_token'] ?? data['token'] ?? '';
+        final userId = data['user']?['id']?.toString() ?? '';
+        final role = data['user']?['role'] ?? 'user';
+        final cat = data['user']?['category'] ?? 'Traveller';
+
+        if (token.isNotEmpty) {
+          await ref.read(ociAuthStateProvider.notifier).setLoggedIn(
+            token: token,
+            phone: cleanPhone,
+            userId: userId,
+            role: role,
+            category: cat,
+          );
         }
+
         state = const AsyncValue.data(null);
         return data;
       } else {
@@ -197,9 +297,9 @@ class AuthController extends AsyncNotifier<void> {
       rethrow;
     }
   }
-  
+
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
+    await ref.read(ociAuthStateProvider.notifier).signOut();
   }
 }
 

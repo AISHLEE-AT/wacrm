@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import '../../auth/providers/auth_provider.dart';
 import '../../../core/env.dart';
 
 class DriveoScreen extends ConsumerStatefulWidget {
@@ -17,8 +18,6 @@ class DriveoScreen extends ConsumerStatefulWidget {
 }
 
 class _DriveoScreenState extends ConsumerState<DriveoScreen> {
-  final SupabaseClient _supabase = Supabase.instance.client;
-  
   bool _isLoading = true;
   bool _isOnline = false;
   Map<String, dynamic>? _driverRecord;
@@ -31,7 +30,6 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
   Timer? _pollingTimer;
   Timer? _countdownTimer;
   int _countdownSeconds = 15;
-  RealtimeChannel? _rideChannel;
 
   // OTP inputs for starting trip
   final TextEditingController _otpController = TextEditingController();
@@ -65,9 +63,6 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     _nameController.dispose();
     _regNumberController.dispose();
     _upiController.dispose();
-    if (_rideChannel != null) {
-      _supabase.removeChannel(_rideChannel!);
-    }
     super.dispose();
   }
 
@@ -78,7 +73,6 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     if (_driverRecord != null) {
       await _fetchEarnings();
       await _checkActiveRide();
-      _setupRealtimeSubscription();
       _startPendingRidePolling();
       _startPresenceHeartbeat();
     }
@@ -93,28 +87,21 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
   }
 
   Future<void> _fetchDriverProfile() async {
-    final user = _supabase.auth.currentUser;
-    final phone = user?.phone ?? '';
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString('user_phone') ?? '';
     if (phone.isEmpty) return;
 
     try {
-      final clean = phone.replaceAll(RegExp(r'\D'), '');
-      final tenDigit = clean.length > 10 ? clean.substring(clean.length - 10) : clean;
-
-      final data = await _supabase
-          .from('drivers')
-          .select('*')
-          .or('phone.ilike.%$tenDigit%,mobile_number.ilike.%$tenDigit%,whatsapp_number.ilike.%$tenDigit%')
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (data != null && mounted) {
-        setState(() {
-          _driverRecord = data;
-          _isOnline = data['status'] == 'online';
-          _operatorCategory = data['category'] ?? 'cab_driver';
-        });
+      final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/drivers/phone/$phone'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _driverRecord = data;
+            _isOnline = data['status'] == 'online';
+            _operatorCategory = data['category'] ?? data['vehicle_type'] ?? 'cab_driver';
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error fetching driver profile: $e');
@@ -128,32 +115,29 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
       final weekAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
       final todayStart = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day).toIso8601String();
 
-      final data = await _supabase
-          .from('rides')
-          .select('total_fare, completed_at')
-          .eq('driver_id', driverId)
-          .eq('status', 'completed')
-          .gte('completed_at', weekAgo);
+      final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/rides?driver_id=$driverId&status=completed'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as List<dynamic>;
+        int tTrips = 0;
+        int tEarn = 0;
+        int wEarn = 0;
 
-      int tTrips = 0;
-      int tEarn = 0;
-      int wEarn = 0;
-
-      for (var row in (data as List<dynamic>)) {
-        final fare = (row['total_fare'] ?? 0) as int;
-        wEarn += fare;
-        if ((row['completed_at'] ?? '').compareTo(todayStart) >= 0) {
-          tTrips++;
-          tEarn += fare;
+        for (var row in data) {
+          final fare = (num.tryParse(row['total_fare']?.toString() ?? '0') ?? 0).toInt();
+          wEarn += fare;
+          if ((row['completed_at'] ?? '').compareTo(todayStart) >= 0) {
+            tTrips++;
+            tEarn += fare;
+          }
         }
-      }
 
-      if (mounted) {
-        setState(() {
-          _todayTrips = tTrips;
-          _todayEarnings = tEarn;
-          _weekEarnings = wEarn;
-        });
+        if (mounted) {
+          setState(() {
+            _todayTrips = tTrips;
+            _todayEarnings = tEarn;
+            _weekEarnings = wEarn;
+          });
+        }
       }
     } catch (_) {}
   }
@@ -161,17 +145,13 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
   Future<void> _checkActiveRide() async {
     if (_driverRecord == null) return;
     try {
-      final data = await _supabase
-          .from('rides')
-          .select('*')
-          .eq('driver_id', _driverRecord!['id'])
-          .inFilter('status', ['accepted', 'driver_arrived', 'in_progress'])
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
-
-      if (data != null && mounted) {
-        setState(() => _activeRide = data);
+      final driverId = _driverRecord!['id'];
+      final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/rides?driver_id=$driverId&status=accepted,driver_arrived,in_progress'));
+      if (res.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(res.body);
+        if (data.isNotEmpty && mounted) {
+          setState(() => _activeRide = data.first as Map<String, dynamic>);
+        }
       }
     } catch (_) {}
   }
@@ -182,10 +162,11 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     setState(() => _isOnline = value);
 
     try {
-      await _supabase
-          .from('drivers')
-          .update({'status': value ? 'online' : 'offline'})
-          .eq('id', _driverRecord!['id']);
+      await http.patch(
+        Uri.parse('${AppEnv.apiUrl}/api/drivers/${_driverRecord!['id']}/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status': value ? 'online' : 'offline'}),
+      );
       
       if (value) {
         _checkActiveRide();
@@ -195,61 +176,22 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     }
   }
 
-  // ─── REALTIME & ACTIVE POLLING (2s INTERVAL) ───
-  void _setupRealtimeSubscription() {
-    if (_rideChannel != null) _supabase.removeChannel(_rideChannel!);
-    if (_driverRecord == null) return;
-
-    _rideChannel = _supabase
-        .channel('driver-rides-${_driverRecord!['id']}')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: 'rides',
-          callback: (payload) {
-            final row = payload.newRecord;
-            if (row.isEmpty) return;
-            final status = row['status'];
-            final rideId = row['id']?.toString() ?? '';
-
-            if ((status == 'pending' || status == 'requested') && _isOnline && _activeRide == null && _incomingRide == null && !_handledRides.contains(rideId)) {
-              if (row['driver_id'] == _driverRecord!['id'] || row['driver_id'] == null) {
-                _triggerIncomingRide(row);
-              }
-            } else if (row['id'] == _activeRide?['id']) {
-              if (status == 'cancelled' || status == 'expired') {
-                setState(() => _activeRide = null);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ride was $status.')));
-              } else {
-                setState(() => _activeRide = row);
-              }
-            }
-          },
-        )
-        .subscribe();
-  }
-
   void _startPendingRidePolling() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (!_isOnline || _activeRide != null || _incomingRide != null || _driverRecord == null) return;
 
       try {
-        final fiveMinsAgo = DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String();
-        final data = await _supabase
-            .from('rides')
-            .select('*')
-            .inFilter('status', ['pending', 'requested'])
-            .gte('created_at', fiveMinsAgo)
-            .order('created_at', ascending: false)
-            .limit(3);
-
-        if (data != null && (data as List).isNotEmpty && mounted) {
-          for (final ride in data) {
-            final id = ride['id']?.toString() ?? '';
-            if (!_handledRides.contains(id)) {
-              _triggerIncomingRide(ride);
-              break;
+        final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/rides/pending'));
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as List<dynamic>;
+          if (data.isNotEmpty && mounted) {
+            for (final ride in data) {
+              final id = ride['id']?.toString() ?? '';
+              if (!_handledRides.contains(id)) {
+                _triggerIncomingRide(ride as Map<String, dynamic>);
+                break;
+              }
             }
           }
         }
@@ -262,22 +204,19 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 45), (_) async {
       if (!_isOnline || _driverRecord == null) return;
       try {
-        final nowIso = DateTime.now().toIso8601String();
-        await _supabase
-            .from('drivers')
-            .update({
-              'status': 'online',
-              'is_online': true,
-              'updated_at': nowIso,
-            })
-            .eq('id', _driverRecord!['id']);
-
-        final userId = _supabase.auth.currentUser?.id;
-        if (userId != null) {
-          await _supabase
-              .from('profiles')
-              .update({'updated_at': nowIso})
-              .eq('id', userId);
+        final prefs = await SharedPreferences.getInstance();
+        final phone = prefs.getString('user_phone') ?? '';
+        await http.patch(
+          Uri.parse('${AppEnv.apiUrl}/api/drivers/${_driverRecord!['id']}/status'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'status': 'online'}),
+        );
+        if (phone.isNotEmpty) {
+          await http.post(
+            Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'phone': phone}),
+          );
         }
       } catch (e) {
         debugPrint('Driver presence heartbeat error: $e');
@@ -303,7 +242,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     // Exclude self-requests:
     final passengerPhone = (ride['passenger_phone'] ?? ride['user_phone'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
     final driverPhone = (_driverRecord?['phone'] ?? _driverRecord?['mobile_number'] ?? _driverRecord?['whatsapp_number'] ?? '').toString().replaceAll(RegExp(r'\D'), '');
-    final currentUserId = _supabase.auth.currentUser?.id;
+    final currentUserId = ref.read(currentUserProvider)?.id;
 
     if (passengerPhone.isNotEmpty && driverPhone.isNotEmpty) {
       final p10 = passengerPhone.length >= 10 ? passengerPhone.substring(passengerPhone.length - 10) : passengerPhone;
@@ -338,7 +277,7 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     });
   }
 
-  // ─── DRIVER ACCEPT / REJECT ───
+  // ─── DRIVER ACCEPT / REJECT (100% OCI Cloud) ───
   Future<void> _acceptIncomingRide() async {
     if (_incomingRide == null || _driverRecord == null) return;
     _countdownTimer?.cancel();
@@ -346,32 +285,33 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     _handledRides.add(rideId.toString());
 
     try {
-      final updated = await _supabase
-          .from('rides')
-          .update({
-            'status': 'accepted',
-            'driver_id': _driverRecord!['id'],
-            'driver_name': _driverRecord!['name'] ?? 'Driver Partner',
-            'driver_phone': _driverRecord!['phone'] ?? _driverRecord!['mobile_number'],
-            'vehicle_model': _driverRecord!['vehicle_model'] ?? 'Standard Vehicle',
-            'vehicle_number': _driverRecord!['vehicle_number'] ?? 'TN-49-2026',
-            'accepted_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', rideId)
-          .select()
-          .single();
-
-      setState(() {
-        _incomingRide = null;
-        _activeRide = updated;
-      });
-
-      // Trigger Webhook on OCI backend
-      http.post(
-        Uri.parse('${AppEnv.apiUrl}/api/ride/driver-action'),
+      final res = await http.patch(
+        Uri.parse('${AppEnv.apiUrl}/api/rides/$rideId/status'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'ride_id': rideId, 'driver_id': _driverRecord!['id'], 'action': 'accepted'}),
-      ).catchError((_) => http.Response('', 500));
+        body: jsonEncode({
+          'status': 'accepted',
+          'driver_id': _driverRecord!['id'],
+          'driver_name': _driverRecord!['name'] ?? 'Driver Partner',
+          'driver_phone': _driverRecord!['phone_number'] ?? _driverRecord!['phone'] ?? _driverRecord!['mobile_number'],
+          'vehicle_model': _driverRecord!['vehicle_model'] ?? _driverRecord!['vehicle_type'] ?? 'Standard Vehicle',
+          'vehicle_number': _driverRecord!['vehicle_number'] ?? _driverRecord!['vehicle_registration'] ?? 'TN-49-2026',
+        }),
+      );
+
+      if (res.statusCode == 200) {
+        final updated = jsonDecode(res.body) as Map<String, dynamic>;
+        setState(() {
+          _incomingRide = null;
+          _activeRide = updated;
+        });
+
+        // Trigger Webhook on OCI backend
+        http.post(
+          Uri.parse('${AppEnv.apiUrl}/api/ride/driver-action'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'ride_id': rideId, 'driver_id': _driverRecord!['id'], 'action': 'accepted'}),
+        ).catchError((_) => http.Response('', 500));
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to accept ride: $e')));
     }
@@ -385,11 +325,11 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     setState(() => _incomingRide = null);
   }
 
-  // ─── START TRIP WITH OTP ───
+  // ─── START TRIP WITH OTP (100% OCI Cloud) ───
   Future<void> _verifyOtpAndStartTrip() async {
     if (_activeRide == null) return;
     final enteredOtp = _otpController.text.trim();
-    final correctOtp = _activeRide!['otp']?.toString() ?? '';
+    final correctOtp = _activeRide!['otp_pin']?.toString() ?? _activeRide!['otp']?.toString() ?? '';
 
     if (enteredOtp != correctOtp && enteredOtp != '1234') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Colors.redAccent, content: Text('Invalid OTP. Please check with passenger.')));
@@ -397,38 +337,39 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     }
 
     try {
-      final updated = await _supabase
-          .from('rides')
-          .update({
-            'status': 'in_progress',
-            'started_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', _activeRide!['id'])
-          .select()
-          .single();
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/ride/driver-action'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'ride_id': _activeRide!['id'], 'action': 'started'}),
+      );
 
-      _otpController.clear();
-      setState(() => _activeRide = updated);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Color(0xFF10B981), content: Text('Trip Started! Drive safe.')));
+      if (res.statusCode == 200) {
+        _otpController.clear();
+        setState(() {
+          _activeRide = {
+            ..._activeRide!,
+            'status': 'in_progress',
+          };
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(backgroundColor: Color(0xFF10B981), content: Text('Trip Started! Drive safe.')));
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error starting trip: $e')));
     }
   }
 
-  // ─── COMPLETE TRIP & COLLECT PAYMENT ───
+  // ─── COMPLETE TRIP & COLLECT PAYMENT (100% OCI Cloud) ───
   Future<void> _completeTrip() async {
     if (_activeRide == null || _driverRecord == null) return;
     final rideId = _activeRide!['id'];
     final fare = _activeRide!['total_fare'] ?? _activeRide!['fare'] ?? 100;
 
     try {
-      await _supabase
-          .from('rides')
-          .update({
-            'status': 'completed',
-            'completed_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', rideId);
+      await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/rides/complete'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'ride_id': rideId, 'final_fare': fare}),
+      );
 
       setState(() => _activeRide = null);
       _fetchEarnings();
@@ -480,35 +421,46 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
     }
   }
 
-  // ─── DRIVER REGISTRATION ───
+  // ─── DRIVER REGISTRATION (100% OCI Cloud) ───
   Future<void> _registerDriver() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    final user = _supabase.auth.currentUser;
-    final phone = user?.phone ?? '9876543210';
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString('user_phone') ?? '9876543210';
 
     try {
       final newDriver = {
-        'user_id': user?.id,
         'name': _nameController.text.trim().isEmpty ? 'Driver Partner' : _nameController.text.trim(),
+        'phone_number': phone,
         'phone': phone,
         'mobile_number': phone,
         'whatsapp_number': phone,
         'vehicle_type': _operatorCategory,
+        'category': _operatorCategory,
+        'vehicle_registration': _regNumberController.text.trim().toUpperCase(),
         'vehicle_number': _regNumberController.text.trim().toUpperCase(),
         'upi_id': _upiController.text.trim(),
         'status': 'online',
-        'created_at': DateTime.now().toIso8601String(),
       };
 
-      final data = await _supabase.from('drivers').insert(newDriver).select().single();
-      setState(() {
-        _driverRecord = data;
-        _isOnline = true;
-      });
-      _setupRealtimeSubscription();
-      _startPendingRidePolling();
+      final res = await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/drivers'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(newDriver),
+      );
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        setState(() {
+          _driverRecord = data;
+          _isOnline = true;
+        });
+        _startPendingRidePolling();
+        _startPresenceHeartbeat();
+      } else {
+        throw Exception('Server error: ${res.statusCode}');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(backgroundColor: Colors.redAccent, content: Text('Registration Error: $e')));
     } finally {

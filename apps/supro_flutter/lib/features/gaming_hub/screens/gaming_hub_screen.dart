@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/offline_sync_service.dart';
 import '../../../services/rewards_service.dart';
 import '../games/mythic_quest_screen.dart';
@@ -22,9 +22,8 @@ class _GamingHubScreenState extends State<GamingHubScreen> {
   UserBalance _liveBalance = const UserBalance(testoPoints: 0, farmPoints: 0);
   bool _isSyncing = false;
 
-  // User ID from main Supabase auth session — stored as TEXT in Gameo DB
-  String? get _userId => Supabase.instance.client.auth.currentUser?.id;
-  bool get _isLoggedIn => _userId != null;
+  String? _userId;
+  bool get _isLoggedIn => _userId != null && _userId!.isNotEmpty;
 
   @override
   void initState() {
@@ -33,6 +32,9 @@ class _GamingHubScreenState extends State<GamingHubScreen> {
   }
 
   Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final phone = prefs.getString('user_phone');
+    _userId = prefs.getString('user_id') ?? (phone != null ? 'user_$phone' : 'demo_user');
     if (!_isLoggedIn) return;
     final testo = await OfflineSyncService.getOfflineTestoPoints();
     final farm = await OfflineSyncService.getOfflineFarmPoints();

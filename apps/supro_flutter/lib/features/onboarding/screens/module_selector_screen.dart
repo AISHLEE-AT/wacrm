@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../../../core/env.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class ModuleSelectorScreen extends StatefulWidget {
@@ -40,13 +42,18 @@ class _ModuleSelectorScreenState extends State<ModuleSelectorScreen> {
       await prefs.setString('selected_module', _selectedModule!);
       await prefs.setBool('onboarding_complete', true);
 
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        await Supabase.instance.client.from('profiles').update({
-          'selected_module': _selectedModule,
-          'default_module': _selectedModule,
-          'onboarding_complete': true,
-        }).eq('id', user.id);
+      final phone = prefs.getString('user_phone');
+      if (phone != null && phone.isNotEmpty) {
+        await http.post(
+          Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'phone': phone,
+            'default_module': _selectedModule,
+            'selected_module': _selectedModule,
+            'onboarding_complete': true,
+          }),
+        ).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
       }
 
       if (mounted) {

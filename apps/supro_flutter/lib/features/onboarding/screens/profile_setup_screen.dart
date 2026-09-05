@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -47,15 +47,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     super.dispose();
   }
 
-  void _loadMetadata() {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null && user.userMetadata != null) {
-      if (user.userMetadata!['full_name'] != null) {
-        _nameController.text = user.userMetadata!['full_name'];
-      }
-      if (user.userMetadata!['avatar_url'] != null) {
-        _avatarUrl = user.userMetadata!['avatar_url'];
-      }
+  void _loadMetadata() async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('user_name');
+    final avatar = prefs.getString('user_avatar');
+    if (name != null && name.isNotEmpty) {
+      _nameController.text = name;
+    }
+    if (avatar != null && avatar.isNotEmpty) {
+      setState(() => _avatarUrl = avatar);
     }
   }
 
@@ -74,25 +74,6 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       setState(() {
         _avatarBytes = bytes;
       });
-
-      // Upload to Supabase bucket if available
-      try {
-        final user = Supabase.instance.client.auth.currentUser;
-        final userId = user?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-        final path = 'avatars/$userId-${DateTime.now().millisecondsSinceEpoch}.jpg';
-        
-        await Supabase.instance.client.storage.from('avatars').uploadBinary(
-          path,
-          bytes,
-          fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
-        );
-        final publicUrl = Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
-        setState(() {
-          _avatarUrl = publicUrl;
-        });
-      } catch (e) {
-        debugPrint('Supabase storage upload fallback: $e');
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -212,31 +193,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        final phone = user.phone ?? '';
-        
-        await http.post(
-          Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'phone': phone,
-            'full_name': _nameController.text.trim(),
-            'upi_id': _upiController.text.trim(),
-            'avatar_url': _avatarUrl,
-          }),
-        ).catchError((_) => http.Response('', 500));
+      final prefs = await SharedPreferences.getInstance();
+      final phone = prefs.getString('user_phone') ?? '';
 
-        try {
-          await Supabase.instance.client.from('profiles').upsert({
-            'id': user.id,
-            'full_name': _nameController.text.trim(),
-            'upi_id': _upiController.text.trim(),
-            'avatar_url': _avatarUrl,
-            'updated_at': DateTime.now().toIso8601String(),
-          });
-        } catch (_) {}
-      }
+      await http.post(
+        Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'phone': phone,
+          'full_name': _nameController.text.trim(),
+          'upi_id': _upiController.text.trim(),
+          'avatar_url': _avatarUrl,
+        }),
+      ).timeout(const Duration(seconds: 4)).catchError((_) => http.Response('', 500));
+
+      await prefs.setString('user_name', _nameController.text.trim());
+      if (_avatarUrl != null) await prefs.setString('user_avatar', _avatarUrl!);
 
       if (mounted) {
         context.go('/onboarding/modules');

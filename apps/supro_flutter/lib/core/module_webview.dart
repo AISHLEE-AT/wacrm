@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'env.dart';
 
@@ -21,13 +20,17 @@ class _ModuleWebViewState extends State<ModuleWebView> {
   @override
   void initState() {
     super.initState();
-    
-    final session = Supabase.instance.client.auth.currentSession;
+    _initWebView();
+  }
+
+  void _initWebView() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('oci_auth_token') ?? '';
+    final phone = prefs.getString('user_phone') ?? '';
+
     String authQueryParams = '?embed=true';
-    if (session != null) {
-      final token = session.accessToken;
-      final refresh = session.refreshToken ?? '';
-      authQueryParams += '&access_token=$token&refresh_token=$refresh';
+    if (token.isNotEmpty) {
+      authQueryParams += '&access_token=$token&phone=$phone';
     }
     
     if (widget.path.contains('?')) {
@@ -62,9 +65,9 @@ class _ModuleWebViewState extends State<ModuleWebView> {
                   // Fallback: convert whatsapp:// to https://wa.me/
                   if (url.startsWith('whatsapp://send')) {
                     final uriParsed = Uri.parse(url);
-                    final phone = uriParsed.queryParameters['phone'] ?? '';
+                    final p = uriParsed.queryParameters['phone'] ?? '';
                     final text = uriParsed.queryParameters['text'] ?? '';
-                    final fallbackUri = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(text)}');
+                    final fallbackUri = Uri.parse('https://wa.me/$p?text=${Uri.encodeComponent(text)}');
                     await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
                   }
                 }
