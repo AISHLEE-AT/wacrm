@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Sparkles,
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
   Brain,
   HelpCircle,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   Flame,
   Star,
@@ -22,7 +23,11 @@ import {
   Loader2,
   Key,
   ShieldCheck,
-  RefreshCw
+  Sun,
+  Moon,
+  GraduationCap,
+  Calendar,
+  X
 } from 'lucide-react';
 import { CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '@/data/coursesCatalog';
 
@@ -92,19 +97,29 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   const [streak, setStreak] = useState<number>(1);
   const [totalXp, setTotalXp] = useState<number>(0);
 
+  // Active Stage Accordion (default open all or first)
+  const [expandedStages, setExpandedStages] = useState<Record<number, boolean>>({
+    1: true,
+    2: true,
+    3: true,
+    4: true
+  });
+
+  // Modal Drawers
+  const [isYogaDrawerOpen, setIsYogaDrawerOpen] = useState(false);
+  const [isHomeworkDrawerOpen, setIsHomeworkDrawerOpen] = useState(false);
+  const [isKeyDrawerOpen, setIsKeyDrawerOpen] = useState(false);
+
   // Homework Assistant State
   const [homeworkQuestion, setHomeworkQuestion] = useState('');
   const [isSolvingHomework, setIsSolvingHomework] = useState(false);
   const [homeworkSolution, setHomeworkSolution] = useState<any | null>(null);
   const [homeworkError, setHomeworkError] = useState<string | null>(null);
-  const [showHomeworkBox, setShowHomeworkBox] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState('');
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
-  // Ambition info
+  // Current Ambition
   const currentAmbition = FEATURED_JUNIOR_COURSES.find(c => c.id === activeAmbitionId) || FEATURED_JUNIOR_COURSES[0];
 
-  // Fetch today's planner from OCI
   const fetchPlanner = async () => {
     setIsLoading(true);
     try {
@@ -126,7 +141,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         }
       }
     } catch (e) {
-      console.warn('Failed to fetch daily planner from OCI, using fallback:', e);
+      console.warn('Failed to fetch daily planner:', e);
     } finally {
       setIsLoading(false);
     }
@@ -145,7 +160,6 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
     const isDone = completedClasses.includes(classIndex);
     const newCompleted = !isDone;
 
-    // Optimistic UI update
     setCompletedClasses(prev => newCompleted ? [...prev, classIndex] : prev.filter(c => c !== classIndex));
     setDailyXp(prev => newCompleted ? prev + xp : Math.max(0, prev - xp));
     setTotalXp(prev => newCompleted ? prev + xp : Math.max(0, prev - xp));
@@ -194,7 +208,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
     }
   };
 
-  // Solve homework question
+  // Homework Solver
   const handleSolveHomework = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!homeworkQuestion.trim()) return;
@@ -219,7 +233,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
       if (data.success && data.solution) {
         setHomeworkSolution(data.solution);
       } else {
-        setHomeworkError(data.error || 'Failed to solve homework question. Please verify your Gemini API key.');
+        setHomeworkError(data.error || 'Failed to solve homework. Please check your Gemini API key in settings.');
       }
     } catch (err: any) {
       setHomeworkError(err.message || 'Error connecting to Homework Assistant');
@@ -233,457 +247,501 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
     if (typeof window !== 'undefined') {
       localStorage.setItem('gemini-api-key', key.trim());
     }
-    setShowKeyInput(false);
+    setIsKeyDrawerOpen(false);
   };
 
-  const progressPercent = Math.round(((completedClasses.length + (yogaCompleted ? 1 : 0) + (testCompleted ? 1 : 0)) / 12) * 100);
+  // 4 Pedagogical Stages
+  const stages = useMemo(() => [
+    {
+      id: 1,
+      title: 'Stage 1: Morning Academic Core',
+      subtitle: 'Core concept building & fundamentals (Classes 1 to 4)',
+      icon: '🌅',
+      color: 'from-blue-500/20 to-indigo-500/10 text-blue-500 border-blue-500/30',
+      classes: classes.filter(c => c.id >= 1 && c.id <= 4)
+    },
+    {
+      id: 2,
+      title: 'Stage 2: Homework & Problem Solving',
+      subtitle: 'Guided homework assistant & workbook practice (Classes 5 to 6)',
+      icon: '🎒',
+      color: 'from-amber-500/20 to-orange-500/10 text-amber-500 border-amber-500/30',
+      classes: classes.filter(c => c.id >= 5 && c.id <= 6)
+    },
+    {
+      id: 3,
+      title: 'Stage 3: Futuristic Ambition Foundation',
+      subtitle: `${currentAmbition.short} career leadership & applied case study (Classes 7 to 8)`,
+      icon: '🚀',
+      color: 'from-purple-500/20 to-pink-500/10 text-purple-500 border-purple-500/30',
+      classes: classes.filter(c => c.id >= 7 && c.id <= 8)
+    },
+    {
+      id: 4,
+      title: 'Stage 4: Evening Masterclass & Revision',
+      subtitle: 'Video visual simulation & 1-minute bedtime exam recap (Classes 9 to 10)',
+      icon: '🌙',
+      color: 'from-emerald-500/20 to-teal-500/10 text-emerald-500 border-emerald-500/30',
+      classes: classes.filter(c => c.id >= 9 && c.id <= 10)
+    }
+  ], [classes, currentAmbition.short]);
+
+  // Find next uncompleted class
+  const nextClass = useMemo(() => {
+    return classes.find(c => !completedClasses.includes(c.id)) || classes[0];
+  }, [classes, completedClasses]);
+
+  const toggleStage = (id: number) => {
+    setExpandedStages(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const progressPercent = Math.round((completedClasses.length / 10) * 100);
+
+  if (isLoading) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center text-center space-y-3">
+        <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-semibold text-muted-foreground">Preparing today&apos;s holistic study mission...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       
-      {/* 1. Header Cockpit Ribbon */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-5 md:p-7 text-white shadow-xl border border-indigo-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 relative z-10">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider flex items-center gap-1.5">
+      {/* 1. HERO ACTIVE MISSION BANNER (Khan Academy / Duolingo Style) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/90 via-slate-900/95 to-slate-950 border border-indigo-500/30 p-6 md:p-8 shadow-2xl text-white">
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 {streak} Day Streak
               </span>
-              <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5">
+              <span className="bg-indigo-400/20 text-indigo-300 border border-indigo-400/30 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5 fill-indigo-400 text-indigo-400" />
                 {totalXp} XP Total
               </span>
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs px-3 py-1 rounded-full font-bold">
+              <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 text-xs px-3 py-1 rounded-full font-bold">
                 Day {dayNumber} of 300
               </span>
             </div>
 
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight">
-              Today&apos;s Mission Cockpit
-            </h2>
-            <p className="text-indigo-200 text-sm mt-1">
-              Holistic 10 Classes + 1 Yoga Session + 1 Daily Online Test.
+            {nextClass && (
+              <>
+                <p className="text-xs uppercase tracking-wider text-indigo-300 font-bold">
+                  Up Next · Class {nextClass.id} of 10 ({nextClass.subject})
+                </p>
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                  {nextClass.title}
+                </h2>
+              </>
+            )}
+
+            <p className="text-xs text-slate-300">
+              Complete today&apos;s 10 classes, daily yoga session, and online mock test to stay ahead in your syllabus.
             </p>
           </div>
 
-          {/* Dual Ambition Selector Badge */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3 flex items-center gap-4 w-full lg:w-auto">
-            <div className="text-3xl">{currentAmbition.icon || '🏛️'}</div>
-            <div className="flex-1">
-              <p className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">Futuristic Ambition</p>
-              <div className="relative">
-                <select
-                  value={activeAmbitionId}
-                  onChange={(e) => onSelectAmbition(e.target.value)}
-                  className="bg-transparent text-white font-bold text-sm pr-6 cursor-pointer focus:outline-none appearance-none"
-                >
-                  {FEATURED_JUNIOR_COURSES.map(c => (
-                    <option key={c.id} value={c.id} className="bg-slate-900 text-white">
-                      {c.short}
-                    </option>
+          {/* Primary CTA + Progress Ring */}
+          <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 w-full lg:w-auto">
+            {nextClass && (
+              <button
+                onClick={() => onOpenCoursePlayer(dayNumber)}
+                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                <Play className="w-4 h-4 fill-slate-950" />
+                <span>Resume Lesson ({nextClass.duration})</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+
+            <div className="text-xs text-indigo-200 font-medium">
+              Daily Progress: <strong>{completedClasses.length} / 10 Classes</strong> ({progressPercent}%)
+            </div>
+          </div>
+        </div>
+
+        {/* Action Pills Bar */}
+        <div className="mt-6 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setIsYogaDrawerOpen(true)}
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+            >
+              <span>🧘</span>
+              <span>Daily Yoga {yogaCompleted ? '✓' : ''}</span>
+            </button>
+
+            <button
+              onClick={() => onOpenTest(dailyTest?.category || course.id, dailyTest?.subject || 'ALL')}
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+              <span>Daily CBT Test (10 Qs)</span>
+            </button>
+
+            <button
+              onClick={() => setIsHomeworkDrawerOpen(true)}
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-indigo-300" />
+              <span>School Homework AI</span>
+            </button>
+          </div>
+
+          <button
+            onClick={() => setIsKeyDrawerOpen(true)}
+            className="text-[11px] text-slate-300 hover:text-white flex items-center gap-1 font-semibold"
+          >
+            <Key className="w-3 h-3 text-amber-400" />
+            <span>{geminiApiKey ? 'Gemini AI Ready' : 'Configure Gemini Key'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 2. THE 4 STAGED DAILY PEDAGOGICAL BLOCKS */}
+      <div className="space-y-4">
+        {stages.map((stg) => {
+          const isExpanded = expandedStages[stg.id] ?? true;
+          const stageCompletedCount = stg.classes.filter(c => completedClasses.includes(c.id)).length;
+          const isStageFinished = stageCompletedCount === stg.classes.length && stg.classes.length > 0;
+
+          return (
+            <div
+              key={stg.id}
+              className={`rounded-2xl border transition-all overflow-hidden ${
+                isStageFinished
+                  ? 'bg-card border-emerald-500/30'
+                  : 'bg-card border-border/80 shadow-sm hover:border-border'
+              }`}
+            >
+              {/* Stage Header */}
+              <div
+                onClick={() => toggleStage(stg.id)}
+                className="p-4 md:p-5 flex items-center justify-between cursor-pointer select-none gap-3 hover:bg-muted/40 transition-colors"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="text-2xl shrink-0">{stg.icon}</div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-foreground truncate">
+                        {stg.title}
+                      </h3>
+                      {isStageFinished && (
+                        <span className="bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">
+                          Completed
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{stg.subtitle}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                    {stageCompletedCount} / {stg.classes.length} Done
+                  </span>
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              {/* Stage Classes Accordion Content */}
+              {isExpanded && (
+                <div className="p-4 pt-0 border-t border-border/60 divide-y divide-border/40">
+                  {stg.classes.map((cls) => {
+                    const isDone = completedClasses.includes(cls.id);
+                    return (
+                      <div
+                        key={cls.id}
+                        className={`py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                          isDone ? 'opacity-70' : ''
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleClass(cls.id, cls.xp)}
+                            className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                            title={isDone ? 'Mark Incomplete' : 'Mark Completed'}
+                          >
+                            {isDone ? (
+                              <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-background" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-muted-foreground/60 hover:text-muted-foreground" />
+                            )}
+                          </button>
+
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                              <span className="text-xs">{cls.icon}</span>
+                              <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                                Class {cls.id} · {cls.subject}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> {cls.duration}
+                              </span>
+                              <span className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
+                                <Award className="w-3 h-3" /> +{cls.xp} XP
+                              </span>
+                            </div>
+                            <h4 className={`text-sm font-semibold truncate ${isDone ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                              {cls.title}
+                            </h4>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
+                          <button
+                            onClick={() => onOpenExplainer(dayNumber, cls.title)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 transition-all flex items-center gap-1"
+                          >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>Notes</span>
+                          </button>
+                          <button
+                            onClick={() => onOpenCoursePlayer(dayNumber)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-muted hover:bg-muted/80 text-foreground transition-all flex items-center gap-1"
+                          >
+                            <Play className="w-3.5 h-3.5" />
+                            <span>Lesson</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 3. YOGA & WELLNESS MODAL DRAWER */}
+      {isYogaDrawerOpen && yoga && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🧘</span>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">
+                    Daily Wellness Session
+                  </span>
+                  <h3 className="text-lg font-black text-foreground mt-0.5">
+                    {yoga.name} {yoga.tamil && <span className="text-sm font-normal text-muted-foreground">· {yoga.tamil}</span>}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsYogaDrawerOpen(false)}
+                className="p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-muted-foreground">
+              <div className="p-3 rounded-2xl bg-muted/50 border border-border/50 space-y-2">
+                <p className="font-bold text-foreground">Step-by-Step Instructions:</p>
+                <ol className="space-y-1.5 pl-4 list-decimal">
+                  {yoga.steps.map((st, i) => (
+                    <li key={i}>{st}</li>
                   ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-indigo-300 absolute right-0 top-0.5 pointer-events-none" />
+                </ol>
+                <p className="text-[11px] text-primary pt-1 border-t border-border/50">
+                  💨 <strong>Breathing:</strong> {yoga.breathing}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-foreground">
+                <p className="font-bold text-amber-500 flex items-center gap-1.5 text-xs mb-1">
+                  <Brain className="w-4 h-4" /> Brain Booster of the Day:
+                </p>
+                <p className="text-xs leading-relaxed">{yoga.brainBooster}</p>
               </div>
             </div>
+
+            <button
+              onClick={() => {
+                handleToggleYoga();
+                setIsYogaDrawerOpen(false);
+              }}
+              className={`w-full py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                yogaCompleted
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-primary text-primary-foreground hover:opacity-90'
+              }`}
+            >
+              {yogaCompleted ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Yoga Completed (+50 XP)</span>
+                </>
+              ) : (
+                <>
+                  <Heart className="w-4 h-4" />
+                  <span>Mark Yoga Done (+50 XP)</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Progress Bar */}
-        <div className="mt-6 pt-5 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="w-full md:w-2/3">
-            <div className="flex justify-between text-xs font-bold text-indigo-200 mb-1.5">
-              <span>Today&apos;s Protocol Completion</span>
-              <span>{progressPercent}% Complete ({completedClasses.length}/10 Classes)</span>
+      {/* 4. HOMEWORK ASSISTANT MODAL DRAWER */}
+      {isHomeworkDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-xl bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                  Gemini AI Powered
+                </span>
+                <h3 className="text-lg font-black text-foreground mt-0.5">
+                  School Homework Problem Solver
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Type any question from today&apos;s school homework for step-by-step guidance.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsHomeworkDrawerOpen(false)}
+                className="p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-emerald-400 to-indigo-400 rounded-full transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
+
+            <form onSubmit={handleSolveHomework} className="space-y-3">
+              <textarea
+                rows={3}
+                value={homeworkQuestion}
+                onChange={(e) => setHomeworkQuestion(e.target.value)}
+                placeholder="e.g. Find roots of 2x² - 5x + 3 = 0, or Explain Newton's Third Law with example..."
+                className="w-full px-4 py-3 bg-muted/60 border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-primary"
               />
-            </div>
-          </div>
+              <div className="flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setIsKeyDrawerOpen(true)}
+                  className="text-xs text-primary underline"
+                >
+                  {geminiApiKey ? 'API Key Configured' : 'Add Gemini API Key'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSolvingHomework || !homeworkQuestion.trim()}
+                  className="px-5 py-2.5 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground rounded-xl font-bold text-xs flex items-center gap-2"
+                >
+                  {isSolvingHomework ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Explain Step-by-Step</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHomeworkBox(!showHomeworkBox)}
-              className="px-4 py-2 bg-indigo-600/50 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-indigo-400/30"
-            >
-              <HelpCircle className="w-4 h-4 text-amber-300" />
-              <span>Homework AI Assistant</span>
-            </button>
+            {homeworkError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-xs text-destructive">
+                {homeworkError}
+              </div>
+            )}
 
-            <button
-              onClick={() => setShowKeyInput(!showKeyInput)}
-              className="px-3 py-2 bg-white/10 hover:bg-white/20 text-indigo-200 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1 transition-colors"
-              title="Configure Gemini API Key"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span>{geminiApiKey ? 'API Key Set' : 'Add API Key'}</span>
-            </button>
+            {homeworkSolution && (
+              <div className="p-4 bg-muted/70 border border-border rounded-2xl space-y-3 text-xs">
+                <h4 className="font-bold text-foreground text-sm">
+                  {homeworkSolution.conceptTitle || 'Concept Breakdown'}
+                </h4>
+                {homeworkSolution.hint && (
+                  <p className="p-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl italic">
+                    💡 <strong>Hint:</strong> {homeworkSolution.hint}
+                  </p>
+                )}
+                {homeworkSolution.stepByStepSolution && (
+                  <div className="space-y-1.5 pl-1 text-muted-foreground">
+                    <p className="font-bold text-foreground">Solution Steps:</p>
+                    {homeworkSolution.stepByStepSolution.map((st: string, idx: number) => (
+                      <p key={idx} className="font-mono text-foreground/90">{st}</p>
+                    ))}
+                  </div>
+                )}
+                {homeworkSolution.finalAnswer && (
+                  <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 rounded-xl font-bold">
+                    ✅ Result: {homeworkSolution.finalAnswer}
+                  </div>
+                )}
+                {homeworkSolution.tamilSummary && (
+                  <p className="text-muted-foreground text-[11px] pt-1 border-t border-border">
+                    🇮🇳 <strong>தமிழ்:</strong> {homeworkSolution.tamilSummary}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
+      )}
 
-        {/* Gemini API Key Configuration Box */}
-        {showKeyInput && (
-          <div className="mt-4 p-4 bg-slate-800/90 rounded-xl border border-indigo-400/30 text-xs space-y-2">
-            <p className="font-bold text-white flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              Custom Gemini API Key (For Instant AI Content & Homework Generation):
+      {/* 5. GEMINI API KEY MODAL DRAWER */}
+      {isKeyDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-2.5">
+                <Key className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-black text-foreground">
+                  Gemini API Key Settings
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsKeyDrawerOpen(false)}
+                className="p-1.5 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Provide your personal Gemini API key to enable on-demand study notes, flashcards, and homework problem solving whenever a topic is not yet in the official syllabus cache.
             </p>
-            <div className="flex gap-2">
+
+            <div className="space-y-2">
               <input
                 type="password"
                 placeholder="AIzaSy..."
                 defaultValue={geminiApiKey}
                 id="gemini-key-input"
-                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono text-xs focus:border-indigo-400 focus:outline-none"
+                className="w-full px-4 py-3 bg-muted/60 border border-border rounded-2xl text-sm font-mono text-foreground focus:outline-none focus:border-primary"
               />
               <button
                 onClick={() => {
                   const input = document.getElementById('gemini-key-input') as HTMLInputElement;
                   if (input) handleSaveApiKey(input.value);
                 }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold"
+                className="w-full py-3 bg-primary text-primary-foreground font-bold rounded-xl text-xs transition-opacity hover:opacity-90"
               >
-                Save Key
+                Save API Key
               </button>
             </div>
-            <p className="text-gray-400 text-[11px]">
-              Keys are securely stored in your local browser storage and used for on-demand lesson fallback.
+
+            <p className="text-[11px] text-muted-foreground/80 text-center">
+              Your API key is securely stored in your local browser storage and never exposed publicly.
             </p>
           </div>
-        )}
-      </div>
-
-      {/* 2. School Homework Assistant Interactive Widget */}
-      {showHomeworkBox && (
-        <div className="bg-white rounded-2xl p-5 border-2 border-indigo-100 shadow-sm space-y-4 animate-in fade-in duration-200">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-indigo-600" />
-                School Homework AI Problem Solver
-              </h3>
-              <p className="text-xs text-gray-500">
-                Stuck on today&apos;s school homework? Type your question for step-by-step guidance.
-              </p>
-            </div>
-            <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded">
-              Gemini Powered
-            </span>
-          </div>
-
-          <form onSubmit={handleSolveHomework} className="space-y-3">
-            <textarea
-              rows={2}
-              value={homeworkQuestion}
-              onChange={(e) => setHomeworkQuestion(e.target.value)}
-              placeholder="e.g. Find the roots of quadratic equation 2x² - 5x + 3 = 0, or Explain the function of stomata in photosynthesis..."
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:bg-white focus:border-indigo-500 focus:outline-none"
-            />
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-400">Step-by-step educational breakdown</span>
-              <button
-                type="submit"
-                disabled={isSolvingHomework || !homeworkQuestion.trim()}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
-              >
-                {isSolvingHomework ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Analyzing Problem...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Explain Homework Step-by-Step</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {homeworkError && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
-              {homeworkError}
-            </div>
-          )}
-
-          {homeworkSolution && (
-            <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl space-y-3 text-xs">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-indigo-600" />
-                <h4 className="font-bold text-indigo-900 text-sm">
-                  {homeworkSolution.conceptTitle || 'Concept Breakdown'}
-                </h4>
-              </div>
-
-              {homeworkSolution.hint && (
-                <p className="p-2 bg-amber-50 border border-amber-200 text-amber-900 rounded-lg italic">
-                  💡 <strong>Guiding Hint:</strong> {homeworkSolution.hint}
-                </p>
-              )}
-
-              {homeworkSolution.stepByStepSolution && (
-                <div className="space-y-1.5 pl-1">
-                  <p className="font-bold text-gray-700">Step-by-Step Solution:</p>
-                  {homeworkSolution.stepByStepSolution.map((st: string, idx: number) => (
-                    <p key={idx} className="text-gray-800 leading-relaxed font-mono">
-                      {st}
-                    </p>
-                  ))}
-                </div>
-              )}
-
-              {homeworkSolution.finalAnswer && (
-                <div className="p-2.5 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-lg font-bold">
-                  ✅ Final Result: {homeworkSolution.finalAnswer}
-                </div>
-              )}
-
-              {homeworkSolution.tamilSummary && (
-                <p className="text-gray-600 text-[11px] pt-1 border-t border-indigo-200/50">
-                  🇮🇳 <strong>தமிழ் விளக்கம்:</strong> {homeworkSolution.tamilSummary}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 3. The 10 Daily Classes Grid */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="text-lg font-extrabold text-gray-900">
-              10 Daily Structured Classes
-            </h3>
-            <p className="text-xs text-gray-500">
-              Complete each class to earn XP and advance your syllabus mastery.
-            </p>
-          </div>
-          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-            {completedClasses.length} / 10 Finished
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {classes.map((cls) => {
-            const isDone = completedClasses.includes(cls.id);
-            const isAmbition = cls.type === 'ambition';
-            const isHomework = cls.type === 'homework';
-
-            return (
-              <div
-                key={cls.id}
-                className={`p-4 rounded-2xl border transition-all flex items-start gap-3.5 ${
-                  isDone
-                    ? 'bg-emerald-50/50 border-emerald-200'
-                    : isAmbition
-                    ? 'bg-amber-50/30 border-amber-200/80 hover:border-amber-300'
-                    : isHomework
-                    ? 'bg-blue-50/30 border-blue-200/80 hover:border-blue-300'
-                    : 'bg-white border-gray-200 hover:border-indigo-300'
-                }`}
-              >
-                {/* Checkbox */}
-                <button
-                  type="button"
-                  onClick={() => handleToggleClass(cls.id, cls.xp)}
-                  className="mt-0.5 text-gray-400 hover:text-emerald-600 transition-colors"
-                  title={isDone ? 'Mark Incomplete' : 'Mark Completed'}
-                >
-                  {isDone ? (
-                    <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-white" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-gray-300 hover:text-gray-400" />
-                  )}
-                </button>
-
-                {/* Class Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">{cls.icon}</span>
-                    <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded tracking-wider ${
-                      isAmbition
-                        ? 'bg-amber-100 text-amber-800'
-                        : isHomework
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      Class {cls.id} · {cls.subject}
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-bold ml-auto flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {cls.duration}
-                    </span>
-                  </div>
-
-                  <h4 className={`text-sm font-bold truncate ${isDone ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                    {cls.title}
-                  </h4>
-
-                  {/* Actions Bar */}
-                  <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100">
-                    <span className="text-[11px] font-bold text-amber-600 flex items-center gap-1">
-                      <Award className="w-3.5 h-3.5" /> +{cls.xp} XP
-                    </span>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onOpenExplainer(dayNumber, cls.title)}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-1 px-2 py-1 rounded hover:bg-indigo-50"
-                      >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Study Notes</span>
-                      </button>
-
-                      <button
-                        onClick={() => onOpenCoursePlayer(dayNumber)}
-                        className="text-xs font-bold text-slate-700 hover:text-indigo-600 flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100"
-                      >
-                        <Play className="w-3 h-3" />
-                        <span>Lesson</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. Daily Yoga & Physical/Mental Wellness Class */}
-      {yoga && (
-        <div className={`rounded-3xl p-5 md:p-6 border-2 transition-all ${
-          yogaCompleted
-            ? 'bg-emerald-50/50 border-emerald-300'
-            : 'bg-gradient-to-br from-emerald-50/70 via-teal-50/50 to-white border-emerald-200'
-        }`}>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-emerald-200">
-                🧘
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-emerald-200/60 text-emerald-900 rounded tracking-wider">
-                    Daily Wellness Class
-                  </span>
-                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {yoga.duration}
-                  </span>
-                </div>
-                <h3 className="text-lg font-black text-gray-900 mt-0.5">
-                  {yoga.name} {yoga.tamil && <span className="text-emerald-800 font-normal">· {yoga.tamil}</span>}
-                </h3>
-              </div>
-            </div>
-
-            <button
-              onClick={handleToggleYoga}
-              className={`px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shadow-sm ${
-                yogaCompleted
-                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                  : 'bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-100'
-              }`}
-            >
-              {yogaCompleted ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-white" />
-                  <span>Yoga Completed (+50 XP)</span>
-                </>
-              ) : (
-                <>
-                  <Heart className="w-4 h-4 text-emerald-600" />
-                  <span>Mark Yoga Done (+50 XP)</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700">
-            {/* Step-by-Step Instructions */}
-            <div className="bg-white/80 rounded-2xl p-4 border border-emerald-100 space-y-2">
-              <h4 className="font-bold text-emerald-900 flex items-center gap-1.5">
-                <Play className="w-3.5 h-3.5 text-emerald-600" /> Step-by-Step Posture Guide:
-              </h4>
-              <ul className="space-y-1.5 pl-1">
-                {yoga.steps.map((st, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    <span>{st}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-[11px] text-emerald-800 pt-2 border-t border-emerald-100 font-medium">
-                💨 <strong>Breathing:</strong> {yoga.breathing}
-              </p>
-            </div>
-
-            {/* Benefits & Brain Booster */}
-            <div className="space-y-3">
-              <div className="bg-white/80 rounded-2xl p-4 border border-emerald-100 space-y-1.5">
-                <h4 className="font-bold text-emerald-900 flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-emerald-600" /> Health & Exam Benefits:
-                </h4>
-                <ul className="space-y-1 pl-1">
-                  {yoga.benefits.map((bf, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <span className="text-emerald-500 font-bold">✓</span>
-                      <span>{bf}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-gradient-to-r from-amber-100/60 to-amber-50 rounded-2xl p-4 border border-amber-200 text-amber-900">
-                <h4 className="font-bold flex items-center gap-1.5 text-xs mb-1">
-                  <Brain className="w-4 h-4 text-amber-600" /> Brain Booster of the Day:
-                </h4>
-                <p className="text-xs leading-relaxed">
-                  {yoga.brainBooster}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Daily Online CBT Assessment Test Card */}
-      {dailyTest && (
-        <div className="bg-gradient-to-r from-indigo-900 via-violet-900 to-indigo-950 rounded-3xl p-5 md:p-6 text-white shadow-lg border border-indigo-400/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase font-black px-2.5 py-0.5 bg-amber-400 text-slate-900 rounded-full">
-                Daily Test Assessment
-              </span>
-              <span className="text-xs text-indigo-200 font-bold flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-amber-300" /> {dailyTest.durationMinutes} Mins · 10 Questions
-              </span>
-            </div>
-            <h3 className="text-xl font-black text-white">
-              {dailyTest.testTitle}
-            </h3>
-            <p className="text-xs text-indigo-200">
-              Drawn from OCI&apos;s 30,145 MCQs specifically matching today&apos;s syllabus topics.
-            </p>
-          </div>
-
-          <button
-            onClick={() => onOpenTest(dailyTest.category, dailyTest.subject)}
-            className="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black rounded-xl text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            <Zap className="w-5 h-5 fill-slate-950 text-slate-950" />
-            <span>Launch Today&apos;s Online Test</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       )}
 

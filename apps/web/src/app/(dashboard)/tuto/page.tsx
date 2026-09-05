@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   GraduationCap, Target, Calendar, Search, ChevronDown,
   CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers, Lock, Zap, FileText,
-  Flame, Star, Compass, Sparkles, Heart, Award
+  Flame, Star, Compass, Sparkles, Heart, Award, Filter, X
 } from 'lucide-react';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '@/data/coursesCatalog';
@@ -17,16 +17,21 @@ import { TutOTopicExplainerWebModal } from '@/components/teacho/TutOTopicExplain
 import { TutODayCoursePlayerWebModal } from '@/components/teacho/TutODayCoursePlayerWebModal';
 import { TutODailyPlannerCockpit } from '@/components/teacho/TutODailyPlannerCockpit';
 
+export type LearnerStream = 'school' | 'entrance' | 'career' | 'college';
+
 export default function TutOWebPage() {
   // Global State
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'daily_mission' | 'curriculum_grid' | 'ambitions'>('daily_mission');
+  const [activeStream, setActiveStream] = useState<LearnerStream>('school');
   const [userPhone, setUserPhone] = useState<string>('anonymous');
   
   // Course State
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [activeAmbitionId, setActiveAmbitionId] = useState<string>('jr-ias');
+  const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
+  const [courseSearchQuery, setCourseSearchQuery] = useState('');
 
   // Days Engine State
   const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
@@ -40,7 +45,6 @@ export default function TutOWebPage() {
   const [explainerDayNumber, setExplainerDayNumber] = useState(1);
   const [isCoursePlayerOpen, setIsCoursePlayerOpen] = useState(false);
   const [playerDayNumber, setPlayerDayNumber] = useState(1);
-  const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
 
   const refreshReleasedDays = useCallback(async (courseId: string, courseTitle: string, board: SchoolBoard, doneSet: Set<number>) => {
     setIsLoadingDays(true);
@@ -86,6 +90,12 @@ export default function TutOWebPage() {
       setActiveAmbitionId(ambition);
       setUserPhone(phone);
 
+      // Deduce stream from course
+      if (course.category.includes('school')) setActiveStream('school');
+      else if (course.category.includes('entrance')) setActiveStream('entrance');
+      else if (course.category.includes('tnpsc') || course.category.includes('upsc') || course.category.includes('banking') || course.category.includes('ssc')) setActiveStream('career');
+      else if (course.category.includes('college')) setActiveStream('college');
+
       const doneSet = await getCompletedDaysForCourse(course.id);
       setCompletedDays(doneSet);
       const maxDay = await getMaxUnlockedDay(course.id);
@@ -98,7 +108,7 @@ export default function TutOWebPage() {
 
   const handleSelectCourse = async (course: CourseOption) => {
     setSelectedCourse(course);
-    setIsCourseDropdownOpen(false);
+    setIsCoursePickerOpen(false);
     
     let board: SchoolBoard = 'TNSB';
     if (typeof window !== 'undefined') {
@@ -127,106 +137,138 @@ export default function TutOWebPage() {
     setIsCoursePlayerOpen(true);
   };
 
+  // Filter courses for modal picker
+  const filteredCourses = useMemo(() => {
+    return ALL_COURSES.filter(c => {
+      const matchQuery = courseSearchQuery.trim() === '' ||
+        c.title.toLowerCase().includes(courseSearchQuery.toLowerCase()) ||
+        c.subtitle.toLowerCase().includes(courseSearchQuery.toLowerCase());
+      
+      if (!matchQuery) return false;
+
+      if (activeStream === 'school') return c.category.includes('school') || c.category.includes('featured_junior');
+      if (activeStream === 'entrance') return c.category.includes('entrance');
+      if (activeStream === 'career') return c.category.includes('tnpsc') || c.category.includes('upsc') || c.category.includes('banking') || c.category.includes('ssc');
+      if (activeStream === 'college') return c.category.includes('college') || c.category.includes('skills');
+      return true;
+    });
+  }, [activeStream, courseSearchQuery]);
+
   const currentAmbitionObj = FEATURED_JUNIOR_COURSES.find(c => c.id === activeAmbitionId) || FEATURED_JUNIOR_COURSES[0];
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+    <div className="max-w-7xl mx-auto p-3 sm:p-5 md:p-8 space-y-6 pb-44 md:pb-40 text-foreground">
       
-      {/* 1. Master Header Panel with Course Selector & Action Triggers */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center gap-4 relative w-full md:w-auto">
-          <div className="p-4 bg-indigo-100 text-indigo-600 rounded-2xl">
-            <GraduationCap className="w-8 h-8" />
+      {/* 1. TOP APP BAR (Sleek, Clean, Theme-Aware) */}
+      <div className="bg-card border border-border/80 rounded-3xl p-4 md:p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        
+        {/* Left: Active Course & Stream Badge */}
+        <div className="flex items-center gap-3.5 w-full md:w-auto">
+          <div className="p-3 bg-primary/10 text-primary rounded-2xl shrink-0">
+            <GraduationCap className="w-7 h-7" />
           </div>
-          <div className="flex-1">
-            <h1 className="text-xl md:text-2xl font-black text-gray-900 cursor-pointer flex items-center gap-2" onClick={() => setIsCourseDropdownOpen(!isCourseDropdownOpen)}>
-              {selectedCourse.title} <ChevronDown className="w-5 h-5 text-gray-400" />
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded-full">
+                {selectedCourse.category.replace(/_/g, ' ')}
+              </span>
+              <span className="text-xs text-muted-foreground font-medium">
                 Board: {selectedBoard}
               </span>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
-                <span>{currentAmbitionObj.icon || '🏛️'}</span>
-                <span>Aim: {currentAmbitionObj.short}</span>
-              </span>
             </div>
+            <h1 className="text-lg md:text-xl font-black text-foreground truncate mt-0.5">
+              {selectedCourse.title}
+            </h1>
           </div>
-          
-          {/* Dropdown for Course Selection */}
-          {isCourseDropdownOpen && (
-            <div className="absolute top-16 left-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-              <div className="p-3 bg-indigo-50 border-b border-indigo-100 text-xs font-bold text-indigo-900">
-                Select Your School Grade or Exam Track:
-              </div>
-              <div className="max-h-96 overflow-y-auto">
-                {ALL_COURSES.map(c => (
-                  <button 
-                    key={c.id} 
-                    className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-gray-50 flex items-center gap-3 transition-colors"
-                    onClick={() => handleSelectCourse(c)}
-                  >
-                    <BookOpen className="w-5 h-5 text-gray-400 shrink-0" />
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">{c.title}</p>
-                      <p className="text-xs text-gray-500">{c.target_exam || c.subtitle}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Header Action Buttons */}
-        <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
+        {/* Right: Actions & Switchers */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+          <button
+            onClick={() => setIsCoursePickerOpen(true)}
+            className="px-3.5 py-2.5 bg-muted hover:bg-muted/80 text-foreground rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all"
+          >
+            <span>Change Course</span>
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+
           <button 
             onClick={() => {
               setExplainerDayNumber(1);
               setIsExplainerModalOpen(true);
             }}
-            className="flex-1 md:flex-none px-4 py-3 bg-white hover:bg-indigo-50/80 text-indigo-700 border border-indigo-200 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-sm hover:shadow transition-all text-xs"
+            className="px-3.5 py-2.5 bg-card hover:bg-muted text-foreground border border-border rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
           >
-            <BookOpen className="w-4 h-4 text-indigo-600" />
+            <BookOpen className="w-3.5 h-3.5 text-primary" />
             <span>Daily Explainer</span>
-            <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase">
-              Notes
-            </span>
           </button>
 
           <button 
             onClick={() => setIsOnlineTestModalOpen(true)}
-            className="flex-1 md:flex-none px-5 py-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-md shadow-indigo-200 hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:opacity-90 text-white rounded-2xl font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition-all"
           >
-            <Zap className="w-4 h-4 fill-current text-amber-300" />
+            <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
             <span>Online Test</span>
-            <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full font-black uppercase">
-              30K+ MCQs
+            <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase">
+              30K
             </span>
           </button>
         </div>
       </div>
 
-      {/* 2. Primary LMS Navigation Tabs */}
-      <div className="flex border-b border-gray-200 gap-2 overflow-x-auto pb-0.5">
+      {/* 2. 4-PERSONA LEARNER STREAM SELECTOR BAR */}
+      <div className="bg-muted/40 p-1.5 rounded-2xl border border-border/60 flex items-center gap-1 overflow-x-auto">
+        {[
+          { id: 'school', label: '🎒 School (1st to 12th)', desc: 'Samacheer Kalvi & CBSE' },
+          { id: 'entrance', label: '🎯 NEET & JEE Entrances', desc: 'Medical & Engineering' },
+          { id: 'career', label: '🏛️ TNPSC & Govt Career', desc: 'Group 1/2/4 & UPSC' },
+          { id: 'college', label: '🎓 College & Skills', desc: 'Degree & Tech Programs' },
+        ].map((st) => (
+          <button
+            key={st.id}
+            onClick={() => {
+              setActiveStream(st.id as LearnerStream);
+              // Auto pick first course of stream if current does not match
+              const match = ALL_COURSES.find(c => {
+                if (st.id === 'school') return c.category.includes('school');
+                if (st.id === 'entrance') return c.category.includes('entrance');
+                if (st.id === 'career') return c.category.includes('tnpsc') || c.category.includes('upsc');
+                if (st.id === 'college') return c.category.includes('college');
+                return false;
+              });
+              if (match) handleSelectCourse(match);
+            }}
+            className={`flex-1 min-w-[140px] px-4 py-2 rounded-xl text-xs font-bold transition-all text-center ${
+              activeStream === st.id
+                ? 'bg-card text-primary shadow-sm border border-border/80'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <div className="truncate">{st.label}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* 3. PRIMARY VIEW MODE TABS */}
+      <div className="flex border-b border-border/80 gap-3 overflow-x-auto pb-0.5">
         <button
           onClick={() => setActiveTab('daily_mission')}
-          className={`px-5 py-3 font-extrabold text-sm rounded-t-2xl flex items-center gap-2 transition-all shrink-0 ${
+          className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 ${
             activeTab === 'daily_mission'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>📅 Today&apos;s Mission (10+1+1 Protocol)</span>
+          <span>📅 Today&apos;s Mission (Daily Cockpit)</span>
         </button>
 
         <button
           onClick={() => setActiveTab('curriculum_grid')}
-          className={`px-5 py-3 font-extrabold text-sm rounded-t-2xl flex items-center gap-2 transition-all shrink-0 ${
+          className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 ${
             activeTab === 'curriculum_grid'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -235,18 +277,21 @@ export default function TutOWebPage() {
 
         <button
           onClick={() => setActiveTab('ambitions')}
-          className={`px-5 py-3 font-extrabold text-sm rounded-t-2xl flex items-center gap-2 transition-all shrink-0 ${
+          className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 ${
             activeTab === 'ambitions'
-              ? 'bg-indigo-600 text-white shadow-sm'
-              : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
           <Compass className="w-4 h-4" />
-          <span>⭐ Futuristic Ambition Tracks</span>
+          <span>⭐ Futuristic Ambitions</span>
+          <span className="text-[10px] px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/30 rounded-full font-bold">
+            {currentAmbitionObj.short}
+          </span>
         </button>
       </div>
 
-      {/* 3. TAB 1: Today's Mission (Daily Planner Cockpit) */}
+      {/* 4. TAB 1: Today's Mission (Daily Planner Cockpit) */}
       {activeTab === 'daily_mission' && (
         <TutODailyPlannerCockpit 
           course={selectedCourse}
@@ -269,25 +314,25 @@ export default function TutOWebPage() {
         />
       )}
 
-      {/* 4. TAB 2: Curriculum Grid (300-Day Whole Year Roadmap) */}
+      {/* 5. TAB 2: 300-Day Curriculum Roadmap Grid */}
       {activeTab === 'curriculum_grid' && (
         <div className="space-y-4">
           <div className="flex justify-between items-end mb-2">
             <div>
-              <h2 className="text-2xl font-extrabold text-gray-900">Whole Year Academic Roadmap</h2>
-              <p className="text-gray-500 text-sm">300 progressive daily missions aligned with official syllabus.</p>
+              <h2 className="text-xl md:text-2xl font-black text-foreground">Whole Year Academic Roadmap</h2>
+              <p className="text-muted-foreground text-xs">300 progressive daily missions aligned with official syllabus.</p>
             </div>
             <div className="text-right">
-              <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-full">
+              <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-full border border-primary/20">
                 {completedDays.size} / {adminReleasedDays.length} Days Completed
               </span>
             </div>
           </div>
 
           {isLoadingDays ? (
-            <div className="text-center py-24 text-indigo-600 font-bold flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-              <span>Loading OCI Curriculum Roadmap...</span>
+            <div className="text-center py-24 text-primary font-bold flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-muted-foreground">Loading OCI Curriculum Roadmap...</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -298,50 +343,50 @@ export default function TutOWebPage() {
                   <div 
                     key={day.dayNumber}
                     onClick={() => !isLocked && handleOpenDay(day.dayNumber)}
-                    className={`border-2 rounded-3xl p-5 transition-all flex flex-col justify-between ${
+                    className={`rounded-3xl p-5 border transition-all flex flex-col justify-between ${
                       isLocked
-                        ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                        ? 'border-border/60 bg-muted/40 opacity-60 cursor-not-allowed'
                         : isDone 
-                        ? 'border-emerald-200 bg-emerald-50/40 cursor-pointer hover:scale-[1.01]' 
-                        : 'border-indigo-100 bg-white hover:border-indigo-300 shadow-sm cursor-pointer hover:scale-[1.01]'
+                        ? 'border-emerald-500/30 bg-card hover:border-emerald-500/50 cursor-pointer shadow-sm' 
+                        : 'border-border bg-card hover:border-primary/50 shadow-sm cursor-pointer'
                     }`}
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-base shadow-sm ${
-                          isDone ? 'bg-emerald-200 text-emerald-800' : 'bg-indigo-100 text-indigo-700'
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm ${
+                          isDone ? 'bg-emerald-500/20 text-emerald-500' : 'bg-primary/10 text-primary'
                         }`}>
                           D{day.dayNumber}
                         </div>
                         {isDone ? (
-                          <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         ) : isLocked ? (
-                          <Lock className="w-5 h-5 text-gray-400" />
+                          <Lock className="w-4 h-4 text-muted-foreground" />
                         ) : (
-                          <div className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" /> ~45m
+                          <div className="px-2 py-0.5 bg-muted text-muted-foreground rounded-lg text-[11px] font-bold flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> ~45m
                           </div>
                         )}
                       </div>
                       
-                      <h3 className="font-bold text-gray-900 mb-1 line-clamp-1">{day.title}</h3>
-                      <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-3">{day.description}</p>
+                      <h3 className="font-bold text-foreground mb-1 line-clamp-1 text-sm">{day.title}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{day.description}</p>
                       {isLocked && (
-                        <p className="text-xs text-orange-500 font-bold mb-2">🔒 Complete Day {day.dayNumber - 1} to unlock</p>
+                        <p className="text-[11px] text-amber-500 font-bold mb-2">🔒 Complete Day {day.dayNumber - 1} to unlock</p>
                       )}
                       
                       <div className="flex gap-2 mb-3">
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-muted text-muted-foreground rounded">
                           {day.subjectLabel}
                         </span>
-                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-pink-50 text-pink-600 rounded">
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded">
                           {day.taskCount} Tasks
                         </span>
                       </div>
                     </div>
 
                     {/* Quick Action Footer: Topic Notes & Start Day */}
-                    <div className="mt-2 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                    <div className="mt-2 pt-3 border-t border-border flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -349,11 +394,11 @@ export default function TutOWebPage() {
                           setExplainerDayNumber(day.dayNumber);
                           setIsExplainerModalOpen(true);
                         }}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline py-1 px-2 rounded-lg hover:bg-indigo-50 transition-colors"
-                        title="Read daily topic notes, flashcards & micro-quiz"
+                        className="text-xs font-bold text-primary hover:underline flex items-center gap-1 px-2 py-1 rounded"
+                        title="Read daily topic notes & micro-quiz"
                       >
                         <BookOpen className="w-3.5 h-3.5" />
-                        <span>Topic Notes</span>
+                        <span>Notes</span>
                       </button>
 
                       <button
@@ -365,11 +410,11 @@ export default function TutOWebPage() {
                         disabled={isLocked}
                         className={`text-xs font-bold flex items-center gap-1 py-1 px-2.5 rounded-xl transition-colors ${
                           isLocked 
-                            ? 'text-gray-400 cursor-not-allowed' 
-                            : 'text-gray-700 hover:text-indigo-600 hover:bg-gray-100'
+                            ? 'text-muted-foreground/60 cursor-not-allowed' 
+                            : 'text-foreground hover:bg-muted'
                         }`}
                       >
-                        <span>Start Day</span>
+                        <span>Start</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -381,12 +426,12 @@ export default function TutOWebPage() {
         </div>
       )}
 
-      {/* 5. TAB 3: Futuristic Ambition Hub */}
+      {/* 6. TAB 3: Futuristic Ambition Tracks Hub */}
       {activeTab === 'ambitions' && (
         <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-extrabold text-gray-900">Futuristic Career Ambition Tracks</h2>
-            <p className="text-gray-500 text-sm">
+            <h2 className="text-xl md:text-2xl font-black text-foreground">Futuristic Career Ambition Tracks</h2>
+            <p className="text-muted-foreground text-xs">
               Early foundational reasoning, governance, robotics, medicine, and deep science alongside your school curriculum.
             </p>
           </div>
@@ -398,40 +443,40 @@ export default function TutOWebPage() {
                 <div
                   key={amb.id}
                   onClick={() => handleSelectAmbition(amb.id)}
-                  className={`rounded-3xl p-6 border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`rounded-3xl p-6 border-2 transition-all cursor-pointer flex flex-col justify-between bg-card ${
                     isSelected
-                      ? 'border-indigo-600 bg-indigo-50/50 shadow-md ring-2 ring-indigo-600/20'
-                      : 'border-gray-200 bg-white hover:border-indigo-300 shadow-sm'
+                      ? 'border-primary shadow-lg ring-2 ring-primary/20'
+                      : 'border-border hover:border-border/80'
                   }`}
                 >
                   <div>
                     <div className="flex justify-between items-start mb-4">
                       <span className="text-4xl">{amb.icon || '⭐'}</span>
                       {isSelected ? (
-                        <span className="bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Active Track
+                        <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Active Aim
                         </span>
                       ) : (
-                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-                          Click to Select
+                        <span className="text-xs font-bold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                          Select
                         </span>
                       )}
                     </div>
 
-                    <h3 className="text-lg font-black text-gray-900 mb-1">
+                    <h3 className="text-lg font-black text-foreground mb-1">
                       {amb.short}
                     </h3>
-                    <p className="text-xs text-indigo-700 font-bold mb-2">
+                    <p className="text-xs text-primary font-bold mb-2">
                       {amb.title}
                     </p>
-                    <p className="text-xs text-gray-500 line-clamp-2 mb-4">
+                    <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
                       {amb.subtitle}
                     </p>
 
                     <div className="space-y-1.5 mb-4">
-                      <p className="text-[11px] font-bold text-gray-600 uppercase tracking-wider">Subjects Covered:</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Key Foundation Units:</p>
                       {amb.subjects?.slice(0, 3).map((sub, i) => (
-                        <div key={i} className="flex items-center gap-1.5 text-xs text-gray-700">
+                        <div key={i} className="flex items-center gap-1.5 text-xs text-foreground/80">
                           <span>{sub.icon}</span>
                           <span className="truncate">{sub.name}</span>
                         </div>
@@ -447,8 +492,8 @@ export default function TutOWebPage() {
                     }}
                     className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
                       isSelected
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-foreground hover:bg-muted/80'
                     }`}
                   >
                     <span>{isSelected ? 'Open in Daily Planner' : 'Set as My Ambition'}</span>
@@ -461,7 +506,65 @@ export default function TutOWebPage() {
         </div>
       )}
 
-      {/* 6. Modals */}
+      {/* 7. COURSE SELECTION MODAL (Comprehensive & Clean) */}
+      {isCoursePickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-2xl bg-card border border-border rounded-3xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-black text-foreground">Select Course or Exam Track</h3>
+                <p className="text-xs text-muted-foreground">Pick from School standards, Competitive exams, or College degrees.</p>
+              </div>
+              <button
+                onClick={() => setIsCoursePickerOpen(false)}
+                className="p-2 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+              <input
+                type="text"
+                value={courseSearchQuery}
+                onChange={(e) => setCourseSearchQuery(e.target.value)}
+                placeholder="Search by class, exam or subject (e.g. 10th, NEET, TNPSC, Physics)..."
+                className="w-full pl-9 pr-4 py-2.5 bg-muted/60 border border-border rounded-xl text-xs text-foreground focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            {/* Courses List */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              {filteredCourses.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => handleSelectCourse(c)}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    c.id === selectedCourse.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border/60 bg-muted/20 hover:border-border hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-xs font-bold text-foreground truncate">{c.title}</span>
+                      <span className="text-[10px] px-2 py-0.2 bg-muted text-muted-foreground rounded uppercase font-bold">
+                        {c.board}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{c.subtitle}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Modals */}
       {isOnboardingModalOpen && (
         <StudentOnboardingWebModal 
           isOpen={isOnboardingModalOpen}
