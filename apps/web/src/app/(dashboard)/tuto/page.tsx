@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   GraduationCap, Target, Calendar, Search, ChevronDown,
-  CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers, Lock
+  CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers, Lock, Zap, FileText
 } from 'lucide-react';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard } from '@/data/coursesCatalog';
@@ -11,6 +11,7 @@ import { getReleasedDaySummariesForCourse, getCompletedDaysForCourse, DayPlanSum
 
 // Modals
 import { StudentOnboardingWebModal } from '@/components/teacho/StudentOnboardingWebModal';
+import { TutOOnlineTestWebModal } from '@/components/teacho/TutOOnlineTestWebModal';
 import { TutOQBankWebModal } from '@/components/teacho/TutOQBankWebModal';
 import { TutODayCoursePlayerWebModal } from '@/components/teacho/TutODayCoursePlayerWebModal';
 
@@ -29,6 +30,7 @@ export default function TutOWebPage() {
   const [isLoadingDays, setIsLoadingDays] = useState(true);
 
   // Modal State
+  const [isOnlineTestModalOpen, setIsOnlineTestModalOpen] = useState(false);
   const [isQBankModalOpen, setIsQBankModalOpen] = useState(false);
   const [isCoursePlayerOpen, setIsCoursePlayerOpen] = useState(false);
   const [playerDayNumber, setPlayerDayNumber] = useState(1);
@@ -144,11 +146,14 @@ export default function TutOWebPage() {
 
         <div className="flex gap-3 w-full md:w-auto">
           <button 
-            onClick={() => setIsQBankModalOpen(true)}
-            className="flex-1 md:flex-none px-6 py-3 bg-white border-2 border-indigo-100 text-indigo-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-50"
+            onClick={() => setIsOnlineTestModalOpen(true)}
+            className="flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl font-bold flex items-center justify-center gap-2.5 shadow-md shadow-indigo-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <Search className="w-5 h-5" />
-            QBank Search
+            <Zap className="w-5 h-5 fill-current text-amber-300" />
+            <span>Online Test</span>
+            <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+              30K+ MCQs
+            </span>
           </button>
         </div>
       </div>
@@ -227,6 +232,14 @@ export default function TutOWebPage() {
         <StudentOnboardingWebModal 
           isOpen={isOnboardingModalOpen}
           onClose={() => setIsOnboardingModalOpen(false)}
+        />
+      )}
+
+      {isOnlineTestModalOpen && (
+        <TutOOnlineTestWebModal 
+          isOpen={isOnlineTestModalOpen}
+          onClose={() => setIsOnlineTestModalOpen(false)}
+          course={selectedCourse}
         />
       )}
 
