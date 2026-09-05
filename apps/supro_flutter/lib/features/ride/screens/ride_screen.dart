@@ -10,6 +10,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
 import 'package:http/http.dart' as http;
+import '../../../core/env.dart';
 
 class VehicleCategory {
   final String id;
@@ -405,9 +406,9 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
       // Start 300s (5:00 min) countdown timer with auto-expiry
       _startCountdownTimer();
 
-      // Dispatch webhook notification
+      // Dispatch notification to OCI backend
       http.post(
-        Uri.parse('https://watscrm.vercel.app/api/rides/book'),
+        Uri.parse('${AppEnv.apiUrl}/api/rides'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'ride_id': inserted['id'],

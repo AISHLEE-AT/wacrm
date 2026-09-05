@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'dart:async';
 
 
+import '../../../core/env.dart';
+
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
   return Supabase.instance.client;
 });
@@ -21,7 +23,7 @@ final currentUserProvider = Provider<User?>((ref) {
 
 class AuthController extends AsyncNotifier<void> {
   late final SupabaseClient _supabase;
-  final String _apiUrl = 'https://watscrm.vercel.app/api'; 
+  final String _apiUrl = '${AppEnv.apiUrl}/api'; 
 
   @override
   FutureOr<void> build() {

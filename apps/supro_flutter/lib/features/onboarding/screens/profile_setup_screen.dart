@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../core/env.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -216,7 +217,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         final phone = user.phone ?? '';
         
         await http.post(
-          Uri.parse('https://watscrm.vercel.app/api/profile/update'),
+          Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'phone': phone,

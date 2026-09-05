@@ -1,5 +1,6 @@
 import 'package:url_launcher/url_launcher.dart';
 import '../data/courses_catalog.dart';
+import '../../../core/env.dart';
 
 class TeachoWhatsAppService {
   /// Format and send daily syllabus routine & active session alert to student WhatsApp
@@ -28,7 +29,7 @@ class TeachoWhatsAppService {
         '$taskLines\n\n'
         '🤖 *AI Doubt Solver:* Ask any doubt 24/7 in English & Tamil.\n'
         '📝 *TestO Assessment:* Take your 15-minute concept test to lock in XP.\n\n'
-        '🚀 *Continue Learning:* https://supro.poovisri.com/teacho\n'
+        '🚀 *Continue Learning:* ${AppEnv.crmUrl}/teacho\n'
         '_Keep up the momentum and achieve Centum!_ ✨';
   }
 
@@ -78,7 +79,7 @@ class TeachoWhatsAppService {
         '📅 *Program Duration:* $totalDays Structured Daily Steps\n'
         '⏰ *Daily Study Routine:* 4 micro-lessons (~80 mins/day)\n'
         '🤖 *AI Tutor & TestO Exam Engine:* Activated for your number.\n\n'
-        'Open your daily routine: https://supro.poovisri.com/teacho\n'
+        'Open your daily routine: ${AppEnv.crmUrl}/teacho\n'
         'Happy Learning! 🌟';
 
     final uri = Uri.parse('https://wa.me/$formattedPhone?text=${Uri.encodeComponent(text)}');

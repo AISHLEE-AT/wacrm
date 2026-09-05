@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/gemini_service.dart';
 import '../services/history_service.dart';
+import '../../../core/env.dart';
 
 // ─── CATEGORIES ───
 class _Category {
@@ -170,7 +171,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
       final phone = user?.phone;
       if (phone != null && phone.isNotEmpty) {
         http.post(
-          Uri.parse('https://watscrm.vercel.app/api/profile/update'),
+          Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'phone': phone, 'gemini_api_key': cleanKey}),
         ).catchError((_) {});

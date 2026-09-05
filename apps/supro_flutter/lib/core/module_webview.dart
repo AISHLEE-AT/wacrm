@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'env.dart';
 
 class ModuleWebView extends StatefulWidget {
   final String path;
@@ -33,7 +34,7 @@ class _ModuleWebViewState extends State<ModuleWebView> {
       authQueryParams = authQueryParams.replaceFirst('?', '&');
     }
 
-    final targetUrl = 'https://watscrm.vercel.app${widget.path}$authQueryParams';
+    final targetUrl = '${AppEnv.crmUrl}${widget.path}$authQueryParams';
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)

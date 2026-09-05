@@ -18,8 +18,10 @@ const List<String> _candidateModels = [
   'gemini-1.5-pro',
 ];
 
+import '../../../core/env.dart';
+
 const String _defaultModel = 'gemini-2.5-flash';
-const String _cloudAiApi = 'https://watscrm.vercel.app/api/ai';
+final String _cloudAiApi = '${AppEnv.apiUrl}/api/ai';
 
 class GeminiService {
   // ─── Main prompt execution engine with Cloud Fallback ───

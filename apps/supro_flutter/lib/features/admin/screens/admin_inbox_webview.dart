@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/env.dart';
 
 class AdminInboxWebview extends StatefulWidget {
   const AdminInboxWebview({super.key});
@@ -27,7 +28,7 @@ class _AdminInboxWebviewState extends State<AdminInboxWebview> {
       authQueryParams += '&access_token=$token&refresh_token=$refresh';
     }
 
-    final targetUrl = 'https://watscrm.vercel.app/inbox$authQueryParams';
+    final targetUrl = '${AppEnv.crmUrl}/inbox$authQueryParams';
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)

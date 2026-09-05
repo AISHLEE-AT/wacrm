@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../services/rewards_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/env.dart';
 
 class RewardsScreen extends StatefulWidget {
   const RewardsScreen({super.key});
@@ -657,7 +658,7 @@ class _CouponSuccessSheet extends StatelessWidget {
     void openPortal() async {
       Navigator.pop(context);
       final uri = Uri.parse(
-          'https://watscrm.vercel.app/redeem?coupon=$code&type=${reward.rewardType}');
+          '${AppEnv.crmUrl}/redeem?coupon=$code&type=${reward.rewardType}');
       if (await canLaunchUrl(uri)) await launchUrl(uri);
     }
 

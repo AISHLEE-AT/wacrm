@@ -1,4 +1,5 @@
 import '../core/gameo_supabase.dart';
+import '../core/env.dart';
 
 /// Handles fetching balances and redeeming game rewards for portal coupons.
 class RewardsService {
@@ -113,7 +114,7 @@ class RewardsService {
 
   /// Generates the portal deep link URL for a coupon.
   static String getPortalDeepLink(GameCoupon coupon) {
-    return 'https://watscrm.vercel.app/redeem?coupon=${coupon.couponCode}&type=${coupon.rewardType}';
+    return '${AppEnv.crmUrl}/redeem?coupon=${coupon.couponCode}&type=${coupon.rewardType}';
   }
 }
 

@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide MapType;
 import 'package:http/http.dart' as http;
+import '../../../core/env.dart';
 
 class DriveoScreen extends ConsumerStatefulWidget {
   const DriveoScreen({super.key});
@@ -365,9 +366,9 @@ class _DriveoScreenState extends ConsumerState<DriveoScreen> {
         _activeRide = updated;
       });
 
-      // Trigger Webhook
+      // Trigger Webhook on OCI backend
       http.post(
-        Uri.parse('https://watscrm.vercel.app/api/rides/driver-action'),
+        Uri.parse('${AppEnv.apiUrl}/api/ride/driver-action'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'ride_id': rideId, 'driver_id': _driverRecord!['id'], 'action': 'accepted'}),
       ).catchError((_) => http.Response('', 500));

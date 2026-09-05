@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter/services.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../../core/env.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -66,7 +67,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
       if (phone != null) {
         // Fetch full profile via the check endpoint
-        final res = await http.get(Uri.parse('https://watscrm.vercel.app/api/auth/check?phone=$phone'));
+        final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/auth/check?phone=$phone'));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           if (data['exists'] == true) {
@@ -119,7 +120,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (phone != null) {
         final cleanVal = value.trim();
         final res = await http.post(
-          Uri.parse('https://watscrm.vercel.app/api/profile/update'),
+          Uri.parse('${AppEnv.apiUrl}/api/profile/update'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'phone': phone,
