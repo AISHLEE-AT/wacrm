@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronRight,
+  ChevronLeft,
   Flame,
   Star,
   Compass,
@@ -31,6 +32,7 @@ import {
   Camera
 } from 'lucide-react';
 import { CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '@/data/coursesCatalog';
+import { generateUniqueTenClassesForDay } from '@/data/curriculum/curriculum365Engine';
 import { TutOBookPageScannerModal } from './TutOBookPageScannerModal';
 
 export interface DailyClassItem {
@@ -41,6 +43,9 @@ export interface DailyClassItem {
   duration: string;
   xp: number;
   icon: string;
+  microTopic?: string;
+  tamilTitle?: string;
+  videoUrl?: string;
 }
 
 export interface DailyYogaItem {
@@ -69,6 +74,7 @@ interface TutODailyPlannerCockpitProps {
   activeAmbitionId: string;
   onSelectAmbition: (ambitionId: string) => void;
   dayNumber: number;
+  onChangeDayNumber?: (newDay: number) => void;
   onOpenExplainer: (dayNum: number, topicHint?: string) => void;
   onOpenTest: (category: string, subject: string) => void;
   onOpenCoursePlayer: (dayNum: number) => void;
@@ -142,193 +148,11 @@ export const AMBITION_FEATURE_TRACKS = [
   }
 ];
 
-export const getInitialClassesForGrade = (courseId: string, ambitionId: string): DailyClassItem[] => {
-  const isLkg = courseId.includes('lkg');
-  const isUkg = courseId.includes('ukg');
-
-  let ambitionClass8: DailyClassItem = {
-    id: 8,
-    type: 'ambition',
-    title: 'JrIAS (Civil Servant): Indian Constitution, District Administration & Public Policy',
-    subject: 'JrIAS (Civil Servant)',
-    duration: '15 Min',
-    xp: 30,
-    icon: '🏛️'
-  };
-
-  if (ambitionId === 'jr-ar' || ambitionId === 'auditor') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrAR (Auditor): Double-Entry Bookkeeping, Financial Statements & Balance Sheets',
-      subject: 'JrAR (Auditor)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '📊'
-    };
-  } else if (ambitionId === 'jr-dr' || ambitionId === 'doctor') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrDR (Doctor): Human Anatomy, Major Organ Systems & Clinical Diagnostics',
-      subject: 'JrDR (Doctor)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '🩺'
-    };
-  } else if (ambitionId === 'jr-er' || ambitionId === 'engineer') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrER (Engineer): Code Logic, Algorithms & Robotics Engineering',
-      subject: 'JrER (Engineer)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '🤖'
-    };
-  } else if (ambitionId === 'jr-ips' || ambitionId === 'police') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrIPS (Police): Forensics, Cyber Crime Investigation & Public Safety',
-      subject: 'JrIPS (Police)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '👮'
-    };
-  } else if (ambitionId === 'jr-ceo' || ambitionId === 'entrepreneur') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrCEO (Entrepreneur): Startup Venture Ideation, Business Models & Pitch Decks',
-      subject: 'JrCEO (Entrepreneur)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '🚀'
-    };
-  } else if (ambitionId === 'jr-scientist' || ambitionId === 'jr-sc') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrScientist (ISRO): Rocket Propulsion, Satellite Systems & Deep Space',
-      subject: 'JrScientist (ISRO)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '🔬'
-    };
-  } else if (ambitionId === 'jr-judge' || ambitionId === 'law') {
-    ambitionClass8 = {
-      id: 8,
-      type: 'ambition',
-      title: 'JrJudge (Justice): Constitutional Rights, Courtroom Ethics & Legal Reasoning',
-      subject: 'JrJudge (Justice)',
-      duration: '15 Min',
-      xp: 30,
-      icon: '⚖️'
-    };
-  }
-
-  if (isLkg || isUkg) {
-    const kg = isLkg ? 'LKG' : 'UKG';
-    return [
-      { id: 1, type: 'academic', title: `${kg} English Phonics: Letter Sounds, Sight Words & Action Rhymes`, subject: 'Phonics & English', duration: '15 Min', xp: 25, icon: '🔤' },
-      { id: 2, type: 'academic', title: `${kg} Number Magic: Counting 1 to 20/50, Shapes & Spatial Logic`, subject: 'Number Magic', duration: '15 Min', xp: 25, icon: '🔢' },
-      { id: 3, type: 'academic', title: `${kg} தமிழ் உயிர்/மெய் எழுத்துக்கள் & பாப்பா பாட்டு`, subject: 'தமிழ் (Tamil)', duration: '15 Min', xp: 25, icon: '🗣️' },
-      { id: 4, type: 'academic', title: `${kg} Nature & EVS: Animals, Birds, Seasons & Colors`, subject: 'Nature & EVS', duration: '15 Min', xp: 25, icon: '🌿' },
-      { id: 5, type: 'academic', title: `${kg} Story Time & Moral Fables: Panchatantra Tales`, subject: 'Story & Values', duration: '10 Min', xp: 20, icon: '📖' },
-      { id: 6, type: 'homework', title: `${kg} Fine Motor & Tracing Practice: Strokes, Lines & Pencil Grip`, subject: 'Tracing & Strokes', duration: '10 Min', xp: 20, icon: '✍️' },
-      { id: 7, type: 'academic', title: `${kg} Creative Arts & Expression: Clay Modeling & Origami`, subject: 'Creative Arts', duration: '10 Min', xp: 20, icon: '🎨' },
-      ambitionClass8,
-      { id: 9, type: 'masterclass', title: `${kg} Visual Masterclass: 3D Cartoon Explainer & Nursery Sing-Along`, subject: 'Visual Masterclass', duration: '15 Min', xp: 25, icon: '🎥' },
-      { id: 10, type: 'revision', title: `${kg} Bedtime Recap: 3-Picture Visual Quiz & Star Reward`, subject: 'Bedtime Revision', duration: '10 Min', xp: 20, icon: '🌙' }
-    ];
-  }
-
-  return [
-    {
-      id: 1,
-      type: 'academic',
-      title: '5th Std Mathematics Core: Factors, Multiples, Decimals & LCM/HCF (கணிதம்)',
-      subject: 'Mathematics',
-      duration: '15 Min',
-      xp: 25,
-      icon: '📐'
-    },
-    {
-      id: 2,
-      type: 'academic',
-      title: '5th Std Science Core: States of Matter, Energy & Plant Life (அறிவியல்)',
-      subject: 'Science',
-      duration: '15 Min',
-      xp: 25,
-      icon: '🔬'
-    },
-    {
-      id: 3,
-      type: 'academic',
-      title: '5th Std Languages: பருவம் 1 - தமிழின் இனிமை & English Grammar (Sentences & Conjunctions)',
-      subject: 'Languages',
-      duration: '15 Min',
-      xp: 25,
-      icon: '📖'
-    },
-    {
-      id: 4,
-      type: 'academic',
-      title: '5th Std Social Science Awareness: Our Earth, Continents, Oceans & TN Heritage (சமூக அறிவியல்)',
-      subject: 'Social Science',
-      duration: '15 Min',
-      xp: 25,
-      icon: '🌍'
-    },
-    {
-      id: 5,
-      type: 'academic',
-      title: '5th Std General Knowledge (GK) & Current Affairs: Tamil Nadu & India Milestones',
-      subject: 'GK & Current Affairs',
-      duration: '10 Min',
-      xp: 20,
-      icon: '📰'
-    },
-    {
-      id: 6,
-      type: 'homework',
-      title: '5th Std Handwriting & Penmanship Practice: Cursive English & Tamil Calligraphy',
-      subject: 'Penmanship',
-      duration: '10 Min',
-      xp: 20,
-      icon: '✍️'
-    },
-    {
-      id: 7,
-      type: 'academic',
-      title: '5th Std Extracurricular & Creative Skills: Logical Reasoning, Puzzles & Ethics',
-      subject: 'Extracurricular',
-      duration: '10 Min',
-      xp: 20,
-      icon: '🎨'
-    },
-    ambitionClass8,
-    {
-      id: 9,
-      type: 'masterclass',
-      title: '5th Std Visual Masterclass: 3D Animated Simulation of Solar System & States of Matter',
-      subject: 'Visual Masterclass',
-      duration: '15 Min',
-      xp: 25,
-      icon: '🎥'
-    },
-    {
-      id: 10,
-      type: 'revision',
-      title: '5th Std Bedtime Revision: Daily Formula Vault, Vocabulary Flashcards & 1-Min Recap',
-      subject: 'Bedtime Revision',
-      duration: '10 Min',
-      xp: 20,
-      icon: '🌙'
-    }
-  ];
+export const getInitialClassesForGrade = (courseId: string, ambitionId: string, dayNum: number = 1): DailyClassItem[] => {
+  const plan = generateUniqueTenClassesForDay(courseId, ambitionId, dayNum);
+  return plan.classes as DailyClassItem[];
 };
+
 
 export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[] => {
   return getInitialClassesForGrade('school-std-5', ambitionId);
@@ -340,13 +164,28 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   activeAmbitionId,
   onSelectAmbition,
   dayNumber,
+  onChangeDayNumber,
   onOpenExplainer,
   onOpenTest,
   onOpenCoursePlayer,
   userPhone = 'anonymous'
 }) => {
+  const [activeDay, setActiveDay] = useState<number>(dayNumber);
+
+  useEffect(() => {
+    setActiveDay(dayNumber);
+  }, [dayNumber]);
+
+  const handleDayChange = (newDay: number) => {
+    const clamped = Math.max(1, Math.min(365, newDay));
+    setActiveDay(clamped);
+    if (onChangeDayNumber) {
+      onChangeDayNumber(clamped);
+    }
+  };
+
   const [isLoading, setIsLoading] = useState(false);
-  const [classes, setClasses] = useState<DailyClassItem[]>(() => getInitialClassesFor5thStd(activeAmbitionId));
+  const [classes, setClasses] = useState<DailyClassItem[]>(() => getInitialClassesForGrade(course.id, activeAmbitionId, dayNumber));
   const [yoga, setYoga] = useState<DailyYogaItem | null>(null);
   const [dailyTest, setDailyTest] = useState<DailyTestConfig | null>(null);
   
@@ -392,9 +231,9 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   // Current Ambition
   const currentAmbition = AMBITION_FEATURE_TRACKS.find(c => c.id === activeAmbitionId) || AMBITION_FEATURE_TRACKS[0];
 
-  const checkSubmissionStatus = () => {
+  const checkSubmissionStatus = (targetDay: number = activeDay) => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`tuto_sub_status_${course.id}_day_${dayNumber}`);
+      const saved = localStorage.getItem(`tuto_sub_status_${course.id}_day_${targetDay}`);
       if (saved === 'submitted' || saved === 'approved') {
         setSubmissionStatus(saved as any);
       } else {
@@ -453,7 +292,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
           academicClass: course.id,
           ambitionId: activeAmbitionId,
           courseId: course.id,
-          dayNumber,
+          dayNumber: activeDay,
           classesCompleted: completedClasses.length,
           totalClasses: 10,
           yogaCompleted,
@@ -467,10 +306,10 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
       if (res.ok) {
         setSubmissionStatus('submitted');
         if (typeof window !== 'undefined') {
-          localStorage.setItem(`tuto_sub_status_${course.id}_day_${dayNumber}`, 'submitted');
+          localStorage.setItem(`tuto_sub_status_${course.id}_day_${activeDay}`, 'submitted');
         }
         setIsSubmitModalOpen(false);
-        setSubmissionSuccessMsg(`🎉 Mission Day ${dayNumber} successfully submitted to your Teacher/Guide for review!`);
+        setSubmissionSuccessMsg(`🎉 Mission Day ${activeDay} successfully submitted to your Teacher/Guide for review!`);
         setTimeout(() => setSubmissionSuccessMsg(null), 7000);
       } else {
         alert('Could not submit mission. Please try again.');
@@ -482,10 +321,10 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
     }
   };
 
-  const fetchPlanner = async () => {
+  const fetchPlanner = async (targetDay: number = activeDay) => {
     try {
       const res = await fetch(
-        `https://mysupro.duckdns.org/api/tuto/planner/today?phone=${encodeURIComponent(userPhone)}&courseId=${encodeURIComponent(course.id)}&ambitionId=${encodeURIComponent(activeAmbitionId)}&dayNumber=${dayNumber}`
+        `https://mysupro.duckdns.org/api/tuto/planner/today?phone=${encodeURIComponent(userPhone)}&courseId=${encodeURIComponent(course.id)}&ambitionId=${encodeURIComponent(activeAmbitionId)}&dayNumber=${targetDay}`
       );
       if (res.ok) {
         const data = await res.json();
@@ -509,15 +348,15 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   };
 
   useEffect(() => {
-    setClasses(getInitialClassesForGrade(course.id, activeAmbitionId));
-    fetchPlanner();
+    setClasses(getInitialClassesForGrade(course.id, activeAmbitionId, activeDay));
+    fetchPlanner(activeDay);
     fetchStudentAlerts();
-    checkSubmissionStatus();
+    checkSubmissionStatus(activeDay);
     if (typeof window !== 'undefined') {
       const savedKey = localStorage.getItem('gemini-api-key') || '';
       setGeminiApiKey(savedKey);
     }
-  }, [course.id, activeAmbitionId, dayNumber, userPhone]);
+  }, [course.id, activeAmbitionId, activeDay, userPhone]);
 
   // Toggle class completion
   const handleToggleClass = async (classIndex: number, xp: number) => {
@@ -535,7 +374,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         body: JSON.stringify({
           phone: userPhone,
           courseId: course.id,
-          dayNumber,
+          dayNumber: activeDay,
           taskType: 'class',
           classIndex,
           completed: newCompleted,
@@ -561,7 +400,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         body: JSON.stringify({
           phone: userPhone,
           courseId: course.id,
-          dayNumber,
+          dayNumber: activeDay,
           taskType: 'yoga',
           completed: newDone,
           xp: 50
@@ -724,6 +563,104 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         </div>
       )}
 
+      {/* 365-DAY INTERACTIVE TIMELINE & NAVIGATION BAR */}
+      <div className="p-4 rounded-3xl bg-slate-900/95 border border-indigo-500/30 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Left: Previous Day Button */}
+        <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-start">
+          <button
+            type="button"
+            onClick={() => handleDayChange(activeDay - 1)}
+            disabled={activeDay <= 1}
+            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition border border-white/10 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Prev Day</span>
+          </button>
+
+          {/* Current Day & Term Header (Mobile) */}
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="px-3 py-1 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-200 text-xs font-black">
+              Day {activeDay} / 365
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleDayChange(activeDay + 1)}
+            disabled={activeDay >= 365}
+            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition border border-white/10 md:hidden cursor-pointer disabled:cursor-not-allowed"
+          >
+            <span>Next</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Center: Term & Day Indicator & Jump Pills */}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="hidden md:inline-flex px-3 py-1.5 rounded-xl bg-indigo-600/30 border border-indigo-500/50 text-indigo-100 text-xs font-black items-center gap-1.5 shadow-sm">
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              Day {activeDay} of 365
+            </span>
+            <span className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold uppercase border ${
+              activeDay <= 120 
+                ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' 
+                : activeDay <= 240 
+                ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' 
+                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+            }`}>
+              {activeDay <= 120 ? 'Term 1: Foundations' : activeDay <= 240 ? 'Term 2: Applied & Lab' : 'Term 3: Advanced Revision'}
+            </span>
+          </div>
+
+          {/* Quick Jump Buttons */}
+          <div className="flex items-center gap-1">
+            {[1, 50, 100, 180, 250, 365].map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => handleDayChange(d)}
+                className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                  activeDay === d
+                    ? 'bg-amber-400 text-slate-950 shadow-md font-black ring-1 ring-amber-300'
+                    : 'bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white'
+                }`}
+              >
+                D{d}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Direct Day Jump Selector + Next Day Button (Desktop) */}
+        <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-xs text-slate-300">
+            <span className="font-semibold text-[11px]">Jump to:</span>
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={activeDay}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val)) handleDayChange(val);
+              }}
+              className="w-16 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-center text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-400"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleDayChange(activeDay + 1)}
+            disabled={activeDay >= 365}
+            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition border border-white/10 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <span>Next Day</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
       {/* MODULE 1: DAY MISSION COMPLETION & SUBMISSION TO TEACHER / GUIDE */}
       <div className="p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-3">
@@ -732,7 +669,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white">Day {dayNumber} Daily Mission</span>
+              <span className="text-xs font-bold text-white">Day {activeDay} Daily Mission</span>
               {submissionStatus === 'approved' ? (
                 <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase">
                   Approved & Commended
@@ -766,10 +703,10 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
           <Send className="w-3.5 h-3.5" />
           <span>
             {submissionStatus === 'approved'
-              ? `View Day ${dayNumber} Teacher Review`
+              ? `View Day ${activeDay} Teacher Review`
               : submissionStatus === 'submitted'
-              ? `Update Day ${dayNumber} Submission`
-              : `Submit Day ${dayNumber} Mission to Teacher / Guide`}
+              ? `Update Day ${activeDay} Submission`
+              : `Submit Day ${activeDay} Mission to Teacher / Guide`}
           </span>
         </button>
       </div>
@@ -790,7 +727,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                 {totalXp} XP Total
               </span>
               <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 text-xs px-3 py-1 rounded-full font-bold">
-                Day {dayNumber} of 365
+                Day {activeDay} of 365
               </span>
             </div>
 
@@ -844,7 +781,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
           <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 w-full lg:w-auto">
             {nextClass && (
               <button
-                onClick={() => onOpenCoursePlayer(dayNumber)}
+                onClick={() => onOpenCoursePlayer(activeDay)}
                 className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 <Play className="w-4 h-4 fill-slate-950" />
@@ -1093,14 +1030,14 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                           {/* Actions */}
                           <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
                             <button
-                              onClick={() => onOpenExplainer(dayNumber, cls.title)}
+                              onClick={() => onOpenExplainer(activeDay, cls.title)}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 transition-all flex items-center gap-1"
                             >
                               <BookOpen className="w-3.5 h-3.5" />
                               <span>Notes</span>
                             </button>
                             <button
-                              onClick={() => onOpenCoursePlayer(dayNumber)}
+                              onClick={() => onOpenCoursePlayer(activeDay)}
                               className="px-3 py-1.5 rounded-lg text-xs font-bold bg-muted hover:bg-muted/80 text-foreground transition-all flex items-center gap-1"
                             >
                               <Play className="w-3.5 h-3.5" />
@@ -1365,7 +1302,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                   Module 1 • Student Submission
                 </span>
                 <h3 className="text-lg font-black text-white mt-1">
-                  Submit Day {dayNumber} Mission to Teacher
+                  Submit Day {activeDay} Mission to Teacher
                 </h3>
                 <p className="text-xs text-slate-400">
                   Your academic guide will evaluate your daily progress and award remarks & bonus XP.

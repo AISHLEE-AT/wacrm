@@ -303,6 +303,7 @@ export default function TutOWebPage() {
           activeAmbitionId={activeAmbitionId}
           onSelectAmbition={handleSelectAmbition}
           dayNumber={playerDayNumber}
+          onChangeDayNumber={(newDay) => setPlayerDayNumber(newDay)}
           onOpenExplainer={(day, topic) => {
             setExplainerDayNumber(day);
             setIsExplainerModalOpen(true);

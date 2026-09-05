@@ -58,6 +58,14 @@ import {
   OfficialNanoConcept,
 } from '../../../../data/curriculum/officialGovernmentSyllabusRegistry';
 import { resolveNanoDayPlan, NanoDayPlan } from '../../../../data/curriculum/dayPlanNanoEngine';
+import {
+  generateUniqueTenClassesForDay,
+  DayClassItem,
+  DayQuizQuestion,
+  DayYogaPlan,
+  DayTestPlan,
+} from '../../../../data/curriculum/curriculum365Engine';
+import { AMBITION_FEATURE_TRACKS } from '../../../../components/teacho/TutODailyPlannerCockpit';
 import { geminiToolsService, GEMINI_MODELS } from '../../../../lib/geminiToolsService';
 import {
   GoogleSheetsDayPlanService,
@@ -162,6 +170,135 @@ export default function TutOAdminStudioPage() {
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(ALL_COURSES[0]);
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [dayNumber, setDayNumber] = useState<number>(1);
+
+  // 365-Day Whole-Year Master Schedule Studio States
+  const [adminAmbitionId, setAdminAmbitionId] = useState<string>('jr-ias');
+  const [adminClasses, setAdminClasses] = useState<DayClassItem[]>([]);
+  const [adminYoga, setAdminYoga] = useState<DayYogaPlan | null>(null);
+  const [adminDailyTest, setAdminDailyTest] = useState<DayTestPlan | null>(null);
+  const [adminTopicTitle, setAdminTopicTitle] = useState<string>('');
+  const [adminChapterTitle, setAdminChapterTitle] = useState<string>('');
+  const [isAdminCustom, setIsAdminCustom] = useState<boolean>(false);
+  const [isLoadingDayPlan, setIsLoadingDayPlan] = useState<boolean>(false);
+  const [isSavingDayPlan, setIsSavingDayPlan] = useState<boolean>(false);
+
+  const fetchAdminDayPlan = async (courseId: string, day: number, ambition: string) => {
+    setIsLoadingDayPlan(true);
+    try {
+      const res = await fetch(
+        `https://mysupro.duckdns.org/api/tuto/admin/day-plan/get?courseId=${encodeURIComponent(courseId)}&dayNumber=${day}&ambitionId=${encodeURIComponent(ambition)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setAdminClasses(data.classes || []);
+          setAdminYoga(data.yoga || null);
+          setAdminDailyTest(data.dailyTest || null);
+          setAdminTopicTitle(data.topicTitle || '');
+          setAdminChapterTitle(data.chapterTitle || '');
+          setIsAdminCustom(!!data.isCustom);
+          setIsLoadingDayPlan(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch admin day plan from OCI, using local 365 engine:', err);
+    }
+
+    // Fallback to local 365-day engine
+    const local = generateUniqueTenClassesForDay(courseId, ambition, day, selectedBoard);
+    setAdminClasses(local.classes);
+    setAdminYoga(local.yoga);
+    setAdminDailyTest(local.dailyTest);
+    setAdminTopicTitle(local.themeOfTheDay);
+    setAdminChapterTitle(local.term);
+    setIsAdminCustom(false);
+    setIsLoadingDayPlan(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'day_plan') {
+      fetchAdminDayPlan(selectedCourse.id, dayNumber, adminAmbitionId);
+    }
+  }, [activeTab, selectedCourse.id, dayNumber, adminAmbitionId, selectedBoard]);
+
+  const handleSaveAdminDayPlan = async () => {
+    setIsSavingDayPlan(true);
+    try {
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/admin/day-plan/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: selectedCourse.id,
+          courseTitle: selectedCourse.title,
+          dayNumber,
+          classes: adminClasses,
+          yoga: adminYoga,
+          dailyTest: adminDailyTest,
+          topicTitle: adminTopicTitle || adminClasses[0]?.title,
+          chapterTitle: adminChapterTitle || adminClasses[0]?.subject,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsAdminCustom(true);
+        showStatus(`🎉 Day ${dayNumber} plan successfully published to OCI Cloud database!`, 'success');
+      } else {
+        showStatus(`Error: ${data.error || 'Failed to save day plan'}`, 'error');
+      }
+    } catch (err: any) {
+      showStatus(`Error saving day plan: ${err.message}`, 'error');
+    } finally {
+      setIsSavingDayPlan(false);
+    }
+  };
+
+  const handleResetToBaseline = () => {
+    const baseline = generateUniqueTenClassesForDay(selectedCourse.id, adminAmbitionId, dayNumber, selectedBoard);
+    setAdminClasses(baseline.classes);
+    setAdminYoga(baseline.yoga);
+    setAdminDailyTest(baseline.dailyTest);
+    setAdminTopicTitle(baseline.themeOfTheDay);
+    setAdminChapterTitle(baseline.term);
+    setIsAdminCustom(false);
+    showStatus(`Day ${dayNumber} reset to default 365-day syllabus baseline. Click "Save & Publish" to commit.`, 'info');
+  };
+
+  const handleUpdateClassItem = (index: number, field: keyof DayClassItem, value: any) => {
+    setAdminClasses((prev) => {
+      const updated = [...prev];
+      if (updated[index]) {
+        updated[index] = { ...updated[index], [field]: value };
+      }
+      return updated;
+    });
+  };
+
+  const handleUpdateQuizQuestion = (qIndex: number, field: string, value: any, optKey?: string) => {
+    if (!adminDailyTest || !adminDailyTest.questions) return;
+    setAdminDailyTest((prev) => {
+      if (!prev) return null;
+      const updatedQuestions = [...prev.questions];
+      if (updatedQuestions[qIndex]) {
+        if (optKey) {
+          updatedQuestions[qIndex] = {
+            ...updatedQuestions[qIndex],
+            options: {
+              ...updatedQuestions[qIndex].options,
+              [optKey]: value,
+            },
+          };
+        } else {
+          updatedQuestions[qIndex] = {
+            ...updatedQuestions[qIndex],
+            [field]: value,
+          };
+        }
+      }
+      return { ...prev, questions: updatedQuestions };
+    });
+  };
+
 
   // Status and AI state
   const [aiGenerating, setAiGenerating] = useState(false);
@@ -722,75 +859,358 @@ Output JSON only matching OfficialCourseSyllabus interface with:
         )}
 
         {/* ═════════════════════════════════════════════════════════════════════
-            TAB 3: 200-DAY PLAN SCHEDULER
+            TAB 3: 365-DAY WHOLE-YEAR MASTER SCHEDULE STUDIO
             ═════════════════════════════════════════════════════════════════════ */}
         {activeTab === 'day_plan' && (
           <div className="space-y-6">
-            <div className="bg-[#0E172A] border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div>
-                <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-xs">
-                  200-Day Micro-Learning Master Schedule
-                </span>
-                <h3 className="text-base font-bold text-white mt-1">
-                  Day {dayNumber} of 200: {activeDayPlan.targetTopicTitle}
-                </h3>
-                <p className="text-xs text-slate-400">
-                  {activeDayPlan.targetSubject} • {activeDayPlan.targetChapter}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400">Select Day:</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={200}
-                  value={dayNumber}
-                  onChange={(e) => setDayNumber(Math.max(1, Math.min(200, parseInt(e.target.value) || 1)))}
-                  className="w-20 bg-[#131F37] border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-bold text-white text-center focus:outline-none focus:border-emerald-500"
-                />
-                <button
-                  onClick={() => handleExportJson('day_plan')}
-                  className="px-3.5 py-2 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Export Day Plan JSON</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 5 Daily Tasks List */}
-            <div className="space-y-3">
-              {activeDayPlan.tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="bg-[#0E172A] border border-slate-800 rounded-2xl p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 font-bold text-xs flex items-center justify-center">
-                      {task.stepNumber}
+            {/* Top Control Center */}
+            <div className="bg-[#0E172A] border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-black text-xs">
+                      365-Day Whole-Year Master Studio
                     </span>
-                    <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-2">
-                        <span>{task.taskName}</span>
-                        <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-mono text-[9px]">
-                          {task.conceptCode}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        {task.topic} • {task.durationMinutes} Mins • +{task.xp} XP
-                      </div>
-                    </div>
+                    <span className={`px-2.5 py-0.5 rounded text-xs font-bold ${
+                      dayNumber <= 120 ? 'bg-blue-500/20 text-blue-400' : dayNumber <= 240 ? 'bg-purple-500/20 text-purple-400' : 'bg-amber-500/20 text-amber-400'
+                    }`}>
+                      {dayNumber <= 120 ? '📘 Term 1: Foundations' : dayNumber <= 240 ? '🔬 Term 2: Applied Mastery & Lab' : '🏆 Term 3: Advanced Board & Exam Sprint'}
+                    </span>
+                    {isAdminCustom ? (
+                      <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        <span>Cloud Customized & Published</span>
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold text-xs flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                        <span>Standard 365 Syllabus</span>
+                      </span>
+                    )}
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-lg bg-[#131F37] text-slate-300 text-xs font-mono">
-                    {task.type.toUpperCase()}
-                  </span>
+                  <h3 className="text-lg font-black text-white mt-1">
+                    Day {dayNumber} of 365: {adminTopicTitle || selectedCourse.title}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {selectedCourse.title} • 10 Independent Classes • 100% Unique Non-Repeating Daily Syllabus
+                  </p>
                 </div>
-              ))}
+
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <button
+                    onClick={handleResetToBaseline}
+                    className="px-3.5 py-2 bg-[#131F37] hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition"
+                    title="Reset to default generated curriculum"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reset Baseline</span>
+                  </button>
+
+                  <button
+                    onClick={handleSaveAdminDayPlan}
+                    disabled={isSavingDayPlan}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition"
+                  >
+                    {isSavingDayPlan ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    <span>{isSavingDayPlan ? 'Publishing...' : 'Save & Publish Day Plan to OCI Cloud'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Day Navigator & Ambition Selector */}
+              <div className="pt-3 border-t border-slate-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => setDayNumber(prev => Math.max(1, prev - 1))}
+                    disabled={dayNumber <= 1}
+                    className="px-3 py-1.5 bg-[#131F37] hover:bg-slate-800 disabled:opacity-30 border border-slate-800 rounded-xl text-xs font-bold text-white transition"
+                  >
+                    ← Prev Day
+                  </button>
+
+                  <div className="flex items-center gap-1.5 bg-[#131F37] border border-slate-800 rounded-xl px-3 py-1">
+                    <span className="text-[11px] font-bold text-slate-400">Day:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={dayNumber}
+                      onChange={(e) => setDayNumber(Math.max(1, Math.min(365, parseInt(e.target.value) || 1)))}
+                      className="w-16 bg-transparent font-black text-sm text-emerald-400 text-center focus:outline-none"
+                    />
+                    <span className="text-[11px] font-bold text-slate-500">/ 365</span>
+                  </div>
+
+                  <button
+                    onClick={() => setDayNumber(prev => Math.min(365, prev + 1))}
+                    disabled={dayNumber >= 365}
+                    className="px-3 py-1.5 bg-[#131F37] hover:bg-slate-800 disabled:opacity-30 border border-slate-800 rounded-xl text-xs font-bold text-white transition"
+                  >
+                    Next Day →
+                  </button>
+
+                  {/* Fast Jump Pills */}
+                  <div className="hidden sm:flex items-center gap-1 ml-2">
+                    {[1, 50, 100, 180, 250, 365].map(jumpDay => (
+                      <button
+                        key={jumpDay}
+                        onClick={() => setDayNumber(jumpDay)}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition ${
+                          dayNumber === jumpDay ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800/60 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        D{jumpDay}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Career Aim Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-slate-400">Aim Track:</span>
+                  <select
+                    value={adminAmbitionId}
+                    onChange={(e) => setAdminAmbitionId(e.target.value)}
+                    className="bg-[#131F37] border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    {AMBITION_FEATURE_TRACKS.map(t => (
+                      <option key={t.id} value={t.id}>{t.icon} {t.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
+
+            {/* 10 Unique Day Classes Editor */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-black text-white flex items-center gap-2">
+                  <span>Day {dayNumber} Curriculum Plan: 10 Dedicated Subject Classes</span>
+                  <span className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 text-xs font-mono font-bold">
+                    {adminClasses.length} Classes
+                  </span>
+                </h4>
+                <span className="text-xs text-slate-400">All fields are editable by Admin and persist directly to OCI Cloud</span>
+              </div>
+
+              {isLoadingDayPlan ? (
+                <div className="bg-[#0E172A] border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-3">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-400" />
+                  <p className="text-xs font-bold">Loading Day {dayNumber} Plan from OCI Cloud...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {adminClasses.map((cls, idx) => (
+                    <div
+                      key={cls.id || idx}
+                      className="bg-[#0E172A] border border-slate-800/90 hover:border-slate-700 rounded-2xl p-4 space-y-3 transition"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-8 h-8 rounded-xl bg-slate-800 text-lg flex items-center justify-center">
+                            {cls.icon || '📚'}
+                          </span>
+                          <div>
+                            <span className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono text-[10px] font-bold">
+                              Class {idx + 1} • {cls.type.toUpperCase()}
+                            </span>
+                            <span className="text-xs text-slate-400 ml-2 font-bold">{cls.subject}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={cls.duration}
+                            onChange={(e) => handleUpdateClassItem(idx, 'duration', e.target.value)}
+                            className="w-20 bg-[#131F37] border border-slate-800 rounded-lg px-2 py-1 text-[11px] font-bold text-center text-white"
+                            placeholder="Duration"
+                          />
+                          <input
+                            type="number"
+                            value={cls.xp}
+                            onChange={(e) => handleUpdateClassItem(idx, 'xp', parseInt(e.target.value) || 20)}
+                            className="w-16 bg-[#131F37] border border-slate-800 rounded-lg px-2 py-1 text-[11px] font-bold text-center text-amber-400"
+                            placeholder="XP"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Class Title Input */}
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-1">Class Topic Title</label>
+                        <input
+                          type="text"
+                          value={cls.title}
+                          onChange={(e) => handleUpdateClassItem(idx, 'title', e.target.value)}
+                          className="w-full bg-[#131F37] border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      {/* Micro Topic / Description Input */}
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-1">Micro-Topic Summary / Learning Objectives</label>
+                        <textarea
+                          rows={2}
+                          value={cls.microTopic || ''}
+                          onChange={(e) => handleUpdateClassItem(idx, 'microTopic', e.target.value)}
+                          className="w-full bg-[#131F37] border border-slate-800 rounded-xl p-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 leading-relaxed"
+                          placeholder="Specific micro-topic rules, formulas, and practical application details for this day..."
+                        />
+                      </div>
+
+                      {/* Video URL for Class 9 (Visual Masterclass) */}
+                      {cls.id === 9 && (
+                        <div className="bg-[#131F37] border border-slate-800 rounded-xl p-3 space-y-2">
+                          <label className="text-[10px] font-bold text-sky-400 flex items-center gap-1.5">
+                            <Video className="w-3.5 h-3.5" />
+                            <span>Visual Masterclass Video URL / YouTube Stream ID</span>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={cls.videoUrl || ''}
+                              onChange={(e) => handleUpdateClassItem(idx, 'videoUrl', e.target.value)}
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              className="flex-1 bg-[#0E172A] border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500"
+                            />
+                            {cls.videoUrl && (
+                              <a
+                                href={cls.videoUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-3 py-1.5 bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 rounded-lg text-xs font-bold flex items-center gap-1"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Preview</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Daily Test Questions Editor (Class 10 Alignment) */}
+            {adminDailyTest && adminDailyTest.questions && adminDailyTest.questions.length > 0 && (
+              <div className="bg-[#0E172A] border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[10px]">
+                      Class 10 Assessment Engine
+                    </span>
+                    <h4 className="text-sm font-bold text-white mt-1">
+                      Daily Test Drill (5 Concept-Aligned MCQs for Day {dayNumber})
+                    </h4>
+                  </div>
+                  <span className="text-xs text-slate-400">Pass: {adminDailyTest.passPercentage}%</span>
+                </div>
+
+                <div className="space-y-4">
+                  {adminDailyTest.questions.map((q, qIdx) => (
+                    <div key={q.id || qIdx} className="bg-[#131F37] border border-slate-800 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs text-emerald-400 font-bold">Question {qIdx + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-bold">Correct Option:</span>
+                          <select
+                            value={q.correctOption}
+                            onChange={(e) => handleUpdateQuizQuestion(qIdx, 'correctOption', e.target.value)}
+                            className="bg-[#0E172A] border border-slate-800 rounded-lg px-2 py-0.5 text-xs font-bold text-emerald-400"
+                          >
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Question Text */}
+                      <input
+                        type="text"
+                        value={q.question}
+                        onChange={(e) => handleUpdateQuizQuestion(qIdx, 'question', e.target.value)}
+                        className="w-full bg-[#0E172A] border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-emerald-500"
+                        placeholder="Question text..."
+                      />
+
+                      {/* Options Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        {(['A', 'B', 'C', 'D'] as const).map((optKey) => (
+                          <div key={optKey} className="flex items-center gap-2 bg-[#0E172A] border border-slate-800 rounded-lg px-2.5 py-1">
+                            <span className={`text-[10px] font-bold ${q.correctOption === optKey ? 'text-emerald-400' : 'text-slate-400'}`}>
+                              {optKey}:
+                            </span>
+                            <input
+                              type="text"
+                              value={q.options[optKey] || ''}
+                              onChange={(e) => handleUpdateQuizQuestion(qIdx, 'options', e.target.value, optKey)}
+                              className="w-full bg-transparent text-xs text-slate-200 focus:outline-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Explanation */}
+                      <input
+                        type="text"
+                        value={q.explanation}
+                        onChange={(e) => handleUpdateQuizQuestion(qIdx, 'explanation', e.target.value)}
+                        className="w-full bg-[#0E172A] border border-slate-800 rounded-lg px-3 py-1 text-[11px] text-slate-400 italic focus:outline-none focus:border-emerald-500"
+                        placeholder="Explanation..."
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Daily Yoga & Wellness Studio */}
+            {adminYoga && (
+              <div className="bg-[#0E172A] border border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[10px]">
+                      Daily Wellness & Brain Booster
+                    </span>
+                    <h4 className="text-sm font-bold text-white mt-1">
+                      Day {dayNumber} Yoga: {adminYoga.name} {adminYoga.tamil && `(${adminYoga.tamil})`}
+                    </h4>
+                  </div>
+                  <span className="text-xs text-slate-400">{adminYoga.duration}</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 block">Breathing Pattern</label>
+                    <input
+                      type="text"
+                      value={adminYoga.breathing}
+                      onChange={(e) => setAdminYoga(prev => prev ? { ...prev, breathing: e.target.value } : null)}
+                      className="w-full bg-[#131F37] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 block">Brain Booster Exercise</label>
+                    <input
+                      type="text"
+                      value={adminYoga.brainBooster}
+                      onChange={(e) => setAdminYoga(prev => prev ? { ...prev, brainBooster: e.target.value } : null)}
+                      className="w-full bg-[#131F37] border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
 
         {/* ═════════════════════════════════════════════════════════════════════
             TAB 4: CBT QUESTION BANK MANAGER
