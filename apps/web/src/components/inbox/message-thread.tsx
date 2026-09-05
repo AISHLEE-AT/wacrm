@@ -263,20 +263,37 @@ export function MessageThread({
     }
 
     // 4. Check contact timestamps if present
-    const contact = (conversation as any)?.contact;
-    if (contact?.last_inbound_at) {
-      const t = new Date(contact.last_inbound_at).getTime();
+    const resolvedContact = contact || (conversation as any)?.contact;
+    if (resolvedContact?.last_inbound_at) {
+      const t = new Date(resolvedContact.last_inbound_at).getTime();
       if (!isNaN(t) && t > 0) timestamps.push(t);
     }
-    if (contact?.updated_at) {
-      const t = new Date(contact.updated_at).getTime();
+    if (resolvedContact?.updated_at) {
+      const t = new Date(resolvedContact.updated_at).getTime();
       if (!isNaN(t) && t > 0) timestamps.push(t);
     }
-    if (contact?.whatsapp_window_expires_at) {
-      const exp = new Date(contact.whatsapp_window_expires_at).getTime();
+    if (resolvedContact?.whatsapp_window_expires_at) {
+      const exp = new Date(resolvedContact.whatsapp_window_expires_at).getTime();
       if (!isNaN(exp) && exp > 0) {
         timestamps.push(exp - 24 * 60 * 60 * 1000);
       }
+    }
+
+    // 5. Check customer profile (coordinates with Profile Page WhatsApp 24h Live Window)
+    const cleanPhone = (resolvedContact?.phone || "").replace(/\D/g, "").slice(-10);
+    const matchedProfile = profiles.find((p) => {
+      if (resolvedContact?.user_id && p.id === resolvedContact.user_id) return true;
+      if (cleanPhone) {
+        const pPhone = (p.phone || "").replace(/\D/g, "").slice(-10);
+        const pWa = (p.whatsapp || "").replace(/\D/g, "").slice(-10);
+        return pPhone === cleanPhone || pWa === cleanPhone;
+      }
+      return false;
+    });
+
+    if (matchedProfile?.last_whatsapp_inbound_at) {
+      const t = new Date(matchedProfile.last_whatsapp_inbound_at).getTime();
+      if (!isNaN(t) && t > 0) timestamps.push(t);
     }
 
     const lastActiveTime = timestamps.length > 0 ? Math.max(...timestamps) : null;
@@ -318,7 +335,7 @@ export function MessageThread({
         : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
       dotClass: isExpiringSoon ? "bg-amber-400" : "bg-emerald-400",
     };
-  }, [messages, conversation?.last_message_at, conversation?.updated_at]);
+  }, [messages, conversation?.last_message_at, conversation?.updated_at, contact, profiles]);
 
   // Store latest callback in a ref so fetchMessages doesn't need to
   // depend on `onMessagesLoaded` — otherwise parent re-renders cause
