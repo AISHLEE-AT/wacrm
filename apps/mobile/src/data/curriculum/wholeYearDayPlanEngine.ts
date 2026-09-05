@@ -815,3 +815,8 @@ export async function getReleasedDaySummariesForCourse(
   const allDays = getAllDaySummariesForCourse(courseId, courseTitle, 300, schoolBoard, completedDaySet);
   return allDays.filter((d) => releasedSet.has(d.dayNumber));
 }
+
+// ─── 365-DAY UNIFIED PROGRESSION RE-EXPORT ────────────────────────────────────
+export { generateUniqueTenClassesForDay } from './curriculum365Engine';
+export type { FullDayPlanResult, DayClassItem, DayYogaPlan, DayTestPlan } from './curriculum365Engine';
+

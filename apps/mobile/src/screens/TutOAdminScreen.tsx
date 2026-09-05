@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -34,12 +35,19 @@ import {
   CreditCard,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  ChevronLeft,
   Video,
   FileText,
   Heart,
   Smile,
   Calendar,
   Send,
+  Star,
+  Zap,
+  Target,
+  Flame,
+  Check,
 } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { ALL_COURSES, CourseOption, SCHOOL_BOARDS, SchoolBoard } from '../data/coursesCatalog';
@@ -56,6 +64,8 @@ import {
   toggleAdminDayRelease,
   releaseBatchDays,
 } from '../data/curriculum/wholeYearDayPlanEngine';
+import { generateUniqueTenClassesForDay, DayClassItem, DayYogaPlan, DayTestPlan } from '../data/curriculum/curriculum365Engine';
+import { AMBITION_FEATURE_TRACKS } from '../components/teacho/TutODailyPlannerMobileCockpit';
 import { geminiToolsService } from '../services/geminiToolsService';
 import {
   GoogleSheetsDayPlanService,
@@ -71,11 +81,175 @@ import {
   EXAM_CATEGORIES,
 } from '../lib/qbankTaxonomyEngine';
 
+const { width } = Dimensions.get('window');
+
 export default function TutOAdminScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { geminiApiKey } = useContext(AppContext);
+  const { geminiApiKey, user } = useContext(AppContext);
 
-  const [activeTab, setActiveTab] = useState<'syllabus' | 'day_plan' | 'qbank_mapper' | 'purchases' | 'telegram' | 'google_sheets'>('google_sheets');
+  const [activeTab, setActiveTab] = useState<
+    'submissions' | 'day_plan' | 'google_sheets' | 'syllabus' | 'qbank_mapper' | 'purchases' | 'telegram'
+  >('day_plan');
+
+  const [selectedCourse, setSelectedCourse] = useState<CourseOption>(ALL_COURSES[0]);
+  const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
+  const [dayNumber, setDayNumber] = useState(1);
+  const [selectedAmbitionId, setSelectedAmbitionId] = useState<string>('jr-ias');
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // ─── 365-DAY OCI CLOUD STUDIO STATES ─────────────────────────────────────────
+  const [adminClasses, setAdminClasses] = useState<DayClassItem[]>([]);
+  const [adminYoga, setAdminYoga] = useState<DayYogaPlan | null>(null);
+  const [adminDailyTest, setAdminDailyTest] = useState<DayTestPlan | null>(null);
+  const [isCustomFromOci, setIsCustomFromOci] = useState(false);
+  const [isLoadingDayPlan, setIsLoadingDayPlan] = useState(false);
+
+  // Load 365-Day Plan for Course + Ambition + DayNumber
+  const load365DayPlan = useCallback(async (courseId: string, ambitionId: string, dayNum: number) => {
+    setIsLoadingDayPlan(true);
+    try {
+      const res = await fetch(
+        `https://mysupro.duckdns.org/api/tuto/admin/day-plan/get?courseId=${encodeURIComponent(
+          courseId
+        )}&ambitionId=${encodeURIComponent(ambitionId)}&dayNumber=${dayNum}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.plan) {
+          setAdminClasses(data.plan.classes || []);
+          setAdminYoga(data.plan.yoga || null);
+          setAdminDailyTest(data.plan.dailyTest || null);
+          setIsCustomFromOci(Boolean(data.isCustomAdminPlan));
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch from OCI admin endpoint, falling back to local:', e);
+    } finally {
+      setIsLoadingDayPlan(false);
+    }
+
+    // Local deterministic fallback
+    const fallback = generateUniqueTenClassesForDay(courseId, ambitionId, dayNum);
+    setAdminClasses(fallback.classes);
+    setAdminYoga(fallback.yoga);
+    setAdminDailyTest(fallback.dailyTest);
+    setIsCustomFromOci(false);
+  }, []);
+
+  useEffect(() => {
+    load365DayPlan(selectedCourse.id, selectedAmbitionId, dayNumber);
+  }, [selectedCourse.id, selectedAmbitionId, dayNumber, load365DayPlan]);
+
+  // Save 365-Day Plan to OCI Cloud
+  const handleSaveToOciCloud = async () => {
+    setIsSaving(true);
+    try {
+      const payload = {
+        courseId: selectedCourse.id,
+        courseTitle: selectedCourse.title,
+        dayNumber,
+        classes: adminClasses,
+        yoga: adminYoga,
+        dailyTest: adminDailyTest,
+        topicTitle: adminClasses[0]?.title || `Day ${dayNumber} Curriculum Plan`,
+        chapterTitle: `Term ${dayNumber <= 120 ? '1' : dayNumber <= 240 ? '2' : '3'} Progression`,
+      };
+
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/admin/day-plan/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsCustomFromOci(true);
+        Alert.alert(
+          'Published to OCI Cloud! ☁️',
+          `Day ${dayNumber} (${selectedCourse.title}) custom plan is now stored in OCI PostgreSQL and immediately live for all students!`
+        );
+      } else {
+        Alert.alert('Save Failed', data.error || 'Could not save day plan to OCI.');
+      }
+    } catch (e: any) {
+      Alert.alert('Network Error', e.message || 'Failed to reach OCI cloud backend.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ─── MODULE 2: TEACHER EVALUATION STUDIO STATES ──────────────────────────────
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isLoadingSubmissions, setIsLoadingSubmissions] = useState(false);
+  const [subFilter, setSubFilter] = useState<'all' | 'pending' | 'approved'>('all');
+  const [selectedSubId, setSelectedSubId] = useState<number | null>(null);
+  const [teacherRemarks, setTeacherRemarks] = useState<Record<number, string>>({});
+  const [bonusXpMap, setBonusXpMap] = useState<Record<number, number>>({});
+  const [isAlerting, setIsAlerting] = useState<Record<number, boolean>>({});
+
+  const fetchSubmissions = useCallback(async () => {
+    setIsLoadingSubmissions(true);
+    try {
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/submissions/list');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.submissions)) {
+          setSubmissions(data.submissions);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch submissions:', err);
+    } finally {
+      setIsLoadingSubmissions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'submissions') {
+      fetchSubmissions();
+    }
+  }, [activeTab, fetchSubmissions]);
+
+  const handleReviewAndAlert = async (sub: any) => {
+    const comments = (teacherRemarks[sub.id] || '🌟 Excellent dedication and consistent daily study! Keep aiming high.').trim();
+    const xp = bonusXpMap[sub.id] || 100;
+
+    setIsAlerting((prev) => ({ ...prev, [sub.id]: true }));
+    try {
+      const res = await fetch('https://mysupro.duckdns.org/api/tuto/submissions/review-and-alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId: sub.id,
+          teacherName: user?.name || 'Lead Academic Guide',
+          remarks: comments,
+          rating: 5,
+          bonusXp: xp,
+          sendWhatsApp: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        Alert.alert(
+          'Student Alerted! 🔔',
+          `Commendation & +${xp} XP sent to ${sub.student_name} via In-App Alert and WhatsApp!`
+        );
+        // Mark locally approved
+        setSubmissions((prev) =>
+          prev.map((s) => (s.id === sub.id ? { ...s, status: 'approved', teacher_remarks: comments, rating: 5, bonus_xp: xp } : s))
+        );
+      } else {
+        Alert.alert('Alert Error', data.error || 'Failed to dispatch alert.');
+      }
+    } catch (e: any) {
+      Alert.alert('Network Error', e.message || 'Failed to contact review server.');
+    } finally {
+      setIsAlerting((prev) => ({ ...prev, [sub.id]: false }));
+    }
+  };
 
   // Google Sheet Manager States
   const [sheetUrl, setSheetUrl] = useState('');
@@ -97,70 +271,6 @@ export default function TutOAdminScreen({ navigation }: any) {
     });
   }, []);
 
-  // Telegram Quiz Bot Admin States
-  const [isTelegramPosting, setIsTelegramPosting] = useState(false);
-  const [telegramCategory, setTelegramCategory] = useState<string>('ALL');
-  const [telegramPostCount, setTelegramPostCount] = useState<number>(10);
-  const [telegramStatus, setTelegramStatus] = useState<string>('');
-
-  // Fast QBank Studio States
-  const [adminQBankQuery, setAdminQBankQuery] = useState('');
-  const [adminQBankDebounced, setAdminQBankDebounced] = useState('');
-  const [adminQBankFormat, setAdminQBankFormat] = useState('ALL');
-  const [adminQBankCategory, setAdminQBankCategory] = useState('ALL');
-
-  useEffect(() => {
-    const t = setTimeout(() => setAdminQBankDebounced(adminQBankQuery), 80);
-    return () => clearTimeout(t);
-  }, [adminQBankQuery]);
-
-  const adminQBankResults = useMemo(() => {
-    return searchQuestions(adminQBankDebounced, 'ALL', 'ALL', MASTER_QBANK_STORE, {
-      format: adminQBankFormat !== 'ALL' ? (adminQBankFormat as any) : undefined,
-      examCategory: adminQBankCategory !== 'ALL' ? (adminQBankCategory as any) : undefined,
-    });
-  }, [adminQBankDebounced, adminQBankFormat, adminQBankCategory]);
-  const [selectedCourse, setSelectedCourse] = useState<CourseOption>(ALL_COURSES[0]);
-  const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
-  const [dayNumber, setDayNumber] = useState(1);
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Editable Day Plan State
-  const [editablePlan, setEditablePlan] = useState<WholeYearDayPlan | null>(null);
-  const [releasedDaySet, setReleasedDaySet] = useState<Set<number>>(new Set());
-
-  const refreshAdminReleasedDays = useCallback(async (courseId: string) => {
-    const set = await getAdminReleasedDayNumbers(courseId);
-    setReleasedDaySet(set);
-  }, []);
-
-  useEffect(() => {
-    refreshAdminReleasedDays(selectedCourse.id);
-  }, [selectedCourse.id, refreshAdminReleasedDays]);
-
-  const isCurrentDayReleased = releasedDaySet.has(dayNumber);
-
-  const handleToggleRelease = async () => {
-    const isNow = await toggleAdminDayRelease(selectedCourse.id, dayNumber);
-    const next = new Set(releasedDaySet);
-    if (isNow) next.add(dayNumber);
-    else next.delete(dayNumber);
-    setReleasedDaySet(next);
-    Alert.alert(
-      isNow ? 'Day Plan Released! 🚀' : 'Day Plan Unpublished 🔒',
-      isNow
-        ? `Day ${dayNumber} is now live and visible to students on TutO UI.`
-        : `Day ${dayNumber} is now hidden from student view.`
-    );
-  };
-
-  const handleBatchRelease = async (from: number, to: number) => {
-    const arr = await releaseBatchDays(selectedCourse.id, from, to);
-    setReleasedDaySet(new Set(arr));
-    Alert.alert('Batch Released! ✨', `Days ${from} to ${to} are now officially released and visible to students!`);
-  };
-
   const handleSyncGoogleSheet = async () => {
     if (!sheetUrl.trim()) {
       Alert.alert('Missing Link', 'Please enter a valid Google Spreadsheet URL or Sheet ID.');
@@ -174,131 +284,72 @@ export default function TutOAdminScreen({ navigation }: any) {
       setSheetPlans(plans);
       const cfg = await GoogleSheetsDayPlanService.getSavedConfig();
       setSheetConfig(cfg);
-      Alert.alert('Google Sheet Synced! ⚡', `Successfully synchronized ${res.count} day plans across ${res.courses.length} courses!`);
+      Alert.alert(
+        'Google Sheet Synced! ⚡',
+        `Successfully synchronized ${res.count} day plans across ${res.courses.length} courses!`
+      );
     } else {
       Alert.alert('Sync Failed ❌', res.error || 'Failed to sync Google Sheet. Please check permissions.');
     }
   };
 
-  // Load active day plan
-  useEffect(() => {
-    async function loadPlan() {
-      const custom = await getAdminCustomDayPlan(selectedCourse.id, dayNumber);
-      if (custom) {
-        setEditablePlan(custom);
-      } else {
-        const resolved = resolveWholeYearDayPlan(selectedCourse.id, selectedCourse.title, dayNumber, selectedBoard);
-        setEditablePlan(resolved);
-      }
-    }
-    loadPlan();
-  }, [selectedCourse.id, selectedCourse.title, dayNumber, selectedBoard]);
+  // Filtered Submissions
+  const filteredSubmissions = useMemo(() => {
+    if (subFilter === 'pending') return submissions.filter((s) => s.status === 'submitted' || !s.status);
+    if (subFilter === 'approved') return submissions.filter((s) => s.status === 'approved');
+    return submissions;
+  }, [submissions, subFilter]);
 
-  const activeSyllabus: OfficialCourseSyllabus = useMemo(() => {
-    return getOfficialGovernmentSyllabus(selectedCourse.id, selectedBoard);
-  }, [selectedCourse.id, selectedBoard]);
-
-  // Save changes handler
-  const handleSaveDayPlan = async () => {
-    if (!editablePlan) return;
-    setIsSaving(true);
-    try {
-      const success = await saveAdminCustomDayPlan(editablePlan);
-      if (success) {
-        Alert.alert('Content Delivered! 🚀', `Day ${dayNumber} content for "${selectedCourse.title}" is now updated and delivered to all student apps!`);
-      } else {
-        Alert.alert('Save Failed', 'Could not save day plan to storage.');
-      }
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to save');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleAiGenerate = async () => {
-    setIsAiGenerating(true);
-    try {
-      const prompt = `Generate an exhaustive, authentic government-notified curriculum breakdown for ${selectedCourse.title} per official norms.`;
-      await geminiToolsService.executePrompt(prompt, geminiApiKey, 'Tamil');
-      Alert.alert('AI Generation Complete ✨', `Gemini AI has analyzed and verified the syllabus for ${selectedCourse.title}!`);
-    } catch (e: any) {
-      Alert.alert('AI Notice', 'AI generation finished with default blueprint fallback.');
-    } finally {
-      setIsAiGenerating(false);
-    }
-  };
+  const termText =
+    dayNumber <= 120
+      ? 'Term 1: Foundations'
+      : dayNumber <= 240
+      ? 'Term 2: Applied & Lab'
+      : 'Term 3: Advanced Revision';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      {/* ─── 1. HEADER ─── */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <View style={styles.adminBadgeRow}>
             <View style={styles.adminBadge}>
               <ShieldCheck size={12} color="#00D084" />
-              <Text style={styles.adminBadgeText}>TUTO ADMIN MANAGEMENT STUDIO</Text>
+              <Text style={styles.adminBadgeText}>TUTO ACADEMIC STUDIO</Text>
             </View>
             <View style={styles.keyBadge}>
-              <Text style={styles.keyBadgeText}>{geminiApiKey ? 'Gemini AI Active' : 'Live Sync Engine'}</Text>
+              <Text style={styles.keyBadgeText}>OCI Cloud Connected</Text>
             </View>
           </View>
-          <Text style={styles.headerTitle}>Course Day Plan & Content Delivery</Text>
+          <Text style={styles.headerTitle}>Curriculum & Teacher Evaluation Hub</Text>
         </View>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation?.goBack?.()}>
           <ArrowLeft size={18} color="#94A3B8" />
         </TouchableOpacity>
       </View>
 
-      {/* Mode Tabs */}
-      <View style={styles.tabBar}>
+      {/* ─── 2. TAB SELECTOR BAR ─── */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBarScroll}>
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === 'day_plan' && styles.tabBtnActive]}
           onPress={() => setActiveTab('day_plan')}
         >
-          <Clock size={13} color={activeTab === 'day_plan' ? '#00D084' : '#94A3B8'} />
+          <Clock size={13} color={activeTab === 'day_plan' ? '#070C18' : '#38BDF8'} />
           <Text style={[styles.tabBtnText, activeTab === 'day_plan' && styles.tabBtnTextActive]}>
-            Whole Year Day Plans
+            365 Day Plans Studio
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'syllabus' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('syllabus')}
+          style={[styles.tabBtn, activeTab === 'submissions' && styles.tabBtnActive]}
+          onPress={() => {
+            setActiveTab('submissions');
+            fetchSubmissions();
+          }}
         >
-          <Layers size={13} color={activeTab === 'syllabus' ? '#00D084' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'syllabus' && styles.tabBtnTextActive]}>
-            Syllabus Matrix
-          </Text>
-        </TouchableOpacity>
-
-                <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'qbank_mapper' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('qbank_mapper')}
-        >
-          <Hash size={13} color={activeTab === 'qbank_mapper' ? '#00D084' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'qbank_mapper' && styles.tabBtnTextActive]}>
-            ⚡ QBank Mapper
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'purchases' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('purchases')}
-        >
-          <CreditCard size={13} color={activeTab === 'purchases' ? '#00D084' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'purchases' && styles.tabBtnTextActive]}>
-            Purchases & Access
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'telegram' && styles.tabBtnActive]}
-          onPress={() => setActiveTab('telegram')}
-        >
-          <Send size={13} color={activeTab === 'telegram' ? '#00D084' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'telegram' && styles.tabBtnTextActive]}>
-            📢 Telegram Bot
+          <Award size={13} color={activeTab === 'submissions' ? '#070C18' : '#00D084'} />
+          <Text style={[styles.tabBtnText, activeTab === 'submissions' && styles.tabBtnTextActive]}>
+            Teacher Submissions ({submissions.length})
           </Text>
         </TouchableOpacity>
 
@@ -306,872 +357,481 @@ export default function TutOAdminScreen({ navigation }: any) {
           style={[styles.tabBtn, activeTab === 'google_sheets' && styles.tabBtnActive]}
           onPress={() => setActiveTab('google_sheets')}
         >
-          <Layers size={13} color={activeTab === 'google_sheets' ? '#00D084' : '#94A3B8'} />
+          <Layers size={13} color={activeTab === 'google_sheets' ? '#070C18' : '#FBBF24'} />
           <Text style={[styles.tabBtnText, activeTab === 'google_sheets' && styles.tabBtnTextActive]}>
-            📊 Google Sheet Sync
+            Google Sheet Sync
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
-      {/* Target Course Selector Bar */}
-      <View style={styles.courseSelectBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-          {ALL_COURSES.slice(0, 15).map((c) => (
-            <TouchableOpacity
-              key={c.id}
-              style={[styles.coursePill, selectedCourse.id === c.id && styles.coursePillActive]}
-              onPress={() => setSelectedCourse(c)}
-            >
-              <Text
-                style={[
-                  styles.coursePillText,
-                  selectedCourse.id === c.id && styles.coursePillTextActive,
-                ]}
+      {/* ─── TAB 1: 365-DAY PLAN STUDIO ─── */}
+      {activeTab === 'day_plan' && (
+        <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+          {/* Target Course Selector Bar */}
+          <View style={styles.controlBox}>
+            <Text style={styles.controlBoxLabel}>SELECT COURSE / GRADE:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
+              {ALL_COURSES.map((c) => {
+                const isSelected = selectedCourse.id === c.id;
+                return (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={[styles.courseChip, isSelected && styles.courseChipActive]}
+                    onPress={() => setSelectedCourse(c)}
+                  >
+                    <Text style={[styles.courseChipText, isSelected && styles.courseChipTextActive]}>
+                      {c.short}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Career Ambition Track Selector */}
+          <View style={styles.controlBox}>
+            <Text style={styles.controlBoxLabel}>SELECT FUTURISTIC CAREER TRACK:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 4 }}>
+              {AMBITION_FEATURE_TRACKS.map((trk) => {
+                const isAct = selectedAmbitionId === trk.id;
+                return (
+                  <TouchableOpacity
+                    key={trk.id}
+                    style={[styles.ambitionChip, isAct && styles.ambitionChipActive]}
+                    onPress={() => setSelectedAmbitionId(trk.id)}
+                  >
+                    <Text style={{ fontSize: 13 }}>{trk.icon}</Text>
+                    <Text style={[styles.ambitionChipText, isAct && styles.ambitionChipTextActive]}>
+                      {trk.short}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* 365-Day Navigator Bar */}
+          <View style={styles.dayNavBox}>
+            <View style={styles.dayNavTopRow}>
+              <TouchableOpacity
+                onPress={() => setDayNumber((d) => Math.max(1, d - 1))}
+                disabled={dayNumber <= 1}
+                style={[styles.navStepBtn, dayNumber <= 1 && { opacity: 0.4 }]}
               >
-                {c.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+                <ChevronLeft size={16} color="#FFFFFF" />
+                <Text style={styles.navStepBtnText}>Prev Day</Text>
+              </TouchableOpacity>
 
-      {/* Main Content Body */}
-      <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
-        {/* TAB 1: WHOLE YEAR DAY PLAN (3 VIDEOS, 3 NOTES, 1 TEST, 1 YOGA) */}
-        {activeTab === 'day_plan' && editablePlan && (
-          <View style={styles.sectionContainer}>
-            {/* Day Header & Navigator */}
-            <View style={styles.dayControlHeader}>
-              {/* Batch Release Bar */}
-              <View style={styles.batchReleaseBar}>
-                <Text style={styles.batchReleaseLabel}>⚡ BATCH RELEASE TO STUDENTS:</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                  <TouchableOpacity
-                    style={styles.batchReleaseBtn}
-                    onPress={() => handleBatchRelease(1, 7)}
-                  >
-                    <Text style={styles.batchReleaseBtnText}>Release Week 1 (Days 1-7)</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.batchReleaseBtn}
-                    onPress={() => handleBatchRelease(1, 30)}
-                  >
-                    <Text style={styles.batchReleaseBtnText}>Release Month 1 (Days 1-30)</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.batchReleaseBtn}
-                    onPress={() => handleBatchRelease(1, 100)}
-                  >
-                    <Text style={styles.batchReleaseBtnText}>Release Days 1-100</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.batchReleaseBtn}
-                    onPress={() => handleBatchRelease(1, 300)}
-                  >
-                    <Text style={styles.batchReleaseBtnText}>Release All 300 Days</Text>
-                  </TouchableOpacity>
-                </ScrollView>
+              <View style={{ alignItems: 'center', gap: 4 }}>
+                <View style={styles.dayHeaderBadge}>
+                  <Calendar size={13} color="#FBBF24" />
+                  <Text style={styles.dayHeaderText}>Day {dayNumber} of 365</Text>
+                </View>
+                <Text style={styles.termHeaderText}>{termText}</Text>
               </View>
 
-              <View style={styles.releaseStatusRow}>
-                <View style={[styles.releaseStatusPill, isCurrentDayReleased && styles.releaseStatusPillActive]}>
-                  <Text style={[styles.releaseStatusPillText, isCurrentDayReleased && styles.releaseStatusPillTextActive]}>
-                    {isCurrentDayReleased ? '✅ RELEASED TO STUDENTS' : '🔒 DRAFT (HIDDEN FROM STUDENTS)'}
-                  </Text>
-                </View>
+              <TouchableOpacity
+                onPress={() => setDayNumber((d) => Math.min(365, d + 1))}
+                disabled={dayNumber >= 365}
+                style={[styles.navStepBtn, dayNumber >= 365 && { opacity: 0.4 }]}
+              >
+                <Text style={styles.navStepBtnText}>Next Day</Text>
+                <ChevronRight size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
 
+            {/* Quick Day Jump Chips */}
+            <View style={styles.quickJumpWrap}>
+              {[1, 50, 100, 180, 250, 365].map((d) => (
                 <TouchableOpacity
-                  style={[styles.toggleReleaseBtn, isCurrentDayReleased ? styles.toggleReleaseBtnRevoke : styles.toggleReleaseBtnPublish]}
-                  onPress={handleToggleRelease}
-                  activeOpacity={0.8}
+                  key={d}
+                  onPress={() => setDayNumber(d)}
+                  style={[styles.quickJumpPill, dayNumber === d && styles.quickJumpPillActive]}
                 >
-                  <Text style={styles.toggleReleaseBtnText}>
-                    {isCurrentDayReleased ? 'Unpublish Day' : `🚀 Release Day ${dayNumber} to Students`}
+                  <Text style={[styles.quickJumpPillText, dayNumber === d && { color: '#0B1120' }]}>
+                    D{d}
                   </Text>
                 </TouchableOpacity>
-              </View>
-              <View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={styles.dayControlTitle}>
-                    Day {editablePlan.dayNumber} · Week {editablePlan.weekNumber}
-                  </Text>
-                  {editablePlan.isMondayHoliday ? (
-                    <View style={styles.holidayBadge}>
-                      <Smile size={10} color="#F59E0B" />
-                      <Text style={styles.holidayBadgeText}>MONDAY HOLIDAY</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.activeDayBadge}>
-                      <Text style={styles.activeDayBadgeText}>{editablePlan.dayOfWeekName}</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.dayControlSubtitle}>{editablePlan.topicTitle}</Text>
-              </View>
+              ))}
+            </View>
+          </View>
 
+          {/* Status & Action Banner */}
+          <View style={styles.statusBanner}>
+            <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <TouchableOpacity
-                  style={[styles.stepBtn, dayNumber <= 1 && styles.stepBtnDisabled]}
-                  disabled={dayNumber <= 1}
-                  onPress={() => setDayNumber(Math.max(1, dayNumber - 1))}
-                >
-                  <Text style={styles.stepBtnText}>Prev</Text>
-                </TouchableOpacity>
-
-                <View style={styles.jumpDayBox}>
-                  <Text style={styles.jumpDayPrefix}>Day #</Text>
-                  <TextInput
-                    style={styles.jumpDayInput}
-                    placeholder="1"
-                    placeholderTextColor="#64748B"
-                    keyboardType="numeric"
-                    value={String(dayNumber)}
-                    onChangeText={(val) => {
-                      const num = parseInt(val, 10);
-                      if (num >= 1 && num <= 300) {
-                        setDayNumber(num);
-                      }
-                    }}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={styles.stepBtn}
-                  onPress={() => setDayNumber(Math.min(300, dayNumber + 1))}
-                >
-                  <Text style={styles.stepBtnText}>Next</Text>
-                </TouchableOpacity>
+                <View
+                  style={[
+                    styles.cloudStatusDot,
+                    isCustomFromOci ? { backgroundColor: '#00D084' } : { backgroundColor: '#38BDF8' },
+                  ]}
+                />
+                <Text style={styles.cloudStatusText}>
+                  {isCustomFromOci ? 'Cloud Customized & Published' : 'Standard 365 Curriculum Baseline'}
+                </Text>
               </View>
+              <Text style={styles.cloudStatusSub}>
+                {selectedCourse.title} • Day {dayNumber}
+              </Text>
             </View>
 
-            {/* 1. EDITABLE 3 VIDEOS */}
-            <View style={styles.editSectionCard}>
-              <View style={styles.editSectionHeader}>
-                <Video size={14} color="#38BDF8" />
-                <Text style={styles.editSectionTitle}>📹 3 IN-APP PLAYABLE VIDEOS (ADMIN CURATED):</Text>
-              </View>
-
-              {editablePlan.videos.map((vid, vIdx) => (
-                <View key={vid.id || vIdx} style={styles.editItemBox}>
-                  <Text style={styles.editItemLabel}>Video {vIdx + 1}: {vid.type.toUpperCase()}</Text>
-                  <TextInput
-                    style={styles.inputField}
-                    placeholder="Video Title"
-                    placeholderTextColor="#64748B"
-                    value={vid.title}
-                    onChangeText={(text) => {
-                      const copy = [...editablePlan.videos] as [any, any, any];
-                      copy[vIdx] = { ...copy[vIdx], title: text };
-                      setEditablePlan({ ...editablePlan, videos: copy });
-                    }}
-                  />
-                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-                    <TextInput
-                      style={[styles.inputField, { flex: 1 }]}
-                      placeholder="YouTube Video ID (e.g. kKKM8Y-u7ds)"
-                      placeholderTextColor="#64748B"
-                      value={vid.youtubeVideoId}
-                      onChangeText={(text) => {
-                        const copy = [...editablePlan.videos] as [any, any, any];
-                        copy[vIdx] = { ...copy[vIdx], youtubeVideoId: text };
-                        setEditablePlan({ ...editablePlan, videos: copy });
-                      }}
-                    />
-                    <TextInput
-                      style={[styles.inputField, { width: 90 }]}
-                      placeholder="Mins"
-                      placeholderTextColor="#64748B"
-                      keyboardType="numeric"
-                      value={String(vid.durationMinutes)}
-                      onChangeText={(text) => {
-                        const copy = [...editablePlan.videos] as [any, any, any];
-                        copy[vIdx] = { ...copy[vIdx], durationMinutes: parseInt(text, 10) || 10 };
-                        setEditablePlan({ ...editablePlan, videos: copy });
-                      }}
-                    />
-                  </View>
-                </View>
-              ))}
-            </View>
-
-            {/* 2. EDITABLE 3 NOTES */}
-            <View style={styles.editSectionCard}>
-              <View style={styles.editSectionHeader}>
-                <FileText size={14} color="#00D084" />
-                <Text style={styles.editSectionTitle}>📝 3 NOTES (ADMIN AI + TOPIC AI):</Text>
-              </View>
-
-              {editablePlan.notes.map((note, nIdx) => (
-                <View key={note.id || nIdx} style={styles.editItemBox}>
-                  <Text style={styles.editItemLabel}>Note {nIdx + 1}: {note.title}</Text>
-                  <TextInput
-                    style={[styles.inputField, { minHeight: 60 }]}
-                    multiline
-                    placeholder="Note Content"
-                    placeholderTextColor="#64748B"
-                    value={note.content}
-                    onChangeText={(text) => {
-                      const copy = [...editablePlan.notes] as [any, any, any];
-                      copy[nIdx] = { ...copy[nIdx], content: text };
-                      setEditablePlan({ ...editablePlan, notes: copy });
-                    }}
-                  />
-                </View>
-              ))}
-            </View>
-
-            {/* 3. EDITABLE 1 DAILY MCQ TEST */}
-            <View style={styles.editSectionCard}>
-              <View style={styles.editSectionHeader}>
-                <Award size={14} color="#F59E0B" />
-                <Text style={styles.editSectionTitle}>🎯 DAILY ASSESSMENT TEST (5 MCQS):</Text>
-              </View>
-              <Text style={styles.subHintText}>{editablePlan.mcqTest.questions.length} Questions configured for Day {dayNumber}.</Text>
-
-              {editablePlan.mcqTest.questions.map((q, qIdx) => (
-                <View key={q.id || qIdx} style={styles.editItemBox}>
-                  <Text style={styles.editItemLabel}>Q{qIdx + 1}: Question Statement</Text>
-                  <TextInput
-                    style={styles.inputField}
-                    placeholder="Question Text"
-                    placeholderTextColor="#64748B"
-                    value={q.question}
-                    onChangeText={(text) => {
-                      const qList = [...editablePlan.mcqTest.questions];
-                      qList[qIdx] = { ...qList[qIdx], question: text };
-                      setEditablePlan({ ...editablePlan, mcqTest: { ...editablePlan.mcqTest, questions: qList } });
-                    }}
-                  />
-                  <Text style={styles.editItemLabel}>Correct Option: [ {q.correctOption} ]</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* 4. EDITABLE 1 YOGA & EXTRA-CURRICULAR TASK */}
-            <View style={styles.editSectionCard}>
-              <View style={styles.editSectionHeader}>
-                <Heart size={14} color="#EC4899" />
-                <Text style={styles.editSectionTitle}>🧘 YOGA & EXTRA-CURRICULAR ACTIVITY:</Text>
-              </View>
-
-              <TextInput
-                style={styles.inputField}
-                placeholder="Asana Name"
-                placeholderTextColor="#64748B"
-                value={editablePlan.yogaAndActivity.asanaName}
-                onChangeText={(text) => {
-                  setEditablePlan({
-                    ...editablePlan,
-                    yogaAndActivity: { ...editablePlan.yogaAndActivity, asanaName: text },
-                  });
-                }}
-              />
-              <TextInput
-                style={[styles.inputField, { marginTop: 4 }]}
-                placeholder="Extra-Curricular Challenge Title"
-                placeholderTextColor="#64748B"
-                value={editablePlan.yogaAndActivity.extraCurricularTask.title}
-                onChangeText={(text) => {
-                  setEditablePlan({
-                    ...editablePlan,
-                    yogaAndActivity: {
-                      ...editablePlan.yogaAndActivity,
-                      extraCurricularTask: { ...editablePlan.yogaAndActivity.extraCurricularTask, title: text },
-                    },
-                  });
-                }}
-              />
-            </View>
-
-            {/* Save & Broadcast Action Button */}
             <TouchableOpacity
-              style={styles.saveBroadcastBtn}
+              onPress={handleSaveToOciCloud}
               disabled={isSaving}
-              onPress={handleSaveDayPlan}
+              style={styles.saveOciBtn}
+              activeOpacity={0.8}
             >
               {isSaving ? (
-                <ActivityIndicator size="small" color="#070C18" />
+                <ActivityIndicator size="small" color="#0B1120" />
               ) : (
                 <>
-                  <Save size={16} color="#070C18" />
-                  <Text style={styles.saveBroadcastBtnText}>Save & Deliver Day {dayNumber} Plan to Students 🚀</Text>
+                  <Save size={14} color="#0B1120" />
+                  <Text style={styles.saveOciBtnText}>Save & Publish</Text>
                 </>
               )}
             </TouchableOpacity>
           </View>
-        )}
 
-        {/* TAB 2: SYLLABUS MATRIX */}
-        {activeTab === 'syllabus' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.aiActionCard}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.aiCardTitle}>Gemini AI Syllabus Verifier</Text>
-                <Text style={styles.aiCardSub}>Auto-verify official norms, formulas, and PYQs</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.aiActionBtn}
-                disabled={isAiGenerating}
-                onPress={handleAiGenerate}
-              >
-                {isAiGenerating ? (
-                  <ActivityIndicator size="small" color="#070C18" />
-                ) : (
-                  <>
-                    <Sparkles size={13} color="#070C18" />
-                    <Text style={styles.aiActionBtnText}>AI Enhance</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Course Summary Card */}
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>{activeSyllabus.courseTitle}</Text>
-              <Text style={styles.infoRef}>📋 {activeSyllabus.notificationRef}</Text>
-              <Text style={styles.infoBlueprint}>⚖️ {activeSyllabus.examPatternSummary}</Text>
-            </View>
-
-            {/* Subjects & Chapters List */}
-            {activeSyllabus.subjects.map((s, sIdx) => (
-              <View key={s.subjectId || sIdx} style={styles.subjectCard}>
-                <View style={styles.subjectHeader}>
-                  <Text style={{ fontSize: 16 }}>{s.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.subjectName}>{s.subjectName}</Text>
-                    {s.tamilName && <Text style={styles.subjectTamil}>{s.tamilName}</Text>}
+          {/* 10 Editable Classes */}
+          {isLoadingDayPlan ? (
+            <ActivityIndicator size="large" color="#00D084" style={{ marginVertical: 30 }} />
+          ) : (
+            <View style={styles.classesCardWrap}>
+              <Text style={styles.sectionHeading}>📚 10 CLASSES SCHEDULE FOR DAY {dayNumber}:</Text>
+              {adminClasses.map((cls, idx) => (
+                <View key={cls.id || idx} style={styles.editClassCard}>
+                  <View style={styles.editClassHeader}>
+                    <Text style={styles.editClassNumber}>CLASS {cls.id}</Text>
+                    <Text style={styles.editClassSubject}>{cls.subject}</Text>
+                    <Text style={styles.editClassDuration}>⏱ {cls.duration}</Text>
+                    <Text style={styles.editClassXp}>+{cls.xp} XP</Text>
                   </View>
-                  <View style={styles.badgeBox}>
-                    <Text style={styles.badgeBoxText}>{s.chapters.length} Chapters</Text>
-                  </View>
+
+                  <Text style={styles.inputTitleLabel}>Class Title:</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={cls.title}
+                    onChangeText={(text) => {
+                      setAdminClasses((prev) => {
+                        const copy = [...prev];
+                        copy[idx] = { ...copy[idx], title: text };
+                        return copy;
+                      });
+                    }}
+                  />
+
+                  <Text style={styles.inputTitleLabel}>Micro-Topic / Lesson Breakdown:</Text>
+                  <TextInput
+                    style={[styles.textInput, { minHeight: 46 }]}
+                    multiline
+                    value={cls.microTopic || ''}
+                    placeholder="Enter micro-topic breakdown..."
+                    placeholderTextColor="#64748B"
+                    onChangeText={(text) => {
+                      setAdminClasses((prev) => {
+                        const copy = [...prev];
+                        copy[idx] = { ...copy[idx], microTopic: text };
+                        return copy;
+                      });
+                    }}
+                  />
                 </View>
+              ))}
 
-                {s.chapters.map((ch, cIdx) => (
-                  <View key={cIdx} style={styles.chapterBox}>
-                    <Text style={styles.chapterTitle}>
-                      Chapter {ch.chapterNumber}: {ch.chapterTitle}
-                    </Text>
-                    <Text style={styles.chapterMeta}>
-                      {ch.topicsCount} Micro-Topics • {ch.isFreePreview ? 'Free Preview' : 'Locked'}
+              {/* Class 10 MCQs Editor */}
+              {adminDailyTest && (
+                <View style={styles.quizEditorCard}>
+                  <View style={styles.quizEditorHeader}>
+                    <Zap size={14} color="#FBBF24" />
+                    <Text style={styles.quizEditorTitle}>
+                      Class 10 Bedtime Mock Test ({adminDailyTest.questions.length} MCQs):
                     </Text>
                   </View>
-                ))}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* TAB 3: PURCHASES */}
-        {activeTab === 'purchases' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Subscription & Course Unlocks</Text>
-              <Text style={styles.infoRef}>Manage active learner subscriptions and day access limits.</Text>
-            </View>
-          </View>
-        )}
-
-        {/* TAB 4: TELEGRAM QUIZ BOT BROADCAST */}
-        {activeTab === 'telegram' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.infoCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Send size={18} color="#38BDF8" style={{ marginRight: 8 }} />
-                <Text style={styles.infoTitle}>Telegram Daily Quiz Automation</Text>
-              </View>
-              <Text style={styles.infoRef}>
-                Broadcast daily MCQs from QBank directly to your Telegram Group as interactive native Quiz Polls.
-              </Text>
-            </View>
-
-            {/* Category Filter */}
-            <Text style={[styles.editSectionTitle, { marginTop: 12, marginBottom: 8 }]}>
-              🎯 SELECT EXAM CATEGORY:
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 14 }}>
-              {EXAM_CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  style={[
-                    styles.coursePill,
-                    telegramCategory === cat.id && styles.coursePillActive,
-                  ]}
-                  onPress={() => setTelegramCategory(cat.id)}
-                >
-                  <Text style={[styles.coursePillText, telegramCategory === cat.id && styles.coursePillTextActive]}>
-                    {cat.icon} {cat.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* 1-Click Trigger Card */}
-            <View style={[styles.editSectionCard, { borderColor: '#0284C7' }]}>
-              <Text style={[styles.editSectionTitle, { color: '#38BDF8' }]}>
-                🚀 1-CLICK INSTANT BROADCAST
-              </Text>
-              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 4, marginBottom: 12 }}>
-                Sends {telegramPostCount} curated MCQs with intro & outro messages to the configured Telegram group.
-              </Text>
-
-              {telegramStatus.length > 0 && (
-                <View style={{ backgroundColor: '#064E3B', padding: 10, borderRadius: 8, marginBottom: 12 }}>
-                  <Text style={{ fontSize: 12, color: '#10B981', fontWeight: '700' }}>{telegramStatus}</Text>
+                  {adminDailyTest.questions.map((q, qIdx) => (
+                    <View key={q.id || qIdx} style={styles.mcqItemBox}>
+                      <Text style={styles.mcqIndexLabel}>Question {qIdx + 1}:</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={q.question}
+                        onChangeText={(txt) => {
+                          setAdminDailyTest((prev) => {
+                            if (!prev) return null;
+                            const copy = [...prev.questions];
+                            copy[qIdx] = { ...copy[qIdx], question: txt };
+                            return { ...prev, questions: copy };
+                          });
+                        }}
+                      />
+                      <Text style={styles.mcqOptionsLabel}>Correct Answer: [{q.correctOption}]</Text>
+                    </View>
+                  ))}
                 </View>
               )}
 
-              <TouchableOpacity
-                style={[
-                  styles.saveBroadcastBtn,
-                  { backgroundColor: '#0284C7' },
-                  isTelegramPosting && { opacity: 0.6 },
-                ]}
-                disabled={isTelegramPosting}
-                onPress={async () => {
-                  setIsTelegramPosting(true);
-                  setTelegramStatus('Posting daily quiz polls to Telegram group...');
-                  try {
-                    // Try triggering backend API endpoint or display simulation feedback
-                    const res = await fetch('https://thamizhan.vercel.app/api/telegram/daily-quiz', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ category: telegramCategory, count: telegramPostCount }),
-                    }).catch(() => null);
+              {/* Daily Yoga Editor */}
+              {adminYoga && (
+                <View style={styles.yogaEditorCard}>
+                  <View style={styles.yogaEditorHeader}>
+                    <Heart size={14} color="#EC4899" />
+                    <Text style={styles.yogaEditorTitle}>🧘 Day {dayNumber} Yoga & Wellness Routine:</Text>
+                  </View>
+                  <Text style={styles.inputTitleLabel}>Asana Name:</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={adminYoga.name}
+                    onChangeText={(txt) => setAdminYoga((prev) => (prev ? { ...prev, name: txt } : null))}
+                  />
+                  <Text style={styles.inputTitleLabel}>Breathing Pattern:</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={adminYoga.breathing}
+                    onChangeText={(txt) => setAdminYoga((prev) => (prev ? { ...prev, breathing: txt } : null))}
+                  />
+                </View>
+              )}
 
-                    if (res && res.ok) {
-                      setTelegramStatus('✅ Successfully published 10 Quiz Polls to Telegram Group!');
-                      Alert.alert('Telegram Broadcast Success 📢', '10 Daily Quiz Polls are now live on your Telegram Group!');
-                    } else {
-                      setTelegramStatus('✅ 10 Curated QBank Polls prepared and verified for Telegram!');
-                      Alert.alert(
-                        'Telegram Quiz Ready 📢',
-                        'Questions are formatted for Telegram sendPoll API. Run `node scripts/telegram_daily_quiz_bot.js` or set cron job for automatic daily posting.'
-                      );
-                    }
-                  } catch (e: any) {
-                    setTelegramStatus(`Status: Verified 10 Questions for ${telegramCategory}`);
-                  } finally {
-                    setIsTelegramPosting(false);
-                  }
-                }}
+              {/* Bottom Big Save Button */}
+              <TouchableOpacity
+                onPress={handleSaveToOciCloud}
+                disabled={isSaving}
+                style={styles.bigSaveBtn}
+                activeOpacity={0.8}
               >
-                {isTelegramPosting ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#0B1120" />
                 ) : (
                   <>
-                    <Send size={15} color="#FFFFFF" />
-                    <Text style={[styles.saveBroadcastBtnText, { color: '#FFFFFF' }]}>
-                      📢 Post {telegramPostCount} Daily MCQs to Telegram Now
+                    <Save size={16} color="#0B1120" />
+                    <Text style={styles.bigSaveBtnText}>
+                      Save & Publish Day {dayNumber} Plan to OCI Cloud 🚀
                     </Text>
                   </>
                 )}
               </TouchableOpacity>
             </View>
+          )}
+        </ScrollView>
+      )}
 
-            {/* Questions Preview */}
-            <Text style={[styles.editSectionTitle, { marginTop: 16, marginBottom: 8 }]}>
-              📋 PREVIEW TODAY'S 10 QUESTIONS ({telegramCategory}):
-            </Text>
-            {adminQBankResults.slice(0, 10).map((q, qIdx) => (
-              <View key={q.question_uid || qIdx} style={[styles.subjectCard, { marginBottom: 10 }]}>
-                <View style={styles.subjectHeader}>
-                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#38BDF8' }}>
-                    Q{qIdx + 1}. [{q.taxonomy?.subject || 'General'}]
-                  </Text>
-                  <View style={styles.badgeBox}>
-                    <Text style={styles.badgeBoxText}>Ans: {q.correct_option}</Text>
-                  </View>
-                </View>
-                <Text style={{ fontSize: 13, color: '#F8FAFC', fontWeight: '600', marginTop: 4 }}>
-                  {q.question_text}
+      {/* ─── TAB 2: MODULE 2 TEACHER SUBMISSIONS EVALUATION STUDIO ─── */}
+      {activeTab === 'submissions' && (
+        <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+          {/* Header Card */}
+          <View style={styles.subStudioBanner}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.subStudioTitle}>Module 2 • Teacher Evaluation Studio</Text>
+              <Text style={styles.subStudioSubtitle}>
+                Review student day missions, award ratings & bonus XP, and trigger immediate WhatsApp alerts.
+              </Text>
+            </View>
+            <TouchableOpacity onPress={fetchSubmissions} style={styles.refreshBtn}>
+              <RefreshCw size={14} color="#00D084" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Filter Chips */}
+          <View style={styles.filterRow}>
+            {(['all', 'pending', 'approved'] as const).map((f) => (
+              <TouchableOpacity
+                key={f}
+                onPress={() => setSubFilter(f)}
+                style={[styles.filterChip, subFilter === f && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterChipText, subFilter === f && styles.filterChipTextActive]}>
+                  {f === 'all' ? `All (${submissions.length})` : f === 'pending' ? 'Pending Review' : 'Approved'}
                 </Text>
-                {q.question_text_ta && (
-                  <Text style={{ fontSize: 12, color: '#94A3B8', marginTop: 3 }}>
-                    {q.question_text_ta}
-                  </Text>
-                )}
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
-        )}
 
-        {/* TAB 5: GOOGLE SHEET WHOLE-YEAR PLAN SYNC */}
-        {activeTab === 'google_sheets' && (
-          <View style={styles.sectionContainer}>
-            <View style={styles.infoCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Layers size={18} color="#00D084" style={{ marginRight: 8 }} />
-                <Text style={styles.infoTitle}>Google Sheets Whole-Year Curriculum Sync</Text>
-              </View>
-              <Text style={styles.infoRef}>
-                Manage all 365 days of learning tasks (ICLE Tech Official Guidance, Tamil, English, Maths, Science, Social, Life Skills, Homework & Yoga) from ONE single Google Sheet.
-              </Text>
+          {/* Submissions List */}
+          {isLoadingSubmissions ? (
+            <ActivityIndicator size="large" color="#00D084" style={{ marginVertical: 30 }} />
+          ) : filteredSubmissions.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Award size={32} color="#64748B" />
+              <Text style={styles.emptyTitle}>No Submissions Found</Text>
+              <Text style={styles.emptySub}>No student missions match the current filter.</Text>
             </View>
+          ) : (
+            filteredSubmissions.map((sub) => {
+              const isApproved = sub.status === 'approved';
+              const isSendingAlert = isAlerting[sub.id] || false;
+              const currentXp = bonusXpMap[sub.id] || 100;
+              const remarks = teacherRemarks[sub.id] ?? (sub.teacher_remarks || '🌟 Excellent work! Keep aiming high.');
 
-            {/* Sync Controls Card */}
-            <View style={[styles.editSectionCard, { borderColor: '#00D084' }]}>
-              <Text style={[styles.editSectionTitle, { color: '#00D084' }]}>
-                ⚡ GOOGLE SPREADSHEET SETTINGS
-              </Text>
-
-              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 6, marginBottom: 4 }}>
-                Google Sheet URL or ID (Public / Anyone with Link can view):
-              </Text>
-              <TextInput
-                style={[styles.editInput, { color: '#F8FAFC', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }]}
-                placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
-                placeholderTextColor="#475569"
-                value={sheetUrl}
-                onChangeText={setSheetUrl}
-                autoCapitalize="none"
-              />
-
-              <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 8, marginBottom: 4 }}>
-                Tab Sheet Name:
-              </Text>
-              <TextInput
-                style={[styles.editInput, { color: '#F8FAFC' }]}
-                placeholder="Sheet1"
-                placeholderTextColor="#475569"
-                value={sheetTabName}
-                onChangeText={setSheetTabName}
-              />
-
-              {/* Sync Button */}
-              <TouchableOpacity
-                style={[
-                  styles.saveBroadcastBtn,
-                  { backgroundColor: '#00D084', marginTop: 12 },
-                  isSyncingSheet && { opacity: 0.6 },
-                ]}
-                disabled={isSyncingSheet}
-                onPress={handleSyncGoogleSheet}
-              >
-                {isSyncingSheet ? (
-                  <ActivityIndicator color="#070C18" />
-                ) : (
-                  <>
-                    <RefreshCw size={15} color="#070C18" />
-                    <Text style={[styles.saveBroadcastBtnText, { color: '#070C18' }]}>
-                      ⚡ Sync Whole Year Plans from Google Sheet
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Live Stats */}
-            <View style={{ flexDirection: 'row', gap: 8, marginVertical: 10 }}>
-              <View style={[styles.infoCard, { flex: 1, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 10, color: '#94A3B8', fontWeight: '800' }}>TOTAL DAYS</Text>
-                <Text style={{ fontSize: 18, color: '#FFFFFF', fontWeight: '900', marginTop: 2 }}>
-                  {Object.keys(sheetPlans).length}
-                </Text>
-              </View>
-              <View style={[styles.infoCard, { flex: 1, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 10, color: '#94A3B8', fontWeight: '800' }}>PROGRAMS</Text>
-                <Text style={{ fontSize: 18, color: '#00D084', fontWeight: '900', marginTop: 2 }}>
-                  {sheetConfig?.coursesFound?.length || 0}
-                </Text>
-              </View>
-              <View style={[styles.infoCard, { flex: 1, alignItems: 'center' }]}>
-                <Text style={{ fontSize: 10, color: '#94A3B8', fontWeight: '800' }}>ICLE GUIDANCE</Text>
-                <Text style={{ fontSize: 18, color: '#38BDF8', fontWeight: '900', marginTop: 2 }}>
-                  Active
-                </Text>
-              </View>
-            </View>
-
-            {/* List of Synced Plans */}
-            <Text style={[styles.editSectionTitle, { marginTop: 10, marginBottom: 8 }]}>
-              📋 LIVE SYNCED CURRICULUM DAYS ({Object.keys(sheetPlans).length}):
-            </Text>
-            {Object.keys(sheetPlans).length === 0 ? (
-              <View style={styles.infoCard}>
-                <Text style={{ fontSize: 12, color: '#94A3B8', textAlign: 'center' }}>
-                  No Google Sheet plans synced yet. Paste the URL above and tap Sync.
-                </Text>
-              </View>
-            ) : (
-              Object.entries(sheetPlans).slice(0, 30).map(([key, item]) => (
-                <View key={key} style={[styles.subjectCard, { marginBottom: 8 }]}>
-                  <View style={styles.subjectHeader}>
-                    <Text style={{ fontSize: 13, fontWeight: '900', color: '#00D084' }}>
-                      Day {item.dayNumber} • [{item.courseId.toUpperCase()}]
-                    </Text>
-                    <View style={styles.badgeBox}>
-                      <Text style={styles.badgeBoxText}>10 Tasks</Text>
+              return (
+                <View key={sub.id} style={styles.submissionCard}>
+                  {/* Card Header */}
+                  <View style={styles.subCardHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.studentNameText}>{sub.student_name || 'Scholar'}</Text>
+                      <Text style={styles.studentPhoneText}>
+                        📱 +91 {sub.student_phone} • {sub.academic_class} • {sub.ambition_id?.toUpperCase()}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.subStatusBadge,
+                        isApproved
+                          ? { backgroundColor: 'rgba(0, 208, 132, 0.2)' }
+                          : { backgroundColor: 'rgba(251, 191, 36, 0.2)' },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.subStatusText,
+                          isApproved ? { color: '#00D084' } : { color: '#FBBF24' },
+                        ]}
+                      >
+                        {isApproved ? 'Approved' : 'Pending Review'}
+                      </Text>
                     </View>
                   </View>
-                  <Text style={{ fontSize: 12, color: '#38BDF8', fontWeight: '800', marginTop: 3 }}>
-                    🏛️ {item.officialGuidanceVideo?.title}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#E2E8F0', marginTop: 2 }}>
-                    📖 {item.tamilTask?.title}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>
-                    📐 {item.mathsTask?.title} • 🔬 {item.scienceTask?.title}
-                  </Text>
+
+                  {/* Metrics Row */}
+                  <View style={styles.subMetricsRow}>
+                    <View style={styles.subMetricBox}>
+                      <Text style={styles.subMetricLabel}>DAY</Text>
+                      <Text style={styles.subMetricVal}>Day {sub.day_number}</Text>
+                    </View>
+                    <View style={styles.subMetricBox}>
+                      <Text style={styles.subMetricLabel}>CLASSES</Text>
+                      <Text style={styles.subMetricVal}>{sub.classes_completed}/10</Text>
+                    </View>
+                    <View style={styles.subMetricBox}>
+                      <Text style={styles.subMetricLabel}>TEST SCORE</Text>
+                      <Text style={styles.subMetricVal}>{sub.test_score}%</Text>
+                    </View>
+                    <View style={styles.subMetricBox}>
+                      <Text style={styles.subMetricLabel}>EARNED XP</Text>
+                      <Text style={[styles.subMetricVal, { color: '#FBBF24' }]}>+{sub.xp_earned} XP</Text>
+                    </View>
+                  </View>
+
+                  {/* Student Reflection Notes */}
+                  {sub.student_notes ? (
+                    <View style={styles.notesBox}>
+                      <Text style={styles.notesBoxTitle}>Student Notes & Doubts:</Text>
+                      <Text style={styles.notesBoxContent}>&ldquo;{sub.student_notes}&rdquo;</Text>
+                    </View>
+                  ) : null}
+
+                  {/* Teacher Feedback Section */}
+                  <View style={styles.feedbackSection}>
+                    <Text style={styles.feedbackLabel}>Teacher Evaluation Remarks:</Text>
+                    <TextInput
+                      style={styles.feedbackInput}
+                      value={remarks}
+                      placeholder="Write feedback for student..."
+                      placeholderTextColor="#64748B"
+                      onChangeText={(txt) => setTeacherRemarks((prev) => ({ ...prev, [sub.id]: txt }))}
+                    />
+
+                    {/* Bonus XP Pills */}
+                    <View style={styles.bonusXpRow}>
+                      <Text style={styles.bonusXpLabel}>Award Bonus XP:</Text>
+                      {[50, 100, 200].map((xp) => (
+                        <TouchableOpacity
+                          key={xp}
+                          onPress={() => setBonusXpMap((prev) => ({ ...prev, [sub.id]: xp }))}
+                          style={[styles.xpPillBtn, currentXp === xp && styles.xpPillBtnActive]}
+                        >
+                          <Text style={[styles.xpPillBtnText, currentXp === xp && { color: '#0B1120' }]}>
+                            +{xp} XP
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+
+                    {/* Alert Action Button */}
+                    <TouchableOpacity
+                      onPress={() => handleReviewAndAlert(sub)}
+                      disabled={isSendingAlert}
+                      style={[styles.alertActionBtn, isApproved && { backgroundColor: '#1E293B' }]}
+                      activeOpacity={0.8}
+                    >
+                      {isSendingAlert ? (
+                        <ActivityIndicator size="small" color="#0B1120" />
+                      ) : (
+                        <>
+                          <Send size={14} color={isApproved ? '#00D084' : '#0B1120'} />
+                          <Text style={[styles.alertActionBtnText, isApproved && { color: '#00D084' }]}>
+                            {isApproved ? '✓ Re-Alert Student (App & WhatsApp)' : '🔔 Alert Student (App & WhatsApp)'}
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              ))
-            )}
+              );
+            })
+          )}
+        </ScrollView>
+      )}
+
+      {/* ─── TAB 3: GOOGLE SHEETS SYNC ─── */}
+      {activeTab === 'google_sheets' && (
+        <ScrollView style={styles.bodyScroll} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.sheetSyncCard}>
+            <Text style={styles.sheetCardTitle}>📊 Google Sheets 365 Days Sync</Text>
+            <Text style={styles.sheetCardSub}>
+              Sync live spreadsheet day plans with topics, micro-topics, video IDs, and 5 MCQs.
+            </Text>
+
+            <Text style={styles.inputTitleLabel}>Google Spreadsheet URL or Sheet ID:</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              placeholderTextColor="#64748B"
+              value={sheetUrl}
+              onChangeText={setSheetUrl}
+            />
+
+            <Text style={styles.inputTitleLabel}>Sheet Tab Name:</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Sheet1"
+              placeholderTextColor="#64748B"
+              value={sheetTabName}
+              onChangeText={setSheetTabName}
+            />
+
+            <TouchableOpacity
+              onPress={handleSyncGoogleSheet}
+              disabled={isSyncingSheet}
+              style={styles.syncBtn}
+              activeOpacity={0.8}
+            >
+              {isSyncingSheet ? (
+                <ActivityIndicator size="small" color="#0B1120" />
+              ) : (
+                <>
+                  <Layers size={15} color="#0B1120" />
+                  <Text style={styles.syncBtnText}>Synchronize Day Plans ⚡</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  editInput: {
-    backgroundColor: '#131F37',
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 12,
-    color: '#F8FAFC',
-  },
-
-  batchReleaseBar: {
-    backgroundColor: '#070C18',
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    marginBottom: 10,
-    gap: 6,
-  },
-  batchReleaseLabel: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#38BDF8',
-    letterSpacing: 0.5,
-  },
-  batchReleaseBtn: {
-    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#38BDF840',
-  },
-  batchReleaseBtnText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#38BDF8',
-  },
-  releaseStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  releaseStatusPill: {
-    backgroundColor: '#1E293B',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  releaseStatusPillActive: {
-    backgroundColor: 'rgba(0, 208, 132, 0.2)',
-  },
-  releaseStatusPillText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#94A3B8',
-  },
-  releaseStatusPillTextActive: {
-    color: '#00D084',
-  },
-  toggleReleaseBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  toggleReleaseBtnPublish: {
-    backgroundColor: '#00D084',
-  },
-  toggleReleaseBtnRevoke: {
-    backgroundColor: '#F43F5E',
-  },
-  toggleReleaseBtnText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#070C18',
-  },
-
-
-  jumpDayBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#070C18',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    width: 80,
-  },
-  jumpDayPrefix: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#00D084',
-    marginRight: 4,
-  },
-  jumpDayInput: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#F8FAFC',
-    padding: 0,
-  },
-
-
-  adminPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#131F37',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  adminPillActive: {
-    backgroundColor: 'rgba(0, 208, 132, 0.15)',
-    borderColor: '#00D084',
-  },
-  adminPillText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  adminPillTextActive: {
-    color: '#00D084',
-  },
-  resultsCountBar: {
-    paddingVertical: 4,
-  },
-  resultsCountText: {
-    fontSize: 11,
-    color: '#94A3B8',
-  },
-  adminQCard: {
-    backgroundColor: '#131F37',
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    gap: 6,
-    marginBottom: 8,
-  },
-  adminQHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  uidBadgePill: {
-    backgroundColor: '#070C18',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  uidBadgePillText: {
-    fontSize: 9,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-    fontWeight: '800',
-    color: '#38BDF8',
-  },
-  formatTagSmall: {
-    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  formatTagSmallText: {
-    fontSize: 8,
-    color: '#38BDF8',
-    fontWeight: '800',
-  },
-  diffPillSmall: {
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-  },
-  diffPillSmallText: {
-    fontSize: 8,
-    color: '#F59E0B',
-    fontWeight: '800',
-  },
-  adminQText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    lineHeight: 16,
-  },
-  adminQTextTamil: {
-    fontSize: 10,
-    color: '#94A3B8',
-    lineHeight: 14,
-  },
-  optionPreviewGrid: {
-    backgroundColor: '#070C18',
-    padding: 6,
-    borderRadius: 6,
-    gap: 2,
-  },
-  optionPreviewText: {
-    fontSize: 10,
-    color: '#CBD5E1',
-  },
-  mappingActionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  correctOptionTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  correctOptionTagText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#00D084',
-  },
-  mapToDayBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#00D084',
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  mapToDayBtnText: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#070C18',
-  },
-
   container: {
     flex: 1,
     backgroundColor: '#070C18',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-    backgroundColor: '#0E172A',
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   adminBadgeRow: {
     flexDirection: 'row',
@@ -1184,333 +844,589 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(0, 208, 132, 0.15)',
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   adminBadgeText: {
+    color: '#00D084',
     fontSize: 9,
     fontWeight: '900',
-    color: '#00D084',
   },
   keyBadge: {
-    backgroundColor: '#131F37',
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 6,
   },
   keyBadgeText: {
-    fontSize: 9,
     color: '#38BDF8',
+    fontSize: 9,
     fontWeight: '700',
   },
   headerTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#1E293B',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#0E172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#131F37',
-  },
-  tabBtnActive: {
-    backgroundColor: 'rgba(0, 208, 132, 0.15)',
-    borderWidth: 1,
-    borderColor: '#00D084',
-  },
-  tabBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  tabBtnTextActive: {
-    color: '#00D084',
-    fontWeight: '900',
-  },
-  courseSelectBar: {
-    backgroundColor: '#070C18',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-  },
-  coursePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#0E172A',
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  coursePillActive: {
-    backgroundColor: '#00D084',
-    borderColor: '#00D084',
-  },
-  coursePillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  coursePillTextActive: {
-    color: '#070C18',
-    fontWeight: '900',
-  },
-  contentScroll: {
-    flex: 1,
-    padding: 16,
-  },
-  sectionContainer: {
-    gap: 14,
-    paddingBottom: 40,
-  },
-  dayControlHeader: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dayControlTitle: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#F8FAFC',
-  },
-  dayControlSubtitle: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  holidayBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  holidayBadgeText: {
-    fontSize: 8,
-    fontWeight: '900',
-    color: '#F59E0B',
-  },
-  activeDayBadge: {
-    backgroundColor: '#131F37',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  activeDayBadgeText: {
-    fontSize: 8,
-    fontWeight: '700',
-    color: '#00D084',
-  },
-  dayNavButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  stepBtn: {
-    backgroundColor: '#131F37',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-  },
-  stepBtnDisabled: {
-    opacity: 0.4,
-  },
-  stepBtnText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#00D084',
-  },
-  editSectionCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    gap: 10,
-  },
-  editSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  editSectionTitle: {
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#F8FAFC',
-    letterSpacing: 0.5,
-  },
-  subHintText: {
-    fontSize: 10,
-    color: '#94A3B8',
-  },
-  editItemBox: {
-    backgroundColor: '#131F37',
-    borderRadius: 8,
-    padding: 10,
-    gap: 6,
-  },
-  editItemLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#38BDF8',
-  },
-  inputField: {
-    backgroundColor: '#0E172A',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    fontSize: 11,
-    color: '#F8FAFC',
-  },
-  saveBroadcastBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#00D084',
-    paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 6,
-  },
-  saveBroadcastBtnText: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#070C18',
-  },
-  aiActionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 208, 132, 0.3)',
-  },
-  aiCardTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  aiCardSub: {
-    fontSize: 11,
-    color: '#94A3B8',
-  },
-  aiActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#00D084',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  aiActionBtnText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#070C18',
-  },
-  infoCard: {
-    backgroundColor: '#0E172A',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    gap: 4,
-  },
-  infoTitle: {
+    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
-    color: '#F8FAFC',
   },
-  infoRef: {
-    fontSize: 11,
-    color: '#94A3B8',
+  backBtn: {
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
-  infoBlueprint: {
-    fontSize: 11,
-    color: '#CBD5E1',
-  },
-  subjectCard: {
+  tabBarScroll: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     backgroundColor: '#0E172A',
+  },
+  tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  tabBtnActive: {
+    backgroundColor: '#00D084',
+  },
+  tabBtnText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  tabBtnTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
+  },
+  bodyScroll: {
+    flex: 1,
+  },
+  bodyContent: {
     padding: 14,
+    gap: 12,
+  },
+  controlBox: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  controlBoxLabel: {
+    color: '#94A3B8',
+    fontSize: 9,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  courseChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  courseChipActive: {
+    backgroundColor: '#00D084',
+  },
+  courseChipText: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  courseChipTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
+  },
+  ambitionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  ambitionChipActive: {
+    backgroundColor: '#F59E0B',
+  },
+  ambitionChipText: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  ambitionChipTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
+  },
+  dayNavBox: {
+    backgroundColor: '#0F172A',
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.25)',
+  },
+  dayNavTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navStepBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  navStepBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  dayHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  dayHeaderText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  termHeaderText: {
+    color: '#93C5FD',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  quickJumpWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  quickJumpPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  quickJumpPillActive: {
+    backgroundColor: '#FBBF24',
+  },
+  quickJumpPillText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusBanner: {
+    backgroundColor: '#1E1B4B',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  cloudStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  cloudStatusText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  cloudStatusSub: {
+    color: '#94A3B8',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  saveOciBtn: {
+    backgroundColor: '#00D084',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  saveOciBtnText: {
+    color: '#0B1120',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  classesCardWrap: {
     gap: 10,
   },
-  subjectHeader: {
+  sectionHeading: {
+    color: '#CBD5E1',
+    fontSize: 12,
+    fontWeight: '800',
+    marginVertical: 4,
+  },
+  editClassCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 4,
+  },
+  editClassHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  editClassNumber: {
+    color: '#FBBF24',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  editClassSubject: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  editClassDuration: {
+    color: '#64748B',
+    fontSize: 10,
+  },
+  editClassXp: {
+    color: '#00D084',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  inputTitleLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  textInput: {
+    backgroundColor: '#1E293B',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: '#FFFFFF',
+    fontSize: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  quizEditorCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    gap: 8,
+  },
+  quizEditorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  quizEditorTitle: {
+    color: '#FBBF24',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  mcqItemBox: {
+    backgroundColor: '#1E293B',
+    borderRadius: 10,
+    padding: 8,
+    gap: 4,
+  },
+  mcqIndexLabel: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  mcqOptionsLabel: {
+    color: '#00D084',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  yogaEditorCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(236, 72, 153, 0.3)',
+    gap: 4,
+  },
+  yogaEditorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  yogaEditorTitle: {
+    color: '#EC4899',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  bigSaveBtn: {
+    backgroundColor: '#00D084',
+    borderRadius: 14,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  bigSaveBtnText: {
+    color: '#0B1120',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  // Submissions Tab
+  subStudioBanner: {
+    backgroundColor: '#1E1B4B',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#00D084',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  subStudioTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  subStudioSubtitle: {
+    color: '#CBD5E1',
+    fontSize: 10,
+    marginTop: 2,
+    lineHeight: 14,
+  },
+  refreshBtn: {
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0, 208, 132, 0.15)',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  filterChip: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: '#0E172A',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  filterChipActive: {
+    backgroundColor: '#00D084',
+    borderColor: '#00D084',
+  },
+  filterChipText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  filterChipTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
+  },
+  emptyCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 30,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  emptySub: {
+    color: '#64748B',
+    fontSize: 11,
+  },
+  submissionCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 10,
+  },
+  subCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  studentNameText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  studentPhoneText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  subStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  subStatusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  subMetricsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  subMetricBox: {
+    flex: 1,
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
+    padding: 6,
+    alignItems: 'center',
+  },
+  subMetricLabel: {
+    color: '#64748B',
+    fontSize: 8,
+    fontWeight: '800',
+  },
+  subMetricVal: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  notesBox: {
+    backgroundColor: '#1E293B',
+    borderRadius: 10,
+    padding: 10,
+  },
+  notesBoxTitle: {
+    color: '#FBBF24',
+    fontSize: 10,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  notesBoxContent: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  feedbackSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: 10,
+    gap: 8,
+  },
+  feedbackLabel: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  feedbackInput: {
+    backgroundColor: '#1E293B',
+    borderRadius: 10,
+    padding: 8,
+    color: '#FFFFFF',
+    fontSize: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  bonusXpRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  subjectName: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  subjectTamil: {
-    fontSize: 11,
+  bonusXpLabel: {
     color: '#94A3B8',
-  },
-  badgeBox: {
-    backgroundColor: '#131F37',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  badgeBoxText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#00D084',
-  },
-  chapterBox: {
-    backgroundColor: '#131F37',
-    borderRadius: 8,
-    padding: 10,
-    gap: 2,
-  },
-  chapterTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#F8FAFC',
-  },
-  chapterMeta: {
     fontSize: 10,
+    fontWeight: '700',
+  },
+  xpPillBtn: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  xpPillBtnActive: {
+    backgroundColor: '#FBBF24',
+  },
+  xpPillBtnText: {
+    color: '#FBBF24',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  alertActionBtn: {
+    backgroundColor: '#00D084',
+    borderRadius: 10,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  alertActionBtnText: {
+    color: '#0B1120',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  // Google Sheets Tab
+  sheetSyncCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
+  },
+  sheetCardTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  sheetCardSub: {
     color: '#94A3B8',
+    fontSize: 11,
+    marginBottom: 8,
+  },
+  syncBtn: {
+    backgroundColor: '#00D084',
+    borderRadius: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  syncBtnText: {
+    color: '#0B1120',
+    fontSize: 12,
+    fontWeight: '900',
   },
 });

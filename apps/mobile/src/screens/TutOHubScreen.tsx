@@ -36,6 +36,7 @@ import {
   Send,
   Zap,
   Target,
+  Compass,
 } from 'lucide-react-native';
 
 import { AppContext } from '../context/AppContext';
@@ -43,6 +44,7 @@ import { TeachOCoursePickerSheet } from '../components/teacho/TeachOCoursePicker
 import { TutOQBankModal } from '../components/teacho/TutOQBankModal';
 import { TutODayCoursePlayerModal } from '../components/teacho/TutODayCoursePlayerModal';
 import { StudentOnboardingModal, StudentProfileData } from '../components/teacho/StudentOnboardingModal';
+import { TutODailyPlannerMobileCockpit, AMBITION_FEATURE_TRACKS } from '../components/teacho/TutODailyPlannerMobileCockpit';
 import {
   getReleasedDaySummariesForCourse,
   getCompletedDaysForCourse,
@@ -64,6 +66,21 @@ export default function TutOHubScreen({ navigation }: any) {
     (user?.role && user.role.toLowerCase() === 'admin') ||
     (user?.phone && ['6381029380'].includes(user.phone.replace(/\D/g, '').slice(-10)))
   );
+
+  // ─── 0. Primary Navigation Tabs & Career Ambition State ───────────────────────
+  const [activeTab, setActiveTab] = useState<'daily_mission' | 'curriculum_grid' | 'aim_tracks'>('daily_mission');
+  const [activeAmbitionId, setActiveAmbitionId] = useState<string>('jr-ias');
+
+  const currentAmbitionObj = useMemo(() => {
+    return AMBITION_FEATURE_TRACKS.find((t) => t.id === activeAmbitionId) || AMBITION_FEATURE_TRACKS[0];
+  }, [activeAmbitionId]);
+
+  const handleSelectAmbition = async (ambitionId: string) => {
+    setActiveAmbitionId(ambitionId);
+    try {
+      await AsyncStorage.setItem('tuto_active_ambition_id', ambitionId);
+    } catch (e) {}
+  };
 
   // ─── 0. Student Onboarding & Career Profiling State ──────────────────────────
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
@@ -128,6 +145,11 @@ export default function TutOHubScreen({ navigation }: any) {
         const maxDay = await getMaxUnlockedDay(course.id);
         setMaxUnlockedDay(maxDay);
         await refreshReleasedDays(course.id, course.title, board, doneSet);
+
+        const savedAmbition = await AsyncStorage.getItem('tuto_active_ambition_id');
+        if (savedAmbition) {
+          setActiveAmbitionId(savedAmbition);
+        }
 
         // Check if first-time student onboarding has been completed
         const onboardingDone = await AsyncStorage.getItem('tuto_student_onboarding_completed');
@@ -325,8 +347,115 @@ export default function TutOHubScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* ─── 3. VIRTUALIZED ADMIN-RELEASED DAY PLANS ONLY ─── */}
-      <FlatList
+      {/* ─── 2.5 THREE PRIMARY NAVIGATION TABS ─── */}
+      <View style={styles.primaryTabsRow}>
+        <TouchableOpacity
+          style={[styles.primaryTabBtn, activeTab === 'daily_mission' && styles.primaryTabBtnActive]}
+          onPress={() => setActiveTab('daily_mission')}
+          activeOpacity={0.8}
+        >
+          <Flame size={13} color={activeTab === 'daily_mission' ? '#070C18' : '#FBBF24'} />
+          <Text style={[styles.primaryTabText, activeTab === 'daily_mission' && styles.primaryTabTextActive]}>
+            Today's Mission
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.primaryTabBtn, activeTab === 'curriculum_grid' && styles.primaryTabBtnActive]}
+          onPress={() => setActiveTab('curriculum_grid')}
+          activeOpacity={0.8}
+        >
+          <Layers size={13} color={activeTab === 'curriculum_grid' ? '#070C18' : '#38BDF8'} />
+          <Text style={[styles.primaryTabText, activeTab === 'curriculum_grid' && styles.primaryTabTextActive]}>
+            365 Roadmap
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.primaryTabBtn, activeTab === 'aim_tracks' && styles.primaryTabBtnActive]}
+          onPress={() => setActiveTab('aim_tracks')}
+          activeOpacity={0.8}
+        >
+          <Compass size={13} color={activeTab === 'aim_tracks' ? '#070C18' : '#A78BFA'} />
+          <Text style={[styles.primaryTabText, activeTab === 'aim_tracks' && styles.primaryTabTextActive]}>
+            ⭐ {currentAmbitionObj.short}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ─── TAB 1: TODAY'S MISSION (DAILY PLANNER MOBILE COCKPIT) ─── */}
+      {activeTab === 'daily_mission' && (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 14 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <TutODailyPlannerMobileCockpit
+            course={selectedCourse}
+            selectedBoard={selectedBoard}
+            activeAmbitionId={activeAmbitionId}
+            onSelectAmbition={handleSelectAmbition}
+            dayNumber={playerDayNumber}
+            onChangeDayNumber={(newDay) => setPlayerDayNumber(newDay)}
+            onOpenCoursePlayer={handleOpenDayPlayer}
+            onOpenTest={(category, subject) => navigation.navigate('QuizScreen')}
+            userPhone={user?.phone}
+          />
+        </ScrollView>
+      )}
+
+      {/* ─── TAB 3: FUTURISTIC AMBITION TRACKS EXPLORER ─── */}
+      {activeTab === 'aim_tracks' && (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 14, gap: 10 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.aimHeaderCard}>
+            <Text style={styles.aimHeaderTitle}>⭐ Futuristic Ambitions & Career Tracks</Text>
+            <Text style={styles.aimHeaderSub}>
+              Select your dream profession to personalize all 365 daily lessons, case studies, and practical skills.
+            </Text>
+          </View>
+
+          {AMBITION_FEATURE_TRACKS.map((trk) => {
+            const isAct = activeAmbitionId === trk.id;
+            return (
+              <TouchableOpacity
+                key={trk.id}
+                onPress={() => handleSelectAmbition(trk.id)}
+                style={[styles.aimCard, isAct && styles.aimCardActive]}
+                activeOpacity={0.8}
+              >
+                <View style={styles.aimCardTop}>
+                  <Text style={{ fontSize: 24 }}>{trk.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Text style={styles.aimTitle}>{trk.title}</Text>
+                      {isAct && (
+                        <View style={styles.aimActivePill}>
+                          <Text style={styles.aimActivePillText}>ACTIVE</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.aimRoleTag}>{trk.roleTag}</Text>
+                  </View>
+                </View>
+                <Text style={styles.aimDesc}>{trk.desc}</Text>
+                <View style={[styles.aimActionBtn, isAct && styles.aimActionBtnActive]}>
+                  <Text style={[styles.aimActionBtnText, isAct && styles.aimActionBtnTextActive]}>
+                    {isAct ? '✓ Currently Enrolled in 365 Plan' : 'Switch to this Career Aim →'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {/* ─── TAB 2: VIRTUALIZED ADMIN-RELEASED DAY PLANS ONLY ─── */}
+      {activeTab === 'curriculum_grid' && (
+        <FlatList
         data={filteredDays}
         keyExtractor={(item) => `day_${item.dayNumber}`}
         initialNumToRender={8}
@@ -643,6 +772,7 @@ export default function TutOHubScreen({ navigation }: any) {
           );
         }}
       />
+      )}
 
       {/* ─── 4. UNIVERSAL COURSE PICKER & PURCHASE SHEET (SINGLE CHANGE OPTION) ─── */}
       <TeachOCoursePickerSheet
@@ -1289,5 +1419,122 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
+  },
+  // Primary Navigation Tabs
+  primaryTabsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#070C18',
+  },
+  primaryTabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#0E172A',
+    paddingVertical: 9,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  primaryTabBtnActive: {
+    backgroundColor: '#00D084',
+    borderColor: '#00D084',
+  },
+  primaryTabText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  primaryTabTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
+  },
+  // Aim Tracks Tab
+  aimHeaderCard: {
+    backgroundColor: '#1E1B4B',
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+  },
+  aimHeaderTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  aimHeaderSub: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  aimCard: {
+    backgroundColor: '#0E172A',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
+  },
+  aimCardActive: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#1E1B4B',
+  },
+  aimCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aimTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  aimActivePill: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  aimActivePillText: {
+    color: '#070C18',
+    fontSize: 8,
+    fontWeight: '900',
+  },
+  aimRoleTag: {
+    color: '#38BDF8',
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  aimDesc: {
+    color: '#94A3B8',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  aimActionBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  aimActionBtnActive: {
+    backgroundColor: '#00D084',
+  },
+  aimActionBtnText: {
+    color: '#CBD5E1',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  aimActionBtnTextActive: {
+    color: '#070C18',
+    fontWeight: '900',
   },
 });

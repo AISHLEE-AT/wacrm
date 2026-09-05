@@ -58,10 +58,17 @@ interface StudentOnboardingModalProps {
 }
 
 const ACADEMIC_CLASSES = [
-  { id: 'class_6', label: 'Class 6th Std', gradeLevel: 'middle', category: 'school_k12' },
-  { id: 'class_7', label: 'Class 7th Std', gradeLevel: 'middle', category: 'school_k12' },
-  { id: 'class_8', label: 'Class 8th Std', gradeLevel: 'middle', category: 'school_k12' },
-  { id: 'class_9', label: 'Class 9th Std', gradeLevel: 'high', category: 'school_k12' },
+  { id: 'class_lkg', label: '🧸 LKG (Lower KG)', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_ukg', label: '🎨 UKG (Upper KG)', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_1', label: 'Class 1st Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_2', label: 'Class 2nd Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_3', label: 'Class 3rd Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_4', label: 'Class 4th Std', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_5', label: 'Class 5th Std (Primary)', gradeLevel: 'primary', category: 'school_k12' },
+  { id: 'class_6', label: 'Class 6th Std (Middle)', gradeLevel: 'middle', category: 'school_k12' },
+  { id: 'class_7', label: 'Class 7th Std (Middle)', gradeLevel: 'middle', category: 'school_k12' },
+  { id: 'class_8', label: 'Class 8th Std (Middle)', gradeLevel: 'middle', category: 'school_k12' },
+  { id: 'class_9', label: 'Class 9th Std (High)', gradeLevel: 'high', category: 'school_k12' },
   { id: 'class_10', label: 'Class 10th (SSLC)', gradeLevel: 'high', category: 'school_k12' },
   { id: 'class_11', label: 'Class 11th (HSC +1)', gradeLevel: 'hsc', category: 'school_k12' },
   { id: 'class_12', label: 'Class 12th (HSC +2)', gradeLevel: 'hsc', category: 'school_k12' },
@@ -70,14 +77,14 @@ const ACADEMIC_CLASSES = [
 ];
 
 const CAREER_INTERESTS = [
-  { id: 'civil_services', label: 'Civil Services / IAS / IPS', icon: '🏛️', color: '#F59E0B', recommendedCourseId: 'jr-ias' },
-  { id: 'medical_neet', label: 'Medical & Healthcare (NEET / Doctor)', icon: '🩺', color: '#EC4899', recommendedCourseId: 'jr-dr' },
-  { id: 'engineering_ai', label: 'Engineering, Coding & AI (JEE / Tech)', icon: '💻', color: '#3B82F6', recommendedCourseId: 'jr-er' },
-  { id: 'law_judiciary', label: 'Law, Justice & Judiciary (Judge / Advocate)', icon: '⚖️', color: '#8B5CF6', recommendedCourseId: 'jr-judge' },
-  { id: 'police_defense', label: 'Police, Armed Forces & Defense', icon: '👮', color: '#10B981', recommendedCourseId: 'jr-ips' },
-  { id: 'business_banking', label: 'Business, Banking & Corporate CEO', icon: '🏦', color: '#06B6D4', recommendedCourseId: 'jr-ceo' },
-  { id: 'science_research', label: 'Pure Science & Space Research (ISRO)', icon: '🔬', color: '#14B8A6', recommendedCourseId: 'jr-scientist' },
-  { id: 'arts_teaching', label: 'Teaching, Literature & Public Policy', icon: '📚', color: '#F97316', recommendedCourseId: 'jr-ias' },
+  { id: 'jr-ias', label: '🏛️ JrIAS (Civil Servant)', roleTag: 'District Collector & Polity', desc: 'Indian Constitution, Public Policy & District Administration', color: '#F59E0B', recommendedCourseId: 'jr-ias' },
+  { id: 'jr-ar', label: '📊 JrAR (Auditor / CA)', roleTag: 'CA & Corporate Finance', desc: 'Double-Entry Bookkeeping, Financial Statements, GST & Auditing Standards', color: '#10B981', recommendedCourseId: 'jr-ar' },
+  { id: 'jr-dr', label: '🩺 JrDR (Doctor / NEET)', roleTag: 'Clinical Biology & NEET', desc: 'Human Anatomy, Major Organ Systems, First Aid & Clinical Diagnostics', color: '#EC4899', recommendedCourseId: 'jr-dr' },
+  { id: 'jr-er', label: '💻 JrER (Engineer / Tech)', roleTag: 'Coding, AI & Robotics', desc: 'Algorithms, Circuit Analysis, Embedded Robotics & Applied Physics', color: '#3B82F6', recommendedCourseId: 'jr-er' },
+  { id: 'jr-ips', label: '👮 JrIPS (Police & Law)', roleTag: 'Criminology & Public Safety', desc: 'Forensics, Cyber Crime Investigation, Law & Tactical Leadership', color: '#06B6D4', recommendedCourseId: 'jr-ips' },
+  { id: 'jr-ceo', label: '🚀 JrCEO (Entrepreneur)', roleTag: 'Startup & Business Leader', desc: 'Venture Creation, Unit Economics, Marketing & Pitch Decks', color: '#8B5CF6', recommendedCourseId: 'jr-ceo' },
+  { id: 'jr-scientist', label: '🔬 JrScientist (ISRO)', roleTag: 'Space Tech & Deep Physics', desc: 'Rocket Propulsion, Satellite Systems & Planetary Science', color: '#14B8A6', recommendedCourseId: 'jr-scientist' },
+  { id: 'jr-judge', label: '⚖️ JrJudge (Judiciary)', roleTag: 'Justice & Legal Master', desc: 'Constitutional Rights, Courtroom Ethics & Landmark Case Analysis', color: '#F97316', recommendedCourseId: 'jr-judge' },
 ];
 
 export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
@@ -91,9 +98,9 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
   // Step 1: Profile fields
   const [fullName, setFullName] = useState(initialName || 'SuprO Scholar');
-  const [selectedClass, setSelectedClass] = useState('class_10');
+  const [selectedClass, setSelectedClass] = useState('class_5');
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
-  const [selectedInterest, setSelectedInterest] = useState('civil_services');
+  const [selectedInterest, setSelectedInterest] = useState('jr-ias');
 
   // Step 2: Course Selection
   const [selectedCourseOption, setSelectedCourseOption] = useState<CourseOption | null>(null);
@@ -114,6 +121,12 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
 
   // Find class-matching curriculum courses
   const matchingClassCourses = React.useMemo(() => {
+    if (selectedClass === 'class_lkg') {
+      return ALL_COURSES.filter((c) => c.id === 'school-lkg');
+    }
+    if (selectedClass === 'class_ukg') {
+      return ALL_COURSES.filter((c) => c.id === 'school-ukg');
+    }
     if (selectedClass.includes('college')) {
       return ALL_COURSES.filter((c) => c.category === 'college_degree');
     }
@@ -159,6 +172,8 @@ export const StudentOnboardingModal: React.FC<StudentOnboardingModalProps> = ({
       // 1. Save local completion flags
       await AsyncStorage.setItem('tuto_student_onboarding_completed', 'true');
       await setEnrollmentDate(finalCourse.id, new Date().toISOString());
+      await AsyncStorage.setItem('tuto_active_course_id', finalCourse.id);
+      await AsyncStorage.setItem('tuto_active_ambition_id', selectedInterest);
       await AsyncStorage.setItem('user-course-id', finalCourse.id);
       await AsyncStorage.setItem('user-board', selectedBoard);
       await AsyncStorage.setItem('user-name', fullName.trim());
