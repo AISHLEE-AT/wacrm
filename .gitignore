@@ -97,3 +97,7 @@ apps/web/src/data/generated_catalog/
 apps/mobile/src/lib/dailyCoursePlans/
 scripts/*.log
 scripts/*.lock
+
+*.key
+*.key.pub
+patch_otp_oci.py
