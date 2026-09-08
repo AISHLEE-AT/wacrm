@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Tractor, Truck, Clock, Mountain, Search, Phone, 
   MessageSquare, Calendar, ShieldCheck, MapPin, Check, ArrowRight 
@@ -11,24 +11,39 @@ import {
 interface RentalItem {
   id: string;
   name: string;
-  tamilName: string;
+  tamil_name?: string;
+  tamilName?: string;
   rate: string;
   unit: string;
-  desc: string;
-  icon: string;
+  desc?: string;
+  description?: string;
+  icon?: string;
   category: 'agri' | 'cargo' | 'hourly' | 'tour';
-  specs: string[];
+  specs?: string[];
+  specifications?: string;
 }
 
-// Rental items are now fetched from OCI Backend
-
 export default function RentOPage() {
-  const [machines, setMachines] = useState<any[]>([]);
-  React.useEffect(() => {
+  const [machines, setMachines] = useState<RentalItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     fetch('/api/rento/machinery')
       .then(res => res.json())
-      .then(data => setMachines(data))
-      .catch(err => console.error(err));
+      .then(data => {
+        if (Array.isArray(data)) {
+          setMachines(data);
+        } else if (data && Array.isArray(data.machines)) {
+          setMachines(data.machines);
+        } else {
+          setMachines([]);
+        }
+      })
+      .catch(err => {
+        console.error('RentO fetch error:', err);
+        setMachines([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const [activeTab, setActiveTab] = useState<'all' | 'agri' | 'cargo' | 'hourly' | 'tour'>('all');
@@ -37,20 +52,43 @@ export default function RentOPage() {
   const [bookingLocation, setBookingLocation] = useState('');
   const [bookingDate, setBookingDate] = useState(new Date().toISOString().split('T')[0]);
 
+  const getSpecs = (item: RentalItem): string[] => {
+    if (Array.isArray(item.specs) && item.specs.length > 0) return item.specs;
+    if (typeof item.specifications === 'string' && item.specifications.trim()) {
+      return item.specifications.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (typeof item.specs === 'string' && (item.specs as string).trim()) {
+      return (item.specs as string).split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
+  const getIcon = (item: RentalItem): string => {
+    if (item.icon && item.icon.length > 0 && !item.icon.includes('')) return item.icon;
+    if (item.category === 'cargo') return '🚚';
+    if (item.category === 'hourly') return '⏱️';
+    if (item.category === 'tour') return '🏔️';
+    return '🚜';
+  };
+
   const filtered = machines.filter((m: any) => {
     const matchesTab = activeTab === 'all' || m.category === activeTab;
-    const matchesSearch =
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.tamilName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (m.specifications || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const nameStr = (m.name || '').toLowerCase();
+    const tamilStr = (m.tamil_name || m.tamilName || '').toLowerCase();
+    const specStr = (typeof m.specifications === 'string' ? m.specifications : Array.isArray(m.specs) ? m.specs.join(' ') : '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = nameStr.includes(query) || tamilStr.includes(query) || specStr.includes(query);
     return matchesTab && matchesSearch;
   });
 
   const handleBookWhatsApp = (item: RentalItem) => {
+    const displayName = item.name || 'Vehicle / Equipment';
+    const displayTamil = item.tamil_name || item.tamilName || '';
+    const displayCat = (item.category || 'agri').toUpperCase();
     const text = `🚜 *SuprO RentO Booking Inquiry* 🚜\n\n` +
-      `*Vehicle / Machine:* ${item.name} (${item.tamil_name})\n` +
-      `*Category:* ${item.category.toUpperCase()}\n` +
-      `*Rate:* ${'₹' + item.rate} (${item.unit})\n` +
+      `*Vehicle / Machine:* ${displayName} ${displayTamil ? `(${displayTamil})` : ''}\n` +
+      `*Category:* ${displayCat}\n` +
+      `*Rate:* ${'₹' + (item.rate || '0')} (${item.unit || 'per day'})\n` +
       `*Required Date:* ${bookingDate}\n` +
       `*Location:* ${bookingLocation || 'Thanjavur / Tamil Nadu'}\n\n` +
       `Hi, I would like to book this via SuprO RentO. Please confirm operator availability!`;
@@ -108,49 +146,81 @@ export default function RentOPage() {
         ))}
       </div>
 
+      {/* ─── LOADING STATE ─── */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-20 space-y-3">
+          <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm">Loading rental equipment fleet...</p>
+        </div>
+      )}
+
+      {/* ─── EMPTY STATE ─── */}
+      {!loading && filtered.length === 0 && (
+        <div className="bg-[#111827] border border-slate-800 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
+          <span className="text-4xl">🚜</span>
+          <h3 className="text-lg font-bold text-white">No Equipment Found</h3>
+          <p className="text-sm text-slate-400">Try adjusting your search query or selecting a different category tab.</p>
+        </div>
+      )}
+
       {/* ─── ITEMS GRID ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map((item) => (
-          <div
-            key={item.id}
-            className="bg-[#111827] border border-slate-800 hover:border-emerald-500/40 transition-all rounded-3xl p-5 flex flex-col justify-between space-y-4 shadow-xl"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-3xl p-3 bg-slate-900 rounded-2xl border border-slate-800">
-                  {item.icon}
+      {!loading && filtered.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map((item) => {
+            const itemSpecs = getSpecs(item);
+            const itemIcon = getIcon(item);
+            const tamilName = item.tamil_name || item.tamilName || '';
+            const desc = item.desc || item.description || '';
+
+            return (
+              <div
+                key={item.id}
+                className="bg-[#111827] border border-slate-800 hover:border-emerald-500/40 transition-all rounded-3xl p-5 flex flex-col justify-between space-y-4 shadow-xl"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-3xl p-3 bg-slate-900 rounded-2xl border border-slate-800">
+                      {itemIcon}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-black text-emerald-400">{'₹' + (item.rate || '0')}</div>
+                      <div className="text-[11px] text-slate-400 font-medium">{item.unit || 'per day'}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <h3 className="font-bold text-base text-white">{item.name}</h3>
+                    {tamilName ? (
+                      <p className="text-xs text-emerald-400 font-semibold mt-0.5">{tamilName}</p>
+                    ) : null}
+                    {desc ? (
+                      <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">{desc}</p>
+                    ) : null}
+                  </div>
+
+                  {/* SPEC BADGES */}
+                  {itemSpecs.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-4">
+                      {itemSpecs.map((spec, sIdx) => (
+                        <span key={sIdx} className="text-[11px] bg-slate-900 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-800">
+                          ✓ {spec}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-black text-emerald-400">{'₹' + item.rate}</div>
-                  <div className="text-[11px] text-slate-400 font-medium">{item.unit}</div>
-                </div>
-              </div>
 
-              <div className="mt-4">
-                <h3 className="font-bold text-base text-white">{item.name}</h3>
-                <p className="text-xs text-emerald-400 font-semibold mt-0.5">{item.tamil_name}</p>
-                <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">{item.desc}</p>
+                <button
+                  onClick={() => setSelectedItem(item)}
+                  className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
+                >
+                  <MessageSquare className="w-4 h-4" /> Book on WhatsApp
+                </button>
               </div>
-
-              {/* SPEC BADGES */}
-              <div className="flex flex-wrap gap-1.5 mt-4">
-                {item.specs.map((spec, sIdx) => (
-                  <span key={sIdx} className="text-[11px] bg-slate-900 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-800">
-                    ✓ {spec}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setSelectedItem(item)}
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 font-bold text-black rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10"
-            >
-              <MessageSquare className="w-4 h-4" /> Book on WhatsApp
-            </button>
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ─── BOOKING MODAL ─── */}
       {selectedItem && (
@@ -163,8 +233,10 @@ export default function RentOPage() {
 
             <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800">
               <div className="font-bold text-white text-base">{selectedItem.name}</div>
-              <div className="text-xs text-emerald-400 font-semibold">{selectedItem.tamilName}</div>
-              <div className="text-sm font-bold text-white mt-2">{selectedItem.rate} • {selectedItem.unit}</div>
+              {(selectedItem.tamil_name || selectedItem.tamilName) && (
+                <div className="text-xs text-emerald-400 font-semibold">{selectedItem.tamil_name || selectedItem.tamilName}</div>
+              )}
+              <div className="text-sm font-bold text-white mt-2">{'₹' + (selectedItem.rate || '0')} • {selectedItem.unit || 'per day'}</div>
             </div>
 
             <div className="space-y-3">
