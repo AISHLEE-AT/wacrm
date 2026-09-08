@@ -33,16 +33,27 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient()
 
-    // 1. Verify OTP — WhatsApp webhook stores phone with country code (919123596988)
-    const dbPhone = `91${cleanPhone}`
+    // 1. Verify OTP — try multiple phone formats the webhook may have stored under
+    const dbPhoneWithCC = `91${cleanPhone}`
+    const phonesToTry = [dbPhoneWithCC, cleanPhone]
 
-    const { data: otpRecord, error: otpErr } = await admin
-      .from('whatsapp_otps')
-      .select('*')
-      .eq('phone_number', dbPhone)
-      .maybeSingle()
+    let otpRecord: any = null
+    let matchedPhone: string = dbPhoneWithCC
 
-    if (otpErr || !otpRecord || otpRecord.otp !== otp) {
+    for (const tryPhone of phonesToTry) {
+      const { data, error: otpErr } = await admin
+        .from('whatsapp_otps')
+        .select('*')
+        .eq('phone_number', tryPhone)
+        .maybeSingle()
+      if (!otpErr && data) {
+        otpRecord = data
+        matchedPhone = tryPhone
+        break
+      }
+    }
+
+    if (!otpRecord || otpRecord.otp !== otp) {
       return NextResponse.json({ error: 'Invalid or expired OTP. Please request a new one.' }, { status: 401 })
     }
 
@@ -50,8 +61,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 401 })
     }
 
-    // OTP valid — delete it so it cannot be reused
-    await admin.from('whatsapp_otps').delete().eq('phone_number', dbPhone)
+    // OTP valid — delete ALL matching phone variants so it cannot be reused
+    await Promise.all(
+      phonesToTry.map(ph => admin.from('whatsapp_otps').delete().eq('phone_number', ph))
+    )
 
     // 2. Find the ONE canonical profile for this phone (most recently updated)
     //    ⚠️ STRICT RULE: We NEVER create a second profile for an existing phone number.

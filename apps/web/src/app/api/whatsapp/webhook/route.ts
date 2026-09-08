@@ -722,11 +722,33 @@ async function processMessage(
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
     const otpMsgText = `Your SuprO login OTP is ${otp}. Valid for 5 minutes.`;
     
-    const { error: upsertErr } = await supabaseAdmin().from('whatsapp_otps').upsert({
-      phone_number: senderPhone,
+    // ── Extract the login phone number from the message text ──
+    // The login page sends: "Mobile: 9123596988" in the message body.
+    // The verify route looks up OTP by this phone (with "91" prefix),
+    // NOT by senderPhone. We must store OTP under ALL relevant variants
+    // so verification succeeds regardless of format.
+    const mobileMatch = contentText.match(/Mobile:\s*(\d{10,12})/);
+    const extractedPhone = mobileMatch ? mobileMatch[1].replace(/\D/g, '').slice(-10) : '';
+    
+    // Build all phone number variants the verify route might look up
+    const phoneVariants = new Set<string>();
+    phoneVariants.add(senderPhone);                          // e.g. "919486335870"
+    phoneVariants.add(clean10Phone);                         // e.g. "9486335870"
+    phoneVariants.add(`91${clean10Phone}`);                  // e.g. "919486335870"
+    if (extractedPhone && extractedPhone.length === 10) {
+      phoneVariants.add(extractedPhone);                     // e.g. "9123596988"
+      phoneVariants.add(`91${extractedPhone}`);              // e.g. "919123596988"
+    }
+
+    // Upsert OTP for every phone variant so the verify route always finds it
+    const upsertRows = [...phoneVariants].map(ph => ({
+      phone_number: ph,
       otp: otp,
-      expires_at: expiresAt
-    });
+      expires_at: expiresAt,
+    }));
+    const { error: upsertErr } = await supabaseAdmin()
+      .from('whatsapp_otps')
+      .upsert(upsertRows);
 
     if (upsertErr) {
       console.error('Failed to upsert OTP:', upsertErr);

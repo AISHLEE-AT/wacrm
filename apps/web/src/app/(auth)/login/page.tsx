@@ -62,7 +62,10 @@ function LoginPageInner() {
   // Steps: 'phone' → 'otp' → 'set-pin' (if no PIN set) → done
   //        'phone' → 'pin' (fallback)
   const [step, setStep] = useState<'phone' | 'otp' | 'set-pin' | 'pin'>('phone');
-  const [wabaPhone, setWabaPhone] = useState("916381029380");
+  // ⚠️ CRITICAL: This MUST always be the SuprO WhatsApp CRM Business number.
+  // Never set this to a personal/admin phone number!
+  const SUPRO_CRM_PHONE = "916381029380";
+  const [wabaPhone, setWabaPhone] = useState(process.env.NEXT_PUBLIC_WABA_PHONE || SUPRO_CRM_PHONE);
 
   const supabase = createClient();
 
@@ -113,7 +116,12 @@ function LoginPageInner() {
 
     fetch('/api/auth/otp/waba')
       .then(res => res.json())
-      .then(data => { if (data?.phone) setWabaPhone(data.phone); })
+      .then(data => {
+        // Only override if the API returns a valid CRM phone (must include country code, 12+ digits)
+        if (data?.phone && data.phone.length >= 12 && /^\d+$/.test(data.phone)) {
+          setWabaPhone(data.phone);
+        }
+      })
       .catch(() => {});
 
     checkDailyVideo();

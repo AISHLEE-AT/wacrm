@@ -103,11 +103,24 @@ export async function handleRideHailingBooking(
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
+      // Extract the login phone from message text if present (e.g. "Mobile: 9123596988")
+      const mobileMatch = rawText.match(/Mobile:\s*(\d{10,12})/i);
+      const extractedPhone = mobileMatch ? mobileMatch[1].replace(/\D/g, '').slice(-10) : '';
+
+      // Build all phone variants the verify route might look up
+      const phoneSet = new Set<string>();
+      phoneSet.add(tenDigitPhone);
+      phoneSet.add(cleanPhone);
+      phoneSet.add(`91${tenDigitPhone}`);
+      if (extractedPhone && extractedPhone.length === 10) {
+        phoneSet.add(extractedPhone);
+        phoneSet.add(`91${extractedPhone}`);
+      }
+
       try {
-        await supabase.from('whatsapp_otps').upsert([
-          { phone_number: tenDigitPhone, otp: otpCode, expires_at: expiresAt },
-          { phone_number: cleanPhone, otp: otpCode, expires_at: expiresAt }
-        ]);
+        await supabase.from('whatsapp_otps').upsert(
+          [...phoneSet].map(ph => ({ phone_number: ph, otp: otpCode, expires_at: expiresAt }))
+        );
       } catch (dbErr) {
         console.warn('whatsapp_otps table upsert warning (non-blocking):', dbErr);
       }
