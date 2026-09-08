@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useContext, useMemo } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,9 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  TextInput,
   StatusBar,
   Platform,
+  Dimensions,
 } from 'react-native';
 import {
   Car,
@@ -20,52 +20,135 @@ import {
   Wrench,
   Users,
   Compass,
-  Search,
   Sparkles,
-  ArrowRight,
   ChevronRight,
   MapPin,
-  Zap,
-  Activity,
-  Award,
+  Shield,
+  UserCircle,
 } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
 import { LocationContext } from '../context/LocationContext';
-import { colors } from '../lib/theme';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = (width - 48) / 2;
 
 export default function OnboardingModuleScreen({ navigation }: any) {
   const { user, updateUserProfile } = useContext(AppContext);
   const locationCtx = useContext(LocationContext);
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const userName = user?.name ? user.name.split(' ')[0] : 'Partner';
   const activeLocation = locationCtx?.district || locationCtx?.city || user?.city || 'Tamil Nadu';
 
-  const handleSelect = async (categoryId: string, directRoute?: string) => {
-    setLoadingId(categoryId);
+  const MODULES = [
+    {
+      id: 'RideO',
+      catId: 'Traveller',
+      title: 'RideO',
+      subtitle: 'Auto & Cab Booking',
+      tamilSubtitle: 'பயண முன்பதிவு',
+      icon: Car,
+      color: '#10b981',
+      badge: '12+ Active Drivers',
+      route: 'RideOScreen',
+    },
+    {
+      id: 'DriveO',
+      catId: 'Driver',
+      title: 'DriveO',
+      subtitle: 'Driver & Goods Transit',
+      tamilSubtitle: 'ஓட்டுநர் வருவாய்',
+      icon: Truck,
+      color: '#0284c7',
+      badge: 'Earn Daily',
+      route: 'DriveOScreen',
+    },
+    {
+      id: 'AgrO',
+      catId: 'Farmer',
+      title: 'AgrO & RentO',
+      subtitle: 'Tractor Hire & Mandi',
+      tamilSubtitle: 'விவசாயம் & வாடகை',
+      icon: Wrench,
+      color: '#f59e0b',
+      badge: 'Live Mandi',
+      route: 'AgrOScreen',
+    },
+    {
+      id: 'TutO',
+      catId: 'Student',
+      title: 'TutO Studio',
+      subtitle: 'Classes & Mock Tests',
+      tamilSubtitle: 'கல்வி & தேர்வுகள்',
+      icon: GraduationCap,
+      color: '#818cf8',
+      badge: 'TNPSC / NEET',
+      route: 'TutOHubScreen',
+    },
+    {
+      id: 'DealO',
+      catId: 'Shopper',
+      title: 'DealO Bazaar',
+      subtitle: 'Local Trade & Crops',
+      tamilSubtitle: 'கிராமத்து சந்தை',
+      icon: Store,
+      color: '#ec4899',
+      badge: 'Buy & Sell',
+      route: 'DealOScreen',
+    },
+    {
+      id: 'GroupO',
+      catId: 'Group',
+      title: 'GroupO',
+      subtitle: 'Women SHG & Sangam',
+      tamilSubtitle: 'சுயஉதவி குழுக்கள்',
+      icon: Users,
+      color: '#a855f7',
+      badge: 'Micro-Finance',
+      route: 'GroupOScreen',
+    },
+    {
+      id: 'TourO',
+      catId: 'Tourist',
+      title: 'TourO Guide',
+      subtitle: 'Girivalam & Pilgrimage',
+      tamilSubtitle: 'ஆன்மீக சுற்றுலா',
+      icon: Compass,
+      color: '#06b6d4',
+      badge: 'Temple Stays',
+      route: 'ModuleView',
+      params: { path: '/touro', moduleName: 'TourO Guide' },
+    },
+    {
+      id: 'AIBot',
+      catId: 'Traveller',
+      title: 'SuprO AI Hub',
+      subtitle: 'Voice Assistant & Tools',
+      tamilSubtitle: 'குரல் AI உதவியாளர்',
+      icon: Sparkles,
+      color: '#14b8a6',
+      badge: 'Smart Tools',
+      route: 'AishleeToolsScreen',
+    },
+  ];
+
+  const handleSelect = async (mod: any) => {
+    setLoadingId(mod.id);
     try {
       if (updateUserProfile) {
-        await updateUserProfile({ category: categoryId });
+        updateUserProfile({ category: mod.catId }).catch(() => {});
       }
-      if (directRoute) {
-        navigation.replace(directRoute);
+      if (mod.params) {
+        navigation.navigate(mod.route, mod.params);
       } else {
-        navigation.replace('Dashboard');
+        navigation.navigate(mod.route);
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to switch module');
+      Alert.alert('Error', err.message || 'Failed to open module');
+    } finally {
       setLoadingId(null);
     }
   };
-
-  const QUICK_INTENTS = [
-    { label: '⚡ Instant Ride', catId: 'Traveller', color: '#34d399' },
-    { label: '🚜 Farm Machinery', catId: 'Farmer', color: '#fbbf24' },
-    { label: '📚 Mock Tests', catId: 'Student', color: '#818cf8' },
-    { label: '🏪 Local Bazaar', catId: 'Shopper', color: '#f472b6' },
-    { label: '👥 SHG Sangam', catId: 'Group', color: '#c084fc' },
-  ];
 
   return (
     <View style={styles.container}>
@@ -73,15 +156,23 @@ export default function OnboardingModuleScreen({ navigation }: any) {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
       >
-        {/* ─── 1. AMBIENT TELEMETRY & GREETING HEADER ─── */}
+        {/* ─── 1. MINIMAL AMBIENT HEADER ─── */}
         <View style={styles.header}>
           <View style={styles.telemetryRow}>
             <View style={styles.statusPill}>
               <View style={styles.statusDot} />
-              <Text style={styles.statusText}>SUPRO NEURAL HUB</Text>
+              <Text style={styles.statusText}>SUPRO ACTIVE HUB</Text>
             </View>
+
+            <TouchableOpacity
+              style={styles.profileBtn}
+              onPress={() => navigation?.navigate?.('Dashboard', { screen: 'DashboardTab' })}
+              activeOpacity={0.75}
+            >
+              <UserCircle size={14} color="#38bdf8" style={{ marginRight: 4 }} />
+              <Text style={styles.profileBtnText}>View Profile</Text>
+            </TouchableOpacity>
 
             <View style={styles.locationPill}>
               <MapPin size={12} color="#94a3b8" style={{ marginRight: 4 }} />
@@ -93,259 +184,73 @@ export default function OnboardingModuleScreen({ navigation }: any) {
             வணக்கம், <Text style={styles.greetingHighlight}>{userName}</Text>
           </Text>
           <Text style={styles.greetingSubtitle}>
-            What do you need to do right now? Pick your mission or search below.
+            எந்த சேவையைத் தொடங்க விரும்புகிறீர்கள்? Pick your module to continue.
           </Text>
         </View>
 
-        {/* ─── 2. AI SMART INTENT BAR & CHIPS ─── */}
-        <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Search size={18} color="#64748b" style={{ marginRight: 10 }} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search ride, tractor, mock test, cattle..."
-              placeholderTextColor="#64748b"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <View style={styles.aiBadge}>
-              <Sparkles size={13} color="#34d399" />
-              <Text style={styles.aiBadgeText}>AI Intent</Text>
-            </View>
-          </View>
-
-          {/* 1-Tap Quick Action Chips */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
-            {QUICK_INTENTS.map((chip) => (
+        {/* ─── 2. INNOVATIVE TACTILE MODULE GRID ─── */}
+        <View style={styles.gridContainer}>
+          {MODULES.map((mod) => {
+            const IconComp = mod.icon;
+            const isLoading = loadingId === mod.id;
+            return (
               <TouchableOpacity
-                key={chip.label}
-                style={[styles.chip, { borderColor: chip.color + '40' }]}
-                onPress={() => handleSelect(chip.catId)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, { color: chip.color }]}>{chip.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* ─── 3. HIGH-TECH BENTO GRID ARCHITECTURE ─── */}
-        <View style={styles.bentoContainer}>
-
-          {/* BENTO 1 (HERO FULL-WIDTH): MOBILITY & COMMUTE HUB */}
-          <View style={[styles.bentoCard, styles.heroCard]}>
-            <View style={styles.cardHeaderRow}>
-              <View style={styles.cardHeaderLeft}>
-                <View style={[styles.iconBox, { backgroundColor: '#34d39920' }]}>
-                  <Car size={22} color="#34d399" />
-                </View>
-                <View>
-                  <Text style={styles.heroCardTag}>MOBILITY & LOGISTICS</Text>
-                  <Text style={styles.heroCardTitle}>RideO & DriveO Transit</Text>
-                </View>
-              </View>
-              <View style={styles.liveBadge}>
-                <Activity size={12} color="#34d399" style={{ marginRight: 4 }} />
-                <Text style={styles.liveBadgeText}>12+ Drivers Online</Text>
-              </View>
-            </View>
-
-            <Text style={styles.heroCardDesc}>
-              Instant village autos, outstation cabs, goods transport, or drive and earn daily.
-            </Text>
-
-            <View style={styles.heroDualActions}>
-              <TouchableOpacity
-                style={[styles.heroBtn, styles.heroBtnPassenger]}
-                onPress={() => handleSelect('Traveller')}
+                key={mod.id}
+                style={[
+                  styles.tactileCard,
+                  {
+                    borderColor: mod.color + '40',
+                    borderBottomColor: mod.color,
+                  },
+                ]}
+                onPress={() => handleSelect(mod)}
                 disabled={loadingId !== null}
-                activeOpacity={0.8}
+                activeOpacity={0.75}
               >
-                {loadingId === 'Traveller' ? (
-                  <ActivityIndicator size="small" color="#0a0f1e" />
-                ) : (
-                  <>
-                    <Car size={16} color="#0a0f1e" style={{ marginRight: 6 }} />
-                    <Text style={styles.heroBtnTextPassenger}>Book a Ride</Text>
-                    <ArrowRight size={14} color="#0a0f1e" style={{ marginLeft: 4 }} />
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.heroBtn, styles.heroBtnDriver]}
-                onPress={() => handleSelect('Driver')}
-                disabled={loadingId !== null}
-                activeOpacity={0.8}
-              >
-                {loadingId === 'Driver' ? (
-                  <ActivityIndicator size="small" color="#38bdf8" />
-                ) : (
-                  <>
-                    <Truck size={16} color="#38bdf8" style={{ marginRight: 6 }} />
-                    <Text style={styles.heroBtnTextDriver}>Start Driving</Text>
-                    <ChevronRight size={14} color="#38bdf8" />
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* BENTO 2 & 3: DUAL TILES (FARMING & EDUCATION) */}
-          <View style={styles.bentoRow}>
-            {/* AgrO & RentO */}
-            <TouchableOpacity
-              style={[styles.bentoCard, styles.halfCard, { borderColor: '#fbbf2435' }]}
-              onPress={() => handleSelect('Farmer')}
-              disabled={loadingId !== null}
-              activeOpacity={0.75}
-            >
-              <View style={styles.tileTop}>
-                <View style={[styles.iconBox, { backgroundColor: '#fbbf2420' }]}>
-                  <Wrench size={20} color="#fbbf24" />
-                </View>
-                <View style={[styles.miniBadge, { backgroundColor: '#fbbf2415' }]}>
-                  <Text style={[styles.miniBadgeText, { color: '#fbbf24' }]}>Mandi Live</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, { color: '#fbbf24' }]}>AgrO & RentO</Text>
-              <Text style={styles.cardSubTitle}>Farmer & Equipment</Text>
-              <Text style={styles.cardDesc}>Tractors, Harvesters, Soil advice & Mandi rates</Text>
-              {loadingId === 'Farmer' ? (
-                <ActivityIndicator color="#fbbf24" style={{ marginTop: 10 }} />
-              ) : (
-                <View style={styles.cardActionLink}>
-                  <Text style={[styles.actionLinkText, { color: '#fbbf24' }]}>Open Farm Hub</Text>
-                  <ChevronRight size={14} color="#fbbf24" />
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {/* TutO & TestO */}
-            <TouchableOpacity
-              style={[styles.bentoCard, styles.halfCard, { borderColor: '#818cf835' }]}
-              onPress={() => handleSelect('Student')}
-              disabled={loadingId !== null}
-              activeOpacity={0.75}
-            >
-              <View style={styles.tileTop}>
-                <View style={[styles.iconBox, { backgroundColor: '#818cf820' }]}>
-                  <GraduationCap size={20} color="#818cf8" />
-                </View>
-                <View style={[styles.miniBadge, { backgroundColor: '#818cf815' }]}>
-                  <Text style={[styles.miniBadgeText, { color: '#818cf8' }]}>TNPSC/NEET</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, { color: '#818cf8' }]}>TutO Studio</Text>
-              <Text style={styles.cardSubTitle}>Education & Exams</Text>
-              <Text style={styles.cardDesc}>Tamil syllabus, Video classes, Daily mock test</Text>
-              {loadingId === 'Student' ? (
-                <ActivityIndicator color="#818cf8" style={{ marginTop: 10 }} />
-              ) : (
-                <View style={styles.cardActionLink}>
-                  <Text style={[styles.actionLinkText, { color: '#818cf8' }]}>Start Learning</Text>
-                  <ChevronRight size={14} color="#818cf8" />
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* BENTO 4 & 5: DUAL TILES (COMMERCE & COMMUNITY) */}
-          <View style={styles.bentoRow}>
-            {/* DealO */}
-            <TouchableOpacity
-              style={[styles.bentoCard, styles.halfCard, { borderColor: '#f472b635' }]}
-              onPress={() => handleSelect('Shopper')}
-              disabled={loadingId !== null}
-              activeOpacity={0.75}
-            >
-              <View style={styles.tileTop}>
-                <View style={[styles.iconBox, { backgroundColor: '#f472b620' }]}>
-                  <Store size={20} color="#f472b6" />
-                </View>
-                <View style={[styles.miniBadge, { backgroundColor: '#f472b615' }]}>
-                  <Text style={[styles.miniBadgeText, { color: '#f472b6' }]}>Cattle/Crops</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, { color: '#f472b6' }]}>DealO Bazaar</Text>
-              <Text style={styles.cardSubTitle}>Local Trading</Text>
-              <Text style={styles.cardDesc}>Buy & sell local produce, livestock, and goods</Text>
-              {loadingId === 'Shopper' ? (
-                <ActivityIndicator color="#f472b6" style={{ marginTop: 10 }} />
-              ) : (
-                <View style={styles.cardActionLink}>
-                  <Text style={[styles.actionLinkText, { color: '#f472b6' }]}>Browse Market</Text>
-                  <ChevronRight size={14} color="#f472b6" />
-                </View>
-              )}
-            </TouchableOpacity>
-
-            {/* GroupO */}
-            <TouchableOpacity
-              style={[styles.bentoCard, styles.halfCard, { borderColor: '#c084fc35' }]}
-              onPress={() => handleSelect('Group')}
-              disabled={loadingId !== null}
-              activeOpacity={0.75}
-            >
-              <View style={styles.tileTop}>
-                <View style={[styles.iconBox, { backgroundColor: '#c084fc20' }]}>
-                  <Users size={20} color="#c084fc" />
-                </View>
-                <View style={[styles.miniBadge, { backgroundColor: '#c084fc15' }]}>
-                  <Text style={[styles.miniBadgeText, { color: '#c084fc' }]}>SHG Sangam</Text>
-                </View>
-              </View>
-              <Text style={[styles.cardTitle, { color: '#c084fc' }]}>GroupO</Text>
-              <Text style={styles.cardSubTitle}>Self-Help Groups</Text>
-              <Text style={styles.cardDesc}>Women micro-finance, savings, meetings & schemes</Text>
-              {loadingId === 'Group' ? (
-                <ActivityIndicator color="#c084fc" style={{ marginTop: 10 }} />
-              ) : (
-                <View style={styles.cardActionLink}>
-                  <Text style={[styles.actionLinkText, { color: '#c084fc' }]}>Enter Sangam</Text>
-                  <ChevronRight size={14} color="#c084fc" />
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* BENTO 6 (COMPACT WIDE): TOURO PILGRIMAGE & TOURISM */}
-          <TouchableOpacity
-            style={[styles.bentoCard, styles.tourCard, { borderColor: '#22d3ee35' }]}
-            onPress={() => handleSelect('Tourist')}
-            disabled={loadingId !== null}
-            activeOpacity={0.75}
-          >
-            <View style={styles.tourLeft}>
-              <View style={[styles.iconBox, { backgroundColor: '#22d3ee20', marginRight: 12 }]}>
-                <Compass size={22} color="#22d3ee" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                  <Text style={[styles.cardTitle, { color: '#22d3ee', marginRight: 8 }]}>TourO Guide</Text>
-                  <View style={[styles.miniBadge, { backgroundColor: '#22d3ee15' }]}>
-                    <Text style={[styles.miniBadgeText, { color: '#22d3ee' }]}>Girivalam & Heritage</Text>
+                {/* Top Row: Icon + Badge */}
+                <View style={styles.cardTopRow}>
+                  <View style={[styles.iconBox, { backgroundColor: mod.color + '20', borderColor: mod.color + '45' }]}>
+                    <IconComp size={22} color={mod.color} />
+                  </View>
+                  <View style={[styles.badgeBox, { backgroundColor: mod.color + '15' }]}>
+                    <Text style={[styles.badgeText, { color: mod.color }]} numberOfLines={1}>
+                      {mod.badge}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.cardDesc}>Temple darshan, local stays, and verified tourist navigation</Text>
-              </View>
-            </View>
 
-            {loadingId === 'Tourist' ? (
-              <ActivityIndicator color="#22d3ee" />
-            ) : (
-              <View style={[styles.arrowCircle, { backgroundColor: '#22d3ee20' }]}>
-                <ChevronRight size={18} color="#22d3ee" />
-              </View>
-            )}
-          </TouchableOpacity>
+                {/* Module Details */}
+                <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>{mod.title}</Text>
+                  <Text style={styles.cardSubtitle} numberOfLines={1}>{mod.subtitle}</Text>
+                  <Text style={[styles.cardTamilSubtitle, { color: mod.color }]} numberOfLines={1}>
+                    {mod.tamilSubtitle}
+                  </Text>
+                </View>
 
+                {/* Bottom Tactile Action Link */}
+                <View style={styles.cardFooter}>
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color={mod.color} />
+                  ) : (
+                    <>
+                      <Text style={[styles.cardActionText, { color: mod.color }]}>தொடங்கு</Text>
+                      <View style={[styles.arrowBox, { backgroundColor: mod.color + '20' }]}>
+                        <ChevronRight size={13} color={mod.color} />
+                      </View>
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* ─── 4. BOTTOM QUICK LAUNCH BAR ─── */}
-        <View style={styles.footerNote}>
-          <Text style={styles.footerNoteText}>
-            💡 You can switch modules anytime from the bottom navigation or profile settings.
+        {/* ─── 3. SUBTLE FOOTER TIP ─── */}
+        <View style={styles.footerTip}>
+          <Shield size={14} color="#64748b" style={{ marginRight: 6 }} />
+          <Text style={styles.footerTipText}>
+            Click back anytime to return here and switch modules.
           </Text>
         </View>
       </ScrollView>
@@ -359,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#070b14',
   },
   scrollContent: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? 44 : 54,
     paddingBottom: 40,
   },
@@ -377,25 +282,40 @@ const styles = StyleSheet.create({
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(52, 211, 153, 0.25)',
+    borderColor: 'rgba(16, 185, 129, 0.25)',
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#34d399',
+    backgroundColor: '#10b981',
     marginRight: 6,
   },
   statusText: {
-    color: '#34d399',
+    color: '#10b981',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,
+  },
+  profileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  profileBtnText: {
+    color: '#38bdf8',
+    fontSize: 11,
+    fontWeight: '700',
   },
   locationPill: {
     flexDirection: 'row',
@@ -414,251 +334,123 @@ const styles = StyleSheet.create({
     maxWidth: 130,
   },
   greetingTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
     color: '#f8fafc',
     letterSpacing: -0.5,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   greetingHighlight: {
     color: '#38bdf8',
   },
   greetingSubtitle: {
-    fontSize: 14,
-    color: '#94a3b8',
-    lineHeight: 20,
-  },
-
-  /* Search & Quick Action Section */
-  searchSection: {
-    marginBottom: 22,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0f172a',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    marginBottom: 12,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#f8fafc',
     fontSize: 13,
-    paddingVertical: 0,
-  },
-  aiBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  aiBadgeText: {
-    color: '#34d399',
-    fontSize: 11,
-    fontWeight: '700',
-    marginLeft: 4,
-  },
-  chipsScroll: {
-    flexDirection: 'row',
-  },
-  chip: {
-    backgroundColor: '#111827',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginRight: 8,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#94a3b8',
+    lineHeight: 18,
   },
 
-  /* Bento Grid */
-  bentoContainer: {
-    gap: 14,
+  /* Tactile Module Grid */
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 14,
   },
-  bentoCard: {
-    backgroundColor: '#0f172a',
+  tactileCard: {
+    width: CARD_WIDTH,
+    backgroundColor: '#0c1322',
     borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#1e293b',
+    padding: 14,
+    borderWidth: 1.5,
+    borderBottomWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 4,
+    justifyContent: 'space-between',
+    minHeight: 168,
   },
-
-  /* Hero Card (RideO & DriveO) */
-  heroCard: {
-    borderColor: 'rgba(52, 211, 153, 0.35)',
-    backgroundColor: '#0c1626',
-  },
-  cardHeaderRow: {
+  cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  heroCardTag: {
-    color: '#34d399',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  heroCardTitle: {
-    color: '#f8fafc',
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(52, 211, 153, 0.12)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  liveBadgeText: {
-    color: '#34d399',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  heroCardDesc: {
-    color: '#94a3b8',
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: 14,
-  },
-  heroDualActions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  heroBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 11,
+    width: 44,
+    height: 44,
     borderRadius: 14,
-  },
-  heroBtnPassenger: {
-    backgroundColor: '#34d399',
-  },
-  heroBtnDriver: {
-    backgroundColor: '#111e33',
     borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.4)',
-  },
-  heroBtnTextPassenger: {
-    color: '#0a0f1e',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  heroBtnTextDriver: {
-    color: '#38bdf8',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-
-  /* 2-Column Bento Rows */
-  bentoRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  halfCard: {
-    flex: 1,
-    padding: 14,
-  },
-  tileTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'center',
   },
-  miniBadge: {
+  badgeBox: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 8,
+    maxWidth: CARD_WIDTH - 64,
   },
-  miniBadgeText: {
+  badgeText: {
     fontSize: 9,
     fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  cardContent: {
+    marginTop: 10,
+    marginBottom: 8,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '800',
-    marginBottom: 2,
+    color: '#f8fafc',
+    letterSpacing: -0.2,
   },
-  cardSubTitle: {
-    color: '#cbd5e1',
+  cardSubtitle: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  cardTamilSubtitle: {
     fontSize: 11,
     fontWeight: '700',
-    marginBottom: 4,
+    marginTop: 2,
   },
-  cardDesc: {
-    color: '#64748b',
-    fontSize: 11,
-    lineHeight: 15,
-    marginBottom: 10,
-  },
-  cardActionLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 'auto',
-  },
-  actionLinkText: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginRight: 2,
-  },
-
-  /* TourO Card */
-  tourCard: {
+  cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-  tourLeft: {
-    flexDirection: 'row',
+  cardActionText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  arrowBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
-    flex: 1,
-  },
-  arrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
   },
 
-  /* Footer */
-  footerNote: {
-    marginTop: 20,
-    paddingHorizontal: 8,
+  /* Footer Tip */
+  footerTip: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#0a0f1d',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#1e293b',
   },
-  footerNoteText: {
+  footerTipText: {
+    fontSize: 12,
     color: '#64748b',
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 16,
+    fontWeight: '500',
   },
 });

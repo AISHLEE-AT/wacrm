@@ -68,7 +68,7 @@ const formatCurrency = (amount) => {
   return `₹${Number(amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 };
 
-export default function DriveOScreen() {
+export default function DriveOScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user } = useContext(AppContext);
   const phone = user?.phone || '';
@@ -935,6 +935,16 @@ export default function DriveOScreen() {
     return (
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.regContainer}>
+          {navigation && (
+            <TouchableOpacity 
+              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}
+              onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft color="#94a3b8" size={18} style={{ marginRight: 6 }} />
+              <Text style={{ color: '#94a3b8', fontSize: 13, fontWeight: '700' }}>Modules</Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.title}>🚗 Driver Registration</Text>
           <Text style={styles.subtitle}>Step {regStep} of 3</Text>
 
@@ -1207,6 +1217,15 @@ export default function DriveOScreen() {
       >
         <View style={styles.headerLeft}>
           <View style={styles.headerTitleRow}>
+            {navigation && (
+              <TouchableOpacity
+                style={{ marginRight: 8, padding: 4 }}
+                onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+                activeOpacity={0.7}
+              >
+                <ArrowLeft size={22} color="#fff" />
+              </TouchableOpacity>
+            )}
             <Text style={styles.headerTitle} numberOfLines={1}>SuprO Partner</Text>
             <View style={styles.platformBadge}>
               <Text style={styles.platformBadgeText}>

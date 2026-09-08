@@ -34,6 +34,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _hasPin = false;
   String _fullName = '';
   bool _showPin = false;
+  bool _isWhatsAppActive = false;
+  double _whatsAppHoursRemaining = 0.0;
 
   // Daily Deepam Video Player states
   bool _isDailyVideoRequired = false;
@@ -124,6 +126,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _handleDailyWhatsAppSync() async {
+    final clean = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final msg = Uri.encodeComponent('SuprO 24h Daily Sync for +91$clean 🔔');
+    final url = Uri.parse('https://wa.me/916381029380?text=$msg');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+      setState(() {
+        _isWhatsAppActive = true;
+        _whatsAppHoursRemaining = 24.0;
+      });
+      await ref.read(whatsAppSessionProvider.notifier).renewSessionLocal24Hours();
+    }
+  }
+
   @override
   void dispose() {
     _phoneController.dispose();
@@ -147,9 +163,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _fullName = data['name'] ?? data['full_name'] ?? '';
             _category = data['category'] ?? 'Traveller';
             _hasPin = data['has_pin'] ?? false;
-            if (_hasPin) {
+            _isWhatsAppActive = data['is_whatsapp_session_active'] == true;
+            _whatsAppHoursRemaining = (data['whatsapp_hours_remaining'] ?? 0).toDouble();
+
+            // Only advance to PIN automatically if user has PIN AND their 24h WhatsApp window is active.
+            // If the 24h window is expired, keep user on WhatsApp OTP so login renews the window!
+            if (_hasPin && _isWhatsAppActive) {
               _step = AuthStep.pinFallback;
             }
+          } else {
+            _isWhatsAppActive = false;
+            _whatsAppHoursRemaining = 0.0;
           }
         });
         if (_isExistingUser == true && data['gemini_api_key'] != null) {
@@ -157,7 +181,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           await prefs.setString('gemini_api_key', data['gemini_api_key']);
         }
       } catch (e) {
-        setState(() => _isExistingUser = false);
+        setState(() {
+          _isExistingUser = false;
+          _isWhatsAppActive = false;
+          _whatsAppHoursRemaining = 0.0;
+        });
       } finally {
         setState(() => _isChecking = false);
       }
@@ -165,6 +193,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() {
         _isExistingUser = null;
         _hasPin = false;
+        _isWhatsAppActive = false;
+        _whatsAppHoursRemaining = 0.0;
       });
     }
   }
@@ -670,6 +700,75 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ],
+            ),
+          const SizedBox(height: 10),
+          // 24-Hour WhatsApp Session Status Pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: _isWhatsAppActive
+                  ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                  : const Color(0xFFF59E0B).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isWhatsAppActive
+                    ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                    : const Color(0xFFF59E0B).withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _isWhatsAppActive ? LucideIcons.checkCircle2 : LucideIcons.alertTriangle,
+                  color: _isWhatsAppActive ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _isWhatsAppActive
+                            ? '24h WhatsApp Session Active'
+                            : '24h WhatsApp Session Expired',
+                        style: TextStyle(
+                          color: _isWhatsAppActive ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        _isWhatsAppActive
+                            ? '${_whatsAppHoursRemaining.toStringAsFixed(1)}h remaining window for instant alerts & CRM'
+                            : 'Login via WhatsApp OTP or tap sync to renew 24h Meta window',
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _handleDailyWhatsAppSync,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.refreshCw, color: Color(0xFF10B981), size: 10),
+                        SizedBox(width: 4),
+                        Text(
+                          'Sync',
+                          style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 10),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

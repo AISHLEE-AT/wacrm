@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  GraduationCap, Target, Calendar, Search, ChevronDown,
+  GraduationCap, ArrowLeft, Target, Calendar, Search, ChevronDown,
   CheckCircle2, Clock, ChevronRight, Play, BookOpen, Layers, Lock, Zap, FileText,
   Flame, Star, Compass, Sparkles, Heart, Award, Filter, X
 } from 'lucide-react';
@@ -163,13 +163,22 @@ export default function TutOWebPage() {
   return (
     <div className="max-w-7xl mx-auto p-3 sm:p-5 md:p-8 space-y-6 pb-44 md:pb-40 text-foreground">
       
-      {/* 1. TOP APP BAR (Sleek, Clean, Theme-Aware) */}
-      <div className="bg-card border border-border/80 rounded-3xl p-4 md:p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* 1. TOP APP BAR (Tactile 3D, Theme-Aware, Safe Navigation) */}
+      <div className="bg-card border border-border/80 border-b-[3px] border-b-slate-800 rounded-3xl p-4 md:p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         
-        {/* Left: Active Course & Stream Badge */}
-        <div className="flex items-center gap-3.5 w-full md:w-auto">
-          <div className="p-3 bg-primary/10 text-primary rounded-2xl shrink-0">
-            <GraduationCap className="w-7 h-7" />
+        {/* Left: Active Course & Stream Badge with Tactile Modules Back Button */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <a
+            href="/"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-100 rounded-2xl border border-slate-700 border-b-[3px] border-b-slate-900 font-extrabold text-xs shadow-md transition-all active:translate-y-0.5"
+            title="Back to Modules"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-200" />
+            <span>Modules</span>
+          </a>
+
+          <div className="p-2.5 bg-primary/10 text-primary rounded-2xl shrink-0 border border-primary/20 border-b-2 border-b-primary/40">
+            <GraduationCap className="w-6 h-6" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -186,11 +195,11 @@ export default function TutOWebPage() {
           </div>
         </div>
 
-        {/* Right: Actions & Switchers */}
+        {/* Right: Actions & Switchers with Tactile 3D Styling */}
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
           <button
             onClick={() => setIsCoursePickerOpen(true)}
-            className="px-3.5 py-2.5 bg-muted hover:bg-muted/80 text-foreground rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all"
+            className="px-3.5 py-2.5 bg-muted hover:bg-muted/80 text-foreground rounded-2xl font-bold text-xs flex items-center gap-1.5 border border-border/80 border-b-2 border-b-slate-700 transition-all active:translate-y-0.5"
           >
             <span>Change Course</span>
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
@@ -201,7 +210,7 @@ export default function TutOWebPage() {
               setExplainerDayNumber(1);
               setIsExplainerModalOpen(true);
             }}
-            className="px-3.5 py-2.5 bg-card hover:bg-muted text-foreground border border-border rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+            className="px-3.5 py-2.5 bg-card hover:bg-muted text-foreground border border-border border-b-2 border-b-slate-700 rounded-2xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:translate-y-0.5"
           >
             <BookOpen className="w-3.5 h-3.5 text-primary" />
             <span>Daily Explainer</span>
@@ -209,7 +218,7 @@ export default function TutOWebPage() {
 
           <button 
             onClick={() => setIsOnlineTestModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:opacity-90 text-white rounded-2xl font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition-all"
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-700 hover:opacity-90 text-white rounded-2xl font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-500/20 border border-indigo-500/30 border-b-[3px] border-b-indigo-900 transition-all active:translate-y-0.5"
           >
             <Zap className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
             <span>Online Test</span>
@@ -218,6 +227,59 @@ export default function TutOWebPage() {
             </span>
           </button>
         </div>
+      </div>
+
+      {/* 1.5 TACTILE 3D QUICK ACTIONS HERO BAR */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button
+          onClick={() => {
+            setActiveTab('daily_mission');
+            setPlayerDayNumber(playerDayNumber);
+            setIsCoursePlayerOpen(true);
+          }}
+          className="flex items-center justify-between p-3.5 bg-emerald-950/30 hover:bg-emerald-900/40 border border-emerald-500/40 border-b-[3.5px] border-b-emerald-600 rounded-2xl text-left transition-all group shadow-md active:translate-y-0.5"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30 group-hover:scale-105 transition-transform">
+              <Play className="w-4 h-4 fill-emerald-400" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-foreground truncate flex items-center gap-2">
+                <span>Start Today&apos;s Lesson</span>
+                <span className="text-[10px] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 rounded font-black uppercase">
+                  10 Classes
+                </span>
+              </h3>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                Day {playerDayNumber} Structured Pedagogical Flow
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-emerald-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+        </button>
+
+        <button
+          onClick={() => setIsOnlineTestModalOpen(true)}
+          className="flex items-center justify-between p-3.5 bg-sky-950/30 hover:bg-sky-900/40 border border-sky-500/40 border-b-[3.5px] border-b-sky-600 rounded-2xl text-left transition-all group shadow-md active:translate-y-0.5"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 border border-sky-500/30 group-hover:scale-105 transition-transform">
+              <Zap className="w-4 h-4 fill-sky-400" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-foreground truncate flex items-center gap-2">
+                <span>5-Min Quick Mock</span>
+                <span className="text-[10px] px-1.5 py-0.2 bg-sky-500/20 text-sky-300 rounded font-black uppercase">
+                  Quiz & XP
+                </span>
+              </h3>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                Targeted Concept Evaluation Test
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-sky-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+        </button>
       </div>
 
       {/* 2. 4-PERSONA LEARNER STREAM SELECTOR BAR */}

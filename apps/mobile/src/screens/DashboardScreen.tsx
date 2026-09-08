@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext, useCallback } from 'react';
+import React, { useEffect, useState, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
-import { LocationService } from '../services/LocationService';
-import { NotificationService } from '../services/NotificationService';
-import { LogOut } from 'lucide-react-native';
+import { LogOut, ArrowLeft, User, CreditCard, Settings, ShoppingBag } from 'lucide-react-native';
 import { AppContext } from '../context/AppContext';
-import { LocationContext } from '../context/LocationContext';
 import { supabase } from '../lib/supabase';
-import { colors, spacing, radius, fontSize } from '../lib/theme';
+import { colors, spacing, radius } from '../lib/theme';
 
 // ─── Profile Section Components ───
 import { ProfileHeader } from '../components/profile/ProfileHeader';
@@ -33,23 +30,17 @@ import { SetupChecklist } from '../components/profile/SetupChecklist';
 import { UserCategoryCard } from '../components/profile/UserCategoryCard';
 import { PurchaseOrderHistoryCard } from '../components/profile/PurchaseOrderHistoryCard';
 import { SupportCard } from '../components/profile/SupportCard';
-import { ENV } from '../config/env';
 
-const endpoints = {
-  updateProfile: `${ENV.CRM_URL}/api/profile/update`,
-};
+type ProfileTab = 'profile' | 'payments' | 'settings' | 'orders';
 
 export default function DashboardScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const {
     user,
-    userRole,
     isAdmin,
     geminiApiKey,
-    updateGeminiKey,
     themeMode,
     themeAccent,
-    themeVer,
     setThemeMode,
     setThemeAccent,
   } = useContext(AppContext);
@@ -60,8 +51,9 @@ export default function DashboardScreen({ navigation }: any) {
   const [isDriver, setIsDriver] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [activeTab, setActiveTab] = useState<ProfileTab>('profile');
 
-  // ─── Format phone for display ───
+  // Format phone for display
   const formatCleanPhone = (raw?: string) => {
     if (!raw) return '';
     let clean = raw;
@@ -74,7 +66,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   const displayPhone = formatCleanPhone(phone || '');
 
-  // ─── Load profile from Supabase + Realtime subscription ───
+  // Load profile from Supabase with memoized fetch
   useEffect(() => {
     let channel: any = null;
 
@@ -90,7 +82,6 @@ export default function DashboardScreen({ navigation }: any) {
       const cleanPhone = savedPhone.replace(/\D/g, '').slice(-10);
 
       try {
-        // Fetch full profile from Supabase
         const { data: profileData } = await supabase
           .from('profiles')
           .select('*')
@@ -107,15 +98,12 @@ export default function DashboardScreen({ navigation }: any) {
               .from('profiles')
               .update({ upi_id: defaultUpi })
               .eq('id', prof.id)
-              .then(
-                () => {},
-                (err: any) => console.warn('Auto UPI DB update warning:', err)
-              );
+              .then(() => {}, (err: any) => console.warn('Auto UPI DB update warning:', err));
           }
 
           setDbProfile(prof);
 
-          // Set up Realtime subscription for live profile updates
+          // Realtime subscription for live profile updates
           channel = supabase
             .channel(`mobile:profiles:${prof.id}`)
             .on(
@@ -130,7 +118,7 @@ export default function DashboardScreen({ navigation }: any) {
             .subscribe();
         }
 
-        // Fetch driver profile
+        // Fetch driver profile if user is driver
         const { data: driverData } = await supabase
           .from('drivers')
           .select('*')
@@ -147,44 +135,38 @@ export default function DashboardScreen({ navigation }: any) {
       } finally {
         setIsLoadingProfile(false);
       }
-
-      // Initialize push notifications
-      const token = await NotificationService.registerForPushNotificationsAsync();
-      if (token) {
-        setPushToken(token);
-        fetch(endpoints.updateProfile, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: savedPhone, pushToken: token }),
-        }).catch(console.error);
-      }
     };
 
     initProfile();
 
     return () => {
-      if (channel) channel.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, []);
 
-  // ─── Callback: refresh profile after update ───
-  const handleProfileUpdate = useCallback((updatedProfile: any) => {
-    if (updatedProfile) {
-      setDbProfile((prev: any) => ({ ...prev, ...updatedProfile }));
-    }
-  }, []);
-
-  // ─── Logout ───
-  const handleLogout = async () => {
-    await LocationService.stopTracking();
-    await SecureStore.deleteItemAsync('sb-access-token');
-    await SecureStore.deleteItemAsync('user-phone');
-    await SecureStore.deleteItemAsync('user-role');
-    await SecureStore.deleteItemAsync('gemini-api-key');
-    navigation.replace('Login');
+  const handleProfileUpdate = (updatedProfile: any) => {
+    setDbProfile((prev: any) => ({ ...prev, ...updatedProfile }));
   };
 
-  // ─── Loading State ───
+  const handleLogout = () => {
+    Alert.alert('Sign Out / வெளியேறு', 'Are you sure you want to sign out from SuprO?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase.auth.signOut();
+          await SecureStore.deleteItemAsync('sb-access-token');
+          await SecureStore.deleteItemAsync('user-phone');
+          await SecureStore.deleteItemAsync('user-role');
+          await SecureStore.deleteItemAsync('gemini-api-key');
+          navigation.replace('Login');
+        },
+      },
+    ]);
+  };
+
+  // Loading State
   if (isLoadingProfile) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -196,6 +178,13 @@ export default function DashboardScreen({ navigation }: any) {
 
   const userId = dbProfile?.id || user?.phone || '';
 
+  const TABS = [
+    { id: 'profile', label: 'Overview', icon: User, color: '#10b981' },
+    { id: 'payments', label: 'UPI & QR', icon: CreditCard, color: '#f59e0b' },
+    { id: 'settings', label: 'Settings', icon: Settings, color: '#38bdf8' },
+    { id: 'orders', label: 'Activity', icon: ShoppingBag, color: '#a855f7' },
+  ];
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -206,13 +195,27 @@ export default function DashboardScreen({ navigation }: any) {
             Math.max(
               insets.top,
               Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0
-            ) + 16,
+            ) + 12,
           paddingBottom: Math.max(insets.bottom, 16) + 120,
         },
       ]}
       showsVerticalScrollIndicator={false}
     >
-      {/* ──── 1. Profile Header (Avatar, Name, Role) ──── */}
+      {/* ──── Top Header Row with Back to Modules Button ──── */}
+      <View style={styles.topBarRow}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={18} color={colors.text} style={{ marginRight: 6 }} />
+          <Text style={[styles.backBtnText, { color: colors.text }]}>Modules</Text>
+        </TouchableOpacity>
+        <Text style={[styles.screenTitle, { color: colors.text }]}>My Profile</Text>
+        <View style={{ width: 75 }} />
+      </View>
+
+      {/* ──── 1. Profile Header (Avatar, Click to View Profile, Name, Role) ──── */}
       <ProfileHeader
         profile={dbProfile}
         userId={userId}
@@ -222,97 +225,121 @@ export default function DashboardScreen({ navigation }: any) {
         onProfileUpdate={handleProfileUpdate}
       />
 
-      {/* ──── 2. Contact & Info Card (Phone, Location, UPI, Gemini Key) ──── */}
-      <ContactInfoCard
-        profile={dbProfile}
-        userId={userId}
-        phone={phone || ''}
-        onProfileUpdate={handleProfileUpdate}
-      />
+      {/* ──── 2. High-Speed Segmented Tabs (Zero Lag) ──── */}
+      <View style={styles.tabBar}>
+        {TABS.map((tab) => {
+          const IconC = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={[
+                styles.tabItem,
+                isActive && [styles.tabItemActive, { borderColor: tab.color + '60', backgroundColor: tab.color + '15' }],
+              ]}
+              onPress={() => setActiveTab(tab.id as ProfileTab)}
+              activeOpacity={0.75}
+            >
+              <IconC size={15} color={isActive ? tab.color : '#64748b'} style={{ marginRight: 5 }} />
+              <Text style={[styles.tabItemText, { color: isActive ? tab.color : '#64748b' }]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-      {/* ──── 2.5 WhatsApp 24h Live Window & Alert Status Card ──── */}
-      <WhatsAppWindowCard />
+      {/* ──── 3. Fast Tab Content (Only renders active tab for 60 FPS performance) ──── */}
+      {activeTab === 'profile' && (
+        <View style={styles.tabContent}>
+          <DigitalIdCard
+            profile={dbProfile}
+            isAdmin={isAdmin}
+            phone={displayPhone}
+          />
+          <UserCategoryCard
+            profile={dbProfile}
+            phone={phone || ''}
+            navigation={navigation}
+            onProfileUpdate={handleProfileUpdate}
+          />
+          <WhatsAppWindowCard />
+          {isDriver && (
+            <DriverStatusCard
+              driverProfile={driverProfile}
+              fullName={dbProfile?.full_name || user?.name || 'Driver Partner'}
+              navigation={navigation}
+            />
+          )}
+        </View>
+      )}
 
-      {/* ──── 3. Setup Checklist ──── */}
-      <SetupChecklist
-        profile={dbProfile}
-        driverProfile={driverProfile}
-        geminiApiKey={geminiApiKey}
-        pushToken={pushToken}
-      />
+      {activeTab === 'payments' && (
+        <View style={styles.tabContent}>
+          <UpiQrCard
+            upiId={dbProfile?.upi_id || ''}
+            fullName={dbProfile?.full_name || user?.name || 'SuprO Partner'}
+            phone={(phone || '').replace(/\D/g, '')}
+          />
+          <DriverStatusCard
+            driverProfile={driverProfile}
+            fullName={dbProfile?.full_name || user?.name || 'Driver Partner'}
+            navigation={navigation}
+          />
+        </View>
+      )}
 
-      {/* ──── 3.5 User Type & Module Category Selection ──── */}
-      <UserCategoryCard
-        profile={dbProfile}
-        phone={phone || ''}
-        navigation={navigation}
-        onProfileUpdate={handleProfileUpdate}
-      />
+      {activeTab === 'settings' && (
+        <View style={styles.tabContent}>
+          <ContactInfoCard
+            profile={dbProfile}
+            userId={userId}
+            phone={phone || ''}
+            onProfileUpdate={handleProfileUpdate}
+          />
+          <SecuritySection phone={phone || ''} />
+          <AppearanceSection
+            currentMode={themeMode}
+            currentAccent={themeAccent}
+            onModeChange={setThemeMode}
+            onAccentChange={setThemeAccent}
+          />
+          <SupportCard />
+        </View>
+      )}
 
-      {/* ──── 4. Category-wise Purchase & Order History ──── */}
-      <PurchaseOrderHistoryCard
-        phone={phone || ''}
-        userId={dbProfile?.id || user?.id}
-        navigation={navigation}
-      />
+      {activeTab === 'orders' && (
+        <View style={styles.tabContent}>
+          <PurchaseOrderHistoryCard
+            phone={phone || ''}
+            userId={dbProfile?.id || user?.id}
+            navigation={navigation}
+          />
+          <SetupChecklist
+            profile={dbProfile}
+            driverProfile={driverProfile}
+            geminiApiKey={geminiApiKey}
+            pushToken={pushToken}
+          />
+        </View>
+      )}
 
-      {/* ──── 5. Security (PIN Change) ──── */}
-      <SecuritySection phone={phone || ''} />
-
-      {/* ──── 6. Appearance (Theme) ──── */}
-      <AppearanceSection
-        currentMode={themeMode}
-        currentAccent={themeAccent}
-        onModeChange={setThemeMode}
-        onAccentChange={setThemeAccent}
-      />
-
-      {/* ──── 7. UPI QR Code ──── */}
-      <UpiQrCard
-        upiId={dbProfile?.upi_id || ''}
-        fullName={dbProfile?.full_name || user?.name || 'SuprO Partner'}
-        phone={(phone || '').replace(/\D/g, '')}
-      />
-
-      {/* ──── 8. Digital ID ──── */}
-      <DigitalIdCard
-        profile={dbProfile}
-        isAdmin={isAdmin}
-        phone={displayPhone}
-      />
-
-      {/* ──── 9. Driver Status ──── */}
-      <DriverStatusCard
-        driverProfile={driverProfile}
-        fullName={dbProfile?.full_name || user?.name || 'Driver Partner'}
-        navigation={navigation}
-      />
-
-      {/* ──── 10. Support SuprO ──── */}
-      <SupportCard />
-
-      {/* ──── 11. Sign Out ──── */}
+      {/* ──── 4. Sign Out Button ──── */}
       <TouchableOpacity
         style={styles.logoutButton}
         onPress={handleLogout}
         activeOpacity={0.8}
       >
-        <LogOut color={colors.destructive} size={20} style={{ marginRight: 8 }} />
+        <LogOut color={colors.destructive} size={18} style={{ marginRight: 8 }} />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
 
-      {/* ──── 12. App Version Info ──── */}
-      <View style={{ alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
-        <Text style={{ color: colors.textMuted, fontSize: 13, fontWeight: '700', letterSpacing: 0.5 }}>
-          SuprO SuperApp • v3.2.1 Beta SuprO
-        </Text>
-        <Text style={{ color: colors.textMuted, fontSize: 11, marginTop: 2, opacity: 0.7 }}>
-          Build 4 • Tamil Nadu Ecosystem
+      {/* ──── 5. App Version Info ──── */}
+      <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 8 }}>
+        <Text style={{ color: '#64748b', fontSize: 12, fontWeight: '700' }}>
+          SuprO SuperApp • v3.2.1
         </Text>
       </View>
-
-      {/* Bottom spacing */}
-      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -322,36 +349,86 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: spacing.xl,
-    paddingTop: 60,
-    paddingBottom: 80,
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
   },
   loadingText: {
-    fontSize: fontSize.md,
+    marginTop: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
-
-  // ─── Sign Out ───
-  logoutButton: {
+  topBarRow: {
     flexDirection: 'row',
-    backgroundColor: colors.destructiveLight,
-    padding: spacing.lg,
-    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: colors.destructiveBorder,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  backBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  screenTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0c1322',
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    marginVertical: 14,
+  },
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.lg,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  tabItemActive: {
+    borderWidth: 1,
+  },
+  tabItemText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  tabContent: {
+    gap: 14,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+    marginTop: 20,
   },
   logoutText: {
-    color: colors.destructive,
-    fontSize: fontSize.md + 1,
-    fontWeight: 'bold',
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '800',
   },
 });

@@ -145,7 +145,7 @@ export default function GroupOWebPage() {
                 if (grp) setSelectedGroup(grp);
               }}
             >
-              {userGroups.map(g => (
+              {(userGroups || []).map(g => (
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
             </select>
@@ -201,7 +201,7 @@ export default function GroupOWebPage() {
           <div className="space-y-6">
             <h3 className="text-xl font-black text-gray-800 border-b pb-4">Group Members ({selectedGroup?.totalMembersCount})</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedGroup?.members.map(m => (
+              {(selectedGroup?.members || []).map(m => (
                 <GroupMemberViewWebCard
                   key={m.id}
                   member={m}

@@ -871,10 +871,11 @@ Instructions: Respond in clear, respectful, practical Tamil with actionable poin
             {selectedVideo.videoId && (
               <div className="aspect-video w-full bg-black">
                 <iframe
-                  src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=1`}
+                  src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&playsinline=1`}
                   title={selectedVideo.title}
                   className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 />
               </div>

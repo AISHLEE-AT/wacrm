@@ -158,6 +158,85 @@ export const getInitialClassesFor5thStd = (ambitionId: string): DailyClassItem[]
   return getInitialClassesForGrade('school-std-5', ambitionId);
 };
 
+interface MemoizedClassItemRowProps {
+  cls: DailyClassItem;
+  isDone: boolean;
+  onToggle: (id: number, xp: number) => void;
+  onOpenExplainer: (dayNum: number, topicHint?: string) => void;
+  onOpenCoursePlayer: (dayNum: number) => void;
+  activeDay: number;
+}
+
+const MemoizedClassItemRow = React.memo(function MemoizedClassItemRow({
+  cls,
+  isDone,
+  onToggle,
+  onOpenExplainer,
+  onOpenCoursePlayer,
+  activeDay,
+}: MemoizedClassItemRowProps) {
+  return (
+    <div
+      className={`p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all border ${
+        isDone
+          ? 'bg-slate-950/40 border-emerald-950/40 opacity-70'
+          : 'bg-card/70 hover:bg-card border-border/80 hover:border-border border-b-[3px] border-b-slate-800 shadow-sm'
+      }`}
+    >
+      <div className="flex items-start gap-3 min-w-0">
+        <button
+          type="button"
+          onClick={() => onToggle(cls.id, cls.xp)}
+          className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors active:scale-95"
+          title={isDone ? 'Mark Incomplete' : 'Mark Completed'}
+        >
+          {isDone ? (
+            <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-background" />
+          ) : (
+            <Circle className="w-5 h-5 text-muted-foreground/60 hover:text-muted-foreground" />
+          )}
+        </button>
+
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="text-xs">{cls.icon}</span>
+            <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border/40">
+              Class {cls.id} · {cls.subject}
+            </span>
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+              <Clock className="w-3 h-3" /> {cls.duration}
+            </span>
+            <span className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
+              <Award className="w-3 h-3" /> +{cls.xp} XP
+            </span>
+          </div>
+          <h4 className={`text-sm font-bold truncate ${isDone ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+            {cls.title}
+          </h4>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
+        <button
+          onClick={() => onOpenExplainer(activeDay, cls.title)}
+          className="px-3 py-1.5 rounded-xl text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 border-b-2 border-b-primary/30 transition-all flex items-center gap-1 active:translate-y-0.5"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>Notes</span>
+        </button>
+        <button
+          onClick={() => onOpenCoursePlayer(activeDay)}
+          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-muted hover:bg-muted/80 text-foreground border border-border border-b-2 border-b-slate-700 transition-all flex items-center gap-1 active:translate-y-0.5"
+        >
+          <Play className="w-3.5 h-3.5" />
+          <span>Lesson</span>
+        </button>
+      </div>
+    </div>
+  );
+});
+
 export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = ({
   course,
   selectedBoard,
@@ -563,15 +642,15 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         </div>
       )}
 
-      {/* 365-DAY INTERACTIVE TIMELINE & NAVIGATION BAR */}
-      <div className="p-4 rounded-3xl bg-slate-900/95 border border-indigo-500/30 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* 365-DAY INTERACTIVE TIMELINE & NAVIGATION BAR (Tactile 3D) */}
+      <div className="p-4 rounded-3xl bg-slate-900/95 border border-indigo-500/30 border-b-[3.5px] border-b-indigo-950 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Left: Previous Day Button */}
         <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-start">
           <button
             type="button"
             onClick={() => handleDayChange(activeDay - 1)}
             disabled={activeDay <= 1}
-            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition border border-white/10 cursor-pointer disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-700 border-b-[3px] border-b-slate-950 shadow-sm cursor-pointer disabled:cursor-not-allowed active:translate-y-0.5"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Prev Day</span>
@@ -588,7 +667,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             type="button"
             onClick={() => handleDayChange(activeDay + 1)}
             disabled={activeDay >= 365}
-            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition border border-white/10 md:hidden cursor-pointer disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-700 border-b-[3px] border-b-slate-950 shadow-sm md:hidden cursor-pointer disabled:cursor-not-allowed active:translate-y-0.5"
           >
             <span>Next</span>
             <ChevronRight className="w-4 h-4" />
@@ -614,16 +693,16 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
           </div>
 
           {/* Quick Jump Buttons */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {[1, 50, 100, 180, 250, 365].map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => handleDayChange(d)}
-                className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                   activeDay === d
-                    ? 'bg-amber-400 text-slate-950 shadow-md font-black ring-1 ring-amber-300'
-                    : 'bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white'
+                    ? 'bg-amber-400 text-slate-950 border border-amber-300 border-b-[2.5px] border-b-amber-600 font-black shadow-md'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 border-b-2 border-b-slate-950 active:translate-y-0.5'
                 }`}
               >
                 D{d}
@@ -645,7 +724,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                 const val = parseInt(e.target.value, 10);
                 if (!isNaN(val)) handleDayChange(val);
               }}
-              className="w-16 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-center text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              className="w-16 px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 border-b-2 border-b-slate-950 text-center text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-400"
             />
           </div>
 
@@ -653,7 +732,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             type="button"
             onClick={() => handleDayChange(activeDay + 1)}
             disabled={activeDay >= 365}
-            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-white/10 text-white text-xs font-bold flex items-center gap-1.5 transition border border-white/10 cursor-pointer disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all border border-slate-700 border-b-[3px] border-b-slate-950 shadow-sm cursor-pointer disabled:cursor-not-allowed active:translate-y-0.5"
           >
             <span>Next Day</span>
             <ChevronRight className="w-4 h-4" />
@@ -711,8 +790,8 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         </button>
       </div>
       
-      {/* 1. HERO ACTIVE MISSION BANNER (365 DAYS UNIFIED) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/90 via-slate-900/95 to-slate-950 border border-indigo-500/30 p-6 md:p-8 shadow-2xl text-white">
+      {/* 1. HERO ACTIVE MISSION BANNER (Tactile 3D) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900/90 via-slate-900/95 to-slate-950 border border-indigo-500/30 border-b-[4px] border-b-slate-950 p-6 md:p-8 shadow-2xl text-white">
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -760,8 +839,8 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                     onClick={() => onSelectAmbition(trk.id)}
                     className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                       isAct
-                        ? 'bg-amber-400 text-slate-950 shadow-md ring-2 ring-amber-300/50'
-                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                        ? 'bg-amber-400 text-slate-950 border border-amber-300 border-b-[2.5px] border-b-amber-600 shadow-md ring-2 ring-amber-300/50'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10 border-b-2 border-b-slate-900 active:translate-y-0.5'
                     }`}
                   >
                     <span>{trk.icon}</span>
@@ -782,7 +861,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             {nextClass && (
               <button
                 onClick={() => onOpenCoursePlayer(activeDay)}
-                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="w-full sm:w-auto px-7 py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-emerald-500/20 border border-emerald-400 border-b-[3.5px] border-b-emerald-700 active:translate-y-0.5 transition-all"
               >
                 <Play className="w-4 h-4 fill-slate-950" />
                 <span>Resume Lesson ({nextClass.duration})</span>
@@ -801,7 +880,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsBookScannerOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition-all hover:scale-105"
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 border border-amber-400 border-b-[3px] border-b-amber-700 active:translate-y-0.5 transition-all"
             >
               <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
               <span>📸 AI Textbook Scanner</span>
@@ -809,7 +888,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
 
             <button
               onClick={() => setIsYogaDrawerOpen(true)}
-              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10 border-b-2 border-b-slate-900 active:translate-y-0.5"
             >
               <span>🧘</span>
               <span>Daily Yoga {yogaCompleted ? '✓' : ''}</span>
@@ -817,7 +896,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
 
             <button
               onClick={() => onOpenTest(dailyTest?.category || course.id, dailyTest?.subject || 'ALL')}
-              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10 border-b-2 border-b-slate-900 active:translate-y-0.5"
             >
               <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
               <span>Daily CBT Test (10 Qs)</span>
@@ -825,7 +904,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
 
             <button
               onClick={() => setIsHomeworkDrawerOpen(true)}
-              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10"
+              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors border border-white/10 border-b-2 border-b-slate-900 active:translate-y-0.5"
             >
               <BookOpen className="w-3.5 h-3.5 text-indigo-300" />
               <span>Homework Q&A Solver</span>
@@ -884,8 +963,8 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
               key={stg.id}
               className={`rounded-2xl border transition-all overflow-hidden ${
                 isStageFinished
-                  ? 'bg-card border-emerald-500/30'
-                  : 'bg-card border-border/80 shadow-sm hover:border-border'
+                  ? 'bg-card border-emerald-500/30 border-b-[3px] border-b-emerald-800 shadow-sm'
+                  : 'bg-card border-border/80 border-b-[3px] border-b-slate-900 shadow-sm hover:border-border'
               }`}
             >
               {/* Stage Header */}
@@ -984,69 +1063,18 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
                     </div>
                   )}
 
-                  <div className="p-4 pt-0 border-t border-border/60 divide-y divide-border/40">
-                    {stg.classes.map((cls) => {
-                      const isDone = completedClasses.includes(cls.id);
-                      return (
-                        <div
-                          key={cls.id}
-                          className={`py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                            isDone ? 'opacity-70' : ''
-                          }`}
-                        >
-                          <div className="flex items-start gap-3 min-w-0">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleClass(cls.id, cls.xp)}
-                              className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary transition-colors"
-                              title={isDone ? 'Mark Incomplete' : 'Mark Completed'}
-                            >
-                              {isDone ? (
-                                <CheckCircle2 className="w-5 h-5 fill-emerald-500 text-background" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-muted-foreground/60 hover:text-muted-foreground" />
-                              )}
-                            </button>
-
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                                <span className="text-xs">{cls.icon}</span>
-                                <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                                  Class {cls.id} · {cls.subject}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                  <Clock className="w-3 h-3" /> {cls.duration}
-                                </span>
-                                <span className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
-                                  <Award className="w-3 h-3" /> +{cls.xp} XP
-                                </span>
-                              </div>
-                              <h4 className={`text-sm font-semibold truncate ${isDone ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                                {cls.title}
-                              </h4>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-2 pl-8 sm:pl-0 shrink-0">
-                            <button
-                              onClick={() => onOpenExplainer(activeDay, cls.title)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 border border-primary/20 transition-all flex items-center gap-1"
-                            >
-                              <BookOpen className="w-3.5 h-3.5" />
-                              <span>Notes</span>
-                            </button>
-                            <button
-                              onClick={() => onOpenCoursePlayer(activeDay)}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-muted hover:bg-muted/80 text-foreground transition-all flex items-center gap-1"
-                            >
-                              <Play className="w-3.5 h-3.5" />
-                              <span>Lesson</span>
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="p-4 pt-3 border-t border-border/60 space-y-2.5">
+                    {stg.classes.map((cls) => (
+                      <MemoizedClassItemRow
+                        key={cls.id}
+                        cls={cls}
+                        isDone={completedClasses.includes(cls.id)}
+                        onToggle={handleToggleClass}
+                        onOpenExplainer={onOpenExplainer}
+                        onOpenCoursePlayer={onOpenCoursePlayer}
+                        activeDay={activeDay}
+                      />
+                    ))}
                   </div>
                 </div>
               )}

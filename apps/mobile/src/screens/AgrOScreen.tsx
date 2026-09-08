@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  ArrowLeft,
   Leaf,
   Tv,
   CalendarCheck,
@@ -41,6 +42,7 @@ import {
   Flame,
 } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
+import { SuproYouTubePlayer } from '../components/SuproYouTubePlayer';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../context/AppContext';
 import { colors } from '../lib/theme';
@@ -280,6 +282,13 @@ Provide clear, actionable, encouraging advice in simple Tamil for rural farmers.
         <View style={styles.headerTopRow}>
           <View>
             <View style={styles.brandRow}>
+              <TouchableOpacity
+                style={{ marginRight: 8, padding: 4 }}
+                onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+                activeOpacity={0.7}
+              >
+                <ArrowLeft size={20} color={colors.text} />
+              </TouchableOpacity>
               <Text style={[styles.brandTitle, { color: colors.text }]}>AgrO</Text>
               <View style={styles.hubBadge}>
                 <Sparkles size={11} color="#10b981" />
@@ -934,14 +943,11 @@ Provide clear, actionable, encouraging advice in simple Tamil for rural farmers.
 
             {activeVideoModal?.videoId && (
               <View style={styles.videoPlayerBox}>
-                <WebView
+                <SuproYouTubePlayer
+                  videoId={activeVideoModal.videoId}
+                  url={activeVideoModal.url}
+                  title={activeVideoModal.title}
                   style={{ flex: 1 }}
-                  javaScriptEnabled
-                  domStorageEnabled
-                  allowsFullscreenVideo
-                  source={{
-                    uri: `https://www.youtube.com/embed/${activeVideoModal.videoId}?autoplay=1&controls=1`,
-                  }}
                 />
               </View>
             )}

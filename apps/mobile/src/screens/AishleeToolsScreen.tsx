@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  ArrowLeft,
   Bot,
   FileText,
   Download,
@@ -1302,6 +1303,15 @@ export default function AishleeToolsScreen({ navigation, route }: any) {
         ]}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          {navigation && (
+            <TouchableOpacity
+              style={{ padding: 4, marginRight: 2 }}
+              onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+              activeOpacity={0.7}
+            >
+              <ArrowLeft color={colors.text} size={22} />
+            </TouchableOpacity>
+          )}
           <Bot color={colors.primary} size={28} />
           <View>
             <Text style={[styles.headerTitle, { color: colors.text }]}>SuprO AI Hub</Text>

@@ -53,7 +53,7 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   void _trackLocation(String location) async {
-    const modules = ['/ride', '/admin', '/driveo', '/dealo', '/teacho', '/rento', '/agro', '/touro', '/testo', '/tvo', '/moneyo', '/gameo'];
+    const modules = ['/ride', '/admin', '/driveo', '/dealo', '/teacho', '/tuto', '/rento', '/agro', '/touro', '/testo', '/tvo', '/moneyo', '/gameo'];
     if (modules.contains(location)) {
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -72,10 +72,11 @@ class _MainLayoutState extends State<MainLayout> {
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/ai_hub')) return 2;
-    if (location.startsWith('/dashboard')) return 3; // Profile
+    if (location.startsWith('/inbox') || location.startsWith('/crm')) return 2;
+    if (location.startsWith('/ai_hub')) return 3;
+    if (location.startsWith('/profile') || location.startsWith('/dashboard')) return 4;
     
-    // Everything else (admin, teacho, testo, etc.) falls into the "Module" tab
+    // Everything else (admin, teacho, tuto, ride, etc.) falls into the "Module" tab
     return 1; 
   }
 
@@ -86,17 +87,20 @@ class _MainLayoutState extends State<MainLayout> {
         break;
       case 1:
         final location = GoRouterState.of(context).uri.path;
-        if (location == '/home' || location == '/dashboard' || location == '/ai_hub') {
+        if (location == '/home' || location == '/profile' || location == '/dashboard' || location == '/ai_hub' || location == '/inbox') {
           final prefs = await SharedPreferences.getInstance();
           final selectedModule = prefs.getString('selected_module') ?? '/driveo';
           if (mounted) context.go(selectedModule);
         }
         break;
       case 2:
-        context.go('/ai_hub');
+        context.go('/inbox');
         break;
       case 3:
-        context.go('/dashboard');
+        context.go('/ai_hub');
+        break;
+      case 4:
+        context.go('/profile');
         break;
     }
   }
@@ -117,7 +121,7 @@ class _MainLayoutState extends State<MainLayout> {
     IconData moduleIcon = LucideIcons.zap;
     
     if (location.startsWith('/admin')) { moduleLabel = 'Admin'; moduleIcon = LucideIcons.shield; }
-    else if (location.startsWith('/teacho')) { moduleLabel = 'TeachO'; moduleIcon = LucideIcons.graduationCap; }
+    else if (location.startsWith('/teacho') || location.startsWith('/tuto')) { moduleLabel = 'TutO'; moduleIcon = LucideIcons.graduationCap; }
     else if (location.startsWith('/testo')) { moduleLabel = 'TestO'; moduleIcon = LucideIcons.award; }
     else if (location.startsWith('/agro')) { moduleLabel = 'AgrO'; moduleIcon = LucideIcons.leaf; }
     else if (location.startsWith('/dealo')) { moduleLabel = 'DealO'; moduleIcon = LucideIcons.shoppingBag; }
@@ -141,8 +145,8 @@ class _MainLayoutState extends State<MainLayout> {
         currentIndex: currentIndex,
         onTap: (index) => _onItemTapped(index, context),
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-        unselectedLabelStyle: const TextStyle(fontSize: 11),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
         items: [
           const BottomNavigationBarItem(
             icon: Icon(LucideIcons.layoutGrid),
@@ -151,6 +155,10 @@ class _MainLayoutState extends State<MainLayout> {
           BottomNavigationBarItem(
             icon: Icon(moduleIcon),
             label: moduleLabel,
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(LucideIcons.messageSquare),
+            label: 'WA CRM',
           ),
           const BottomNavigationBarItem(
             icon: Icon(LucideIcons.bot),

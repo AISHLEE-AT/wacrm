@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  ArrowLeft,
   GraduationCap,
   Layers,
   Search,
@@ -255,9 +256,19 @@ export default function TutOHubScreen({ navigation }: any) {
       <StatusBar barStyle="light-content" backgroundColor="#070C18" />
 
       {/* ─── 1. CLEAN TOP BRAND BAR ─── */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0) + 8 }]}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0) + 12 }]}>
         <View style={styles.headerTopRow}>
           <View style={styles.brandContainer}>
+            {navigation && (
+              <TouchableOpacity
+                style={styles.moduleBackBtn}
+                onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+                activeOpacity={0.7}
+              >
+                <ArrowLeft size={16} color="#F8FAFC" />
+                <Text style={styles.moduleBackText}>Modules</Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.brandLogoBox}>
               <GraduationCap size={20} color="#00D084" />
             </View>
@@ -344,6 +355,42 @@ export default function TutOHubScreen({ navigation }: any) {
               <View style={[styles.progressBarFill, { width: `${Math.max(2, progressPercent)}%` }]} />
             </View>
           </View>
+        </View>
+
+        {/* ─── 2.2 TACTILE 3D QUICK ACTIONS HERO BAR ─── */}
+        <View style={styles.quickActionsBar}>
+          <TouchableOpacity
+            style={[styles.quickActionCard, { borderColor: '#10B98160', backgroundColor: '#064E3B30' }]}
+            onPress={() => {
+              setActiveTab('daily_mission');
+              handleOpenDayPlayer(playerDayNumber);
+            }}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.quickActionIconBox, { backgroundColor: '#10B98125' }]}>
+              <Play size={15} color="#10B981" fill="#10B981" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.quickActionTitle}>Start Lesson</Text>
+              <Text style={styles.quickActionSub}>Day {playerDayNumber} • 10 Classes</Text>
+            </View>
+            <ArrowRight size={13} color="#10B981" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickActionCard, { borderColor: '#38BDF860', backgroundColor: '#07598530' }]}
+            onPress={() => navigation?.navigate?.('QuizScreen')}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.quickActionIconBox, { backgroundColor: '#38BDF825' }]}>
+              <Zap size={15} color="#38BDF8" fill="#38BDF8" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.quickActionTitle}>5-Min Mock</Text>
+              <Text style={styles.quickActionSub}>Quick Quiz & XP</Text>
+            </View>
+            <ArrowRight size={13} color="#38BDF8" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -952,6 +999,63 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#1E293B',
+  },
+  moduleBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    marginRight: 8,
+    gap: 4,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+  },
+  moduleBackText: {
+    color: '#F8FAFC',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  quickActionsBar: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  quickActionCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderBottomWidth: 3,
+    gap: 8,
+    elevation: 2,
+  },
+  quickActionIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#F8FAFC',
+  },
+  quickActionSub: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 1,
   },
   headerTopRow: {
     flexDirection: 'row',

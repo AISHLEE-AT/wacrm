@@ -190,13 +190,72 @@ class _AdminScreenState extends State<AdminScreen> {
   }
 
   Widget _buildInboxTab() {
-    return ListView.separated(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: _recentMessages.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final msg = _recentMessages[index];
-        return Container(
+      children: [
+        // Admin Master Controls Strip
+        Container(
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(LucideIcons.sparkles, color: Color(0xFFA5B4FC), size: 18),
+                  SizedBox(width: 8),
+                  Text('Ecosystem Admin Suites', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ActionChip(
+                    avatar: const Icon(LucideIcons.graduationCap, color: Color(0xFFA855F7), size: 14),
+                    label: const Text('TutO Studio', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    backgroundColor: const Color(0xFF1E293B),
+                    side: const BorderSide(color: Color(0xFFA855F7)),
+                    onPressed: () => Navigator.of(context).pushNamed('/tuto_admin', arguments: null),
+                  ),
+                  ActionChip(
+                    avatar: const Icon(LucideIcons.messageSquare, color: Color(0xFF10B981), size: 14),
+                    label: const Text('CRM Inbox', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    backgroundColor: const Color(0xFF1E293B),
+                    side: const BorderSide(color: Color(0xFF10B981)),
+                    onPressed: () => Navigator.of(context).pushNamed('/inbox', arguments: null),
+                  ),
+                  ActionChip(
+                    avatar: const Icon(LucideIcons.truck, color: Color(0xFF3B82F6), size: 14),
+                    label: const Text('Driver Fleet', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                    backgroundColor: const Color(0xFF1E293B),
+                    side: const BorderSide(color: Color(0xFF3B82F6)),
+                    onPressed: () => setState(() => _currentIndex = 2),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // Recent Messages Header
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12.0),
+          child: Text('Live Inbound WhatsApp Conversations', style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.bold, fontSize: 12)),
+        ),
+
+        ..._recentMessages.map((msg) => Container(
+          margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFF111827),
@@ -255,8 +314,8 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
             ],
           ),
-        );
-      },
+        )).toList(),
+      ],
     );
   }
 

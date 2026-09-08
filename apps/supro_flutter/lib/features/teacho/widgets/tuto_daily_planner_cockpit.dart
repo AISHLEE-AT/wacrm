@@ -556,10 +556,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                     icon: const Icon(LucideIcons.chevronLeft, size: 14, color: Colors.white),
                     label: const Text('Prev', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.08),
+                      backgroundColor: const Color(0xFF1E293B),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF334155), width: 1.5),
+                      ),
+                      elevation: 2,
                     ),
                   ),
                   Column(
@@ -594,10 +598,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                   ElevatedButton(
                     onPressed: _activeDay >= 365 ? null : () => _handleDayChange(_activeDay + 1),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.08),
+                      backgroundColor: const Color(0xFF1E293B),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: const BorderSide(color: Color(0xFF334155), width: 1.5),
+                      ),
+                      elevation: 2,
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -628,8 +636,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: isSelected ? const Color(0xFFFBBF24) : Colors.white.withOpacity(0.06),
+                              color: isSelected ? const Color(0xFFFBBF24) : const Color(0xFF1E293B),
                               borderRadius: BorderRadius.circular(8),
+                              border: Border(
+                                top: BorderSide(color: isSelected ? const Color(0xFFFDE68A) : const Color(0xFF334155), width: 1.2),
+                                left: BorderSide(color: isSelected ? const Color(0xFFFDE68A) : const Color(0xFF334155), width: 1.2),
+                                right: BorderSide(color: isSelected ? const Color(0xFFD97706) : const Color(0xFF1E293B), width: 1.2),
+                                bottom: BorderSide(color: isSelected ? const Color(0xFFB45309) : const Color(0xFF0F172A), width: 2.5),
+                              ),
                             ),
                             child: Text(
                               'D$d',
@@ -812,8 +826,20 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: const Color(0xFF1E1B4B),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.4)),
+            borderRadius: BorderRadius.circular(20),
+            border: const Border(
+              top: BorderSide(color: Color(0x666366F1), width: 1.5),
+              left: BorderSide(color: Color(0x666366F1), width: 1.5),
+              right: BorderSide(color: Color(0x666366F1), width: 1.5),
+              bottom: BorderSide(color: Color(0xFF0F172A), width: 3.5),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.35),
+                offset: const Offset(0, 3),
+                blurRadius: 6,
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -884,6 +910,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                           decoration: BoxDecoration(
                             color: isAct ? const Color(0xFFFBBF24) : Colors.white.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(10),
+                            border: isAct
+                                ? const Border(
+                                    top: BorderSide(color: Color(0xFFFDE68A), width: 1.2),
+                                    left: BorderSide(color: Color(0xFFFDE68A), width: 1.2),
+                                    right: BorderSide(color: Color(0xFFD97706), width: 1.2),
+                                    bottom: BorderSide(color: Color(0xFFB45309), width: 2.5),
+                                  )
+                                : null,
                           ),
                           child: Row(
                             children: [
@@ -916,8 +950,12 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                   label: Text('Resume Lesson (${nextClass.duration})', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0B1120))),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00D084),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(color: Color(0xFF34D399), width: 1),
+                    ),
+                    elevation: 3,
                   ),
                 ),
               ),
@@ -942,13 +980,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                 icon: const Text('🧘', style: TextStyle(fontSize: 16)),
                 label: Text('Daily Yoga ${_yogaCompleted ? "✓" : ""}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0E172A),
+                  backgroundColor: const Color(0xFF131F37),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(color: Colors.white.withOpacity(0.08)),
+                    side: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
                   ),
+                  elevation: 2,
                 ),
               ),
             ),
@@ -959,13 +998,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                 icon: const Icon(LucideIcons.zap, size: 14, color: Color(0xFFFBBF24)),
                 label: const Text('Daily CBT Test (10 Qs)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0E172A),
+                  backgroundColor: const Color(0xFF131F37),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(color: Colors.white.withOpacity(0.08)),
+                    side: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
                   ),
+                  elevation: 2,
                 ),
               ),
             ),
@@ -985,14 +1025,26 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFF0E172A),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                borderRadius: BorderRadius.circular(16),
+                border: const Border(
+                  top: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                  left: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                  right: BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                  bottom: BorderSide(color: Color(0xFF0A0F1D), width: 3.0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   InkWell(
                     onTap: () => setState(() => _expandedStages[stgId] = !isExp),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
@@ -1023,10 +1075,16 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                           final isDone = _completedClasses.contains(cls.id);
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(11),
                             decoration: BoxDecoration(
-                              color: isDone ? const Color(0xFF1E293B).withOpacity(0.5) : const Color(0xFF1E293B),
-                              borderRadius: BorderRadius.circular(14),
+                              color: isDone ? const Color(0xFF0B1120) : const Color(0xFF131F37),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border(
+                                top: BorderSide(color: isDone ? const Color(0x4010B981) : const Color(0xFF1E293B), width: 1.5),
+                                left: BorderSide(color: isDone ? const Color(0x4010B981) : const Color(0xFF1E293B), width: 1.5),
+                                right: BorderSide(color: isDone ? const Color(0x4010B981) : const Color(0xFF1E293B), width: 1.5),
+                                bottom: BorderSide(color: isDone ? const Color(0xFF047857) : const Color(0xFF0A0F1D), width: 2.5),
+                              ),
                             ),
                             child: Row(
                               children: [

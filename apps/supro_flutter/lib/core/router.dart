@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'main_layout.dart';
 import '../features/auth/screens/login_screen.dart';
+import '../features/profile/screens/profile_screen.dart';
+import '../features/inbox/screens/inbox_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
 import '../features/home/screens/home_screen.dart';
 import '../features/ride/screens/ride_screen.dart';
@@ -52,13 +54,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => MainLayout(child: child),
         routes: [
           GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-          GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
+          GoRoute(path: '/profile', builder: (context, state) => const ProfileScreen()),
+          GoRoute(path: '/dashboard', builder: (context, state) => const ProfileScreen()),
+          GoRoute(path: '/inbox', builder: (context, state) => const InboxScreen()),
+          GoRoute(path: '/crm', builder: (context, state) => const InboxScreen()),
           GoRoute(path: '/ride', builder: (context, state) => const RideScreen()),
           GoRoute(path: '/driveo', builder: (context, state) => const DriveoScreen()),
           GoRoute(path: '/rento', builder: (context, state) => const RentoScreen()),
           GoRoute(path: '/admin', builder: (context, state) => const AdminScreen()),
+          GoRoute(path: '/admin/tuto', builder: (context, state) => const TutOAdminScreen()),
+          GoRoute(path: '/admin/drivers', builder: (context, state) => const DriveoScreen()),
           GoRoute(path: '/dealo', builder: (context, state) => const DealoScreen()),
           GoRoute(path: '/teacho', builder: (context, state) => const TeachoScreen()),
+          GoRoute(path: '/tuto', builder: (context, state) => const TeachoScreen()),
           GoRoute(path: '/tuto_admin', builder: (context, state) => const TutOAdminScreen()),
           GoRoute(path: '/agro', builder: (context, state) => const AgroScreen()),
           GoRoute(path: '/touro', builder: (context, state) => const TouroScreen()),

@@ -82,6 +82,7 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
     <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="referrer" content="strict-origin-when-cross-origin">
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           html, body {
@@ -127,6 +128,7 @@ export const DailyDeepamVideoPlayer: React.FC<DailyDeepamVideoPlayerProps> = ({
           <iframe
             id="ytplayer"
             src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&iv_load_policy=3&fs=0&disablekb=1&showinfo=0&origin=https://watscrm.vercel.app"
+            referrerpolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen>
           </iframe>

@@ -39,6 +39,7 @@ import {
   Share2,
   Trash2,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Check,
 } from 'lucide-react-native';
@@ -450,6 +451,15 @@ export default function DealOScreen({ navigation }: any) {
         <View style={styles.headerTop}>
           <View>
             <View style={styles.brandRow}>
+              {navigation && (
+                <TouchableOpacity
+                  style={{ marginRight: 8, padding: 4 }}
+                  onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+                  activeOpacity={0.7}
+                >
+                  <ArrowLeft size={20} color={colors.text} />
+                </TouchableOpacity>
+              )}
               <Text style={[styles.headerTitle, { color: colors.text }]}>DealO</Text>
               <View style={styles.badge}>
                 <Sparkles size={11} color="#00D084" />

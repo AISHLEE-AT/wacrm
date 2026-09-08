@@ -268,6 +268,52 @@ class _TeachoScreenState extends State<TeachoScreen> {
                     children: [
                       Row(
                         children: [
+                          InkWell(
+                            onTap: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/home');
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(14),
+                                border: const Border(
+                                  top: BorderSide(color: Color(0xFF334155), width: 1.5),
+                                  left: BorderSide(color: Color(0xFF334155), width: 1.5),
+                                  right: BorderSide(color: Color(0xFF334155), width: 1.5),
+                                  bottom: BorderSide(color: Color(0xFF0F172A), width: 3.0),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.35),
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 3,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(LucideIcons.arrowLeft, size: 14, color: Color(0xFFF8FAFC)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Modules',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFF8FAFC),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           Container(
                             width: 36,
                             height: 36,
@@ -388,20 +434,146 @@ class _TeachoScreenState extends State<TeachoScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('$completedCount of $releasedTotal Released Days Done', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8))),
-                            Text('$progressPercent% Done', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF00D084))),
+                            Text('$completedCount of $releasedTotal Days Done ($progressPercent%)', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8))),
+                            Text('Unlocked: Day $_maxUnlockedDay', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFFBBF24))),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         LinearProgressIndicator(
-                          value: releasedTotal > 0 ? (completedCount / releasedTotal) : 0,
-                          backgroundColor: const Color(0xFF070C18),
+                          value: releasedTotal > 0 ? (completedCount / releasedTotal).clamp(0.0, 1.0) : 0,
+                          backgroundColor: const Color(0xFF1E293B),
                           valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00D084)),
                           minHeight: 5,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ],
                     ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // ─── 2.2 TACTILE 3D QUICK ACTIONS HERO BAR ───
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _activeTab = 'daily_mission');
+                            _openDayPlayer(_playerDayNumber);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF064E3B).withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: const Border(
+                                top: BorderSide(color: Color(0x6010B981), width: 1.5),
+                                left: BorderSide(color: Color(0x6010B981), width: 1.5),
+                                right: BorderSide(color: Color(0x6010B981), width: 1.5),
+                                bottom: BorderSide(color: Color(0xFF059669), width: 3.0),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 3,
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x2510B981),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(LucideIcons.play, size: 14, color: Color(0xFF10B981)),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Start Lesson',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFF8FAFC)),
+                                      ),
+                                      Text(
+                                        'Day $_playerDayNumber • 10 Classes',
+                                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(LucideIcons.arrowRight, size: 12, color: Color(0xFF10B981)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _activeTab = 'daily_mission');
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF075985).withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(12),
+                              border: const Border(
+                                top: BorderSide(color: Color(0x6038BDF8), width: 1.5),
+                                left: BorderSide(color: Color(0x6038BDF8), width: 1.5),
+                                right: BorderSide(color: Color(0x6038BDF8), width: 1.5),
+                                bottom: BorderSide(color: Color(0xFF0284C7), width: 3.0),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 3,
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x2538BDF8),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(LucideIcons.zap, size: 14, color: Color(0xFF38BDF8)),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        '5-Min Mock',
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFF8FAFC)),
+                                      ),
+                                      Text(
+                                        'Quick Quiz & XP',
+                                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(LucideIcons.arrowRight, size: 12, color: Color(0xFF38BDF8)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

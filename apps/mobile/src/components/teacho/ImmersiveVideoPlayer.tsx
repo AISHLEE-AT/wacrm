@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { SuproYouTubePlayer } from '../SuproYouTubePlayer';
 import {
   Play,
   Maximize2,
@@ -121,19 +122,19 @@ export const ImmersiveVideoPlayer: React.FC<ImmersiveVideoPlayerProps> = ({
             key={`web_${cleanId}_${reloadKey}`}
             src={embedUrl}
             style={{ width: '100%', height: isFull ? '100%' : 220, border: 0, borderRadius: isFull ? 0 : 12 }}
+            referrerPolicy="strict-origin-when-cross-origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             onLoad={() => setIsLoading(false)}
           />
         ) : (
-          <WebView
-            key={`native_${cleanId}_${reloadKey}`}
+          <SuproYouTubePlayer
+            videoId={cleanId}
+            title={title}
+            autoplay={true}
+            controls={true}
             style={[styles.nativeWebView, isFull && styles.nativeWebViewFullscreen]}
-            source={{ uri: embedUrl }}
-            allowsFullscreenVideo
-            javaScriptEnabled
-            domStorageEnabled
-            onLoadEnd={() => setIsLoading(false)}
+            onReady={() => setIsLoading(false)}
           />
         )}
       </View>

@@ -12,6 +12,9 @@ class OciUser {
   final String phone;
   final String role;
   final String category;
+  final String? name;
+  final String? upiId;
+  final String? location;
   final Map<String, dynamic> userMetadata;
 
   OciUser({
@@ -19,9 +22,197 @@ class OciUser {
     required this.phone,
     required this.role,
     required this.category,
+    this.name,
+    this.upiId,
+    this.location,
     Map<String, dynamic>? userMetadata,
-  }) : userMetadata = userMetadata ?? {'role': role, 'category': category};
+  }) : userMetadata = userMetadata ?? {
+          'role': role,
+          'category': category,
+          if (name != null) 'name': name,
+          if (upiId != null) 'upi_id': upiId,
+          if (location != null) 'location': location,
+        };
 }
+
+// ─── 24-Hour WhatsApp Session Model & State ──────────────────────────────────
+class WhatsAppSessionState {
+  final bool isSessionActive;
+  final double hoursRemaining;
+  final DateTime? expiresAt;
+  final DateTime? lastInboundAt;
+  final bool isChecking;
+
+  const WhatsAppSessionState({
+    this.isSessionActive = false,
+    this.hoursRemaining = 0.0,
+    this.expiresAt,
+    this.lastInboundAt,
+    this.isChecking = false,
+  });
+
+  String get formattedRemaining {
+    if (!isSessionActive || hoursRemaining <= 0) return 'Expired';
+    final totalMinutes = (hoursRemaining * 60).round();
+    final h = totalMinutes ~/ 60;
+    final m = totalMinutes % 60;
+    if (h > 0) return '${h}h ${m}m';
+    return '${m}m';
+  }
+
+  double get progressFraction {
+    if (!isSessionActive || hoursRemaining <= 0) return 0.0;
+    final fraction = hoursRemaining / 24.0;
+    return fraction.clamp(0.0, 1.0);
+  }
+
+  WhatsAppSessionState copyWith({
+    bool? isSessionActive,
+    double? hoursRemaining,
+    DateTime? expiresAt,
+    DateTime? lastInboundAt,
+    bool? isChecking,
+  }) {
+    return WhatsAppSessionState(
+      isSessionActive: isSessionActive ?? this.isSessionActive,
+      hoursRemaining: hoursRemaining ?? this.hoursRemaining,
+      expiresAt: expiresAt ?? this.expiresAt,
+      lastInboundAt: lastInboundAt ?? this.lastInboundAt,
+      isChecking: isChecking ?? this.isChecking,
+    );
+  }
+}
+
+class WhatsAppSessionNotifier extends Notifier<WhatsAppSessionState> {
+  Timer? _ticker;
+
+  @override
+  WhatsAppSessionState build() {
+    _initFromPrefs();
+    _startTicker();
+    ref.onDispose(() {
+      _ticker?.cancel();
+    });
+    return const WhatsAppSessionState();
+  }
+
+  Future<void> _initFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final expiresStr = prefs.getString('whatsapp_window_expires_at');
+    final lastInboundStr = prefs.getString('last_whatsapp_inbound_at');
+
+    DateTime? expiresAt;
+    DateTime? lastInboundAt;
+
+    if (expiresStr != null) expiresAt = DateTime.tryParse(expiresStr);
+    if (lastInboundStr != null) lastInboundAt = DateTime.tryParse(lastInboundStr);
+
+    if (expiresAt != null) {
+      _recalc(expiresAt, lastInboundAt);
+    }
+  }
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (state.expiresAt != null) {
+        _recalc(state.expiresAt!, state.lastInboundAt);
+      }
+    });
+  }
+
+  void _recalc(DateTime expiresAt, DateTime? lastInboundAt) {
+    final now = DateTime.now();
+    final diffSec = expiresAt.difference(now).inSeconds;
+    if (diffSec <= 0) {
+      state = WhatsAppSessionState(
+        isSessionActive: false,
+        hoursRemaining: 0.0,
+        expiresAt: expiresAt,
+        lastInboundAt: lastInboundAt,
+      );
+    } else {
+      final hours = double.parse((diffSec / 3600.0).toStringAsFixed(1));
+      state = WhatsAppSessionState(
+        isSessionActive: true,
+        hoursRemaining: hours,
+        expiresAt: expiresAt,
+        lastInboundAt: lastInboundAt,
+      );
+    }
+  }
+
+  Future<void> updateFromApiData(Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool active = data['is_whatsapp_session_active'] == true;
+    final double hours = (data['whatsapp_hours_remaining'] ?? 0).toDouble();
+
+    DateTime? expiresAt;
+    DateTime? lastInboundAt;
+
+    if (data['whatsapp_window_expires_at'] != null) {
+      expiresAt = DateTime.tryParse(data['whatsapp_window_expires_at'].toString());
+    } else if (active && hours > 0) {
+      expiresAt = DateTime.now().add(Duration(minutes: (hours * 60).round()));
+    }
+
+    if (data['last_whatsapp_inbound_at'] != null) {
+      lastInboundAt = DateTime.tryParse(data['last_whatsapp_inbound_at'].toString());
+    }
+
+    if (expiresAt != null) {
+      await prefs.setString('whatsapp_window_expires_at', expiresAt.toIso8601String());
+    }
+    if (lastInboundAt != null) {
+      await prefs.setString('last_whatsapp_inbound_at', lastInboundAt.toIso8601String());
+    }
+
+    if (expiresAt != null) {
+      _recalc(expiresAt, lastInboundAt);
+    } else {
+      state = WhatsAppSessionState(
+        isSessionActive: active,
+        hoursRemaining: hours,
+        expiresAt: expiresAt,
+        lastInboundAt: lastInboundAt,
+      );
+    }
+  }
+
+  Future<void> renewSessionLocal24Hours() async {
+    final now = DateTime.now();
+    final expires = now.add(const Duration(hours: 24));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('whatsapp_window_expires_at', expires.toIso8601String());
+    await prefs.setString('last_whatsapp_inbound_at', now.toIso8601String());
+    _recalc(expires, now);
+  }
+
+  Future<void> refreshSession([String? phone]) async {
+    final targetPhone = phone ?? ref.read(currentUserPhoneProvider);
+    if (targetPhone == null || targetPhone.isEmpty) return;
+
+    state = state.copyWith(isChecking: true);
+    try {
+      final clean = targetPhone.replaceAll(RegExp(r'\D'), '');
+      final clean10 = clean.length >= 10 ? clean.substring(clean.length - 10) : clean;
+      final res = await http.get(Uri.parse('${AppEnv.apiUrl}/api/auth/check?phone=$clean10')).timeout(const Duration(seconds: 6));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        if (data is Map<String, dynamic>) {
+          await updateFromApiData(data);
+        }
+      }
+    } catch (_) {
+    } finally {
+      state = state.copyWith(isChecking: false);
+    }
+  }
+}
+
+final whatsAppSessionProvider = NotifierProvider<WhatsAppSessionNotifier, WhatsAppSessionState>(() {
+  return WhatsAppSessionNotifier();
+});
 
 // ─── OCI Auth State ──────────────────────────────────────────────────────────
 class OciAuthState {
@@ -63,6 +254,9 @@ class OciAuthNotifier extends Notifier<OciAuthState> {
     final userId = prefs.getString('user_id') ?? 'user_$phone';
     final role = prefs.getString('user_role') ?? 'user';
     final category = prefs.getString('user_category') ?? 'Traveller';
+    final name = prefs.getString('user_name');
+    final upi = prefs.getString('user_upi');
+    final loc = prefs.getString('user_location');
 
     if (token != null && phone != null) {
       state = OciAuthState(
@@ -73,6 +267,9 @@ class OciAuthNotifier extends Notifier<OciAuthState> {
           phone: phone,
           role: role,
           category: category,
+          name: name,
+          upiId: upi,
+          location: loc,
         ),
       );
     }
@@ -84,6 +281,9 @@ class OciAuthNotifier extends Notifier<OciAuthState> {
     String? userId,
     String? role,
     String? category,
+    String? name,
+    String? upiId,
+    String? location,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('oci_auth_token', token);
@@ -91,6 +291,9 @@ class OciAuthNotifier extends Notifier<OciAuthState> {
     if (userId != null) await prefs.setString('user_id', userId);
     if (role != null) await prefs.setString('user_role', role);
     if (category != null) await prefs.setString('user_category', category);
+    if (name != null) await prefs.setString('user_name', name);
+    if (upiId != null) await prefs.setString('user_upi', upiId);
+    if (location != null) await prefs.setString('user_location', location);
 
     final resolvedId = userId ?? 'user_$phone';
     final resolvedRole = role ?? 'user';
@@ -104,8 +307,30 @@ class OciAuthNotifier extends Notifier<OciAuthState> {
         phone: phone,
         role: resolvedRole,
         category: resolvedCat,
+        name: name,
+        upiId: upiId,
+        location: location,
       ),
     );
+  }
+
+  Future<void> updateCategory(String newCategory) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_category', newCategory);
+    if (state.user != null) {
+      final u = state.user!;
+      state = state.copyWith(
+        user: OciUser(
+          id: u.id,
+          phone: u.phone,
+          role: newCategory.toLowerCase() == 'admin' ? 'admin' : (newCategory.toLowerCase() == 'driver' ? 'driver' : u.role),
+          category: newCategory,
+          name: u.name,
+          upiId: u.upiId,
+          location: u.location,
+        ),
+      );
+    }
   }
 
   Future<void> signOut() async {
@@ -114,6 +339,8 @@ class OciAuthNotifier extends Notifier<OciAuthState> {
     await prefs.remove('user_id');
     await prefs.remove('user_role');
     await prefs.remove('user_category');
+    await prefs.remove('whatsapp_window_expires_at');
+    await prefs.remove('last_whatsapp_inbound_at');
 
     state = const OciAuthState();
   }
@@ -155,6 +382,9 @@ class AuthController extends AsyncNotifier<void> {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        if (data is Map<String, dynamic>) {
+          ref.read(whatsAppSessionProvider.notifier).updateFromApiData(data);
+        }
         state = const AsyncValue.data(null);
         return data;
       } else {
@@ -164,6 +394,8 @@ class AuthController extends AsyncNotifier<void> {
           'category': 'Traveller',
           'role': 'user',
           'has_pin': false,
+          'is_whatsapp_session_active': false,
+          'whatsapp_hours_remaining': 0.0,
         };
       }
     } catch (e, st) {
@@ -173,6 +405,8 @@ class AuthController extends AsyncNotifier<void> {
         'category': 'Traveller',
         'role': 'user',
         'has_pin': false,
+        'is_whatsapp_session_active': false,
+        'whatsapp_hours_remaining': 0.0,
       };
     }
   }
@@ -185,11 +419,12 @@ class AuthController extends AsyncNotifier<void> {
   }) async {
     state = const AsyncValue.loading();
     try {
+      final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       final response = await http.post(
         Uri.parse('$_apiUrl/auth/otp/verify'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'phone': phone,
+          'phone': cleanPhone,
           'otp': otp,
           if (fullName != null) 'fullName': fullName,
           if (category != null) 'category': category,
@@ -202,16 +437,25 @@ class AuthController extends AsyncNotifier<void> {
         final userId = data['user']?['id']?.toString() ?? '';
         final role = data['user']?['role'] ?? 'user';
         final cat = data['user']?['category'] ?? category ?? 'Traveller';
+        final name = data['user']?['full_name'] ?? fullName;
+        final upi = data['user']?['upi_id'];
+        final loc = data['user']?['location'];
 
         if (token.isNotEmpty) {
           await ref.read(ociAuthStateProvider.notifier).setLoggedIn(
             token: token,
-            phone: phone,
+            phone: cleanPhone,
             userId: userId,
             role: role,
             category: cat,
+            name: name,
+            upiId: upi,
+            location: loc,
           );
         }
+
+        // Renew 24h WhatsApp session upon successful OTP entry
+        await ref.read(whatsAppSessionProvider.notifier).renewSessionLocal24Hours();
 
         state = const AsyncValue.data(null);
         return data;
@@ -276,6 +520,9 @@ class AuthController extends AsyncNotifier<void> {
         final userId = data['user']?['id']?.toString() ?? '';
         final role = data['user']?['role'] ?? 'user';
         final cat = data['user']?['category'] ?? 'Traveller';
+        final name = data['user']?['full_name'];
+        final upi = data['user']?['upi_id'];
+        final loc = data['user']?['location'];
 
         if (token.isNotEmpty) {
           await ref.read(ociAuthStateProvider.notifier).setLoggedIn(
@@ -284,8 +531,14 @@ class AuthController extends AsyncNotifier<void> {
             userId: userId,
             role: role,
             category: cat,
+            name: name,
+            upiId: upi,
+            location: loc,
           );
         }
+
+        // Refresh or renew session
+        ref.read(whatsAppSessionProvider.notifier).refreshSession(cleanPhone);
 
         state = const AsyncValue.data(null);
         return data;

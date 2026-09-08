@@ -121,6 +121,74 @@ interface TutODailyPlannerMobileCockpitProps {
   userPhone?: string;
 }
 
+interface MemoizedClassItemProps {
+  cls: DayClassItem;
+  isDone: boolean;
+  onToggle: () => void;
+  onOpenExplainer?: (dayNum: number, topicHint?: string) => void;
+  onOpenCoursePlayer: (dayNum: number) => void;
+  activeDay: number;
+}
+
+const MemoizedClassItem = React.memo(function MemoizedClassItem({
+  cls,
+  isDone,
+  onToggle,
+  onOpenExplainer,
+  onOpenCoursePlayer,
+  activeDay,
+}: MemoizedClassItemProps) {
+  return (
+    <View style={[styles.classItem, isDone && styles.classItemDone]}>
+      <TouchableOpacity
+        onPress={onToggle}
+        style={styles.classCheckbox}
+        activeOpacity={0.7}
+      >
+        {isDone ? (
+          <CheckCircle2 size={20} color="#00D084" />
+        ) : (
+          <Circle size={20} color="#475569" />
+        )}
+      </TouchableOpacity>
+
+      <View style={{ flex: 1 }}>
+        <View style={styles.classMetaRow}>
+          <Text style={styles.classNumberBadge}>CLASS {cls.id}</Text>
+          <Text style={styles.classSubject}>{cls.subject}</Text>
+          <Text style={styles.classDuration}>⏱ {cls.duration}</Text>
+          <Text style={styles.classXp}>+{cls.xp} XP</Text>
+        </View>
+        <Text style={[styles.classTitle, isDone && styles.classTitleDone]}>
+          {cls.title}
+        </Text>
+        {cls.microTopic ? (
+          <Text style={styles.classMicroTopic}>{cls.microTopic}</Text>
+        ) : null}
+      </View>
+
+      <View style={styles.classActions}>
+        {onOpenExplainer && (
+          <TouchableOpacity
+            onPress={() => onOpenExplainer(activeDay, cls.title)}
+            style={styles.classActionBtn}
+            activeOpacity={0.7}
+          >
+            <BookOpen size={12} color="#38BDF8" />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity
+          onPress={() => onOpenCoursePlayer(activeDay)}
+          style={[styles.classActionBtn, { backgroundColor: '#1E293B' }]}
+          activeOpacity={0.7}
+        >
+          <Play size={12} color="#00D084" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+});
+
 export const TutODailyPlannerMobileCockpit: React.FC<TutODailyPlannerMobileCockpitProps> = ({
   course,
   selectedBoard,
@@ -707,56 +775,15 @@ export const TutODailyPlannerMobileCockpit: React.FC<TutODailyPlannerMobileCockp
                   {stg.classes.map((cls) => {
                     const isDone = completedClasses.includes(cls.id);
                     return (
-                      <View
+                      <MemoizedClassItem
                         key={cls.id}
-                        style={[styles.classItem, isDone && styles.classItemDone]}
-                      >
-                        <TouchableOpacity
-                          onPress={() => handleToggleClass(cls.id, cls.xp)}
-                          style={styles.classCheckbox}
-                          activeOpacity={0.7}
-                        >
-                          {isDone ? (
-                            <CheckCircle2 size={20} color="#00D084" />
-                          ) : (
-                            <Circle size={20} color="#475569" />
-                          )}
-                        </TouchableOpacity>
-
-                        <View style={{ flex: 1 }}>
-                          <View style={styles.classMetaRow}>
-                            <Text style={styles.classNumberBadge}>CLASS {cls.id}</Text>
-                            <Text style={styles.classSubject}>{cls.subject}</Text>
-                            <Text style={styles.classDuration}>⏱ {cls.duration}</Text>
-                            <Text style={styles.classXp}>+{cls.xp} XP</Text>
-                          </View>
-                          <Text style={[styles.classTitle, isDone && styles.classTitleDone]}>
-                            {cls.title}
-                          </Text>
-                          {cls.microTopic ? (
-                            <Text style={styles.classMicroTopic}>{cls.microTopic}</Text>
-                          ) : null}
-                        </View>
-
-                        <View style={styles.classActions}>
-                          {onOpenExplainer && (
-                            <TouchableOpacity
-                              onPress={() => onOpenExplainer(activeDay, cls.title)}
-                              style={styles.classActionBtn}
-                              activeOpacity={0.7}
-                            >
-                              <BookOpen size={12} color="#38BDF8" />
-                            </TouchableOpacity>
-                          )}
-                          <TouchableOpacity
-                            onPress={() => onOpenCoursePlayer(activeDay)}
-                            style={[styles.classActionBtn, { backgroundColor: '#1E293B' }]}
-                            activeOpacity={0.7}
-                          >
-                            <Play size={12} color="#00D084" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
+                        cls={cls}
+                        isDone={isDone}
+                        onToggle={() => handleToggleClass(cls.id, cls.xp)}
+                        onOpenExplainer={onOpenExplainer}
+                        onOpenCoursePlayer={onOpenCoursePlayer}
+                        activeDay={activeDay}
+                      />
                     );
                   })}
                 </View>
@@ -923,13 +950,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#1E293B',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#334155',
+    borderBottomWidth: 3,
+    borderBottomColor: '#0F172A',
+    elevation: 2,
   },
   navBtnDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   navBtnText: {
     color: '#FFFFFF',
@@ -983,13 +1015,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   jumpChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#334155',
   },
   jumpChipActive: {
     backgroundColor: '#FBBF24',
+    borderColor: '#D97706',
+    borderBottomWidth: 2.5,
+    borderBottomColor: '#B45309',
   },
   jumpChipText: {
     color: '#94A3B8',
@@ -1150,11 +1187,14 @@ const styles = StyleSheet.create({
   // Hero Banner
   heroBanner: {
     backgroundColor: '#1E1B4B',
-    borderRadius: 22,
+    borderRadius: 20,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: 'rgba(99, 102, 241, 0.4)',
+    borderBottomWidth: 3.5,
+    borderBottomColor: '#0F172A',
     gap: 10,
+    elevation: 3,
   },
   heroStatsRow: {
     flexDirection: 'row',
@@ -1179,13 +1219,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+    backgroundColor: 'rgba(129, 140, 248, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
   },
   xpText: {
-    color: '#A5B4FC',
+    color: '#818CF8',
     fontSize: 10,
     fontWeight: '800',
   },
@@ -1257,12 +1297,15 @@ const styles = StyleSheet.create({
   heroPlayBtn: {
     backgroundColor: '#00D084',
     borderRadius: 14,
-    paddingVertical: 12,
+    paddingVertical: 13,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    borderBottomWidth: 3.5,
+    borderBottomColor: '#059669',
+    elevation: 3,
   },
   heroPlayBtnText: {
     color: '#0B1120',
@@ -1281,16 +1324,19 @@ const styles = StyleSheet.create({
   },
   toolBtn: {
     flex: 1,
-    backgroundColor: '#0E172A',
+    backgroundColor: '#131F37',
     borderRadius: 14,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: '#1E293B',
+    borderBottomWidth: 3,
+    borderBottomColor: '#0A0F1D',
+    elevation: 2,
   },
   toolBtnText: {
     color: '#FFFFFF',
@@ -1303,10 +1349,13 @@ const styles = StyleSheet.create({
   },
   stageCard: {
     backgroundColor: '#0E172A',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#1E293B',
+    borderBottomWidth: 3,
+    borderBottomColor: '#0A0F1D',
     overflow: 'hidden',
+    elevation: 2,
   },
   stageHeader: {
     flexDirection: 'row',
@@ -1345,16 +1394,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   classItem: {
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    padding: 10,
+    backgroundColor: '#131F37',
+    borderRadius: 12,
+    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    borderWidth: 1.5,
+    borderColor: '#1E293B',
+    borderBottomWidth: 2.5,
+    borderBottomColor: '#0A0F1D',
   },
   classItemDone: {
-    opacity: 0.7,
-    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    opacity: 0.65,
+    backgroundColor: '#0B1120',
+    borderColor: '#10B98140',
   },
   classCheckbox: {
     padding: 2,

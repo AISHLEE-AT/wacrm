@@ -938,6 +938,18 @@ export default function RideOScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
+      {/* Back to Modules Button */}
+      {rideState === 'SELECT_PICKUP' && (
+        <TouchableOpacity 
+          style={styles.moduleBackBtn} 
+          onPress={() => navigation?.canGoBack?.() ? navigation.goBack() : navigation?.replace?.('OnboardingModule')}
+          activeOpacity={0.8}
+        >
+          <ArrowLeft color="#fff" size={18} />
+          <Text style={styles.moduleBackText}>Modules</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Top Address Overlay — only show after IDLE (when route is set) */}
       {['SELECT_DROPOFF', 'SHOW_DRIVERS'].includes(rideState) && (
         <View style={styles.topOverlay}>
@@ -1943,5 +1955,30 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 14,
     marginBottom: 20,
+  },
+  moduleBackBtn: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? 44 : 54,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(10, 15, 30, 0.88)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 999,
+  },
+  moduleBackText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+    marginLeft: 6,
   },
 });
