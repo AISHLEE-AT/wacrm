@@ -41,7 +41,9 @@ export default function LoginScreen({ navigation }: any) {
   
   const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
-  const [wabaPhone, setWabaPhone] = useState(ENV.WABA_PHONE);
+  // ⚠️ Official Aishlee Technologies / SuprO WhatsApp CRM Number: +91 63810 29380
+  const SUPRO_CRM_PHONE = '916381029380';
+  const [wabaPhone, setWabaPhone] = useState(SUPRO_CRM_PHONE);
   const [is23hSyncRequired, setIs23hSyncRequired] = useState(false);
 
   // Daily Deepam Video Player states
@@ -82,9 +84,10 @@ export default function LoginScreen({ navigation }: any) {
   const fetchWaba = async () => {
     try {
       const waba = await API.getWabaPhone();
-      if (waba) setWabaPhone(waba);
+      if (waba && waba.includes('6381029380')) setWabaPhone(waba);
+      else setWabaPhone(SUPRO_CRM_PHONE);
     } catch {
-      // Keep the default fallback WABA number — safe to ignore
+      setWabaPhone(SUPRO_CRM_PHONE);
     }
   };
 
@@ -103,81 +106,60 @@ export default function LoginScreen({ navigation }: any) {
         const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 24 * 60 * 60 * 1000;
 
         if (!isWindowExpired && savedToken) {
-          // Allow fast biometric authentication if available
-          const hasHardware = await LocalAuthentication.hasHardwareAsync();
-          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          try {
+            const hasHardware = await LocalAuthentication.hasHardwareAsync();
+            const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-          if (hasHardware && isEnrolled) {
-            const result = await LocalAuthentication.authenticateAsync({
-              promptMessage: 'Login to SuprO',
-              fallbackLabel: 'Use PIN',
-            });
+            if (hasHardware && isEnrolled) {
+              const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: 'Unlock SuprO with Biometrics',
+                fallbackLabel: 'Use WhatsApp OTP / PIN',
+                disableDeviceFallback: false,
+              });
 
-            if (result.success) {
-              await SecureStore.setItemAsync('onboarding-complete', 'true');
-              navigation.replace('OnboardingModule');
-              return;
+              if (result.success) {
+                signIn(savedToken, {
+                  phone: cleanSavedPhone,
+                  name: 'Authenticated Member'
+                });
+                return;
+              }
             }
-          } else {
-            await SecureStore.setItemAsync('onboarding-complete', 'true');
-            navigation.replace('OnboardingModule');
-            return;
+          } catch (bioErr) {
+            console.warn('Biometric auto-login bypassed:', bioErr);
           }
         }
-
-        // If window expired, prompt sync via WhatsApp
-        if (isWindowExpired) {
-          setIs23hSyncRequired(true);
-        }
-        handlePhoneChange(cleanSavedPhone);
       }
-    } catch {
-      // SecureStore not available on first cold launch — safe to ignore
+    } catch (e) {
+      console.warn('Biometric session read error:', e);
     }
   };
 
   const handlePhoneChange = async (val: string) => {
-    const clean = val.replace(/\D/g, '').slice(0, 10);
-    setPhone(clean);
+    const cleaned = val.replace(/\D/g, '').slice(0, 10);
+    setPhone(cleaned);
     setError(null);
     setIsExistingUser(null);
+    setIs23hSyncRequired(false);
 
-    if (clean.length === 10) {
+    if (cleaned.length === 10) {
       setIsChecking(true);
       try {
-        const data = await API.checkUser(clean);
-        setIsExistingUser(data.exists);
-        if (data.exists) {
-          if (data.name) setFullName(data.name);
-          if (data.category) setCategory(data.category);
-          if (data.role) await SecureStore.setItemAsync('user-role', data.role);
-          let windowActive = !!data.is_whatsapp_session_active;
-          if (data.last_whatsapp_inbound_at || data.whatsapp_window_expires_at) {
-            const inboundTs = data.last_whatsapp_inbound_at 
-              ? new Date(data.last_whatsapp_inbound_at).getTime()
-              : new Date(data.whatsapp_window_expires_at).getTime() - (24 * 60 * 60 * 1000);
-            if (!isNaN(inboundTs) && inboundTs > 0) {
-              await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', inboundTs.toString());
-              const isStillValid = (Date.now() - inboundTs) < 24 * 60 * 60 * 1000;
-              setIs23hSyncRequired(!isStillValid);
-              windowActive = isStillValid;
-            }
-          } else if (data.is_whatsapp_session_active === false) {
-            setIs23hSyncRequired(true);
-            windowActive = false;
-          }
-          // Only advance to PIN if user has PIN AND 24h session is currently active
-          if (data.has_pin && windowActive) {
+        const profile = await API.checkProfile(cleaned);
+        if (profile.exists) {
+          setIsExistingUser(true);
+          setFullName(profile.name || profile.full_name || '');
+          if (profile.category) setCategory(profile.category);
+          
+          // STRICT RULE: If the 24h window is expired, force the user to WhatsApp OTP
+          // so logging in renews their 24h window!
+          if (profile.has_pin && profile.is_whatsapp_session_active) {
             setStep('pin');
-          } else {
-            setStep('phone');
+          } else if (!profile.is_whatsapp_session_active) {
+            setIs23hSyncRequired(true);
           }
-        }
-        
-        if (clean === '6381029380') {
-          // Hardcode admin role for 6381029380
-          setCategory('Admin');
-          await SecureStore.setItemAsync('user-role', 'admin');
+        } else {
+          setIsExistingUser(false);
         }
       } catch (err) {
         setIsExistingUser(false);
@@ -195,8 +177,8 @@ export default function LoginScreen({ navigation }: any) {
     setError(null);
     setStep('otp');
     
-    Linking.openURL(`whatsapp://send?phone=${wabaPhone}&text=Requesting OTP for Login`).catch(() => {
-      Linking.openURL(`https://wa.me/${wabaPhone}?text=Requesting OTP for Login`);
+    Linking.openURL(`whatsapp://send?phone=${SUPRO_CRM_PHONE}&text=Requesting OTP for Login`).catch(() => {
+      Linking.openURL(`https://wa.me/${SUPRO_CRM_PHONE}?text=Requesting OTP for Login`);
     });
   };
 
@@ -208,8 +190,8 @@ export default function LoginScreen({ navigation }: any) {
     setError(null);
 
     const syncMsg = `SuprO 23h Keep-Alive & Sync for +91${phone} 🔔`;
-    const waUrl = `whatsapp://send?phone=${wabaPhone}&text=${encodeURIComponent(syncMsg)}`;
-    const webUrl = `https://wa.me/${wabaPhone}?text=${encodeURIComponent(syncMsg)}`;
+    const waUrl = `whatsapp://send?phone=${SUPRO_CRM_PHONE}&text=${encodeURIComponent(syncMsg)}`;
+    const webUrl = `https://wa.me/${SUPRO_CRM_PHONE}?text=${encodeURIComponent(syncMsg)}`;
 
     try {
       const canOpen = await Linking.canOpenURL(waUrl);

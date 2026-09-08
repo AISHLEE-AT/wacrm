@@ -117,12 +117,16 @@ function LoginPageInner() {
     fetch('/api/auth/otp/waba')
       .then(res => res.json())
       .then(data => {
-        // Only override if the API returns a valid CRM phone (must include country code, 12+ digits)
-        if (data?.phone && data.phone.length >= 12 && /^\d+$/.test(data.phone)) {
+        // Enforce official Aishlee Technologies WhatsApp CRM number (6381029380) ONLY
+        if (data?.phone && data.phone.includes('6381029380')) {
           setWabaPhone(data.phone);
+        } else {
+          setWabaPhone(SUPRO_CRM_PHONE);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setWabaPhone(SUPRO_CRM_PHONE);
+      });
 
     checkDailyVideo();
   }, [router, supabase]);
@@ -200,7 +204,8 @@ function LoginPageInner() {
     const text = encodeURIComponent(
       `SuprO 24h Daily Sync for +91${phone} 🔔`
     );
-    window.open(`https://wa.me/${wabaPhone}?text=${text}`, "_blank");
+    // ⚠️ Always open official Aishlee Technologies / SuprO WhatsApp CRM number (6381029380)
+    window.open(`https://wa.me/${SUPRO_CRM_PHONE}?text=${text}`, "_blank");
     setIsWhatsAppActive(true);
     setWhatsAppHoursRemaining(24);
   };
@@ -231,7 +236,8 @@ function LoginPageInner() {
       const text = encodeURIComponent(
         `🔐 SuprO Login Verification\n\nMobile: ${phone}\nAction: Request OTP\n\nPlease send my 6-digit login OTP.`
       );
-      window.open(`https://wa.me/${wabaPhone}?text=${text}`, "_blank");
+      // ⚠️ Always open official Aishlee Technologies / SuprO WhatsApp CRM number (6381029380)
+      window.open(`https://wa.me/${SUPRO_CRM_PHONE}?text=${text}`, "_blank");
     } catch (err: any) {
       setError(err.message || "Failed to send OTP. Please try again.");
     } finally {

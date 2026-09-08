@@ -135,15 +135,8 @@ export const API = {
   },
   
   getWabaPhone: async () => {
-    // Prioritize configured Admin / WABA number: 916381029380
-    if (ENV.WABA_PHONE) return ENV.WABA_PHONE;
-    try {
-      const res = await fetch(endpoints.authWaba);
-      const data = await res.json();
-      return data.phone || '916381029380';
-    } catch (e) {
-      return '916381029380';
-    }
+    // Official Aishlee Technologies / SuprO WhatsApp CRM number: 916381029380
+    return '916381029380';
   },
 
   setPin: async (phone: string, pin: string, confirmPin: string) => {
