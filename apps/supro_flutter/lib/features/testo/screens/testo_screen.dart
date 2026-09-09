@@ -509,7 +509,13 @@ class _TestoScreenState extends State<TestoScreen> {
   // --- CBT EXAM UI ---
   Widget _buildExamScreen() {
     final currentQ = questions[currentIdx];
-    final options = (currentQ['options'] as List? ?? []);
+    List<String> options = [];
+    if (currentQ['options'] is List) {
+      options = (currentQ['options'] as List).map((e) => e.toString()).toList();
+    } else if (currentQ['options'] is Map) {
+      options = (currentQ['options'] as Map).entries.map((e) => '${e.key}) ${e.value}').toList();
+    }
+    final questionText = (currentQ['question'] ?? currentQ['question_text'] ?? 'No question text').toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0F1E),
@@ -581,7 +587,7 @@ class _TestoScreenState extends State<TestoScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  currentQ['question'] ?? 'No question text',
+                  questionText,
                   style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.4, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -812,8 +818,9 @@ class _TestoScreenState extends State<TestoScreen> {
           ...List.generate(questions.length, (idx) {
             final q = questions[idx];
             final uAns = answers[idx];
-            final cAns = q['correct_answer'] ?? q['correctAnswer'] ?? q['answer'];
-            final isCorrect = uAns != null && cAns != null && uAns.toString().trim().toLowerCase() == cAns.toString().trim().toLowerCase();
+            final cAns = q['correct_answer'] ?? q['correct_option'] ?? q['correctAnswer'] ?? q['answer'];
+            final isCorrect = uAns != null && cAns != null && (uAns.toString().trim().toLowerCase() == cAns.toString().trim().toLowerCase() || uAns.toString().startsWith('$cAns)'));
+            final qTitle = (q['question'] ?? q['question_text'] ?? '').toString();
 
             return Card(
               color: const Color(0xFF1E293B),
@@ -827,7 +834,7 @@ class _TestoScreenState extends State<TestoScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Q${idx + 1}. ${q['question']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text('Q${idx + 1}. $qTitle', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 8),
                     Text('Your Answer: ${uAns ?? 'Not Answered'}', style: TextStyle(color: isCorrect ? const Color(0xFF10B981) : const Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.bold)),
                     Text('Correct Answer: $cAns', style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),

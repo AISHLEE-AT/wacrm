@@ -21,6 +21,8 @@ import '../features/moneyo/screens/moneyo_screen.dart';
 import '../features/gameo/screens/gameo_screen.dart';
 import '../features/gaming_hub/screens/gaming_hub_screen.dart';
 import '../features/ai_hub/screens/ai_hub_screen.dart';
+import '../features/groupo/screens/groupo_screen.dart';
+import '../features/career/screens/career_hub_screen.dart';
 import '../features/auth/providers/auth_provider.dart';
 import 'startup_screen.dart';
 import '../features/onboarding/screens/biometric_setup_screen.dart';
@@ -76,6 +78,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/gameo', builder: (context, state) => const GameoScreen()),
           GoRoute(path: '/gaming_hub', builder: (context, state) => const GamingHubScreen()),
           GoRoute(path: '/ai_hub', builder: (context, state) => const AiHubScreen()),
+          GoRoute(path: '/groupo', builder: (context, state) => const GroupOScreen()),
+          GoRoute(path: '/career', builder: (context, state) => const CareerHubScreen()),
+          GoRoute(path: '/jobo', builder: (context, state) => const CareerHubScreen()),
         ],
       ),
     ],

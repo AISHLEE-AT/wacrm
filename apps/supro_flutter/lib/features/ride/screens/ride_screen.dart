@@ -483,7 +483,7 @@ class _RideScreenState extends ConsumerState<RideScreen> with SingleTickerProvid
           'vehicle_model': ride['vehicle_model'] ?? _selectedCategory.name,
           'vehicle_number': ride['vehicle_number'] ?? 'TN-49-AT-2026',
           'rating': 4.9,
-          'otp': ride['otp'] ?? '1234',
+          'otp': ride['otp_pin'] ?? ride['otp'] ?? '1234',
         };
       });
     } else if (status == 'in_progress') {

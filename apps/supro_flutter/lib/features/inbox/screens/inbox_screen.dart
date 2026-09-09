@@ -198,12 +198,16 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           {
             'id': 'msg_1',
             'sender': 'customer',
+            'sender_type': 'customer',
+            'content_text': conv['last_message_text'] ?? 'Hello SuprO team!',
             'content': conv['last_message_text'] ?? 'Hello SuprO team!',
             'created_at': conv['last_message_at'] ?? DateTime.now().toIso8601String(),
           },
           {
             'id': 'msg_2',
             'sender': 'agent',
+            'sender_type': 'agent',
+            'content_text': 'Welcome to SuprO! Your 24-hour customer service window is active.',
             'content': 'Welcome to SuprO! Your 24-hour customer service window is active.',
             'created_at': DateTime.now().toIso8601String(),
           },
@@ -233,8 +237,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final newMsg = {
       'id': 'temp_${DateTime.now().millisecondsSinceEpoch}',
       'sender': 'agent',
+      'sender_type': 'agent',
+      'content_text': text,
       'content': text,
       'created_at': DateTime.now().toIso8601String(),
+      'status': 'sent',
     };
 
     setState(() {
@@ -245,15 +252,19 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
     try {
       final phone = _selectedConversation?['contact']?['phone'] ?? '';
+      final convId = _selectedConversation?['id'];
       await http.post(
-        Uri.parse('${AppEnv.apiUrl}/api/messages/send'),
+        Uri.parse('${AppEnv.apiUrl}/api/whatsapp/send'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'conversationId': _selectedConversation?['id'],
+          'conversation_id': convId,
+          'conversationId': convId,
           'phone': phone,
+          'content_text': text,
+          'text': text,
           'message': text,
         }),
-      ).timeout(const Duration(seconds: 6));
+      ).timeout(const Duration(seconds: 8));
     } catch (_) {}
   }
 
@@ -417,6 +428,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         backgroundColor: const Color(0xFF0D1526),
         elevation: 0,
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(6),
@@ -426,10 +438,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               ),
               child: const Icon(LucideIcons.messageSquare, color: Color(0xFF10B981), size: 18),
             ),
-            const SizedBox(width: 10),
-            const Text(
-              'WhatsApp CRM Inbox',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+            const SizedBox(width: 8),
+            const Flexible(
+              child: Text(
+                'WA CRM',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+              ),
             ),
           ],
         ),
@@ -814,7 +829,27 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                   itemCount: _messages.length,
                   itemBuilder: (context, index) {
                     final msg = _messages[index];
-                    final isAgent = msg['sender'] == 'agent';
+                    final isAgent = msg['sender'] == 'agent' ||
+                        msg['sender_type'] == 'agent' ||
+                        msg['sender_type'] == 'bot';
+                    final content = (msg['content_text'] as String?)?.isNotEmpty == true
+                        ? msg['content_text'] as String
+                        : (msg['content'] as String?)?.isNotEmpty == true
+                            ? msg['content'] as String
+                            : (msg['text'] as String?) ?? '';
+
+                    String timeStr = 'Now';
+                    if (msg['created_at'] != null) {
+                      try {
+                        final dt = DateTime.parse(msg['created_at'].toString()).toLocal();
+                        final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+                        final min = dt.minute.toString().padLeft(2, '0');
+                        final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+                        timeStr = '$hour:$min $ampm';
+                      } catch (_) {}
+                    }
+
+                    final status = (msg['status'] ?? 'sent').toString();
 
                     return Align(
                       alignment: isAgent ? Alignment.centerRight : Alignment.centerLeft,
@@ -835,7 +870,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                           crossAxisAlignment: isAgent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                           children: [
                             Text(
-                              msg['content'] ?? '',
+                              content,
                               style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
                             ),
                             const SizedBox(height: 4),
@@ -843,12 +878,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'Now',
+                                  timeStr,
                                   style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 9),
                                 ),
                                 if (isAgent) ...[
                                   const SizedBox(width: 4),
-                                  const Icon(LucideIcons.checkCheck, color: Colors.white, size: 12),
+                                  Icon(
+                                    status == 'read'
+                                        ? LucideIcons.checkCheck
+                                        : (status == 'delivered' ? LucideIcons.checkCheck : LucideIcons.check),
+                                    color: status == 'read' ? const Color(0xFF38BDF8) : Colors.white70,
+                                    size: 12,
+                                  ),
                                 ],
                               ],
                             ),

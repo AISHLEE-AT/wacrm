@@ -704,6 +704,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ],
             ),
+          ),
           const SizedBox(height: 10),
           // 24-Hour WhatsApp Session Status Pill
           Container(

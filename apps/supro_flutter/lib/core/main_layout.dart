@@ -53,7 +53,7 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   void _trackLocation(String location) async {
-    const modules = ['/ride', '/admin', '/driveo', '/dealo', '/teacho', '/tuto', '/rento', '/agro', '/touro', '/testo', '/tvo', '/moneyo', '/gameo'];
+    const modules = ['/ride', '/admin', '/driveo', '/dealo', '/teacho', '/tuto', '/rento', '/agro', '/groupo', '/career', '/touro', '/testo', '/tvo', '/moneyo', '/gameo'];
     if (modules.contains(location)) {
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -134,6 +134,8 @@ class _MainLayoutState extends State<MainLayout> {
     else if (location.startsWith('/gaming_hub')) { moduleLabel = 'GameHub'; moduleIcon = LucideIcons.library; }
     else if (location.startsWith('/ai_hub')) { moduleLabel = 'AI Bot'; moduleIcon = LucideIcons.bot; }
     else if (location.startsWith('/rento')) { moduleLabel = 'RentO'; moduleIcon = LucideIcons.wrench; }
+    else if (location.startsWith('/groupo')) { moduleLabel = 'GroupO'; moduleIcon = LucideIcons.users; }
+    else if (location.startsWith('/career') || location.startsWith('/jobo')) { moduleLabel = 'JobO'; moduleIcon = LucideIcons.briefcase; }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0a0f1e),
