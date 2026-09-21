@@ -26,15 +26,35 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
-    // 1. Try OCI backend directly for zero-delay sending and dual-sync
+    // Parse the request body ONCE up front. In Next.js App Router the
+    // underlying body stream can only be consumed once — calling
+    // request.clone().json() followed by request.json() caused the
+    // second read to throw, which silently broke every media send
+    // (photo, video, document, audio).
+    const body = await request.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json(
+        { error: 'Invalid or missing JSON body' },
+        { status: 400 },
+      )
+    }
+
+    // 1. Try OCI backend directly for zero-delay sending and dual-sync.
+    //    Only proxy plain-text sends — the OCI Express server's
+    //    /api/whatsapp/send only calls sendWhatsAppMessage() which
+    //    hard-codes `type: 'text'`. Routing media (image/video/document/
+    //    audio) through OCI would silently send only the caption as text
+    //    and drop the attachment entirely.
     try {
-      const clonedReq = request.clone();
-      const rawBody = await clonedReq.json().catch(() => null);
-      if (rawBody && rawBody.conversation_id && (rawBody.content_text || rawBody.text)) {
+      const isTextForOci =
+        body.conversation_id &&
+        (!body.message_type || body.message_type === 'text') &&
+        (body.content_text || body.text);
+      if (isTextForOci) {
         const ociRes = await fetch('https://mysupro.duckdns.org/api/whatsapp/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(rawBody),
+          body: JSON.stringify(body),
         });
         if (ociRes.ok) {
           const json = await ociRes.json();
@@ -106,7 +126,6 @@ export async function POST(request: Request) {
       )
     }
 
-    const body = await request.json()
     const {
       conversation_id,
       message_type,
