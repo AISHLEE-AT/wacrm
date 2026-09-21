@@ -104,7 +104,34 @@ export async function uploadAccountMedia(
 
   const path = buildMediaPath(profile.account_id as string, file.name);
 
-  // Generate a signed upload URL using the Server Action
+  // 1. Primary: Direct OCI backend upload pipeline (bypasses Next.js cross-origin Server Action constraints)
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("bucket", bucket);
+    formData.append("account_id", profile.account_id as string);
+
+    const res = await fetch("/api/whatsapp/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && data?.publicUrl) {
+        return {
+          publicUrl: data.publicUrl,
+          path: data.path || path,
+        };
+      }
+    } else {
+      console.warn("Direct upload endpoint returned non-200:", res.status);
+    }
+  } catch (err) {
+    console.warn("Direct upload endpoint failed, falling back to signed URL:", err);
+  }
+
+  // 2. Fallback: Generate a signed upload URL using the Server Action
   const { createUploadUrl } = await import("@/actions/storage");
   const { token } = await createUploadUrl(bucket, path);
 

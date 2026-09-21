@@ -132,6 +132,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['mysupro-crm.duckdns.org', 'watscrm.vercel.app'],
+    },
+  },
   async rewrites() {
     return [
       {
