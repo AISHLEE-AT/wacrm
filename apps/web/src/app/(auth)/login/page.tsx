@@ -267,15 +267,15 @@ function LoginPageInner() {
         await supabase.auth.setSession(data.session);
       }
 
-      if (data.hasPin === false) {
+      if (data.hasPin === false || data.needs_pin_setup === true) {
         setPendingSession(data.session);
-        setPendingRedirect(data.redirectUrl || "/rideo");
+        setPendingRedirect(data.redirectUrl || data.redirect_to || "/rideo");
         setStep("set-pin");
         setLoading(false);
         return;
       }
 
-      router.replace(data.redirectUrl || "/rideo");
+      router.replace(data.redirectUrl || data.redirect_to || "/rideo");
     } catch (err: any) {
       setError(err.message || "Verification failed. Please try again.");
       setLoading(false);

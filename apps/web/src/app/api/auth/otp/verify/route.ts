@@ -53,12 +53,35 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!otpRecord || otpRecord.otp !== otp) {
-      return NextResponse.json({ error: 'Invalid or expired OTP. Please request a new one.' }, { status: 401 })
+    let isOtpValid = false
+
+    if (otpRecord && otpRecord.otp === otp) {
+      if (new Date(otpRecord.expires_at).getTime() < Date.now()) {
+        return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 401 })
+      }
+      isOtpValid = true
+    } else {
+      // Fallback: Check OCI PostgreSQL backend at https://mysupro.duckdns.org/api/auth/check-otp
+      try {
+        const ociRes = await fetch('https://mysupro.duckdns.org/api/auth/check-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: cleanPhone, otp }),
+          signal: AbortSignal.timeout(3500)
+        })
+        if (ociRes.ok) {
+          const ociData = await ociRes.json()
+          if (ociData.valid) {
+            isOtpValid = true
+          }
+        }
+      } catch (ociErr) {
+        console.warn('OCI fallback OTP check error:', ociErr)
+      }
     }
 
-    if (new Date(otpRecord.expires_at).getTime() < Date.now()) {
-      return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 401 })
+    if (!isOtpValid) {
+      return NextResponse.json({ error: 'Invalid or expired OTP. Please request a new one.' }, { status: 401 })
     }
 
     // OTP valid — delete ALL matching phone variants so it cannot be reused
@@ -220,6 +243,8 @@ export async function POST(request: Request) {
       success: true,
       message: 'OTP authentication successful',
       needs_pin_setup: needsPinSetup,
+      hasPin: !needsPinSetup,
+      has_pin: !needsPinSetup,
       session: {
         access_token: authResult.data.session.access_token,
         refresh_token: authResult.data.session.refresh_token,
@@ -232,7 +257,8 @@ export async function POST(request: Request) {
         role: resolvedRole,
         category: finalCategory,
       },
-      redirect_to: '/',
+      redirectUrl: defaultModule || (isAdminUser ? '/admin/tuto' : (isDriverPartner ? '/drivo' : '/rideo')),
+      redirect_to: defaultModule || (isAdminUser ? '/admin/tuto' : (isDriverPartner ? '/drivo' : '/rideo')),
     })
 
     // Set session cookie
