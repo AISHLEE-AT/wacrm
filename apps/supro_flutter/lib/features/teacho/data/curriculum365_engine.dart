@@ -617,6 +617,7 @@ FullDayPlanResult generateUniqueTenClassesForDay(
   String ambitionId = 'jr-ias',
   int dayNumber = 1,
   String board = 'TNSB',
+  String? registeredAcademicClass,
 ]) {
   final safeDay = dayNumber.clamp(1, 365);
 
@@ -850,10 +851,24 @@ FullDayPlanResult generateUniqueTenClassesForDay(
     final lTop = langTopics[(safeDay - 1) % langTopics.length];
     final soTop = socTopics[(safeDay - 1) % socTopics.length];
 
+    // Resolve Grade Label
+    String gradeLabel = 'Class 10';
+    if (registeredAcademicClass != null && registeredAcademicClass.isNotEmpty) {
+      final numMatch = RegExp(r'(\d+)').firstMatch(registeredAcademicClass);
+      if (numMatch != null) {
+        gradeLabel = 'Class ${numMatch.group(1)}';
+      }
+    } else {
+      final stdMatch = RegExp(r'std-(\d+)').firstMatch(courseId);
+      if (stdMatch != null) {
+        gradeLabel = 'Class ${stdMatch.group(1)}';
+      }
+    }
+
     class1 = DayClassItem(
       id: 1,
       type: 'academic',
-      title: 'Day $safeDay: Mathematics — $mTop ($termMultiplier)',
+      title: 'Day $safeDay: $gradeLabel Mathematics — $mTop ($termMultiplier)',
       subject: 'Mathematics',
       duration: '15 Min',
       xp: 25,
@@ -863,7 +878,7 @@ FullDayPlanResult generateUniqueTenClassesForDay(
     class2 = DayClassItem(
       id: 2,
       type: 'academic',
-      title: 'Day $safeDay: Science — $sTop ($termMultiplier)',
+      title: 'Day $safeDay: $gradeLabel Science — $sTop ($termMultiplier)',
       subject: 'Science',
       duration: '15 Min',
       xp: 25,
@@ -873,7 +888,7 @@ FullDayPlanResult generateUniqueTenClassesForDay(
     class3 = DayClassItem(
       id: 3,
       type: 'academic',
-      title: 'Day $safeDay: Languages — $lTop',
+      title: 'Day $safeDay: $gradeLabel Languages — $lTop',
       subject: 'Languages (Tamil/Eng)',
       duration: '15 Min',
       xp: 25,
@@ -883,7 +898,7 @@ FullDayPlanResult generateUniqueTenClassesForDay(
     class4 = DayClassItem(
       id: 4,
       type: 'academic',
-      title: 'Day $safeDay: Social Science — $soTop',
+      title: 'Day $safeDay: $gradeLabel Social Science — $soTop',
       subject: 'Social Science',
       duration: '15 Min',
       xp: 25,

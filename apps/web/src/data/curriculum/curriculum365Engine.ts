@@ -21,6 +21,7 @@
  */
 
 import { getOfficialGovernmentSyllabus, OfficialCourseSyllabus } from './officialGovernmentSyllabusRegistry';
+import { parseAcademicClass } from './studentAcademicHelper';
 
 export interface DayClassItem {
   id: number;
@@ -390,7 +391,8 @@ export function generateUniqueTenClassesForDay(
   courseId: string,
   ambitionId: string = 'jr-ias',
   dayNumber: number = 1,
-  board: string = 'TNSB'
+  board: string = 'TNSB',
+  registeredAcademicClass?: string
 ): FullDayPlanResult {
   const safeDay = Math.max(1, Math.min(365, dayNumber || 1));
 
@@ -405,15 +407,26 @@ export function generateUniqueTenClassesForDay(
     termMultiplier = 'Applied Derivations & Real-World Lab';
   }
 
-  const isLkg = courseId.includes('lkg');
-  const isUkg = courseId.includes('ukg');
-  const isNeet = courseId.includes('neet');
-  const isJee = courseId.includes('jee');
-  const isTnpsc = courseId.includes('tnpsc') || courseId.includes('group');
+  // Resolve academic course ID and grade
+  // If courseId is already a school course (std, lkg, ukg) or an exam (neet, jee, tnpsc), use it directly.
+  // If courseId is an ambition track (jr-ias, jr-dr, etc.), resolve academic course and label from registeredAcademicClass.
+  let academicCourseId = courseId;
+  const isDirectSchoolCourse = courseId.includes('std-') || courseId.includes('lkg') || courseId.includes('ukg') || courseId.includes('neet') || courseId.includes('jee') || courseId.includes('tnpsc') || courseId.includes('college');
+  
+  if (!isDirectSchoolCourse && registeredAcademicClass) {
+    const parsed = parseAcademicClass(registeredAcademicClass);
+    academicCourseId = parsed.schoolCourseId;
+  }
+
+  const isLkg = academicCourseId.includes('lkg');
+  const isUkg = academicCourseId.includes('ukg');
+  const isNeet = academicCourseId.includes('neet');
+  const isJee = academicCourseId.includes('jee');
+  const isTnpsc = academicCourseId.includes('tnpsc') || academicCourseId.includes('group');
 
   // Grade label resolution
   let gradeLabel = '5th Std';
-  const stdMatch = courseId.match(/std-(\d+)/);
+  const stdMatch = academicCourseId.match(/std-(\d+)/);
   if (stdMatch) {
     const num = stdMatch[1];
     gradeLabel = `${num}${num === '1' ? 'st' : num === '2' ? 'nd' : num === '3' ? 'rd' : 'th'} Std`;
@@ -427,6 +440,9 @@ export function generateUniqueTenClassesForDay(
     gradeLabel = 'JEE Engineering';
   } else if (isTnpsc) {
     gradeLabel = 'TNPSC Group Examination';
+  } else if (registeredAcademicClass) {
+    const parsed = parseAcademicClass(registeredAcademicClass);
+    gradeLabel = parsed.gradeLabel;
   }
 
   // Ambition Curriculum Lookup
@@ -443,7 +459,7 @@ export function generateUniqueTenClassesForDay(
   const videoItem = MASTERCLASS_VIDEOS_POOL[(safeDay - 1) % MASTERCLASS_VIDEOS_POOL.length];
 
   // Pull authentic syllabus if available to extract deep subjects
-  const syllabus: OfficialCourseSyllabus = getOfficialGovernmentSyllabus(courseId, board);
+  const syllabus: OfficialCourseSyllabus = getOfficialGovernmentSyllabus(academicCourseId, board);
   const subjects = syllabus.subjects || [];
 
   // Build Classes 1 to 4 dynamically and uniquely based on dayNumber

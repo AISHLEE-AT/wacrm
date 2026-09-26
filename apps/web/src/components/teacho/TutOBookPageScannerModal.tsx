@@ -20,8 +20,11 @@ import {
   Check,
   Brain,
   Lightbulb,
-  Share2
+  Share2,
+  GraduationCap
 } from 'lucide-react';
+
+import { getRegisteredStudentClass, parseAcademicClass } from '@/data/curriculum/studentAcademicHelper';
 
 interface TutOBookPageScannerModalProps {
   isOpen: boolean;
@@ -75,13 +78,25 @@ interface BookAnalysisResult {
 export const TutOBookPageScannerModal: React.FC<TutOBookPageScannerModalProps> = ({
   isOpen,
   onClose,
-  defaultGrade = 'Class 5',
+  defaultGrade,
   defaultSubject = 'Mathematics',
   onXpEarned
 }) => {
+  const initialClassInfo = defaultGrade ? parseAcademicClass(defaultGrade) : getRegisteredStudentClass();
   const [inputMode, setInputMode] = useState<'upload' | 'text'>('upload');
-  const [selectedGrade, setSelectedGrade] = useState(defaultGrade);
-  const [selectedSubject, setSelectedSubject] = useState(defaultSubject);
+  const [isChangingGrade, setIsChangingGrade] = useState(false);
+  const [selectedGrade, setSelectedGrade] = useState(initialClassInfo.standardName);
+  const [selectedSubject, setSelectedSubject] = useState(
+    initialClassInfo.subjects.includes(defaultSubject) ? defaultSubject : (initialClassInfo.subjects[0] || 'Mathematics')
+  );
+
+  React.useEffect(() => {
+    const info = defaultGrade ? parseAcademicClass(defaultGrade) : getRegisteredStudentClass();
+    setSelectedGrade(info.standardName);
+    if (!info.subjects.includes(selectedSubject)) {
+      setSelectedSubject(info.subjects[0] || 'Mathematics');
+    }
+  }, [defaultGrade]);
   const [textSnippet, setTextSnippet] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -270,16 +285,48 @@ export const TutOBookPageScannerModal: React.FC<TutOBookPageScannerModalProps> =
           {/* Grade & Subject Selectors */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-muted/30 p-3.5 rounded-2xl border border-border/60">
             <div>
-              <label className="text-[11px] font-bold text-muted-foreground uppercase block mb-1">Class / Standard</label>
-              <select
-                value={selectedGrade}
-                onChange={(e) => setSelectedGrade(e.target.value)}
-                className="w-full text-xs font-semibold bg-card border border-border rounded-xl px-2.5 py-2 text-foreground focus:outline-none focus:border-primary"
-              >
-                {['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'].map(g => (
-                  <option key={g} value={g}>{g} Standard</option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-muted-foreground uppercase block">Enrolled Standard</label>
+                <button
+                  type="button"
+                  onClick={() => setIsChangingGrade(!isChangingGrade)}
+                  className="text-[10px] font-bold text-primary hover:underline"
+                >
+                  {isChangingGrade ? 'Done' : 'Change'}
+                </button>
+              </div>
+
+              {isChangingGrade ? (
+                <select
+                  value={selectedGrade}
+                  onChange={(e) => {
+                    setSelectedGrade(e.target.value);
+                    const parsed = parseAcademicClass(e.target.value);
+                    if (!parsed.subjects.includes(selectedSubject)) {
+                      setSelectedSubject(parsed.subjects[0] || 'Mathematics');
+                    }
+                  }}
+                  className="w-full text-xs font-semibold bg-card border border-border rounded-xl px-2.5 py-2 text-foreground focus:outline-none focus:border-primary"
+                >
+                  {['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'].map(g => (
+                    <option key={g} value={`${g} Standard`}>{g} Standard</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="w-full flex items-center gap-2 bg-card border border-primary/30 rounded-xl px-2.5 py-1.5 shadow-sm">
+                  <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-black text-foreground truncate block leading-tight">
+                      {selectedGrade}
+                    </span>
+                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-wider block">
+                      Enrolled & Verified
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -289,7 +336,7 @@ export const TutOBookPageScannerModal: React.FC<TutOBookPageScannerModalProps> =
                 onChange={(e) => setSelectedSubject(e.target.value)}
                 className="w-full text-xs font-semibold bg-card border border-border rounded-xl px-2.5 py-2 text-foreground focus:outline-none focus:border-primary"
               >
-                {['Mathematics', 'Science', 'Social Science', 'Tamil', 'English'].map(s => (
+                {(parseAcademicClass(selectedGrade).subjects).map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>

@@ -38,6 +38,7 @@ import {
 
 import { CourseOption, SchoolBoard } from '../../data/coursesCatalog';
 import { generateUniqueTenClassesForDay, DayClassItem, DayYogaPlan, DayTestPlan } from '../../data/curriculum/curriculum365Engine';
+import { parseAcademicClass } from '../../data/curriculum/studentAcademicHelper';
 
 const { width } = Dimensions.get('window');
 
@@ -119,6 +120,7 @@ interface TutODailyPlannerMobileCockpitProps {
   onOpenTest?: (category: string, subject: string) => void;
   onOpenExplainer?: (dayNum: number, topicHint?: string) => void;
   userPhone?: string;
+  registeredAcademicClass?: string;
 }
 
 interface MemoizedClassItemProps {
@@ -200,6 +202,7 @@ export const TutODailyPlannerMobileCockpit: React.FC<TutODailyPlannerMobileCockp
   onOpenTest,
   onOpenExplainer,
   userPhone = 'anonymous',
+  registeredAcademicClass,
 }) => {
   const [activeDay, setActiveDay] = useState<number>(dayNumber);
 
@@ -216,13 +219,13 @@ export const TutODailyPlannerMobileCockpit: React.FC<TutODailyPlannerMobileCockp
   };
 
   const [classes, setClasses] = useState<DayClassItem[]>(() =>
-    generateUniqueTenClassesForDay(course.id, activeAmbitionId, dayNumber).classes
+    generateUniqueTenClassesForDay(course.id, activeAmbitionId, dayNumber, selectedBoard, registeredAcademicClass).classes
   );
   const [yoga, setYoga] = useState<DayYogaPlan | null>(() =>
-    generateUniqueTenClassesForDay(course.id, activeAmbitionId, dayNumber).yoga
+    generateUniqueTenClassesForDay(course.id, activeAmbitionId, dayNumber, selectedBoard, registeredAcademicClass).yoga
   );
   const [dailyTest, setDailyTest] = useState<DayTestPlan | null>(() =>
-    generateUniqueTenClassesForDay(course.id, activeAmbitionId, dayNumber).dailyTest
+    generateUniqueTenClassesForDay(course.id, activeAmbitionId, dayNumber, selectedBoard, registeredAcademicClass).dailyTest
   );
 
   // Progress State
@@ -379,21 +382,21 @@ export const TutODailyPlannerMobileCockpit: React.FC<TutODailyPlannerMobileCockp
     }
 
     // Fallback: Deterministic local generation
-    const baseline = generateUniqueTenClassesForDay(course.id, activeAmbitionId, targetDay);
+    const baseline = generateUniqueTenClassesForDay(course.id, activeAmbitionId, targetDay, selectedBoard, registeredAcademicClass);
     setClasses(baseline.classes);
     setYoga(baseline.yoga);
     setDailyTest(baseline.dailyTest);
   };
 
   useEffect(() => {
-    const baseline = generateUniqueTenClassesForDay(course.id, activeAmbitionId, activeDay);
+    const baseline = generateUniqueTenClassesForDay(course.id, activeAmbitionId, activeDay, selectedBoard, registeredAcademicClass);
     setClasses(baseline.classes);
     setYoga(baseline.yoga);
     setDailyTest(baseline.dailyTest);
     fetchPlanner(activeDay);
     fetchStudentAlerts();
     checkSubmissionStatus(activeDay);
-  }, [course.id, activeAmbitionId, activeDay, userPhone]);
+  }, [course.id, activeAmbitionId, activeDay, userPhone, selectedBoard, registeredAcademicClass]);
 
   // Toggle class completion
   const handleToggleClass = async (classIndex: number, xp: number) => {

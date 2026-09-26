@@ -402,7 +402,7 @@ router.get('/whatsapp/media/:mediaId', async (req, res) => {
 });
 
 // 8. WhatsApp Webhook Ingress (Verification + Incoming Messages/Statuses)
-router.get('/webhooks/whatsapp', (req, res) => {
+router.get(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], (req, res) => {
   const verify_token = process.env.META_VERIFY_TOKEN;
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -420,7 +420,7 @@ router.get('/webhooks/whatsapp', (req, res) => {
   }
 });
 
-router.post('/webhooks/whatsapp', async (req, res) => {
+router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], async (req, res) => {
   try {
     const body = req.body;
     

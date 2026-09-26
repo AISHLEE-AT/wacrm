@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/env.dart';
+import '../../../core/offline_cache_service.dart';
 
 class TutoOciService {
   static const String baseUrl = AppEnv.apiUrl;
@@ -40,15 +41,17 @@ class TutoOciService {
     }
   }
 
-  /// 2. Fetch Today's Planner for Student & Day
+  /// 2. Fetch Today's Planner for Student & Day (Offline-Resilient)
   static Future<Map<String, dynamic>?> fetchTodayPlanner({
     required String phone,
     required String courseId,
     required String ambitionId,
     required int dayNumber,
   }) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final cacheKey = 'tuto_planner_${cleanPhone}_${courseId}_${ambitionId}_$dayNumber';
+
     try {
-      final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
       final url = Uri.parse(
         '$baseUrl/api/tuto/planner/today?phone=${Uri.encodeComponent(cleanPhone)}'
         '&courseId=${Uri.encodeComponent(courseId)}'
@@ -59,14 +62,20 @@ class TutoOciService {
       if (res.statusCode == 200) {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
         if (data['success'] == true) {
+          await OfflineCacheService.set(cacheKey, data, ttlSeconds: 86400);
           return data;
         }
       }
-      return null;
     } catch (e) {
-      print('TutoOciService.fetchTodayPlanner error: $e');
-      return null;
+      print('TutoOciService.fetchTodayPlanner error, falling back to cache: $e');
     }
+
+    // Fallback to local offline cache
+    final cached = await OfflineCacheService.get(cacheKey, ignoreExpiration: true);
+    if (cached != null && cached is Map<String, dynamic>) {
+      return cached;
+    }
+    return null;
   }
 
   /// 3. Toggle Class or Yoga Task Completion & Update Progress
@@ -145,25 +154,33 @@ class TutoOciService {
     }
   }
 
-  /// 5. Fetch Student In-App Alerts (Module 2 Teacher Reviews)
+  /// 5. Fetch Student In-App Alerts (Module 2 Teacher Reviews - Offline-Resilient)
   static Future<List<Map<String, dynamic>>> fetchStudentAlerts(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    if (cleanPhone.isEmpty) return [];
+    final cacheKey = 'tuto_alerts_$cleanPhone';
+
     try {
-      final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
-      if (cleanPhone.isEmpty) return [];
       final res = await http.get(
         Uri.parse('$baseUrl/api/tuto/student/alerts?phone=${Uri.encodeComponent(cleanPhone)}'),
       ).timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = jsonDecode(utf8.decode(res.bodyBytes));
         if (data['success'] == true && data['alerts'] is List) {
-          return List<Map<String, dynamic>>.from(data['alerts']);
+          final alerts = List<Map<String, dynamic>>.from(data['alerts']);
+          await OfflineCacheService.set(cacheKey, alerts, ttlSeconds: 3600);
+          return alerts;
         }
       }
-      return [];
     } catch (e) {
-      print('TutoOciService.fetchStudentAlerts error: $e');
-      return [];
+      print('TutoOciService.fetchStudentAlerts error, checking cache: $e');
     }
+
+    final cached = await OfflineCacheService.get(cacheKey, ignoreExpiration: true);
+    if (cached != null && cached is List) {
+      return List<Map<String, dynamic>>.from(cached);
+    }
+    return [];
   }
 
   /// 6. Dismiss Alert and Claim Bonus XP

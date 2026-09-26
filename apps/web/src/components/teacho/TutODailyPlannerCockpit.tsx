@@ -34,6 +34,7 @@ import {
 import { CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '@/data/coursesCatalog';
 import { generateUniqueTenClassesForDay } from '@/data/curriculum/curriculum365Engine';
 import { TutOBookPageScannerModal } from './TutOBookPageScannerModal';
+import { getRegisteredStudentClass, parseAcademicClass } from '@/data/curriculum/studentAcademicHelper';
 
 export interface DailyClassItem {
   id: number;
@@ -79,6 +80,7 @@ interface TutODailyPlannerCockpitProps {
   onOpenTest: (category: string, subject: string) => void;
   onOpenCoursePlayer: (dayNum: number) => void;
   userPhone?: string;
+  registeredAcademicClass?: string;
 }
 
 export const AMBITION_FEATURE_TRACKS = [
@@ -148,8 +150,14 @@ export const AMBITION_FEATURE_TRACKS = [
   }
 ];
 
-export const getInitialClassesForGrade = (courseId: string, ambitionId: string, dayNum: number = 1): DailyClassItem[] => {
-  const plan = generateUniqueTenClassesForDay(courseId, ambitionId, dayNum);
+export const getInitialClassesForGrade = (
+  courseId: string,
+  ambitionId: string,
+  dayNum: number = 1,
+  board: SchoolBoard = 'TNSB',
+  registeredClass?: string
+): DailyClassItem[] => {
+  const plan = generateUniqueTenClassesForDay(courseId, ambitionId, dayNum, board, registeredClass);
   return plan.classes as DailyClassItem[];
 };
 
@@ -247,8 +255,13 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   onOpenExplainer,
   onOpenTest,
   onOpenCoursePlayer,
-  userPhone = 'anonymous'
+  userPhone = 'anonymous',
+  registeredAcademicClass
 }) => {
+  const academicInfo = useMemo(() => {
+    return registeredAcademicClass ? parseAcademicClass(registeredAcademicClass) : getRegisteredStudentClass();
+  }, [registeredAcademicClass]);
+
   const [activeDay, setActiveDay] = useState<number>(dayNumber);
 
   useEffect(() => {
@@ -264,7 +277,9 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   };
 
   const [isLoading, setIsLoading] = useState(false);
-  const [classes, setClasses] = useState<DailyClassItem[]>(() => getInitialClassesForGrade(course.id, activeAmbitionId, dayNumber));
+  const [classes, setClasses] = useState<DailyClassItem[]>(() =>
+    getInitialClassesForGrade(course.id, activeAmbitionId, dayNumber, selectedBoard, registeredAcademicClass || academicInfo.rawClass)
+  );
   const [yoga, setYoga] = useState<DailyYogaItem | null>(null);
   const [dailyTest, setDailyTest] = useState<DailyTestConfig | null>(null);
   
@@ -427,7 +442,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
   };
 
   useEffect(() => {
-    setClasses(getInitialClassesForGrade(course.id, activeAmbitionId, activeDay));
+    setClasses(getInitialClassesForGrade(course.id, activeAmbitionId, activeDay, selectedBoard, registeredAcademicClass || academicInfo.rawClass));
     fetchPlanner(activeDay);
     fetchStudentAlerts();
     checkSubmissionStatus(activeDay);
@@ -435,7 +450,7 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
       const savedKey = localStorage.getItem('gemini-api-key') || '';
       setGeminiApiKey(savedKey);
     }
-  }, [course.id, activeAmbitionId, activeDay, userPhone]);
+  }, [course.id, activeAmbitionId, activeDay, userPhone, selectedBoard, registeredAcademicClass, academicInfo]);
 
   // Toggle class completion
   const handleToggleClass = async (classIndex: number, xp: number) => {
@@ -928,10 +943,13 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
             <Camera className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-sm md:text-base font-black text-foreground">
                 School Homework: AI Textbook Scanner & Personal Tutor
               </h3>
+              <span className="px-2 py-0.5 bg-primary/20 text-primary text-[10px] font-black uppercase rounded-full">
+                {academicInfo.standardName}
+              </span>
               <span className="px-2 py-0.5 bg-amber-500/20 text-amber-500 text-[10px] font-black uppercase rounded-full">
                 AI Guided
               </span>
@@ -1311,8 +1329,8 @@ export const TutODailyPlannerCockpit: React.FC<TutODailyPlannerCockpitProps> = (
         <TutOBookPageScannerModal
           isOpen={isBookScannerOpen}
           onClose={() => setIsBookScannerOpen(false)}
-          defaultGrade={course.title.includes('5') ? 'Class 5' : 'Class 10'}
-          defaultSubject="Mathematics"
+          defaultGrade={academicInfo.standardName}
+          defaultSubject={academicInfo.subjects[0] || 'Mathematics'}
           onXpEarned={(earned) => {
             setDailyXp(prev => prev + earned);
             setTotalXp(prev => prev + earned);

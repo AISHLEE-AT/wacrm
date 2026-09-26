@@ -33,7 +33,8 @@ export async function GET(
 
     // 2. Fallback to OCI backend
     try {
-      const ociRes = await fetch(`http://152.67.7.216:8080/api/rides/${id}`, {
+      const ociBase = process.env.NEXT_PUBLIC_OCI_BACKEND_URL || 'https://mysupro.duckdns.org';
+      const ociRes = await fetch(`${ociBase}/api/rides/${id}`, {
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(3000),
       });

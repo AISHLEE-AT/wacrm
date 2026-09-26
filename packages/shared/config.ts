@@ -1,8 +1,9 @@
-export const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://192.168.1.100:3000' // Local development IP (Update as needed)
-  : 'https://watscrm.vercel.app';
+export const API_URL = 
+  process.env.NEXT_PUBLIC_API_URL || 
+  process.env.API_URL || 
+  'https://mysupro.duckdns.org';
 
-export const WABA_PHONE_NUMBER = "916381029380"; // From web app login logic
+export const WABA_PHONE_NUMBER = "916381029380"; // SuprO Official WABA
 
 export const endpoints = {
   authCheck: `${API_URL}/api/auth/check`,
@@ -11,3 +12,4 @@ export const endpoints = {
   authPinLogin: `${API_URL}/api/auth/pin`,
   updateProfile: `${API_URL}/api/profile/update`,
 };
+

@@ -36,6 +36,7 @@ import {
 import { ImmersiveVideoWebPlayer } from './ImmersiveVideoWebPlayer';
 import { TaskVideoFeedbackModal } from './TaskVideoFeedbackModal';
 import { TutOBookPageScannerModal } from './TutOBookPageScannerModal';
+import { getRegisteredStudentClass, parseAcademicClass } from '@/data/curriculum/studentAcademicHelper';
 
 interface TutODayCoursePlayerWebModalProps {
   isOpen: boolean;
@@ -904,7 +905,7 @@ export const TutODayCoursePlayerWebModal: React.FC<TutODayCoursePlayerWebModalPr
           <TutOBookPageScannerModal
             isOpen={isBookScannerOpen}
             onClose={() => setIsBookScannerOpen(false)}
-            defaultGrade={courseTitle.includes('5') ? 'Class 5' : 'Class 10'}
+            defaultGrade={parseAcademicClass(course?.id || courseTitle).standardName || getRegisteredStudentClass().standardName}
             defaultSubject="Mathematics"
           />
         )}

@@ -29,7 +29,7 @@ async function testEndpoint(name, url, options = {}) {
 }
 
 async function runTests() {
-  const BASE_URL = 'http://152.67.7.216:8080';
+  const BASE_URL = process.env.BASE_URL || 'https://mysupro.duckdns.org';
   console.log('--- STARTING OCI BACKEND TESTS ---\\n');
   
   // 1. Rideo
@@ -37,7 +37,7 @@ async function runTests() {
   
   // 2. DriveO
   await testEndpoint('DriveO - Get Pending Rides', BASE_URL + '/api/rides/pending');
-  await testEndpoint('DriveO - Get Driver by Phone', BASE_URL + '/api/drivers/phone/9999999999'); // Should be 404 or empty
+  await testEndpoint('DriveO - Get Driver by Phone', BASE_URL + '/api/drivers/phone/919123596988');
   
   // 3. DealO
   await testEndpoint('DealO - Get Listings', BASE_URL + '/api/dealo/listings');

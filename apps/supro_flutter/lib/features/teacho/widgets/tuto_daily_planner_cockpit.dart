@@ -16,6 +16,7 @@ class TutoDailyPlannerCockpit extends StatefulWidget {
   final Function(String category, String subject)? onOpenTest;
   final Function(int dayNum, String? topicHint)? onOpenExplainer;
   final String userPhone;
+  final String? registeredAcademicClass;
 
   const TutoDailyPlannerCockpit({
     super.key,
@@ -30,6 +31,7 @@ class TutoDailyPlannerCockpit extends StatefulWidget {
     this.onOpenTest,
     this.onOpenExplainer,
     this.userPhone = '',
+    this.registeredAcademicClass,
   });
 
   @override
@@ -74,7 +76,9 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
       _activeDay = widget.dayNumber;
       _initDayPlan();
     }
-    if (oldWidget.activeAmbitionId != widget.activeAmbitionId || oldWidget.courseId != widget.courseId) {
+    if (oldWidget.activeAmbitionId != widget.activeAmbitionId ||
+        oldWidget.courseId != widget.courseId ||
+        oldWidget.registeredAcademicClass != widget.registeredAcademicClass) {
       _initDayPlan();
     }
   }
@@ -86,8 +90,14 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
   }
 
   void _initDayPlan() {
-    // 1. Load deterministic baseline
-    final baseline = generateUniqueTenClassesForDay(widget.courseId, widget.activeAmbitionId, _activeDay, widget.selectedBoard);
+    // 1. Load deterministic baseline with student's enrolled academic class
+    final baseline = generateUniqueTenClassesForDay(
+      widget.courseId,
+      widget.activeAmbitionId,
+      _activeDay,
+      widget.selectedBoard,
+      widget.registeredAcademicClass,
+    );
     setState(() {
       _classes = baseline.classes;
       _yoga = baseline.yoga;
@@ -875,6 +885,27 @@ class _TutoDailyPlannerCockpitState extends State<TutoDailyPlannerCockpit> {
                     decoration: BoxDecoration(color: const Color(0xFF00D084).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
                     child: Text('Day $_activeDay of 365', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF00D084))),
                   ),
+                  if (widget.registeredAcademicClass != null && widget.registeredAcademicClass!.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38BDF8).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(LucideIcons.graduationCap, size: 12, color: Color(0xFF38BDF8)),
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.registeredAcademicClass!.replaceAll('_', ' ').toUpperCase(),
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF38BDF8)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 10),

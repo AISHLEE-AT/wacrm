@@ -40,7 +40,8 @@ export async function PUT(request: NextRequest) {
 
     // 2. Dual-sync to OCI backend in background
     try {
-      fetch('http://152.67.7.216:8080/api/drivers/location', {
+      const ociBase = process.env.NEXT_PUBLIC_OCI_BACKEND_URL || 'https://mysupro.duckdns.org';
+      fetch(`${ociBase}/api/drivers/location`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

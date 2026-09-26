@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
+import '../../../core/offline_cache_service.dart';
 
 class NewsItem {
   final String title;
@@ -17,6 +18,24 @@ class NewsItem {
     this.imageUrl,
     required this.source,
   });
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'link': link,
+    'pubDate': pubDate,
+    'description': description,
+    'imageUrl': imageUrl,
+    'source': source,
+  };
+
+  factory NewsItem.fromJson(Map<String, dynamic> json) => NewsItem(
+    title: json['title'] as String? ?? 'No Title',
+    link: json['link'] as String? ?? '',
+    pubDate: json['pubDate'] as String? ?? '',
+    description: json['description'] as String? ?? '',
+    imageUrl: json['imageUrl'] as String?,
+    source: json['source'] as String? ?? 'SuprO Agro',
+  );
 }
 
 class AgriNewsService {
@@ -36,7 +55,7 @@ class AgriNewsService {
 
     for (var feed in feeds) {
       try {
-        final response = await http.get(Uri.parse(feed['url']!));
+        final response = await http.get(Uri.parse(feed['url']!)).timeout(const Duration(seconds: 8));
         if (response.statusCode == 200) {
           final document = XmlDocument.parse(response.body);
           final items = document.findAllElements('item');
@@ -76,8 +95,25 @@ class AgriNewsService {
       }
     }
 
-    // Sort by parsing date roughly, or just mix them up
-    // Since dates come in various formats, we'll leave them as they arrive from feeds
+    if (allNews.isNotEmpty) {
+      // Cache successful response for 4 hours
+      await OfflineCacheService.set(
+        'agri_news_feed',
+        allNews.map((n) => n.toJson()).toList(),
+        ttlSeconds: 14400,
+      );
+      return allNews;
+    }
+
+    // Fallback to offline cache if network failed or returned no items
+    final cached = await OfflineCacheService.get('agri_news_feed', ignoreExpiration: true);
+    if (cached != null && cached is List) {
+      return cached
+          .whereType<Map<String, dynamic>>()
+          .map((m) => NewsItem.fromJson(m))
+          .toList();
+    }
+
     return allNews;
   }
 }

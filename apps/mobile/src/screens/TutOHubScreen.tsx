@@ -55,6 +55,7 @@ import {
 } from '../data/curriculum/wholeYearDayPlanEngine';
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '../data/coursesCatalog';
+import { parseAcademicClass } from '../data/curriculum/studentAcademicHelper';
 
 const { width } = Dimensions.get('window');
 
@@ -87,9 +88,12 @@ export default function TutOHubScreen({ navigation }: any) {
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
 
   // ─── 1. Active Course & Board State ──────────────────────────────────────────
+  const [registeredAcademicClass, setRegisteredAcademicClass] = useState<string>('class_10');
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
+
+  const registeredAcademicInfo = useMemo(() => parseAcademicClass(registeredAcademicClass), [registeredAcademicClass]);
 
   // ─── 2. QBank Number Search Modal State ─────────────────────────────────────
   const [isQBankModalOpen, setIsQBankModalOpen] = useState(false);
@@ -129,6 +133,13 @@ export default function TutOHubScreen({ navigation }: any) {
   useEffect(() => {
     async function loadSavedState() {
       try {
+        const savedClass =
+          (await AsyncStorage.getItem('student-academic-class')) ||
+          (await AsyncStorage.getItem('tuto_student_registered_class'));
+        if (savedClass) {
+          setRegisteredAcademicClass(savedClass);
+        }
+
         const savedCourseId = await AsyncStorage.getItem('tuto_active_course_id');
         let course = DEFAULT_COURSE;
         let board: SchoolBoard = 'TNSB';
@@ -136,6 +147,10 @@ export default function TutOHubScreen({ navigation }: any) {
           const savedBoard = await AsyncStorage.getItem(`tuto_selected_board_${savedCourseId}`);
           if (savedBoard) board = savedBoard as SchoolBoard;
           const matched = ALL_COURSES.find((c) => c.id === savedCourseId);
+          if (matched) course = matched;
+        } else if (savedClass) {
+          const parsed = parseAcademicClass(savedClass);
+          const matched = ALL_COURSES.find((c) => c.id === parsed.schoolCourseId);
           if (matched) course = matched;
         }
         setSelectedCourse(course);
@@ -314,7 +329,12 @@ export default function TutOHubScreen({ navigation }: any) {
               <Layers size={16} color="#00D084" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.activeCourseLabel}>ENROLLED COURSE</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <View style={{ backgroundColor: '#10B98125', borderColor: '#10B98140', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999 }}>
+                  <Text style={{ fontSize: 9, fontWeight: '900', color: '#10B981' }}>{registeredAcademicInfo.displayName}</Text>
+                </View>
+                <Text style={styles.activeCourseLabel}>ENROLLED</Text>
+              </View>
               <Text style={styles.activeCourseTitle} numberOfLines={1}>
                 {selectedCourse.title}
               </Text>
@@ -447,6 +467,7 @@ export default function TutOHubScreen({ navigation }: any) {
             onOpenCoursePlayer={handleOpenDayPlayer}
             onOpenTest={(category, subject) => navigation.navigate('QuizScreen')}
             userPhone={user?.phone}
+            registeredAcademicClass={registeredAcademicClass}
           />
         </ScrollView>
       )}
@@ -863,6 +884,9 @@ export default function TutOHubScreen({ navigation }: any) {
         onComplete={(course, board, profile) => {
           setSelectedCourse(course);
           setSelectedBoard(board);
+          if (profile.academicClass) {
+            setRegisteredAcademicClass(profile.academicClass);
+          }
           AsyncStorage.setItem('tuto_active_course_id', course.id).catch(() => {});
           AsyncStorage.setItem(`tuto_selected_board_${course.id}`, board).catch(() => {});
           getCompletedDaysForCourse(course.id).then((doneSet) => {

@@ -42,7 +42,8 @@ export async function PATCH(
 
     // 2. Dual-sync to OCI backend in background
     try {
-      fetch(`http://152.67.7.216:8080/api/rides/${id}/status`, {
+      const ociBase = process.env.NEXT_PUBLIC_OCI_BACKEND_URL || 'https://mysupro.duckdns.org';
+      fetch(`${ociBase}/api/rides/${id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

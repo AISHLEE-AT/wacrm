@@ -21,6 +21,7 @@ class _TeachoScreenState extends State<TeachoScreen> {
 
   String _selectedCourseId = 'school-std-10';
   String _selectedCourseTitle = 'Class 10th (SSLC) Academic Deck';
+  String _registeredAcademicClass = 'class_10';
   String _selectedBoard = 'TNSB';
   String _studentName = 'SuprO Scholar';
   String _studentPhone = '';
@@ -48,6 +49,11 @@ class _TeachoScreenState extends State<TeachoScreen> {
       final savedBoard = prefs.getString('user-board');
       final savedName = prefs.getString('user-name');
       final savedPhone = prefs.getString('user-phone');
+      final savedClass = prefs.getString('student-academic-class') ??
+          prefs.getString('tuto_student_registered_class') ??
+          (savedCourseId != null && savedCourseId.contains('std-')
+              ? 'class_${savedCourseId.split('std-').last}'
+              : 'class_10');
 
       if (savedCourseId != null && savedCourseId.isNotEmpty) {
         _selectedCourseId = savedCourseId;
@@ -65,6 +71,7 @@ class _TeachoScreenState extends State<TeachoScreen> {
       if (savedPhone != null && savedPhone.isNotEmpty) {
         _studentPhone = savedPhone;
       }
+      _registeredAcademicClass = savedClass;
 
       final doneSet = await getCompletedDaysForCourse(_selectedCourseId);
       final maxDay = await getMaxUnlockedDay(_selectedCourseId);
@@ -72,6 +79,7 @@ class _TeachoScreenState extends State<TeachoScreen> {
       setState(() {
         _completedDays = doneSet;
         _maxUnlockedDay = maxDay;
+        _registeredAcademicClass = savedClass;
       });
 
       await _refreshReleasedDays(doneSet);
@@ -146,12 +154,17 @@ class _TeachoScreenState extends State<TeachoScreen> {
       initialName: _studentName,
       userPhone: _studentPhone,
       onComplete: (courseId, board, ambitionId, name) async {
+        final prefs = await SharedPreferences.getInstance();
+        final savedClass = prefs.getString('student-academic-class') ??
+            prefs.getString('tuto_student_registered_class') ??
+            (courseId.contains('std-') ? 'class_${courseId.split('std-').last}' : 'class_10');
         setState(() {
           _selectedCourseId = courseId;
           _selectedCourseTitle = _getCourseTitle(courseId);
           _selectedBoard = board;
           _activeAmbitionId = ambitionId;
           _studentName = name;
+          _registeredAcademicClass = savedClass;
         });
         final doneSet = await getCompletedDaysForCourse(courseId);
         _refreshReleasedDays(doneSet);
@@ -387,6 +400,19 @@ class _TeachoScreenState extends State<TeachoScreen> {
                                 children: [
                                   const Text('ENROLLED COURSE', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFF00D084), letterSpacing: 0.5)),
                                   Text(_selectedCourseTitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
+                                  const SizedBox(height: 3),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF38BDF8).withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+                                    ),
+                                    child: Text(
+                                      '🎒 ${_registeredAcademicClass.replaceAll('_', ' ').toUpperCase()} • $_selectedBoard',
+                                      style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: Color(0xFF38BDF8)),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -604,6 +630,7 @@ class _TeachoScreenState extends State<TeachoScreen> {
                         courseTitle: _selectedCourseTitle,
                         selectedBoard: _selectedBoard,
                         activeAmbitionId: _activeAmbitionId,
+                        registeredAcademicClass: _registeredAcademicClass,
                         onSelectAmbition: _handleSelectAmbition,
                         dayNumber: _playerDayNumber,
                         onChangeDayNumber: (d) => setState(() => _playerDayNumber = d),

@@ -9,6 +9,7 @@ import {
 
 import { ALL_COURSES, DEFAULT_COURSE, CourseOption, SchoolBoard, FEATURED_JUNIOR_COURSES } from '@/data/coursesCatalog';
 import { getReleasedDaySummariesForCourse, getCompletedDaysForCourse, DayPlanSummaryItem, getMaxUnlockedDay } from '@/data/curriculum/wholeYearDayPlanEngine';
+import { getRegisteredStudentClass, parseAcademicClass } from '@/data/curriculum/studentAcademicHelper';
 
 // Modals & Sub-components
 import { StudentOnboardingWebModal } from '@/components/teacho/StudentOnboardingWebModal';
@@ -26,12 +27,15 @@ export default function TutOWebPage() {
   const [activeStream, setActiveStream] = useState<LearnerStream>('school');
   const [userPhone, setUserPhone] = useState<string>('anonymous');
   
-  // Course State
+  // Course & Academic Class State
+  const [registeredAcademicClass, setRegisteredAcademicClass] = useState<string>('class_10');
   const [selectedCourse, setSelectedCourse] = useState<CourseOption>(DEFAULT_COURSE);
   const [selectedBoard, setSelectedBoard] = useState<SchoolBoard>('TNSB');
   const [activeAmbitionId, setActiveAmbitionId] = useState<string>('jr-ias');
   const [isCoursePickerOpen, setIsCoursePickerOpen] = useState(false);
   const [courseSearchQuery, setCourseSearchQuery] = useState('');
+
+  const registeredAcademicInfo = useMemo(() => parseAcademicClass(registeredAcademicClass), [registeredAcademicClass]);
 
   // Days Engine State
   const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
@@ -64,26 +68,35 @@ export default function TutOWebPage() {
       let board: SchoolBoard = 'TNSB';
       let ambition = 'jr-ias';
       let phone = 'anonymous';
+      let academicClass = 'class_10';
       
       if (typeof window !== 'undefined') {
         const onboardingDone = window.localStorage.getItem('tuto_student_onboarding_completed');
         if (!onboardingDone) setIsOnboardingModalOpen(true);
 
+        const savedClass =
+          window.localStorage.getItem('student-academic-class') ||
+          window.localStorage.getItem('tuto_student_registered_class');
+        if (savedClass) {
+          academicClass = savedClass;
+          setRegisteredAcademicClass(savedClass);
+        }
+
         const savedCourseId = window.localStorage.getItem('tuto_active_course_id');
-        if (savedCourseId && savedCourseId !== 'school-std-10') {
+        if (savedCourseId) {
           const matched = ALL_COURSES.find(c => c.id === savedCourseId);
           if (matched) course = matched;
           
           const savedBoard = window.localStorage.getItem(`tuto_selected_board_${savedCourseId}`);
           if (savedBoard) board = savedBoard as SchoolBoard;
-        } else {
-          const std5 = ALL_COURSES.find(c => c.id === 'school-std-5');
-          if (std5) course = std5;
+        } else if (savedClass) {
+          const parsed = parseAcademicClass(savedClass);
+          const matched = ALL_COURSES.find(c => c.id === parsed.schoolCourseId);
+          if (matched) course = matched;
         }
 
         const savedAmbition = window.localStorage.getItem('tuto_active_ambition_id');
         if (savedAmbition) ambition = savedAmbition;
-
 
         const savedPhone = window.localStorage.getItem('user_phone') || window.localStorage.getItem('supro_phone') || window.localStorage.getItem('tuto_phone');
         if (savedPhone) phone = savedPhone;
@@ -181,7 +194,10 @@ export default function TutOWebPage() {
             <GraduationCap className="w-6 h-6" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-full">
+                🎒 {registeredAcademicInfo.displayName}
+              </span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-primary/10 text-primary rounded-full">
                 {selectedCourse.category.replace(/_/g, ' ')}
               </span>
@@ -378,6 +394,7 @@ export default function TutOWebPage() {
             setIsCoursePlayerOpen(true);
           }}
           userPhone={userPhone}
+          registeredAcademicClass={registeredAcademicClass}
         />
       )}
 
@@ -639,6 +656,9 @@ export default function TutOWebPage() {
           onComplete={(course, board, profile) => {
             setSelectedCourse(course);
             setSelectedBoard(board);
+            if (profile.academicClass) {
+              setRegisteredAcademicClass(profile.academicClass);
+            }
             if (profile.areaOfInterest) {
               const matched = FEATURED_JUNIOR_COURSES.find(c => c.id.includes(profile.areaOfInterest));
               if (matched) handleSelectAmbition(matched.id);
