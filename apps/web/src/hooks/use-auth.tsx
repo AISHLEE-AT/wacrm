@@ -196,33 +196,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const safetyTimer = setTimeout(() => {
       if (mounted) {
-        console.warn("[AuthProvider] getSession() timed out after 3s");
+        console.warn("[AuthProvider] getSession() timed out");
         setLoading(false);
         setProfileLoading(false);
       }
-    }, 3000);
+    }, 6000);
 
     const init = async () => {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        let currentUser: User | null = null;
 
-        if (error) console.error("[AuthProvider] getSession error:", error.message);
-
-        if (!mounted) return;
-        let currentUser = session?.user ?? null;
-
-        // Direct token fallback if Supabase GoTrue Auth session is not available
-        if (!currentUser && typeof window !== "undefined") {
-          const directToken =
-            localStorage.getItem("sb-access-token") ||
-            document.cookie
-              .split("; ")
-              .find((row) => row.startsWith("sb-access-token="))
-              ?.split("=")[1];
-
+        // Fast path 1: Instant local token check (0ms wait, no network delay)
+        if (typeof window !== "undefined") {
+          const directToken = localStorage.getItem("sb-access-token");
           if (directToken) {
             try {
               const base64Url = directToken.split(".")[1];
@@ -231,8 +217,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const payload = JSON.parse(decodeURIComponent(escape(atob(base64))));
                 const nowSec = Math.floor(Date.now() / 1000);
                 if (!payload.exp || payload.exp > nowSec) {
+                  const cleanPhone = (payload.phone || "").replace(/\D/g, "").slice(-10);
                   currentUser = {
-                    id: payload.id || payload.sub || (payload.phone ? `user_${payload.phone}` : "user_authenticated"),
+                    id: payload.id || payload.sub || (cleanPhone ? `user_${cleanPhone}` : "user_authenticated"),
                     app_metadata: {},
                     user_metadata: payload,
                     aud: "authenticated",
@@ -247,15 +234,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        setUser(currentUser);
-
-        if (currentUser) {
+        // If local token found, immediately set user and unblock UI rendering
+        if (currentUser && mounted) {
+          setUser(currentUser);
+          setLoading(false);
           const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
           fetchProfile(currentUser.id, phone);
-        } else {
-          setProfile(null);
-          setAccount(null);
-          setProfileLoading(false);
+        }
+
+        // Supabase session check (in background or if no direct token)
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) console.error("[AuthProvider] getSession error:", error.message);
+
+        if (!mounted) return;
+        if (session?.user) {
+          currentUser = session.user;
+          setUser(currentUser);
+          setLoading(false);
+          const phone = currentUser.phone || currentUser.email;
+          fetchProfile(currentUser.id, phone);
+          return;
+        }
+
+        // Fallback: If still no currentUser, call /api/auth/me to read HttpOnly cookies
+        if (!currentUser && typeof window !== "undefined") {
+          try {
+            const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+            if (meRes.ok) {
+              const meData = await meRes.json();
+              if (meData.authenticated && meData.user && mounted) {
+                currentUser = meData.user;
+                setUser(currentUser);
+                setLoading(false);
+                if (meData.token) {
+                  try { localStorage.setItem("sb-access-token", meData.token); } catch (_) {}
+                }
+                if (meData.profile) {
+                  setProfile(meData.profile);
+                  setProfileLoading(false);
+                }
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (mounted) {
+          setUser(currentUser);
+          if (currentUser) {
+            const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
+            fetchProfile(currentUser.id, phone);
+          } else {
+            setProfile(null);
+            setAccount(null);
+            setProfileLoading(false);
+          }
         }
       } catch (err) {
         console.error("[AuthProvider] init threw:", err);

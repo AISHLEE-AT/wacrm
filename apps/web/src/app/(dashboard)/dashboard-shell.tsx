@@ -83,8 +83,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user && !isEmbed) return null;
-
   if (isEmbed) {
     return (
       <div className="flex h-screen overflow-hidden bg-background">
@@ -96,7 +94,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen w-full bg-background text-foreground relative overflow-x-hidden">
       {/* Headless presence tracker */}
-      <PresenceHeartbeat />
+      {user && <PresenceHeartbeat />}
 
       {/* Modern Top Header */}
       <Header />
