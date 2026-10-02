@@ -52,20 +52,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, source: 'mem_cache', content: memCache.get(cacheKey) });
     }
 
-    // 2. Check OCI backend cache
+    // 2. Check OCI backend cache (authoritative tuto_ai_content_cache)
     try {
-      const ociRes = await fetch(`https://mysupro.duckdns.org/api/tuto/content?courseId=${encodeURIComponent(courseId)}&dayNumber=${dayNumber}`, {
+      const apiKeys = getApiKeys();
+      const ociRes = await fetch('https://mysupro.duckdns.org/api/tuto/ai/generate-topic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId,
+          dayNumber,
+          topicTitle,
+          subject: subject || 'General',
+          userApiKey: apiKeys[0] || '',
+        }),
         cache: 'no-store',
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(12000),
       });
       if (ociRes.ok) {
         const ociData = await ociRes.json();
         if (ociData.success && ociData.content) {
           memCache.set(cacheKey, ociData.content);
-          return NextResponse.json({ success: true, source: 'oci_cache', content: ociData.content });
+          return NextResponse.json({ success: true, source: ociData.source || 'oci_cache', content: ociData.content });
         }
       }
-    } catch {}
+    } catch (ociErr) {
+      console.warn('[tnpsc-content] OCI cache lookup failed:', ociErr);
+    }
 
     // 3. Generate fresh content with Gemini
     const apiKeys = getApiKeys();

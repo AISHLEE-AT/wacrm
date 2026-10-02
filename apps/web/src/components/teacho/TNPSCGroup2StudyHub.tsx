@@ -55,6 +55,7 @@ export const TNPSCGroup2StudyHub: React.FC<{
   const [isGeneratingContent, setIsGeneratingContent] = useState(false);
   const [isGeneratingTest, setIsGeneratingTest] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
   const [activeView, setActiveView] = useState<'plan' | 'study' | 'test'>('plan');
 
@@ -127,14 +128,49 @@ export const TNPSCGroup2StudyHub: React.FC<{
   const generateTest = async (topicTitle: string, subject: string, dayNumber: number) => {
     setActiveView('test');
     setIsGeneratingTest(true);
-    setTestQuestions([]);
+    setTestError(null);
     setTestAnswers({});
     setTestSubmitted(false);
     setTestScore(0);
 
+    // Fast-path: If active topic content already has questions, load them instantly
+    const rawQuiz = (topicContent as any)?.practiceQuiz || topicContent?.mcqs;
+    let hasLoadedFast = false;
+    if (Array.isArray(rawQuiz) && rawQuiz.length > 0 && (topicContent?.topicTitle === topicTitle || !topicTitle)) {
+      const initial = rawQuiz.map((q: any, idx: number) => {
+        const optionsObj: Record<string, string> = {};
+        if (Array.isArray(q.options)) {
+          q.options.forEach((opt: string, i: number) => {
+            const key = ['A', 'B', 'C', 'D'][i] || `opt_${i}`;
+            optionsObj[key] = opt.replace(/^[A-D]\.\s*/, '');
+          });
+        } else if (typeof q.options === 'object' && q.options !== null) {
+          Object.assign(optionsObj, q.options);
+        }
+        const correct = typeof q.correctIndex === 'number'
+          ? ['A', 'B', 'C', 'D'][q.correctIndex]
+          : (typeof q.correctAnswer === 'number' ? ['A', 'B', 'C', 'D'][q.correctAnswer] : (q.correct_option || 'A'));
+
+        return {
+          id: q.id || `q_${idx + 1}`,
+          sequence_number: idx + 1,
+          question_text: q.question || q.question_text || '',
+          question_text_ta: q.questionTamil || q.question_text_ta || '',
+          options: optionsObj,
+          correct_option: correct,
+          explanation: q.explanation || 'Curriculum solution verified.',
+          explanation_ta: q.explanationTamil || q.explanation_ta || '',
+        };
+      });
+      setTestQuestions(initial);
+      hasLoadedFast = true;
+    } else {
+      setTestQuestions([]);
+    }
+
     try {
-      // Pass notes context if available
-      const notesContext = topicContent?.coreConcepts?.map(c => c.content).join('\n') || '';
+      const notesContext = topicContent?.studyNotes?.map(n => n.content).join('\n') 
+        || topicContent?.coreConcepts?.map(c => c.content).join('\n') || '';
 
       const res = await fetch('/api/tnpsc-test', {
         method: 'POST',
@@ -145,15 +181,23 @@ export const TNPSCGroup2StudyHub: React.FC<{
           subject,
           count: 10,
           notesContext,
+          courseId: 'tnpsc-group2',
         }),
       });
 
       const data = await res.json();
-      if (data.success && data.questions?.length) {
+      if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
         setTestQuestions(data.questions);
+      } else if (!hasLoadedFast) {
+        setTestError(data.error || 'Failed to load test questions. Please try again.');
       }
-    } catch {}
-    setIsGeneratingTest(false);
+    } catch (err: any) {
+      if (!hasLoadedFast) {
+        setTestError(err.message || 'Network error while loading test questions.');
+      }
+    } finally {
+      setIsGeneratingTest(false);
+    }
   };
 
   const handleTestSubmit = () => {
@@ -244,7 +288,14 @@ export const TNPSCGroup2StudyHub: React.FC<{
             <Target className="w-3.5 h-3.5" /> 25-Day Plan
           </button>
           <button
-            onClick={() => setActiveView('study')}
+            onClick={() => {
+              setActiveView('study');
+              if (!topicContent) {
+                const day = crashPlan.find(d => d.dayNumber === (expandedDay || 1)) || crashPlan[0];
+                const firstTask = day.tasks.find(t => t.taskType !== 'quiz') || day.tasks[0];
+                generateContent(day, firstTask);
+              }
+            }}
             className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeView === 'study' ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-500/40' : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-slate-700/30'
             }`}
@@ -252,7 +303,11 @@ export const TNPSCGroup2StudyHub: React.FC<{
             <BookOpen className="w-3.5 h-3.5" /> Study Notes
           </button>
           <button
-            onClick={() => setActiveView('test')}
+            onClick={() => {
+              const day = crashPlan.find(d => d.dayNumber === (expandedDay || 1)) || crashPlan[0];
+              const firstTask = day.tasks.find(t => t.taskType !== 'quiz') || day.tasks[0];
+              generateTest(firstTask.topic, firstTask.subject, day.dayNumber);
+            }}
             className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeView === 'test' ? 'bg-sky-500/30 text-sky-300 border border-sky-500/40' : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-slate-700/30'
             }`}
@@ -412,14 +467,20 @@ export const TNPSCGroup2StudyHub: React.FC<{
 
               {/* Tamil Explanation */}
               {topicContent.tamilExplanation && (
-                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
                   <h3 className="text-sm font-black text-amber-400 mb-2">📝 தமிழ் விளக்கம்</h3>
-                  {topicContent.tamilExplanation.colloquialIntro && (
-                    <p className="text-sm text-amber-200/80">{topicContent.tamilExplanation.colloquialIntro}</p>
+                  {typeof topicContent.tamilExplanation === 'string' ? (
+                    <p className="text-sm text-amber-200/90 leading-relaxed whitespace-pre-wrap">{topicContent.tamilExplanation}</p>
+                  ) : (
+                    <>
+                      {topicContent.tamilExplanation.colloquialIntro && (
+                        <p className="text-sm text-amber-200/80 leading-relaxed">{topicContent.tamilExplanation.colloquialIntro}</p>
+                      )}
+                      {topicContent.tamilExplanation.keyPointsTamil?.map((pt: string, i: number) => (
+                        <p key={i} className="text-xs text-amber-200/70 mt-1.5">• {pt}</p>
+                      ))}
+                    </>
                   )}
-                  {topicContent.tamilExplanation.keyPointsTamil?.map((pt: string, i: number) => (
-                    <p key={i} className="text-xs text-amber-200/60 mt-1">• {pt}</p>
-                  ))}
                 </div>
               )}
 
@@ -433,7 +494,7 @@ export const TNPSCGroup2StudyHub: React.FC<{
                 </div>
               )}
 
-              {/* Core Concepts */}
+              {/* Core Concepts (if present) */}
               {topicContent.coreConcepts?.map((concept, i) => (
                 <div key={i} className="bg-muted/20 border border-border/40 rounded-2xl p-4 space-y-2">
                   <h3 className="text-sm font-black text-foreground">{concept.heading}</h3>
@@ -449,9 +510,14 @@ export const TNPSCGroup2StudyHub: React.FC<{
 
               {/* Study Notes */}
               {topicContent.studyNotes?.map((note, i) => (
-                <div key={i} className="space-y-1">
-                  <h4 className="text-xs font-black text-foreground">{note.sectionTitle}</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{note.content}</p>
+                <div key={i} className="bg-muted/20 border border-border/40 rounded-2xl p-4 space-y-2">
+                  <h4 className="text-xs font-black text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                    {note.sectionTitle}
+                  </h4>
+                  <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap pl-4">
+                    {note.content}
+                  </div>
                 </div>
               ))}
 
@@ -486,11 +552,16 @@ export const TNPSCGroup2StudyHub: React.FC<{
                 </div>
               )}
 
-              {/* Practice MCQs from Notes */}
-              {topicContent.mcqs?.length && (
+              {/* Practice MCQs from Notes / AI Cache */}
+              {Boolean((topicContent.mcqs && topicContent.mcqs.length > 0) || ((topicContent as any).practiceQuiz && (topicContent as any).practiceQuiz.length > 0)) && (
                 <div>
-                  <h3 className="text-sm font-black text-foreground mb-3">📝 Quick Practice Quiz ({topicContent.mcqs.length} Qs)</h3>
-                  {topicContent.mcqs.map((q: any, i: number) => (
+                  <h3 className="text-sm font-black text-foreground mb-3 flex items-center gap-2">
+                    <span>📝 Quick Practice Quiz</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30 font-bold">
+                      {(topicContent.mcqs || (topicContent as any).practiceQuiz).length} Questions
+                    </span>
+                  </h3>
+                  {(topicContent.mcqs || (topicContent as any).practiceQuiz).map((q: any, i: number) => (
                     <InlineQuiz key={i} question={q} index={i} />
                   ))}
                 </div>
@@ -552,6 +623,18 @@ export const TNPSCGroup2StudyHub: React.FC<{
               <Loader2 className="w-10 h-10 animate-spin text-sky-400" />
               <p className="text-sm font-bold text-foreground">AI is generating your test paper...</p>
               <p className="text-xs text-muted-foreground">10 bilingual MCQs with detailed explanations</p>
+            </div>
+          ) : testError ? (
+            <div className="text-center py-16 space-y-3">
+              <p className="text-sm text-red-400 font-bold">{testError}</p>
+              <div className="flex justify-center gap-2">
+                <button onClick={() => setActiveView('plan')} className="px-4 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold">
+                  ← Back to Plan
+                </button>
+                <button onClick={() => onOpenTest()} className="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-xs font-bold">
+                  Take Full Mock CBT Instead
+                </button>
+              </div>
             </div>
           ) : testQuestions.length > 0 ? (
             <div className="space-y-4">
@@ -698,9 +781,15 @@ const InlineQuiz: React.FC<{ question: any; index: number }> = ({ question, inde
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
 
+  const correctIdx = typeof question.correctIndex === 'number'
+    ? question.correctIndex
+    : (typeof question.correctAnswer === 'number' ? question.correctAnswer : 0);
+
+  const isCorrect = selected === correctIdx;
+
   return (
     <div className="mb-3 bg-muted/20 border border-border/30 rounded-xl p-3 space-y-2">
-      <p className="text-xs font-bold text-foreground">Q{index + 1}: {question.question}</p>
+      <p className="text-xs font-bold text-foreground">Q{index + 1}: {question.question || question.question_text}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
         {question.options?.map((opt: string, i: number) => (
           <button
@@ -708,10 +797,10 @@ const InlineQuiz: React.FC<{ question: any; index: number }> = ({ question, inde
             onClick={() => { setSelected(i); setRevealed(true); }}
             className={`text-left px-2.5 py-1.5 rounded-lg border text-[11px] font-medium transition-all ${
               revealed
-                ? i === question.correctAnswer
-                  ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-300'
+                ? i === correctIdx
+                  ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 font-bold'
                   : i === selected
-                  ? 'bg-red-950/30 border-red-500/30 text-red-300'
+                  ? 'bg-red-950/40 border-red-500/50 text-red-300'
                   : 'border-border/30 text-muted-foreground opacity-50'
                 : selected === i
                 ? 'bg-primary/10 border-primary/30'
@@ -723,8 +812,8 @@ const InlineQuiz: React.FC<{ question: any; index: number }> = ({ question, inde
         ))}
       </div>
       {revealed && (
-        <p className="text-[11px] text-indigo-300/60 leading-relaxed bg-indigo-950/10 rounded-lg p-2">
-          {selected === question.correctAnswer ? '✅ ' : '❌ '}{question.explanation}
+        <p className="text-[11px] text-indigo-300/80 leading-relaxed bg-indigo-950/20 border border-indigo-500/20 rounded-lg p-2.5">
+          {isCorrect ? '✅ ' : '❌ '}{question.explanation}
         </p>
       )}
     </div>
