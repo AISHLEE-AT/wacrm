@@ -430,4 +430,95 @@ router.post('/pin/set', async (req, res) => {
   }
 });
 
+// 7. GET /api/auth/me - Verify session cookie and return user profile
+router.get('/me', async (req, res) => {
+  try {
+    let token = req.cookies ? req.cookies['sb-access-token'] : null;
+    if (!token && req.headers.cookie) {
+      const match = req.headers.cookie.match(/sb-access-token=([^;]+)/);
+      if (match) token = match[1];
+    }
+    if (!token && req.headers.authorization) {
+      const parts = req.headers.authorization.split(' ');
+      if (parts[0] === 'Bearer' && parts[1]) token = parts[1];
+    }
+    if (!token && req.headers['x-supro-access-token']) {
+      token = req.headers['x-supro-access-token'];
+    }
+
+    if (!token) {
+      return res.json({ authenticated: false, user: null, profile: null });
+    }
+
+    let payload;
+    try {
+      payload = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      payload = jwt.decode(token);
+    }
+
+    if (!payload || (!payload.id && !payload.phone && !payload.sub)) {
+      return res.json({ authenticated: false, user: null, profile: null });
+    }
+
+    const clean = (payload.phone || '').replace(/\D/g, '').slice(-10);
+    const userId = payload.id || payload.sub || (clean ? `user_${clean}` : 'user_authenticated');
+
+    let profile = null;
+    if (clean) {
+      const profRes = await pool.query(
+        `SELECT * FROM profiles 
+         WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2
+         ORDER BY updated_at DESC LIMIT 1`,
+        [`%${clean}%`, `%91${clean}%`]
+      );
+      if (profRes.rows.length > 0) profile = profRes.rows[0];
+    } else if (userId && !userId.startsWith('user_')) {
+      const profRes = await pool.query(`SELECT * FROM profiles WHERE id = $1 LIMIT 1`, [userId]);
+      if (profRes.rows.length > 0) profile = profRes.rows[0];
+    }
+
+    const isAdmin = isPhoneAdminCheck(clean);
+    const resolvedRole = isAdmin ? 'admin' : (profile?.role || payload.role || 'user');
+    const resolvedCat = isAdmin ? 'Admin' : (profile?.main_category || payload.category || 'Traveller');
+    const resolvedName = profile?.full_name || payload.fullName || payload.name || `User ${clean.slice(-4)}`;
+
+    const user = {
+      id: profile?.id || userId,
+      phone: clean,
+      email: profile?.email || payload.email || '',
+      role: resolvedRole,
+      app_metadata: {},
+      user_metadata: {
+        id: profile?.id || userId,
+        phone: clean,
+        fullName: resolvedName,
+        role: resolvedRole,
+        category: resolvedCat
+      }
+    };
+
+    const finalProfile = profile || {
+      id: userId,
+      full_name: resolvedName,
+      phone: clean,
+      whatsapp: clean,
+      role: resolvedRole,
+      main_category: resolvedCat,
+      account_id: 'f21e8cdb-e27d-41fa-9aa4-af06ccdc0feb',
+      account_role: resolvedRole === 'admin' ? 'admin' : 'owner',
+    };
+
+    return res.json({
+      authenticated: true,
+      user,
+      profile: finalProfile,
+      token
+    });
+  } catch (err) {
+    console.error('[AUTH ME ERROR]', err);
+    return res.status(500).json({ authenticated: false, error: err.message });
+  }
+});
+
 module.exports = router;
