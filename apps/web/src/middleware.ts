@@ -52,17 +52,32 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+function extractJwtPayload(token: string): any {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const base64Url = parts[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = atob(base64)
+    return JSON.parse(decoded)
+  } catch {
+    return null
+  }
+}
+
   // Handle access_token in URL (deep-link) OR from custom headers (native app WebView)
   const accessToken = request.nextUrl.searchParams.get('access_token') || request.headers.get('x-supro-access-token')
   const refreshToken = request.nextUrl.searchParams.get('refresh_token') || request.headers.get('x-supro-refresh-token')
 
-  let user = null
+  let user: any = null
 
   // First, check if we already have a valid session via cookies
-  const { data: sessionData } = await supabase.auth.getUser()
-  if (sessionData?.user) {
-    user = sessionData.user
-  }
+  try {
+    const { data: sessionData } = await supabase.auth.getUser()
+    if (sessionData?.user) {
+      user = sessionData.user
+    }
+  } catch (_) {}
 
   // If no user from cookies, but we have URL tokens (mobile app inject), try to set session
   if (!user && accessToken && refreshToken) {
@@ -83,6 +98,46 @@ export async function middleware(request: NextRequest) {
       }
     } catch (err) {
       console.error('Middleware token auth error:', err)
+    }
+  }
+
+  // Fallback: If Supabase auth server is in PostgREST mode or offline, inspect JWT in cookies/headers
+  if (!user) {
+    const candidateTokens: string[] = []
+    if (accessToken) candidateTokens.push(accessToken)
+    const cookieTok = request.cookies.get('sb-access-token')?.value
+    if (cookieTok) candidateTokens.push(cookieTok)
+    const headerTok = request.headers.get('x-supro-access-token') || request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    if (headerTok) candidateTokens.push(headerTok)
+
+    for (const c of request.cookies.getAll()) {
+      if (c.name.includes('-auth-token') || c.name === 'token') {
+        try {
+          const parsed = JSON.parse(c.value)
+          if (Array.isArray(parsed) && parsed[0]) candidateTokens.push(parsed[0])
+          else if (parsed?.access_token) candidateTokens.push(parsed.access_token)
+          else if (typeof parsed === 'string') candidateTokens.push(parsed)
+        } catch (_) {
+          if (c.value && c.value.includes('.')) candidateTokens.push(c.value)
+        }
+      }
+    }
+
+    const nowSec = Math.floor(Date.now() / 1000)
+    for (const tok of candidateTokens) {
+      const payload = extractJwtPayload(tok)
+      if (payload && (payload.id || payload.sub || payload.phone)) {
+        if (!payload.exp || payload.exp > nowSec) {
+          user = {
+            id: payload.id || payload.sub || (payload.phone ? `user_${payload.phone}` : 'user_authenticated'),
+            phone: payload.phone || '',
+            email: payload.email || '',
+            role: payload.role || 'user',
+            user_metadata: payload,
+          }
+          break
+        }
+      }
     }
   }
 
@@ -111,11 +166,28 @@ export async function middleware(request: NextRequest) {
       // Resolve role from profiles DB
       let defaultModule = '/rideo'
       try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role, main_category, default_module, profile_complete')
-          .eq('id', user.id)
-          .single()
+        const rawPhone = user.phone || user.email || user.user_metadata?.phone || ''
+        const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10)
+
+        let profileData: any = null
+        if (user.id && !user.id.startsWith('user_')) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role, main_category, default_module, profile_complete')
+            .eq('id', user.id)
+            .maybeSingle()
+          profileData = data
+        }
+        if (!profileData && cleanPhone) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role, main_category, default_module, profile_complete')
+            .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          profileData = data
+        }
 
         const role = profileData?.role?.toLowerCase() || ''
         const category = profileData?.main_category?.toLowerCase() || ''

@@ -17,14 +17,15 @@ import { TutOOnlineTestWebModal } from '@/components/teacho/TutOOnlineTestWebMod
 import { TutOTopicExplainerWebModal } from '@/components/teacho/TutOTopicExplainerWebModal';
 import { TutODayCoursePlayerWebModal } from '@/components/teacho/TutODayCoursePlayerWebModal';
 import { TutODailyPlannerCockpit } from '@/components/teacho/TutODailyPlannerCockpit';
+import { TNPSCGroup2StudyHub } from '@/components/teacho/TNPSCGroup2StudyHub';
 
 export type LearnerStream = 'school' | 'entrance' | 'career' | 'college';
 
 export default function TutOWebPage() {
   // Global State
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'daily_mission' | 'curriculum_grid' | 'ambitions'>('daily_mission');
-  const [activeStream, setActiveStream] = useState<LearnerStream>('school');
+  const [activeTab, setActiveTab] = useState<'daily_mission' | 'tnpsc_plan' | 'curriculum_grid' | 'ambitions'>('tnpsc_plan');
+  const [activeStream, setActiveStream] = useState<LearnerStream>('career');
   const [userPhone, setUserPhone] = useState<string>('anonymous');
   
   // Course & Academic Class State
@@ -334,6 +335,21 @@ export default function TutOWebPage() {
       {/* 3. PRIMARY VIEW MODE TABS */}
       <div className="flex border-b border-border/80 gap-3 overflow-x-auto pb-0.5">
         <button
+          onClick={() => setActiveTab('tnpsc_plan')}
+          className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 ${
+            activeTab === 'tnpsc_plan'
+              ? 'border-indigo-500 text-indigo-400'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Target className="w-4 h-4 text-indigo-400" />
+          <span>🏛️ TNPSC Group 2 (25-Day Centum Plan)</span>
+          <span className="text-[10px] px-2 py-0.5 bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 rounded-full font-black">
+            MAIN FOCUS
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('daily_mission')}
           className={`pb-3 font-extrabold text-sm flex items-center gap-2 border-b-2 transition-all shrink-0 ${
             activeTab === 'daily_mission'
@@ -372,6 +388,17 @@ export default function TutOWebPage() {
           </span>
         </button>
       </div>
+
+      {/* 3.5. TNPSC GROUP 2 MASTER FOCUS HUB */}
+      {activeTab === 'tnpsc_plan' && (
+        <TNPSCGroup2StudyHub
+          onOpenTest={() => setIsOnlineTestModalOpen(true)}
+          onOpenExplainer={(day) => {
+            setExplainerDayNumber(day);
+            setIsExplainerModalOpen(true);
+          }}
+        />
+      )}
 
       {/* 4. TAB 1: Today's Mission (Daily Planner Cockpit) */}
       {activeTab === 'daily_mission' && (

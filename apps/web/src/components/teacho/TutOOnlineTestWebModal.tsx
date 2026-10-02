@@ -74,7 +74,7 @@ export const TutOOnlineTestWebModal: React.FC<TutOOnlineTestModalProps> = ({
   const [testPhase, setTestPhase] = useState<TestPhase>('config');
   const [selectedCategory, setSelectedCategory] = useState<string>('TNPSC');
   const [selectedSubject, setSelectedSubject] = useState<string>('ALL');
-  const [questionCount, setQuestionCount] = useState<number>(10);
+  const [questionCount, setQuestionCount] = useState<number>(25);
   const [difficulty, setDifficulty] = useState<string>('ALL');
 
   // Active Test State

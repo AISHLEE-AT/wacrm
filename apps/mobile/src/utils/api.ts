@@ -13,9 +13,9 @@ const endpoints = {
 export const API = {
   checkUser: async (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-    const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE";
+    const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicG9zdGdyZXMiLCJpc3MiOiJzdXByby1vY2kiLCJpYXQiOjE3OTA0MDAwMDYsImV4cCI6MjEwNTk3NjAwNn0.5JnlOQOdNyLuYrZp0SV7MtQ8sAzz0daLgnYT7Z43pHo";
 
-    // 1. Try Vercel API with 2.5s timeout
+    // 1. Try OCI Express Backend API with 2.5s timeout
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
@@ -28,12 +28,12 @@ export const API = {
         }
       }
     } catch (_) {
-      // Fallback to direct Supabase query
+      // Fallback to direct OCI PostgREST query
     }
 
-    // 2. Direct Supabase Query (100% offline-resilient & checks all phone formats)
+    // 2. Direct OCI PostgREST Query (100% OCI Cloud & checks all phone formats)
     try {
-      const spUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/profiles?or=(phone.ilike.*${cleanPhone}*,whatsapp.ilike.*${cleanPhone}*)&select=id,full_name,main_category,role,pin_hash,gemini_api_key,last_whatsapp_inbound_at&order=updated_at.desc&limit=1`;
+      const spUrl = `https://mysupro-crm.duckdns.org/rest/v1/profiles?or=(phone.ilike.*${cleanPhone}*,whatsapp.ilike.*${cleanPhone}*)&select=id,full_name,main_category,role,pin_hash,gemini_api_key,last_whatsapp_inbound_at&order=updated_at.desc&limit=1`;
       const spRes = await fetch(spUrl, {
         headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
       });
@@ -47,7 +47,7 @@ export const API = {
         // Fallback: check conversations if profile missing last_whatsapp_inbound_at
         if (!lastInbound || isNaN(lastInbound) || lastInbound <= 0) {
           try {
-            const convUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/conversations?select=last_message_at,updated_at&order=last_message_at.desc&limit=5`;
+            const convUrl = `https://mysupro-crm.duckdns.org/rest/v1/conversations?select=last_message_at,updated_at&order=last_message_at.desc&limit=5`;
             const convRes = await fetch(convUrl, {
               headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
             });
@@ -83,7 +83,7 @@ export const API = {
       }
 
       // Also check drivers table in case user registered as driver
-      const drvUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/rest/v1/drivers?or=(phone.ilike.*${cleanPhone}*,mobile_number.ilike.*${cleanPhone}*,whatsapp_number.ilike.*${cleanPhone}*)&select=id,name,vehicle_type,is_whatsapp_active&limit=1`;
+      const drvUrl = `https://mysupro-crm.duckdns.org/rest/v1/drivers?or=(phone.ilike.*${cleanPhone}*,mobile_number.ilike.*${cleanPhone}*,whatsapp_number.ilike.*${cleanPhone}*)&select=id,name,vehicle_type,is_whatsapp_active&limit=1`;
       const drvRes = await fetch(drvUrl, {
         headers: { "apikey": anonKey, "Authorization": `Bearer ${anonKey}` }
       });
@@ -111,6 +111,10 @@ export const API = {
       has_pin: false,
       is_whatsapp_session_active: false
     };
+  },
+  
+  checkProfile: async (phone: string) => {
+    return API.checkUser(phone);
   },
   
   verifyOtp: async (phone: string, otp: string, fullName?: string, category?: string) => {

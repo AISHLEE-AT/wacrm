@@ -131,26 +131,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Shared across init, auth-state-change listener, and the exposed
   // refreshProfile() callback. Reads the current session's user id and
   // pulls the matching profile row along with its account summary.
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, userPhone?: string) => {
     const supabase = createClient();
     setProfileLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode, gemini_api_key"
-        )
-        .eq("id", userId)
-        .maybeSingle();
+      let data: any = null;
+      if (userId && !userId.startsWith("user_")) {
+        const res = await supabase
+          .from("profiles")
+          .select(
+            "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode, gemini_api_key"
+          )
+          .eq("id", userId)
+          .maybeSingle();
+        data = res.data;
+      }
 
-      if (error) {
-        console.error("[AuthProvider] fetchProfile error:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
-        return;
+      if (!data && userPhone) {
+        const cleanPhone = userPhone.replace(/\D/g, "").slice(-10);
+        if (cleanPhone) {
+          const res = await supabase
+            .from("profiles")
+            .select(
+              "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode, gemini_api_key"
+            )
+            .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          data = res.data;
+        }
       }
 
       if (data) {
@@ -202,11 +212,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) console.error("[AuthProvider] getSession error:", error.message);
 
         if (!mounted) return;
-        const currentUser = session?.user ?? null;
+        let currentUser = session?.user ?? null;
+
+        // Direct token fallback if Supabase GoTrue Auth session is not available
+        if (!currentUser && typeof window !== "undefined") {
+          const directToken =
+            localStorage.getItem("sb-access-token") ||
+            document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("sb-access-token="))
+              ?.split("=")[1];
+
+          if (directToken) {
+            try {
+              const base64Url = directToken.split(".")[1];
+              if (base64Url) {
+                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+                const payload = JSON.parse(decodeURIComponent(escape(atob(base64))));
+                const nowSec = Math.floor(Date.now() / 1000);
+                if (!payload.exp || payload.exp > nowSec) {
+                  currentUser = {
+                    id: payload.id || payload.sub || (payload.phone ? `user_${payload.phone}` : "user_authenticated"),
+                    app_metadata: {},
+                    user_metadata: payload,
+                    aud: "authenticated",
+                    created_at: new Date().toISOString(),
+                    email: payload.email || "",
+                    phone: payload.phone || "",
+                    role: payload.role || "user",
+                  } as User;
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
         setUser(currentUser);
 
         if (currentUser) {
-          fetchProfile(currentUser.id);
+          const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
+          fetchProfile(currentUser.id, phone);
         } else {
           setProfile(null);
           setAccount(null);
@@ -230,7 +275,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser);
 
       if (currentUser) {
-        fetchProfile(currentUser.id);
+        const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
+        fetchProfile(currentUser.id, phone);
       } else {
         setProfile(null);
         setAccount(null);

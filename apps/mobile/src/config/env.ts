@@ -17,9 +17,9 @@ export const ENV = {
   // UPI Configuration
   ADMIN_UPI: '6381029380@hdfcbank',
 
-  // Supabase Project Ref
-  SUPABASE_URL: 'https://gmahjdzqitbomtmdzlfp.supabase.co',
-  LMS_SUPABASE_URL: 'https://jjgdatjthyeesmgunnlp.supabase.co',
+  // OCI Unified Endpoints (100% OCI Cloud - Zero Supabase Cloud)
+  SUPABASE_URL: 'https://mysupro-crm.duckdns.org',
+  LMS_SUPABASE_URL: 'https://mysupro-crm.duckdns.org',
 };
 
 export default ENV;

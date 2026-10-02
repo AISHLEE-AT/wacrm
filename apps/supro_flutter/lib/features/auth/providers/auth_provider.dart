@@ -520,7 +520,7 @@ class AuthController extends AsyncNotifier<void> {
         final userId = data['user']?['id']?.toString() ?? '';
         final role = data['user']?['role'] ?? 'user';
         final cat = data['user']?['category'] ?? 'Traveller';
-        final name = data['user']?['full_name'];
+        final name = data['user']?['full_name'] ?? data['user']?['fullName'];
         final upi = data['user']?['upi_id'];
         final loc = data['user']?['location'];
 

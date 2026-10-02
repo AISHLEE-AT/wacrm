@@ -2,14 +2,10 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 const { pool } = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
 const { hashPinSha } = require('../services/crypto');
 const { sendWhatsAppMessage } = require('../services/whatsapp');
-
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gmahjdzqitbomtmdzlfp.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI1MTcyNywiZXhwIjoyMDk3ODI3NzI3fQ.t0dqkLlGK0P9SwdYveBFgQDIify4UTpVGvZZeiF7Mn0';
 
 const ADMIN_PHONES_LIST = ['6381029380', '916381029380', '9486335870', '919486335870'];
 
@@ -124,27 +120,6 @@ router.post(['/otp/request', '/request-otp'], async (req, res) => {
       [cleanPhone, otp, expiresAt]
     );
 
-    // Dual-sync to Supabase Cloud whatsapp_otps for both phone formats
-    for (const ph of [`91${cleanPhone}`, cleanPhone]) {
-      try {
-        await axios.post(`${SUPABASE_URL}/rest/v1/whatsapp_otps`, {
-          phone_number: ph,
-          otp: otp,
-          expires_at: expiresAt.toISOString()
-        }, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          timeout: 4000
-        });
-      } catch (sbErr) {
-        console.warn('[SUPABASE OTP REQUEST SYNC WARN]', ph, sbErr.message);
-      }
-    }
-
     // Send via Meta WhatsApp if configured
     await sendWhatsAppMessage(
       `91${cleanPhone}`,
@@ -229,30 +204,6 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
       }
     }
 
-    // Fallback: check Supabase Cloud whatsapp_otps
-    if (!validOtp) {
-      try {
-        const sbRes = await axios.get(
-          `${SUPABASE_URL}/rest/v1/whatsapp_otps?or=(phone_number.eq.91${clean},phone_number.eq.${clean})&select=*&order=created_at.desc&limit=1`,
-          {
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`
-            },
-            timeout: 3000
-          }
-        );
-        if (Array.isArray(sbRes.data) && sbRes.data.length > 0) {
-          const sbOtp = sbRes.data[0];
-          if (sbOtp.otp === otp.trim() && new Date(sbOtp.expires_at).getTime() >= Date.now()) {
-            validOtp = true;
-          }
-        }
-      } catch (sbErr) {
-        console.warn('[SUPABASE VERIFY FALLBACK WARN]', sbErr.message);
-      }
-    }
-
     // Master OTP for testing / admin bypass
     if (!validOtp && isPhoneAdminCheck(clean) && (otp === '696133' || otp === '123456')) {
       validOtp = true;
@@ -262,17 +213,8 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
       return res.status(401).json({ error: 'Invalid or expired OTP. Please request a new one.' });
     }
 
-    // Delete used OTP from OCI Postgres and Supabase Cloud
+    // Delete used OTP from OCI Postgres
     await pool.query('DELETE FROM whatsapp_otps WHERE phone_number = $1 OR phone_number = $2', [clean, `91${clean}`]).catch(() => {});
-    try {
-      await axios.delete(`${SUPABASE_URL}/rest/v1/whatsapp_otps?or=(phone_number.eq.91${clean},phone_number.eq.${clean})`, {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
-        },
-        timeout: 3000
-      });
-    } catch (_) {}
 
     // Provision or fetch user profile in profiles table
     let profRes = await pool.query(
@@ -319,7 +261,18 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    const hasPin = !!profile.pin_hash;
+    const defaultModule = profile.default_module || (isAdmin ? '/admin/tuto' : (resolvedRole === 'driver' ? '/drivo' : '/rideo'));
+
+    res.cookie('sb-access-token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     return res.json({
+      success: true,
       message: 'Login successful!',
       token,
       user: {
@@ -333,7 +286,11 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
         access_token: token,
         refresh_token: token
       },
-      needs_pin_setup: !profile.pin_hash
+      hasPin,
+      has_pin: hasPin,
+      needs_pin_setup: !hasPin,
+      redirectUrl: defaultModule,
+      redirect_to: defaultModule
     });
   } catch (err) {
     console.error('[OTP VERIFY ERROR]', err);
@@ -409,7 +366,19 @@ router.post('/pin', async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    const defaultModule = profile.default_module || (isAdmin ? '/admin/tuto' : (resolvedRole === 'driver' ? '/drivo' : '/rideo'));
+
+    res.cookie('sb-access-token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     return res.json({
+      success: true,
+      message: 'PIN login successful',
+      token,
       user: {
         id: profile.id,
         phone: clean,
@@ -420,7 +389,12 @@ router.post('/pin', async (req, res) => {
       session: {
         access_token: token,
         refresh_token: token
-      }
+      },
+      hasPin: true,
+      has_pin: true,
+      needs_pin_setup: false,
+      redirectUrl: defaultModule,
+      redirect_to: defaultModule
     });
   } catch (err) {
     console.error('[PIN LOGIN ERROR]', err);

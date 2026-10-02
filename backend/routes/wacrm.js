@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 const { pool } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
@@ -234,47 +236,6 @@ router.post('/whatsapp/send', async (req, res) => {
       `, [msgText || `[Template: ${template_name}]`, resolvedConvId]);
     }
 
-    // Dual-sync to Supabase Realtime
-    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gmahjdzqitbomtmdzlfp.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI1MTcyNywiZXhwIjoyMDk3ODI3NzI3fQ.t0dqkLlGK0P9SwdYveBFgQDIify4UTpVGvZZeiF7Mn0';
-    try {
-      if (resolvedConvId) {
-        await axios.post(`${SUPABASE_URL}/rest/v1/messages`, {
-          conversation_id: resolvedConvId,
-          sender_type: 'agent',
-          content_type: message_type || 'text',
-          content_text: msgText || (isMedia ? `[${message_type}]` : `[Template: ${template_name}]`),
-          media_url: media_url || null,
-          message_id: metaMessageId,
-          status: msgStatus,
-          created_at: new Date().toISOString()
-        }, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          timeout: 4000
-        });
-        await axios.patch(`${SUPABASE_URL}/rest/v1/conversations?id=eq.${resolvedConvId}`, {
-          last_message_text: msgText || `[Template: ${template_name}]`,
-          last_message_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          timeout: 4000
-        });
-      }
-    } catch (sbErr) {
-      console.warn('[SUPABASE DUAL-SYNC NOTE]', sbErr.message);
-    }
-
     if (!isMetaSuccess) {
       const errStr = JSON.stringify(sendRes.error || {});
       const isSessionExpired = errStr.includes('131047') || errStr.toLowerCase().includes('24 hour') || errStr.toLowerCase().includes('window');
@@ -296,15 +257,12 @@ router.post('/whatsapp/send', async (req, res) => {
   }
 });
 
-// 6. Direct WhatsApp Media Upload Pipeline
+// 6. Direct WhatsApp Media Upload Pipeline (100% OCI Static CDN)
 router.post('/whatsapp/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-
-    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gmahjdzqitbomtmdzlfp.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI1MTcyNywiZXhwIjoyMDk3ODI3NzI3fQ.t0dqkLlGK0P9SwdYveBFgQDIify4UTpVGvZZeiF7Mn0';
 
     const origName = req.file.originalname || 'upload.bin';
     const ext = origName.includes('.') ? origName.split('.').pop().toLowerCase() : 'bin';
@@ -314,24 +272,25 @@ router.post('/whatsapp/upload', upload.single('file'), async (req, res) => {
       .slice(0, 40) || 'file';
     const bucket = req.body.bucket || 'chat-media';
     const accountId = req.body.account_id || req.body.accountId || 'crm-default';
-    const storagePath = `account-${accountId}/${Date.now()}-${safeBase}.${ext}`;
+    const storageSubdir = `account-${accountId}`;
+    const filename = `${Date.now()}-${safeBase}.${ext}`;
+    const storagePath = `${storageSubdir}/${filename}`;
 
-    await axios.post(
-      `${SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`,
-      req.file.buffer,
-      {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': req.file.mimetype || 'application/octet-stream',
-          'x-upsert': 'true'
-        },
-        timeout: 30000
-      }
-    );
+    // Target CDN directory (OCI /var/www/cdn or local fallback)
+    const baseCdnDir = fs.existsSync('/var/www/cdn') 
+      ? '/var/www/cdn' 
+      : path.join(__dirname, '../public/cdn');
+    
+    const targetDir = path.join(baseCdnDir, bucket, storageSubdir);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
 
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`;
-    console.log(`[OCI MEDIA UPLOAD] Uploaded ${origName} (${req.file.size} bytes) -> ${publicUrl}`);
+    const targetFilePath = path.join(targetDir, filename);
+    fs.writeFileSync(targetFilePath, req.file.buffer);
+
+    const publicUrl = `https://mysupro-cdn.duckdns.org/${bucket}/${storagePath}`;
+    console.log(`[OCI CDN MEDIA UPLOAD] Saved ${origName} (${req.file.size} bytes) -> ${publicUrl}`);
 
     res.json({
       success: true,
@@ -342,10 +301,10 @@ router.post('/whatsapp/upload', upload.single('file'), async (req, res) => {
       size: req.file.size
     });
   } catch (err) {
-    console.error('[OCI MEDIA UPLOAD ERROR]', err.response?.data || err.message);
+    console.error('[OCI CDN MEDIA UPLOAD ERROR]', err.message);
     res.status(500).json({
-      error: 'Failed to upload media file',
-      details: err.response?.data || err.message
+      error: 'Failed to upload media file to OCI CDN',
+      details: err.message
     });
   }
 });
@@ -434,20 +393,6 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
         if (wamid && statusVal) {
           try {
             await pool.query('UPDATE messages SET status = $1 WHERE message_id = $2', [statusVal, wamid]);
-
-            const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gmahjdzqitbomtmdzlfp.supabase.co';
-            const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI1MTcyNywiZXhwIjoyMDk3ODI3NzI3fQ.t0dqkLlGK0P9SwdYveBFgQDIify4UTpVGvZZeiF7Mn0';
-            await axios.patch(`${SUPABASE_URL}/rest/v1/messages?message_id=eq.${wamid}`, {
-              status: statusVal
-            }, {
-              headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-              },
-              timeout: 4000
-            }).catch(() => {});
           } catch (stErr) {
             console.warn('[STATUS UPDATE WARN]', stErr.message);
           }
@@ -558,8 +503,6 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
 
         // F. Auto-Replies (OTP Hook / Session Renewal / Help)
         const lowerText = (text || '').toLowerCase().trim();
-        const SUPABASE_URL = process.env.SUPABASE_URL || 'https://gmahjdzqitbomtmdzlfp.supabase.co';
-        const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI1MTcyNywiZXhwIjoyMDk3ODI3NzI3fQ.t0dqkLlGK0P9SwdYveBFgQDIify4UTpVGvZZeiF7Mn0';
 
         if (lowerText.includes('requesting otp') || lowerText.includes('request otp') || lowerText.includes('login otp') || lowerText.includes('otp for login') || lowerText.includes('login verification') || lowerText.includes('supro login')) {
           try {
@@ -583,7 +526,7 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
 
             const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-            // 1. Save into OCI PostgreSQL whatsapp_otps for ALL phone variants
+            // Save into OCI PostgreSQL whatsapp_otps for ALL phone variants
             for (const ph of phoneVariants) {
               try {
                 await pool.query(
@@ -594,43 +537,6 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
                 console.warn('[OCI OTP DB WARN]', ph, dbErr.message);
               }
             }
-
-            // 2. Dual-sync to Supabase Cloud whatsapp_otps for ALL phone variants
-            for (const ph of phoneVariants) {
-              try {
-                await axios.post(`${SUPABASE_URL}/rest/v1/whatsapp_otps`, {
-                  phone_number: ph,
-                  otp: otp,
-                  expires_at: expiresAt.toISOString()
-                }, {
-                  headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Authorization': `Bearer ${SUPABASE_KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'resolution=merge-duplicates'
-                  },
-                  timeout: 4000
-                });
-              } catch (sbOtpErr) {
-                console.warn('[SUPABASE OTP SYNC WARN]', ph, sbOtpErr.message);
-              }
-            }
-
-            // Dual-sync touch profile in Supabase Cloud
-            try {
-              await axios.patch(`${SUPABASE_URL}/rest/v1/profiles?or=(phone.ilike.*${clean10}*,whatsapp.ilike.*${clean10}*)`, {
-                last_whatsapp_inbound_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }, {
-                headers: {
-                  'apikey': SUPABASE_KEY,
-                  'Authorization': `Bearer ${SUPABASE_KEY}`,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'return=minimal'
-                },
-                timeout: 4000
-              });
-            } catch (_) {}
 
             await sendWhatsAppMessage(from_number, otpMsg);
             if (extractedPhone && `91${extractedPhone}` !== from_number && extractedPhone !== from_number) {
@@ -652,22 +558,6 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
               'INSERT INTO messages (id, conversation_id, customer_id, sender_type, sender, content_type, content_text, content, status, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())',
               [conversationId, customerId, 'agent', 'agent', 'text', renewalMsg, renewalMsg, 'sent']
             );
-
-            // Dual-sync touch profile in Supabase Cloud
-            try {
-              await axios.patch(`${SUPABASE_URL}/rest/v1/profiles?or=(phone.ilike.*${clean10}*,whatsapp.ilike.*${clean10}*)`, {
-                last_whatsapp_inbound_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }, {
-                headers: {
-                  'apikey': SUPABASE_KEY,
-                  'Authorization': `Bearer ${SUPABASE_KEY}`,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'return=minimal'
-                },
-                timeout: 4000
-              });
-            } catch (_) {}
           } catch (autoErr) {
             console.error('[AUTO-REPLY ERROR]', autoErr.message);
           }

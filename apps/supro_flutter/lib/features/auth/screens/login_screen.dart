@@ -166,9 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _isWhatsAppActive = data['is_whatsapp_session_active'] == true;
             _whatsAppHoursRemaining = (data['whatsapp_hours_remaining'] ?? 0).toDouble();
 
-            // Only advance to PIN automatically if user has PIN AND their 24h WhatsApp window is active.
-            // If the 24h window is expired, keep user on WhatsApp OTP so login renews the window!
-            if (_hasPin && _isWhatsAppActive) {
+            if (_hasPin) {
               _step = AuthStep.pinFallback;
             }
           } else {
@@ -248,7 +246,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final cleanPin = _pinController.text.replaceAll(RegExp(r'\D'), '');
     if (cleanPin.length != 4) return;
     try {
-      await ref.read(authControllerProvider.notifier).loginWithPin(
+      final res = await ref.read(authControllerProvider.notifier).loginWithPin(
         phone: _phoneController.text.replaceAll(RegExp(r'\D'), ''),
         pin: cleanPin,
       );
@@ -258,7 +256,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await prefs.setString('last_whatsapp_sync_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
       await prefs.setBool('onboarding_complete', true);
 
-      if (mounted) context.go('/startup');
+      // Route directly based on role or default_module to avoid StartupScreen re-init hang
+      final userRole = res['user']?['role'] ?? '';
+      final userCat = (res['user']?['category'] ?? '').toString().toLowerCase();
+      final defaultMod = res['redirectUrl'] ?? res['redirect_to'] ?? '';
+
+      if (mounted) {
+        if (userRole == 'admin' || userCat == 'admin') {
+          context.go('/admin');
+        } else if (defaultMod.toString().isNotEmpty) {
+          String route = defaultMod.toString();
+          if (route == '/rideo') route = '/ride';
+          if (route == '/drivo') route = '/driveo';
+          context.go(route);
+        } else if (userCat.contains('student') || userCat.contains('learner')) {
+          context.go('/teacho');
+        } else if (userCat.contains('driver')) {
+          context.go('/driveo');
+        } else if (userCat.contains('farmer') || userCat.contains('agri')) {
+          context.go('/agro');
+        } else {
+          context.go('/home');
+        }
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -296,7 +316,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await prefs.setString('last_whatsapp_sync_timestamp', DateTime.now().millisecondsSinceEpoch.toString());
       await prefs.setBool('onboarding_complete', true);
 
-      if (mounted) context.go('/startup');
+      if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

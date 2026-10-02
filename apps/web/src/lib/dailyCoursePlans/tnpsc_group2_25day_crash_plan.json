@@ -1,0 +1,1077 @@
+[
+  {
+    "dayNumber": 1,
+    "blockNumber": 1,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 1 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு I: எழுத்து (பிரித்து/சேர்த்து எழுதுதல், சந்திப்பிழை, குறில்/நெடில், ல/ள/ழ வேறுபாடு)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 1 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "சுருக்குதல் (Simplification - BODMAS, வர்க்க/கன மூலம்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 1 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: தொல்லியல் கண்டுபிடிப்புகள் (கீழடி, ஆதிச்சநல்லூர்) & Polity: முகவுரை, முக்கிய கூறுகள்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 1 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 2,
+    "blockNumber": 1,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 2 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு I: எழுத்து (ன/ண, ர/ற வேறுபாடு, இனவெழுத்துகள், சுட்டு/வினா எழுத்துகள், ஒருமை/பன்மை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 2 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "விழுக்காடு (Percentage - அடிப்படை & விலை மாற்றங்கள்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 2 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: சங்க இலக்கிய வரலாறு (எட்டுத்தொகை, பத்துப்பாட்டு) & Polity: குடியுரிமை, அடிப்படை உரிமைகள்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 2 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 3,
+    "blockNumber": 1,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 3 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு I: சொல் (வேர்ச்சொல், வினைமுற்று, வினையெச்சம்) & அலகு VII: திருக்குறள் (ஒழுக்கமுடைமை, பொறையுடைமை, ஊக்கமுடைமை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 3 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "மீப்பெரு பொதுக் காரணி (HCF) & மீச்சிறு பொது மடங்கு (LCM)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 3 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: திருக்குறள் மதச்சார்பற்ற இலக்கியம் & Polity: அடிப்படைக் கடமைகள், அரசு நெறிமுறைக் கோட்பாடுகள்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 3 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 4,
+    "blockNumber": 1,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 4 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு I: சொல் (அயற்சொல்-தமிழ்ச்சொல், எதிர்ச்சொல், ஒற்றுப்பிழை) & அலகு VII: திருக்குறள் (விருந்தோம்பல், அறன்வலியுறுத்தல், ஈகை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 4 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "விகிதம் மற்றும் விகிதாச்சாரம் (Ratio & Proportion)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 4 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: திருக்குறள் மானுட தாக்கம் & Polity: ஒன்றிய நிர்வாகம் (குடியரசுத் தலைவர், பிரதமர்)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 4 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 5,
+    "blockNumber": 1,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 5 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு I: இரண்டு வினைச்சொற்கள் வேறுபாடு & அலகு VII: திருக்குறள் (பெரியாரைத் துணைக்கோடல், வினை செயல்வகை, அவையஞ்சாமை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 5 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "தனிவட்டி (Simple Interest - PNR/100, மடங்கு கணக்குகள்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 5 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: திருக்குறள் சமூக அரசியல் பொருத்தம் & Polity: ஒன்றிய நாடாளுமன்றம் (மக்களவை, மாநிலங்களவை)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 5 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 6,
+    "blockNumber": 1,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 6 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு II: சொல்லகராதி (எதிர்ச்சொல், ஓரெழுத்து ஒரு மொழி 42) & அலகு VII: திருக்குறள் (கண்ணோட்டம், அன்புடைமை, கல்வி)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 6 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "கூட்டு வட்டி (Compound Interest & CI-SI வேறுபாடு)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 6 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: திருக்குறள் தத்துவக் கோட்பாடுகள் & Polity: மாநில நிர்வாகம் (ஆளுநர், முதல்வர், சட்டமன்றம்)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 6 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 7,
+    "blockNumber": 2,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 7 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு II: சொல்லகராதி (ஒருபொருள் பலசொல், பொருந்தா சொல், அகரவரிசை) & அலகு VII: திருக்குறள் (நடுவுநிலைமை, கூடா ஒழுக்கம், கல்லாமை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 7 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "பரப்பு (Area - 2D Mensuration: முக்கோணம், சதுரம், செவ்வகம், வட்டம்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 7 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: ஆங்கிலேயருக்கு எதிரான தொடக்க கால கிளர்ச்சிகள் (பூலித்தேவர், கட்டபொம்மன், மருது) & Polity: பஞ்சாயத்து ராஜ்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 7 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 8,
+    "blockNumber": 2,
+    "phaseTitle": "Phase 1: High Weightage Foundation",
+    "themeTitle": "Day 8 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு II: சொல்லகராதி (பேச்சு வழக்கு/எழுத்து வழக்கு) & அலகு VII: திருக்குறள் (செங்கோன்மை, பண்புடைமை, நட்பாராய்தல்)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 8 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "கொள்ளளவு (Volume - 3D Mensuration: கனசதுரம், உருளை, கூம்பு, கோளம்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 8 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: வேலூர் புரட்சி 1806, வேலுநாச்சியார், குயிலி & Polity: மத்திய-மாநில உறவுகள் (சர்க்காரியா, பூஞ்சி)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 8 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 9,
+    "blockNumber": 2,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 9 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: திருக்குறள் (புறங்கூறாமை, அருளுடைமை) & அலகு II: கோடிட்ட இடம், ஊடகம்/சமூகம் பொருள்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 9 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "காலம் மற்றும் வேலை (Time and Work, குழாயும் தொட்டியும்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 9 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: விடுதலைப் போராட்டத்தில் பெண்கள் & Polity: தேர்தல் ஆணையம், உச்ச நீதிமன்றம், உயர் நீதிமன்றங்கள்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 9 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 10,
+    "blockNumber": 2,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 10 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: அறநூல்கள் (நாலடியார், நான்மணிக்கடிகை, பழமொழி நானூறு) & அலகு II: ஊர்ப் பெயர்களின் மரூஉ",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 10 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "தருக்கக் காரணவியல் (Logical Reasoning, Statement & Conclusion, Venn Diagrams)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 10 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: நீதிக்கட்சி (Justice Party 1916-1937 சாதனைகள்) & Polity: ஊழல் தடுப்பு (லோக்பால், RTI)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 10 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 11,
+    "blockNumber": 2,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 11 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: அறநூல்கள் (முதுமொழிக்காஞ்சி, திரிகடுகம், இன்னாநாற்பது) & அலகு II: பிழை திருத்துக (ஒரு-ஓர், வெத்தில-வெற்றிலை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 11 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "புதிர்கள் (Puzzles, இருக்கை அமைப்பு, இரத்த உறவுகள்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 11 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: சுயமரியாதை இயக்கம் 1925, பெரியார் பங்களிப்புகள் & Polity: பெண்கள் அதிகாரமளித்தல், நுகர்வோர் பாதுகாப்பு",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 11 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 12,
+    "blockNumber": 2,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 12 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: அறநூல்கள் (சிறுபஞ்சமூலம், ஏலாதி, அவ்வையார்) & அலகு II: பேச்சு வழக்குத் தொடர் பிழை திருத்தம்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 12 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "பகடை (Dice - நிலையான பகடை, திறந்த பகடை மடித்தல்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 12 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 8: பேரறிஞர் அண்ணா பங்களிப்புகள் & Polity: அரசியல் கட்சிகள், தேசிய/மாநில கட்சி அங்கீகாரம்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 12 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 13,
+    "blockNumber": 3,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 13 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: தமிழின் தொன்மை, உ.வே.சா, தெ.பொ.மீ, சி.இலக்குவனார் & அலகு II: சொற்களை இணைத்துப் புதிய சொல்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 13 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "காட்சிக் காரணவியல் (Visual Reasoning, கண்ணாடி பிம்பம், உருவங்கள் எண்ணுதல்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 13 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 9: ஐந்தாண்டு திட்டங்கள், திட்டக்குழு & நிதி ஆயோக், RBI பணவியல் கொள்கை, Finance Commission",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 13 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 14,
+    "blockNumber": 3,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 14 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: தேவநேயப் பாவாணர், அகரமுதலி, பெருஞ்சித்திரனார், போப், வீரமாமுனிவர் & அடைப்புக்குள் உள்ள சொல் சேர்த்தல்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 14 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "எண் எழுத்துக் காரணவியல் (Alpha Numeric Reasoning, Coding-Decoding)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 14 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 9: சரக்கு மற்றும் சேவை வரி (GST), வேளாண்மை, அறிவியல் தொழில்நுட்பம், தொழில் வளர்ச்சி",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 14 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 15,
+    "blockNumber": 3,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 15 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: தமிழ்ச் சான்றோர் (பாரதிதாசன், டி.கே.சி, குன்றக்குடி, கண்ணதாசன், காயிதே மில்லத்) & பொருள் தரும் ஓரெழுத்து",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 15 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "எண் வரிசை (Number Series - கூட்டு/பெருக்குத் தொடர், விடுபட்ட எண்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 15 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 9: ஊரக நலன்சார் திட்டங்கள், வறுமை, தமிழ்நாட்டின் மனிதவள மேம்பாட்டுக் குறியீடுகள் (HDI)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 15 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 16,
+    "blockNumber": 3,
+    "phaseTitle": "Phase 2: Core Scoring Surge",
+    "themeTitle": "Day 16 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு VII: தாரா பாரதி, வேலுநாச்சியார், பட்டுக்கோட்டை, முடியரசன், தமிழ் ஒளி, உருத்திரங்கண்ணனார், கி.வா.ஜ, நாமக்கல் கவிஞர்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 16 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Aptitude & Mental Ability: சுருக்குதல், சதவீதம், மீ.பொ.கா, பகடை அதிவேக மாதிரித் தேர்வு",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 16 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 9: சமூக மறுமலர்ச்சி இயக்கங்கள் பங்களிப்பு, தமிழ்நாடு 69% இடஒதுக்கீட்டுக் கொள்கை நியாயங்கள்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 16 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 17,
+    "blockNumber": 3,
+    "phaseTitle": "Phase 3: Total Syllabus Coverage",
+    "themeTitle": "Day 17 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு III: எழுதும் திறன் (சொற்களை ஒழுங்குபடுத்துதல், செய்வினை/செயப்பாட்டு வினை, தன்வினை/பிறவினை, ஒருமை/பன்மை)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 17 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Aptitude Sprint: விகிதம், தனிவட்டி, கூட்டுவட்டி, எண் எழுத்துக் காரணவியல் 30 வினாக்கள்",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 17 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 9: தமிழ்நாட்டின் பொருளாதாரப் போக்குகள், சமூகநீதி, கல்வி, நல்வாழ்வு முறைமைகள் & மின்னாளுகை (e-Governance)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 17 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 18,
+    "blockNumber": 3,
+    "phaseTitle": "Phase 3: Total Syllabus Coverage",
+    "themeTitle": "Day 18 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு III: மரபுத் தமிழ் (திணை, பால், காலம், இளமைப் பெயர், ஒலிமரபு, வினைமரபு, தொகை மரபு) & நிறுத்தற்குறிகள்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 18 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Aptitude Sprint: பரப்பு, கொள்ளளவு, காலம் மற்றும் வேலை 30 வினாக்கள்",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 18 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 9: தமிழ்நாடு நலன்சார் அரசுத் திட்டங்கள் (புதுமைப் பெண், தமிழ்ப் புதல்வன், மகளிர் உரிமை) & PDS சிக்கல்கள்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 18 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 19,
+    "blockNumber": 4,
+    "phaseTitle": "Phase 3: Total Syllabus Coverage",
+    "themeTitle": "Day 19 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு IV: பல்துறை கலைச் சொற்கள் (அறிவியல், கல்வி, மருத்துவம், சட்டம்) & அலகு VI: எளிய மொழிபெயர்ப்பு",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 19 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Reasoning Sprint: புதிர்கள், பகடை, காட்சிக் காரணவியல் மற்றும் எண் வரிசை அதிவேக பயிற்சி",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 19 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 3: சிந்து சமவெளி, குப்தர்கள், தில்லி சுல்தான்கள், முகலாயர்கள், மராத்தியர்கள், விஜயநகரம், தென்னிந்திய வரலாறு",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 19 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 20,
+    "blockNumber": 4,
+    "phaseTitle": "Phase 3: Total Syllabus Coverage",
+    "themeTitle": "Day 20 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "அலகு V: வாசித்தல் புரிந்து கொள்ளும் திறன் (பத்தி வினாக்கள், தலையங்கம், உவமைத் தொடர், மரபுத் தொடர், பழமொழிகள்)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 20 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Aptitude 25/25 Mock Speed Drill: அதிகாரப்பூர்வ TNPSC கணித மாதிரித் தேர்வு (20 நிமிடங்கள்)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 20 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 3: இந்திய தேசிய இயக்கம், தேசிய மறுமலர்ச்சி, INC, காந்தி, நேரு, அம்பேத்கர், சுபாஷ் சந்திர போஸ், பகத்சிங்",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 20 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 21,
+    "blockNumber": 4,
+    "phaseTitle": "Phase 3: Total Syllabus Coverage",
+    "themeTitle": "Day 21 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "பொதுத் தமிழ் முழு மீள்பார்வை (இலக்கணம், திருக்குறள் 20 அதிகாரங்கள், அறநூல்கள், கலைச் சொற்கள்)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 21 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "கணித சூத்திரங்கள் மற்றும் குறுக்குவழிகள் முழு மீள்பார்வை (16 தலைப்புகள் Formula Deck)",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 21 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Unit 1: பொது அறிவியல் (இயற்பியல், வேதியியல், உயிரியல்) & Unit 2: இந்திய புவியியல் (பருவமழை, ஆறுகள், கனிமங்கள்)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 21 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 22,
+    "blockNumber": 4,
+    "phaseTitle": "Phase 4: Centum Mock Simulation",
+    "themeTitle": "Day 22 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "Grand Mock Test 01: பொதுத் தமிழ் 100 வினாக்கள் (SSLC தரம்)",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 22 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Grand Mock Test 01: கணிதம் & திறனறிவு 25 வினாக்கள்",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 22 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Grand Mock Test 01: பொது அறிவு 75 வினாக்கள் (முழு 200 வினாக்கள் - 3 மணி நேரம் தேர்வு)",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 22 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 23,
+    "blockNumber": 4,
+    "phaseTitle": "Phase 4: Centum Mock Simulation",
+    "themeTitle": "Day 23 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "Grand Mock Test 02: பொதுத் தமிழ் 100 வினாக்கள்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 23 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Grand Mock Test 02: கணிதம் & திறனறிவு 25 வினாக்கள்",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 23 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Grand Mock Test 02: பொது அறிவு 75 வினாக்கள் & Unit 8 / 9 தொல்லியல், திட்டங்கள் சிறப்பு மீள்பார்வை",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 23 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 24,
+    "blockNumber": 4,
+    "phaseTitle": "Phase 4: Centum Mock Simulation",
+    "themeTitle": "Day 24 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "Grand Mock Test 03: பொதுத் தமிழ் 100 வினாக்கள்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 24 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Grand Mock Test 03: கணிதம் & திறனறிவு 25 வினாக்கள்",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 24 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Grand Mock Test 03: பொது அறிவு 75 வினாக்கள் & இந்திய அரசியலமைப்பு சரத்துகள், INM காலக்கோடு மீள்பார்வை",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 24 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  },
+  {
+    "dayNumber": 25,
+    "blockNumber": 5,
+    "phaseTitle": "Phase 4: Centum Mock Simulation",
+    "themeTitle": "Day 25 of 25: TNPSC Group 2 Centum Fast-Track Mission",
+    "totalDurationMins": 135,
+    "tasks": [
+      {
+        "subject": "பொதுத்தமிழ் (தமிழ் மொழித் தகுதி - 100 வினாக்கள்)",
+        "topic": "Final State Simulation Mock 04: பொதுத் தமிழ் 100 வினாக்கள்",
+        "durationMinutes": 45,
+        "taskType": "reading",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "EpdTHQ0s6oM",
+          "videoTitle": "TNPSC பொதுத்தமிழ் Day 25 Master Video | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "கணிதம் & திறனறிவு (Aptitude & Mental Ability - 25 வினாக்கள்)",
+        "topic": "Final State Simulation Mock 04: கணிதம் & திறனறிவு 25 வினாக்கள்",
+        "durationMinutes": 30,
+        "taskType": "practice",
+        "videoMeta": {
+          "channel": "@aishleetechnology",
+          "youtubeVideoId": "aishlee_tnpsc_aptitude_1",
+          "videoTitle": "TNPSC Aptitude 25/25 Day 25 Shortcuts | @aishleetechnology"
+        }
+      },
+      {
+        "subject": "பொது அறிவு (General Studies - 75 வினாக்கள்)",
+        "topic": "Final State Simulation Mock 04: பொது அறிவு 75 வினாக்கள் & தேர்வுக்கூட உத்திகள், OMR மேலாண்மை",
+        "durationMinutes": 40,
+        "taskType": "reading"
+      },
+      {
+        "subject": "My Supra Daily CBT Online Test (TestO)",
+        "topic": "Day 25 Speed Drill: 25 Questions Bilingual Assessment",
+        "durationMinutes": 20,
+        "taskType": "quiz"
+      }
+    ]
+  }
+]

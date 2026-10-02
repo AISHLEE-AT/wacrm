@@ -224,10 +224,10 @@ export async function fetchDaily10Questions(
   try {
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      "https://gmahjdzqitbomtmdzlfp.supabase.co";
+      "https://mysupro-crm.duckdns.org";
     const supabaseKey =
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNTE3MjcsImV4cCI6MjA5NzgyNzcyN30.04eGatbmH8yjtGCE2a2t2xfKAla72RZF7ZDfOevj6RE";
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoicG9zdGdyZXMiLCJpc3MiOiJzdXByby1vY2kiLCJpYXQiOjE3OTA0MDAwMDYsImV4cCI6MjEwNTk3NjAwNn0.5JnlOQOdNyLuYrZp0SV7MtQ8sAzz0daLgnYT7Z43pHo";
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 

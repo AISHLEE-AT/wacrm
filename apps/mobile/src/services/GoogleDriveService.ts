@@ -435,35 +435,42 @@ export const GoogleDriveService = {
     const timestamp = Date.now();
     const cleanGroupId = groupId.replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileName = `meeting_${cleanGroupId}_${meetingNumber}_${timestamp}.mp4`;
-    const targetUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/storage/v1/object/groupo-videos/${fileName}`;
-    const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtYWhqZHpxaXRib210bWR6bGZwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjI1MTcyNywiZXhwIjoyMDk3ODI3NzI3fQ.t0dqkLlGK0P9SwdYveBFgQDIify4UTpVGvZZeiF7Mn0';
+    const targetUrl = 'https://mysupro.duckdns.org/api/whatsapp/upload';
 
     onProgress?.(20);
+
+    let uploadedUrl = `https://mysupro-cdn.duckdns.org/groupo-videos/account-${cleanGroupId}/${fileName}`;
 
     try {
       const uploadTask = await FileSystem.uploadAsync(targetUrl, videoUri, {
         httpMethod: 'POST',
-        uploadType: (FileSystem.UploadType?.BINARY_CONTENT || 0) as any,
-        headers: {
-          Authorization: `Bearer ${SERVICE_KEY}`,
-          apikey: SERVICE_KEY,
-          'Content-Type': 'video/mp4',
+        uploadType: (FileSystem.UploadType?.MULTIPART || 1) as any,
+        fieldName: 'file',
+        parameters: {
+          bucket: 'groupo-videos',
+          accountId: cleanGroupId,
         },
       });
 
       onProgress?.(85);
 
-      if (uploadTask.status < 200 || uploadTask.status >= 300) {
-        console.warn('[GoogleDriveService] Storage upload notice:', uploadTask.body);
+      if (uploadTask.status >= 200 && uploadTask.status < 300) {
+        try {
+          const respData = JSON.parse(uploadTask.body);
+          if (respData.publicUrl) {
+            uploadedUrl = respData.publicUrl;
+          }
+        } catch (_) {}
+      } else {
+        console.warn('[GoogleDriveService] OCI CDN upload notice:', uploadTask.body);
       }
     } catch (e) {
-      console.warn('[GoogleDriveService] Storage upload exception:', e);
+      console.warn('[GoogleDriveService] OCI CDN upload exception:', e);
     }
 
-    const publicUrl = `https://gmahjdzqitbomtmdzlfp.supabase.co/storage/v1/object/public/groupo-videos/${fileName}`;
     onProgress?.(100);
 
-    return { publicUrl, fileName };
+    return { publicUrl: uploadedUrl, fileName };
   },
 
   /**

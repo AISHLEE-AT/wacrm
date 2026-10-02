@@ -145,18 +145,14 @@ export default function LoginScreen({ navigation }: any) {
     if (cleaned.length === 10) {
       setIsChecking(true);
       try {
-        const profile = await API.checkProfile(cleaned);
+        const profile = await (API.checkProfile ? API.checkProfile(cleaned) : API.checkUser(cleaned));
         if (profile.exists) {
           setIsExistingUser(true);
           setFullName(profile.name || profile.full_name || '');
           if (profile.category) setCategory(profile.category);
           
-          // STRICT RULE: If the 24h window is expired, force the user to WhatsApp OTP
-          // so logging in renews their 24h window!
-          if (profile.has_pin && profile.is_whatsapp_session_active) {
+          if (profile.has_pin) {
             setStep('pin');
-          } else if (!profile.is_whatsapp_session_active) {
-            setIs23hSyncRequired(true);
           }
         } else {
           setIsExistingUser(false);
@@ -282,10 +278,33 @@ export default function LoginScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      await API.setPin(phone, newPin, confirmPin);
+      const data = await API.setPin(phone, newPin, confirmPin);
       await SecureStore.setItemAsync('onboarding-complete', 'true');
-      setTimeout(async () => {
-        navigation.replace('OnboardingModule');
+      if (data?.session?.access_token) {
+        await SecureStore.setItemAsync('sb-access-token', data.session.access_token);
+      }
+      if (data?.session?.refresh_token) {
+        await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
+      }
+      await SecureStore.setItemAsync('user-phone', phone);
+      await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
+
+      if (data?.user) {
+        await SecureStore.setItemAsync('user-name', data.user.fullName || data.user.name || '');
+        await SecureStore.setItemAsync('user-role', data.user.role || 'user');
+        await SecureStore.setItemAsync('user-category', data.user.category || 'Traveller');
+        signIn({
+          phone: data.user.phone || phone,
+          name: data.user.fullName || data.user.name || '',
+          role: data.user.role || 'user',
+          category: data.user.category || 'Traveller',
+          accessToken: data.session?.access_token || data.token,
+          refreshToken: data.session?.refresh_token || data.token,
+        });
+      }
+
+      setTimeout(() => {
+        navigation.replace('Dashboard');
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Failed to save PIN');
@@ -299,49 +318,36 @@ export default function LoginScreen({ navigation }: any) {
     if (phone.length !== 10) { setError("Please enter a valid 10-digit mobile number"); return; }
     if (pin.length !== 4) { setError("Please enter your 4-digit PIN"); return; }
 
-    // ─── Gate: Block PIN login when 24h WhatsApp session is expired ───
-    // The user MUST login via WhatsApp OTP to renew the Meta messaging window.
-    const savedSync = await SecureStore.getItemAsync('last-whatsapp-sync-timestamp');
-    const lastSyncTime = savedSync ? parseInt(savedSync, 10) : 0;
-    const isWindowExpired = !savedSync || (Date.now() - lastSyncTime) > 23 * 60 * 60 * 1000;
-
-    if (isWindowExpired) {
-      setError('⏰ Your 24-hour WhatsApp session has expired. Please login via WhatsApp OTP to renew your messaging window.');
-      setIs23hSyncRequired(true);
-      setStep('phone');
-      return;
-    }
-
     setLoading(true);
     try {
       const data = await API.loginWithPin(phone, pin);
-      await SecureStore.setItemAsync('sb-access-token', data.session.access_token);
-      if (data.session.refresh_token) {
+      if (data.session?.access_token) {
+        await SecureStore.setItemAsync('sb-access-token', data.session.access_token);
+      }
+      if (data.session?.refresh_token) {
         await SecureStore.setItemAsync('sb-refresh-token', data.session.refresh_token);
       }
       await SecureStore.setItemAsync('user-phone', phone);
-      // NOTE: Do NOT reset last-whatsapp-sync-timestamp here.
-      // PIN login does not involve a real WhatsApp interaction,
-      // so the 24h window should NOT be faked as renewed.
+      await SecureStore.setItemAsync('last-whatsapp-sync-timestamp', Date.now().toString());
       await SecureStore.setItemAsync('onboarding-complete', 'true');
 
       if (data.user) {
-        await SecureStore.setItemAsync('user-name', data.user.fullName);
-        await SecureStore.setItemAsync('user-role', data.user.role);
-        await SecureStore.setItemAsync('user-category', data.user.category);
+        await SecureStore.setItemAsync('user-name', data.user.fullName || data.user.name || '');
+        await SecureStore.setItemAsync('user-role', data.user.role || 'user');
+        await SecureStore.setItemAsync('user-category', data.user.category || 'Traveller');
         signIn({
-          phone: data.user.phone,
-          name: data.user.fullName,
-          role: data.user.role,
-          category: data.user.category,
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
+          phone: data.user.phone || phone,
+          name: data.user.fullName || data.user.name || '',
+          role: data.user.role || 'user',
+          category: data.user.category || 'Traveller',
+          accessToken: data.session?.access_token || data.token,
+          refreshToken: data.session?.refresh_token || data.token,
         });
       }
 
-      // Direct navigation to Dashboard
-      setTimeout(async () => {
-        navigation.replace('OnboardingModule');
+      // Direct navigation into the App
+      setTimeout(() => {
+        navigation.replace('Dashboard');
       }, 100);
     } catch (err: any) {
       setError(err.message || 'Login failed');

@@ -182,9 +182,7 @@ function LoginPageInner() {
           const activeSession = !!data.is_whatsapp_session_active;
           setIsWhatsAppActive(activeSession);
           setWhatsAppHoursRemaining(data.whatsapp_hours_remaining || 0);
-          // Only advance to PIN automatically if user has PIN AND their 24h WhatsApp window is active.
-          // If the 24h window is expired, keep user on WhatsApp OTP so login renews the window!
-          if (data.has_pin && activeSession) {
+          if (data.has_pin) {
             setStep('pin');
           }
         } else {
@@ -342,11 +340,26 @@ function LoginPageInner() {
 
       if (!res.ok) throw new Error(data.error || "Invalid PIN. If forgotten, login via WhatsApp OTP.");
 
-      if (data.session) {
-        await supabase.auth.setSession(data.session);
+      const token = data.session?.access_token || data.token;
+      if (token) {
+        try {
+          localStorage.setItem("sb-access-token", token);
+          if (data.session?.refresh_token) {
+            localStorage.setItem("sb-refresh-token", data.session.refresh_token);
+          }
+          localStorage.setItem("user-phone", phone);
+          document.cookie = `sb-access-token=${token}; path=/; max-age=${30 * 86400}; SameSite=Lax`;
+        } catch (_) {}
       }
 
-      router.replace(data.redirectUrl || data.redirect_to || "/rideo");
+      if (data.session) {
+        try {
+          await supabase.auth.setSession(data.session);
+        } catch (_) {}
+      }
+
+      const targetUrl = data.redirectUrl || data.redirect_to || "/rideo";
+      window.location.href = targetUrl;
     } catch (err: any) {
       setError(err.message || "PIN login failed");
       setLoading(false);
