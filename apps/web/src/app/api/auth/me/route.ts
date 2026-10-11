@@ -41,6 +41,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ authenticated: false, user: null, profile: null });
     }
 
+    // 1. Primary: Query OCI Production Backend for authoritative profile & 24h WhatsApp session status
+    try {
+      const ociRes = await fetch('https://mysupro.duckdns.org/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Cookie: `sb-access-token=${token}`,
+        },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (ociRes.ok) {
+        const ociData = await ociRes.json();
+        if (ociData?.authenticated && ociData?.profile) {
+          return NextResponse.json(ociData);
+        }
+      }
+    } catch (_) {
+      // Fallback to local JWT decode + Supabase query
+    }
+
     const payload = extractJwtPayload(token);
     if (!payload || (!payload.id && !payload.phone && !payload.sub)) {
       return NextResponse.json({ authenticated: false, user: null, profile: null });

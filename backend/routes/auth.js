@@ -14,6 +14,88 @@ function isPhoneAdminCheck(p) {
   return ADMIN_PHONES_LIST.some(ap => ap.replace(/\D/g, '').slice(-10) === clean);
 }
 
+// Helper: Resolve unified 24h WhatsApp session status across profiles, contacts, conversations & messages
+async function resolveWhatsAppSessionStatus(cleanPhone, profileRow = null) {
+  const timestamps = [];
+
+  if (profileRow?.last_whatsapp_inbound_at) {
+    const t = new Date(profileRow.last_whatsapp_inbound_at).getTime();
+    if (!isNaN(t) && t > 0) timestamps.push(t);
+  }
+
+  if (cleanPhone) {
+    try {
+      // 1. Check all matching profile rows for this phone
+      const allProfRes = await pool.query(
+        `SELECT MAX(last_whatsapp_inbound_at) AS max_inbound
+         FROM profiles
+         WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2`,
+        [`%${cleanPhone}%`, `%91${cleanPhone}%`]
+      );
+      if (allProfRes.rows[0]?.max_inbound) {
+        const t = new Date(allProfRes.rows[0].max_inbound).getTime();
+        if (!isNaN(t) && t > 0) timestamps.push(t);
+      }
+
+      // 2. Check CRM conversations & contacts for this phone (matches WhatsApp CRM Inbox timer)
+      const convRes = await pool.query(
+        `SELECT MAX(GREATEST(c.last_message_at, c.updated_at)) AS max_conv_at,
+                ARRAY_AGG(c.id) AS conv_ids
+         FROM conversations c
+         JOIN contacts ct ON c.contact_id = ct.id
+         WHERE ct.phone LIKE $1 OR ct.phone LIKE $2`,
+        [`%${cleanPhone}%`, `%91${cleanPhone}%`]
+      );
+      if (convRes.rows[0]?.max_conv_at) {
+        const t = new Date(convRes.rows[0].max_conv_at).getTime();
+        if (!isNaN(t) && t > 0) timestamps.push(t);
+      }
+
+      // 3. Check latest message in those conversations
+      const convIds = (convRes.rows[0]?.conv_ids || []).filter(Boolean);
+      if (convIds.length > 0) {
+        const msgRes = await pool.query(
+          `SELECT MAX(created_at) AS max_msg_at FROM messages WHERE conversation_id = ANY($1::uuid[])`,
+          [convIds]
+        );
+        if (msgRes.rows[0]?.max_msg_at) {
+          const t = new Date(msgRes.rows[0].max_msg_at).getTime();
+          if (!isNaN(t) && t > 0) timestamps.push(t);
+        }
+      }
+    } catch (e) {
+      console.warn('[SESSION SYNC CHECK WARN]', e.message);
+    }
+  }
+
+  const lastInbound = timestamps.length > 0 ? Math.max(...timestamps) : 0;
+  const lastInboundIso = lastInbound > 0 ? new Date(lastInbound).toISOString() : null;
+
+  // Self-heal profile.last_whatsapp_inbound_at if CRM conversation/message has a fresher timestamp
+  const profTs = profileRow?.last_whatsapp_inbound_at ? new Date(profileRow.last_whatsapp_inbound_at).getTime() : 0;
+  if (cleanPhone && lastInbound > 0 && (!profTs || isNaN(profTs) || lastInbound > profTs + 1000)) {
+    pool.query(
+      `UPDATE profiles SET last_whatsapp_inbound_at = $1
+       WHERE phone LIKE $2 OR whatsapp LIKE $2 OR phone LIKE $3 OR whatsapp LIKE $3`,
+      [lastInboundIso, `%${cleanPhone}%`, `%91${cleanPhone}%`]
+    ).catch(() => {});
+  }
+
+  const isWindowActive = lastInbound > 0 && (Date.now() - lastInbound) < 24 * 60 * 60 * 1000;
+  const expiresAt = lastInbound > 0 ? new Date(lastInbound + 24 * 60 * 60 * 1000).toISOString() : null;
+  const hoursRemaining = isWindowActive
+    ? Math.max(0, Math.round(((lastInbound + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)) * 10) / 10)
+    : 0;
+
+  return {
+    lastInbound,
+    lastInboundIso,
+    isWindowActive,
+    expiresAt,
+    hoursRemaining,
+  };
+}
+
 // 1. GET /api/auth/otp/waba - Return configured WABA Admin number
 router.get('/otp/waba', (req, res) => {
   res.json({ phone: '916381029380' });
@@ -53,6 +135,7 @@ router.get('/check', async (req, res) => {
         category: 'Traveller',
         role: 'user',
         has_pin: false,
+        last_whatsapp_inbound_at: null,
         is_whatsapp_session_active: false,
         whatsapp_window_expires_at: null,
         whatsapp_hours_remaining: 0
@@ -63,24 +146,29 @@ router.get('/check', async (req, res) => {
     const resolvedCategory = isAdmin ? 'Admin' : (driver ? 'Driver' : (profile?.main_category || 'Traveller'));
     const resolvedName = profile?.full_name || driver?.name || (isAdmin ? 'Admin-RAJA' : 'SuprO User');
 
-    let lastInbound = profile?.last_whatsapp_inbound_at ? new Date(profile.last_whatsapp_inbound_at).getTime() : 0;
-    const isWindowActive = lastInbound > 0 && (Date.now() - lastInbound) < 24 * 60 * 60 * 1000;
-    const expiresAt = lastInbound > 0 ? new Date(lastInbound + 24 * 60 * 60 * 1000).toISOString() : null;
-    const hoursRemaining = isWindowActive ? Math.max(0, Math.round(((lastInbound + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)) * 10) / 10) : 0;
+    const { lastInboundIso, isWindowActive, expiresAt, hoursRemaining } = await resolveWhatsAppSessionStatus(clean, profile);
 
     return res.json({
       exists: true,
       id: profile?.id || driver?.id || `user_${clean}`,
       name: resolvedName,
       fullName: resolvedName,
+      full_name: resolvedName,
+      phone: clean,
+      whatsapp: clean,
       category: resolvedCategory,
+      main_category: resolvedCategory,
       role: resolvedRole,
       has_pin: !!profile?.pin_hash,
+      last_whatsapp_inbound_at: lastInboundIso,
       is_whatsapp_session_active: isWindowActive || isAdmin,
       whatsapp_window_expires_at: expiresAt,
-      whatsapp_hours_remaining: hoursRemaining || 24,
+      whatsapp_hours_remaining: isWindowActive ? hoursRemaining : (isAdmin ? 24 : 0),
       gemini_api_key: profile?.gemini_api_key || '',
-      upi_id: profile?.upi_id || driver?.upi_id || '6381029380@hdfcbank'
+      upi_id: profile?.upi_id || driver?.upi_id || '6381029380@hdfcbank',
+      location: profile?.location || '',
+      avatar_url: profile?.avatar_url || '',
+      driver_profile: driver || null
     });
   } catch (err) {
     console.error('[AUTH CHECK ERROR]', err);
@@ -220,15 +308,25 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
     let profRes = await pool.query(
       `SELECT * FROM profiles 
        WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2
-       LIMIT 1`,
+       ORDER BY updated_at DESC NULLS LAST LIMIT 1`,
       [`%${clean}%`, `%91${clean}%`]
     );
 
+    const driverRes = await pool.query(
+      `SELECT * FROM drivers 
+       WHERE phone LIKE $1 OR mobile_number LIKE $1 OR whatsapp_number LIKE $1
+       LIMIT 1`,
+      [`%${clean}%`]
+    ).catch(() => ({ rows: [] }));
+    const driver = driverRes.rows[0] || null;
+
     let profile = profRes.rows[0];
     const isAdmin = isPhoneAdminCheck(clean);
-    const resolvedRole = isAdmin ? 'admin' : (profile?.role || 'user');
-    const resolvedCat = isAdmin ? 'Admin' : (category || profile?.main_category || 'Traveller');
-    const resolvedName = fullName || full_name || profile?.full_name || (isAdmin ? 'Admin-RAJA' : 'SuprO User');
+    const resolvedRole = isAdmin ? 'admin' : (driver ? 'driver' : (profile?.role || 'user'));
+    const resolvedCat = isAdmin ? 'Admin' : (driver ? 'Driver' : (category || profile?.main_category || 'Traveller'));
+    const resolvedName = fullName || full_name || profile?.full_name || driver?.name || (isAdmin ? 'Admin-RAJA' : 'SuprO User');
+    const nowIso = new Date().toISOString();
+    const expiresAtIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
     if (!profile) {
       const newId = `user_${clean}_${Date.now()}`;
@@ -241,9 +339,14 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
       profile = insertRes.rows[0];
     } else {
       await pool.query(
-        `UPDATE profiles SET last_whatsapp_inbound_at = NOW(), updated_at = NOW() WHERE id = $1`,
-        [profile.id]
+        `UPDATE profiles
+         SET last_whatsapp_inbound_at = NOW(), updated_at = NOW()
+         WHERE id = $1 OR phone LIKE $2 OR whatsapp LIKE $2 OR phone LIKE $3 OR whatsapp LIKE $3`,
+        [profile.id, `%${clean}%`, `%91${clean}%`]
       );
+      profile.last_whatsapp_inbound_at = nowIso;
+      profile.updated_at = nowIso;
+
       // Sync 24h WhatsApp window: touch conversations so CRM inbox sees fresh timestamp
       await pool.query(
         `UPDATE conversations SET last_message_at = NOW(), updated_at = NOW()
@@ -280,8 +383,20 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
         phone: clean,
         fullName: resolvedName,
         role: resolvedRole,
-        category: resolvedCat
+        category: resolvedCat,
+        last_whatsapp_inbound_at: nowIso
       },
+      profile: {
+        ...profile,
+        last_whatsapp_inbound_at: nowIso,
+        is_whatsapp_session_active: true,
+        whatsapp_window_expires_at: expiresAtIso,
+        whatsapp_hours_remaining: 24
+      },
+      last_whatsapp_inbound_at: nowIso,
+      is_whatsapp_session_active: true,
+      whatsapp_window_expires_at: expiresAtIso,
+      whatsapp_hours_remaining: 24,
       session: {
         access_token: token,
         refresh_token: token
@@ -313,7 +428,7 @@ router.post('/pin', async (req, res) => {
     const profRes = await pool.query(
       `SELECT * FROM profiles 
        WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2
-       LIMIT 1`,
+       ORDER BY updated_at DESC NULLS LAST LIMIT 1`,
       [`%${clean}%`, `%91${clean}%`]
     );
 
@@ -345,9 +460,13 @@ router.post('/pin', async (req, res) => {
     }
 
     // Touch profile & conversation so 24h WhatsApp window is kept fresh
+    const nowIso = new Date().toISOString();
+    const expiresAtIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     await pool.query(
-      `UPDATE profiles SET last_whatsapp_inbound_at = NOW(), updated_at = NOW() WHERE id = $1`,
-      [profile.id]
+      `UPDATE profiles
+       SET last_whatsapp_inbound_at = NOW(), updated_at = NOW()
+       WHERE id = $1 OR phone LIKE $2 OR whatsapp LIKE $2 OR phone LIKE $3 OR whatsapp LIKE $3`,
+      [profile.id, `%${clean}%`, `%91${clean}%`]
     ).catch(() => {});
     await pool.query(
       `UPDATE conversations SET last_message_at = NOW(), updated_at = NOW()
@@ -384,8 +503,20 @@ router.post('/pin', async (req, res) => {
         phone: clean,
         fullName: profile.full_name || 'SuprO User',
         role: resolvedRole,
-        category: resolvedCat
+        category: resolvedCat,
+        last_whatsapp_inbound_at: nowIso
       },
+      profile: {
+        ...profile,
+        last_whatsapp_inbound_at: nowIso,
+        is_whatsapp_session_active: true,
+        whatsapp_window_expires_at: expiresAtIso,
+        whatsapp_hours_remaining: 24
+      },
+      last_whatsapp_inbound_at: nowIso,
+      is_whatsapp_session_active: true,
+      whatsapp_window_expires_at: expiresAtIso,
+      whatsapp_hours_remaining: 24,
       session: {
         access_token: token,
         refresh_token: token
@@ -461,7 +592,8 @@ router.get('/me', async (req, res) => {
       return res.json({ authenticated: false, user: null, profile: null });
     }
 
-    const clean = (payload.phone || '').replace(/\D/g, '').slice(-10);
+    const rawPhone = payload.phone || payload.user_metadata?.phone || '';
+    let clean = rawPhone.replace(/\D/g, '').slice(-10);
     const userId = payload.id || payload.sub || (clean ? `user_${clean}` : 'user_authenticated');
 
     let profile = null;
@@ -469,7 +601,7 @@ router.get('/me', async (req, res) => {
       const profRes = await pool.query(
         `SELECT * FROM profiles 
          WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2
-         ORDER BY updated_at DESC LIMIT 1`,
+         ORDER BY updated_at DESC NULLS LAST LIMIT 1`,
         [`%${clean}%`, `%91${clean}%`]
       );
       if (profRes.rows.length > 0) profile = profRes.rows[0];
@@ -478,10 +610,27 @@ router.get('/me', async (req, res) => {
       if (profRes.rows.length > 0) profile = profRes.rows[0];
     }
 
+    if (!clean && (profile?.phone || profile?.whatsapp)) {
+      clean = (profile.phone || profile.whatsapp || '').replace(/\D/g, '').slice(-10);
+    }
+
+    let driver = null;
+    if (clean) {
+      const drvRes = await pool.query(
+        `SELECT * FROM drivers
+         WHERE phone LIKE $1 OR mobile_number LIKE $1 OR whatsapp_number LIKE $1
+         LIMIT 1`,
+        [`%${clean}%`]
+      ).catch(() => ({ rows: [] }));
+      driver = drvRes.rows[0] || null;
+    }
+
     const isAdmin = isPhoneAdminCheck(clean);
-    const resolvedRole = isAdmin ? 'admin' : (profile?.role || payload.role || 'user');
-    const resolvedCat = isAdmin ? 'Admin' : (profile?.main_category || payload.category || 'Traveller');
-    const resolvedName = profile?.full_name || payload.fullName || payload.name || `User ${clean.slice(-4)}`;
+    const resolvedRole = isAdmin ? 'admin' : (driver ? 'driver' : (profile?.role || payload.role || 'user'));
+    const resolvedCat = isAdmin ? 'Admin' : (driver ? 'Driver' : (profile?.main_category || payload.category || 'Traveller'));
+    const resolvedName = profile?.full_name || driver?.name || payload.fullName || payload.name || `User ${clean.slice(-4)}`;
+
+    const { lastInboundIso, isWindowActive, expiresAt, hoursRemaining } = await resolveWhatsAppSessionStatus(clean, profile);
 
     const user = {
       id: profile?.id || userId,
@@ -494,25 +643,37 @@ router.get('/me', async (req, res) => {
         phone: clean,
         fullName: resolvedName,
         role: resolvedRole,
-        category: resolvedCat
+        category: resolvedCat,
+        last_whatsapp_inbound_at: lastInboundIso
       }
     };
 
-    const finalProfile = profile || {
-      id: userId,
-      full_name: resolvedName,
-      phone: clean,
-      whatsapp: clean,
-      role: resolvedRole,
-      main_category: resolvedCat,
-      account_id: 'f21e8cdb-e27d-41fa-9aa4-af06ccdc0feb',
-      account_role: resolvedRole === 'admin' ? 'admin' : 'owner',
+    const finalProfile = {
+      ...(profile || {
+        id: userId,
+        full_name: resolvedName,
+        phone: clean,
+        whatsapp: clean,
+        role: resolvedRole,
+        main_category: resolvedCat,
+        account_id: 'f21e8cdb-e27d-41fa-9aa4-af06ccdc0feb',
+        account_role: resolvedRole === 'admin' ? 'admin' : 'owner',
+      }),
+      last_whatsapp_inbound_at: lastInboundIso,
+      is_whatsapp_session_active: isWindowActive || isAdmin,
+      whatsapp_window_expires_at: expiresAt,
+      whatsapp_hours_remaining: isWindowActive ? hoursRemaining : (isAdmin ? 24 : 0),
     };
 
     return res.json({
       authenticated: true,
       user,
       profile: finalProfile,
+      driver_profile: driver,
+      last_whatsapp_inbound_at: lastInboundIso,
+      is_whatsapp_session_active: isWindowActive || isAdmin,
+      whatsapp_window_expires_at: expiresAt,
+      whatsapp_hours_remaining: isWindowActive ? hoursRemaining : (isAdmin ? 24 : 0),
       token
     });
   } catch (err) {

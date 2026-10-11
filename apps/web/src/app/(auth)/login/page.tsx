@@ -261,8 +261,22 @@ function LoginPageInner() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Invalid or expired OTP");
 
+      const token = data.session?.access_token || data.token;
+      if (token) {
+        try {
+          localStorage.setItem("sb-access-token", token);
+          if (data.session?.refresh_token) {
+            localStorage.setItem("sb-refresh-token", data.session.refresh_token);
+          }
+          localStorage.setItem("user-phone", phone);
+          document.cookie = `sb-access-token=${token}; path=/; max-age=${30 * 86400}; SameSite=Lax`;
+        } catch (_) {}
+      }
+
       if (data.session) {
-        await supabase.auth.setSession(data.session);
+        try {
+          await supabase.auth.setSession(data.session);
+        } catch (_) {}
       }
 
       if (data.hasPin === false || data.needs_pin_setup === true) {

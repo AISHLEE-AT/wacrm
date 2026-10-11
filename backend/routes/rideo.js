@@ -271,7 +271,13 @@ router.get('/drivers/:id', async (req, res) => {
 // 10. Get Driver by Phone
 router.get('/drivers/phone/:phone', async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM drivers WHERE phone_number = $1`, [req.params.phone]);
+    const clean = (req.params.phone || '').replace(/\D/g, '').slice(-10);
+    const result = await pool.query(
+      `SELECT * FROM drivers
+       WHERE phone_number = $1 OR phone LIKE $2 OR mobile_number LIKE $2 OR whatsapp_number LIKE $2 OR phone_number LIKE $2
+       ORDER BY updated_at DESC NULLS LAST LIMIT 1`,
+      [req.params.phone, `%${clean}%`]
+    );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Driver not found' });
     res.json(result.rows[0]);
   } catch (err) {

@@ -31,6 +31,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid 10-digit phone number' }, { status: 400 })
     }
 
+    // 0. Primary: Forward OTP verification to OCI Production Backend (https://mysupro.duckdns.org/api/auth/otp/verify)
+    //    so profiles.last_whatsapp_inbound_at and conversations.last_message_at are updated in OCI PostgreSQL.
+    try {
+      const ociVerifyRes = await fetch('https://mysupro.duckdns.org/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: cleanPhone, otp, fullName, category, pin }),
+        signal: AbortSignal.timeout(6000),
+      })
+      if (ociVerifyRes.ok) {
+        const ociData = await ociVerifyRes.json()
+        if (ociData?.success) {
+          const response = NextResponse.json(ociData)
+          const accessToken = ociData?.session?.access_token || ociData?.token
+          if (accessToken) {
+            response.cookies.set('sb-access-token', accessToken, {
+              path: '/',
+              httpOnly: false,
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24 * 30,
+            })
+          }
+          return response
+        }
+      }
+    } catch (_) {
+      // Fallback to local Supabase verification
+    }
+
     const admin = getAdminClient()
 
     // 1. Verify OTP — try multiple phone formats the webhook may have stored under

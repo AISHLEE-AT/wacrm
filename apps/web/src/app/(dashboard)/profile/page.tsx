@@ -172,7 +172,33 @@ function ProfilePageInner() {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [savingCategory, setSavingCategory] = useState(false);
 
-  const activeProfile = dbProfile || profile;
+  const [crmLastActiveAt, setCrmLastActiveAt] = useState<number>(0);
+  const [, setNowTick] = useState<number>(Date.now());
+
+  const activeProfile = useMemo(() => {
+    if (!dbProfile && !profile) return null;
+    const merged = { ...(profile || {}), ...(dbProfile || {}) };
+    const tsCandidates: number[] = [];
+    if (dbProfile?.last_whatsapp_inbound_at) {
+      const t = new Date(dbProfile.last_whatsapp_inbound_at).getTime();
+      if (!isNaN(t) && t > 0) tsCandidates.push(t);
+    }
+    if ((profile as any)?.last_whatsapp_inbound_at) {
+      const t = new Date((profile as any).last_whatsapp_inbound_at).getTime();
+      if (!isNaN(t) && t > 0) tsCandidates.push(t);
+    }
+    if (merged.whatsapp_window_expires_at) {
+      const exp = new Date(merged.whatsapp_window_expires_at).getTime();
+      if (!isNaN(exp) && exp > 0) tsCandidates.push(exp - 24 * 60 * 60 * 1000);
+    }
+    if (crmLastActiveAt > 0) {
+      tsCandidates.push(crmLastActiveAt);
+    }
+    if (tsCandidates.length > 0) {
+      merged.last_whatsapp_inbound_at = new Date(Math.max(...tsCandidates)).toISOString();
+    }
+    return merged;
+  }, [dbProfile, profile, crmLastActiveAt]);
 
   const currentCategoryKey = activeProfile?.main_category || activeProfile?.role || 'Traveller';
   const currentCategory = USER_CATEGORIES.find(c => c.key.toLowerCase() === currentCategoryKey.toLowerCase()) || USER_CATEGORIES[5];
@@ -215,32 +241,162 @@ function ProfilePageInner() {
     user?.phone?.includes("6381029380")
   );
 
-  // Real-Time Profile Data Subscription
+  // Real-Time Profile Data & WhatsApp CRM 24h Window Coordination
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id && !user?.phone) return;
     let channel: any = null;
+    let mounted = true;
 
-    const initRealtimeProfile = async () => {
+    const syncOciProfileAndSession = async () => {
       try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        
-        // Initial fetch
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
+        const rawPhone =
+          user?.phone ||
+          (user as any)?.user_metadata?.phone ||
+          profile?.phone ||
+          (profile as any)?.whatsapp ||
+          (typeof window !== 'undefined' ? localStorage.getItem('user-phone') || '' : '');
+        let cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
 
-        if (data) {
-          setDbProfile(data);
-          if (data.upi_id) setUpiIdState(data.upi_id);
-          if (data.location) setLocationState(data.location);
-          if (data.gemini_api_key) setGeminiState(data.gemini_api_key);
-          if (data.full_name) setNameValue(data.full_name);
+        const tsList: number[] = [];
+        let mergedData: any = null;
+
+        // 1. Authoritative OCI /api/auth/me check
+        try {
+          const directToken = typeof window !== 'undefined' ? localStorage.getItem('sb-access-token') : null;
+          const headers: Record<string, string> = {};
+          if (directToken) headers['Authorization'] = `Bearer ${directToken}`;
+          const meRes = await fetch('/api/auth/me', {
+            cache: 'no-store',
+            credentials: 'include',
+            headers,
+          });
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.authenticated && meData.profile) {
+              mergedData = { ...(mergedData || {}), ...meData.profile };
+              if (!cleanPhone && (meData.profile.phone || meData.profile.whatsapp)) {
+                cleanPhone = (meData.profile.phone || meData.profile.whatsapp).replace(/\D/g, '').slice(-10);
+              }
+              const t = new Date(meData.last_whatsapp_inbound_at || meData.profile.last_whatsapp_inbound_at || 0).getTime();
+              if (!isNaN(t) && t > 0) tsList.push(t);
+              if (meData.driver_profile && mounted) {
+                setDriverProfile(meData.driver_profile);
+              }
+            }
+          }
+        } catch (_) {}
+
+        // 2. Authoritative OCI /api/auth/check?phone=... (coordinates OTP login + 24h window)
+        if (cleanPhone) {
+          try {
+            const checkRes = await fetch(`/api/auth/check?phone=${cleanPhone}`, { cache: 'no-store' });
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (checkData.exists) {
+                mergedData = {
+                  ...(mergedData || {}),
+                  id: mergedData?.id || checkData.id || user?.id,
+                  full_name: mergedData?.full_name || checkData.full_name || checkData.name,
+                  phone: mergedData?.phone || cleanPhone,
+                  whatsapp: mergedData?.whatsapp || cleanPhone,
+                  role: mergedData?.role || checkData.role,
+                  main_category: mergedData?.main_category || checkData.main_category || checkData.category,
+                  upi_id: mergedData?.upi_id || checkData.upi_id,
+                  location: mergedData?.location || checkData.location,
+                  gemini_api_key: mergedData?.gemini_api_key || checkData.gemini_api_key,
+                  avatar_url: mergedData?.avatar_url || checkData.avatar_url,
+                  is_whatsapp_session_active: checkData.is_whatsapp_session_active,
+                  whatsapp_window_expires_at: checkData.whatsapp_window_expires_at,
+                  whatsapp_hours_remaining: checkData.whatsapp_hours_remaining,
+                };
+                if (checkData.last_whatsapp_inbound_at) {
+                  const t = new Date(checkData.last_whatsapp_inbound_at).getTime();
+                  if (!isNaN(t) && t > 0) tsList.push(t);
+                }
+                if (checkData.whatsapp_window_expires_at) {
+                  const exp = new Date(checkData.whatsapp_window_expires_at).getTime();
+                  if (!isNaN(exp) && exp > 0) tsList.push(exp - 24 * 60 * 60 * 1000);
+                }
+                if (checkData.driver_profile && mounted) {
+                  setDriverProfile(checkData.driver_profile);
+                }
+              }
+            }
+          } catch (_) {}
+
+          // 3. Coordinate directly with WhatsApp CRM Inbox conversations (/api/conversations)
+          try {
+            const convRes = await fetch('/api/conversations', { cache: 'no-store', credentials: 'include' });
+            if (convRes.ok) {
+              const convJson = await convRes.json();
+              const convList = Array.isArray(convJson)
+                ? convJson
+                : (convJson.conversations || convJson.data || []);
+              const userConvs = convList.filter((c: any) => {
+                const cPhone = (c?.contact?.phone || c?.phone || '').replace(/\D/g, '').slice(-10);
+                return cPhone && cPhone === cleanPhone;
+              });
+              for (const c of userConvs) {
+                if (c.last_message_at) {
+                  const t = new Date(c.last_message_at).getTime();
+                  if (!isNaN(t) && t > 0) tsList.push(t);
+                }
+                if (c.updated_at) {
+                  const t = new Date(c.updated_at).getTime();
+                  if (!isNaN(t) && t > 0) tsList.push(t);
+                }
+              }
+            }
+          } catch (_) {}
         }
 
-        // Realtime Subscription on profiles table
+        // 4. Fallback/Supplement from Supabase client
+        try {
+          const { createClient } = await import('@/lib/supabase/client');
+          const supabase = createClient();
+          if (user?.id) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle();
+            if (data) {
+              if (data.last_whatsapp_inbound_at) {
+                const t = new Date(data.last_whatsapp_inbound_at).getTime();
+                if (!isNaN(t) && t > 0) tsList.push(t);
+              }
+              mergedData = { ...data, ...(mergedData || {}) };
+            }
+          }
+        } catch (_) {}
+
+        const bestTs = tsList.length > 0 ? Math.max(...tsList) : 0;
+        if (mounted) {
+          if (bestTs > 0) {
+            setCrmLastActiveAt(bestTs);
+          }
+          if (mergedData) {
+            if (bestTs > 0) {
+              mergedData.last_whatsapp_inbound_at = new Date(bestTs).toISOString();
+            }
+            setDbProfile((prev: any) => ({ ...(prev || {}), ...mergedData }));
+            if (mergedData.upi_id) setUpiIdState(mergedData.upi_id);
+            if (mergedData.location) setLocationState(mergedData.location);
+            if (mergedData.gemini_api_key) setGeminiState(mergedData.gemini_api_key);
+            if (mergedData.full_name) setNameValue(mergedData.full_name);
+          }
+        }
+      } catch (err) {
+        console.error('Error syncing OCI profile & session:', err);
+      }
+    };
+
+    const initRealtimeProfile = async () => {
+      await syncOciProfileAndSession();
+      try {
+        if (!user?.id) return;
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
         channel = supabase
           .channel(`public:profiles:${user.id}`)
           .on(
@@ -256,17 +412,31 @@ function ProfilePageInner() {
             }
           )
           .subscribe();
-      } catch (err) {
-        console.error('Error fetching db profile:', err);
-      }
+      } catch (_) {}
     };
 
     initRealtimeProfile();
 
-    return () => {
-      if (channel) channel.unsubscribe();
+    const onFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        syncOciProfileAndSession();
+        setNowTick(Date.now());
+      }
     };
-  }, [user?.id]);
+    window.addEventListener('focus', onFocusOrVisible);
+    document.addEventListener('visibilitychange', onFocusOrVisible);
+    const timer = setInterval(() => {
+      setNowTick(Date.now());
+    }, 30000);
+
+    return () => {
+      mounted = false;
+      if (channel) channel.unsubscribe();
+      window.removeEventListener('focus', onFocusOrVisible);
+      document.removeEventListener('visibilitychange', onFocusOrVisible);
+      clearInterval(timer);
+    };
+  }, [user?.id, user?.phone]);
 
   const handleSaveName = async () => {
     if (!nameValue.trim() || !user?.id) return;
@@ -283,7 +453,7 @@ function ProfilePageInner() {
       });
       const data = await res.json();
       if (res.ok && data.profile) {
-        setDbProfile(data.profile);
+        setDbProfile((prev: any) => ({ ...(prev || {}), ...data.profile }));
         setEditingName(false);
       } else {
         alert('Failed to update name. Please try again.');
@@ -296,22 +466,36 @@ function ProfilePageInner() {
   };
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id && !user?.phone) return;
     const fetchDriverData = async () => {
-      const { createClient } = await import('@/lib/supabase/client');
-      const supabase = createClient();
-      const rawPhone = user.phone || activeProfile?.phone || '';
+      const rawPhone = user?.phone || activeProfile?.phone || (typeof window !== 'undefined' ? localStorage.getItem('user-phone') || '' : '');
       const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
-      const { data } = await supabase
-        .from('drivers')
-        .select('*')
-        .or(`user_id.eq.${user.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (data && data.length > 0) setDriverProfile(data[0]);
+      if (cleanPhone) {
+        try {
+          const drvRes = await fetch(`/api/drivers/phone/91${cleanPhone}`, { cache: 'no-store' });
+          if (drvRes.ok) {
+            const drv = await drvRes.json();
+            if (drv && drv.id) {
+              setDriverProfile(drv);
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data } = await supabase
+          .from('drivers')
+          .select('*')
+          .or(`user_id.eq.${user?.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%` : ''}`)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (data && data.length > 0) setDriverProfile(data[0]);
+      } catch (_) {}
     };
     fetchDriverData();
-  }, [user?.id]);
+  }, [user?.id, user?.phone]);
 
   const formatCleanPhone = (raw?: string) => {
     if (!raw) return '';

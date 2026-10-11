@@ -16,8 +16,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User ID or Phone number is required' }, { status: 400 })
     }
 
-    const admin = getAdminClient()
     const cleanPhone = phone ? phone.replace(/\D/g, '').slice(-10) : null
+
+    // 0. Primary: Forward profile update to OCI Production Backend (https://mysupro.duckdns.org/api/profile/update)
+    let ociUpdateResult: any = null
+    try {
+      const ociRes = await fetch('https://mysupro.duckdns.org/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          phone: cleanPhone || phone,
+          full_name,
+          upi_id,
+          location,
+          main_category,
+          gemini_api_key,
+          city,
+          district,
+          state,
+          country,
+          pincode,
+          latitude,
+          longitude,
+          avatar_url,
+          pushToken,
+        }),
+        signal: AbortSignal.timeout(5000),
+      })
+      if (ociRes.ok) {
+        const ociData = await ociRes.json()
+        if (ociData?.profile) {
+          ociUpdateResult = ociData.profile
+        }
+      }
+    } catch (_) {}
+
+    const admin = getAdminClient()
 
     // Build update object with only provided fields
     const updates: Record<string, any> = {
@@ -82,7 +117,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
-      profile: updateResult,
+      profile: ociUpdateResult || updateResult,
     })
   } catch (err: any) {
     console.error('Error in /api/profile/update:', err)

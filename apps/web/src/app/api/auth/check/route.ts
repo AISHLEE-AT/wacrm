@@ -14,6 +14,23 @@ export async function GET(request: Request) {
     }
 
     phone = phone.replace(/\D/g, '')
+    const cleanPhone = phone.slice(-10)
+
+    // 1. Primary: Query OCI Production Backend for authoritative profile & 24h WhatsApp session status
+    try {
+      const ociRes = await fetch(`https://mysupro.duckdns.org/api/auth/check?phone=${encodeURIComponent(cleanPhone)}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+      })
+      if (ociRes.ok) {
+        const ociData = await ociRes.json()
+        if (ociData && typeof ociData.exists === 'boolean') {
+          return NextResponse.json(ociData)
+        }
+      }
+    } catch (_) {
+      // Fallback to local Supabase query
+    }
 
     const admin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +38,6 @@ export async function GET(request: Request) {
     )
 
     // Profiles table query
-    const cleanPhone = phone.slice(-10)
     const { data: profile, error } = await admin
       .from('profiles')
       .select('id, full_name, main_category, role, pin_hash, gemini_api_key, upi_id, avatar_url, location, latitude, longitude, city, state, country, pincode, profile_complete, last_whatsapp_inbound_at')

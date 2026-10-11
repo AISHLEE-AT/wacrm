@@ -33,14 +33,20 @@ interface Profile {
   pincode: string | null;
   /** WhatsApp phone — used by FAGO for buyer contact */
   phone: string | null;
+  whatsapp?: string | null;
   district?: string | null;
   location?: string | null;
   upi_id?: string | null;
   gemini_api_key?: string | null;
   category?: string | null;
+  main_category?: string | null;
   default_module?: string | null;
   pinned_modules?: string[] | null;
   profile_complete?: boolean | null;
+  last_whatsapp_inbound_at?: string | null;
+  is_whatsapp_session_active?: boolean;
+  whatsapp_window_expires_at?: string | null;
+  whatsapp_hours_remaining?: number;
 }
 
 interface AccountSummary {
@@ -136,31 +142,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileLoading(true);
     try {
       let data: any = null;
-      if (userId && !userId.startsWith("user_")) {
+      const cleanPhone = (userPhone || (typeof window !== "undefined" ? localStorage.getItem("user-phone") || "" : "")).replace(/\D/g, "").slice(-10);
+
+      // 1. Primary: Fetch from authoritative OCI /api/auth/me or /api/auth/check
+      if (typeof window !== "undefined") {
+        try {
+          const directToken = localStorage.getItem("sb-access-token");
+          const headers: Record<string, string> = {};
+          if (directToken) headers["Authorization"] = `Bearer ${directToken}`;
+          const meRes = await fetch("/api/auth/me", {
+            cache: "no-store",
+            credentials: "include",
+            headers,
+          });
+          if (meRes.ok) {
+            const meData = await meRes.json();
+            if (meData.authenticated && meData.profile) {
+              data = {
+                ...meData.profile,
+                last_whatsapp_inbound_at: meData.last_whatsapp_inbound_at ?? meData.profile.last_whatsapp_inbound_at ?? null,
+                is_whatsapp_session_active: meData.is_whatsapp_session_active ?? meData.profile.is_whatsapp_session_active,
+                whatsapp_window_expires_at: meData.whatsapp_window_expires_at ?? meData.profile.whatsapp_window_expires_at ?? null,
+                whatsapp_hours_remaining: meData.whatsapp_hours_remaining ?? meData.profile.whatsapp_hours_remaining,
+              };
+            }
+          }
+        } catch (_) {}
+
+        if ((!data || !data.last_whatsapp_inbound_at) && cleanPhone) {
+          try {
+            const checkRes = await fetch(`/api/auth/check?phone=${cleanPhone}`, { cache: "no-store" });
+            if (checkRes.ok) {
+              const checkData = await checkRes.json();
+              if (checkData.exists) {
+                data = {
+                  ...(data || {}),
+                  id: data?.id || checkData.id || userId,
+                  full_name: data?.full_name || checkData.full_name || checkData.name || null,
+                  phone: data?.phone || cleanPhone,
+                  whatsapp: data?.whatsapp || cleanPhone,
+                  role: data?.role || checkData.role || "user",
+                  main_category: data?.main_category || checkData.main_category || checkData.category || "Traveller",
+                  upi_id: data?.upi_id || checkData.upi_id || null,
+                  location: data?.location || checkData.location || null,
+                  gemini_api_key: data?.gemini_api_key || checkData.gemini_api_key || null,
+                  avatar_url: data?.avatar_url || checkData.avatar_url || null,
+                  last_whatsapp_inbound_at: checkData.last_whatsapp_inbound_at || data?.last_whatsapp_inbound_at || null,
+                  is_whatsapp_session_active: checkData.is_whatsapp_session_active ?? data?.is_whatsapp_session_active,
+                  whatsapp_window_expires_at: checkData.whatsapp_window_expires_at ?? data?.whatsapp_window_expires_at ?? null,
+                  whatsapp_hours_remaining: checkData.whatsapp_hours_remaining ?? data?.whatsapp_hours_remaining,
+                };
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      // 2. Fallback: Direct Supabase query
+      if (!data && userId && !userId.startsWith("user_")) {
         const res = await supabase
           .from("profiles")
-          .select(
-            "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode, gemini_api_key"
-          )
+          .select("*")
           .eq("id", userId)
           .maybeSingle();
         data = res.data;
       }
 
-      if (!data && userPhone) {
-        const cleanPhone = userPhone.replace(/\D/g, "").slice(-10);
-        if (cleanPhone) {
-          const res = await supabase
-            .from("profiles")
-            .select(
-              "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, phone, whatsapp, upi_id, location, pincode, gemini_api_key"
-            )
-            .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          data = res.data;
-        }
+      if (!data && cleanPhone) {
+        const res = await supabase
+          .from("profiles")
+          .select("*")
+          .or(`phone.ilike.%${cleanPhone}%,whatsapp.ilike.%${cleanPhone}%`)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        data = res.data;
       }
 
       if (data) {
@@ -169,18 +225,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : "owner";
 
         setProfile({
+          ...data,
           id: data.id,
           full_name: data.full_name || null,
           email: data.email || "",
           avatar_url: data.avatar_url,
           role: data.role,
-          beta_features: data.beta_features ?? [],
+          main_category: data.main_category || data.category || null,
+          beta_features: Array.isArray(data.beta_features) ? data.beta_features : [],
           account_id: data.account_id ?? "f21e8cdb-e27d-41fa-9aa4-af06ccdc0feb",
           account_role: accountRole,
           pincode: (data as Record<string, unknown>).pincode as string | null ?? null,
           phone: (data as Record<string, unknown>).phone as string | null ?? (data as Record<string, unknown>).whatsapp as string | null ?? null,
           upi_id: (data as Record<string, unknown>).upi_id as string | null ?? null,
           location: (data as Record<string, unknown>).location as string | null ?? null,
+          last_whatsapp_inbound_at: data.last_whatsapp_inbound_at ?? null,
+          is_whatsapp_session_active: data.is_whatsapp_session_active,
+          whatsapp_window_expires_at: data.whatsapp_window_expires_at ?? null,
+          whatsapp_hours_remaining: data.whatsapp_hours_remaining,
         } as any);
       }
     } catch (err) {
@@ -239,7 +301,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentUser);
           setLoading(false);
           const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
-          fetchProfile(currentUser.id, phone);
+          await fetchProfile(currentUser.id, phone);
+          return;
         }
 
         // Supabase session check (in background or if no direct token)
@@ -256,14 +319,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentUser);
           setLoading(false);
           const phone = currentUser.phone || currentUser.email;
-          fetchProfile(currentUser.id, phone);
+          await fetchProfile(currentUser.id, phone);
           return;
         }
 
         // Fallback: If still no currentUser, call /api/auth/me to read HttpOnly cookies
         if (!currentUser && typeof window !== "undefined") {
           try {
-            const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+            const meRes = await fetch("/api/auth/me", { cache: "no-store", credentials: "include" });
             if (meRes.ok) {
               const meData = await meRes.json();
               if (meData.authenticated && meData.user && mounted) {
@@ -274,8 +337,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   try { localStorage.setItem("sb-access-token", meData.token); } catch (_) {}
                 }
                 if (meData.profile) {
-                  setProfile(meData.profile);
+                  setProfile({
+                    ...meData.profile,
+                    last_whatsapp_inbound_at: meData.last_whatsapp_inbound_at ?? meData.profile.last_whatsapp_inbound_at ?? null,
+                    is_whatsapp_session_active: meData.is_whatsapp_session_active ?? meData.profile.is_whatsapp_session_active,
+                    whatsapp_window_expires_at: meData.whatsapp_window_expires_at ?? meData.profile.whatsapp_window_expires_at ?? null,
+                    whatsapp_hours_remaining: meData.whatsapp_hours_remaining ?? meData.profile.whatsapp_hours_remaining,
+                  });
                   setProfileLoading(false);
+                  return;
                 }
               }
             }
@@ -286,7 +356,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentUser);
           if (currentUser) {
             const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
-            fetchProfile(currentUser.id, phone);
+            await fetchProfile(currentUser.id, phone);
           } else {
             setProfile(null);
             setAccount(null);

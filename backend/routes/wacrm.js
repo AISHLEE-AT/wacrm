@@ -495,10 +495,10 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
         `;
         await pool.query(msgInsertSql, [conversationId, customerId, contentType, text, mediaUrl, messageId]);
 
-        // E. Touch profile
+        // E. Touch profile for sender phone
         await pool.query(
-          'UPDATE profiles SET last_whatsapp_inbound_at = NOW() WHERE phone LIKE $1 OR whatsapp LIKE $1',
-          [`%${clean10}%`]
+          'UPDATE profiles SET last_whatsapp_inbound_at = NOW(), updated_at = NOW() WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2',
+          [`%${clean10}%`, `%91${clean10}%`]
         );
 
         // F. Auto-Replies (OTP Hook / Session Renewal / Help)
@@ -522,6 +522,16 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
             if (extractedPhone && extractedPhone.length === 10) {
               phoneVariants.add(extractedPhone);
               phoneVariants.add(`91${extractedPhone}`);
+              // Also touch profile and conversations for extractedPhone so OTP request immediately activates 24h session
+              await pool.query(
+                'UPDATE profiles SET last_whatsapp_inbound_at = NOW(), updated_at = NOW() WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2',
+                [`%${extractedPhone}%`, `%91${extractedPhone}%`]
+              ).catch(() => {});
+              await pool.query(
+                `UPDATE conversations SET last_message_at = NOW(), updated_at = NOW()
+                 WHERE contact_id IN (SELECT id FROM contacts WHERE phone LIKE $1 OR phone LIKE $2)`,
+                [`%${extractedPhone}%`, `%91${extractedPhone}%`]
+              ).catch(() => {});
             }
 
             const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -547,6 +557,10 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
               'INSERT INTO messages (id, conversation_id, customer_id, sender_type, sender, content_type, content_text, content, status, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())',
               [conversationId, customerId, 'agent', 'agent', 'text', otpMsg, otpMsg, 'sent']
             );
+            await pool.query(
+              'UPDATE conversations SET last_message_text = $1, last_message_at = NOW(), updated_at = NOW() WHERE id = $2',
+              [otpMsg, conversationId]
+            );
           } catch (otpErr) {
             console.error('[OTP AUTO-REPLY ERROR]', otpErr.message);
           }
@@ -557,6 +571,10 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
             await pool.query(
               'INSERT INTO messages (id, conversation_id, customer_id, sender_type, sender, content_type, content_text, content, status, created_at) VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())',
               [conversationId, customerId, 'agent', 'agent', 'text', renewalMsg, renewalMsg, 'sent']
+            );
+            await pool.query(
+              'UPDATE conversations SET last_message_text = $1, last_message_at = NOW(), updated_at = NOW() WHERE id = $2',
+              [renewalMsg, conversationId]
             );
           } catch (autoErr) {
             console.error('[AUTO-REPLY ERROR]', autoErr.message);
@@ -593,4 +611,128 @@ router.post(['/webhooks/whatsapp', '/whatsapp/webhook', '/whatsapp/webhooks'], a
   }
 });
 
+// 9. Profile Update Endpoint (/api/profile/update)
+router.post('/profile/update', async (req, res) => {
+  try {
+    const {
+      userId,
+      phone,
+      full_name,
+      upi_id,
+      location,
+      main_category,
+      gemini_api_key,
+      city,
+      district,
+      state,
+      country,
+      pincode,
+      latitude,
+      longitude,
+      avatar_url,
+    } = req.body || {};
+
+    if (!userId && !phone) {
+      return res.status(400).json({ error: 'User ID or Phone number is required' });
+    }
+
+    const cleanPhone = phone ? String(phone).replace(/\D/g, '').slice(-10) : null;
+
+    // Find target profile row(s)
+    let existing = null;
+    if (userId && !String(userId).startsWith('user_')) {
+      const r = await pool.query('SELECT * FROM profiles WHERE id = $1 LIMIT 1', [userId]).catch(() => ({ rows: [] }));
+      if (r.rows.length > 0) existing = r.rows[0];
+    }
+    if (!existing && cleanPhone) {
+      const r = await pool.query(
+        `SELECT * FROM profiles
+         WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2
+         ORDER BY updated_at DESC NULLS LAST LIMIT 1`,
+        [`%${cleanPhone}%`, `%91${cleanPhone}%`]
+      );
+      if (r.rows.length > 0) existing = r.rows[0];
+    }
+
+    if (existing) {
+      const updatedRes = await pool.query(
+        `UPDATE profiles
+         SET full_name = COALESCE($1, full_name),
+             upi_id = COALESCE($2, upi_id),
+             location = COALESCE($3, location),
+             main_category = COALESCE($4, main_category),
+             gemini_api_key = COALESCE($5, gemini_api_key),
+             city = COALESCE($6, city),
+             district = COALESCE($7, district),
+             state = COALESCE($8, state),
+             country = COALESCE($9, country),
+             pincode = COALESCE($10, pincode),
+             latitude = COALESCE($11, latitude),
+             longitude = COALESCE($12, longitude),
+             avatar_url = COALESCE($13, avatar_url),
+             updated_at = NOW()
+         WHERE id = $14
+            OR ($15::text IS NOT NULL AND (phone LIKE $15 OR whatsapp LIKE $15 OR phone LIKE $16 OR whatsapp LIKE $16))
+         RETURNING *`,
+        [
+          full_name !== undefined ? String(full_name).trim() : null,
+          upi_id !== undefined ? String(upi_id).trim() : null,
+          location !== undefined ? String(location).trim() : null,
+          main_category !== undefined ? main_category : null,
+          gemini_api_key !== undefined ? gemini_api_key : null,
+          city !== undefined ? city : null,
+          district !== undefined ? district : null,
+          state !== undefined ? state : null,
+          country !== undefined ? country : null,
+          pincode !== undefined ? pincode : null,
+          latitude !== undefined ? latitude : null,
+          longitude !== undefined ? longitude : null,
+          avatar_url !== undefined ? avatar_url : null,
+          existing.id,
+          cleanPhone ? `%${cleanPhone}%` : null,
+          cleanPhone ? `%91${cleanPhone}%` : null,
+        ]
+      );
+      return res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        profile: updatedRes.rows[0] || existing,
+      });
+    }
+
+    // Insert new profile if none existed
+    const insertRes = await pool.query(
+      `INSERT INTO profiles (id, phone, whatsapp, full_name, upi_id, location, main_category, gemini_api_key, city, district, state, country, pincode, latitude, longitude, avatar_url, updated_at, last_whatsapp_inbound_at)
+       VALUES (gen_random_uuid(), $1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+       RETURNING *`,
+      [
+        cleanPhone,
+        full_name ? String(full_name).trim() : `User ${cleanPhone ? cleanPhone.slice(-4) : ''}`,
+        upi_id || null,
+        location || null,
+        main_category || 'Traveller',
+        gemini_api_key || null,
+        city || null,
+        district || null,
+        state || null,
+        country || 'India',
+        pincode || null,
+        latitude || null,
+        longitude || null,
+        avatar_url || null,
+      ]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Profile created and updated successfully',
+      profile: insertRes.rows[0],
+    });
+  } catch (err) {
+    console.error('[PROFILE UPDATE ERROR]', err);
+    return res.status(500).json({ error: err.message || 'Failed to update profile' });
+  }
+});
+
 module.exports = router;
+
