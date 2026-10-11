@@ -24,7 +24,7 @@ const SUBSCRIPTION_PLANS = [
 ];
 
 export default function DriveODashboard() {
-  const { user: currentUser, profile } = useAuth();
+  const { user: currentUser, profile, loading: authLoading, profileLoading } = useAuth();
   const [isOnline, setIsOnline] = useState(true);
   const [operatorCategory, setOperatorCategory] = useState<string>('auto');
   const [regNumber, setRegNumber] = useState<string>('');
@@ -60,27 +60,58 @@ export default function DriveODashboard() {
     currentUser?.phone?.includes("6381029380")
   );
 
-  // Fetch current user's driver partner record from Supabase
+  // Fetch current user's driver partner record from OCI backend first, then Supabase fallback
   useEffect(() => {
-    if (!currentUser?.id) return;
+    const userId = currentUser?.id || profile?.id;
+    const rawPhone = currentUser?.phone || profile?.phone || (typeof window !== 'undefined' ? localStorage.getItem('user-phone') || '' : '');
+    const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+    if (!userId && !cleanPhone) return;
+
     const fetchDriverRecord = async () => {
       setLoadingDriverRecord(true);
       try {
-        const rawPhone = currentUser.phone || profile?.phone || '';
-        const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
-        const { data } = await supabase
-          .from('drivers')
-          .select('*')
-          .or(`user_id.eq.${currentUser.id}${cleanPhone ? `,phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%` : ''}`)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        let resolvedDriver: any = null;
 
-        if (data && data.length > 0) {
-          const driver = data[0];
-          setDriverRecord(driver);
-          if (driver.vehicle_type) setOperatorCategory(driver.vehicle_type);
-          if (driver.vehicle_number) setRegNumber(driver.vehicle_number);
-          if (driver.upi_id) setUpiId(driver.upi_id);
+        if (cleanPhone) {
+          try {
+            const drvRes = await fetch(`/api/drivers/phone/${cleanPhone}`, { cache: 'no-store' });
+            if (drvRes.ok) {
+              const drvJson = await drvRes.json();
+              if (drvJson?.id) resolvedDriver = drvJson;
+            }
+          } catch (_) {}
+
+          if (!resolvedDriver) {
+            try {
+              const checkRes = await fetch(`/api/auth/check?phone=${cleanPhone}`, { cache: 'no-store' });
+              if (checkRes.ok) {
+                const checkJson = await checkRes.json();
+                if (checkJson?.driver_profile?.id) {
+                  resolvedDriver = checkJson.driver_profile;
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
+        if (!resolvedDriver && (userId || cleanPhone)) {
+          const { data } = await supabase
+            .from('drivers')
+            .select('*')
+            .or(`${userId ? `user_id.eq.${userId}` : ''}${userId && cleanPhone ? ',' : ''}${cleanPhone ? `phone.ilike.%${cleanPhone}%,mobile_number.ilike.%${cleanPhone}%,whatsapp_number.ilike.%${cleanPhone}%` : ''}`)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (data && data.length > 0) {
+            resolvedDriver = data[0];
+          }
+        }
+
+        if (resolvedDriver) {
+          setDriverRecord(resolvedDriver);
+          if (resolvedDriver.vehicle_type) setOperatorCategory(resolvedDriver.vehicle_type);
+          if (resolvedDriver.vehicle_number) setRegNumber(resolvedDriver.vehicle_number);
+          if (resolvedDriver.upi_id) setUpiId(resolvedDriver.upi_id);
         }
       } catch (err) {
         console.error(err);
@@ -90,7 +121,7 @@ export default function DriveODashboard() {
     };
 
     fetchDriverRecord();
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.phone, profile?.id, profile?.phone]);
 
   // Live driver location streaming
   useEffect(() => {
@@ -581,7 +612,16 @@ export default function DriveODashboard() {
     window.open(getFreeActiveWhatsAppUrl(), '_blank');
   };
 
-  if (!currentUser) {
+  if ((authLoading || profileLoading) && !currentUser && !profile) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center text-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mb-3" />
+        <p className="text-sm text-muted-foreground">Loading DriveO portal...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser && !profile) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center text-foreground">
         <ShieldCheck className="w-12 h-12 text-primary mb-4" />

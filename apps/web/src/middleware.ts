@@ -189,8 +189,9 @@ function extractJwtPayload(token: string): any {
           profileData = data
         }
 
-        const role = profileData?.role?.toLowerCase() || ''
-        const category = profileData?.main_category?.toLowerCase() || ''
+        const role = (profileData?.role || user.user_metadata?.role || user.role || '').toLowerCase()
+        const rawCategory = profileData?.main_category || user.user_metadata?.category || ''
+        const category = rawCategory.toLowerCase()
         const userText = `${user.email ?? ''} ${user.phone ?? ''}`.toLowerCase()
         const isBootstrapAdmin = [
           ...BOOTSTRAP_ADMIN_PHONES,
@@ -198,9 +199,12 @@ function extractJwtPayload(token: string): any {
         ].some(id => userText.includes(id.toLowerCase()))
 
         const isAdmin = role === 'admin' || isBootstrapAdmin
-        let isDriver = role.includes('driver') || category.includes('driver')
+        const hasExplicitNonDriverCat = Boolean(
+          category && !['traveller', 'user', 'driver', 'driver partner'].includes(category)
+        )
+        let isDriver = !hasExplicitNonDriverCat && (role.includes('driver') || category.includes('driver'))
 
-        if (!isDriver && (user.phone || user.email)) {
+        if (!isDriver && !hasExplicitNonDriverCat && (user.phone || user.email)) {
           const rawPhone = user.phone || user.email || ''
           const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10)
           if (cleanPhone) {
@@ -225,10 +229,12 @@ function extractJwtPayload(token: string): any {
           const routeMap: Record<string, string> = {
             Traveller: '/rideo', Driver: '/drivo', 'Driver Partner': '/drivo', Farmer: '/rento',
             Shopper: '/dealo', Student: '/teacho', Teacher: '/teacho',
-            Financier: '/moneyo', JobSeeker: '/teacho', Tourist: '/touro'
+            Financier: '/moneyo', JobSeeker: '/teacho', Tourist: '/touro',
+            Group: '/groupo', 'Group Member': '/groupo', group: '/groupo'
           }
           defaultModule = profileData?.default_module
-            || routeMap[profileData?.main_category || '']
+            || routeMap[rawCategory]
+            || routeMap[category]
             || '/rideo'
         }
       } catch (err) {

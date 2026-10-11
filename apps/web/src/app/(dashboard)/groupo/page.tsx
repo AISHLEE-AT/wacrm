@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 import { GroupRepository, UserGroupStatus, DbGroup, DbMember, GroupData } from '@/lib/groupRepository';
 
 // Import newly ported Web Modals
@@ -38,6 +39,7 @@ const mapDbGroupToGroupData = async (grp: DbGroup): Promise<GroupData> => {
 };
 
 export default function GroupOWebPage() {
+  const { user: authUser, profile: authProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'savings' | 'meetings' | 'videos' | 'ai_docs'>('overview');
   
   // Data State
@@ -58,14 +60,22 @@ export default function GroupOWebPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      
-      let phone = user.phone;
-      if (!phone && user.email) {
-        const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-        if (profile?.phone) phone = profile.phone;
+      let phone =
+        authProfile?.phone ||
+        authUser?.phone ||
+        (typeof window !== 'undefined' ? localStorage.getItem('user-phone') || '' : '');
+
+      if (!phone) {
+        const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+        if (user) {
+          phone = user.phone || '';
+          if (!phone && user.email) {
+            const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+            if (profile?.phone) phone = profile.phone;
+          }
+        }
       }
+
       if (phone) {
         setUserPhone(phone);
         
@@ -88,7 +98,7 @@ export default function GroupOWebPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedGroup]);
+  }, [selectedGroup, authProfile?.phone, authUser?.phone]);
 
   useEffect(() => {
     loadData();

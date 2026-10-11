@@ -134,6 +134,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // window they're in — see the type doc above.
   const [profileLoading, setProfileLoading] = useState(true);
 
+  const getJwtUserFromBrowser = useCallback((): User | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      let token = localStorage.getItem("sb-access-token") || "";
+      if (!token && document.cookie) {
+        const match = document.cookie.match(/(?:^|;\s*)sb-access-token=([^;]+)/);
+        if (match && match[1]) {
+          token = decodeURIComponent(match[1]);
+          try {
+            localStorage.setItem("sb-access-token", token);
+          } catch (_) {}
+        }
+      }
+      if (!token) return null;
+      const base64Url = token.split(".")[1];
+      if (!base64Url) return null;
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(decodeURIComponent(escape(atob(base64))));
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp <= nowSec) return null;
+      const cleanPhone = (payload.phone || "").replace(/\D/g, "").slice(-10);
+      return {
+        id: payload.id || payload.sub || (cleanPhone ? `user_${cleanPhone}` : "user_authenticated"),
+        app_metadata: {},
+        user_metadata: payload,
+        aud: "authenticated",
+        created_at: new Date().toISOString(),
+        email: payload.email || "",
+        phone: payload.phone || cleanPhone || "",
+        role: payload.role || "user",
+      } as User;
+    } catch (_) {
+      return null;
+    }
+  }, []);
+
   // Shared across init, auth-state-change listener, and the exposed
   // refreshProfile() callback. Reads the current session's user id and
   // pulls the matching profile row along with its account summary.
@@ -142,12 +178,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileLoading(true);
     try {
       let data: any = null;
+      let resolvedAuthUser: User | null = null;
       const cleanPhone = (userPhone || (typeof window !== "undefined" ? localStorage.getItem("user-phone") || "" : "")).replace(/\D/g, "").slice(-10);
 
       // 1. Primary: Fetch from authoritative OCI /api/auth/me or /api/auth/check
       if (typeof window !== "undefined") {
         try {
-          const directToken = localStorage.getItem("sb-access-token");
+          let directToken = localStorage.getItem("sb-access-token") || "";
+          if (!directToken && document.cookie) {
+            const match = document.cookie.match(/(?:^|;\s*)sb-access-token=([^;]+)/);
+            if (match && match[1]) directToken = decodeURIComponent(match[1]);
+          }
           const headers: Record<string, string> = {};
           if (directToken) headers["Authorization"] = `Bearer ${directToken}`;
           const meRes = await fetch("/api/auth/me", {
@@ -158,6 +199,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (meRes.ok) {
             const meData = await meRes.json();
             if (meData.authenticated && meData.profile) {
+              if (meData.user) {
+                resolvedAuthUser = meData.user as User;
+              }
+              if (meData.token) {
+                try {
+                  localStorage.setItem("sb-access-token", meData.token);
+                } catch (_) {}
+              }
               data = {
                 ...meData.profile,
                 last_whatsapp_inbound_at: meData.last_whatsapp_inbound_at ?? meData.profile.last_whatsapp_inbound_at ?? null,
@@ -224,6 +273,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? data.account_role
           : "owner";
 
+        const resolvedPhone = (data.phone || data.whatsapp || cleanPhone || "") as string;
+        const fallbackUser: User = resolvedAuthUser || {
+          id: data.id || userId,
+          app_metadata: {},
+          user_metadata: {
+            id: data.id || userId,
+            phone: resolvedPhone,
+            full_name: data.full_name || "",
+            fullName: data.full_name || "",
+            role: data.role || "user",
+            category: data.main_category || data.category || "Traveller",
+          },
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+          email: data.email || "",
+          phone: resolvedPhone,
+          role: data.role || "user",
+        } as User;
+
+        setUser((prev) => prev || fallbackUser);
+
         setProfile({
           ...data,
           id: data.id,
@@ -266,37 +336,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const init = async () => {
       try {
-        let currentUser: User | null = null;
+        // Fast path 1: Instant local/cookie token check (0ms wait, no network delay)
+        let currentUser: User | null = getJwtUserFromBrowser();
 
-        // Fast path 1: Instant local token check (0ms wait, no network delay)
-        if (typeof window !== "undefined") {
-          const directToken = localStorage.getItem("sb-access-token");
-          if (directToken) {
-            try {
-              const base64Url = directToken.split(".")[1];
-              if (base64Url) {
-                const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-                const payload = JSON.parse(decodeURIComponent(escape(atob(base64))));
-                const nowSec = Math.floor(Date.now() / 1000);
-                if (!payload.exp || payload.exp > nowSec) {
-                  const cleanPhone = (payload.phone || "").replace(/\D/g, "").slice(-10);
-                  currentUser = {
-                    id: payload.id || payload.sub || (cleanPhone ? `user_${cleanPhone}` : "user_authenticated"),
-                    app_metadata: {},
-                    user_metadata: payload,
-                    aud: "authenticated",
-                    created_at: new Date().toISOString(),
-                    email: payload.email || "",
-                    phone: payload.phone || "",
-                    role: payload.role || "user",
-                  } as User;
-                }
-              }
-            } catch (_) {}
-          }
-        }
-
-        // If local token found, immediately set user and unblock UI rendering
+        // If local/cookie token found, immediately set user and unblock UI rendering
         if (currentUser && mounted) {
           setUser(currentUser);
           setLoading(false);
@@ -334,7 +377,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(currentUser);
                 setLoading(false);
                 if (meData.token) {
-                  try { localStorage.setItem("sb-access-token", meData.token); } catch (_) {}
+                  try {
+                    localStorage.setItem("sb-access-token", meData.token);
+                    document.cookie = `sb-access-token=${meData.token}; path=/; max-age=${30 * 86400}; SameSite=Lax`;
+                  } catch (_) {}
                 }
                 if (meData.profile) {
                   setProfile({
@@ -377,19 +423,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
+      if (session?.user) {
+        const currentUser = session.user;
+        setUser(currentUser);
         const phone = (currentUser as any).phone || (currentUser as any).user_metadata?.phone;
         fetchProfile(currentUser.id, phone);
-      } else {
-        setProfile(null);
-        setAccount(null);
-        setProfileLoading(false);
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
+      // IMPORTANT: When authenticated via OCI JWT (sb-access-token in localStorage/cookie),
+      // Supabase GoTrue emits INITIAL_SESSION or SIGNED_OUT with session=null.
+      // Never wipe our active OCI JWT user/profile when a valid OCI token exists!
+      const jwtUser = getJwtUserFromBrowser();
+      if (jwtUser) {
+        setUser((prev) => prev || jwtUser);
+        setLoading(false);
+        return;
+      }
     });
 
     return () => {
@@ -397,11 +448,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile, getJwtUserFromBrowser]);
 
   const signOut = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sb-access-token");
+        localStorage.removeItem("sb-refresh-token");
+        localStorage.removeItem("user-phone");
+        document.cookie = "sb-access-token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      }
+      await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+      const supabase = createClient();
+      await supabase.auth.signOut().catch(() => {});
+    } catch (_) {}
     setUser(null);
     setProfile(null);
     setAccount(null);
@@ -409,9 +469,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!user?.id) return;
-    await fetchProfile(user.id);
-  }, [user?.id, fetchProfile]);
+    const targetId = user?.id || profile?.id;
+    const targetPhone = (user as any)?.phone || profile?.phone || undefined;
+    if (!targetId && !targetPhone) return;
+    await fetchProfile(targetId || "user_authenticated", targetPhone);
+  }, [user, profile?.id, profile?.phone, fetchProfile]);
 
   // Derive the role booleans once per profile change rather than on
   // every consumer render. Cheap regardless, but the memo also gives

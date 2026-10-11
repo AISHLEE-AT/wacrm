@@ -10,7 +10,7 @@ import { checkIsAdmin } from "@/lib/auth/admin";
 import { createClient } from "@/lib/supabase/client";
 
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, profileLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -39,12 +39,18 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
   const isAdmin = checkIsAdmin(user, profile ?? undefined);
 
   useEffect(() => {
-    // If not loading, no user, and NOT running inside mobile embed/native app, redirect to login
-    if (!loading && !user && !isEmbed) {
-      router.push("/login");
-      return;
+    // If not loading, no user/profile, and NOT running inside mobile embed/native app, redirect to login
+    if (!loading && !profileLoading && !user && !profile && !isEmbed) {
+      const hasToken =
+        typeof window !== "undefined" &&
+        (Boolean(localStorage.getItem("sb-access-token")) ||
+          document.cookie.includes("sb-access-token="));
+      if (!hasToken) {
+        router.push("/login");
+        return;
+      }
     }
-  }, [user, loading, isAdmin, pathname, router, isEmbed]);
+  }, [user, profile, loading, profileLoading, isAdmin, pathname, router, isEmbed]);
 
   const supabase = createClient();
   const lastTrackedModuleRef = useRef<string | null>(null);

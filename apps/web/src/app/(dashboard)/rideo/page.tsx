@@ -9,6 +9,7 @@ import {
   Phone, MessageCircle, Clock, Shield, Award, RotateCcw, User 
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 
 // Dynamically import Map so it only renders on client
 const RideMap = nextDynamic(() => import('@/components/GoogleRideMap'), { ssr: false });
@@ -51,6 +52,7 @@ function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): 
 }
 
 export default function RideOBookingPage() {
+  const { user: authUser, profile: authProfile } = useAuth();
   const [pickup, setPickup] = useState<[number, number] | null>(null);
   const [dropoff, setDropoff] = useState<[number, number] | null>(null);
   const [pickupAddress, setPickupAddress] = useState('Locating your position...');
@@ -148,15 +150,16 @@ export default function RideOBookingPage() {
     setSearchCountdown(30);
 
     const otp = String(1000 + Math.floor(Math.random() * 9000));
-    const { data: userAuth } = await supabase.auth.getUser();
-    const passengerPhone = userAuth?.user?.phone || '';
-    const passengerName = userAuth?.user?.user_metadata?.full_name || 'Passenger';
+    const { data: userAuth } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+    const passengerPhone = authProfile?.phone || authUser?.phone || userAuth?.user?.phone || '';
+    const passengerName = authProfile?.full_name || authUser?.user_metadata?.full_name || userAuth?.user?.user_metadata?.full_name || 'Passenger';
+    const passengerId = authProfile?.id || authUser?.id || userAuth?.user?.id;
 
     try {
       const { data: rideRecord, error } = await supabase
         .from('rides')
         .insert({
-          user_id: userAuth?.user?.id,
+          user_id: passengerId,
           passenger_phone: passengerPhone,
           passenger_name: passengerName,
           pickup_location: {

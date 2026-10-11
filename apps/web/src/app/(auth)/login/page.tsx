@@ -273,7 +273,7 @@ function LoginPageInner() {
         } catch (_) {}
       }
 
-      if (data.session) {
+      if (data.session && data.session.access_token !== data.session.refresh_token) {
         try {
           await supabase.auth.setSession(data.session);
         } catch (_) {}
@@ -287,7 +287,7 @@ function LoginPageInner() {
         return;
       }
 
-      router.replace(data.redirectUrl || data.redirect_to || "/rideo");
+      window.location.href = data.redirectUrl || data.redirect_to || "/rideo";
     } catch (err: any) {
       setError(err.message || "Verification failed. Please try again.");
       setLoading(false);
@@ -311,12 +311,12 @@ function LoginPageInner() {
       const res = await fetch("/api/auth/pin/set", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, pin: newPin }),
+        body: JSON.stringify({ phone, pin: newPin, confirmPin }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Failed to set PIN");
 
-      router.replace(pendingRedirect || "/rideo");
+      window.location.href = pendingRedirect || "/rideo";
     } catch (err: any) {
       setError(err.message || "Failed to save PIN");
       setLoading(false);
@@ -366,7 +366,7 @@ function LoginPageInner() {
         } catch (_) {}
       }
 
-      if (data.session) {
+      if (data.session && data.session.access_token !== data.session.refresh_token) {
         try {
           await supabase.auth.setSession(data.session);
         } catch (_) {}

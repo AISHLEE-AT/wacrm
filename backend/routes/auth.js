@@ -142,8 +142,10 @@ router.get('/check', async (req, res) => {
       });
     }
 
-    const resolvedRole = isAdmin ? 'admin' : (driver ? 'driver' : (profile?.role || 'user'));
-    const resolvedCategory = isAdmin ? 'Admin' : (driver ? 'Driver' : (profile?.main_category || 'Traveller'));
+    const hasExplicitRole = profile?.role && !['user', 'traveller', 'authenticated'].includes(String(profile.role).toLowerCase());
+    const hasExplicitCat = profile?.main_category && !['traveller', 'user'].includes(String(profile.main_category).toLowerCase());
+    const resolvedRole = isAdmin ? 'admin' : (hasExplicitRole ? profile.role : (driver ? 'driver' : (profile?.role || 'user')));
+    const resolvedCategory = isAdmin ? 'Admin' : (hasExplicitCat ? profile.main_category : (driver ? 'Driver' : (profile?.main_category || 'Traveller')));
     const resolvedName = profile?.full_name || driver?.name || (isAdmin ? 'Admin-RAJA' : 'SuprO User');
 
     const { lastInboundIso, isWindowActive, expiresAt, hoursRemaining } = await resolveWhatsAppSessionStatus(clean, profile);
@@ -322,8 +324,10 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
 
     let profile = profRes.rows[0];
     const isAdmin = isPhoneAdminCheck(clean);
-    const resolvedRole = isAdmin ? 'admin' : (driver ? 'driver' : (profile?.role || 'user'));
-    const resolvedCat = isAdmin ? 'Admin' : (driver ? 'Driver' : (category || profile?.main_category || 'Traveller'));
+    const hasExplicitRole = profile?.role && !['user', 'traveller', 'authenticated'].includes(String(profile.role).toLowerCase());
+    const hasExplicitCat = profile?.main_category && !['traveller', 'user'].includes(String(profile.main_category).toLowerCase());
+    const resolvedRole = isAdmin ? 'admin' : (hasExplicitRole ? profile.role : (driver ? 'driver' : (profile?.role || 'user')));
+    const resolvedCat = isAdmin ? 'Admin' : (hasExplicitCat ? profile.main_category : (driver ? 'Driver' : (category || profile?.main_category || 'Traveller')));
     const resolvedName = fullName || full_name || profile?.full_name || driver?.name || (isAdmin ? 'Admin-RAJA' : 'SuprO User');
     const nowIso = new Date().toISOString();
     const expiresAtIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -341,9 +345,15 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
       await pool.query(
         `UPDATE profiles
          SET last_whatsapp_inbound_at = NOW(), updated_at = NOW()
-         WHERE id = $1 OR phone LIKE $2 OR whatsapp LIKE $2 OR phone LIKE $3 OR whatsapp LIKE $3`,
-        [profile.id, `%${clean}%`, `%91${clean}%`]
+         WHERE id = $1`,
+        [profile.id]
       );
+      await pool.query(
+        `UPDATE profiles
+         SET last_whatsapp_inbound_at = NOW()
+         WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2`,
+        [`%${clean}%`, `%91${clean}%`]
+      ).catch(() => {});
       profile.last_whatsapp_inbound_at = nowIso;
       profile.updated_at = nowIso;
 
@@ -369,7 +379,7 @@ router.post(['/otp/verify', '/verify-otp'], async (req, res) => {
 
     res.cookie('sb-access-token', token, {
       path: '/',
-      httpOnly: true,
+      httpOnly: false,
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
@@ -465,8 +475,14 @@ router.post('/pin', async (req, res) => {
     await pool.query(
       `UPDATE profiles
        SET last_whatsapp_inbound_at = NOW(), updated_at = NOW()
-       WHERE id = $1 OR phone LIKE $2 OR whatsapp LIKE $2 OR phone LIKE $3 OR whatsapp LIKE $3`,
-      [profile.id, `%${clean}%`, `%91${clean}%`]
+       WHERE id = $1`,
+      [profile.id]
+    ).catch(() => {});
+    await pool.query(
+      `UPDATE profiles
+       SET last_whatsapp_inbound_at = NOW()
+       WHERE phone LIKE $1 OR whatsapp LIKE $1 OR phone LIKE $2 OR whatsapp LIKE $2`,
+      [`%${clean}%`, `%91${clean}%`]
     ).catch(() => {});
     await pool.query(
       `UPDATE conversations SET last_message_at = NOW(), updated_at = NOW()
@@ -489,7 +505,7 @@ router.post('/pin', async (req, res) => {
 
     res.cookie('sb-access-token', token, {
       path: '/',
-      httpOnly: true,
+      httpOnly: false,
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
@@ -540,7 +556,7 @@ router.post('/pin/set', async (req, res) => {
     if (!phone || !pin || pin.length !== 4) {
       return res.status(400).json({ error: 'Valid 4-digit PIN is required' });
     }
-    if (pin !== confirmPin) {
+    if (confirmPin !== undefined && pin !== confirmPin) {
       return res.status(400).json({ error: 'PINs do not match' });
     }
 
@@ -549,7 +565,7 @@ router.post('/pin/set', async (req, res) => {
 
     await pool.query(
       `UPDATE profiles 
-       SET pin_hash = $1, pin_set_at = NOW(), updated_at = NOW() 
+       SET pin_hash = $1, pin_set_at = NOW() 
        WHERE phone LIKE $2 OR whatsapp LIKE $2 OR phone LIKE $3 OR whatsapp LIKE $3`,
       [hashedSha, `%${clean}%`, `%91${clean}%`]
     );
@@ -559,6 +575,12 @@ router.post('/pin/set', async (req, res) => {
     console.error('[PIN SET ERROR]', err);
     res.status(500).json({ error: 'Failed to set PIN' });
   }
+});
+
+// 6b. POST /api/auth/logout - Clear session cookie
+router.post('/logout', (req, res) => {
+  res.clearCookie('sb-access-token', { path: '/' });
+  return res.json({ success: true });
 });
 
 // 7. GET /api/auth/me - Verify session cookie and return user profile
@@ -626,8 +648,10 @@ router.get('/me', async (req, res) => {
     }
 
     const isAdmin = isPhoneAdminCheck(clean);
-    const resolvedRole = isAdmin ? 'admin' : (driver ? 'driver' : (profile?.role || payload.role || 'user'));
-    const resolvedCat = isAdmin ? 'Admin' : (driver ? 'Driver' : (profile?.main_category || payload.category || 'Traveller'));
+    const hasExplicitRole = profile?.role && !['user', 'traveller', 'authenticated'].includes(String(profile.role).toLowerCase());
+    const hasExplicitCat = profile?.main_category && !['traveller', 'user'].includes(String(profile.main_category).toLowerCase());
+    const resolvedRole = isAdmin ? 'admin' : (hasExplicitRole ? profile.role : (driver ? 'driver' : (profile?.role || payload.role || 'user')));
+    const resolvedCat = isAdmin ? 'Admin' : (hasExplicitCat ? profile.main_category : (driver ? 'Driver' : (profile?.main_category || payload.category || 'Traveller')));
     const resolvedName = profile?.full_name || driver?.name || payload.fullName || payload.name || `User ${clean.slice(-4)}`;
 
     const { lastInboundIso, isWindowActive, expiresAt, hoursRemaining } = await resolveWhatsAppSessionStatus(clean, profile);
